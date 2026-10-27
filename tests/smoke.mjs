@@ -275,12 +275,29 @@ assert.equal(ukssCloseup.surfaceMaterials.ukss.version,'1.0');
 assert.ok(ukssCloseup.surfaceMaterials.gagarin.texturedCount>=15);
 assert.ok(ukssCloseup.surfaceMaterials.ukss.texturedCount>=10);
 const reviewStyle=await page.addStyleTag({content:'#ui,#info,#timeDock,#hero,.site-label,.detail-card,.flank-label{visibility:hidden!important}'});
+await page.setViewportSize({width:1100,height:700});
 for(const part of ['metal','concrete']){
  await page.evaluate(part=>window.__BAIKONUR_QA.inspectSurface('ukss',part),part);
  await page.waitForTimeout(300);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid),true,'Textured '+part+' must render with valid WebGL programs');
- await page.screenshot({path:'qa-ukss-'+part+'-surface.png'});
+ // Let SwiftShader finish one frame instead of competing with a continuously
+ // animated WebGL canvas while Chromium copies a high-detail screenshot.
+ await page.evaluate(()=>{
+  const original=window.requestAnimationFrame;
+  let pending;
+  window.requestAnimationFrame=callback=>{pending=callback;return 0};
+  window.__resumeSurfaceCapture=()=>{
+   window.requestAnimationFrame=original;
+   if(pending)window.requestAnimationFrame(pending);
+   delete window.__resumeSurfaceCapture;
+  };
+ });
+ try{
+  await page.waitForTimeout(200);
+  await page.screenshot({path:'qa-ukss-'+part+'-surface.png'});
+ }finally{await page.evaluate(()=>window.__resumeSurfaceCapture())}
 }
+await page.setViewportSize({width:1600,height:900});
 await reviewStyle.evaluate(el=>el.remove());
 await page.evaluate(()=>{const qa=window.__BAIKONUR_QA;qa.focusSite(qa.stats().ukssIndex)});
 const ukssGeometry=await page.evaluate(async()=>{
