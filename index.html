@@ -339,12 +339,13 @@ for(let py=0;py<size;py++)for(let px=0;px<size;px++){
  const waviness=(massif-.5)*.46+(plain-.5)*.31+(soil-.5)*.23;
  const saltBasin=Math.max(0,Math.min(1,(.44-plain)*5.3))*(.55+.45*soil);
  const crust=Math.max(0,Math.min(1,(soil-.5)*3.2))*(.6+.4*massif);
- const riverbed=Math.max(0,1-Math.abs(Math.sin((nx*6+ny*9)*Math.PI*2+massif*11+plain*7))*12)*Math.max(0,(.62-massif)*2);
- const dune=Math.sin((nx*18-ny*6)*Math.PI*2+plain*7.7)*Math.sin((nx*6+ny*4)*Math.PI*2+massif*3.4)*3.8;
+ // Broad irregular clay/gravel transition; no repeated sine-wave grooves.
+ const dryCrust=terrainTileNoise(nx,ny,47,49);
  const granule=(texture-.5)*24+(pebbles-.5)*15;
- let r=170+waviness*112+granule+dune+saltBasin*53-crust*22-riverbed*16;
- let g=153+waviness*101+granule*.88+dune*.85+saltBasin*52-crust*21-riverbed*13;
- let b=124+waviness*85+granule*.73+dune*.67+saltBasin*47-crust*19-riverbed*8;
+ const dryPatch=Math.max(0,dryCrust-.57)*17;
+ let r=170+waviness*112+granule+saltBasin*53-crust*22-dryPatch;
+ let g=153+waviness*101+granule*.88+saltBasin*52-crust*21-dryPatch*.89;
+ let b=124+waviness*85+granule*.73+saltBasin*47-crust*19-dryPatch*.73;
  // Dusty gray-green scrub / hardened alluvium, sparingly across the desert.
  const scrub=Math.max(0,soil-.66)*Math.max(0,plain-.46)*5;
  r-=scrub*32;g+=scrub*4;b-=scrub*6;
