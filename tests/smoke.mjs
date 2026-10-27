@@ -10,6 +10,16 @@ const museumURL=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 await page.goto(museumURL,{waitUntil:'domcontentloaded'});
 await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA),{timeout:60000});
 await page.waitForFunction(()=>document.getElementById('roadStatus')?.textContent.includes('цветных пикселей'),{timeout:30000});
+// Enterprise artwork is local, transparent, and attached only to attributed sites.
+await page.waitForFunction(()=>{
+ const logos=[...document.querySelectorAll('.detail-card .org-logo')];
+ return logos.length>=4&&logos.every(image=>image.complete&&image.naturalWidth===1280);
+},{timeout:15000});
+assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),2);
+assert.equal(await page.locator('.detail-card [data-org-logo="energia"]').count(),1);
+assert.equal(await page.locator('.detail-card [data-org-logo="cpc"]').count(),1);
+assert.equal(await page.locator('.detail-card img[src*="wikimedia"]').count(),0);
+console.log('ENTERPRISE LOGOS: local silver assets loaded on all attributed site cards');
 // Sidebar cleanup must preserve navigation while removing temporary implementation notes.
 const sidebarCleanup=await page.evaluate(()=>{
  const sidebar=document.querySelector('#ui');const text=sidebar?.innerText||'';
@@ -299,6 +309,11 @@ await page.waitForFunction(()=>[...document.querySelectorAll('.detail-card')].so
 console.log('DETAIL CARDS',await page.locator('.detail-card:visible').count());
 assert.ok((await page.locator('.detail-card:visible').count())>0,'Level 4: on-site detail cards should be visible');
 const siteDetail=page.locator('.detail-card[data-site-index="0"]');
+assert.equal(await siteDetail.locator('.org-logo').isVisible(),true);
+await page.waitForFunction(()=>document.querySelector('#infoOrg .org-logo')?.naturalWidth===1280);
+assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),'tsenki');
+assert.equal(await siteDetail.locator('.org-logo').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
+await page.screenshot({path:'qa-enterprise-logos.png'});
 const detailEye=siteDetail.locator('.site-eye-toggle');
 assert.equal(await detailEye.isVisible(),false,'Detailed card eye starts hidden too');
 await siteDetail.hover();
@@ -314,10 +329,12 @@ assert.equal(await siteDetail.getAttribute('data-collapsed'),'true');
 assert.equal(await detailEye.isVisible(),false);
 assert.equal(await siteDetail.locator('.detail-mini-number').isVisible(),true);
 assert.equal(await siteDetail.locator('.detail-mini-number').textContent(),'Пл. №1');
+assert.equal(await siteDetail.locator('.org-logo').isVisible(),false,'Collapsed cards contain only their site number');
 assert.equal(await page.locator('.site-label[data-site-index="0"]').getAttribute('data-collapsed'),'true','Collapse state stays synchronized across zoom levels');
 await page.screenshot({path:'qa-collapsed-site-number.png'});
 await siteDetail.locator('.detail-mini-number').press('Enter');
 assert.equal(await siteDetail.getAttribute('data-collapsed'),'false','The number restores the full detail card');
+assert.equal(await siteDetail.locator('.org-logo').isVisible(),true,'Restoring a card restores its enterprise logo');
 assert.equal(await detailEye.isVisible(),true);
 assert.equal(await page.locator('.site-label[data-site-index="0"]').getAttribute('data-collapsed'),'false');
 await page.locator('.rockettrip-logo').click();
@@ -460,5 +477,6 @@ assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&m
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
 await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: archival portraits and designer names restored; expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 enterprise districts with rockets, purposes, features and fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
+
 
 
