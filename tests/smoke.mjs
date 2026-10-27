@@ -190,7 +190,20 @@ await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(760));
 await page.waitForTimeout(300);
 assert.ok((await page.locator('.flank-label').count())===3,'Level 2: three enterprise flanks must exist');
 assert.ok((await page.locator('.flank-label:visible').count())>0,'Level 2: at least one flank card must be visible');
-assert.equal(await page.locator('.flank-portrait,.flank-fullname,.flank-school').count(),0,'Flanks must show enterprises without founder portraits or school labels');
+assert.equal(await page.locator('.flank-portrait').count(),3,'All three constructors must have archival portraits');
+assert.equal(await page.locator('.flank-engineer').count(),3,'All three designers must have large surname headings');
+assert.equal(await page.locator('.flank-fullname').count(),3,'All three cards must have the designers full names');
+assert.deepEqual(await page.locator('.flank-engineer').allTextContents(),['ЧЕЛОМЕЙ','КОРОЛЁВ','ЯНГЕЛЬ']);
+assert.deepEqual(await page.locator('.flank-fullname').allTextContents(),[
+ 'Владимир Николаевич Челомей','Сергей Павлович Королёв','Михаил Кузьмич Янгель'
+]);
+await page.waitForFunction(()=>[...document.querySelectorAll('.flank-portrait img')].every(im=>im.complete),{timeout:18000});
+const portraits=await page.evaluate(()=>[...document.querySelectorAll('.flank-portrait img')].map(im=>({
+ alt:im.alt,src:im.currentSrc,loaded:im.naturalWidth>0,
+ width:im.naturalWidth,height:im.naturalHeight
+})));
+console.log('FLANK PORTRAITS',JSON.stringify(portraits));
+assert.ok(portraits.every(p=>p.loaded),'Portrait images must load, not just fallback to initials');
 const enterpriseTitles=await page.locator('.flank-name').allTextContents();
 assert.ok(enterpriseTitles[0].includes('НПО машиностроения')&&enterpriseTitles[0].includes('Центр Хруничева'),'Left flank names its enterprises');
 assert.ok(enterpriseTitles[1].includes('РКК «Энергия»')&&enterpriseTitles[1].includes('РКЦ «Прогресс»'),'Central flank names its enterprises');
@@ -200,7 +213,7 @@ for(const field of ['rockets','purpose','features']){
  assert.equal(values.length,3,'Every flank has a '+field+' section');
  assert.ok(values.every(value=>value.length>15),'Flank '+field+' sections contain useful summaries');
 }
-assert.ok((await page.locator('.flank-label').allTextContents()).every(text=>!/школ[а-я]*/iu.test(text)),'No school wording remains on flank cards');
+assert.equal(await page.locator('.flank-enterprises').count(),3,'Keep enterprise descriptions alongside returned designer portraits');
 const districtState=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
 console.log('FLANK DISTRICTS',JSON.stringify(districtState));
 assert.equal(districtState.zoneCount,3,'Museum should have exactly 3 thematic map districts');
@@ -405,6 +418,6 @@ console.log('MOBILE',JSON.stringify(mobile));
 assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.logoVisible,'Floating timeline and expanding menu must fit mobile');
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
-await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 enterprise districts with rockets, purposes, features and fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
+await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: archival portraits and designer names restored; expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 enterprise districts with rockets, purposes, features and fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
 
 
