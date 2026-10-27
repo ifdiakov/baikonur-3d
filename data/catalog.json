@@ -2119,11 +2119,11 @@
       "titleShort": "ИП-5 «Сатурн-МС»",
       "titleFull": "пл. №23 · ИП-5 «Сатурн-МС»",
       "x": 709,
-      "y": 806,
+      "y": 778,
       "model": "saturn-ms-photo-v1",
       "firstYear": 1966,
       "status": "externally-attributed",
-      "positionBasis": "approximate three-landmark affine positioning of published GPS; no cadastral registration",
+      "positionBasis": "Provisional museum placement moved 28 map units north (toward inner cosmodrome, beyond presumed access line); exact checkpoint position not yet verified.",
       "positionVerified": false,
       "coordinateConfidence": "low: geographic-coordinate source and historical-image alignment independently unverified",
       "geographicPoint": {
