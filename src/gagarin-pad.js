@@ -2,9 +2,9 @@ import * as THREE from 'three';
 
 /**
  * GAGARIN'S START — SITE 1, launch position 5
- * PHOTO-GROUNDED MUSEUM STUDY v3.1, not engineering drawings.
+ * PHOTO-GROUNDED MUSEUM STUDY v3.2, not engineering drawings.
  * v3.1: real coaxial openings through all service decks and crown.
- * Flame-duct contour remains v3 pending visual verification of the overheads.
+ * v3.2: eastern duct plan traced from owner screenshot 2026-10-27 20:41:25.
  *
  * Primary user references: IMG_5826 (whole tower), IMG_8447
  * (elevated concrete bridge, gallery, stairs, undercroft), IMG_4933/4948
@@ -21,7 +21,7 @@ import * as THREE from 'three';
  */
 
 export function buildGagarinPad(root) {
-  root.name='Пл. 1 — Гагаринский старт / Фотографическая реконструкция 3.1';
+  root.name='Пл. 1 — Гагаринский старт / Фотографическая реконструкция 3.2';
   const colors={
     concrete:0x9d9c94, oldConcrete:0x817f76, paleConcrete:0xc0b9ac,
     cutFace:0x756e64, soot:0x44403a, duct:0x4e473e,
@@ -181,64 +181,112 @@ export function buildGagarinPad(root) {
     block(side*20,22,-3,5,.8,41,'paleConcrete','launch-podium-rim');
   }
 
-  // 03 / EAST DUCT — the actual overhead is a broad leaf/fan-shaped
-  // earthwork lined with tan concrete and rounded at the far eastern end.
-  // Local axis -Z; upper banks slope inward down to soot-dark channel.
-  const stations=[
-    {z:-23,b:16,t:25,h:18},
-    {z:-38,b:19,t:31,h:15.5},
-    {z:-58,b:23,t:42,h:13},
-    {z:-82,b:26,t:54,h:11},
-    {z:-105,b:27,t:61,h:9},
-    {z:-130,b:27,t:66,h:7},
-    {z:-152,b:23,t:59,h:5},
-    {z:-170,b:15,t:39,h:3.8},
-    {z:-180,b:0,t:0,h:2.5}
+  // 03 / EAST DUCT — plan traced from the owner's overhead screenshot
+  // 2026-10-27 20:41:25. Broad shoulders beside the launch bridge taper
+  // EAST to a finite-width apron; the perimeter road returns around it.
+  // These are image proportions, not a metric survey. Heights are schematic.
+  const planScale=.50,planOrigin=[674,546];
+  const fromPixel=(px,py,y)=>[(py-planOrigin[1])*planScale,y,-(px-planOrigin[0])*planScale];
+  // px, north/south upper rim, north/south floor edge, floor elevation.
+  // Both sides are traced independently; the satellite view is asymmetric.
+  const ductPlan=[
+    [750,267,810,455,580,.35],
+    [780,271,813,447,590,.40],
+    [825,278,814,442,600,.55],
+    [880,290,806,445,606,.80],
+    [950,313,783,461,609,1.40],
+    [1030,346,750,482,604,2.60],
+    [1110,379,714,503,593,4.40],
+    [1190,410,677,515,582,7.10],
+    [1260,435,650,518,578,10.10],
+    [1340,466,623,516,579,13.80],
+    [1405,487,608,506,581,16.60],
+    [1435,505,593,507,581,18.00]
   ];
-  const leftFloor=stations.map(p=>[-p.b,p.z]),rightFloor=stations.slice().reverse().map(p=>[p.b,p.z]);
-  surface([...leftFloor,...rightFloor],.22,'soot','flame-channel');
-  // Floor variations, burnt islands, longitudinal drainage trenches.
-  for(let z=-33;z>=-155;z-=11){
-    let st=stations.find((s,i)=>i<stations.length-1&&z<=s.z&&z>=stations[i+1].z);
-    let w=st?st.b:19;
-    block(0,.29,z,Math.max(2,w*1.35),.08,2.6,z>-63?'cutFace':'duct','gas-duct-floor-panels');
-    if(z%22>-12)block(w*.33,.37,z-2,w*.27,.09,5,'rust','gas-duct-staining');
+  const bankY=18.1,ductBatches=new Map();
+  function ductQuad(a,b,c,d,material,key){
+    const id=material+':'+key;
+    let batch=ductBatches.get(id);
+    if(!batch){batch={material,key,vertices:[]};ductBatches.set(id,batch)}
+    batch.vertices.push(...a,...b,...c,...b,...d,...c);mark(key);
   }
-  for(const sign of [-1,1]){
-    // Slanted masonry wall as a sequence of true 3D faces (not a black
-    // polygon pretending to be a deep excavation).
-    for(let i=0;i<stations.length-1;i++){
-      const a=stations[i],b=stations[i+1];
-      const innerA=[sign*a.b,.4,a.z],innerB=[sign*b.b,.4,b.z];
-      const upperA=[sign*a.t,a.h,a.z],upperB=[sign*b.t,b.h,b.z];
-      faceStrip(innerA,innerB,upperA,upperB,'paleConcrete','flame-duct-bank');
-      // separate upper cutting beyond the wall, in earth-coloured materials
-      faceStrip(upperA,upperB,[sign*(a.t+14),.25,a.z],[sign*(b.t+14),.25,b.z],
-                'soil','flame-duct-embankment');
-      bar(upperA,upperB,.55,'cutFace','flame-duct-upper-coping');
-      bar(innerA,innerB,.42,'rust','flame-duct-discolored-seam');
-      if(i<7){
-        const midX=sign*(a.b+a.t)*.5;
-        bar([midX,.4,a.z],[sign*a.t,a.h,a.z],.37,'oldConcrete','retaining-buttress');
-      }
-      if(i<5){
-        for(let j=1;j<=3;j++){
-          const t=j/4;
-          const p1=[sign*(a.b+(a.t-a.b)*t),a.h*t,a.z];
-          const p2=[sign*(b.b+(b.t-b.b)*t),b.h*t,b.z];
-          bar(p1,p2,.095,'concrete','concrete-tile-seam');
-        }
-      }
+  // The throat continues UNDER the launch deck into the chamber, avoiding
+  // the old disconnected channel that started in front of the support ring.
+  ductQuad([-24,.32,8],[24,.32,8],fromPixel(750,455,.35),fromPixel(750,580,.35),'cutFace','flame-channel');
+  for(let i=0;i<ductPlan.length-1;i++){
+    const a=ductPlan[i],b=ductPlan[i+1];
+    const an=fromPixel(a[0],a[3],a[5]),as=fromPixel(a[0],a[4],a[5]);
+    const bn=fromPixel(b[0],b[3],b[5]),bs=fromPixel(b[0],b[4],b[5]);
+    ductQuad(an,bn,as,bs,i<2?'oldConcrete':'concrete','flame-channel');
+    // Transverse expansion joints follow the actual sloping floor.
+    bar([an[0],an[1]+.04,an[2]],[as[0],as[1]+.04,as[2]],.055,'cutFace','gas-duct-floor-panels');
+    for(let j=1;j<7;j++){
+      const f=j/7,p=V(...an).lerp(V(...as),f),q=V(...bn).lerp(V(...bs),f);
+      p.y+=.05;q.y+=.05;bar(p.toArray(),q.toArray(),.04,'oldConcrete','gas-duct-floor-panels');
     }
-    // 2 curved outer perimeter roads and subtle gravel shoulders
-    const track=stations.slice(0,-1).map(p=>[sign*(p.t+20),p.z]);
-    railLine(track,.34,'oldConcrete',2.0,'duct-perimeter-road');
-    const rim=stations.slice(0,-1).map(p=>[sign*(p.t+15.5),p.z]);
-    railLine(rim,.38,'rust',.28,'duct-road-guard');
+    for(const side of [0,1]){
+      const innerA=side?as:an,innerB=side?bs:bn;
+      const rimA=fromPixel(a[0],a[side+1],bankY),rimB=fromPixel(b[0],b[side+1],bankY);
+      // Two sloping concrete bands with an intermediate seam, not vertical
+      // walls or buttresses invented from the old symmetric station model.
+      const middleA=V(...innerA).lerp(V(...rimA),.53).toArray();
+      const middleB=V(...innerB).lerp(V(...rimB),.53).toArray();
+      ductQuad(innerA,innerB,middleA,middleB,side?'oldConcrete':'paleConcrete','flame-duct-bank');
+      ductQuad(middleA,middleB,rimA,rimB,side?'concrete':'paleConcrete','flame-duct-bank');
+      bar(middleA,middleB,.10,'cutFace','concrete-tile-seam');
+      bar(rimA,rimB,.24,'oldConcrete','flame-duct-upper-coping');
+      bar(innerA,innerB,.12,'cutFace','flame-duct-discolored-seam');
+      // Radial panel seams run up each bank.
+      bar(innerA,rimA,.06,'oldConcrete','concrete-tile-seam');
+      const outerA=fromPixel(a[0],a[side+1]+(side?22:-22),.28);
+      const outerB=fromPixel(b[0],b[side+1]+(side?22:-22),.28);
+      ductQuad(rimA,rimB,outerA,outerB,'soil','flame-duct-embankment');
+    }
   }
-  // Widened river-like outlet, with an end rounded to a pointed leaf.
-  surface([[-32,-173],[-19,-180],[0,-185],[19,-180],[32,-173],[15,-172],
-    [0,-180],[-15,-172]],.33,'cutFace','flame-outlet-fan');
+  // Curved western shoulders wrap around the bridge cheeks; they account
+  // for the broad end of the excavation being beside the pad, not at its exit.
+  const shoulders=[
+    {rim:[[620,487],[619,355],[665,328],[715,310],[750,267]],inner:[750,455]},
+    {rim:[[612,616],[613,711],[632,765],[686,796],[750,810]],inner:[750,580]}
+  ];
+  for(const [side,shoulder] of shoulders.entries()){
+    const anchor=fromPixel(...shoulder.inner,.35);
+    for(let i=0;i<shoulder.rim.length-1;i++){
+      const a=fromPixel(...shoulder.rim[i],bankY),b=fromPixel(...shoulder.rim[i+1],bankY);
+      // One triangle in the merged bank mesh for each headwall sector.
+      const id=(side?'concrete':'paleConcrete')+':flame-duct-bank';
+      const batch=ductBatches.get(id);batch.vertices.push(...a,...b,...anchor);mark('flame-duct-bank');
+      bar(a,b,.24,'oldConcrete','flame-duct-upper-coping');
+    }
+  }
+  // The far apron has an open, straight edge of nonzero width. It does not
+  // converge to a zero-area point and is not closed with an artificial wall.
+  const end=ductPlan[ductPlan.length-1];
+  ductQuad(fromPixel(end[0],end[3],18),fromPixel(1450,508,18),
+           fromPixel(end[0],end[4],18),fromPixel(1450,581,18),'concrete','flame-outlet-apron');
+  const roadPixels=[
+    [609,345],[669,306],[718,245],[803,251],[900,277],[1045,329],
+    [1206,389],[1353,448],[1423,482],[1460,521],[1472,561],
+    [1464,610],[1438,654],[1368,699],[1230,765],[1072,836],
+    [928,891],[875,883],[848,845],[749,837],[658,820],[614,788],[591,727],[594,636]
+  ];
+  const roadPoints=roadPixels.map(([px,py])=>V(...fromPixel(px,py,.38)));
+  // Catmull-Rom interpolation rounds the return road while the surveyed
+  // chamber contour retains its trace points. One continuous U, not two stubs.
+  const roadCurve=new THREE.CatmullRomCurve3(roadPoints,false,'centripetal');
+  const road=roadCurve.getPoints(100);
+  for(let i=0;i<road.length-1;i++){
+    bar(road[i].toArray(),road[i+1].toArray(),1.75,'oldConcrete','duct-perimeter-road');
+  }
+  // Merge channel panels by material/component to keep museum navigation light.
+  for(const batch of ductBatches.values()){
+    const geometry=new THREE.BufferGeometry();
+    geometry.setAttribute('position',new THREE.Float32BufferAttribute(batch.vertices,3));
+    geometry.computeVertexNormals();
+    const mesh=new THREE.Mesh(geometry,mats[batch.material]);
+    mesh.userData.museumComponent=batch.key;mesh.receiveShadow=true;
+    root.add(mesh);renderMeshCount++;
+  }
 
   // 04 / R-7 SUPPORT RING, TULIP FLOWER, yellow roller drums.
   // Distinguish lower outward arms from central maintenance tower.
@@ -390,7 +438,7 @@ export function buildGagarinPad(root) {
     block(x,h+1.2,z,15,.9,1.1,'steel','lighting-array-head');
     for(let j=0;j<8;j++)block(x-6.7+j*1.85,h+2.1,z+.65,1.1,.8,.35,'white','floodlight-array');
   }
-  [[-75,-6,52],[76,-5,54],[-71,87,47],[74,88,48]].forEach(p=>floodTower(...p));
+  [[-155,-125,52],[162,-147,54],[-71,87,47],[74,88,48]].forEach(p=>floodTower(...p));
   for(const [x,z] of [[-86,49],[86,22]]){
     bar([x,0,z],[x,68,z],.19,'steel','lightning-mast');
     bar([x,68,z],[x,76,z],.09,'paleSteel','lightning-mast-tip');
@@ -403,7 +451,7 @@ export function buildGagarinPad(root) {
   }
   outbuilding(-63,106,23,26,9);
   outbuilding(57,96,18,22,7);
-  outbuilding(-73,-38,10,12,6);
+  outbuilding(-73,45,10,12,6);
   for(const sx of [-1,1]){
     for(const z of [10,17,24,32]){
       bar([sx*44,21,z],[sx*61,21,z],.3,'steel','fuel-utility-lines');
@@ -452,14 +500,15 @@ export function buildGagarinPad(root) {
     root.add(mesh);renderMeshCount++;
   }
   const metadata={
-    version:'3.1',
+    version:'3.2',
     rocketPassage:{axis:[0,0],crownRadius:5.2,serviceDecks:6,throughHole:true},
-    flameDuctReview:'Pending: v3 contour has not yet been checked visually against the overhead images',
+    flameDuctReview:'Plan visually traced from owner overhead screenshot 2026-10-27 20:41:25; elevations unverified',
+    ductPlan:{reference:'2026-10-27 20:41:25',imageSize:[1920,1297],origin:planOrigin,scale:planScale,stations:ductPlan,outletWidth:(end[4]-end[3])*planScale,roadReturnsAroundOutlet:true},
     name:"Gagarin's Start photo-grounded reconstruction",
     archiveFolder:'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC',
-    orientation:'West rail (+Z) → start at centre → East fan-shaped duct (-Z)',
+    orientation:'West rail (+Z) → start at centre → broad western chamber tapering to eastern apron (-Z)',
     localFlameAzimuth:'-Z',
-    photosUsed:['IMG_5826.jpeg','IMG_8447.jpeg','IMG_4933.jpeg','IMG_4948.jpeg','2026-10-27 17:49 overhead','2026-10-27 16:18 overhead'],
+    photosUsed:['IMG_5826.jpeg','IMG_8447.jpeg','IMG_4933.jpeg','IMG_4948.jpeg','2026-10-27 17:49 overhead','2026-10-27 16:18 overhead','2026-10-27 20:41:25 overhead'],
     featureCounts:features,
     meshCount:primitiveCount,
     renderMeshCount,
@@ -469,3 +518,4 @@ export function buildGagarinPad(root) {
   root.userData.gagarinModel=metadata;
   return {rocket,features,meshCount:primitiveCount};
 }
+

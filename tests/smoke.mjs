@@ -95,7 +95,7 @@ assert.deepEqual(terrainInfo.terrain?.detailResolution,[1536,1236],'Local satell
 assert.ok(terrainInfo.terrainExtent>=100000,'The desert may not terminate at the historical map edge');
 const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
 console.log('GAGARIN START',JSON.stringify(gagarin));
-assert.equal(gagarin.version,'3.1','Pad 1 must use the model with real circular rocket openings');
+assert.equal(gagarin.version,'3.2','Pad 1 must use the model with real circular rocket openings');
 assert.equal(gagarin.archiveFolder,'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC');
 assert.ok(gagarin.meshCount>700,'Detailed model must contain a large set of photo-informed structural primitives');
 assert.ok(gagarin.renderMeshCount<100,'Optimized geometry should not produce a huge number of WebGL draw calls');
@@ -133,7 +133,16 @@ const passageGeometry=await page.evaluate(async()=>{
   ray.set(new THREE.Vector3(Math.cos(a)*radius,110,Math.sin(a)*radius),new THREE.Vector3(0,-1,0));
   if(ray.intersectObjects(structure,true).some(hit=>hit.point.y>=27))blockedShaftSamples++;
  }
- const result={deckCount:decks.length,blockedHoleSamples,missingRimSamples,blockedShaftSamples};
+ const plan=model.userData.gagarinModel.ductPlan;
+ const floor=model.children.filter(object=>object.userData.museumComponent==='flame-channel');
+ let floorGaps=0;
+ for(const p of plan.stations.slice(1,-1)){
+  const x=((p[3]+p[4])/2-plan.origin[1])*plan.scale,z=-(p[0]-plan.origin[0])*plan.scale;
+  ray.set(new THREE.Vector3(x,25,z),new THREE.Vector3(0,-1,0));
+  const hit=ray.intersectObjects(floor,true)[0];
+  if(!hit||Math.abs(hit.point.y-p[5])>.02)floorGaps++;
+ }
+ const result={deckCount:decks.length,blockedHoleSamples,missingRimSamples,blockedShaftSamples,floorGaps};
  const geometries=new Set(),materials=new Set();
  model.traverse(object=>{if(object.geometry)geometries.add(object.geometry);if(object.material)materials.add(object.material)});
  for(const geometry of geometries)geometry.dispose();
@@ -141,8 +150,11 @@ const passageGeometry=await page.evaluate(async()=>{
  return result;
 });
 console.log('ROCKET PASSAGE GEOMETRY',JSON.stringify(passageGeometry));
-assert.deepEqual(passageGeometry,{deckCount:7,blockedHoleSamples:0,missingRimSamples:0,blockedShaftSamples:0},'Seven circular deck openings must align on a clear rocket axis, with solid rims');
+assert.deepEqual(passageGeometry,{deckCount:7,blockedHoleSamples:0,missingRimSamples:0,blockedShaftSamples:0,floorGaps:0},'Seven circular deck openings must align on a clear rocket axis, with solid rims');
 
+const duct=gagarin.ductPlan;
+assert.ok(duct.stations[0][2]-duct.stations[0][1]>4*(duct.stations.at(-1)[2]-duct.stations.at(-1)[1]),'The broad chamber must be beside the launch pad, tapering east');
+assert.ok(duct.outletWidth>30,'The exhaust apron must have finite width, not end at a point');
 const padPlacement=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinPlacement);
 assert.deepEqual(padPlacement.mapPixel,[699,365],'Site 1 must remain on its original schematic site');
 assert.ok(Math.abs(padPlacement.rotationY+Math.PI/2)<.0001,'Flame duct must face east');
@@ -246,3 +258,4 @@ assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&m
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
 await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: 3 cyberpunk school districts with fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
+
