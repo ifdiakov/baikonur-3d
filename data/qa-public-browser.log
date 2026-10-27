@@ -7,7 +7,7 @@ GAGARIN START {"version":"3.2","rocketPassage":{"axis":[0,0],"crownRadius":5.2,"
 ROCKET PASSAGE GEOMETRY {"deckCount":7,"blockedHoleSamples":0,"missingRimSamples":0,"blockedShaftSamples":0,"floorGaps":0}
 PASSPORT {"inline":"1","computed":"1","visible":true}
 FLANK DISTRICTS {"alpha":1,"zoneCount":3,"visibleZones":3,"visibleBoundaries":2,"thematicOnly":true}
-DETAIL CARDS 1
+DETAIL CARDS 3
 TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
 MOBILE {"dockFits":true,"dockWidth":372,"sidebarEndsAboveDock":true,"logoVisible":true}
 BAIKONUR 3D smoke checks PASSED: 3 cyberpunk school districts with fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.
