@@ -1006,6 +1006,8 @@ for(let j=clickable.length-1;j>=0;j--)
  if(clickable[j].userData.idx===saturnIndex)clickable.splice(j,1);
 buildSaturnIP5(saturnGroup);
 saturnGroup.scale.setScalar(SATURN_SCALE);
+// Route the site's access lane toward the highway west of the hill; orientation provisional.
+saturnGroup.rotation.y=-Math.PI/2;
 saturnGroup.position.y=-2.4; // hill edges join the surrounding steppe
 saturnSite.type='saturn-ms';
 saturnGroup.traverse(o=>{
