@@ -1,12 +1,10 @@
+PASSPORT {"inline":"1","computed":"1","visible":true}
 node:internal/modules/run_main:123
     triggerUncaughtException(
     ^
 
-AssertionError [ERR_ASSERTION]: Level 1: factual passport should be visible
-    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:15:8
-    at runNextTicks (node:internal/process/task_queues:64:5)
-    at process.processImmediate (node:internal/timers:452:9)
-    at process.callbackTrampoline (node:internal/async_hooks:130:17) {
+AssertionError [ERR_ASSERTION]: Level 4: on-site detail cards should be visible
+    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:32:8 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
   actual: false,
