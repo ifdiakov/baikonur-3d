@@ -44,6 +44,7 @@ export function buildGagarinPad(root) {
   let primitiveCount=0,renderMeshCount=0;
   const tmpP=new THREE.Vector3(),tmpQ=new THREE.Vector3(),tmpMid=new THREE.Vector3();
   const tmpQuat=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0),tmpS=new THREE.Vector3(),tmpM=new THREE.Matrix4();
+  const V=(...coords)=>new THREE.Vector3(...coords);
   function bucket(mat,kind) {
     const key=mat+':'+kind;
     let item=buckets.get(key);
