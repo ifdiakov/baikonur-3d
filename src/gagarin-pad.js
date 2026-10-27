@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createSurfacePalette} from './surface-materials.js';
 
 /**
  * GAGARIN'S START — SITE 1, launch position 5
@@ -33,12 +34,12 @@ export function buildGagarinPad(root) {
     rail:0x3f4242, timber:0x766c5c, window:0x344852,
     blueRoof:0x698c97, grass:0x777d65, sky:0xa3a7a3
   };
-  const mats={};
-  for(const [k,c] of Object.entries(colors))mats[k]=new THREE.MeshStandardMaterial({
-    color:c,roughness:['green','brightGreen','olive','steel','shadowSteel','paleSteel','rail','yellow'].includes(k)?.65:.94,
-    metalness:['green','brightGreen','olive','steel','shadowSteel','paleSteel','rail','yellow'].includes(k)?.32:.04,
-    side:THREE.DoubleSide
-  });
+  const mats=createSurfacePalette(root,colors,{
+    concrete:'concrete',oldConcrete:'concrete',paleConcrete:'concrete',
+    cutFace:'concrete',soot:'concrete',duct:'concrete',rust:'rust',
+    green:'paint',brightGreen:'paint',olive:'paint',steel:'metal',shadowSteel:'metal',
+    paleSteel:'sheet',white:'paint',yellow:'paint',fadedYellow:'paint',rail:'metal',blueRoof:'sheet'
+  },{window:{roughness:.3}});
   // Repeating beams, stairs and concrete blocks are instanced for good WebGL speed.
   const rodGeometry=new THREE.CylinderGeometry(1,1,1,6,1);
   const boxGeometry=new THREE.BoxGeometry(1,1,1);

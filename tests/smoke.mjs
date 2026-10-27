@@ -268,6 +268,21 @@ assert.equal(ukssCloseup.shadersValid,true,'Terrain-cutout shaders must compile 
 assert.equal(await page.locator('#title').textContent(),'пл. №250 · УКСС «Энергия»');
 assert.equal(await page.locator('#rocketExhibitToggle').isVisible(),false,'The R-7 control belongs only to Site 1');
 await page.screenshot({path:'qa-ukss-closeup.png'});
+// Compile the shared surface shader on both instanced beams and UV-less trench
+// faces, then capture metal/concrete at a distance where the grain is visible.
+assert.equal(ukssCloseup.surfaceMaterials.gagarin.version,'1.0');
+assert.equal(ukssCloseup.surfaceMaterials.ukss.version,'1.0');
+assert.ok(ukssCloseup.surfaceMaterials.gagarin.texturedCount>=15);
+assert.ok(ukssCloseup.surfaceMaterials.ukss.texturedCount>=10);
+const reviewStyle=await page.addStyleTag({content:'#ui,#info,#timeDock,#hero,.site-label,.detail-card,.flank-label{visibility:hidden!important}'});
+for(const part of ['metal','concrete']){
+ await page.evaluate(part=>window.__BAIKONUR_QA.inspectSurface('ukss',part),part);
+ await page.waitForTimeout(300);
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid),true,'Textured '+part+' must render with valid WebGL programs');
+ await page.screenshot({path:'qa-ukss-'+part+'-surface.png'});
+}
+await reviewStyle.evaluate(el=>el.remove());
+await page.evaluate(()=>{const qa=window.__BAIKONUR_QA;qa.focusSite(qa.stats().ukssIndex)});
 const ukssGeometry=await page.evaluate(async()=>{
  const THREE=await import('three');const {buildUkssPad}=await import('./src/ukss-pad.js');
  const root=new THREE.Group();buildUkssPad(root);root.updateMatrixWorld(true);

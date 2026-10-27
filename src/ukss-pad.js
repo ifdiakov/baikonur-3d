@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createSurfacePalette} from './surface-materials.js';
 
 /**
  * Site 250 / UKSS: architectural museum study, v1.0.
@@ -46,12 +47,13 @@ export function buildUkssPad(root) {
   root.name='Пл. 250 — УКСС «Энергия» / реконструкция 1.0';
   const colors={concrete:0xa8a59b,edge:0xc4bfb2,oldConcrete:0x77766c,
     steel:0x6c786d,green:0x6f7e59,dark:0x353e3a,rust:0x85513e,
-    sheet:0x87928f,rail:0x454844,gravel:0x969182,yellow:0xc1a04e,
+    sheet:0x87928f,rail:0x454844,pipe:0xb3b5a9,gravel:0x969182,yellow:0xc1a04e,
     white:0xd7d5c9,red:0x9e5442,glass:0x34484b,water:0x405d57};
-  const mats={};
-  for(const [k,color] of Object.entries(colors))mats[k]=new THREE.MeshStandardMaterial({
-    color,roughness:k==='water'?.38:.83,metalness:['steel','sheet','rail','green'].includes(k)?.25:.02,side:THREE.DoubleSide
-  });
+  const mats=createSurfacePalette(root,colors,{
+    concrete:'concrete',edge:'concrete',oldConcrete:'concrete',
+    steel:'metal',green:'paint',dark:'metal',rust:'rust',sheet:'sheet',
+    rail:'metal',pipe:'paint',yellow:'paint',white:'paint',red:'paint'
+  },{water:{roughness:.38},glass:{roughness:.3}});
   const geometries={box:new THREE.BoxGeometry(1,1,1),rod:new THREE.CylinderGeometry(1,1,1,6)};
   const batches=new Map(),surfaces=new Map(),features={};let primitives=0;
   const p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(),matrix=new THREE.Matrix4(),up=new THREE.Vector3(0,1,0);
@@ -215,7 +217,7 @@ export function buildUkssPad(root) {
     railing([-38,y+1,2],[-4,y+1,2],'steel');
     for(let x=-11;x<=-5;x+=2)bar([x,y,1],[x,y-3,1],.14,'dark','hanging-hoses');
   }
-  for(const z of [-8,0,8])bar([mx-6,5,z],[mx-6,81,z],.48,'edge','vertical-pipes');
+  for(const z of [-8,0,8])bar([mx-6,5,z],[mx-6,81,z],.48,'pipe','vertical-pipes');
 
   // Four tall light screens, with open lattice stems and a regular array of lamps.
   const lights=[[-116,-84],[116,-84],[-116,84],[116,84]];
@@ -253,7 +255,7 @@ export function buildUkssPad(root) {
     }
     bar([-51,9,z],[-42,9,z],.28,'steel','pipe-trestle');
   }
-  for(let x=-50;x<=-43;x+=1.4)bar([x,9.8,-142],[x,9.8,-9],.40,'edge','feed-pipelines');
+  for(let x=-50;x<=-43;x+=1.4)bar([x,9.8,-142],[x,9.8,-9],.40,'pipe','feed-pipelines');
   for(const x of [-51.5,-41.5])railing([x,10,-142],[x,10,-20],'steel');
   // Modest photographed equipment buildings at the mast base / approach.
   for(const [x,z,w,d,h] of [[-67,84,22,17,7],[43,66,16,11,5],[-37,195,14,10,5]]){
