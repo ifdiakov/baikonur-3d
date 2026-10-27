@@ -136,36 +136,86 @@ export function buildGagarinPad(root) {
     // Curved support plates near the body of R-7 form the iconic petal tips.
     tube([inner[0],inner[1],inner[2]],[dx*5.7,26.4,dz*5.7+1],1.18,palette.green,'tulip-top',.82,10);
   }
-  // Two service half-towers, not four identical placeholder skyscrapers.
-  // Hinged climbing gantries with cross-braced steel skeletons and access decks.
+  // Twin hinged R-7/Soyuz service gantries: the iconic swept-back lattice
+  // 'wings' visible at Pad 1, rather than two vertical container-like towers.
+  // Museum default = retracted / launch configuration, no vehicle installed.
+  // Each half has paired longitudinal chords, bracing, 8 access levels,
+  // folding balconies, ladders, outriggers, pivot drums and counterweights.
   function serviceHalf(sign){
-    const xx=sign*25,z=17,height=53,levels=9;
-    for(const side of [-1,1]){
-      const X=xx+side*5.3;
-      tube([X,6,z+7],[X-sign*3.2,height,z+3],.66,palette.green,'service-gantry');
-      tube([X,6,z-7],[X-sign*3.2,height,z-3],.66,palette.green,'service-gantry');
+    const groupName=sign<0?'west':'east';
+    const baseX=sign*18,topX=sign*92,baseY=5,topY=65,zCenter=19,zWidth=7.8;
+    const deckLevelCount=8;
+    const at=(t,zOffset=0,sideOffset=0)=>[
+      baseX+(topX-baseX)*t+sign*sideOffset,
+      baseY+(topY-baseY)*t,
+      zCenter+zOffset
+    ];
+    // Heavy tapered paired diagonal beams with continuous rails. An elevated V
+    // silhouette is the defining difference from modern enclosed Soyuz gantries.
+    for(const z of [-zWidth,zWidth]){
+      tube(at(0,z),at(1,z),1.02,palette.green,'service-gantry',.68,10);
+      tube(at(0,z,3.5),at(1,z,3.5),.52,palette.darkMetal,'gantry-second-chord',.36);
+      tube(at(0,z,-1.7),at(1,z,-1.7),.36,palette.lightGreen,'gantry-third-chord');
     }
-    for(let j=0;j<levels;j++){
-      const y=7+j*5.7,t=j/(levels-1),shift=sign*3.2*t,x=xx-shift;
-      for(const zOffset of [-6,6])tube([x-5,y,z+zOffset],[x+5,y,z+zOffset],.42,palette.lightGreen,'gantry-crossbeams');
-      for(const sx of [-1,1]){
-        const xx2=x+sx*5;
-        tube([xx2,y,z-6],[xx2-sign*.45,y+5.5,z+6],.32,palette.darkMetal,'gantry-diagonals');
-        tube([xx2,y,z+6],[xx2-sign*.45,y+5.5,z-6],.32,palette.darkMetal,'gantry-diagonals');
+    for(let i=0;i<deckLevelCount;i++){
+      const t=i/(deckLevelCount-1),nT=Math.min(1,t+.095);
+      const [x,y,z]=at(t,0);
+      const [nx,ny,nz]=at(nT,0);
+      // Zigzag steel compression/extension diagonals between both chords.
+      for(const zz of [-zWidth,zWidth]){
+        tube(at(t,zz),at(nT,-zz),.35,palette.lightGreen,'gantry-cross-bracing');
+        tube(at(t,-zz),at(nT,zz),.35,palette.darkMetal,'gantry-cross-bracing');
+        tube(at(t,zz,3.5),at(nT,zz,-1.7),.3,palette.green,'gantry-cross-bracing');
+        tube(at(t,zz,-1.7),at(nT,zz,3.5),.3,palette.darkMetal,'gantry-cross-bracing');
       }
-      if(j%2===0){
-        const deck=box(12,.8,12,x,y,z,palette.metal,'gantry-platform');
-        deck.castShadow=false;
-        for(const dz of [-5.4,5.4])box(11,.20,.4,x,y+1.2,z+dz,palette.lightGreen,'platform-railing');
+      tube([x,y,zCenter-zWidth],[x,y,zCenter+zWidth],.55,palette.darkMetal,'gantry-transverse-beam');
+      // Narrow ribbed service balconies with cage-like working platforms, hinged
+      // to the main gantry chord. In open configuration platforms point inward.
+      if(i>0){
+        const deckX=x-sign*10.4;
+        box(23,.73,19,deckX,y+1.4,zCenter,palette.metal,'gantry-platform');
+        box(24,.34,.8,deckX,y+2.8,zCenter-zWidth-1.2,palette.warning,'gantry-edge-rail');
+        box(24,.34,.8,deckX,y+2.8,zCenter+zWidth+1.2,palette.warning,'gantry-edge-rail');
+        for(const shift of [-9,-3,3,9]){
+          tube([deckX+shift,y+1.8,zCenter-zWidth-1],[deckX+shift,y+3.8,zCenter-zWidth-1],.2,palette.lightGreen,'gantry-platform-post');
+          tube([deckX+shift,y+1.8,zCenter+zWidth+1],[deckX+shift,y+3.8,zCenter+zWidth+1],.2,palette.lightGreen,'gantry-platform-post');
+        }
+        // Angled struts support each suspended balcony.
+        tube([deckX-sign*9,y,zCenter-zWidth],[x,y+5.0,zCenter-zWidth],.45,palette.green,'gantry-balcony-bracket');
+        tube([deckX-sign*9,y,zCenter+zWidth],[x,y+5.0,zCenter+zWidth],.45,palette.green,'gantry-balcony-bracket');
+        for(const offset of [-5,5])tube([deckX-sign*7,y+1.3,zCenter+offset],[x,y+4,zCenter+offset],.24,palette.lightGreen,'gantry-balcony-diagonal');
+      }
+      if(i<deckLevelCount-1){
+        const t0=t,t1=(i+1)/(deckLevelCount-1);
+        const p0=at(t0,-zWidth-.9),p1=at(t1,-zWidth-.9);
+        // Long flight of inclined ladders / narrow maintenance walkway.
+        tube([p0[0],p0[1],p0[2]],[p1[0],p1[1],p1[2]],.4,palette.warning,'gantry-stairs');
+        tube([p0[0],p0[1],p0[2]+2],[p1[0],p1[1],p1[2]+2],.4,palette.warning,'gantry-stairs');
+        for(let step=0;step<7;step++){
+          const u=(step+.5)/7;
+          const xx=p0[0]+(p1[0]-p0[0])*u,yy=p0[1]+(p1[1]-p0[1])*u,zz=p0[2];
+          tube([xx,yy,zz],[xx,yy,zz+2],.18,palette.lightGreen,'gantry-stair-steps');
+        }
       }
     }
-    // Lightweight lattice work platforms that approach the vehicle from both sides.
-    for(const y of [20,32,44]){
-      trestle([xx-sign*3,y,z],[sign*6.3,y,5],2.1,palette.green,'service-access-bridge');
-      box(6,.4,6,sign*7,y,4,palette.oldConcrete,'service-access-deck');
+    // Massive pivot drums close to the start table, with paired structural braces.
+    const hingeX=baseX-sign*1.5;
+    const pivot=new THREE.Mesh(new THREE.CylinderGeometry(3.7,3.7,20,20),palette.darkMetal);
+    pivot.rotation.x=Math.PI/2;pivot.position.set(hingeX,6,zCenter);
+    register(pivot,'gantry-hinge');
+    tube([hingeX,4,zCenter-16],[hingeX,4,zCenter+16],1.2,palette.darkMetal,'gantry-pivot-shaft');
+    for(const z of [zCenter-11,zCenter+11]){
+      box(12,8,7,hingeX+sign*2,4,z,palette.darkConcrete,'gantry-hinge-foundation');
+      tube([hingeX+sign*5,5,z],[hingeX+sign*28,30,z],.72,palette.green,'gantry-hydraulic-actuator');
+      tube([hingeX+sign*13,9,z],[hingeX+sign*38,26,z],.54,palette.silver,'gantry-hydraulic-piston');
+      const counter=new THREE.Mesh(new THREE.CylinderGeometry(2.7,2.7,2.6,14),palette.warning);
+      counter.rotation.x=Math.PI/2;counter.position.set(hingeX-sign*8,7,z);register(counter,'gantry-counterweight');
     }
-    // Actual pivot mechanism (shown in the parked service configuration).
-    tube([xx,3,z-9],[xx,13,z-7],1.5,palette.darkMetal,'gantry-hinge');
+    // A colored safety-light row emphasises the arm silhouette when zoomed in.
+    for(let j=1;j<deckLevelCount;j++){
+      const t=j/(deckLevelCount-1),p=at(t,0);
+      box(1.6,.5,2,p[0],p[1]+2.3,zCenter,palette.warning,'gantry-safety-mark');
+    }
   }
   serviceHalf(-1);serviceHalf(1);
   // Cable mast with longitudinal braces and landing at the top.
