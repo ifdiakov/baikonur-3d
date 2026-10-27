@@ -293,6 +293,25 @@ await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===
 await page.locator('[data-layer="sites"]').check();
 await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===1);
 console.log('UKSS: 6 piers, 11 open service decks, 4 light screens, below-grade trench, stable scale');
+// A subpixel camera movement must not make broad terrain patches flash.
+await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));
+await page.waitForTimeout(250);
+const terrainA=(await page.screenshot()).toString('base64');
+await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450.4));
+await page.waitForTimeout(250);
+const terrainB=(await page.screenshot({path:'qa-terrain-stability.png'})).toString('base64');
+const stability=await page.evaluate(async([a,b])=>{
+ async function pixels(data){const image=new Image();image.src='data:image/png;base64,'+data;await image.decode();const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);return ctx.getImageData(350,100,650,580).data}
+ const [pa,pb]=await Promise.all([pixels(a),pixels(b)]);let changed=0,total=0;
+ for(let i=0;i<pa.length;i+=4){const d=(Math.abs(pa[i]-pb[i])+Math.abs(pa[i+1]-pb[i+1])+Math.abs(pa[i+2]-pb[i+2]))/3;total+=d;if(d>24)changed++}
+ return {largeChanges:changed/(pa.length/4),meanChange:total/(pa.length/4)};
+},[terrainA,terrainB]);
+console.log('TERRAIN STABILITY',JSON.stringify(stability));
+assert.ok(stability.largeChanges<.04&&stability.meanChange<3,'Small camera movement must not create widespread terrain flicker');
+await page.mouse.move(810,480);await page.mouse.down({button:'right'});
+await page.mouse.move(940,430,{steps:16});await page.mouse.up({button:'right'});
+await page.waitForTimeout(350);await page.screenshot({path:'qa-terrain-orbit.png'});
+assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid),true,'Map and excavation shaders must remain valid during orbit');
 await page.setViewportSize({width:390,height:844});
 await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));
 await page.waitForTimeout(300);
