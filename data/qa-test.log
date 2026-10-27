@@ -7,6 +7,7 @@ GAGARIN START {"version":"3.2","rocketPassage":{"axis":[0,0],"crownRadius":5.2,"
 ROCKET PASSAGE GEOMETRY {"deckCount":7,"blockedHoleSamples":0,"missingRimSamples":0,"blockedShaftSamples":0,"floorGaps":0}
 TRANSPORT NETWORK {"version":"1.0","stationCount":7,"roadRoutes":18,"railRoutes":14,"railSwitches":40,"yardTracks":16,"facilityDriveways":24,"railTies":2496,"renderedRailLength":18211.31436820559,"sources":"original Baikonur historical site plan + visually interpreted switches","confidence":"schematic-topology","siteAccess":["1","2А","254","113","90","92","95","97","89","81","175","200","132","70","163","251","250","250А","110","112","31","45","241","17"],"stationNames":["ст. Западная","ст. Горная","ст. Песчаная","Разъезд (по схеме)","ст. Нагорная","ст. Восточная","станционный район Тюратам"]}
 PASSPORT {"inline":"1","computed":"1","visible":true}
+FLANK PORTRAITS [{"alt":"Архивный портрет: Владимир Николаевич Челомей","src":"https://commons.wikimedia.org/wiki/Special:FilePath/Vladimir_Chelomey.jpg","loaded":true,"width":715,"height":952},{"alt":"Архивный портрет: Сергей Павлович Королёв","src":"https://commons.wikimedia.org/wiki/Special:FilePath/Sergei_Korolev_portrait.jpg","loaded":true,"width":226,"height":260},{"alt":"Архивный портрет: Михаил Кузьмич Янгель","src":"https://commons.wikimedia.org/wiki/Special:FilePath/Myhajlo_jangel_a.jpg","loaded":true,"width":200,"height":200}]
 FLANK DISTRICTS {"alpha":1,"zoneCount":3,"visibleZones":3,"visibleBoundaries":2,"thematicOnly":true}
 DETAIL CARDS 2
 TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
@@ -17,7 +18,7 @@ node:internal/modules/run_main:123
     ^
 
 AssertionError [ERR_ASSERTION]: Small camera movement must not create widespread terrain flicker
-    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:390:8 {
+    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:403:8 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
   actual: false,
@@ -26,4 +27,4 @@ AssertionError [ERR_ASSERTION]: Small camera movement must not create widespread
   diff: 'simple'
 }
 
-Node.js v22.23.3
+Node.js v22.23.4
