@@ -337,16 +337,73 @@ const rails=[
 ];
 // Rails, turnouts and yards are constructed from transport-network.json.
 // Schematic riverbed derived from the historical plan; width and water material are illustrative.
-const riverPts=[[0,740],[95,765],[160,820],[244,827],[330,920],[416,1015],[530,1020],[650,974],[745,960],[830,901],[922,862],[1030,800],[1120,745],[1210,730],[1300,749]];
+// The historical diagram fixes the river's bends INSIDE the cosmodrome.
+const riverCorePts=[[0,740],[95,765],[160,820],[244,827],[330,920],[416,1015],
+ [530,1020],[650,974],[745,960],[830,901],[922,862],[1030,800],
+ [1120,745],[1210,730],[1300,749]];
+// Outside the drawn border, prefer OpenStreetMap hydrographic geometry
+// transformed by the three-source affine anchors (city, LC1, LC31).
+// The distant fallback is approximate; do not label it surveyed.
+const riverFallback=(left)=>{
+ const result=[],a=left?-8000:1370,b=left?-80:10000,step=left?80:80;
+ for(let x=a;x<=b;x+=step){
+  const dist=left?x:x-1300;
+  const trend=left?740:749;
+  const y=trend+58*Math.sin(dist/360)+31*Math.sin(dist/152)+14*Math.sin(dist/68);
+  result.push([x,y]);
+ }
+ return result;
+};
+let riverGeo=null;
+try{
+ const geoResp=await fetch('./data/syrdarya-river.json',{cache:'no-store'});
+ if(geoResp.ok){
+  const candidate=await geoResp.json();
+  if(Array.isArray(candidate.mapPoints)&&candidate.mapPoints.length>=20&&candidate.source?.includes('OpenStreetMap')){
+   riverGeo=candidate;
+  }
+ }
+}catch(error){console.warn('Гидрографическая подложка пока недоступна:',error.message)}
+function selectRiverExtension(geo,western){
+ if(!geo)return riverFallback(western);
+ const pts=geo.mapPoints.filter(p=>Array.isArray(p)&&p.length===2&&Number.isFinite(p[0])&&Number.isFinite(p[1])&&
+    (western?p[0]<-45:p[0]>1345)&&Math.abs(p[1])<3000).slice();
+ pts.sort((a,b)=>a[0]-b[0]);
+ if(pts.length<8)return riverFallback(western);
+ // Feather residual georeferencing drift into the historical core so there
+ // is no sharp topological jump between two map sources.
+ return pts.map(p=>{
+  const edge=western?Math.max(0,-p[0]):Math.max(0,p[0]-1300);
+  const blend=Math.max(0,1-edge/450);
+  const core=western?740:749;
+  return [p[0],p[1]*(1-blend)+core*blend];
+ });
+}
+const westRiver=selectRiverExtension(riverGeo,true),eastRiver=selectRiverExtension(riverGeo,false);
+const riverPts=[...westRiver,...riverCorePts,...eastRiver];
+const riverStats={
+ source:riverGeo?'OpenStreetMap ODbL, aligned by three museum anchors':'historical map + illustrative continuation',
+ cartographicAccuracy:riverGeo?'open geodata with approximate schematic alignment':'unverified outside diagram',
+ corePointCount:riverCorePts.length,
+ totalPointCount:riverPts.length,
+ westmostX:riverPts[0][0],eastmostX:riverPts[riverPts.length-1][0],
+ planBoundaryLeft:0,planBoundaryRight:1300,
+ geoDataset:riverGeo?.generatedAt||null
+};
 const riverGroup=new THREE.Group();scene.add(riverGroup);
 function riverRibbon(width,elevation,color,opacity){
  const curve=new THREE.CatmullRomCurve3(riverPts.map(([x,y])=>point(x,y,elevation)),false,'centripetal');
- const vertices=[],uv=[],indices=[],steps=150;
+ const vertices=[],uv=[],indices=[],steps=Math.min(2400,Math.max(420,riverPts.length*4));
  for(let i=0;i<=steps;i++){const t=i/steps,center=curve.getPoint(t),dir=curve.getTangent(t),length=Math.hypot(dir.x,dir.z)||1;const sideX=-dir.z/length,sideZ=dir.x/length,half=(width/2)*(1+.14*Math.sin(t*49)+.07*Math.cos(t*87));for(const sign of [-1,1]){vertices.push(center.x+sideX*half*sign,elevation,center.z+sideZ*half*sign);uv.push(t,sign>0?1:0)}if(i<steps){const k=i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2)}}
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();
  const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.32,metalness:.13,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false}));mesh.renderOrder=3;riverGroup.add(mesh);return mesh;
 }
-riverRibbon(41,-1.95,0x70866e,.58);riverRibbon(25,-1.30,0x428797,.92);riverRibbon(5,-1.20,0x8dbab7,.26);
+// Floodplain and water are layered continuously well beyond both map edges.
+riverRibbon(188,-2.18,0x78836f,.16);
+riverRibbon(104,-2.05,0x727f69,.21);
+riverRibbon(51,-1.88,0x546d65,.78);
+riverRibbon(34,-1.69,0x377783,.94);
+riverRibbon(9,-1.60,0x8dc4c5,.21);
 
 const response=await fetch('./data/catalog.json',{cache:'no-store'});if(!response.ok)throw new Error('Каталог площадок не загрузился: '+response.status);const catalog=await response.json();const siteRecords=catalog.sites;
 const transportResponse=await fetch('./data/transport-network.json',{cache:'no-store'});
@@ -438,7 +495,7 @@ const satW=satelliteCanvas.width,satH=satelliteCanvas.height,satImage=satCtx.cre
 function smoothNoiseStep(v){return v*v*(3-2*v)}
 function terrainHash(x,y,salt){let n=(Math.imul(x,374761393)+Math.imul(y,668265263)+Math.imul(salt,1442695041))|0;n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967295}
 function terrainNoise(x,y,scale,salt){const xx=x*scale,yy=y*scale,ix=Math.floor(xx),iy=Math.floor(yy),fx=smoothNoiseStep(xx-ix),fy=smoothNoiseStep(yy-iy);const a=terrainHash(ix,iy,salt),b=terrainHash(ix+1,iy,salt),c=terrainHash(ix,iy+1,salt),d=terrainHash(ix+1,iy+1,salt);return(a+(b-a)*fx)*(1-fy)+(c+(d-c)*fx)*fy}
-function riverDistance(x,y){let dist=100000;for(let j=0;j<riverPts.length-1;j++){const a=riverPts[j],b=riverPts[j+1],dx=b[0]-a[0],dy=b[1]-a[1],u=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy||1))),vx=x-(a[0]+dx*u),vy=y-(a[1]+dy*u);dist=Math.min(dist,Math.hypot(vx,vy))}return dist}
+function riverDistance(x,y){let dist=100000;for(let j=0;j<riverCorePts.length-1;j++){const a=riverCorePts[j],b=riverCorePts[j+1],dx=b[0]-a[0],dy=b[1]-a[1],u=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy||1))),vx=x-(a[0]+dx*u),vy=y-(a[1]+dy*u);dist=Math.min(dist,Math.hypot(vx,vy))}return dist}
 const industrialRegions=[[165,100,125,85],[630,350,115,105],[1055,275,120,92],[680,810,80,65],[660,965,105,95],[570,110,80,50]];
 for(let sy=0;sy<satH;sy++)for(let sx=0;sx<satW;sx++){
  const nx=sx/(satW-1),ny=sy/(satH-1),px=nx*W,py=ny*H,k=(sy*satW+sx)*4;
