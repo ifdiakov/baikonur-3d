@@ -431,7 +431,7 @@ function updateLabels(){
  for(const l of labels){
   const o=objects[l.i],el=l.el;
   if(siteAlpha<.04||!o.g.visible||!o.g.parent.visible){el.style.display="none";continue}
-  o.g.getWorldPosition(l.world);l.world.y+=l.i===0?94:45;
+  o.g.getWorldPosition(l.world);l.world.y+=l.i===0?42:45;
   const p=projectToScreen(l.world);if(!p){el.style.display="none";continue}
   const near=camera.position.distanceTo(l.world);
   el.classList.toggle("compact",near>600);el.style.display="flex";
@@ -453,7 +453,7 @@ function updateLabels(){
   if(detailAlpha<.05||!o.g.visible||!o.g.parent.visible){el.style.display="none";continue}
   o.g.getWorldPosition(d.world);const fromTarget=d.world.distanceTo(ctl.target);
   if(fromTarget>240){el.style.display="none";continue}
-  d.world.y+=d.i===0?105:48;
+  d.world.y+=d.i===0?48:48;
   const p=projectToScreen(d.world);if(!p){el.style.display="none";continue}
   candidates.push({d,p,fromTarget});
  }
@@ -473,7 +473,11 @@ function updateLabels(){
 // Site №1 alone uses the detailed historical architecture module.
 const pad1=objects[0],padGroup=pad1.g;
 padGroup.clear();
+for(let j=clickable.length-1;j>=0;j--)if(clickable[j].userData.idx===0)clickable.splice(j,1);
 const gagarinExhibit=buildGagarinPad(padGroup);
+// The original 1300×1045 schematic is not a cadastral map; keep the
+// individual large launch complex within its compact diagrammatic cell.
+padGroup.scale.setScalar(.43);
 pad1.name='Площадка № 1 — Гагаринский старт';
 pad1.type='launch';pad1.from=1955;
 padGroup.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=0;clickable.push(mesh)}});
@@ -484,7 +488,7 @@ let currentObject=0;let currentResearch=null;
 function focus(i){
  currentResearch=null;
  const o=objects[i],r=o.record;currentObject=i;ctl.target.copy(o.g.position);
- camera.position.copy(o.g.position).add(i===0?new THREE.Vector3(140,115,174):new THREE.Vector3(90,115,135));
+ camera.position.copy(o.g.position).add(i===0?new THREE.Vector3(70,66,91):new THREE.Vector3(90,115,135));
  document.getElementById("title").textContent=displaySiteName(o);
  document.getElementById("infoOrg").textContent=r.organisation?.org||"Принадлежность не установлена";
  document.getElementById("infoOrgRole").textContent=r.organisation?.role||"Нет подтверждённого ответственного предприятия";
@@ -545,6 +549,21 @@ document.getElementById("detailMore").onclick=()=>{
   const refs=[...new Set([...(r.publicReferences||[]),...(r.organisation?.source?[r.organisation.source]:[])])];
   if(refs.length){const heading=document.createElement("div");heading.style.marginTop="9px";heading.textContent="Публичные источники:";el.appendChild(heading);}
   for(let k=0;k<refs.length;k++){const link=document.createElement("a");link.href=refs[k];link.target="_blank";link.rel="noopener noreferrer";link.style.display="block";link.textContent=(k+1)+". "+(new URL(refs[k]).hostname)+" ↗";el.appendChild(link)}
+  if(r.architectureReferences?.length){
+    const heading=document.createElement("div");heading.textContent="Документация реконструкции:";heading.style.marginTop="10px";el.appendChild(heading);
+    for(const entry of r.architectureReferences){
+      const a=document.createElement("a");a.href=entry.url;a.target="_blank";a.rel="noopener noreferrer";a.style.display="block";
+      a.textContent=entry.label+" ↗";el.append(a);
+    }
+  }
+  if(r.photoArchive?.length){
+    const heading=document.createElement("div");heading.textContent="Фотоархив RocketTrip · референсы архитектуры Р-7 (атрибуция площадки уточняется):";
+    heading.style.marginTop="10px";el.append(heading);
+    for(const photo of r.photoArchive){
+      const a=document.createElement("a");a.href="https://drive.google.com/file/d/"+photo.driveId+"/view";a.target="_blank";a.rel="noopener noreferrer";a.style.display="block";
+      a.textContent=photo.fileName+" · "+photo.subject+" ↗";el.append(a);
+    }
+  }
   if(!refs.length){const note=document.createElement("div");note.textContent="Идентификация пока основана на исходной исторической схеме.";el.appendChild(note)}
  }
  el.style.display=isHidden?"block":"none";document.getElementById("detailMore").textContent=isHidden?"СВЕРНУТЬ":"ПОДРОБНЕЕ ↗";
