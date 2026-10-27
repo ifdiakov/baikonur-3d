@@ -1,8 +1,8 @@
 {
-  "targetCommit": "d8887ef9f521d503e0ba87647f82fd56659c053f",
+  "targetCommit": "76d242fc00ed3dd17b9d341b63408bec7d8d76de",
   "status": "skipped",
   "install": "failure",
   "server": "skipped",
-  "checkedAt": "2026-10-27T11:31:09.679Z",
+  "checkedAt": "2026-10-27T11:32:00.649Z",
   "test": "Browser-based Playwright smoke check"
 }
