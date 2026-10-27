@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "coordinateSystem": {
     "description": "Нормализованные координаты исходного изображения схемы; НЕ географические координаты",
     "width": 1300,
@@ -21,6 +21,11 @@
       "kind": "user-provided-photograph",
       "imageNotYetInRepository": true,
       "note": "Второй источник идентификации; фотосъёмка под углом, требуется перспективная калибровка до точной оцифровки"
+    },
+    "numbered-site-reference": {
+      "title": "Публичный перечень объектов из приложения к договору аренды комплекса «Байконур»",
+      "url": "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38",
+      "kind": "public-legal-reference"
     }
   },
   "statusLegend": {
@@ -40,7 +45,13 @@
       "sources": [
         "original-plan-3993x3208"
       ],
-      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована.",
+      "organisation": {
+        "org": "ЦЭНКИ",
+        "role": "эксплуатация стартовой инфраструктуры",
+        "source": "https://www.russian.space/kosmodromy/kosmodrom-baykonur/"
+      },
+      "purpose": "Гагаринский старт: первая пилотируемая космическая экспедиция 1961 года"
     },
     {
       "id": "pad-2a",
@@ -124,7 +135,13 @@
       "sources": [
         "original-plan-3993x3208"
       ],
-      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована.",
+      "organisation": {
+        "org": "РКК «Энергия»",
+        "role": "участие в подготовке пилотируемых кораблей; эксплуатация площадки требует уточнения",
+        "source": "https://www.gctc.ru/main.php?id=3104"
+      },
+      "purpose": "Предстартовая подготовка пилотируемых кораблей"
     },
     {
       "id": "pad-113",
@@ -391,6 +408,1153 @@
         "original-plan-3993x3208"
       ],
       "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "pad-90",
+      "name": "Площадка № 90",
+      "x": 108,
+      "y": 55,
+      "model": "launch",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Исторический стартовый и испытательный район"
+    },
+    {
+      "id": "pad-91",
+      "name": "Площадка № 91",
+      "x": 92,
+      "y": 87,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технические и испытательные объекты"
+    },
+    {
+      "id": "pad-92",
+      "name": "Площадка № 92",
+      "x": 115,
+      "y": 117,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический район"
+    },
+    {
+      "id": "pad-92а",
+      "name": "Площадка № 92А",
+      "x": 130,
+      "y": 119,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Вспомогательный технический район"
+    },
+    {
+      "id": "pad-93",
+      "name": "Площадка № 93",
+      "x": 68,
+      "y": 109,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Вспомогательные сооружения"
+    },
+    {
+      "id": "pad-94",
+      "name": "Площадка № 94",
+      "x": 24,
+      "y": 84,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический комплекс"
+    },
+    {
+      "id": "pad-94а",
+      "name": "Площадка № 94А",
+      "x": 24,
+      "y": 104,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технические сооружения"
+    },
+    {
+      "id": "pad-95",
+      "name": "Площадка № 95",
+      "x": 145,
+      "y": 114,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Комплекс административно-технических сооружений"
+    },
+    {
+      "id": "pad-96",
+      "name": "Площадка № 96",
+      "x": 138,
+      "y": 88,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технические сооружения"
+    },
+    {
+      "id": "pad-97",
+      "name": "Площадка № 97",
+      "x": 113,
+      "y": 96,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технические сооружения"
+    },
+    {
+      "id": "pad-98",
+      "name": "Площадка № 98",
+      "x": 126,
+      "y": 66,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический объект"
+    },
+    {
+      "id": "pad-89",
+      "name": "Площадка № 89",
+      "x": 146,
+      "y": 144,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технические сооружения"
+    },
+    {
+      "id": "pad-130",
+      "name": "Площадка № 130",
+      "x": 92,
+      "y": 63,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный исторический объект"
+    },
+    {
+      "id": "pad-174",
+      "name": "Площадка № 174",
+      "x": 93,
+      "y": 65,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный технический объект"
+    },
+    {
+      "id": "pad-160",
+      "name": "Площадка № 160",
+      "x": 138,
+      "y": 69,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный технический объект"
+    },
+    {
+      "id": "pad-131",
+      "name": "Площадка № 131",
+      "x": 161,
+      "y": 78,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Историческая площадка"
+    },
+    {
+      "id": "pad-81",
+      "name": "Площадка № 81",
+      "x": 189,
+      "y": 74,
+      "model": "launch",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Стартовый комплекс «Протон»"
+    },
+    {
+      "id": "pad-82",
+      "name": "Площадка № 82",
+      "x": 181,
+      "y": 121,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Техническая площадка"
+    },
+    {
+      "id": "pad-83",
+      "name": "Площадка № 83",
+      "x": 179,
+      "y": 126,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Техническая площадка"
+    },
+    {
+      "id": "pad-84",
+      "name": "Площадка № 84",
+      "x": 157,
+      "y": 85,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Техническая площадка"
+    },
+    {
+      "id": "pad-175",
+      "name": "Площадка № 175",
+      "x": 196,
+      "y": 121,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Исторический стартово-технический район"
+    },
+    {
+      "id": "pad-200",
+      "name": "Площадка № 200",
+      "x": 269,
+      "y": 135,
+      "model": "launch",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Стартовый комплекс «Протон»"
+    },
+    {
+      "id": "pad-132",
+      "name": "Площадка № 132",
+      "x": 270,
+      "y": 145,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Историческая площадка"
+    },
+    {
+      "id": "pad-161",
+      "name": "Площадка № 161",
+      "x": 309,
+      "y": 156,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический объект"
+    },
+    {
+      "id": "pad-201",
+      "name": "Площадка № 201",
+      "x": 250,
+      "y": 154,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Вспомогательный комплекс"
+    },
+    {
+      "id": "pad-176",
+      "name": "Площадка № 176",
+      "x": 282,
+      "y": 176,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Исторический объект"
+    },
+    {
+      "id": "pad-178",
+      "name": "Площадка № 178",
+      "x": 68,
+      "y": 175,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-182",
+      "name": "Площадка № 182",
+      "x": 248,
+      "y": 195,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический объект"
+    },
+    {
+      "id": "pad-165",
+      "name": "Площадка № 165",
+      "x": 102,
+      "y": 239,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-179",
+      "name": "Площадка № 179",
+      "x": 169,
+      "y": 241,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-71",
+      "name": "Площадка № 71",
+      "x": 398,
+      "y": 241,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Техническая площадка"
+    },
+    {
+      "id": "pad-70",
+      "name": "Площадка № 70",
+      "x": 373,
+      "y": 168,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Техническая площадка"
+    },
+    {
+      "id": "pad-163",
+      "name": "Площадка № 163",
+      "x": 456,
+      "y": 194,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный объект"
+    },
+    {
+      "id": "pad-173",
+      "name": "Площадка № 173",
+      "x": 404,
+      "y": 160,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённая площадка"
+    },
+    {
+      "id": "pad-172",
+      "name": "Площадка № 172",
+      "x": 340,
+      "y": 80,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённая площадка"
+    },
+    {
+      "id": "pad-180",
+      "name": "Площадка № 180",
+      "x": 368,
+      "y": 129,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный объект"
+    },
+    {
+      "id": "pad-203",
+      "name": "Площадка № 203",
+      "x": 240,
+      "y": 275,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-202",
+      "name": "Площадка № 202",
+      "x": 260,
+      "y": 311,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-204",
+      "name": "Площадка № 204",
+      "x": 285,
+      "y": 210,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-170",
+      "name": "Площадка № 170",
+      "x": 375,
+      "y": 317,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-164",
+      "name": "Площадка № 164",
+      "x": 369,
+      "y": 322,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-251",
+      "name": "Площадка № 251",
+      "x": 565,
+      "y": 100,
+      "model": "air",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Аэродром «Юбилейный»"
+    },
+    {
+      "id": "pad-250",
+      "name": "Площадка № 250",
+      "x": 635,
+      "y": 220,
+      "model": "launch",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Универсальный комплекс стенд-старт «Энергия»"
+    },
+    {
+      "id": "pad-250а",
+      "name": "Площадка № 250А",
+      "x": 605,
+      "y": 240,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Объекты комплекса «Энергия»"
+    },
+    {
+      "id": "pad-192",
+      "name": "Площадка № 192",
+      "x": 640,
+      "y": 169,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический объект"
+    },
+    {
+      "id": "pad-110",
+      "name": "Площадка № 110",
+      "x": 650,
+      "y": 281,
+      "model": "launch",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Исторический стартовый комплекс Н1 / «Энергия»"
+    },
+    {
+      "id": "pad-112",
+      "name": "Площадка № 112",
+      "x": 680,
+      "y": 331,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический комплекс"
+    },
+    {
+      "id": "pad-104",
+      "name": "Площадка № 104",
+      "x": 811,
+      "y": 241,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Историческая площадка"
+    },
+    {
+      "id": "pad-101",
+      "name": "Площадка № 101",
+      "x": 819,
+      "y": 310,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный технический объект"
+    },
+    {
+      "id": "pad-102",
+      "name": "Площадка № 102",
+      "x": 835,
+      "y": 352,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Техническая площадка"
+    },
+    {
+      "id": "pad-103",
+      "name": "Площадка № 103",
+      "x": 844,
+      "y": 319,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Техническая площадка"
+    },
+    {
+      "id": "pad-111",
+      "name": "Площадка № 111",
+      "x": 823,
+      "y": 390,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Вспомогательная техническая площадка"
+    },
+    {
+      "id": "pad-57",
+      "name": "Площадка № 57",
+      "x": 552,
+      "y": 395,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический объект"
+    },
+    {
+      "id": "pad-5",
+      "name": "Площадка № 5",
+      "x": 665,
+      "y": 550,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Транспортно-технический объект"
+    },
+    {
+      "id": "pad-31",
+      "name": "Площадка № 31",
+      "x": 1017,
+      "y": 228,
+      "model": "launch",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Стартовый комплекс семейства «Союз»",
+      "organisation": {
+        "org": "ЦЭНКИ",
+        "role": "эксплуатация стартового комплекса",
+        "source": "https://www.russian.space/press-tsentr/novosti/na-baykonure-nachalas-podgotovka-startovogo-kompleksa-k-zapusku-ka-resurs-p-5.html"
+      }
+    },
+    {
+      "id": "pad-105",
+      "name": "Площадка № 105",
+      "x": 912,
+      "y": 212,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический объект"
+    },
+    {
+      "id": "pad-106",
+      "name": "Площадка № 106",
+      "x": 898,
+      "y": 321,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный технический объект"
+    },
+    {
+      "id": "pad-109",
+      "name": "Площадка № 109",
+      "x": 921,
+      "y": 321,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Исторический испытательный объект"
+    },
+    {
+      "id": "pad-42",
+      "name": "Площадка № 42",
+      "x": 875,
+      "y": 334,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Историческая стартово-техническая площадка"
+    },
+    {
+      "id": "pad-43",
+      "name": "Площадка № 43",
+      "x": 1089,
+      "y": 262,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Вспомогательная площадка"
+    },
+    {
+      "id": "pad-44",
+      "name": "Площадка № 44",
+      "x": 1090,
+      "y": 247,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Вспомогательная площадка"
+    },
+    {
+      "id": "pad-45",
+      "name": "Площадка № 45",
+      "x": 1134,
+      "y": 332,
+      "model": "launch",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Стартовый комплекс «Зенит»"
+    },
+    {
+      "id": "pad-241",
+      "name": "Площадка № 241",
+      "x": 833,
+      "y": 487,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Отдельный технический объект"
+    },
+    {
+      "id": "pad-196",
+      "name": "Площадка № 196",
+      "x": 427,
+      "y": 558,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый технический объект"
+    },
+    {
+      "id": "pad-195",
+      "name": "Площадка № 195",
+      "x": 594,
+      "y": 638,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый технический объект"
+    },
+    {
+      "id": "pad-246",
+      "name": "Площадка № 246",
+      "x": 777,
+      "y": 650,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Удалённый объект"
+    },
+    {
+      "id": "pad-17",
+      "name": "Площадка № 17",
+      "x": 639,
+      "y": 551,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Гостиница «Космонавт»; предполётная подготовка экипажей",
+      "organisation": {
+        "org": "ЦПК",
+        "role": "подготовка экипажей; связь с гостиницей «Космонавт»",
+        "source": "https://www.gctc.ru/main.php?id=2227"
+      }
+    },
+    {
+      "id": "pad-3",
+      "name": "Площадка № 3",
+      "x": 646,
+      "y": 750,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технический район"
+    },
+    {
+      "id": "pad-3а",
+      "name": "Площадка № 3А",
+      "x": 620,
+      "y": 756,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Исторические технические сооружения"
+    },
+    {
+      "id": "pad-3б",
+      "name": "Площадка № 3Б",
+      "x": 638,
+      "y": 703,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Технические сооружения"
+    },
+    {
+      "id": "pad-21",
+      "name": "Площадка № 21",
+      "x": 653,
+      "y": 778,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "visual-reference-plan",
+      "sources": [
+        "original-plan-3993x3208",
+        "service-photo-2026"
+      ],
+      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка.",
+      "purpose": "Вспомогательный объект"
     }
-  ]
+  ],
+  "notes": "Номера добавлены по визуальному чтению схем, указанные координаты относительные и требуют индивидуальной проверки. Новые площадки имеют условные 3D-макеты, не реальные размеры зданий."
 }
