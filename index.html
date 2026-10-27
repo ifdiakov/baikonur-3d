@@ -226,6 +226,54 @@ const satelliteGround=new THREE.Mesh(new THREE.PlaneGeometry(W*S,H*S),new THREE.
 satelliteGround.rotation.x=-Math.PI/2;satelliteGround.position.y=-2.75;scene.add(satelliteGround);satelliteGround.renderOrder=0;
 scene.userData.syntheticGroundReady=true;scene.userData.terrainStyle={name:'Baikonur Steppe v2',kind:'synthetic-satellite-style',tileResolution:size,detailResolution:[satW,satH],infiniteExtent:true};
 
+/* Image-assisted 3D ground detail. Uses the visitor-supplied photographed scheme,
+   perspective-corrected and stored locally. Only high-contrast ink is visible;
+   the paper, folds, car and hands do not appear as a flat terrain rectangle. */
+scene.userData.serviceReference={asset:'assets/service-photo-rectified.b64',source:'visitor-supplied-photograph',positioning:'schematic-not-georeferenced',loaded:false,inkPixels:0};
+async function loadServiceReference(){
+ try{
+  const response=await fetch('./assets/service-photo-rectified.b64',{cache:'no-store'});
+  if(!response.ok)throw Error('Схема: HTTP '+response.status);
+  const content=(await response.text()).trim();
+  const photo=new Image();photo.decoding='async';
+  photo.onload=()=>{
+   const cw=960,ch=774,canvas=document.createElement('canvas'),ctx=canvas.getContext('2d',{willReadFrequently:true});
+   canvas.width=cw;canvas.height=ch;ctx.drawImage(photo,0,0,cw,ch);
+   const original=ctx.getImageData(0,0,cw,ch);
+   const blurredCanvas=document.createElement('canvas');blurredCanvas.width=cw;blurredCanvas.height=ch;
+   const blurredContext=blurredCanvas.getContext('2d',{willReadFrequently:true});
+   blurredContext.filter='blur(5px)';blurredContext.drawImage(canvas,0,0);
+   const soft=blurredContext.getImageData(0,0,cw,ch).data,out=original.data;
+   let inkPixels=0;
+   for(let y=0;y<ch;y++)for(let x=0;x<cw;x++){
+    const i=(y*cw+x)*4,nx=x/cw,ny=y/ch,lum=.299*out[i]+.587*out[i+1]+.114*out[i+2];
+    const blurred=.299*soft[i]+.587*soft[i+1]+.114*soft[i+2];
+    const contrast=Math.max(0,(blurred-lum-7)/43);
+    const fade=Math.min(1,nx/.034,(1-nx)/.034,ny/.042,(1-ny)/.042);
+    // The paper's title and fold are not ground infrastructure.
+    const titleZone=ny<.18&&nx>.43&&nx<.78;
+    const alpha=titleZone?0:Math.round(180*Math.min(1,contrast)*Math.max(0,fade));
+    const blueInk=out[i+2]>out[i]+5&&out[i+1]>out[i]+4;
+    out[i]=blueInk?78:76;out[i+1]=blueInk?132:83;out[i+2]=blueInk?149:77;
+    out[i+3]=alpha;
+    if(alpha>32)inkPixels++;
+   }
+   ctx.putImageData(original,0,0);
+   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
+   texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
+   texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
+   const geometry=new THREE.PlaneGeometry(W*S,H*S);
+   const plane=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial({map:texture,transparent:true,opacity:.43,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2}));
+   plane.rotation.x=-Math.PI/2;plane.position.y=-2.46;plane.renderOrder=2;scene.add(plane);
+   scene.userData.serviceReference.loaded=true;scene.userData.serviceReference.inkPixels=inkPixels;
+  };
+  photo.onerror=()=>{console.warn('Изображение служебной схемы не декодировалось')};
+  photo.src='data:image/webp;base64,'+content;
+ }catch(err){console.warn('Не удалось загрузить линии со служебной схемы:',err.message)}
+}
+loadServiceReference();
+
+
 function displaySiteName(o){const r=o.record;const number=r.number||o.name.match(/Площадка №\s*([\dА-ЯA-Z]+)/u)?.[1];return number?"пл. "+number+(r.titleShort?" · "+r.titleShort:""):o.name}
 const labelLayer=document.getElementById("labelLayer");const labels=[];
 for(let i=0;i<objects.length;i++){
@@ -398,6 +446,6 @@ document.getElementById("detailMore").onclick=()=>{
   if(!refs.length){const note=document.createElement("div");note.textContent="Идентификация пока основана на исходной исторической схеме.";el.appendChild(note)}
  }
  el.style.display=isHidden?"block":"none";document.getElementById("detailMore").textContent=isHidden?"СВЕРНУТЬ":"ПОДРОБНЕЕ ↗";
-};const list=document.getElementById('list');function renderList(){list.innerHTML='';const q=document.getElementById('search').value.toLowerCase();let n=0;objects.forEach((o,i)=>{if(![o.name,o.record.titleShort,o.record.titleFull,o.record.purposeLong].some(v=>String(v||'').toLowerCase().includes(q)))return;n++;const b=document.createElement('button');b.className='entry';b.replaceChildren();const main=document.createElement("span");main.textContent=displaySiteName(o);const sm=document.createElement("small");sm.textContent=o.record.titleShort?'Назначение сверено · позиция предварительная':(o.record.status==='label-read'?'Номер прочитан на схеме':'Рабочий сектор — требует идентификации');b.append(main,sm);b.onclick=()=>focus(i);list.append(b)});document.getElementById('count').textContent=n}renderList();document.getElementById('search').oninput=renderList;document.getElementById('close').onclick=()=>document.getElementById('info').style.display='none';document.getElementById('all').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(580,1450,1200)};document.getElementById('top').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(0,1500,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>{const year=+e.target.value;document.getElementById('yearVal').textContent=year;objects.forEach(o=>o.g.visible=year>=o.from)};const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(clickable).find(h=>h.object.parent.visible&&h.object.parent.parent.visible);if(hit)focus(hit.object.userData.idx)});window.__BAIKONUR_QA={setAltitude(n){ctl.target.set(0,0,0);camera.position.set(0,n,Math.max(240,n*.6));ctl.update();camera.updateMatrixWorld(true);updateLabels()},focusSite:focus,stats(){return{sites:objects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100,780,Math.sin(angle)*1100);ctl.target.set(0,0,0)}if(camera.position.y>1650)camera.position.y=1650;if(camera.position.y<7)camera.position.y=7;ctl.update();updateLabels();renderer.render(scene,camera)}animate();
+};const list=document.getElementById('list');function renderList(){list.innerHTML='';const q=document.getElementById('search').value.toLowerCase();let n=0;objects.forEach((o,i)=>{if(![o.name,o.record.titleShort,o.record.titleFull,o.record.purposeLong].some(v=>String(v||'').toLowerCase().includes(q)))return;n++;const b=document.createElement('button');b.className='entry';b.replaceChildren();const main=document.createElement("span");main.textContent=displaySiteName(o);const sm=document.createElement("small");sm.textContent=o.record.titleShort?'Назначение сверено · позиция предварительная':(o.record.status==='label-read'?'Номер прочитан на схеме':'Рабочий сектор — требует идентификации');b.append(main,sm);b.onclick=()=>focus(i);list.append(b)});document.getElementById('count').textContent=n}renderList();document.getElementById('search').oninput=renderList;document.getElementById('close').onclick=()=>document.getElementById('info').style.display='none';document.getElementById('all').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(580,1450,1200)};document.getElementById('top').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(0,1500,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>{const year=+e.target.value;document.getElementById('yearVal').textContent=year;objects.forEach(o=>o.g.visible=year>=o.from)};const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(clickable).find(h=>h.object.parent.visible&&h.object.parent.parent.visible);if(hit)focus(hit.object.userData.idx)});window.__BAIKONUR_QA={setAltitude(n){ctl.target.set(0,0,0);camera.position.set(0,n,Math.max(240,n*.6));ctl.update();camera.updateMatrixWorld(true);updateLabels()},focusSite:focus,stats(){return{sites:objects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100,780,Math.sin(angle)*1100);ctl.target.set(0,0,0)}if(camera.position.y>1650)camera.position.y=1650;if(camera.position.y<7)camera.position.y=7;ctl.update();updateLabels();renderer.render(scene,camera)}animate();
 }catch(err){document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}
 </script></body></html>
