@@ -230,8 +230,8 @@ import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js';
 try{
 // Common display scale for structures on the schematic; geometry stays fully detailed.
 const MODEL_SCALE=0.5;
-const GAGARIN_SCALE=.43*MODEL_SCALE;
-const UKSS_SCALE=.5*MODEL_SCALE;
+const GAGARIN_SCALE=.43*MODEL_SCALE/1.5;
+const UKSS_SCALE=.5*MODEL_SCALE*1.5;
 const groundMaterials=new Set();let ukssCutout=null;
 function registerGroundSurface(mesh){
  groundMaterials.add(mesh.material);
@@ -567,7 +567,7 @@ function updateLabels(){
  for(const l of labels){
   const o=objects[l.i],el=l.el;
   if(siteAlpha<.04||!o.g.visible||!o.g.parent.visible){el.style.display="none";continue}
-  o.g.getWorldPosition(l.world);l.world.y+=(l.i===0?42:45)*MODEL_SCALE;
+  o.g.getWorldPosition(l.world);l.world.y+=l.i===0?42*MODEL_SCALE/1.5:l.i===ukssIndex?45*MODEL_SCALE*1.5:45*MODEL_SCALE;
   const p=projectToScreen(l.world);if(!p){el.style.display="none";continue}
   const near=camera.position.distanceTo(l.world);
   el.classList.toggle("compact",near>600);el.style.display="flex";

@@ -161,7 +161,7 @@ assert.ok(Math.abs(padPlacement.rotationY+Math.PI/2)<.0001,'Flame duct must face
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),false,'No permanently staged rocket at closed Pad 1');
 const overviewScale=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 assert.equal(overviewScale.modelScale,.5,'Structures must use the smaller common display scale');
-assert.equal(overviewScale.gagarinScale,.215,'Detailed Pad 1 must fit the rescaled schematic');
+assert.equal(overviewScale.gagarinScale,.215/1.5,'Pad 1 must be 1.5 times smaller at the requested scale');
 const count=overviewScale.sites;
 assert.ok(count>=90,'The museum must load the extended site catalogue');
 assert.ok((await page.locator('.site-label').count())>=80,'Must have labels for the catalogue');
@@ -252,6 +252,7 @@ assert.equal(restored.visibleSites,overviewScale.visibleSites,'Closing Pad 1 mus
 // UKSS must use separate architecture and keep the reduced map scale on focus.
 const ukssOverview=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 assert.equal(ukssOverview.ukss.version,'1.0');
+assert.equal(ukssOverview.ukssScale,.375,'UKSS must be 1.5 times larger at the requested scale');
 assert.deepEqual(ukssOverview.ukssPlacement,[635,220],'Keep Site 250 on the original schematic');
 assert.equal(ukssOverview.ukss.bridge.piers,6);
 assert.equal(ukssOverview.ukss.serviceTower.decks.length,11);
