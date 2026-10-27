@@ -28,7 +28,7 @@ Processing triggers for fontconfig (2.15.0-1.1ubuntu2) ...
 Running kernel seems to be up-to-date.
 
 Restarting services...
- systemctl restart php8.3-fpm.service polkit.service udisks2.service
+ systemctl restart packagekit.service php8.3-fpm.service polkit.service udisks2.service
 
 Service restarts being deferred:
  systemctl restart ModemManager.service
