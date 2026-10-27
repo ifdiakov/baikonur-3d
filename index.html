@@ -567,7 +567,7 @@ sites.forEach(makeSite);
 // Synthetic satellite-style surface: deliberately illustrative, NOT a Yandex or georeferenced image.
 // Detailed historical-map zone: same desert palette, but closer-resolution erosion,
 // salt crust, alluvial silt, sparse scrub, sun-bleached concrete and riverine vegetation.
-const satelliteCanvas=document.createElement('canvas');satelliteCanvas.width=1536;satelliteCanvas.height=1236;
+const satelliteCanvas=document.createElement('canvas');satelliteCanvas.width=1024;satelliteCanvas.height=824;
 const satCtx=satelliteCanvas.getContext('2d',{willReadFrequently:true});
 const satW=satelliteCanvas.width,satH=satelliteCanvas.height,satImage=satCtx.createImageData(satW,satH);
 function smoothNoiseStep(v){return v*v*(3-2*v)}
