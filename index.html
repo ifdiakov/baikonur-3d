@@ -234,7 +234,12 @@ function riverRibbon(width,elevation,color,opacity){
 }
 riverRibbon(41,-1.95,0x70866e,.58);riverRibbon(25,-1.30,0x428797,.92);riverRibbon(5,-1.20,0x8dbab7,.26);
 
-const response=await fetch('./data/catalog.json',{cache:'no-store'});if(!response.ok)throw new Error('Каталог площадок не загрузился: '+response.status);const catalog=await response.json();const siteRecords=catalog.sites;const sites=siteRecords.map(s=>[s.name,s.x,s.y,s.model,s.firstYear]);
+const response=await fetch('./data/catalog.json',{cache:'no-store'});if(!response.ok)throw new Error('Каталог площадок не загрузился: '+response.status);const catalog=await response.json();const siteRecords=catalog.sites;
+const historyResponse=await fetch('./data/history.json',{cache:'no-store'});
+const historyEvents=historyResponse.ok?(await historyResponse.json()).events:[];
+const researchResponse=await fetch('./data/field-research.json',{cache:'no-store'});
+const researchObjects=researchResponse.ok?(await researchResponse.json()).objects:[];
+const sites=siteRecords.map(s=>[s.name,s.x,s.y,s.model,s.firstYear]);
 const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSite(s,i){const [name,x,y,type,from]=s;const parent=type==='city'||type==='air'?layers.city:siteRoot;const g=new THREE.Group();g.position.copy(point(x,y));parent.add(g);const seed=(i*17)%11;block(g,type==='air'?135:54,2,type==='air'?28:47,0,1,0,pave);if(type==='launch'){block(g,26,5,25,0,4,0,dark);for(let a of [-1,1])for(let b of [-1,1])block(g,3,32+seed,3,a*14,19,b*13,steel);cyl(g,2.5,43,0,26,0,white);const cone=new THREE.Mesh(new THREE.ConeGeometry(4,12,12),orange);cone.position.y=53;g.add(cone);block(g,14,8,10,23,5,5,roof)}else if(type==='tech'){for(let j=0;j<4;j++){const h=8+((j*9+seed)%18);block(g,13+(j%2)*6,h,15+(j%3)*4,(j-1.5)*16,h/2+2,(j%2?1:-1)*13,j%2?roof:white)}block(g,3,31,3,23,17,-20,steel)}else if(type==='city'){for(let a=0;a<7;a++)for(let b=0;b<6;b++){const h=5+(a*3+b*7)%17;block(g,10,h,12,(a-3)*16,h/2+2,(b-2.5)*17,(a+b)%3?white:roof)}}else{block(g,130,1,13,0,3,0,dark);for(let j=-3;j<=3;j++)block(g,1,1,12,j*17,4,0,white);block(g,28,12,22,5,8,-31,roof)}g.traverse(c=>{if(c.isMesh){c.userData.idx=i;clickable.push(c)}});objects.push({g,name,from,type,x,y,record:siteRecords[i]})}sites.forEach(makeSite);
 
 // Synthetic satellite-style surface: deliberately illustrative, NOT a Yandex or georeferenced image.
@@ -509,6 +514,60 @@ document.getElementById("detailMore").onclick=()=>{
   if(!refs.length){const note=document.createElement("div");note.textContent="Идентификация пока основана на исходной исторической схеме.";el.appendChild(note)}
  }
  el.style.display=isHidden?"block":"none";document.getElementById("detailMore").textContent=isHidden?"СВЕРНУТЬ":"ПОДРОБНЕЕ ↗";
-};const list=document.getElementById('list');function renderList(){list.innerHTML='';const q=document.getElementById('search').value.toLowerCase();let n=0;objects.forEach((o,i)=>{if(![o.name,o.record.titleShort,o.record.titleFull,o.record.purposeLong].some(v=>String(v||'').toLowerCase().includes(q)))return;n++;const b=document.createElement('button');b.className='entry';b.replaceChildren();const main=document.createElement("span");main.textContent=displaySiteName(o);const sm=document.createElement("small");sm.textContent=o.record.titleShort?'Назначение сверено · позиция предварительная':(o.record.status==='label-read'?'Номер прочитан на схеме':'Рабочий сектор — требует идентификации');b.append(main,sm);b.onclick=()=>focus(i);list.append(b)});document.getElementById('count').textContent=n}renderList();document.getElementById('search').oninput=renderList;document.getElementById('close').onclick=()=>document.getElementById('info').style.display='none';document.getElementById('all').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(580,1450,1200)};document.getElementById('top').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(0,1500,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>{const year=+e.target.value;document.getElementById('yearVal').textContent=year;objects.forEach(o=>o.g.visible=year>=o.from)};const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(clickable).find(h=>h.object.parent.visible&&h.object.parent.parent.visible);if(hit)focus(hit.object.userData.idx)});window.__BAIKONUR_QA={setAltitude(n){ctl.target.set(0,0,0);camera.position.set(0,n,Math.max(240,n*.6));ctl.update();camera.updateMatrixWorld(true);updateLabels()},focusSite:focus,stats(){return{sites:objects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100,780,Math.sin(angle)*1100);ctl.target.set(0,0,0)}if(camera.position.y>1650)camera.position.y=1650;if(camera.position.y<7)camera.position.y=7;ctl.update();updateLabels();renderer.render(scene,camera)}animate();
+};const list=document.getElementById('list');function renderList(){list.innerHTML='';const q=document.getElementById('search').value.toLowerCase();let n=0;objects.forEach((o,i)=>{if(![o.name,o.record.titleShort,o.record.titleFull,o.record.purposeLong].some(v=>String(v||'').toLowerCase().includes(q)))return;n++;const b=document.createElement('button');b.className='entry';b.replaceChildren();const main=document.createElement("span");main.textContent=displaySiteName(o);const sm=document.createElement("small");sm.textContent=o.record.titleShort?'Назначение сверено · позиция предварительная':(o.record.status==='label-read'?'Номер прочитан на схеме':'Рабочий сектор — требует идентификации');b.append(main,sm);b.onclick=()=>focus(i);list.append(b)});document.getElementById('count').textContent=n}renderList();document.getElementById('search').oninput=renderList;
+
+const researchList=document.getElementById('researchList');
+for(const item of researchObjects){
+ const card=document.createElement('article');card.className='research-card';
+ const title=document.createElement('h4');title.textContent=item.id+' · '+item.title;
+ const desc=document.createElement('p');desc.textContent=item.description;
+ const gps=document.createElement('div');gps.className='research-meta';
+ gps.textContent=item.latitude!=null&&item.longitude!=null
+   ?'GPS: '+item.latitude.toFixed(6)+', '+item.longitude.toFixed(6)+' · положение в 3D не привязано'
+   :'Географическая позиция в каталоге 3D пока не установлена';
+ const source=document.createElement('a');source.href=item.source;source.target='_blank';source.rel='noopener noreferrer';source.textContent='Исходная точка на карте ↗';
+ card.append(title,desc,gps,source);researchList.append(card);
+}
+document.getElementById('researchCount').textContent=researchObjects.length;
+const timelineItems=document.getElementById('timelineEvents');
+const timelineEventPanel=document.getElementById('timelineEventPanel');
+const timelineSelected=document.getElementById('timelineYearHint');
+const timelineButtons=new Map();
+let selectedTimelineId=null;
+const historicalDateFormatter=new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'long',year:'numeric'});
+function displayEventDate(s){return historicalDateFormatter.format(new Date(s+'T12:00:00'))}
+function setMuseumYear(year,fromEvent=false){
+ const val=Math.min(2026,Math.max(1955,Math.round(year)));
+ document.getElementById('year').value=String(val);
+ document.getElementById('yearVal').textContent=String(val);
+ for(const o of objects)o.g.visible=val>=o.from;
+ if(!fromEvent){selectedTimelineId=null;timelineEventPanel.hidden=true;timelineSelected.textContent='В истории к '+val+' году: '+historyEvents.filter(e=>Number(e.date.slice(0,4))<=val).length+' событий'}
+ for(const e of historyEvents){const b=timelineButtons.get(e.id);if(!b)continue;b.classList.toggle('is-future',Number(e.date.slice(0,4))>val);b.classList.toggle('is-selected',e.id===selectedTimelineId);b.setAttribute('aria-pressed',String(e.id===selectedTimelineId))}
+ camera.updateMatrixWorld(true);updateLabels();
+}
+function displayHistoricalEvent(e){
+ selectedTimelineId=e.id;
+ setMuseumYear(Number(e.date.slice(0,4)),true);
+ document.getElementById('timelineEventDate').textContent=displayEventDate(e.date);
+ document.getElementById('timelineEventTitle').textContent=e.title;
+ document.getElementById('timelineEventDescription').textContent=e.description;
+ const source=document.getElementById('timelineEventSource');source.href=e.source;source.textContent='ПОДТВЕРЖДЕНИЕ ДАТЫ ↗';
+ const siteButton=document.getElementById('timelineGoToSite');
+ const found=objects.findIndex(o=>(o.record.number||o.name.match(/№\\s*([\\dА-ЯA-Z]+)/u)?.[1])===e.site);
+ siteButton.hidden=found<0;
+ if(found>=0)siteButton.onclick=()=>{focus(found);timelineEventPanel.hidden=true};
+ timelineSelected.textContent=displayEventDate(e.date)+' · '+e.title;
+ timelineEventPanel.hidden=false;
+}
+for(const e of historyEvents){
+ const btn=document.createElement('button');btn.type='button';btn.className='timeline-chip';btn.dataset.eventId=e.id;
+ btn.title=displayEventDate(e.date)+' — '+e.title;btn.setAttribute('aria-pressed','false');
+ const year=document.createElement('time');year.dateTime=e.date;year.textContent=e.date.slice(0,4);
+ const title=document.createElement('span');title.textContent=e.short||e.title;btn.append(year,title);
+ btn.onclick=()=>displayHistoricalEvent(e);timelineItems.append(btn);timelineButtons.set(e.id,btn);
+}
+document.getElementById('timelineEventClose').onclick=()=>{timelineEventPanel.hidden=true};
+setMuseumYear(2026,false);
+document.getElementById('close').onclick=()=>document.getElementById('info').style.display='none';document.getElementById('all').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(580,1450,1200)};document.getElementById('top').onclick=()=>{ctl.target.set(0,0,0);camera.position.set(0,1500,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(clickable).find(h=>h.object.parent.visible&&h.object.parent.parent.visible);if(hit)focus(hit.object.userData.idx)});window.__BAIKONUR_QA={setAltitude(n){ctl.target.set(0,0,0);camera.position.set(0,n,Math.max(240,n*.6));ctl.update();camera.updateMatrixWorld(true);updateLabels()},focusSite:focus,stats(){return{sites:objects.length,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100,780,Math.sin(angle)*1100);ctl.target.set(0,0,0)}if(camera.position.y>1650)camera.position.y=1650;if(camera.position.y<7)camera.position.y=7;ctl.update();updateLabels();renderer.render(scene,camera)}animate();
 }catch(err){document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}
 </script></body></html>
