@@ -44,7 +44,7 @@ jobs:
         run: |
           set -e
           for attempt in $(seq 1 9); do
-            if curl --connect-timeout 8 --max-time 22 -fsSL "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/baikonur-public.html && grep -q 'syntheticGroundReady=true' /tmp/baikonur-public.html; then
+            if curl --connect-timeout 8 --max-time 22 -fsSL "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/baikonur-public.html && grep -q 'id="timeDock"' /tmp/baikonur-public.html && grep -q 'rockettrip-logo.svg' /tmp/baikonur-public.html && curl --connect-timeout 8 --max-time 15 -fsSL 'https://ifdiakov.github.io/baikonur-3d/assets/rockettrip-logo.svg' | grep -q 'data:image/png;base64'; then
               echo "Published museum includes the new synthetic terrain"
               exit 0
             fi
@@ -53,6 +53,14 @@ jobs:
           done
           echo "Current museum update was not verified on the published URL"
           exit 1
+      - name: Open published 3D museum in Chromium and test interaction
+        id: publicbrowser
+        if: always() && steps.public.outcome == 'success'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?browser-qa=${{ github.sha }}
+        run: |
+          set -o pipefail
+          node tests/smoke.mjs 2>&1 | tee /tmp/baikonur-public-browser.log
       - name: Save 4 level screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -69,14 +77,16 @@ jobs:
           INSTALL_STATUS: ${{ steps.install.outcome }}
           SERVER_STATUS: ${{ steps.server.outcome }}
           PUBLIC_STATUS: ${{ steps.public.outcome }}
+          PUBLIC_BROWSER_STATUS: ${{ steps.publicbrowser.outcome }}
           RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p data
-          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-status.json",JSON.stringify({targetCommit:process.env.TARGET_SHA,status:process.env.SMOKE_STATUS||"not-run",install:process.env.INSTALL_STATUS,server:process.env.SERVER_STATUS,public:process.env.PUBLIC_STATUS,runId:process.env.RUN_ID,checkedAt:new Date().toISOString(),test:"Browser-based Playwright smoke check"},null,2))'
+          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-status.json",JSON.stringify({targetCommit:process.env.TARGET_SHA,status:process.env.SMOKE_STATUS||"not-run",install:process.env.INSTALL_STATUS,server:process.env.SERVER_STATUS,public:process.env.PUBLIC_STATUS,publicBrowser:process.env.PUBLIC_BROWSER_STATUS,runId:process.env.RUN_ID,checkedAt:new Date().toISOString(),test:"Browser-based Playwright smoke check"},null,2))'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [ -f /tmp/baikonur-browser-install.log ]; then tail -n 80 /tmp/baikonur-browser-install.log > data/qa-install.log; fi
           if [ -f /tmp/baikonur-test.log ]; then tail -n 140 /tmp/baikonur-test.log > data/qa-test.log; fi
-          git add data/qa-status.json data/qa-install.log data/qa-test.log 2>/dev/null || git add data/qa-status.json
+          if [ -f /tmp/baikonur-public-browser.log ]; then tail -n 130 /tmp/baikonur-public-browser.log > data/qa-public-browser.log; fi
+          git add data/qa-status.json data/qa-install.log data/qa-test.log data/qa-public-browser.log 2>/dev/null || git add data/qa-status.json
           git diff --cached --quiet || git commit -m "ci: update Baikonur museum browser check result"
           git push
