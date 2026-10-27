@@ -97,7 +97,7 @@ for(let py=0;py<size;py++)for(let px=0;px<size;px++){
 }
 cx.putImageData(sandImage,0,0);
 const desertTexture=new THREE.CanvasTexture(sandCanvas);desertTexture.wrapS=THREE.RepeatWrapping;desertTexture.wrapT=THREE.RepeatWrapping;desertTexture.repeat.set(13,13);desertTexture.colorSpace=THREE.SRGBColorSpace;desertTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
-ground.material=new THREE.MeshStandardMaterial({map:desertTexture,color:0xffffff,roughness:1,metalness:0});
+ground.material=new THREE.MeshBasicMaterial({map:desertTexture,color:0xffffff});
 const grid=new THREE.GridHelper(2400,60,0x4f524a,0x4f524a);grid.position.y=-2.8;grid.visible=false;grid.material.opacity=0;grid.material.transparent=true;scene.add(grid);
 function block(g,w,h,d,x,y,z,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);g.add(o);return o}function cyl(g,r,h,x,y,z,m){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),m);o.position.set(x,y,z);g.add(o);return o}
 function path(g,pts,color,width,height=.5){const coords=pts.map(([x,y])=>point(x,y,height));const curve=new THREE.CatmullRomCurve3(coords,false,'centripetal');const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(8,pts.length*8),width,6,false),material(color));g.add(mesh);return mesh}
