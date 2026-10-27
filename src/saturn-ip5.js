@@ -50,13 +50,22 @@ export function buildSaturnIP5(root) {
     const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat[m]);mesh.position.set(x,y,z);
     return add(mesh,label,parent);
   }
+  // Instanced antenna-frame beams: hundreds of real open-truss components
+  // cost only one GPU draw call per material and dish subassembly.
+  const rodGeometry=new THREE.CylinderGeometry(1,1,1,6,1);
+  const rodBatches=new Map();
   function rod(a,b,r,m,label,parent=root,n=6) {
     const p=new THREE.Vector3(...a),q=new THREE.Vector3(...b),dir=q.clone().sub(p);
-    const length=dir.length();if(length<.001)return;
-    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,length,n),mat[m]);
-    mesh.position.copy(p).add(q).multiplyScalar(.5);
-    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
-    return add(mesh,label,parent);
+    const length=dir.length();if(length<.001)return null;
+    const key=m+':'+parent.uuid;
+    let batch=rodBatches.get(key);
+    if(!batch){batch={material:m,parent,matrices:[]};rodBatches.set(key,batch);}
+    const matrix=new THREE.Matrix4(),orient=new THREE.Quaternion();
+    orient.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
+    matrix.compose(p.add(q).multiplyScalar(.5),orient,new THREE.Vector3(r,length,r));
+    batch.matrices.push(matrix);
+    if(label)features[label]=(features[label]||0)+1;
+    primitives++;return null;
   }
   function cylinder(radTop,radBottom,h,x,y,z,m,label,sides=12,parent=root){
     const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radTop,radBottom,h,sides),mat[m]);
@@ -298,6 +307,13 @@ export function buildSaturnIP5(root) {
     shrub.position.set(x,.4+((i%7)*.06),z);
     add(shrub,'semi-desert-scrub');
   }
+  for(const batch of rodBatches.values()){
+    const mesh=new THREE.InstancedMesh(rodGeometry,mat[batch.material],batch.matrices.length);
+    for(let i=0;i<batch.matrices.length;i++)mesh.setMatrixAt(i,batch.matrices[i]);
+    mesh.instanceMatrix.needsUpdate=true;
+    mesh.frustumCulled=false;mesh.name='Сатурн-МС · ферменные элементы';
+    add(mesh,'instanced-antenna-steel',batch.parent);
+  }
   root.userData.saturnModel={
     version:'1.0',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
     sourceFolder:'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk',
@@ -305,7 +321,7 @@ export function buildSaturnIP5(root) {
     antennaType:'П-200',largeAntennaCount:2,dishDiameterMetres:25,
     profile:'two parabolic open-lattice dishes; stepped brick towers; white dome; technical offices',
     modelReliability:'photo-informed, structure dimensions and footprint illustrative',
-    featureCounts:features,primitiveCount:primitives,meshCount:objects.length,
+    featureCounts:features,primitiveCount:primitives,meshCount:objects.length,instancedFrameBatches:rodBatches.size,
     confidence:'relative layout from aerial photograph, approximate 3-anchor external geolocation'
   };
   return root.userData.saturnModel;
