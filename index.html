@@ -304,7 +304,7 @@ import {buildGagarinPad} from './src/gagarin-pad.js';
 import {buildUkssPad,maskUkssTerrain} from './src/ukss-pad.js';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js';
 import {buildTransportNetwork} from './src/transport-network.js';
-import {buildExtendedTerrain} from './src/terrain-extent.js';
+import {buildExtendedTerrain, sampleSteppe} from './src/terrain-extent.js';
 import {buildHighwaySigns} from './src/road-signs.js';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js';
 try{
@@ -359,7 +359,7 @@ desertTexture.repeat.set(42,42);desertTexture.colorSpace=THREE.SRGBColorSpace;
 desertTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
 ground.material=new THREE.MeshBasicMaterial({map:desertTexture,color:0xffffff});
 // Extended procedural detail spans far beyond the old 1300×1045 plan without a visible rim.
-const outerTerrain=buildExtendedTerrain({scene,registerGroundSurface});registerGroundSurface(ground);
+const outerTerrain=buildExtendedTerrain({scene,registerGroundSurface,renderer});registerGroundSurface(ground);
 const grid=new THREE.GridHelper(2400,60,0x4f524a,0x4f524a);grid.position.y=-2.8;grid.visible=false;grid.material.opacity=0;grid.material.transparent=true;scene.add(grid);
 function block(g,w,h,d,x,y,z,m){const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);g.add(o);return o}function cyl(g,r,h,x,y,z,m){const o=new THREE.Mesh(new THREE.CylinderGeometry(r,r,h,12),m);o.position.set(x,y,z);g.add(o);return o}
 function path(g,pts,color,width,height=.5){const coords=pts.map(([x,y])=>point(x,y,height));const curve=new THREE.CatmullRomCurve3(coords,false,'centripetal');const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(8,pts.length*8),width,6,false),material(color));g.add(mesh);registerGroundSurface(mesh);return mesh}
@@ -478,6 +478,7 @@ riverRibbon(34,-1.69,0x377783,.94);
 riverRibbon(9,-1.60,0x8dc4c5,.21);
 
 const response=await fetch('./data/catalog.json',{cache:'no-store'});if(!response.ok)throw new Error('Каталог площадок не загрузился: '+response.status);const catalog=await response.json();const siteRecords=catalog.sites;
+const riparianShrubs=outerTerrain.addRiparian({riverCorePts,point,siteRecords});
 const transportResponse=await fetch('./data/transport-network.json',{cache:'no-store'});
 if(!transportResponse.ok)throw new Error('Транспортная сеть не загружена: '+transportResponse.status);
 const transportData=await transportResponse.json();
@@ -574,32 +575,45 @@ function terrainHash(x,y,salt){let n=(Math.imul(x,374761393)+Math.imul(y,6682652
 function terrainNoise(x,y,scale,salt){const xx=x*scale,yy=y*scale,ix=Math.floor(xx),iy=Math.floor(yy),fx=smoothNoiseStep(xx-ix),fy=smoothNoiseStep(yy-iy);const a=terrainHash(ix,iy,salt),b=terrainHash(ix+1,iy,salt),c=terrainHash(ix,iy+1,salt),d=terrainHash(ix+1,iy+1,salt);return(a+(b-a)*fx)*(1-fy)+(c+(d-c)*fx)*fy}
 function riverDistance(x,y){let dist=100000;for(let j=0;j<riverCorePts.length-1;j++){const a=riverCorePts[j],b=riverCorePts[j+1],dx=b[0]-a[0],dy=b[1]-a[1],u=Math.max(0,Math.min(1,((x-a[0])*dx+(y-a[1])*dy)/(dx*dx+dy*dy||1))),vx=x-(a[0]+dx*u),vy=y-(a[1]+dy*u);dist=Math.min(dist,Math.hypot(vx,vy))}return dist}
 const industrialRegions=[[165,100,125,85],[630,350,115,105],[1055,275,120,92],[680,810,80,65],[660,965,105,95],[570,110,80,50]];
+// Close-up earth shares exactly the same landform colors and world-space
+// noise as the regional and intermediate steppe. Only river alluvium and
+// vehicle/industrial traces are special to the historical-map area.
 for(let sy=0;sy<satH;sy++)for(let sx=0;sx<satW;sx++){
  const nx=sx/(satW-1),ny=sy/(satH-1),px=nx*W,py=ny*H,k=(sy*satW+sx)*4;
- const massif=terrainNoise(nx,ny,5,13),clay=terrainNoise(nx,ny,13,29),
-       soil=terrainNoise(nx,ny,32,47),salt=terrainNoise(nx,ny,67,53),
-       micro=terrainNoise(nx,ny,212,97),sediment=terrainNoise(nx,ny,124,111);
- const relief=(massif-.5)*52+(clay-.5)*34+(soil-.5)*19;
- const crust=Math.max(0,Math.min(1,(soil-.52)*3.3));
- const saltpan=Math.max(0,Math.min(1,(.39-clay)*6.5))*(.55+.45*salt);
- const shadow=(sediment-.5)*17+(micro-.5)*19;
- const dune=(Math.sin(px*.11+py*.045+clay*13)*2.8+Math.sin(px*.29-py*.067+massif*6)*1.5);
- let r=174+relief+shadow+dune+saltpan*49-crust*15;
- let g=158+relief*.89+shadow*.87+dune*.75+saltpan*50-crust*17;
- let b=127+relief*.74+shadow*.69+dune*.50+saltpan*43-crust*16;
- // Old erosional channels and dry washes are elongated natural traces, not streets.
- const wash=Math.abs(Math.sin(px*.017+py*.031+massif*15+clay*5));
- if(wash<.044&&massif<.62){const strength=(1-wash/.044)*(.62-massif)*65;r-=strength;g-=strength*.87;b-=strength*.72}
- let industrial=0;
- for(const area of industrialRegions){const dx=(px-area[0])/area[2],dy=(py-area[1])/area[3];industrial=Math.max(industrial,Math.exp(-(dx*dx+dy*dy)*1.8))}
- const hardpan=industrial*(.18+soil*.34);
- r+=(151-r)*hardpan;g+=(146-g)*hardpan;b+=(138-b)*hardpan;
- const river=riverDistance(px,py),bankNoise=(terrainNoise(nx,ny,82,93)-.5)*13;
- if(river<56+bankNoise){const t=Math.max(0,1-(river-bankNoise)/58),riparian=Math.max(0,t*(.56+soil*.44));r+=(94-r)*riparian*.79;g+=(119-g)*riparian*.81;b+=(89-b)*riparian*.70}
- if(river<22+bankNoise*.6){const t=Math.max(0,1-river/23);r+=(66-r)*t*.91;g+=(119-g)*t*.91;b+=(128-b)*t*.94}
- const saltRim=Math.abs(clay-.405)<.020?.10:0;
- r+=saltRim*25;g+=saltRim*24;b+=saltRim*23;
- const edge=Math.min(nx,ny,1-nx,1-ny),feather=smoothNoiseStep(Math.min(1,Math.max(0,edge/.33)));
+ const wx=(px-W/2)*S,wz=(py-H/2)*S;
+ let [r,g,b]=sampleSteppe(wx,wz,2);
+ const clay=terrainNoise(nx,ny,23,42),gravel=terrainNoise(nx,ny,103,54),
+       vegetation=terrainNoise(nx,ny,71,69),small=terrainNoise(nx,ny,197,92);
+ // Infra footprint: weathered packed dirt around the main named industrial
+ // clusters, not uniform square concrete patches covering the whole map.
+ let industry=0;
+ for(const zone of industrialRegions){
+  const dx=(px-zone[0])/zone[2],dy=(py-zone[1])/zone[3];
+  industry=Math.max(industry,Math.exp(-(dx*dx+dy*dy)*1.8));
+ }
+ const apron=industry*(.10+.22*gravel)*(.8+.2*clay);
+ r+=(146-r)*apron;g+=(142-g)*apron;b+=(134-b)*apron;
+ const river=riverDistance(px,py),bankNoise=(vegetation-.5)*20;
+ // Dry reeds / gray-green banks appear in a broken, irregular belt.
+ const riparian=Math.max(0,1-(river-bankNoise-16)/136)*
+       (.22+.35*vegetation)*Math.max(0,1-river/180);
+ if(riparian>0){
+  r+=(118-r)*riparian;g+=(137-g)*riparian;b+=(103-b)*riparian;
+ }
+ // Gravel levees and the occasional pale salt crust along abandoned floodplain.
+ const oldLevee=Math.max(0,1-Math.abs(river-(72+bankNoise*2))/25)*
+   Math.max(0,clay-.43)*.38;
+ r+=oldLevee*16;g+=oldLevee*14;b+=oldLevee*11;
+ const smallBrush=Math.max(0,small-.81)*Math.max(0,1-river/155)*45;
+ r-=smallBrush*1.5;g-=smallBrush*.6;b-=smallBrush*1.3;
+ if(river<24+bankNoise*.5){
+  const waterMix=Math.max(0,1-river/24)*.86;
+  r+=(68-r)*waterMix;g+=(112-g)*waterMix;b+=(115-b)*waterMix;
+ }
+ // Feather the central historical map over a generous region. Because all
+ // three texture LODs use sampleSteppe, even partial alpha matches below.
+ const edge=Math.min(nx,ny,1-nx,1-ny);
+ const feather=smoothNoiseStep(Math.min(1,Math.max(0,edge/.25)));
  satImage.data[k]=clampColor(r);satImage.data[k+1]=clampColor(g);
  satImage.data[k+2]=clampColor(b);satImage.data[k+3]=Math.round(feather*255);
 }
@@ -609,11 +623,21 @@ function satellitePath(points,color,width,dash){satCtx.beginPath();points.forEac
 for(const line of roads){satellitePath(line,'rgba(62,64,62,.26)',5);satellitePath(line,'rgba(179,171,149,.55)',2.0)}
 for(const line of rails){satellitePath(line,'rgba(91,83,72,.45)',2);satellitePath(line,'rgba(205,200,186,.36)',.65,[3,4])}
 // Thin concrete aprons are keyed to the existing site catalogue, not random geographical claims.
-for(const o of objects){if(o.type==='city'||o.type==='air')continue;const x=o.x/W*satW,y=o.y/H*satH;const j=11+(o.record.status==='label-read'?5:0);satCtx.fillStyle='rgba(127,125,119,.28)';satCtx.fillRect(x-j-2,y-j*.68-2,(j+2)*2,(j*.68+2)*2);satCtx.fillStyle='rgba(193,187,175,.33)';satCtx.fillRect(x-j,y-j*.68,j*2,j*1.36)}
+for(const o of objects){
+ if(o.type==='city'||o.type==='air')continue;
+ const x=o.x/W*satW,y=o.y/H*satH;
+ const radius=o.type==='launch'?20:o.type==='tech'?14:9;
+ const gradient=satCtx.createRadialGradient(x,y,2,x,y,radius*1.9);
+ gradient.addColorStop(0,'rgba(138,139,132,.26)');
+ gradient.addColorStop(.48,'rgba(163,159,148,.17)');
+ gradient.addColorStop(1,'rgba(170,164,150,0)');
+ satCtx.fillStyle=gradient;
+ satCtx.fillRect(x-radius*2,y-radius*2,radius*4,radius*4);
+}
 const satelliteTexture=new THREE.CanvasTexture(satelliteCanvas);satelliteTexture.colorSpace=THREE.SRGBColorSpace;satelliteTexture.minFilter=THREE.LinearMipmapLinearFilter;satelliteTexture.magFilter=THREE.LinearFilter;satelliteTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
 const satelliteGround=new THREE.Mesh(new THREE.PlaneGeometry(W*S,H*S),new THREE.MeshBasicMaterial({map:satelliteTexture,transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1}));
-satelliteGround.rotation.x=-Math.PI/2;satelliteGround.position.y=-2.75;scene.add(satelliteGround);registerGroundSurface(satelliteGround);satelliteGround.renderOrder=1;
-scene.userData.syntheticGroundReady=true;scene.userData.terrainStyle={name:'Baikonur Steppe v3',kind:'synthetic-satellite-style',tileResolution:size,detailResolution:[satW,satH],extended:outerTerrain.stats(),infiniteExtent:true};
+satelliteGround.rotation.x=-Math.PI/2;satelliteGround.position.y=-2.755;scene.add(satelliteGround);registerGroundSurface(satelliteGround);satelliteGround.renderOrder=2;
+scene.userData.syntheticGroundReady=true;scene.userData.terrainStyle={name:'Baikonur Steppe v4',kind:'synthesized-earth-3-levels',tileResolution:size,detailResolution:[satW,satH],extended:outerTerrain.stats(),infiniteExtent:true,source:'illustrative, awaiting licensed georeferenced imagery'};
 
 /* Image-assisted 3D ground detail. Uses the visitor-supplied photographed scheme,
    perspective-corrected and stored locally. Only high-contrast ink is visible;
