@@ -114,11 +114,11 @@ export function buildSaturnIP5(root) {
   // as seen in the aerial photograph; internal service loop faces the radomes.
   // Preserve natural hill soil between separately modelled buildings and roads;
   // a single 170×126m rectangle used to look like a container depot.
-  box(141,.23,13,-7,7.42,24,'asphalt','internal-access-road');
-  box(12,.25,70,10,7.48,-34,'asphalt','service-lane');
-  box(8,.24,40,-80,7.47,32,'asphalt','antenna-service-access');
+  box(147,.23,10,-6,7.42,74,'asphalt','internal-access-road');
+  box(9,.25,106,10,7.48,14,'asphalt','service-lane');
+  box(7,.24,86,-92,7.47,9,'asphalt','antenna-service-access');
   const approach=new THREE.CatmullRomCurve3([
-    new THREE.Vector3(22,7.45,10),new THREE.Vector3(49,6.4,64),
+    new THREE.Vector3(10,7.45,74),new THREE.Vector3(49,6.4,94),
     new THREE.Vector3(78,3.9,114),new THREE.Vector3(104,.2,180)
   ],false,'centripetal');
   const paved=new THREE.Mesh(new THREE.TubeGeometry(approach,40,4.5,6,false),mat.asphalt);
@@ -145,11 +145,13 @@ export function buildSaturnIP5(root) {
     const ventilator=cylinder(1.2,1.2,1.4,x-w*.31,baseY+h+1.6,z,'steel','roof-fan');
     return ventilator;
   }
-  offices({x:-35,z:29,w:66,d:25,h:14,levels:2,brick:false});
-  offices({x:33,z:30,w:55,d:23,h:11,levels:2,brick:false});
-  offices({x:-50,z:-28,w:49,d:18,h:9,levels:1,brick:true});
-  offices({x:44,z:-43,w:36,d:17,h:7,levels:1,brick:true});
-  offices({x:-2,z:54,w:49,d:11,h:6,levels:1});
+  // A sequence of separated low technical blocks, rather than two enormous
+  // generic office slabs. Positions remain approximate pending a scaled plan.
+  offices({x:-44,z:39,w:43,d:14,h:8,levels:2,brick:false});
+  offices({x:31,z:45,w:33,d:13,h:7,levels:1,brick:false});
+  offices({x:-46,z:-16,w:30,d:12,h:7,levels:1,brick:true});
+  offices({x:53,z:-43,w:21,d:11,h:6,levels:1,brick:true});
+  offices({x:-11,z:54,w:22,d:10,h:5,levels:1});
   for(const [x,z,w,d,h] of [[-78,41,15,12,6],[-72,-46,13,11,6],[-15,-55,13,12,7],[66,57,18,14,6]]){
     box(w,h,d,x,7.6+h/2,z,'brick','service-annex');
     box(w+.6,.5,d+.8,x,7.9+h,z,'roof','service-annex-roof');
@@ -159,8 +161,10 @@ export function buildSaturnIP5(root) {
   // turquoise shafts and little horizontal cornices clearly seen in IMG_6181.
   function tallPedestal(cx,cz,baseRadius,height,secondary=false){
     const floor=7.7,n=secondary?4:6;
-    cylinder(baseRadius,baseRadius+1.1,height*.84,cx,floor+height*.42,cz,
-      'brick','antenna-pedestal',12);
+    // Photographs: pale sand concrete, a 12-sided tapered vertical cylinder,
+    // strong stepped cornices at each storey, and narrow turquoise glazing.
+    cylinder(baseRadius*.88,baseRadius+1.1,height*.84,cx,floor+height*.42,cz,
+      'concrete','antenna-pedestal',12);
     for(let i=0;i<n;i++){
       const y=floor+2+(i+1)*height*.78/(n+1);
       cylinder(baseRadius+.85,baseRadius+.65,.70,cx,y,cz,'trim','tower-horizontal-cornice',12);
@@ -181,6 +185,26 @@ export function buildSaturnIP5(root) {
     cylinder(baseRadius+1.4,baseRadius+1.4,.8,cx,crownY,cz,'trim','antenna-tower-crown',12);
     cylinder(baseRadius*.8,baseRadius*.9,height*.16,cx,crownY+height*.08,cz,'steel','antenna-yoke-base',12);
     box(baseRadius*2+4,1.0,baseRadius*2+3,cx,floor+height+2,cz,'shadow','yoke-platform');
+    // Top bearing machinery is set on a massive rectangular cantilever deck.
+    // The older model lacked this characteristic silhouette.
+    box(baseRadius*2+8,1.25,baseRadius*2+9,cx,floor+height+1.3,cz,'concrete','cantilever-bearing-deck');
+    for(const side of [-1,1]){
+      box(baseRadius*2+7,.2,.18,cx,floor+height+2.2,cz+side*(baseRadius+4),'railing','upper-deck-guardrail');
+      for(let j=-3;j<=3;j++)
+        rod([cx+j*2.3,floor+height+2,cz+side*(baseRadius+4)],
+            [cx+j*2.3,floor+height+3.4,cz+side*(baseRadius+4)],.07,'railPaint','upper-deck-railing-post');
+    }
+    // Narrow vertical window strips run down the photograph-facing sides.
+    for(let k=0;k<n;k++){
+      const yy=floor+4+k*(height*.77/n);
+      for(const a of [0,Math.PI/2,Math.PI,3*Math.PI/2]){
+        const radius=baseRadius*.94;
+        const glass=box(1.05,Math.max(1.9,height*.77/n*.55),.13,
+          cx+Math.cos(a)*radius,yy,cz+Math.sin(a)*radius,
+          'window','vertical-glass-block-window');
+        glass.rotation.y=-a;
+      }
+    }
     // Visible balcony rails on top of the pedestal.
     for(const side of [-1,1])for(let k=-2;k<=2;k++){
       const z=cz+k*baseRadius*.42;
@@ -283,6 +307,13 @@ export function buildSaturnIP5(root) {
     return group;
   }
 
+  // Ground-floor wing is physically integrated with the main tower, with
+  // broad flat canopies and large green glass-block/service openings.
+  box(33,5,14,43,10.1,-16,'concrete','main-tower-base-pavilion');
+  box(37,.9,16,43,13.1,-16,'concrete','pavilion-cantilever-roof');
+  for(let i=0;i<8;i++)
+    box(2.8,2.6,.12,29+i*4,10,-8.85,'window','green-glass-block-facade');
+  box(2.9,3.4,.2,53,9.6,-8.8,'steelDark','pavilion-service-door');
   const mainHeight=tallPedestal(43,-16,7.2,34,false);
   parabolicAntenna({x:43,z:-16,baseHeight:mainHeight,azimuth:.15,tilt:.18,
     name:'П-200 · основная башенная антенна Ø25 м'});
@@ -350,11 +381,11 @@ export function buildSaturnIP5(root) {
     add(mesh,'instanced-antenna-steel',batch.parent);
   }
   root.userData.saturnModel={
-    version:'1.1-photo-2026-10-27',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
+    version:'1.2-layout-and-tower-2026-10-28',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
     sourceFolder:'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk',
     photosUsed:['IMG_6181.JPG','IMG_5342.JPG','IMG_3645.JPG','ajU0...jpg','IMG_7396.jpeg','IMG_7403.jpeg','IMG_5711.jpeg','IMG_2352.jpeg','IMG_5528.jpeg','IMG_5863.jpeg','IMG_5861.jpeg'],
     antennaType:'П-200',largeAntennaCount:2,dishDiameterMetres:25,
-    profile:'two 25m parabolic open-grid reflector dishes, ring/spoke mesh and structural ribs; stepped towers; white radome; technical offices',
+    profile:'two 25m open-grid dishes, concrete ring-storey towers with turquoise window strips and cantilever bearing decks; integrated ground-floor pavilion; separated service blocks',
     modelReliability:'photo-informed, structure dimensions and footprint illustrative',
     featureCounts:features,primitiveCount:primitives,meshCount:objects.length,instancedFrameBatches:rodBatches.size,
     confidence:'relative layout from aerial photograph, approximate 3-anchor external geolocation'
