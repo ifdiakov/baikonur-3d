@@ -1,0 +1,1008 @@
+{
+  "version": 1,
+  "designStatus": "historical-scheme-interpretation",
+  "description": "Железнодорожная и автодорожная инфраструктура, схематически оцифрованная из исходного плана комплекса Байконур 3993×3208. Точные координаты, длины и стрелочные переводы не подтверждены; стрелки, кривые и примыкающие пути показаны как музейная реконструкция.",
+  "planCoordinateSystem": "1300×1045 schematic-pixel coordinates; map-to-world scale supplied by museum",
+  "provenance": [
+    {
+      "name": "Схема объектов комплекса Байконур",
+      "type": "user-supplied historical primary source",
+      "ref": "baykonur-plan.png",
+      "confidence": "schematic positions"
+    },
+    {
+      "name": "Служебная схема сфотографированная в экспедиции",
+      "type": "user-supplied supplemental reference",
+      "ref": "assets/service-photo-rectified.b64",
+      "confidence": "topological support"
+    }
+  ],
+  "routes": {
+    "road": [
+      {
+        "id": "r-nw-center",
+        "class": "arterial",
+        "points": [
+          [
+            18,
+            99
+          ],
+          [
+            100,
+            95
+          ],
+          [
+            186,
+            101
+          ],
+          [
+            268,
+            154
+          ],
+          [
+            352,
+            208
+          ],
+          [
+            426,
+            258
+          ],
+          [
+            501,
+            336
+          ],
+          [
+            567,
+            404
+          ],
+          [
+            679,
+            515
+          ],
+          [
+            680,
+            748
+          ],
+          [
+            674,
+            861
+          ],
+          [
+            669,
+            911
+          ]
+        ]
+      },
+      {
+        "id": "r-center-east",
+        "class": "arterial",
+        "points": [
+          [
+            679,
+            515
+          ],
+          [
+            757,
+            478
+          ],
+          [
+            845,
+            432
+          ],
+          [
+            940,
+            377
+          ],
+          [
+            1034,
+            305
+          ],
+          [
+            1146,
+            282
+          ],
+          [
+            1295,
+            262
+          ]
+        ]
+      },
+      {
+        "id": "r-center-west",
+        "class": "arterial",
+        "points": [
+          [
+            679,
+            515
+          ],
+          [
+            680,
+            421
+          ],
+          [
+            651,
+            349
+          ],
+          [
+            609,
+            299
+          ],
+          [
+            602,
+            239
+          ]
+        ]
+      },
+      {
+        "id": "r-nw-perimeter",
+        "class": "service",
+        "points": [
+          [
+            25,
+            84
+          ],
+          [
+            111,
+            87
+          ],
+          [
+            179,
+            86
+          ],
+          [
+            250,
+            143
+          ],
+          [
+            348,
+            201
+          ],
+          [
+            429,
+            259
+          ]
+        ]
+      },
+      {
+        "id": "r-nw-inner",
+        "class": "service",
+        "points": [
+          [
+            170,
+            83
+          ],
+          [
+            201,
+            98
+          ],
+          [
+            264,
+            157
+          ],
+          [
+            329,
+            204
+          ],
+          [
+            414,
+            259
+          ]
+        ]
+      },
+      {
+        "id": "r-west-loop",
+        "class": "service",
+        "points": [
+          [
+            503,
+            336
+          ],
+          [
+            493,
+            290
+          ],
+          [
+            440,
+            248
+          ],
+          [
+            353,
+            193
+          ]
+        ]
+      },
+      {
+        "id": "r-center-bypass",
+        "class": "service",
+        "points": [
+          [
+            675,
+            509
+          ],
+          [
+            745,
+            543
+          ],
+          [
+            828,
+            559
+          ],
+          [
+            958,
+            576
+          ],
+          [
+            1110,
+            531
+          ],
+          [
+            1290,
+            497
+          ]
+        ]
+      },
+      {
+        "id": "r-south-west",
+        "class": "arterial",
+        "points": [
+          [
+            677,
+            856
+          ],
+          [
+            568,
+            882
+          ],
+          [
+            444,
+            864
+          ],
+          [
+            322,
+            839
+          ],
+          [
+            179,
+            797
+          ],
+          [
+            19,
+            730
+          ]
+        ]
+      },
+      {
+        "id": "r-south-east",
+        "class": "arterial",
+        "points": [
+          [
+            677,
+            856
+          ],
+          [
+            786,
+            819
+          ],
+          [
+            943,
+            763
+          ],
+          [
+            1106,
+            717
+          ],
+          [
+            1283,
+            681
+          ]
+        ]
+      },
+      {
+        "id": "r-city",
+        "class": "urban",
+        "points": [
+          [
+            668,
+            911
+          ],
+          [
+            645,
+            934
+          ],
+          [
+            626,
+            965
+          ],
+          [
+            645,
+            996
+          ],
+          [
+            689,
+            1010
+          ]
+        ]
+      },
+      {
+        "id": "r-31-service",
+        "class": "service",
+        "points": [
+          [
+            1040,
+            301
+          ],
+          [
+            1041,
+            256
+          ],
+          [
+            1042,
+            228
+          ],
+          [
+            1045,
+            209
+          ]
+        ]
+      },
+      {
+        "id": "r-zenit-service",
+        "class": "service",
+        "points": [
+          [
+            1147,
+            282
+          ],
+          [
+            1140,
+            312
+          ],
+          [
+            1125,
+            336
+          ]
+        ]
+      },
+      {
+        "id": "r-81-access",
+        "class": "service",
+        "points": [
+          [
+            196,
+            106
+          ],
+          [
+            174,
+            85
+          ],
+          [
+            135,
+            81
+          ],
+          [
+            110,
+            80
+          ]
+        ]
+      },
+      {
+        "id": "r-200-access",
+        "class": "service",
+        "points": [
+          [
+            354,
+            209
+          ],
+          [
+            331,
+            174
+          ],
+          [
+            302,
+            149
+          ],
+          [
+            270,
+            134
+          ]
+        ]
+      },
+      {
+        "id": "r-jubilee",
+        "class": "service",
+        "points": [
+          [
+            680,
+            419
+          ],
+          [
+            647,
+            310
+          ],
+          [
+            612,
+            225
+          ],
+          [
+            585,
+            145
+          ],
+          [
+            576,
+            106
+          ]
+        ]
+      },
+      {
+        "id": "r-complex-110",
+        "class": "service",
+        "points": [
+          [
+            681,
+            416
+          ],
+          [
+            677,
+            354
+          ],
+          [
+            664,
+            310
+          ],
+          [
+            649,
+            280
+          ]
+        ]
+      },
+      {
+        "id": "r-complex-1",
+        "class": "service",
+        "points": [
+          [
+            636,
+            327
+          ],
+          [
+            673,
+            348
+          ],
+          [
+            700,
+            366
+          ]
+        ]
+      },
+      {
+        "id": "r-airfield-gate",
+        "class": "service",
+        "points": [
+          [
+            579,
+            116
+          ],
+          [
+            634,
+            116
+          ],
+          [
+            683,
+            104
+          ]
+        ]
+      }
+    ],
+    "rail": [
+      {
+        "id": "t-west-center",
+        "role": "mainline",
+        "points": [
+          [
+            16,
+            95
+          ],
+          [
+            103,
+            97
+          ],
+          [
+            176,
+            100
+          ],
+          [
+            248,
+            148
+          ],
+          [
+            356,
+            214
+          ],
+          [
+            431,
+            262
+          ],
+          [
+            504,
+            337
+          ],
+          [
+            567,
+            408
+          ],
+          [
+            639,
+            484
+          ],
+          [
+            678,
+            513
+          ]
+        ],
+        "confidence": "schematic"
+      },
+      {
+        "id": "t-center-south",
+        "role": "mainline",
+        "points": [
+          [
+            678,
+            513
+          ],
+          [
+            677,
+            632
+          ],
+          [
+            675,
+            747
+          ],
+          [
+            675,
+            861
+          ],
+          [
+            668,
+            915
+          ],
+          [
+            669,
+            952
+          ],
+          [
+            687,
+            985
+          ]
+        ],
+        "confidence": "schematic"
+      },
+      {
+        "id": "t-center-east",
+        "role": "mainline",
+        "points": [
+          [
+            678,
+            512
+          ],
+          [
+            756,
+            470
+          ],
+          [
+            836,
+            432
+          ],
+          [
+            939,
+            369
+          ],
+          [
+            1040,
+            294
+          ],
+          [
+            1146,
+            282
+          ],
+          [
+            1292,
+            262
+          ]
+        ],
+        "confidence": "schematic"
+      },
+      {
+        "id": "t-central-north",
+        "role": "branch",
+        "points": [
+          [
+            563,
+            407
+          ],
+          [
+            601,
+            363
+          ],
+          [
+            643,
+            322
+          ],
+          [
+            654,
+            285
+          ],
+          [
+            618,
+            245
+          ]
+        ],
+        "confidence": "schematic"
+      },
+      {
+        "id": "t-center-west-south",
+        "role": "branch",
+        "points": [
+          [
+            675,
+            861
+          ],
+          [
+            566,
+            881
+          ],
+          [
+            438,
+            862
+          ],
+          [
+            312,
+            828
+          ],
+          [
+            166,
+            772
+          ],
+          [
+            20,
+            718
+          ]
+        ],
+        "confidence": "schematic"
+      },
+      {
+        "id": "t-center-south-east",
+        "role": "branch",
+        "points": [
+          [
+            675,
+            861
+          ],
+          [
+            788,
+            811
+          ],
+          [
+            935,
+            758
+          ],
+          [
+            1110,
+            701
+          ],
+          [
+            1290,
+            680
+          ]
+        ],
+        "confidence": "schematic"
+      },
+      {
+        "id": "t-200-feeder",
+        "role": "branch",
+        "points": [
+          [
+            190,
+            94
+          ],
+          [
+            239,
+            138
+          ],
+          [
+            269,
+            155
+          ],
+          [
+            279,
+            140
+          ]
+        ],
+        "confidence": "diagrammatic connection"
+      },
+      {
+        "id": "t-81-feeder",
+        "role": "branch",
+        "points": [
+          [
+            100,
+            94
+          ],
+          [
+            133,
+            112
+          ],
+          [
+            165,
+            105
+          ],
+          [
+            182,
+            81
+          ]
+        ],
+        "confidence": "diagrammatic connection"
+      },
+      {
+        "id": "t-r7-feeder",
+        "role": "branch",
+        "points": [
+          [
+            640,
+            322
+          ],
+          [
+            683,
+            353
+          ],
+          [
+            701,
+            366
+          ]
+        ],
+        "confidence": "schematic connection"
+      },
+      {
+        "id": "t-250-feeder",
+        "role": "branch",
+        "points": [
+          [
+            654,
+            283
+          ],
+          [
+            633,
+            254
+          ],
+          [
+            630,
+            223
+          ]
+        ],
+        "confidence": "diagrammatic connection"
+      },
+      {
+        "id": "t-31-feeder",
+        "role": "branch",
+        "points": [
+          [
+            1040,
+            294
+          ],
+          [
+            1040,
+            246
+          ],
+          [
+            1019,
+            224
+          ]
+        ],
+        "confidence": "diagrammatic connection"
+      },
+      {
+        "id": "t-zenit-feeder",
+        "role": "branch",
+        "points": [
+          [
+            1146,
+            282
+          ],
+          [
+            1128,
+            307
+          ],
+          [
+            1131,
+            333
+          ]
+        ],
+        "confidence": "diagrammatic connection"
+      },
+      {
+        "id": "t-jubilee-service",
+        "role": "industrial",
+        "points": [
+          [
+            654,
+            282
+          ],
+          [
+            611,
+            201
+          ],
+          [
+            585,
+            145
+          ],
+          [
+            577,
+            107
+          ]
+        ],
+        "confidence": "schematic location"
+      },
+      {
+        "id": "t-local-mik",
+        "role": "industrial",
+        "points": [
+          [
+            620,
+            445
+          ],
+          [
+            600,
+            419
+          ],
+          [
+            579,
+            407
+          ]
+        ],
+        "confidence": "diagrammatic connection"
+      }
+    ]
+  },
+  "yards": [
+    {
+      "id": "st-zapadnaya",
+      "label": "ст. Западная",
+      "x": 132,
+      "y": 115,
+      "railRoute": "t-west-center",
+      "tracks": 3,
+      "length": 230,
+      "confidence": "label visible on original scheme"
+    },
+    {
+      "id": "st-gornaya",
+      "label": "ст. Горная",
+      "x": 486,
+      "y": 292,
+      "railRoute": "t-west-center",
+      "tracks": 3,
+      "length": 240,
+      "confidence": "label visible on original scheme"
+    },
+    {
+      "id": "st-peschanaya",
+      "label": "ст. Песчаная",
+      "x": 549,
+      "y": 400,
+      "railRoute": "t-west-center",
+      "tracks": 4,
+      "length": 275,
+      "confidence": "label visible on original scheme"
+    },
+    {
+      "id": "st-razyezd",
+      "label": "Разъезд (по схеме)",
+      "x": 675,
+      "y": 545,
+      "railRoute": "t-center-south",
+      "tracks": 3,
+      "length": 235,
+      "confidence": "rail passing-loop interpretation"
+    },
+    {
+      "id": "st-vostochnaya",
+      "label": "ст. Восточная",
+      "x": 1029,
+      "y": 287,
+      "railRoute": "t-center-east",
+      "tracks": 3,
+      "length": 260,
+      "confidence": "label visible on original scheme"
+    },
+    {
+      "id": "st-tyuratam",
+      "label": "станционный район Тюратам",
+      "x": 671,
+      "y": 972,
+      "railRoute": "t-center-south",
+      "tracks": 4,
+      "length": 255,
+      "confidence": "named town, exact station footprint requires verification"
+    }
+  ],
+  "turnoutPoints": [
+    {
+      "id": "switch-nw",
+      "railRoute": "t-west-center",
+      "x": 254,
+      "y": 150
+    },
+    {
+      "id": "switch-west-station",
+      "railRoute": "t-west-center",
+      "x": 485,
+      "y": 309
+    },
+    {
+      "id": "switch-central",
+      "railRoute": "t-center-south",
+      "x": 677,
+      "y": 515
+    },
+    {
+      "id": "switch-north",
+      "railRoute": "t-central-north",
+      "x": 636,
+      "y": 325
+    },
+    {
+      "id": "switch-east",
+      "railRoute": "t-center-east",
+      "x": 1040,
+      "y": 294
+    },
+    {
+      "id": "switch-zenit",
+      "railRoute": "t-center-east",
+      "x": 1145,
+      "y": 282
+    },
+    {
+      "id": "switch-south",
+      "railRoute": "t-center-south",
+      "x": 675,
+      "y": 860
+    },
+    {
+      "id": "switch-jubilee",
+      "railRoute": "t-jubilee-service",
+      "x": 605,
+      "y": 198
+    }
+  ],
+  "facilityDriveways": [
+    "1",
+    "31",
+    "45",
+    "81",
+    "200",
+    "110",
+    "112",
+    "250",
+    "251",
+    "254",
+    "17",
+    "2А",
+    "95",
+    "97",
+    "90",
+    "92",
+    "175",
+    "250А",
+    "113",
+    "132",
+    "241",
+    "200",
+    "89",
+    "70",
+    "163"
+  ],
+  "realismNotes": {
+    "historic": "Key corridor order, branching topology and station names are based on the photographed/historical Baikonur diagram.",
+    "reconstruction": "Junction radii, turnout blades, yard track counts, simplified service roads and low station buildings are interpretive museum geometry.",
+    "future": "Digitize branch geometry more precisely from full-resolution source and georeference against surveyed satellite imagery."
+  }
+}
