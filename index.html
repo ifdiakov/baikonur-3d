@@ -553,7 +553,7 @@ function displayHistoricalEvent(e){
  document.getElementById('timelineEventDescription').textContent=e.description;
  const source=document.getElementById('timelineEventSource');source.href=e.source;source.textContent='ПОДТВЕРЖДЕНИЕ ДАТЫ ↗';
  const siteButton=document.getElementById('timelineGoToSite');
- const found=objects.findIndex(o=>(o.record.number||o.name.match(/№\\s*([\\dА-ЯA-Z]+)/u)?.[1])===e.site);
+ const found=objects.findIndex(o=>(o.record.number||o.name.match(/№\s*([\dА-ЯA-Z]+)/u)?.[1])===e.site);
  siteButton.hidden=found<0;
  if(found>=0)siteButton.onclick=()=>{focus(found);timelineEventPanel.hidden=true};
  timelineSelected.textContent=displayEventDate(e.date)+' · '+e.title;
