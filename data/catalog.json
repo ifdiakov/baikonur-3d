@@ -1393,15 +1393,15 @@
       "name": "Площадка № 250",
       "x": 635,
       "y": 220,
-      "model": "launch",
-      "firstYear": null,
+      "model": "ukss-architectural-v1",
+      "firstYear": 1983,
       "status": "label-read",
       "positionBasis": "visual-reference-plan",
       "sources": [
         "original-plan-3993x3208",
         "service-photo-2026"
       ],
-      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка. Функция сверена по публичным источникам, положение на 3D-плане предварительное.",
+      "note": "Модель построена по 16 фотографиям из архива RocketTrip: отведённая башня обслуживания, заправочная мачта, стартовый мост и поперечный газоотводный лоток. Размеры и ориентация условные; позиция сохранена по исходной схеме.",
       "purpose": "Универсальный комплекс стенд-старт (17П31) для испытаний и старта сверхтяжёлой ракеты «Энергия».",
       "number": "250",
       "titleShort": "УКСС «Энергия»",
@@ -1414,7 +1414,99 @@
         "https://baikonurtour.ru/program.html"
       ],
       "evidenceLevel": "public-source-confirmed-function",
-      "positionVerified": false
+      "positionVerified": false,
+      "architectureReferences": [
+        {
+          "label": "Фотоархив площадки №250 · 16 изображений",
+          "url": "https://drive.google.com/drive/folders/1e8kuX4iVjO6N5nHknJ8zKJClJCpLv7Ku"
+        },
+        {
+          "label": "Начало автономных испытаний оборудования УКСС в 1983 году · воспоминания сотрудников НИИХИММАШ",
+          "url": "https://kpopov.ru/books/zagorsk.htm"
+        }
+      ],
+      "photoArchive": [
+        {
+          "driveId": "1dlQK_xw4B7F9lQ_WYKFs25tPfYe4Gigw",
+          "fileName": "IMG_2898.jpeg",
+          "subject": "Осветительная мачта и башня обслуживания на заднем плане"
+        },
+        {
+          "driveId": "1CVG5x75xmgeosA0pqm_K4BKlxynWQzFd",
+          "fileName": "IMG_2906.jpeg",
+          "subject": "Стартовый настил, трубопроводы и решётчатые эстакады"
+        },
+        {
+          "driveId": "1cvSW3vaGuFOGwsdn8fb1IBpFUWDjfyUP",
+          "fileName": "IMG_2893.jpeg",
+          "subject": "Рельсы, ограждения и основание мачты"
+        },
+        {
+          "driveId": "1AmjlVfcOa4inEvzafttm4ZYHCptI8KgJ",
+          "fileName": "IMG_3883.WEBP",
+          "subject": "Общая компоновка и отведённая башня обслуживания"
+        },
+        {
+          "driveId": "1QCwm9Oguv24sQQVup_f62tBAHc_yvV24",
+          "fileName": "IMG_2309.WEBP",
+          "subject": "Заправочная мачта, прожекторные экраны и пусковая установка"
+        },
+        {
+          "driveId": "1-EOgumYcYZt2ZuM13NsHcZsy_0iEsjZ4",
+          "fileName": "IMG_2300.WEBP",
+          "subject": "Исторический вид «Энергии» и заправочной мачты"
+        },
+        {
+          "driveId": "1qW7rWhgdR0UzWVTuYfO2H30gF4FeeQ6N",
+          "fileName": "IMG_2307.WEBP",
+          "subject": "Исторический вид стартового сооружения"
+        },
+        {
+          "driveId": "1iAemwhf0jl1NB92goZuvS19o8Vvo4O8s",
+          "fileName": "IMG_0998 2.WEBP",
+          "subject": "Общий вид стартового сооружения (дубль ракурса)"
+        },
+        {
+          "driveId": "1D44twf9xfHcLcChtJJjI2lgfUMpUwCfZ",
+          "fileName": "IMG_0996.WEBP",
+          "subject": "Панорама комплекса"
+        },
+        {
+          "driveId": "1eREnKaIoBYmJPLXCrh6VMJH38fzDLyQv",
+          "fileName": "IMG_0998.WEBP",
+          "subject": "Стартовый мост, опоры, мачта и башня у ракеты"
+        },
+        {
+          "driveId": "1LvhnErTWklz5uj44O9T7JtKU6OJXSNZe",
+          "fileName": "IMG_1002.JPG",
+          "subject": "Бетонная облицовка лотка и приямок"
+        },
+        {
+          "driveId": "1MV4CeZbCyZFRNoD6oqE2iRUMjh3rQfox",
+          "fileName": "IMG_3555.jpeg",
+          "subject": "Окружение комплекса и периметр"
+        },
+        {
+          "driveId": "1g36RTy9pvMeKgUNKbWkZhzEDgtvkQvuk",
+          "fileName": "IMG_1004.JPG",
+          "subject": "Башня обслуживания: проёмы, боковая обшивка и рельсовые тележки"
+        },
+        {
+          "driveId": "1C4bsQUJdW7CZX-1GlSLub-1X5Tpd0Fmi",
+          "fileName": "IMG_2302.WEBP",
+          "subject": "Исторический вид мачты и рабочих консолей"
+        },
+        {
+          "driveId": "1jFA9lJcaR6WEcpwuPUIpyc8vGOaZgmGc",
+          "fileName": "IMG_2894.jpeg",
+          "subject": "Откосы, швы бетонных плит и вода в приямке"
+        },
+        {
+          "driveId": "1tH4zNQ3STaOI-Bu4rUadVpWcwrrxAP1w",
+          "fileName": "IMG_7999.jpeg",
+          "subject": "Фасад отведённой башни обслуживания"
+        }
+      ]
     },
     {
       "id": "pad-250а",
