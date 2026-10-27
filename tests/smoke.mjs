@@ -95,11 +95,15 @@ assert.deepEqual(terrainInfo.terrain?.detailResolution,[1536,1236],'Local satell
 assert.ok(terrainInfo.terrainExtent>=100000,'The desert may not terminate at the historical map edge');
 const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
 console.log('GAGARIN START',JSON.stringify(gagarin));
-assert.equal(gagarin.version,'1.0','Pad 1 must use the dedicated detailed reconstruction');
-for(const component of ['flame-trench','tulip-arm','service-gantry','rail-approach','lighting-tower','utility-building','cable-mast']){
- assert.ok(gagarin.featureCounts[component]>=(component==='flame-trench'?1:2),'Pad 1 lacks reconstructed component '+component);
+assert.equal(gagarin.version,'2.0','Pad 1 must use the rebuilt photo-referenced reconstruction');
+assert.equal(gagarin.archiveFolder,'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC','Model must be grounded in dedicated user Drive folder');
+for(const [component,min] of [['flame-channel',1],['flame-duct-bank',2],['tulip-arm',4],['gantry-inclined-main',4],['tower-main-leg',4],['tower-service-deck',6],['rail-approach',2],['lighting-tower',4],['utility-building',3],['yellow-counterweight',4]]){
+ assert.ok((gagarin.featureCounts[component]||0)>=min,'Rebuilt Pad 1 lacks photo-referenced component '+component);
 }
-assert.ok(gagarin.meshCount>220,'Realistic Pad 1 must contain substantially more than a box-mockup');
+assert.ok(gagarin.meshCount>450,'Photo-based rebuild must contain substantial structural detail');
+const padPlacement=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinPlacement);
+assert.deepEqual(padPlacement.mapPixel,[699,365],'Rebuild must not move Site 1 away from original map location');
+assert.ok(Math.abs(padPlacement.rotationY+Math.PI/2)<0.0001,'Gas channel must be rotated due east (+X)');
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),false,'No permanently staged rocket at closed Pad 1');
 const count=await page.evaluate(()=>window.__BAIKONUR_QA.stats().sites);
 assert.ok(count>=90,'The museum must load the extended site catalogue');
@@ -144,7 +148,7 @@ await page.locator('#sitesAccordion > summary').click();
 assert.equal(await accordion.evaluate(el=>el.open),false,'Site catalogue stays independently collapsible after filtering');
 await page.locator('#detailMore').click();assert.equal(await page.locator('#infoExtra').evaluate(e=>e.style.display),'block');
 assert.ok((await page.locator('#infoExtra a').count())>=1,'At least one original historical source must be linked in a site detail');
-assert.ok((await page.locator('#infoExtra a[href*="drive.google.com"]').count())>=4,'Curated RocketTrip Drive references must be available from Pad 1 details');
+assert.ok((await page.locator('#infoExtra a[href*="drive.google.com"]').count())>=18,'Every new reference in the dedicated Drive folder must be accessible from Site 1');
 assert.ok((await page.locator('#infoExtra').textContent()).includes('атрибуция площадки уточняется'),'Unconfirmed Drive shots must carry an attribution warning');
 const terrain=await page.evaluate(()=>({proceduralGround:document.querySelector('canvas')!==null,flag:document.getElementById('view')!==null,gridElements:document.querySelectorAll('canvas').length}));
 console.log('TERRAIN',JSON.stringify(terrain));
@@ -166,4 +170,4 @@ console.log('MOBILE',JSON.stringify(mobile));
 assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.logoVisible,'Floating timeline and expanding menu must fit mobile');
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
-await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: Site 1 detailed trusses/tulips/trench and optional rocket, Drive refs, 104 sites, history and zoom layers.');
+await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: Site 1 photo reconstruction v2, east-facing duct, central tower, inclined trusses, 18 Drive references, 104 sites.');
