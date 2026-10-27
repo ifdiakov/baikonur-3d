@@ -47,19 +47,15 @@ export function sampleSteppe(x,z,detail=1){
   const panDry=smooth(.46,.66,macro*.56+fans*.44)*smooth(.53,.76,lichen);
   // Dark laminated pebble fields and stony hills interrupt the light loess.
   const stone=smooth(.51,.74,fans*.48+macro*.32+fineClay*.20)*(9+grain*17);
-  // Narrow erosion / runoff marks with variegated edges.
-  const washPhase=x/173+z/311+Math.sin(z/730)*1.35+(fans-.5)*5.1;
-  const channel=Math.abs(Math.sin(washPhase));
-  const wash=(1-smooth(.03,.135,channel))*
-     smooth(.36,.69,macro*.44+fineClay*.56)*(.55+.45*lichen);
-  // Pale curvilinear salt flanks; avoid the impression of hand-drawn roads.
-  const levee=(1-smooth(.10,.21,Math.abs(Math.sin(washPhase+.18))))*(1-wash);
-  // A sparse beige-gray semi-desert floor, not saturated yellow sand.
+  // Nonperiodic erosion is represented by irregular low-contrast clay patches,
+  // not sinusoidal channels, wash bands or wave-like ridges.
+  const dryClay=noise(x,z,680,41)*.52+noise(x,z,225,43)*.31+noise(x,z,95,47)*.17;
+  const weathered=smooth(.62,.83,dryClay)*10;
+  const transition=smooth(.30,.58,dryClay)*5;
   const loess=panDry*8;
-  const dune=(detail>0?Math.sin(x/52-z/115+fans*8)*(fineClay-.4)*2.7:0);
-  const rr=171+relief+micros+salt+loess+levee*9-stone*1.15-wash*27+dune;
-  const gg=156+relief*.88+micros*.87+salt*.95+loess*.82+levee*8-stone*1.25-wash*26+dune*.68;
-  const bb=132+relief*.69+micros*.69+salt*.86+loess*.67+levee*6-stone*1.02-wash*23+dune*.44;
+  const rr=171+relief+micros+salt+loess-stone*1.15-weathered+transition;
+  const gg=156+relief*.88+micros*.87+salt*.95+loess*.82-stone*1.25-weathered*.92+transition*.87;
+  const bb=132+relief*.69+micros*.69+salt*.86+loess*.67-stone*1.02-weathered*.81+transition*.68;
   return [
     clamp(Math.round(rr),0,255),clamp(Math.round(gg),0,255),
     clamp(Math.round(bb),0,255)
