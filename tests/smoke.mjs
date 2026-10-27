@@ -160,8 +160,19 @@ assert.deepEqual(padPlacement.mapPixel,[699,365],'Site 1 must remain on its orig
 assert.ok(Math.abs(padPlacement.rotationY+Math.PI/2)<.0001,'Flame duct must face east');
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),false,'No permanently staged rocket at closed Pad 1');
 const overviewScale=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
-assert.equal(overviewScale.modelScale,.5,'Structures must use the smaller common display scale');
-assert.equal(overviewScale.gagarinScale,.215/1.5,'Pad 1 must be 1.5 times smaller at the requested scale');
+assert.equal(overviewScale.modelScale,.28,'Schematic pad models must be reduced to 28% of their model-space size');
+assert.ok(overviewScale.sceneScale>2.3,'Cosmodrome extent must be more than doubled');
+assert.equal(overviewScale.gagarinScale,.43*.28/1.5,'Pad 1 must retain its detailed model at reduced world scale');
+const transport=overviewScale.transport;
+console.log('TRANSPORT NETWORK',JSON.stringify(transport));
+assert.equal(transport.roadRoutes,18,'Road system should use historical-schema corridors');
+assert.equal(transport.railRoutes,14,'Rail layout should include main corridors and branch sidings');
+assert.equal(transport.stationCount,6,'Render the six identified/interpretative station yards');
+assert.ok(transport.railSwitches>=18,'Rail turnouts and station throat switches must be modeled');
+assert.ok(transport.railTies>=900,'Two-rail track system must have realistic sleepers');
+assert.ok(transport.yardTracks>=11,'Stations need several diverging yard tracks');
+assert.ok(transport.facilityDriveways>=12,'Pads must connect to the main road network');
+assert.ok(transport.renderedRailLength>14000,'Render long continuously curved rail networks');
 const count=overviewScale.sites;
 assert.ok(count>=90,'The museum must load the extended site catalogue');
 assert.ok((await page.locator('.site-label').count())>=80,'Must have labels for the catalogue');
@@ -279,7 +290,7 @@ assert.equal(restored.visibleSites,overviewScale.visibleSites,'Closing Pad 1 mus
 // UKSS must use separate architecture and keep the reduced map scale on focus.
 const ukssOverview=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 assert.equal(ukssOverview.ukss.version,'1.0');
-assert.equal(ukssOverview.ukssScale,.375,'UKSS must be 1.5 times larger at the requested scale');
+assert.equal(ukssOverview.ukssScale,.5*.28*1.5,'UKSS architecture must scale with the reduced buildings');
 assert.deepEqual(ukssOverview.ukssPlacement,[635,220],'Keep Site 250 on the original schematic');
 assert.equal(ukssOverview.ukss.bridge.piers,6);
 assert.equal(ukssOverview.ukss.serviceTower.decks.length,11);
@@ -385,5 +396,5 @@ console.log('MOBILE',JSON.stringify(mobile));
 assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.logoVisible,'Floating timeline and expanding menu must fit mobile');
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
-await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: 3 cyberpunk school districts with fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
+await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 cyberpunk school districts with fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
 
