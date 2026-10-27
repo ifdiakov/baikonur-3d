@@ -75,7 +75,7 @@ export function buildSaturnIP5(root) {
       vertices.push(xx,height-.22,zz);uv.push(x/N,z/N);
       if(x<N&&z<N){
         const a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;
-        indices.push(a,b,c,b,d,c);
+        indices.push(a,c,b,b,c,d);
       }
     }
     const geo=new THREE.BufferGeometry();
