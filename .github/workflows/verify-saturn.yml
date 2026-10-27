@@ -1,0 +1,93 @@
+name: Saturn IP-5 3D model — isolated browser verification
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/saturn-ip5.js'
+      - 'data/catalog.json'
+      - 'index.html'
+      - 'tests/saturn-smoke.mjs'
+      - '.github/workflows/verify-saturn.yml'
+  workflow_dispatch:
+concurrency:
+  group: baikonur-3d-saturn-check
+  cancel-in-progress: true
+jobs:
+  saturn:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium smoke dependencies
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Start local museum webserver
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 3
+      - name: Verify Saturn model in Chromium
+        id: local
+        run: node tests/saturn-smoke.mjs 2>&1 | tee /tmp/saturn-local.log
+      - name: Await actual public GitHub Pages build
+        id: publish
+        if: always()
+        run: |
+          set -e
+          for attempt in $(seq 1 18); do
+            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?preview=saturn&check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/saturn-public.html \
+              && grep -Fq "buildSaturnIP5" /tmp/saturn-public.html \
+              && curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/saturn-ip5.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -Fq "instancedFrameBatches" \
+              && curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/data/catalog.json?check=${GITHUB_SHA}&attempt=${attempt}" | grep -Fq "saturn-ms-photo-v1"; then
+              echo "Saturn model and 98-site catalog are published"
+              exit 0
+            fi
+            echo "Waiting for current Saturn public asset: attempt ${attempt}"
+            sleep 8
+          done
+          echo "Public Saturn assets not confirmed";exit 1
+      - name: Verify PUBLIC Saturn model in Chromium
+        id: publicbrowser
+        if: always() && steps.publish.outcome == 'success'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+        run: node tests/saturn-smoke.mjs 2>&1 | tee /tmp/saturn-public.log
+      - name: Archive screenshots and reproducible source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: saturn-ip5-qa
+          path: |
+            qa-saturn-ip5.png
+            index.html
+            src/
+            data/*.json
+            assets/
+            baykonur-plan.png
+          if-no-files-found: ignore
+      - name: Write model QA outcome
+        if: always()
+        env:
+          LOCAL: ${{ steps.local.outcome }}
+          PUBLIC: ${{ steps.publish.outcome }}
+          PUBLIC_BROWSER: ${{ steps.publicbrowser.outcome }}
+          TARGET: ${{ github.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-saturn.json",JSON.stringify({targetCommit:process.env.TARGET,local:process.env.LOCAL,public:process.env.PUBLIC,publicBrowser:process.env.PUBLIC_BROWSER,runId:process.env.RUN_ID,checkedAt:new Date().toISOString()},null,2)+"\n")'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/qa-saturn.json
+          git diff --cached --quiet && exit 0
+          git commit -m "ci: record isolated Saturn IP-5 3D QA"
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 4
+          done
+          exit 1
