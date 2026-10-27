@@ -48,5 +48,17 @@ assert.ok((await page.locator('.detail-card:visible').count())>0,'Level 4: on-si
 assert.equal(await page.locator('#title').textContent(),'Площадка № 1 — Гагаринский старт');
 await page.locator('#detailMore').click();assert.equal(await page.locator('#infoExtra').evaluate(e=>e.style.display),'block');
 await page.screenshot({path:'qa-details.png'});
+await page.setViewportSize({width:390,height:844});
+await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));
+await page.waitForTimeout(300);
+const mobile=await page.evaluate(()=>{
+ const dock=document.querySelector('#timeDock').getBoundingClientRect();
+ const sidebar=document.querySelector('#ui').getBoundingClientRect();
+ const logo=document.querySelector('.rockettrip-logo').getBoundingClientRect();
+ return {dockFits:Math.abs(dock.bottom-innerHeight)<1,dockWidth:dock.width,sidebarEndsAboveDock:sidebar.bottom<=dock.top+2,logoVisible:logo.width>100&&logo.height>35};
+});
+console.log('MOBILE',JSON.stringify(mobile));
+assert.ok(mobile.dockFits&&mobile.dockWidth>=389&&mobile.sidebarEndsAboveDock&&mobile.logoVisible,'Logo and timeline must work on mobile');
+await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
 await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: logo, bottom timeline, year changes, 97 sites, 4 zoom levels, roads and card expansion.');
