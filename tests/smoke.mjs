@@ -6,9 +6,23 @@ const page=await browser.newPage({viewport:{width:1600,height:900},deviceScaleFa
 const errors=[];page.on('pageerror',err=>errors.push(String(err)));
 page.on('console',m=>{if(m.type()==='error')console.error('BROWSER CONSOLE:',m.text())});
 page.on('requestfailed',r=>console.error('FAILED REQUEST:',r.url(),r.failure()?.errorText));
-await page.goto('http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
+const museumURL=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
+await page.goto(museumURL,{waitUntil:'domcontentloaded'});
 await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA),{timeout:60000});
 await page.waitForFunction(()=>document.getElementById('roadStatus')?.textContent.includes('цветных пикселей'),{timeout:30000});
+// Verify the exact supplied brand graphic and the separate bottom history dock.
+await page.waitForFunction(()=>{const image=document.querySelector('.rockettrip-logo');return !!(image&&image.complete&&image.naturalWidth>=300)},{timeout:15000});
+const layout=await page.evaluate(()=>{
+ const dock=document.querySelector('#timeDock'),logo=document.querySelector('.rockettrip-logo'),slider=document.querySelector('#year'),sidebar=document.querySelector('#ui');
+ const d=dock.getBoundingClientRect(),l=logo.getBoundingClientRect(),s=slider.getBoundingClientRect(),m=sidebar.getBoundingClientRect();
+ return {dockBottom:Math.round(innerHeight-d.bottom),dockWidth:d.width,logoNatural:logo.naturalWidth,logoVisible:l.width>100&&l.height>40,sliderOutsideSidebar:!sidebar.contains(slider),sliderBottom:s.bottom<=d.bottom&&s.top>=d.top,sidebarAboveDock:m.bottom<=d.top+1};
+});
+console.log('LAYOUT',JSON.stringify(layout));
+assert.ok(layout.dockWidth>1500&&Math.abs(layout.dockBottom)<=1,'History dock must span the bottom of desktop view');
+assert.ok(layout.logoVisible&&layout.logoNatural>=300,'User-supplied RocketTrip logo must load and be visible');
+assert.ok(layout.sliderOutsideSidebar&&layout.sliderBottom&&layout.sidebarAboveDock,'Time slider must live outside sidebar and remain inside bottom dock');
+await page.locator('#year').fill('1961');assert.equal(await page.locator('#yearVal').textContent(),'1961','Year readout must follow timeline control');
+await page.locator('#year').fill('2026');
 const count=await page.evaluate(()=>window.__BAIKONUR_QA.stats().sites);
 assert.ok(count>=90,'The museum must load the extended site catalogue');
 assert.ok((await page.locator('.site-label').count())>=80,'Must have labels for the catalogue');
@@ -35,4 +49,4 @@ assert.equal(await page.locator('#title').textContent(),'Площадка № 1 
 await page.locator('#detailMore').click();assert.equal(await page.locator('#infoExtra').evaluate(e=>e.style.display),'block');
 await page.screenshot({path:'qa-details.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
-await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: 97 sites, traced roads, 4 zoom levels, card expansion.');
+await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: logo, bottom timeline, year changes, 97 sites, 4 zoom levels, roads and card expansion.');
