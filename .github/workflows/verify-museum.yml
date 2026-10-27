@@ -20,10 +20,12 @@ jobs:
         with:
           node-version: '22'
       - name: Install headless browser
+        id: install
         run: |
           npm install --no-save playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Start museum site
+        id: server
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 &
           sleep 2
@@ -43,9 +45,11 @@ jobs:
         env:
           SMOKE_STATUS: ${{ steps.browser.outcome }}
           TARGET_SHA: ${{ github.sha }}
+          INSTALL_STATUS: ${{ steps.install.outcome }}
+          SERVER_STATUS: ${{ steps.server.outcome }}
         run: |
           mkdir -p data
-          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-status.json",JSON.stringify({targetCommit:process.env.TARGET_SHA,status:process.env.SMOKE_STATUS||"not-run",checkedAt:new Date().toISOString(),test:"Browser-based Playwright smoke check"},null,2))'
+          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-status.json",JSON.stringify({targetCommit:process.env.TARGET_SHA,status:process.env.SMOKE_STATUS||"not-run",install:process.env.INSTALL_STATUS,server:process.env.SERVER_STATUS,checkedAt:new Date().toISOString(),test:"Browser-based Playwright smoke check"},null,2))'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/qa-status.json
