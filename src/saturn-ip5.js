@@ -18,7 +18,7 @@ import * as THREE from 'three';
  * visual reconstructions. Both giant dishes are ~25m diameter, per public
  * Roscosmos/Saturn-MS documentation. Do not use this geometry for navigation.
  */
-export function buildSaturnIP5(root) {
+export function buildSaturnIP5(root,terrain={}) {
   root.name='Пл. №23 · ИП-5 «Сатурн-МС»';
   const mat={
     steppe:new THREE.MeshStandardMaterial({color:0x9d8e76,roughness:1}),
@@ -88,11 +88,16 @@ export function buildSaturnIP5(root) {
         t=Math.max(0,Math.min(1,(radius-.83)/.38)),
         fade=1-t*t*(3-2*t),
         height=7.8*fade+r*fade;
-      vertices.push(xx,height-.22,zz);uv.push(x/N,z/N);
+      vertices.push(xx,height-.22,zz);
+      const world=root.localToWorld(new THREE.Vector3(xx,0,zz));
+      uv.push(.5+world.x/(terrain.terrainWidth||4420),.5-world.z/(terrain.terrainHeight||3553));
       const patina=(Math.sin(xx*.055+zz*.03)*.055+Math.cos(xx*.012-zz*.083)*.04+
         Math.sin(xx*.21+zz*.34)*.012)*fade;
       const color=new THREE.Color(0x9d8e76).multiplyScalar(1+patina);
-      colors.push(color.r,color.g,color.b);
+      // Feather alpha from the raised center into the exact underlying map.
+      const edgeAlpha=Math.max(0,Math.min(1,(1.12-radius)/.28));
+      const alpha=edgeAlpha*edgeAlpha*(3-2*edgeAlpha);
+      colors.push(1,1,1,alpha);
       if(x<N&&z<N){
         const a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;
         indices.push(a,c,b,b,c,d);
@@ -101,10 +106,13 @@ export function buildSaturnIP5(root) {
     const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
-    geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
     geo.setIndex(indices);geo.computeVertexNormals();
-    const groundMaterial=new THREE.MeshStandardMaterial({
-      vertexColors:true,roughness:1,metalness:0,side:THREE.DoubleSide
+    const groundMaterial=new THREE.MeshBasicMaterial({
+      map:terrain.terrainTexture||null,
+      color:terrain.terrainTexture?0xffffff:0x9d8e76,
+      vertexColors:true,transparent:true,depthWrite:false,
+      side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2
     });
     add(new THREE.Mesh(geo,groundMaterial),'murguduk-hill');
   }
