@@ -1,0 +1,6 @@
+{
+  "targetCommit": "34788793cc0bb30b6e1868a87428403f72e7ab85",
+  "status": "skipped",
+  "checkedAt": "2026-10-27T11:26:15.924Z",
+  "test": "Browser-based Playwright smoke check"
+}\n
