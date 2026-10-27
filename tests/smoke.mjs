@@ -95,7 +95,7 @@ assert.deepEqual(terrainInfo.terrain?.detailResolution,[1536,1236],'Local satell
 assert.ok(terrainInfo.terrainExtent>=100000,'The desert may not terminate at the historical map edge');
 const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
 console.log('GAGARIN START',JSON.stringify(gagarin));
-assert.equal(gagarin.version,'3.0','Pad 1 must use the rebuilt photo-grounded v3 model');
+assert.equal(gagarin.version,'3.1','Pad 1 must use the model with real circular rocket openings');
 assert.equal(gagarin.archiveFolder,'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC');
 assert.ok(gagarin.meshCount>700,'Detailed model must contain a large set of photo-informed structural primitives');
 assert.ok(gagarin.renderMeshCount<100,'Optimized geometry should not produce a huge number of WebGL draw calls');
@@ -105,6 +105,44 @@ for(const [component,min] of [
  ['tower-service-deck',6],['rail-approach',2],['tulip-arm',4],
  ['lighting-tower',4],['yellow-counterweight',4],['concrete-bridge-stairs',4]
 ]) assert.ok((gagarin.featureCounts[component]||0)>=min,'Missing photo-referenced Site 1 component '+component);
+
+// Raycast actual geometry: an opening must remain empty, while its rim is solid.
+const passageGeometry=await page.evaluate(async()=>{
+ const THREE=await import('three');
+ const {buildGagarinPad}=await import('./src/gagarin-pad.js');
+ const model=new THREE.Group();
+ const exhibit=buildGagarinPad(model);
+ model.updateMatrixWorld(true);
+ const decks=[];
+ model.traverse(object=>{if(object.userData.rocketAperture)decks.push(object)});
+ const ray=new THREE.Raycaster();
+ let blockedHoleSamples=0,missingRimSamples=0,blockedShaftSamples=0;
+ for(const deck of decks){
+  const {radius,deckY}=deck.userData.rocketAperture;
+  for(let j=0;j<32;j++){
+   const a=j*Math.PI/16;
+   ray.set(new THREE.Vector3(Math.cos(a)*radius*.97,deckY+2,Math.sin(a)*radius*.97),new THREE.Vector3(0,-1,0));
+   if(ray.intersectObject(deck,false).length)blockedHoleSamples++;
+   ray.set(new THREE.Vector3(Math.cos(a)*(radius+.25),deckY+2,Math.sin(a)*(radius+.25)),new THREE.Vector3(0,-1,0));
+   if(!ray.intersectObject(deck,false).length)missingRimSamples++;
+  }
+ }
+ const structure=model.children.filter(object=>object!==exhibit.rocket);
+ for(const radius of [0,3.3,4.6])for(let j=0;j<16;j++){
+  const a=j*Math.PI/8;
+  ray.set(new THREE.Vector3(Math.cos(a)*radius,110,Math.sin(a)*radius),new THREE.Vector3(0,-1,0));
+  if(ray.intersectObjects(structure,true).some(hit=>hit.point.y>=27))blockedShaftSamples++;
+ }
+ const result={deckCount:decks.length,blockedHoleSamples,missingRimSamples,blockedShaftSamples};
+ const geometries=new Set(),materials=new Set();
+ model.traverse(object=>{if(object.geometry)geometries.add(object.geometry);if(object.material)materials.add(object.material)});
+ for(const geometry of geometries)geometry.dispose();
+ for(const material of materials)material.dispose();
+ return result;
+});
+console.log('ROCKET PASSAGE GEOMETRY',JSON.stringify(passageGeometry));
+assert.deepEqual(passageGeometry,{deckCount:7,blockedHoleSamples:0,missingRimSamples:0,blockedShaftSamples:0},'Seven circular deck openings must align on a clear rocket axis, with solid rims');
+
 const padPlacement=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinPlacement);
 assert.deepEqual(padPlacement.mapPixel,[699,365],'Site 1 must remain on its original schematic site');
 assert.ok(Math.abs(padPlacement.rotationY+Math.PI/2)<.0001,'Flame duct must face east');

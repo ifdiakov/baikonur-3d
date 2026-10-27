@@ -2,7 +2,9 @@ import * as THREE from 'three';
 
 /**
  * GAGARIN'S START — SITE 1, launch position 5
- * PHOTO-GROUNDED MUSEUM STUDY v3, not engineering drawings.
+ * PHOTO-GROUNDED MUSEUM STUDY v3.1, not engineering drawings.
+ * v3.1: real coaxial openings through all service decks and crown.
+ * Flame-duct contour remains v3 pending visual verification of the overheads.
  *
  * Primary user references: IMG_5826 (whole tower), IMG_8447
  * (elevated concrete bridge, gallery, stairs, undercroft), IMG_4933/4948
@@ -19,7 +21,7 @@ import * as THREE from 'three';
  */
 
 export function buildGagarinPad(root) {
-  root.name='Пл. 1 — Гагаринский старт / Фотографическая реконструкция 3';
+  root.name='Пл. 1 — Гагаринский старт / Фотографическая реконструкция 3.1';
   const colors={
     concrete:0x9d9c94, oldConcrete:0x817f76, paleConcrete:0xc0b9ac,
     cutFace:0x756e64, soot:0x44403a, duct:0x4e473e,
@@ -78,6 +80,26 @@ export function buildGagarinPad(root) {
     mesh.rotation.x=-Math.PI/2;mesh.position.y=y;
     return direct(mesh,material,key);
   }
+
+  // A real extruded deck with an empty circular rocket passage.
+  // The origin is the rocket axis; a painted disk would still occlude it.
+  function openServiceDeck(w,d,y,thickness,radius,material,key){
+    const outline=new THREE.Shape();
+    outline.moveTo(-w/2,-d/2);outline.lineTo(w/2,-d/2);
+    outline.lineTo(w/2,d/2);outline.lineTo(-w/2,d/2);outline.closePath();
+    const aperture=new THREE.Path();
+    aperture.absarc(0,0,radius,0,Math.PI*2,true);
+    outline.holes.push(aperture);
+    const geometry=new THREE.ExtrudeGeometry(outline,{
+      depth:thickness,bevelEnabled:false,curveSegments:64,steps:1
+    });
+    const mesh=new THREE.Mesh(geometry,mats[material]);
+    mesh.rotation.x=-Math.PI/2;
+    mesh.position.y=y-thickness/2;
+    mesh.userData.rocketAperture={center:[0,0],radius,deckY:y,thickness};
+    return direct(mesh,material,key);
+  }
+
   function faceStrip(p1,p2,q1,q2,material,key) {
     const v=[...p1,...p2,...q1,...p2,...q2,...q1];
     const g=new THREE.BufferGeometry();
@@ -256,7 +278,7 @@ export function buildGagarinPad(root) {
   // 05 / PHOTO-TRUE SILHOUETTE. Tall NARROW steel cage and working balconies
   // at top, with 4 tapering chassis legs from an elevated green service frame.
   // Primary IMG_5826 shows central height significantly above the lower V arms.
-  const towerBottom=27,towerTop=106,zTower=8;
+  const towerBottom=27,towerTop=106,zTower=0;
   const section=t=>{
     const half=10.9-4.2*t,depth=8.3-1.3*t,y=towerBottom+(towerTop-towerBottom)*t;
     return{half,depth,y};
@@ -291,7 +313,9 @@ export function buildGagarinPad(root) {
     const y=levels[idx],t=(y-towerBottom)/(towerTop-towerBottom),
         sec=section(t),w=sec.half+2.5,d=sec.depth+2.3;
     // Service decks are thin floors and an outside white railing.
-    block(0,y,zTower,w*2,.5,d*2,'steel','tower-service-deck');
+    // Booster envelope is wider below y=70; upper decks surround the core.
+    const clearance=y<=54?9.6:y<=67?8.4:5.2;
+    openServiceDeck(w*2,d*2,y,.5,clearance,'steel','tower-service-deck');
     for(const sx of [-1,1]){
       bar([sx*w,y+2.4,zTower-d],[sx*w,y+2.4,zTower+d],.14,'paleSteel','tower-deck-rails');
       for(const sz of [-1,1])bar([sx*w,y,zTower+sz*d],[sx*w,y+2.4,zTower+sz*d],.16,'paleSteel','tower-deck-rails');
@@ -300,8 +324,9 @@ export function buildGagarinPad(root) {
     block(0,y+1.2,zTower+d+1.5,2.1,2.2,1.4,idx===5?'green':'yellow','tower-electrical-cabinet');
   }
   // Crown access deck with piping and a prominent side green utility chamber.
-  block(0,106.5,8,21,.65,18,'brightGreen','tower-crown');
-  block(7.6,102,8,6.5,8.5,8,'green','tower-upper-equipment');
+  openServiceDeck(21,18,106.5,.65,5.2,'brightGreen','tower-crown');
+  // Keep the side equipment chamber outside the cylindrical rocket clearance.
+  block(12.4,102,zTower,6.5,8.5,8,'green','tower-upper-equipment');
   for(const x of [-10,10])rungLadder([x,95,zTower+9],[x,108,zTower+9],2.0,'paleSteel','tower-crown-ladder',14);
   // Outer opposed inclined *open trusses* buttress narrow tower.
   for(const sign of [-1,1]){
@@ -427,7 +452,9 @@ export function buildGagarinPad(root) {
     root.add(mesh);renderMeshCount++;
   }
   const metadata={
-    version:'3.0',
+    version:'3.1',
+    rocketPassage:{axis:[0,0],crownRadius:5.2,serviceDecks:6,throughHole:true},
+    flameDuctReview:'Pending: v3 contour has not yet been checked visually against the overhead images',
     name:"Gagarin's Start photo-grounded reconstruction",
     archiveFolder:'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC',
     orientation:'West rail (+Z) → start at centre → East fan-shaped duct (-Z)',
