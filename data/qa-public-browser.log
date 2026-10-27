@@ -1,4 +1,5 @@
 SIDEBAR {"noPrototypeNote":true,"noPlanToggle":true,"noRoadDiagnostics":true,"noSatelliteDisclaimer":true,"roadsToggle":true,"railsToggle":true,"labelsToggle":true,"noYandexButton":true,"statusHidden":true}
+ACCORDION: collapsed, expands with search and object list, then collapses
 LAYOUT {"dockBottom":0,"dockWidth":1600,"logoNatural":360,"logoVisible":true,"sliderOutsideSidebar":true,"sliderBottom":true,"sidebarAboveDock":true}
 SERVICE SCHEME {"asset":"assets/service-photo-rectified.b64","source":"visitor-supplied-photograph","positioning":"schematic-not-georeferenced","loaded":true,"inkPixels":55361}
 TERRAIN STYLE {"name":"Baikonur Steppe v2","kind":"synthetic-satellite-style","tileResolution":1024,"detailResolution":[1536,1236],"infiniteExtent":true}
