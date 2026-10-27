@@ -80,14 +80,14 @@ export function buildSaturnIP5(root,terrain={}) {
   function groundPatch(){
     // A slight berm on the Murguduk hill, fading into the real procedural
     // steppe, not a big raised rectangular slab.
-    const N=40,extent=280,vertices=[],colors=[],uv=[],indices=[];
+    const N=64,extent=340,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
       const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent,
-        radius=Math.sqrt((xx/158)**2+(zz/147)**2),
+        radius=Math.sqrt((xx/150)**2+(zz/140)**2),
         r=(Math.sin(xx*.085+zz*.035)+Math.sin(xx*.038-zz*.076))*.22,
-        t=Math.max(0,Math.min(1,(radius-.83)/.38)),
+        t=Math.max(0,Math.min(1,(radius-.68)/.49)),
         fade=1-t*t*(3-2*t),
-        height=7.8*fade+r*fade;
+        height=7.8*fade+1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+r*fade;
       vertices.push(xx,height-.22,zz);
       const world=root.localToWorld(new THREE.Vector3(xx,0,zz));
       uv.push(.5+world.x/(terrain.terrainWidth||4420),.5-world.z/(terrain.terrainHeight||3553));
@@ -108,10 +108,10 @@ export function buildSaturnIP5(root,terrain={}) {
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
     geo.setIndex(indices);geo.computeVertexNormals();
-    const groundMaterial=new THREE.MeshBasicMaterial({
+    const groundMaterial=new THREE.MeshStandardMaterial({
       map:terrain.terrainTexture||null,
       color:terrain.terrainTexture?0xffffff:0x9d8e76,
-      vertexColors:true,transparent:true,depthWrite:false,
+      vertexColors:true,transparent:true,depthWrite:false,roughness:1,metalness:0,
       side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2
     });
     add(new THREE.Mesh(geo,groundMaterial),'murguduk-hill');
@@ -389,7 +389,7 @@ export function buildSaturnIP5(root,terrain={}) {
     add(mesh,'instanced-antenna-steel',batch.parent);
   }
   root.userData.saturnModel={
-    version:'1.2-layout-and-tower-2026-10-28',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
+    version:'1.3-restored-relief',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
     sourceFolder:'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk',
     photosUsed:['IMG_6181.JPG','IMG_5342.JPG','IMG_3645.JPG','ajU0...jpg','IMG_7396.jpeg','IMG_7403.jpeg','IMG_5711.jpeg','IMG_2352.jpeg','IMG_5528.jpeg','IMG_5863.jpeg','IMG_5861.jpeg'],
     antennaType:'П-200',largeAntennaCount:2,dishDiameterMetres:25,
