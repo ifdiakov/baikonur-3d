@@ -1,0 +1,36 @@
+name: Museum 3D browser smoke test
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'data/**'
+      - 'tests/**'
+      - '.github/workflows/verify-museum.yml'
+  workflow_dispatch:
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install headless browser
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Start museum site
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+      - name: Smoke test - Three.js and semantic zoom
+        run: node tests/smoke.mjs
+      - name: Save 4 level screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baikonur-3d-checks
+          path: qa-*.png
+          if-no-files-found: ignore
