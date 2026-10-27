@@ -136,7 +136,12 @@
  #ui{max-height:calc(100dvh - 165px)!important}
  .timeline-sub,#timelineYearHint{display:none!important}
 }
-</style></head><body><div id="view"></div><section id="hero" aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ROCKETTRIP / ИНТЕРАКТИВНЫЙ МУЗЕЙ</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" aria-label="Подписи площадок"></div><div id="error"></div><aside id="ui"><div id="museumIdentity"><img class="rockettrip-logo" src="./assets/rockettrip-logo.svg" alt="RocketTrip" width="278" height="105" decoding="async"><div class="identity-rule"></div><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-version">3D</span></div></div><div class="buttons"><button id="all">Весь космодром</button><button id="top">Сверху</button><button id="fly">Облёт</button></div><div class="label">СЛОИ СЦЕНЫ</div><label class="filter"><input type="checkbox" checked data-layer="sites"> Площадки и сооружения</label><label class="filter"><input type="checkbox" checked data-layer="roads"> Автодороги</label><label class="filter"><input type="checkbox" checked data-layer="rails"> Железнодорожные пути</label><label class="filter"><input type="checkbox" checked data-layer="city"> Город и аэродром</label><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><label class="filter"><input type="checkbox" id="showLabels" checked> <strong>Подписи / фланги</strong></label><details id="sitesAccordion" class="sites-accordion"><summary aria-label="Раскрыть или свернуть площадки и узлы"><span class="sites-accordion-title">ПЛОЩАДКИ И УЗЛЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество объектов"></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body"><input class="search" id="search" type="search" aria-label="Поиск площадок и узлов" placeholder="Поиск по номеру и названию…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><details id="researchAccordion" class="sites-accordion research-accordion"><summary aria-label="Раскрыть находки экспедиции"><span class="sites-accordion-title">РЕЙД В СТЕПЬ</span><span class="sites-accordion-count" id="researchCount">7</span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body"><p class="research-note">Исследовательские точки. GPS известен для двух объектов; расположение на 3D-схеме пока не установлено.</p><div id="researchList"></div></div></details><p class="small">ЛКМ — перемещение над картой; ПКМ — вращение; колёсико — масштаб. WASD / стрелки — полёт над территорией, Shift — ускорение. Нажми на модель или выбери объект.</p></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div><div class="timeline-events-heading"><span>СОБЫТИЯ</span><span id="timelineYearHint">Нажмите на событие, чтобы узнать больше</span></div><div id="timelineEvents" class="timeline-events" role="group" aria-label="Ключевые события истории Байконура"></div><section id="timelineEventPanel" class="timeline-event-panel" hidden aria-label="Историческое событие"><button type="button" id="timelineEventClose" class="timeline-event-close" aria-label="Закрыть историческую справку">×</button><div id="timelineEventDate" class="timeline-event-date"></div><h3 id="timelineEventTitle"></h3><p id="timelineEventDescription"></p><div class="timeline-event-actions"><a id="timelineEventSource" href="#" target="_blank" rel="noopener noreferrer">ИСТОЧНИК ↗</a><button type="button" id="timelineGoToSite">К ПЛОЩАДКЕ ↗</button></div></section></footer><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
+
+/* Unverified field survey objects live in the same catalogue as numbered pads. */
+.entry-field-research{border-left:2px solid #d58965!important;background:#243341!important}
+.entry-field-research:hover{background:#34495a!important}
+.entry-field-research small{color:#bdaea6!important}
+</style></head><body><div id="view"></div><section id="hero" aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ROCKETTRIP / ИНТЕРАКТИВНЫЙ МУЗЕЙ</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" aria-label="Подписи площадок"></div><div id="error"></div><aside id="ui"><div id="museumIdentity"><img class="rockettrip-logo" src="./assets/rockettrip-logo.svg" alt="RocketTrip" width="278" height="105" decoding="async"><div class="identity-rule"></div><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-version">3D</span></div></div><div class="buttons"><button id="all">Весь космодром</button><button id="top">Сверху</button><button id="fly">Облёт</button></div><div class="label">СЛОИ СЦЕНЫ</div><label class="filter"><input type="checkbox" checked data-layer="sites"> Площадки и сооружения</label><label class="filter"><input type="checkbox" checked data-layer="roads"> Автодороги</label><label class="filter"><input type="checkbox" checked data-layer="rails"> Железнодорожные пути</label><label class="filter"><input type="checkbox" checked data-layer="city"> Город и аэродром</label><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><label class="filter"><input type="checkbox" id="showLabels" checked> <strong>Подписи / фланги</strong></label><details id="sitesAccordion" class="sites-accordion"><summary aria-label="Раскрыть или свернуть площадки и узлы"><span class="sites-accordion-title">ПЛОЩАДКИ И УЗЛЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество объектов"></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body"><input class="search" id="search" type="search" aria-label="Поиск площадок и узлов" placeholder="Поиск по номеру и названию…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><p class="small">ЛКМ — перемещение над картой; ПКМ — вращение; колёсико — масштаб. WASD / стрелки — полёт над территорией, Shift — ускорение. Нажми на модель или выбери объект.</p></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div><div class="timeline-events-heading"><span>СОБЫТИЯ</span><span id="timelineYearHint">Нажмите на событие, чтобы узнать больше</span></div><div id="timelineEvents" class="timeline-events" role="group" aria-label="Ключевые события истории Байконура"></div><section id="timelineEventPanel" class="timeline-event-panel" hidden aria-label="Историческое событие"><button type="button" id="timelineEventClose" class="timeline-event-close" aria-label="Закрыть историческую справку">×</button><div id="timelineEventDate" class="timeline-event-date"></div><h3 id="timelineEventTitle"></h3><p id="timelineEventDescription"></p><div class="timeline-event-actions"><a id="timelineEventSource" href="#" target="_blank" rel="noopener noreferrer">ИСТОЧНИК ↗</a><button type="button" id="timelineGoToSite">К ПЛОЩАДКЕ ↗</button></div></section></footer><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 try{
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x89938e);scene.fog=new THREE.FogExp2(0xb7b5a4,.00012);const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,1,10000);camera.position.set(580,1450,1200);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.getElementById('view').appendChild(renderer.domElement);const ctl=new OrbitControls(camera,renderer.domElement);ctl.enableDamping=true;ctl.screenSpacePanning=false;ctl.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};ctl.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};ctl.maxPolarAngle=Math.PI/2.02;ctl.minDistance=15;ctl.maxDistance=3300;scene.add(new THREE.HemisphereLight(0xbdd7f2,0x62533d,2));const sun=new THREE.DirectionalLight(0xffdfb4,2.2);sun.position.set(-700,1200,500);scene.add(sun);const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const sand=material(0x807965),pave=material(0x666b6a),steel=material(0x85949b),roof=material(0x427084),white=material(0xcbd0ce),dark=material(0x303b43),orange=material(0xb95c3c),railMat=material(0x4b4944);const layers={sites:new THREE.Group(),roads:new THREE.Group(),rails:new THREE.Group(),city:new THREE.Group(),plan:new THREE.Group()};Object.values(layers).forEach(g=>scene.add(g));const W=1300,H=1045,S=1.45;const point=(x,y,z=0)=>new THREE.Vector3((x-W/2)*S,z,(y-H/2)*S);const ground=new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),sand);ground.rotation.x=-Math.PI/2;ground.position.y=-3;scene.add(ground);
@@ -487,8 +492,9 @@ pad1.name='Площадка № 1 — Гагаринский старт';pad1.ty
 padGroup.traverse(c=>{if(c.isMesh){c.userData.idx=0;clickable.push(c)}});
 
 const tex=new THREE.TextureLoader().load('./baykonur-plan.png');tex.colorSpace=THREE.SRGBColorSpace;const plan=new THREE.Mesh(new THREE.PlaneGeometry(W*S,H*S),new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:.75,side:THREE.DoubleSide,depthWrite:false}));plan.rotation.x=-Math.PI/2;plan.position.y=-.2;layers.plan.add(plan);layers.plan.visible=false;
-let currentObject=0;
+let currentObject=0;let currentResearch=null;
 function focus(i){
+ currentResearch=null;
  const o=objects[i],r=o.record;currentObject=i;ctl.target.copy(o.g.position);
  camera.position.copy(o.g.position).add(new THREE.Vector3(90,115,135));
  document.getElementById("title").textContent=displaySiteName(o);
@@ -502,8 +508,40 @@ function focus(i){
  // Force camera and DOM callouts to sync immediately, even under a slow WebGL renderer.
  ctl.update();camera.updateMatrixWorld(true);updateLabels();
 }
+function showResearch(item){
+ currentResearch=item;
+ document.getElementById("title").textContent=item.id+' · '+item.title;
+ document.getElementById("infoOrg").textContent="Полевое исследование";
+ document.getElementById("infoOrgRole").textContent="Назначение объекта не подтверждено";
+ document.getElementById("infoPurpose").textContent=item.description;
+ const coords=item.latitude!=null&&item.longitude!=null
+   ?'Координаты: '+item.latitude.toFixed(6)+', '+item.longitude.toFixed(6)+'. '
+   :'Точные координаты пока не извлечены из ссылки на карту. ';
+ document.getElementById("description").textContent=coords+'Расположение на трёхмерной схеме не установлено. Предположение: '+item.hypothesis+'.';
+ document.getElementById("infoExtra").style.display="none";
+ document.getElementById("detailMore").textContent="ПОДРОБНЕЕ ↗";
+ document.getElementById("info").style.display="block";
+}
 document.getElementById("detailMore").onclick=()=>{
- const o=objects[currentObject],r=o.record,el=document.getElementById("infoExtra");
+ const el=document.getElementById("infoExtra");
+ if(currentResearch){
+  const isHidden=el.style.display!=="block";el.replaceChildren();
+  if(isHidden){
+   const record=currentResearch;
+   for(const line of [
+    "Номер исследовательской записи: "+record.id,
+    "Описание: "+record.description,
+    "Версия назначения (не подтверждена): "+record.hypothesis,
+    record.latitude!=null&&record.longitude!=null?"GPS: "+record.latitude.toFixed(6)+", "+record.longitude.toFixed(6):"GPS пока неизвестен",
+    "Точка не размещена на 3D-схеме до проверки геопривязки"
+   ]){const p=document.createElement("div");p.textContent=line;el.append(p)}
+   const a=document.createElement("a");a.href=record.source;a.target="_blank";a.rel="noopener noreferrer";
+   a.style.display="block";a.style.marginTop="10px";a.textContent="Исходная ссылка на карту ↗";el.append(a);
+  }
+  el.style.display=isHidden?"block":"none";document.getElementById("detailMore").textContent=isHidden?"СВЕРНУТЬ":"ПОДРОБНЕЕ ↗";
+  return;
+ }
+ const o=objects[currentObject],r=o.record;
  const isHidden=el.style.display!=="block";el.replaceChildren();
  if(isHidden){
   const lines=["Номер и название: "+displaySiteName(o),"Источник позиции: "+(r.positionBasis||"не указан"),"Достоверность: "+(r.status==="label-read"?"номер прочитан, координаты приблизительны":"временная геометрия"),"Назначение: "+(r.purposeLong||r.purpose||"не установлено"),"Предприятие: "+(r.organisation?.org||"не подтверждено"),"3D-модель: условная, размеры не подтверждены"];
@@ -514,21 +552,32 @@ document.getElementById("detailMore").onclick=()=>{
   if(!refs.length){const note=document.createElement("div");note.textContent="Идентификация пока основана на исходной исторической схеме.";el.appendChild(note)}
  }
  el.style.display=isHidden?"block":"none";document.getElementById("detailMore").textContent=isHidden?"СВЕРНУТЬ":"ПОДРОБНЕЕ ↗";
-};const list=document.getElementById('list');function renderList(){list.innerHTML='';const q=document.getElementById('search').value.toLowerCase();let n=0;objects.forEach((o,i)=>{if(![o.name,o.record.titleShort,o.record.titleFull,o.record.purposeLong].some(v=>String(v||'').toLowerCase().includes(q)))return;n++;const b=document.createElement('button');b.className='entry';b.replaceChildren();const main=document.createElement("span");main.textContent=displaySiteName(o);const sm=document.createElement("small");sm.textContent=o.record.titleShort?'Назначение сверено · позиция предварительная':(o.record.status==='label-read'?'Номер прочитан на схеме':'Рабочий сектор — требует идентификации');b.append(main,sm);b.onclick=()=>focus(i);list.append(b)});document.getElementById('count').textContent=n}renderList();document.getElementById('search').oninput=renderList;
-
-const researchList=document.getElementById('researchList');
-for(const item of researchObjects){
- const card=document.createElement('article');card.className='research-card';
- const title=document.createElement('h4');title.textContent=item.id+' · '+item.title;
- const desc=document.createElement('p');desc.textContent=item.description;
- const gps=document.createElement('div');gps.className='research-meta';
- gps.textContent=item.latitude!=null&&item.longitude!=null
-   ?'GPS: '+item.latitude.toFixed(6)+', '+item.longitude.toFixed(6)+' · положение в 3D не привязано'
-   :'Географическая позиция в каталоге 3D пока не установлена';
- const source=document.createElement('a');source.href=item.source;source.target='_blank';source.rel='noopener noreferrer';source.textContent='Исходная точка на карте ↗';
- card.append(title,desc,gps,source);researchList.append(card);
+};const list=document.getElementById('list');
+function renderList(){
+ list.replaceChildren();
+ const q=document.getElementById('search').value.toLowerCase().trim();
+ let n=0;
+ for(let i=0;i<objects.length;i++){
+  const o=objects[i];
+  if(![o.name,o.record.titleShort,o.record.titleFull,o.record.purposeLong].some(v=>String(v||'').toLowerCase().includes(q)))continue;
+  n++;const b=document.createElement('button');b.className='entry';b.type='button';
+  const main=document.createElement('span');main.textContent=displaySiteName(o);
+  const sm=document.createElement('small');sm.textContent=o.record.titleShort?'Назначение сверено · позиция предварительная':(o.record.status==='label-read'?'Номер прочитан на схеме':'Рабочий сектор — требует идентификации');
+  b.append(main,sm);b.onclick=()=>focus(i);list.append(b);
+ }
+ for(const item of researchObjects){
+  const text=[item.id,item.title,item.description,item.hypothesis,item.latitude,item.longitude].filter(v=>v!=null).join(' ').toLowerCase();
+  if(!text.includes(q))continue;
+  n++;const b=document.createElement('button');b.type='button';b.className='entry entry-field-research';b.dataset.researchId=item.id;
+  const title=document.createElement('span');title.textContent=item.id+' · '+item.title;
+  const note=document.createElement('small');note.textContent=item.latitude!=null&&item.longitude!=null?'Полевое исследование · GPS известен, 3D-позиция не установлена':'Полевое исследование · положение не установлено';
+  b.append(title,note);b.onclick=()=>showResearch(item);list.append(b);
+ }
+ document.getElementById('count').textContent=n;
 }
-document.getElementById('researchCount').textContent=researchObjects.length;
+renderList();
+document.getElementById('search').oninput=renderList;
+
 const timelineItems=document.getElementById('timelineEvents');
 const timelineEventPanel=document.getElementById('timelineEventPanel');
 const timelineSelected=document.getElementById('timelineYearHint');
