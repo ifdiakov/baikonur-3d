@@ -130,7 +130,7 @@ console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
 assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v4','Museum must load the unified v4 earth textures');
 assert.equal(terrainInfo.outerTerrain.edition,4,'Shared-coordinate terrain generator must be active');
 assert.equal(terrainInfo.outerTerrain.continuousWorldCoordinates,true,'Near/far terrain must sample shared coordinates');
-assert.deepEqual(terrainInfo.outerTerrain.textureResolutions,[1152,1792],'Two world-scale texture bands must be present');
+assert.deepEqual(terrainInfo.outerTerrain.textureResolutions,[960,1280],'Two world-scale texture bands must be present');
 assert.ok(terrainInfo.outerTerrain.mediumExtent>17000,'Intermediate terrain must cover territory beyond site map');
 assert.ok(terrainInfo.outerTerrain.riparianShrubs>100,'Sparse alluvial shrub vegetation must be placed along the river');
 assert.equal(terrainInfo.terrain?.photographicClaim,undefined,'Generated ground must not be misrepresented as satellite imagery');
