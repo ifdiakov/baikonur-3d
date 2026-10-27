@@ -1,5 +1,6 @@
 LAYOUT {"dockBottom":0,"dockWidth":1600,"logoNatural":360,"logoVisible":true,"sliderOutsideSidebar":true,"sliderBottom":true,"sidebarAboveDock":true}
 PASSPORT {"inline":"1","computed":"1","visible":true}
 DETAIL CARDS 3
+TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
 MOBILE {"dockFits":true,"dockWidth":390,"sidebarEndsAboveDock":true,"logoVisible":true}
-BAIKONUR 3D smoke checks PASSED: logo, bottom timeline, year changes, 97 sites, 4 zoom levels, roads and card expansion.
+BAIKONUR 3D smoke checks PASSED: 97 sites, 26 sourced descriptions, compact labels, seamless terrain, 4 zoom levels, references and timeline.

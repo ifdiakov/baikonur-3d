@@ -1,11 +1,11 @@
 {
-  "targetCommit": "1d39fa5e6688d98410b06b9850e740af41a29c48",
+  "targetCommit": "efa7e28f1085796a1c00cd9df813801667b33bde",
   "status": "success",
   "install": "success",
   "server": "success",
   "public": "success",
   "publicBrowser": "success",
-  "runId": "40503036883",
-  "checkedAt": "2026-10-27T12:22:17.379Z",
+  "runId": "40505818284",
+  "checkedAt": "2026-10-27T12:44:24.750Z",
   "test": "Browser-based Playwright smoke check"
 }
