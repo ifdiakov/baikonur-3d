@@ -10,6 +10,13 @@ const museumURL=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 await page.goto(museumURL,{waitUntil:'domcontentloaded'});
 await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA),{timeout:60000});
 await page.waitForFunction(()=>document.getElementById('roadStatus')?.textContent.includes('цветных пикселей'),{timeout:30000});
+// Sidebar cleanup must preserve navigation while removing temporary implementation notes.
+const sidebarCleanup=await page.evaluate(()=>{
+ const sidebar=document.querySelector('#ui');const text=sidebar?.innerText||'';
+ return {noPrototypeNote:!text.includes('Трёхмерная модель планировки'),noPlanToggle:!sidebar.querySelector('[data-layer="plan"]'),noRoadDiagnostics:!text.includes('цветных пикселей'),noSatelliteDisclaimer:!text.includes('Спутниковая съёмка доступна'),roadsToggle:!!sidebar.querySelector('[data-layer="roads"]'),railsToggle:!!sidebar.querySelector('[data-layer="rails"]'),labelsToggle:!!sidebar.querySelector('#showLabels'),satelliteButton:!!sidebar.querySelector('#satellite'),statusHidden:getComputedStyle(document.getElementById('roadStatus')).display==='none'};
+});
+console.log('SIDEBAR',JSON.stringify(sidebarCleanup));
+assert.ok(Object.values(sidebarCleanup).every(Boolean),'Sidebar must hide implementation diagnostics without losing working navigation');
 // Verify the exact supplied brand graphic and the separate bottom history dock.
 await page.waitForFunction(()=>{const image=document.querySelector('.rockettrip-logo');return !!(image&&image.complete&&image.naturalWidth>=300)},{timeout:15000});
 const layout=await page.evaluate(()=>{
