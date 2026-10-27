@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Пл. №23 — ИП-5 «Сатурн» · 3D-мастерская RocketTrip</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+:root{color-scheme:dark}
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#111e26;color:#f2f7fa;font-family:Montserrat,Arial,sans-serif}
+#view{position:absolute;inset:0;width:100vw;height:100vh;display:block}
+#header{position:fixed;z-index:5;top:16px;left:16px;max-width:min(350px,calc(100vw - 32px));border:1px solid #ffffff35;border-radius:14px;background:#091926ee;backdrop-filter:blur(16px);padding:18px;box-shadow:0 20px 70px #0007}
+.logo{width:150px;height:55px;object-fit:contain;object-position:left center}
+h1{font-size:19px;line-height:1.2;letter-spacing:.03em;margin:8px 0 7px}
+h1 span{color:#fa918b}.kicker{font-weight:700;letter-spacing:.13em;color:#ffaca4;font-size:10px;text-transform:uppercase}
+p{font-size:11px;line-height:1.65;color:#b8c9d3;margin:7px 0}
+.meta{display:flex;gap:6px;flex-wrap:wrap;margin:13px 0}
+.meta span{padding:6px 9px;border:1px solid #ffffff32;border-radius:6px;color:#e3edf3;font-size:10px}
+nav{display:flex;gap:7px;flex-wrap:wrap}
+button,a.btn{font:700 10px Montserrat,Arial;letter-spacing:.02em;text-decoration:none;cursor:pointer;display:inline-block;padding:8px 11px;background:#1b3343;color:#e9f6ff;border:1px solid #ffffff36;border-radius:7px}
+button:hover,button:focus-visible,a.btn:hover{background:#8d3938;border-color:#f0aaa6;outline:none}
+#footer{position:fixed;z-index:3;bottom:18px;left:16px;right:16px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;pointer-events:none}
+#footer>*{pointer-events:auto}
+.notice{padding:10px 12px;max-width:490px;border:1px solid #ffffff37;background:#102333dc;border-radius:10px;color:#b7c8d3;font-size:10px;line-height:1.55}
+.refs{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.refs a{padding:8px 9px;background:#132b3ded;border:1px solid #ffffff35;color:#e8bac4;text-decoration:none;border-radius:8px;font-size:10px}
+.refs a:hover{border-color:#ed8881}
+#loading{position:fixed;inset:0;display:grid;place-items:center;color:white;background:#132532;z-index:9;font-weight:700}
+#loading[hidden]{display:none}
+#error{display:none;position:fixed;bottom:20px;right:20px;max-width:350px;z-index:10;padding:15px;background:#71282be9;border-radius:10px}
+@media(max-width:710px){#header{padding:11px;max-width:235px}h1{font-size:15px}.logo{width:110px;height:35px}#footer{flex-direction:column;align-items:flex-start}.notice{max-width:65vw}.refs{max-width:100%}.refs a{font-size:8px}}
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div id="view" aria-label="Трёхмерная фотографическая реконструкция измерительного пункта Сатурн"></div>
+<div id="loading">ЗАГРУЗКА МОДЕЛИ ИП «САТУРН»…</div>
+<aside id="header">
+<img class="logo" src="../assets/rockettrip-logo.svg" alt="RocketTrip">
+<div class="kicker">3D-МАСТЕРСКАЯ · БАЙКОНУР</div>
+<h1>пл. №23 — <span>«САТУРН-МС»</span></h1>
+<p>Измерительный пункт ИП-5. Две параболические антенны П-200 с зеркалами диаметром 25 м, радиопрозрачный купол и технический комплекс.</p>
+<div class="meta"><span>2 × П-200 · Ø25 м</span><span>С 1966 года</span><span>Реконструкция v1</span></div>
+<nav>
+<button id="reset" type="button">ОБЩИЙ ВИД</button>
+<button id="grid" type="button" aria-pressed="false">СЕТКА</button>
+<button id="wireframe" type="button" aria-pressed="false">КАРКАС</button>
+<a class="btn" href="../?site=23" rel="noopener">НА КАРТУ ↗</a>
+</nav>
+</aside>
+<footer id="footer">
+<div class="notice">ЛКМ — вращение · ПКМ — перемещение · колёсико — масштаб. Положение и размеры вспомогательных сооружений предварительные; точная геопривязка проверяется отдельно.</div>
+<div class="refs">
+<a href="https://drive.google.com/drive/folders/1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk" target="_blank" rel="noopener">Фото RocketTrip ↗</a>
+<a href="https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/" target="_blank" rel="noopener">Исторические сведения ↗</a>
+</div>
+</footer>
+<div id="error" role="alert"></div>
+<script type="module">
+import * as THREE from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import {buildSaturnIP5} from '../src/saturn-ip5.js';
+try{
+ const scene=new THREE.Scene();scene.background=new THREE.Color(0xa6b4b5);
+ scene.fog=new THREE.Fog(0xa6b4b5,600,1450);
+ const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,5000);
+ camera.position.set(210,150,270);
+ const renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});
+ renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
+ renderer.outputColorSpace=THREE.SRGBColorSpace;
+ document.getElementById('view').append(renderer.domElement);
+ const controls=new OrbitControls(camera,renderer.domElement);
+ controls.enableDamping=true;controls.dampingFactor=.07;
+ controls.target.set(0,27,0);controls.maxPolarAngle=Math.PI/3;
+ controls.maxDistance=650;controls.minDistance=24;
+ controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};
+ scene.add(new THREE.HemisphereLight(0xd5e9fa,0x77664e,2));
+ const sun=new THREE.DirectionalLight(0xffe2b5,2.5);sun.position.set(-120,210,170);scene.add(sun);
+ const ground=new THREE.Mesh(new THREE.PlaneGeometry(2400,2400),
+   new THREE.MeshStandardMaterial({color:0x9c8f76,roughness:1}));
+ ground.rotation.x=-Math.PI/2;ground.position.y=-.9;scene.add(ground);
+ const grid=new THREE.GridHelper(440,22,0xffe2bd,0x655d50);
+ grid.position.y=-.54;grid.material.transparent=true;grid.material.opacity=.4;grid.visible=false;scene.add(grid);
+ const station=new THREE.Group();scene.add(station);
+ const metadata=buildSaturnIP5(station);
+ const modelMaterials=[...new Set(station.children.flatMap(o=>{
+   const arr=[];o.traverse(c=>{if(c.isMesh){const m=c.material;Array.isArray(m)?arr.push(...m):arr.push(m)}});return arr
+ }))].filter(Boolean);
+ const reset=()=>{camera.position.set(210,150,270);controls.target.set(0,27,0);controls.update()};
+ document.getElementById('reset').onclick=reset;
+ document.getElementById('grid').onclick=e=>{
+   grid.visible=!grid.visible;e.currentTarget.setAttribute('aria-pressed',String(grid.visible));
+ };
+ let wireOn=false;
+ document.getElementById('wireframe').onclick=e=>{
+   wireOn=!wireOn;
+   for(const m of modelMaterials)if('wireframe' in m)m.wireframe=wireOn;
+   e.currentTarget.setAttribute('aria-pressed',String(wireOn));
+ };
+ window.addEventListener('resize',()=>{
+   camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);
+ });
+ function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}
+ animate();
+ document.getElementById('loading').hidden=true;
+ window.__SATURN_PREVIEW__={model:metadata,rendererReady:true,reset,grid,station,
+   stats:()=>({antennas:metadata.largeAntennaCount,diameter:metadata.dishDiameterMetres,
+     meshCount:metadata.meshCount,primitiveCount:metadata.primitiveCount,gridVisible:grid.visible})};
+}catch(err){
+ document.getElementById('loading').hidden=true;
+ document.getElementById('error').style.display='block';
+ document.getElementById('error').textContent='Ошибка модели: '+(err.message||err);
+ console.error(err);
+}
+</script>
+</body>
+</html>
