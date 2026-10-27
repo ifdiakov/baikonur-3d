@@ -188,7 +188,7 @@
 .detail-card{padding-top:35px;transition:opacity .18s,border-color .18s,background .18s}
 .detail-card .site-eye-toggle{position:absolute;top:7px;right:8px}
 .detail-card .detail-mini-number{display:none}
-.detail-card.is-collapsed{width:79px;min-height:38px;max-width:79px;padding:6px 5px 6px 7px;display:flex!important;align-items:center;gap:5px;opacity:calc(var(--level-alpha,1)*.24);border-color:#ffffff3c;background:#0e243296}
+.detail-card.is-collapsed{width:79px;min-height:38px;max-width:79px;padding:6px 5px 6px 7px;display:flex;align-items:center;gap:5px;opacity:calc(var(--level-alpha,1)*.24);border-color:#ffffff3c;background:#0e243296}
 .detail-card.is-collapsed .detail-head,.detail-card.is-collapsed p,.detail-card.is-collapsed .more{display:none!important}
 .detail-card.is-collapsed .detail-mini-number{display:inline;font:700 9px Bounded,Montserrat,Arial;color:#d7e9ed}
 .detail-card.is-collapsed .site-eye-toggle{position:static;width:25px;height:23px;order:2}
@@ -570,7 +570,7 @@ function updateLabels(){
   const rect={left:a.p.x-halfWidth,right:a.p.x+halfWidth,top:a.p.y-cardHeight,bottom:a.p.y-5};
   const conflict=used.some(b=>!(rect.right<b.left||rect.left>b.right||rect.bottom<b.top||rect.top>b.bottom));
   if(conflict){el.style.display="none";continue}
-  el.style.display="block";el.style.left=a.p.x+"px";el.style.top=a.p.y+"px";
+  el.style.display=collapsedSites.has(a.d.i)?"flex":"block";el.style.left=a.p.x+"px";el.style.top=a.p.y+"px";
   el.style.setProperty("--level-alpha",detailAlpha.toFixed(3));el.style.pointerEvents=detailAlpha>.25?"auto":"none";used.push(rect);shown++;
  }
 }
