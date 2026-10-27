@@ -1,7 +1,7 @@
 {
-  "version": 1,
+  "version": 2,
   "designStatus": "historical-scheme-interpretation",
-  "description": "Железнодорожная и автодорожная инфраструктура, схематически оцифрованная из исходного плана комплекса Байконур 3993×3208. Точные координаты, длины и стрелочные переводы не подтверждены; стрелки, кривые и примыкающие пути показаны как музейная реконструкция.",
+  "description": "Железнодорожная и автодорожная инфраструктура, схематически оцифрованная из исходного плана комплекса Байконур 3993×3208. Точные координаты, длины и стрелочные переводы не подтверждены; стрелки, кривые и примыкающие пути показаны как музейная реконструкция. Добавлена станция Нагорная из подписи на южном фрагменте исходной схемы.",
   "planCoordinateSystem": "1300×1045 schematic-pixel coordinates; map-to-world scale supplied by museum",
   "provenance": [
     {
@@ -901,6 +901,16 @@
       "tracks": 3,
       "length": 235,
       "confidence": "rail passing-loop interpretation"
+    },
+    {
+      "id": "st-nagornaya",
+      "label": "ст. Нагорная",
+      "x": 673,
+      "y": 755,
+      "railRoute": "t-center-south",
+      "tracks": 3,
+      "length": 230,
+      "confidence": "station name and location visible on original southern schematic crop"
     },
     {
       "id": "st-vostochnaya",
