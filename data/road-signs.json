@@ -1,12 +1,12 @@
 {
-  "version": 1,
+  "version": 2,
   "coordinateSystem": "1300×1045 source diagram coordinates",
   "signMeaning": "Rounded estimated car-route lengths from Baikonur city center to destination city centers; not exact distances from placed signposts.",
-  "placementStatus": "schematic roadside locations, not a surveyed highway road marker",
+  "placementStatus": "Roadside markers moved closer to central junction along the schematic southern highway; illustrative sites, not actual kilometer posts.",
   "west": {
     "id": "highway-west",
-    "x": 60,
-    "y": 755,
+    "x": 180,
+    "y": 795,
     "direction": "west",
     "destinations": [
       {
@@ -30,8 +30,8 @@
   },
   "east": {
     "id": "highway-east",
-    "x": 1246,
-    "y": 692,
+    "x": 1105,
+    "y": 716,
     "direction": "east",
     "destinations": [
       {
