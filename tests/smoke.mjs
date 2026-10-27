@@ -95,15 +95,19 @@ assert.deepEqual(terrainInfo.terrain?.detailResolution,[1536,1236],'Local satell
 assert.ok(terrainInfo.terrainExtent>=100000,'The desert may not terminate at the historical map edge');
 const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
 console.log('GAGARIN START',JSON.stringify(gagarin));
-assert.equal(gagarin.version,'2.0','Pad 1 must use the rebuilt photo-referenced reconstruction');
-assert.equal(gagarin.archiveFolder,'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC','Model must be grounded in dedicated user Drive folder');
-for(const [component,min] of [['flame-channel',1],['flame-duct-bank',2],['tulip-arm',4],['gantry-inclined-main',4],['tower-main-leg',4],['tower-service-deck',6],['rail-approach',2],['lighting-tower',4],['utility-building',3],['yellow-counterweight',4]]){
- assert.ok((gagarin.featureCounts[component]||0)>=min,'Rebuilt Pad 1 lacks photo-referenced component '+component);
-}
-assert.ok(gagarin.meshCount>450,'Photo-based rebuild must contain substantial structural detail');
+assert.equal(gagarin.version,'3.0','Pad 1 must use the rebuilt photo-grounded v3 model');
+assert.equal(gagarin.archiveFolder,'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC');
+assert.ok(gagarin.meshCount>700,'Detailed model must contain a large set of photo-informed structural primitives');
+assert.ok(gagarin.renderMeshCount<100,'Optimized geometry should not produce a huge number of WebGL draw calls');
+for(const [component,min] of [
+ ['bridge-concrete-pier',2],['underbridge-gallery',4],['flame-channel',1],
+ ['flame-duct-bank',10],['gantry-inclined-main',4],['tower-main-leg',4],
+ ['tower-service-deck',6],['rail-approach',2],['tulip-arm',4],
+ ['lighting-tower',4],['yellow-counterweight',4],['concrete-bridge-stairs',4]
+]) assert.ok((gagarin.featureCounts[component]||0)>=min,'Missing photo-referenced Site 1 component '+component);
 const padPlacement=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinPlacement);
-assert.deepEqual(padPlacement.mapPixel,[699,365],'Rebuild must not move Site 1 away from original map location');
-assert.ok(Math.abs(padPlacement.rotationY+Math.PI/2)<0.0001,'Gas channel must be rotated due east (+X)');
+assert.deepEqual(padPlacement.mapPixel,[699,365],'Site 1 must remain on its original schematic site');
+assert.ok(Math.abs(padPlacement.rotationY+Math.PI/2)<.0001,'Flame duct must face east');
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),false,'No permanently staged rocket at closed Pad 1');
 const count=await page.evaluate(()=>window.__BAIKONUR_QA.stats().sites);
 assert.ok(count>=90,'The museum must load the extended site catalogue');
@@ -170,4 +174,4 @@ console.log('MOBILE',JSON.stringify(mobile));
 assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.logoVisible,'Floating timeline and expanding menu must fit mobile');
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
-await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: Site 1 photo reconstruction v2, east-facing duct, central tower, inclined trusses, 18 Drive references, 104 sites.');
+await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: rebuilt photo-grounded Gagarin v3, east duct, high concrete viaduct, optimized gantries, 18 references, other layers.');
