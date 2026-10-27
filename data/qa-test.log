@@ -1,16 +1,3 @@
 PASSPORT {"inline":"1","computed":"1","visible":true}
-node:internal/modules/run_main:123
-    triggerUncaughtException(
-    ^
-
-AssertionError [ERR_ASSERTION]: Level 4: on-site detail cards should be visible
-    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:32:8 {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
-
-Node.js v22.23.3
+DETAIL CARDS 3
+BAIKONUR 3D smoke checks PASSED: 97 sites, traced roads, 4 zoom levels, card expansion.
