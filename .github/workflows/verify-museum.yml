@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     permissions:
       contents: write
@@ -24,7 +24,7 @@ jobs:
         run: |
           set -o pipefail
           npm install --no-save playwright@1.57.0 2>&1 | tee /tmp/baikonur-browser-install.log
-          npx playwright install chromium 2>&1 | tee -a /tmp/baikonur-browser-install.log
+          npx playwright install --with-deps chromium 2>&1 | tee -a /tmp/baikonur-browser-install.log
       - name: Start museum site
         id: server
         run: |
