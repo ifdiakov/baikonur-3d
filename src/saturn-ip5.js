@@ -9,6 +9,10 @@ import * as THREE from 'three';
  *   IMG_5342.JPG — aerial view of the site, access road and building layout
  *   IMG_3645.JPG — distance/silhouette of the full antenna field
  *   ajU0...jpg — near view of the umbrella-like receiver/transmitter truss
+ *   IMG_7396.jpeg, IMG_7403.jpeg, IMG_5711.jpeg, IMG_2352.jpeg,
+ *   IMG_5528.jpeg, IMG_5863.jpeg, IMG_5861.jpeg — October 27, 2026
+ *   additional views for shape, truss density, tower features and material study.
+ *   IMG_6657.MOV — supplementary walkthrough reference (not yet frame-verified).
  *
  * NOT a survey; all relative footprints, building heights and azimuths are
  * visual reconstructions. Both giant dishes are ~25m diameter, per public
@@ -37,7 +41,9 @@ export function buildSaturnIP5(root) {
     trim:new THREE.MeshStandardMaterial({color:0xc3b3a1,roughness:.94}),
     gravel:new THREE.MeshStandardMaterial({color:0x8a8273,roughness:1}),
     vegetation:new THREE.MeshStandardMaterial({color:0x797d59,roughness:1,flatShading:true}),
-    signal:new THREE.MeshStandardMaterial({color:0xcab56e,roughness:.88})
+    signal:new THREE.MeshStandardMaterial({color:0xcab56e,roughness:.88}),
+    oxidized:new THREE.MeshStandardMaterial({color:0x747a79,metalness:.38,roughness:.86}),
+    railPaint:new THREE.MeshStandardMaterial({color:0xc1c9c7,metalness:.31,roughness:.68})
   };
   const features={},objects=[];
   let primitives=0;
@@ -226,6 +232,25 @@ export function buildSaturnIP5(root) {
             row%2===0?'steel':'dishRim','dish-radial-rib',group);
       }
     }
+    // Fine open-grid reflector: real P-200 surface reads as a metal mesh,
+    // not an opaque satellite television dish. Added from the new close-ups.
+    // Segments are batched into instanced rods for browser performance.
+    for(let ring=2;ring<=13;ring++){
+      const r=R*ring/13, yy=depth*(r/R)**2+.035;
+      for(let k=0;k<72;k++){
+        const a=k*2*Math.PI/72,b=(k+1)*2*Math.PI/72;
+        rod([r*Math.cos(a),yy,r*Math.sin(a)],
+            [r*Math.cos(b),yy,r*Math.sin(b)],.018,'oxidized','reflector-mesh-rings',group);
+      }
+    }
+    for(let k=0;k<72;k++){
+      const a=k*2*Math.PI/72,c=Math.cos(a),ss=Math.sin(a);
+      for(let j=0;j<12;j++){
+        const r0=R*j/13,r1=R*(j+1)/13;
+        rod([r0*c,depth*(r0/R)**2+.04,r0*ss],
+            [r1*c,depth*(r1/R)**2+.04,r1*ss],.018,'oxidized','reflector-mesh-spokes',group);
+      }
+    }
     // Cross-braces under bowl: triangular lattice narrowing at the mounting.
     for(let k=0;k<24;k++){
       const a=2*Math.PI*k/24,c=Math.cos(a),s=Math.sin(a);
@@ -325,11 +350,11 @@ export function buildSaturnIP5(root) {
     add(mesh,'instanced-antenna-steel',batch.parent);
   }
   root.userData.saturnModel={
-    version:'1.0',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
+    version:'1.1-photo-2026-10-27',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
     sourceFolder:'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk',
-    photosUsed:['IMG_6181.JPG','IMG_5342.JPG','IMG_3645.JPG','ajU0...jpg'],
+    photosUsed:['IMG_6181.JPG','IMG_5342.JPG','IMG_3645.JPG','ajU0...jpg','IMG_7396.jpeg','IMG_7403.jpeg','IMG_5711.jpeg','IMG_2352.jpeg','IMG_5528.jpeg','IMG_5863.jpeg','IMG_5861.jpeg'],
     antennaType:'П-200',largeAntennaCount:2,dishDiameterMetres:25,
-    profile:'two parabolic open-lattice dishes; stepped brick towers; white dome; technical offices',
+    profile:'two 25m parabolic open-grid reflector dishes, ring/spoke mesh and structural ribs; stepped towers; white radome; technical offices',
     modelReliability:'photo-informed, structure dimensions and footprint illustrative',
     featureCounts:features,primitiveCount:primitives,meshCount:objects.length,instancedFrameBatches:rodBatches.size,
     confidence:'relative layout from aerial photograph, approximate 3-anchor external geolocation'
