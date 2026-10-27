@@ -30,6 +30,12 @@ assert.ok(layout.logoVisible&&layout.logoNatural>=300,'User-supplied RocketTrip 
 assert.ok(layout.sliderOutsideSidebar&&layout.sliderBottom&&layout.sidebarAboveDock,'Time slider must live outside sidebar and remain inside bottom dock');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='1961';slider.dispatchEvent(new Event('input',{bubbles:true}))});assert.equal(await page.locator('#yearVal').textContent(),'1961','Year readout must follow timeline control');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='2026';slider.dispatchEvent(new Event('input',{bubbles:true}))});
+const terrainInfo=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
+console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
+assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v2','Museum must load the v2 generated terrain');
+assert.equal(terrainInfo.terrain?.tileResolution,1024,'Background terrain must use 1024px seamless base');
+assert.deepEqual(terrainInfo.terrain?.detailResolution,[1536,1236],'Local satellite-style mosaic must use high-resolution synthetic detail');
+assert.ok(terrainInfo.terrainExtent>=100000,'The desert may not terminate at the historical map edge');
 const count=await page.evaluate(()=>window.__BAIKONUR_QA.stats().sites);
 assert.ok(count>=90,'The museum must load the extended site catalogue');
 assert.ok((await page.locator('.site-label').count())>=80,'Must have labels for the catalogue');
