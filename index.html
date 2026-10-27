@@ -631,8 +631,8 @@ function focus(i){
  const o=objects[i],r=o.record;currentObject=i;ctl.target.copy(o.g.position);
  if(i===0){
   // Include the full satellite-proportioned trench in the opening view.
-  ctl.target.add(new THREE.Vector3(85,20,0));
-  camera.position.copy(ctl.target).add(new THREE.Vector3(245,175,285));
+  ctl.target.add(new THREE.Vector3(135,10,0));
+  camera.position.copy(ctl.target).add(new THREE.Vector3(295,180,345));
  }else camera.position.copy(o.g.position).add(new THREE.Vector3(90,115,135));
  document.getElementById("title").textContent=displaySiteName(o);
  document.getElementById("infoOrg").textContent=r.organisation?.org||"Принадлежность не установлена";
