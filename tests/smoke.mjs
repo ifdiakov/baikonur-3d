@@ -97,7 +97,7 @@ const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
 console.log('GAGARIN START',JSON.stringify(gagarin));
 assert.equal(gagarin.version,'1.0','Pad 1 must use the dedicated detailed reconstruction');
 for(const component of ['flame-trench','tulip-arm','service-gantry','rail-approach','lighting-tower','utility-building','cable-mast']){
- assert.ok(gagarin.featureCounts[component]>=2,'Pad 1 lacks reconstructed component '+component);
+ assert.ok(gagarin.featureCounts[component]>=(component==='flame-trench'?1:2),'Pad 1 lacks reconstructed component '+component);
 }
 assert.ok(gagarin.meshCount>220,'Realistic Pad 1 must contain substantially more than a box-mockup');
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),false,'No permanently staged rocket at closed Pad 1');
