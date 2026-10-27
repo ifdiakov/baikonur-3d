@@ -1,11 +1,13 @@
-SIDEBAR {"noPrototypeNote":true,"noPlanToggle":true,"noRoadDiagnostics":true,"noSatelliteDisclaimer":true,"roadsToggle":true,"railsToggle":true,"labelsToggle":true,"noYandexButton":true,"statusHidden":true}
-ACCORDION: collapsed, expands with search and object list, then collapses
-LAYOUT {"dockBottom":15,"dockWidth":1570,"logoNatural":360,"logoVisible":true,"sliderOutsideSidebar":true,"sliderBottom":true,"sidebarAboveDock":true}
-SERVICE SCHEME {"asset":"assets/service-photo-rectified.b64","source":"visitor-supplied-photograph","positioning":"schematic-not-georeferenced","loaded":true,"inkPixels":55361}
-TERRAIN STYLE {"name":"Baikonur Steppe v2","kind":"synthetic-satellite-style","tileResolution":1024,"detailResolution":[1536,1236],"infiniteExtent":true}
-GAGARIN START {"version":"1.0","mode":"historical-reconstruction","source":"Google Drive refs + published pad 1 surveys","featureCounts":{"apron":1,"pavement-joints":13,"rail-approach":4,"rail-sleepers":35,"rail-shoulder":2,"flame-trench":1,"flame-trench-bank":2,"flame-trench-rim":2,"bank-ribs":26,"launch-deck":2,"deck-parapet":2,"pad-foundations":2,"deck-bridges":2,"start-table":13,"tulip-arm":8,"tulip-lattice":16,"tulip-counterweight":8,"tulip-top":4,"service-gantry":4,"gantry-second-chord":4,"gantry-third-chord":4,"gantry-cross-bracing":128,"gantry-transverse-beam":16,"gantry-stairs":28,"gantry-stair-steps":98,"gantry-platform":14,"gantry-edge-rail":28,"gantry-platform-post":112,"gantry-balcony-bracket":28,"gantry-balcony-diagonal":28,"gantry-hinge":2,"gantry-pivot-shaft":2,"gantry-hinge-foundation":4,"gantry-hydraulic-actuator":4,"gantry-hydraulic-piston":4,"gantry-counterweight":4,"gantry-safety-mark":14,"cable-mast":14,"cable-mast-ladder":8,"lighting-tower":16,"lighting-truss":256,"lighting-crossbar":72,"floodlight-array":124,"utility-building":3,"utility-roof":3,"utility-doors":3,"utility-windows":15,"utility-vents":9,"tank":2,"fuel-piping":4,"tank-cradle":4,"trench-stairs":26,"safety-railing":22},"meshCount":1250,"rocketExhibitDefault":false}
-PASSPORT {"inline":"1","computed":"1","visible":true}
-DETAIL CARDS 1
-TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
-MOBILE {"dockFits":true,"dockWidth":372,"sidebarEndsAboveDock":true,"logoVisible":true}
-BAIKONUR 3D smoke checks PASSED: Site 1 detailed trusses/tulips/trench and optional rocket, Drive refs, 104 sites, history and zoom layers.
+BROWSER CONSOLE: ReferenceError: V is not defined
+    at buildGagarinPad (http://127.0.0.1:8765/src/gagarin-pad.js:316:17)
+    at http://127.0.0.1:8765/:485:22
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.waitForFunction: Timeout 30000ms exceeded.
+    at /home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:11:12 {
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.3
