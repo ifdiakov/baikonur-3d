@@ -19,13 +19,14 @@ export const UKSS_TRENCH = [
 
 // Cut only the terrain and schematic overlays, leaving the real 3D trench visible.
 // World-space clipping follows the same cross sections as the constructed banks.
-export function maskUkssTerrain(material, origin, scale) {
+export function maskUkssTerrain(material, origin, scale, enabled={value:1}) {
   if(material.userData.ukssGroundCutout)return;
   material.userData.ukssGroundCutout=true;
   const prior=material.onBeforeCompile;
   material.onBeforeCompile=shader=>{
     prior.call(material,shader);
     shader.uniforms.ukssCutout={value:new THREE.Vector3(origin.x,origin.z,scale)};
+    shader.uniforms.ukssCutoutEnabled=enabled;
     shader.vertexShader=shader.vertexShader.replace('#include <common>',
       '#include <common>\nvarying vec3 vUkssWorld;').replace('#include <project_vertex>',
       '#include <project_vertex>\nvUkssWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
@@ -34,10 +35,10 @@ export function maskUkssTerrain(material, origin, scale) {
       return `${i?'else ':''}if(ax<=${s[0].toFixed(1)})hw=mix(${a[1].toFixed(1)},${s[1].toFixed(1)},clamp((ax-${a[0].toFixed(1)})/${(s[0]-a[0]).toFixed(1)},0.0,1.0));`;
     }).join('\n');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-      '#include <common>\nvarying vec3 vUkssWorld;\nuniform vec3 ukssCutout;').replace('#include <clipping_planes_fragment>',
-      `#include <clipping_planes_fragment>\nvec2 up=(vUkssWorld.xz-ukssCutout.xy)/ukssCutout.z;\nfloat ax=abs(up.x);float hw=0.0;\n${widthCode}\nif(ax<214.98&&abs(up.y)<hw-0.02)discard;`);
+      '#include <common>\nvarying vec3 vUkssWorld;\nuniform vec3 ukssCutout;\nuniform float ukssCutoutEnabled;').replace('#include <clipping_planes_fragment>',
+      `#include <clipping_planes_fragment>\nvec2 up=(vUkssWorld.xz-ukssCutout.xy)/ukssCutout.z;\nfloat ax=abs(up.x);float hw=0.0;\n${widthCode}\nif(ukssCutoutEnabled>0.5&&ax<214.98&&abs(up.y)<hw-0.02)discard;`);
   };
-  material.customProgramCacheKey=()=> 'ukss-ground-cutout-v1';
+  material.customProgramCacheKey=()=> 'ukss-ground-cutout-v1.1';
   material.needsUpdate=true;
 }
 

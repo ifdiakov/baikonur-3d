@@ -284,6 +284,14 @@ assert.equal(await page.locator('#infoExtra a[href*="drive.google.com/file/"]').
 await page.locator('#close').click();
 await page.locator('#all').click();
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukssScale),ukssOverview.ukssScale,'Return to overview must preserve UKSS scale');
+await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='1955';slider.dispatchEvent(new Event('input',{bubbles:true}))});
+await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===0);
+await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='2026';slider.dispatchEvent(new Event('input',{bubbles:true}))});
+await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===1);
+await page.locator('[data-layer="sites"]').uncheck();
+await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===0);
+await page.locator('[data-layer="sites"]').check();
+await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===1);
 console.log('UKSS: 6 piers, 11 open service decks, 4 light screens, below-grade trench, stable scale');
 await page.setViewportSize({width:390,height:844});
 await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));
