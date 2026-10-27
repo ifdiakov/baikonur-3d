@@ -3,8 +3,12 @@ ACCORDION: collapsed, expands with search and object list, then collapses
 LAYOUT {"dockBottom":15,"dockWidth":1570,"logoNatural":360,"logoVisible":true,"sliderOutsideSidebar":true,"sliderBottom":true,"sidebarAboveDock":true}
 SERVICE SCHEME {"asset":"assets/service-photo-rectified.b64","source":"visitor-supplied-photograph","positioning":"schematic-not-georeferenced","loaded":true,"inkPixels":55361}
 TERRAIN STYLE {"name":"Baikonur Steppe v2","kind":"synthetic-satellite-style","tileResolution":1024,"detailResolution":[1536,1236],"infiniteExtent":true}
-PASSPORT {"inline":"1","computed":"1","visible":true}
-DETAIL CARDS 3
-TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
-MOBILE {"dockFits":true,"dockWidth":372,"sidebarEndsAboveDock":true,"logoVisible":true}
-BAIKONUR 3D smoke checks PASSED: unified 104-object catalogue, 18 historical milestones, 7 field-research finds, floating timeline, and all 3D layers.
+GAGARIN START undefined
+file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:98
+assert.equal(gagarin.version,'1.0','Pad 1 must use the dedicated detailed reconstruction');
+                     ^
+
+TypeError: Cannot read properties of undefined (reading 'version')
+    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:98:22
+
+Node.js v22.23.4
