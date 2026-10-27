@@ -1,16 +1,9 @@
-SIDEBAR {"noPrototypeNote":true,"noPlanToggle":true,"noRoadDiagnostics":true,"noSatelliteDisclaimer":true,"roadsToggle":true,"railsToggle":true,"labelsToggle":true,"satelliteButton":false,"statusHidden":true}
-node:internal/modules/run_main:123
-    triggerUncaughtException(
-    ^
-
-AssertionError [ERR_ASSERTION]: Sidebar must hide implementation diagnostics without losing working navigation
-    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:19:8 {
-  generatedMessage: false,
-  code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
-  diff: 'simple'
-}
-
-Node.js v22.23.3
+SIDEBAR {"noPrototypeNote":true,"noPlanToggle":true,"noRoadDiagnostics":true,"noSatelliteDisclaimer":true,"roadsToggle":true,"railsToggle":true,"labelsToggle":true,"noYandexButton":true,"statusHidden":true}
+LAYOUT {"dockBottom":0,"dockWidth":1600,"logoNatural":360,"logoVisible":true,"sliderOutsideSidebar":true,"sliderBottom":true,"sidebarAboveDock":true}
+SERVICE SCHEME {"asset":"assets/service-photo-rectified.b64","source":"visitor-supplied-photograph","positioning":"schematic-not-georeferenced","loaded":true,"inkPixels":55361}
+TERRAIN STYLE {"name":"Baikonur Steppe v2","kind":"synthetic-satellite-style","tileResolution":1024,"detailResolution":[1536,1236],"infiniteExtent":true}
+PASSPORT {"inline":"1","computed":"1","visible":true}
+DETAIL CARDS 3
+TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
+MOBILE {"dockFits":true,"dockWidth":390,"sidebarEndsAboveDock":true,"logoVisible":true}
+BAIKONUR 3D smoke checks PASSED: 97 sites, 26 sourced descriptions, compact labels, seamless terrain, 4 zoom levels, references and timeline.
