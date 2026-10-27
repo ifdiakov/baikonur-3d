@@ -13,7 +13,7 @@ await page.waitForFunction(()=>document.getElementById('roadStatus')?.textConten
 // Sidebar cleanup must preserve navigation while removing temporary implementation notes.
 const sidebarCleanup=await page.evaluate(()=>{
  const sidebar=document.querySelector('#ui');const text=sidebar?.innerText||'';
- return {noPrototypeNote:!text.includes('Трёхмерная модель планировки'),noPlanToggle:!sidebar.querySelector('[data-layer="plan"]'),noRoadDiagnostics:!text.includes('цветных пикселей'),noSatelliteDisclaimer:!text.includes('Спутниковая съёмка доступна'),roadsToggle:!!sidebar.querySelector('[data-layer="roads"]'),railsToggle:!!sidebar.querySelector('[data-layer="rails"]'),labelsToggle:!!sidebar.querySelector('#showLabels'),satelliteButton:!!sidebar.querySelector('#satellite'),statusHidden:getComputedStyle(document.getElementById('roadStatus')).display==='none'};
+ return {noPrototypeNote:!text.includes('Трёхмерная модель планировки'),noPlanToggle:!sidebar.querySelector('[data-layer="plan"]'),noRoadDiagnostics:!text.includes('цветных пикселей'),noSatelliteDisclaimer:!text.includes('Спутниковая съёмка доступна'),roadsToggle:!!sidebar.querySelector('[data-layer="roads"]'),railsToggle:!!sidebar.querySelector('[data-layer="rails"]'),labelsToggle:!!sidebar.querySelector('#showLabels'),noYandexButton:!sidebar.querySelector('#satellite'),statusHidden:getComputedStyle(document.getElementById('roadStatus')).display==='none'};
 });
 console.log('SIDEBAR',JSON.stringify(sidebarCleanup));
 assert.ok(Object.values(sidebarCleanup).every(Boolean),'Sidebar must hide implementation diagnostics without losing working navigation');
@@ -30,6 +30,13 @@ assert.ok(layout.logoVisible&&layout.logoNatural>=300,'User-supplied RocketTrip 
 assert.ok(layout.sliderOutsideSidebar&&layout.sliderBottom&&layout.sidebarAboveDock,'Time slider must live outside sidebar and remain inside bottom dock');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='1961';slider.dispatchEvent(new Event('input',{bubbles:true}))});assert.equal(await page.locator('#yearVal').textContent(),'1961','Year readout must follow timeline control');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='2026';slider.dispatchEvent(new Event('input',{bubbles:true}))});
+await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.serviceReference?.loaded===true,{timeout:20000});
+const photoOverlay=await page.evaluate(()=>window.__BAIKONUR_QA.stats().serviceReference);
+console.log('SERVICE SCHEME',JSON.stringify(photoOverlay));
+assert.equal(photoOverlay.source,'visitor-supplied-photograph','The actual user-supplied service scheme must be the overlay source');
+assert.ok(photoOverlay.inkPixels>250,'The new image must contribute nonempty historical infrastructure linework');
+const yandexControl=await page.evaluate(()=>document.querySelector('#ui #satellite'));
+assert.equal(yandexControl,null,'Yandex external link must be removed from the museum sidebar');
 const terrainInfo=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
 assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v2','Museum must load the v2 generated terrain');
