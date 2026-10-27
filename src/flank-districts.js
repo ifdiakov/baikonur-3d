@@ -1,26 +1,29 @@
 import * as THREE from 'three';
 
 /**
- * Thematic RocketTrip design-school districts, not administrative borders or
+ * Thematic RocketTrip enterprise districts, not administrative borders or
  * surveyed launch-site ownership. Boundaries follow the historical diagram
  * loosely and exist ONLY at the flank zoom level.
  */
 export const FLANK_DISTRICTS = [
-  {key:'left',name:'ЧЕЛОМЕЙ',color:0xd45a91,school:'ОКБ-52 · школа универсальных ракет',
-   speciality:'Тяжёлые носители, управляемые ракеты и орбитальные комплексы',
-   accomplishments:'УР-100 · УР-500 «Протон» · «Алмаз»',
-   note:'Унификация ракетной техники, тяжёлые носители и долговременные орбитальные системы.',
-   source:'https://www.ras.ru/nappelbaum/2397d9ea-f53c-45eb-a57b-9061d3527a59.aspx?hidetoc=0'},
-  {key:'center',name:'КОРОЛЁВ',color:0x39bad2,school:'ОКБ-1 · школа пилотируемой космонавтики',
-   speciality:'Ракеты Р-7, первый спутник и пилотируемые корабли',
-   accomplishments:'Р-7 · «Спутник» · «Восток» · «Союз»',
-   note:'От первой межконтинентальной ракеты Р-7 к первым орбитальным полётам человека.',
-   source:'https://russianspaceweb.com/baikonur_r7_1.html'},
-  {key:'right',name:'ЯНГЕЛЬ',color:0xefb65d,school:'ОКБ-586 · днепровская ракетная школа',
-   speciality:'Стратегические ракеты на долгохранимых компонентах топлива',
-   accomplishments:'Р-12 · Р-16 · Р-36 · семейство «Циклон»',
-   note:'Отработка надёжных боевых ракет и космических носителей на их основе.',
-   source:'https://cosmosinter.ru/encyclopaedia/en_constructor/detail.php?ID=31'}
+  {key:'left',name:'НПО машиностроения · Центр Хруничева',color:0xd45a91,
+   enterprises:['НПО машиностроения','Центр Хруничева'],
+   rockets:'УР-100 · УР-500 «Протон»',
+   purpose:'Испытания стратегических ракет; запуск тяжёлых спутников и орбитальных станций.',
+   features:'Унификация ракетных систем; долгохранимые компоненты топлива.',
+   sources:['https://npomash.ru/press/ru/tribuna060226.htm?l=0&prn=y','https://www.prlib.ru/history/619392']},
+  {key:'center',name:'РКК «Энергия» · РКЦ «Прогресс»',color:0x39bad2,
+   enterprises:['РКК «Энергия»','РКЦ «Прогресс»'],
+   rockets:'Р-7 · «Восток» · «Союз» · Н-1 · «Энергия»',
+   purpose:'Пилотируемые полёты, доставка грузов, запуск спутников; лунная программа.',
+   features:'Семейство Р-7; кислородно-керосиновые носители; комплекс «Энергия — Буран».',
+   sources:['https://www.samspace.ru/products/launch_vehicles/rakety_nositeli_semeystva_r7/','https://en.samspace.ru/about/history/']},
+  {key:'right',name:'КБ «Южное» · «Южмаш»',color:0xefb65d,
+   enterprises:['КБ «Южное»','«Южмаш»'],
+   rockets:'Р-16 · Р-36 · «Циклон» · «Зенит» · «Днепр»',
+   purpose:'Испытания стратегических ракет и выведение космических аппаратов на орбиту.',
+   features:'Носители на базе боевых ракет; автоматизированный старт «Зенита».',
+   sources:['https://www.unoosa.org/pdf/pres/stsc2010/tech-41.pdf','https://yuzhmash.com/en/about-company/','https://www.testpilot.ru/espace/bibl/kb-ujn/05.php']}
 ];
 
 export function buildFlankDistricts(scene, point, W, H) {
@@ -137,3 +140,4 @@ void main(){gl_FragColor=vec4(uColor,uOpacity*vFade);}`,
     thematicOnly:true
   })};
 }
+
