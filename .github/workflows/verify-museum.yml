@@ -35,6 +35,20 @@ jobs:
         run: |
           set -o pipefail
           node tests/smoke.mjs 2>&1 | tee /tmp/baikonur-test.log
+      - name: Verify published GitHub Pages contains current museum
+        id: public
+        run: |
+          set -e
+          for attempt in $(seq 1 14); do
+            if curl --connect-timeout 8 --max-time 22 -fsSL "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/baikonur-public.html && grep -q 'syntheticGroundReady=true' /tmp/baikonur-public.html; then
+              echo "Published museum includes the new synthetic terrain"
+              exit 0
+            fi
+            echo "GitHub Pages not updated yet: attempt $attempt"
+            sleep 12
+          done
+          echo "Current museum update was not verified on the published URL"
+          exit 1
       - name: Save 4 level screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -50,9 +64,11 @@ jobs:
           TARGET_SHA: ${{ github.sha }}
           INSTALL_STATUS: ${{ steps.install.outcome }}
           SERVER_STATUS: ${{ steps.server.outcome }}
+          PUBLIC_STATUS: ${{ steps.public.outcome }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           mkdir -p data
-          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-status.json",JSON.stringify({targetCommit:process.env.TARGET_SHA,status:process.env.SMOKE_STATUS||"not-run",install:process.env.INSTALL_STATUS,server:process.env.SERVER_STATUS,checkedAt:new Date().toISOString(),test:"Browser-based Playwright smoke check"},null,2))'
+          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-status.json",JSON.stringify({targetCommit:process.env.TARGET_SHA,status:process.env.SMOKE_STATUS||"not-run",install:process.env.INSTALL_STATUS,server:process.env.SERVER_STATUS,public:process.env.PUBLIC_STATUS,runId:process.env.RUN_ID,checkedAt:new Date().toISOString(),test:"Browser-based Playwright smoke check"},null,2))'
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [ -f /tmp/baikonur-browser-install.log ]; then tail -n 80 /tmp/baikonur-browser-install.log > data/qa-install.log; fi
