@@ -10,5 +10,6 @@ FLANK DISTRICTS {"alpha":1,"zoneCount":3,"visibleZones":3,"visibleBoundaries":2,
 DETAIL CARDS 3
 TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
 UKSS: 6 piers, 11 open service decks, 4 light screens, below-grade trench, stable scale
+TERRAIN STABILITY {"largeChanges":0.001336870026525199,"meanChange":0.23678072502207415}
 MOBILE {"dockFits":true,"dockWidth":372,"sidebarEndsAboveDock":true,"logoVisible":true}
 BAIKONUR 3D smoke checks PASSED: 3 cyberpunk school districts with fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.
