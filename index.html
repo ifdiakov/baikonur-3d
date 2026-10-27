@@ -1035,7 +1035,7 @@ function focus(i){
  }else if(i===saturnIndex){
   // View both large dishes, their control buildings, radome and highway access.
   ctl.target.add(new THREE.Vector3(0,32,5).multiplyScalar(SATURN_SCALE));
-  camera.position.copy(ctl.target).add(new THREE.Vector3(235,220,275).multiplyScalar(SATURN_SCALE));
+  camera.position.copy(ctl.target).add(new THREE.Vector3(160,165,195).multiplyScalar(SATURN_SCALE));
  }else camera.position.copy(o.g.position).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  document.getElementById("title").textContent=displaySiteName(o);
  setOrganisationBrand(document.getElementById("infoOrg"),r.organisation?.org,"Принадлежность не установлена");
