@@ -74,8 +74,8 @@ export function sampleSteppe(x,z,detail=1){
  */
 export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
   const config=[
-    {id:'regional',extent:116000,resolution:1152,height:-4.95,fade:.22,detail:0,order:0},
-    {id:'intermediate',extent:18000,resolution:1792,height:-3.75,fade:.24,detail:1,order:1}
+    {id:'regional',extent:116000,resolution:960,height:-4.95,fade:.22,detail:0,order:0},
+    {id:'intermediate',extent:18000,resolution:1280,height:-3.75,fade:.24,detail:1,order:1}
   ];
   const planes=[],textures=[],regionInfo=[];
   for(const spec of config){
