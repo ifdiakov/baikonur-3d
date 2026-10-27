@@ -45,7 +45,7 @@ jobs:
         run: |
           set -e
           for attempt in $(seq 1 20); do
-            if curl --connect-timeout 8 --max-time 22 -fsSL "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/baikonur-public.html && grep -q 'id="timeDock"' /tmp/baikonur-public.html && grep -q 'rockettrip-logo.svg' /tmp/baikonur-public.html && grep -q 'buildGagarinPad' /tmp/baikonur-public.html && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/gagarin-pad.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q "version:'3.2'" && curl --connect-timeout 8 --max-time 15 -fsSL 'https://ifdiakov.github.io/baikonur-3d/assets/rockettrip-logo.svg' | grep -q 'data:image/png;base64'; then
+            if curl --connect-timeout 8 --max-time 22 -fsSL "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/baikonur-public.html && grep -q 'id="timeDock"' /tmp/baikonur-public.html && grep -q 'rockettrip-logo.svg' /tmp/baikonur-public.html && grep -q 'buildGagarinPad' /tmp/baikonur-public.html && grep -q 'const MODEL_SCALE=0.5;' /tmp/baikonur-public.html && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/gagarin-pad.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q "version:'3.2'" && curl --connect-timeout 8 --max-time 15 -fsSL 'https://ifdiakov.github.io/baikonur-3d/assets/rockettrip-logo.svg' | grep -q 'data:image/png;base64'; then
               echo "Published museum includes the updated Gagarin 3D model and RocketTrip branding"
               exit 0
             fi

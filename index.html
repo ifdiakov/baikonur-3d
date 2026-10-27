@@ -227,7 +227,10 @@ import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/O
 import {buildGagarinPad} from './src/gagarin-pad.js';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js';
 try{
-const scene=new THREE.Scene();scene.background=new THREE.Color(0x89938e);scene.fog=new THREE.FogExp2(0xb7b5a4,.00012);const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,1,10000);camera.position.set(0,1450,1450);camera.lookAt(0,0,0);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.getElementById('view').appendChild(renderer.domElement);const ctl=new OrbitControls(camera,renderer.domElement);ctl.enableDamping=true;ctl.screenSpacePanning=false;ctl.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};ctl.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};ctl.maxPolarAngle=Math.PI/2.02;ctl.minDistance=15;ctl.maxDistance=3300;scene.add(new THREE.HemisphereLight(0xbdd7f2,0x62533d,2));const sun=new THREE.DirectionalLight(0xffdfb4,2.2);sun.position.set(-700,1200,500);scene.add(sun);const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const sand=material(0x807965),pave=material(0x666b6a),steel=material(0x85949b),roof=material(0x427084),white=material(0xcbd0ce),dark=material(0x303b43),orange=material(0xb95c3c),railMat=material(0x4b4944);const layers={sites:new THREE.Group(),roads:new THREE.Group(),rails:new THREE.Group(),city:new THREE.Group(),plan:new THREE.Group()};Object.values(layers).forEach(g=>scene.add(g));const W=1300,H=1045,S=1.45;const point=(x,y,z=0)=>new THREE.Vector3((x-W/2)*S,z,(y-H/2)*S);const ground=new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),sand);ground.rotation.x=-Math.PI/2;ground.position.y=-3;scene.add(ground);
+// Common display scale for structures on the schematic; geometry stays fully detailed.
+const MODEL_SCALE=0.5;
+const GAGARIN_SCALE=.43*MODEL_SCALE;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x89938e);scene.fog=new THREE.FogExp2(0xb7b5a4,.00012);const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,10000);camera.position.set(0,1450,1450);camera.lookAt(0,0,0);const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.getElementById('view').appendChild(renderer.domElement);const ctl=new OrbitControls(camera,renderer.domElement);ctl.enableDamping=true;ctl.screenSpacePanning=false;ctl.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};ctl.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};ctl.maxPolarAngle=Math.PI/2.02;ctl.minDistance=15*MODEL_SCALE;ctl.maxDistance=3300;scene.add(new THREE.HemisphereLight(0xbdd7f2,0x62533d,2));const sun=new THREE.DirectionalLight(0xffdfb4,2.2);sun.position.set(-700,1200,500);scene.add(sun);const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const sand=material(0x807965),pave=material(0x666b6a),steel=material(0x85949b),roof=material(0x427084),white=material(0xcbd0ce),dark=material(0x303b43),orange=material(0xb95c3c),railMat=material(0x4b4944);const layers={sites:new THREE.Group(),roads:new THREE.Group(),rails:new THREE.Group(),city:new THREE.Group(),plan:new THREE.Group()};Object.values(layers).forEach(g=>scene.add(g));const W=1300,H=1045,S=1.45;const point=(x,y,z=0)=>new THREE.Vector3((x-W/2)*S,z,(y-H/2)*S);const ground=new THREE.Mesh(new THREE.PlaneGeometry(100000,100000),sand);ground.rotation.x=-Math.PI/2;ground.position.y=-3;scene.add(ground);
 // Seamless orbital-altitude steppe surface. Generated on-device, not remote imagery.
 // BAÏKONUR TERRAIN v2 — generated, seamlessly repeating steppe / saltpan / aeolian detail.
 // This is an artistic museum reconstruction, not a georeferenced satellite photograph.
@@ -328,7 +331,7 @@ const historyEvents=historyResponse.ok?(await historyResponse.json()).events:[];
 const researchResponse=await fetch('./data/field-research.json',{cache:'no-store'});
 const researchObjects=researchResponse.ok?(await researchResponse.json()).objects:[];
 const sites=siteRecords.map(s=>[s.name,s.x,s.y,s.model,s.firstYear]);
-const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSite(s,i){const [name,x,y,type,from]=s;const parent=type==='city'||type==='air'?layers.city:siteRoot;const g=new THREE.Group();g.position.copy(point(x,y));parent.add(g);const seed=(i*17)%11;block(g,type==='air'?135:54,2,type==='air'?28:47,0,1,0,pave);if(type==='launch'){block(g,26,5,25,0,4,0,dark);for(let a of [-1,1])for(let b of [-1,1])block(g,3,32+seed,3,a*14,19,b*13,steel);cyl(g,2.5,43,0,26,0,white);const cone=new THREE.Mesh(new THREE.ConeGeometry(4,12,12),orange);cone.position.y=53;g.add(cone);block(g,14,8,10,23,5,5,roof)}else if(type==='tech'){for(let j=0;j<4;j++){const h=8+((j*9+seed)%18);block(g,13+(j%2)*6,h,15+(j%3)*4,(j-1.5)*16,h/2+2,(j%2?1:-1)*13,j%2?roof:white)}block(g,3,31,3,23,17,-20,steel)}else if(type==='city'){for(let a=0;a<7;a++)for(let b=0;b<6;b++){const h=5+(a*3+b*7)%17;block(g,10,h,12,(a-3)*16,h/2+2,(b-2.5)*17,(a+b)%3?white:roof)}}else{block(g,130,1,13,0,3,0,dark);for(let j=-3;j<=3;j++)block(g,1,1,12,j*17,4,0,white);block(g,28,12,22,5,8,-31,roof)}g.traverse(c=>{if(c.isMesh){c.userData.idx=i;clickable.push(c)}});objects.push({g,name,from,type,x,y,record:siteRecords[i]})}sites.forEach(makeSite);
+const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSite(s,i){const [name,x,y,type,from]=s;const parent=type==='city'||type==='air'?layers.city:siteRoot;const g=new THREE.Group();g.position.copy(point(x,y));g.scale.setScalar(MODEL_SCALE);parent.add(g);const seed=(i*17)%11;block(g,type==='air'?135:54,2,type==='air'?28:47,0,1,0,pave);if(type==='launch'){block(g,26,5,25,0,4,0,dark);for(let a of [-1,1])for(let b of [-1,1])block(g,3,32+seed,3,a*14,19,b*13,steel);cyl(g,2.5,43,0,26,0,white);const cone=new THREE.Mesh(new THREE.ConeGeometry(4,12,12),orange);cone.position.y=53;g.add(cone);block(g,14,8,10,23,5,5,roof)}else if(type==='tech'){for(let j=0;j<4;j++){const h=8+((j*9+seed)%18);block(g,13+(j%2)*6,h,15+(j%3)*4,(j-1.5)*16,h/2+2,(j%2?1:-1)*13,j%2?roof:white)}block(g,3,31,3,23,17,-20,steel)}else if(type==='city'){for(let a=0;a<7;a++)for(let b=0;b<6;b++){const h=5+(a*3+b*7)%17;block(g,10,h,12,(a-3)*16,h/2+2,(b-2.5)*17,(a+b)%3?white:roof)}}else{block(g,130,1,13,0,3,0,dark);for(let j=-3;j<=3;j++)block(g,1,1,12,j*17,4,0,white);block(g,28,12,22,5,8,-31,roof)}g.traverse(c=>{if(c.isMesh){c.userData.idx=i;clickable.push(c)}});objects.push({g,name,from,type,x,y,record:siteRecords[i]})}sites.forEach(makeSite);
 
 // Synthetic satellite-style surface: deliberately illustrative, NOT a Yandex or georeferenced image.
 // Detailed historical-map zone: same desert palette, but closer-resolution erosion,
@@ -554,7 +557,7 @@ function updateLabels(){
  for(const l of labels){
   const o=objects[l.i],el=l.el;
   if(siteAlpha<.04||!o.g.visible||!o.g.parent.visible){el.style.display="none";continue}
-  o.g.getWorldPosition(l.world);l.world.y+=l.i===0?42:45;
+  o.g.getWorldPosition(l.world);l.world.y+=(l.i===0?42:45)*MODEL_SCALE;
   const p=projectToScreen(l.world);if(!p){el.style.display="none";continue}
   const near=camera.position.distanceTo(l.world);
   el.classList.toggle("compact",near>600);el.style.display="flex";
@@ -576,11 +579,11 @@ function updateLabels(){
   if(detailAlpha<.05||!o.g.visible||!o.g.parent.visible){el.style.display="none";continue}
   o.g.getWorldPosition(d.world);const fromTarget=d.world.distanceTo(ctl.target);
   if(fromTarget>240){el.style.display="none";continue}
-  d.world.y+=d.i===0?48:48;
+  d.world.y+=d.i===0?60*GAGARIN_SCALE:48*MODEL_SCALE;
   const p=projectToScreen(d.world);if(!p){el.style.display="none";continue}
   candidates.push({d,p,fromTarget});
  }
- candidates.sort((a,b)=>a.fromTarget-b.fromTarget);
+ candidates.sort((a,b)=>Number(b.d.i===currentObject)-Number(a.d.i===currentObject)||a.fromTarget-b.fromTarget);
  const used=[];let shown=0;
  for(const a of candidates){
   const el=a.d.el;if(shown>=3){el.style.display="none";continue}
@@ -603,9 +606,8 @@ const gagarinExhibit=buildGagarinPad(padGroup);
 // Local flame trench points along -Z; rotating -90° around Y directs its
 // outlet toward the EAST (+X) of the historical schematic. North is -Z.
 padGroup.rotation.y=-Math.PI/2;
-// The original 1300×1045 schematic is not a cadastral map; keep the
-// individual large launch complex within its compact diagrammatic cell.
-padGroup.scale.setScalar(.43);
+// Keep one size on the schematic, including when focused. Close-ups move the camera.
+padGroup.scale.setScalar(GAGARIN_SCALE);
 pad1.name='Площадка № 1 — Гагаринский старт';
 pad1.type='launch';pad1.from=1955;
 padGroup.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=0;clickable.push(mesh)}});
@@ -614,26 +616,18 @@ padGroup.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=0;clickable.push(mesh
 const tex=new THREE.TextureLoader().load('./baykonur-plan.png');tex.colorSpace=THREE.SRGBColorSpace;const plan=new THREE.Mesh(new THREE.PlaneGeometry(W*S,H*S),new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:.75,side:THREE.DoubleSide,depthWrite:false}));plan.rotation.x=-Math.PI/2;plan.position.y=-.2;layers.plan.add(plan);layers.plan.visible=false;
 let currentObject=0;let currentResearch=null;
 let gagarinDetailView=false;
-const gagarinIsolationRadius=340;
 function setGagarinDetailView(active){
  gagarinDetailView=Boolean(active);
- const year=Number(document.getElementById("year").value);
- padGroup.scale.setScalar(active?.82:.43);
- for(let i=1;i<objects.length;i++){
-  const o=objects[i];
-  const near=o.g.position.distanceTo(padGroup.position)<gagarinIsolationRadius;
-  o.g.visible=year>=o.from&&!(active&&near);
- }
 }
 function focus(i){
  currentResearch=null;
  setGagarinDetailView(i===0);
  const o=objects[i],r=o.record;currentObject=i;ctl.target.copy(o.g.position);
  if(i===0){
-  // Include the full satellite-proportioned trench in the opening view.
-  ctl.target.add(new THREE.Vector3(135,10,0));
-  camera.position.copy(ctl.target).add(new THREE.Vector3(295,180,345));
- }else camera.position.copy(o.g.position).add(new THREE.Vector3(90,115,135));
+  // Frame the unchanged detailed mesh at its map scale, including the whole trench.
+  ctl.target.add(new THREE.Vector3(165,12,0).multiplyScalar(GAGARIN_SCALE));
+  camera.position.copy(ctl.target).add(new THREE.Vector3(360,220,420).multiplyScalar(GAGARIN_SCALE));
+ }else camera.position.copy(o.g.position).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  document.getElementById("title").textContent=displaySiteName(o);
  document.getElementById("infoOrg").textContent=r.organisation?.org||"Принадлежность не установлена";
  document.getElementById("infoOrgRole").textContent=r.organisation?.role||"Нет подтверждённого ответственного предприятия";
@@ -752,7 +746,7 @@ function setMuseumYear(year,fromEvent=false){
  document.getElementById('yearVal').textContent=String(val);
  for(let i=0;i<objects.length;i++){
   const o=objects[i];
-  o.g.visible=val>=o.from&&!(gagarinDetailView&&i!==0&&o.g.position.distanceTo(padGroup.position)<gagarinIsolationRadius);
+  o.g.visible=val>=o.from;
  }
  if(!fromEvent){selectedTimelineId=null;timelineEventPanel.hidden=true;timelineSelected.textContent='В истории к '+val+' году: '+historyEvents.filter(e=>Number(e.date.slice(0,4))<=val).length+' событий'}
  for(const e of historyEvents){const b=timelineButtons.get(e.id);if(!b)continue;b.classList.toggle('is-future',Number(e.date.slice(0,4))>val);b.classList.toggle('is-selected',e.id===selectedTimelineId);b.setAttribute('aria-pressed',String(e.id===selectedTimelineId))}
@@ -781,6 +775,6 @@ for(const e of historyEvents){
 }
 document.getElementById('timelineEventClose').onclick=()=>{timelineEventPanel.hidden=true};
 setMuseumYear(2026,false);
-document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('all').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1450,1450)};document.getElementById('top').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1500,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(clickable).find(h=>h.object.parent.visible&&h.object.parent.parent.visible);if(hit)focus(hit.object.userData.idx)});window.__BAIKONUR_QA={setAltitude(n){ctl.target.set(0,0,0);camera.position.set(0,n,Math.max(240,n*.6));ctl.update();camera.updateMatrixWorld(true);updateLabels()},focusSite:focus,stats(){return{sites:objects.length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,gagarin:padGroup.userData.gagarinModel,gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100,780,Math.sin(angle)*1100);ctl.target.set(0,0,0)}if(camera.position.y>1650)camera.position.y=1650;if(camera.position.y<7)camera.position.y=7;ctl.update();updateLabels();renderer.render(scene,camera)}animate();
+document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('all').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1450,1450)};document.getElementById('top').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1500,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(clickable).find(h=>h.object.parent.visible&&h.object.parent.parent.visible);if(hit)focus(hit.object.userData.idx)});window.__BAIKONUR_QA={setAltitude(n){ctl.target.set(0,0,0);camera.position.set(0,n,Math.max(240,n*.6));ctl.update();camera.updateMatrixWorld(true);updateLabels()},focusSite:focus,stats(){return{sites:objects.length,modelScale:MODEL_SCALE,visibleSites:objects.filter(o=>o.g.visible).length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,gagarin:padGroup.userData.gagarinModel,gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100,780,Math.sin(angle)*1100);ctl.target.set(0,0,0)}if(camera.position.y>1650)camera.position.y=1650;if(camera.position.y<7*MODEL_SCALE)camera.position.y=7*MODEL_SCALE;ctl.update();updateLabels();renderer.render(scene,camera)}animate();
 }catch(err){document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}
 </script></body></html>
