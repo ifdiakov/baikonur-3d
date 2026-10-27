@@ -62,12 +62,19 @@ jobs:
         run: |
           set -o pipefail
           node tests/smoke.mjs 2>&1 | tee /tmp/baikonur-public-browser.log
-      - name: Save 4 level screenshots
+      - name: Save browser screenshots and reproducible 3D test snapshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: baikonur-3d-checks
-          path: qa-*.png
+          path: |
+            qa-*.png
+            index.html
+            src/
+            data/*.json
+            assets/
+            tests/smoke.mjs
+            baykonur-plan.png
           if-no-files-found: ignore
 
       - name: Record check result in repository
