@@ -1,30 +1,27 @@
+BROWSER CONSOLE: Failed to load resource: the server responded with a status of 404 (File not found)
 SIDEBAR {"noPrototypeNote":true,"noPlanToggle":true,"noRoadDiagnostics":true,"noSatelliteDisclaimer":true,"roadsToggle":true,"railsToggle":true,"labelsToggle":true,"noYandexButton":true,"statusHidden":true}
 ACCORDION: collapsed, expands with search and object list, then collapses
 LAYOUT {"dockBottom":15,"dockWidth":1570,"logoNatural":360,"logoVisible":true,"sliderOutsideSidebar":true,"sliderBottom":true,"sidebarAboveDock":true}
 SERVICE SCHEME {"asset":"assets/service-photo-rectified.b64","source":"visitor-supplied-photograph","positioning":"schematic-not-georeferenced","loaded":true,"inkPixels":55361}
-TERRAIN STYLE {"name":"Baikonur Steppe v2","kind":"synthetic-satellite-style","tileResolution":1024,"detailResolution":[1536,1236],"infiniteExtent":true}
-GAGARIN START {"version":"3.2","rocketPassage":{"axis":[0,0],"crownRadius":5.2,"serviceDecks":6,"throughHole":true},"flameDuctReview":"Plan visually traced from owner overhead screenshot 2026-10-27 20:41:25; elevations unverified","ductPlan":{"reference":"2026-10-27 20:41:25","imageSize":[1920,1297],"origin":[674,546],"scale":0.5,"stations":[[750,267,810,455,580,0.35],[780,271,813,447,590,0.4],[825,278,814,442,600,0.55],[880,290,806,445,606,0.8],[950,313,783,461,609,1.4],[1030,346,750,482,604,2.6],[1110,379,714,503,593,4.4],[1190,410,677,515,582,7.1],[1260,435,650,518,578,10.1],[1340,466,623,516,579,13.8],[1405,487,608,506,581,16.6],[1435,505,593,507,581,18]],"outletWidth":37,"roadReturnsAroundOutlet":true},"name":"Gagarin's Start photo-grounded reconstruction","archiveFolder":"1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC","orientation":"West rail (+Z) → start at centre → broad western chamber tapering to eastern apron (-Z)","localFlameAzimuth":"-Z","photosUsed":["IMG_5826.jpeg","IMG_8447.jpeg","IMG_4933.jpeg","IMG_4948.jpeg","2026-10-27 17:49 overhead","2026-10-27 16:18 overhead","2026-10-27 20:41:25 overhead"],"featureCounts":{"western-forecourt":1,"ballast-bed":1,"rail-approach":4,"rail-sleepers":44,"service-road":4,"bridge-concrete-pier":2,"bridge-superstructure":2,"pier-formwork-seams":14,"pier-rust-rib":6,"launcher-upper-deck":2,"launcher-west-crosswalk":1,"launcher-red-crossbeam":1,"rust-red-deck-edge":2,"corrugated-cladding":38,"deck-safety-railing":22,"underbridge-gallery":6,"underbridge-grating":30,"underbridge-staircase":40,"underbridge-cross-truss":6,"launch-podium-ring-frame":2,"launch-podium-rim":2,"flame-channel":12,"gas-duct-floor-panels":77,"flame-duct-bank":52,"concrete-tile-seam":44,"flame-duct-upper-coping":30,"flame-duct-discolored-seam":22,"flame-duct-embankment":22,"flame-outlet-apron":1,"duct-perimeter-road":100,"start-table":1,"start-table-support":1,"tulip-arm":8,"tulip-inner-bracing":20,"tulip-counterweight-rod":4,"yellow-counterweight":4,"tulip-gripper":4,"launcher-guide":4,"umbilical-connection":2,"tower-main-leg":4,"tower-story-ring":100,"tower-x-lattice":144,"tower-service-deck":6,"tower-deck-rails":48,"tower-electrical-cabinet":6,"tower-crown":1,"tower-upper-equipment":1,"tower-crown-ladder":34,"gantry-inclined-main":4,"gantry-inclined-secondary":4,"gantry-inclined-lattice":104,"outer-yellow-hinge":2,"buttress-actuator":4,"hydraulic-strut":4,"lower-access-truss":8,"lower-access-truss-web":20,"service-ladder":55,"service-catwalk":3,"service-catwalk-deck":3,"concrete-bridge-stairs":50,"lighting-tower":16,"lighting-tower-bracing":192,"lighting-array-head":4,"floodlight-array":32,"lightning-mast":2,"lightning-mast-tip":2,"utility-building":3,"utility-roof":3,"utility-door":3,"utility-window":6,"fuel-utility-lines":16,"gallery-safety-rail":18,"concrete-deck-seam":8},"meshCount":1548,"renderMeshCount":47,"rocketExhibitDefault":false,"status":"interpretative model: plan-layout and structural shapes photo-referenced; dimensions unverified"}
-ROCKET PASSAGE GEOMETRY {"deckCount":7,"blockedHoleSamples":0,"missingRimSamples":0,"blockedShaftSamples":0,"floorGaps":0}
-TRANSPORT NETWORK {"version":"1.0","stationCount":7,"roadRoutes":18,"railRoutes":14,"railSwitches":40,"yardTracks":16,"facilityDriveways":24,"railTies":2496,"renderedRailLength":18211.31436820559,"sources":"original Baikonur historical site plan + visually interpreted switches","confidence":"schematic-topology","siteAccess":["1","2А","254","113","90","92","95","97","89","81","175","200","132","70","163","251","250","250А","110","112","31","45","241","17"],"stationNames":["ст. Западная","ст. Горная","ст. Песчаная","Разъезд (по схеме)","ст. Нагорная","ст. Восточная","станционный район Тюратам"]}
-PASSPORT {"inline":"1","computed":"1","visible":true}
-FLANK PORTRAITS [{"alt":"Архивный портрет: Владимир Николаевич Челомей","src":"https://commons.wikimedia.org/wiki/Special:FilePath/Vladimir_Chelomey.jpg","loaded":true,"width":715,"height":952},{"alt":"Архивный портрет: Сергей Павлович Королёв","src":"https://commons.wikimedia.org/wiki/Special:FilePath/Sergei_Korolev_portrait.jpg","loaded":true,"width":226,"height":260},{"alt":"Архивный портрет: Михаил Кузьмич Янгель","src":"https://commons.wikimedia.org/wiki/Special:FilePath/Myhajlo_jangel_a.jpg","loaded":true,"width":200,"height":200}]
-FLANK DISTRICTS {"alpha":1,"zoneCount":3,"visibleZones":3,"visibleBoundaries":2,"thematicOnly":true}
-DETAIL CARDS 2
-TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
-UKSS: 6 piers, 11 open service decks, 4 light screens, below-grade trench, stable scale
-TERRAIN STABILITY {"largeChanges":0.056453580901856766,"meanChange":7.717158267020306}
+TERRAIN STYLE {"name":"Baikonur Steppe v3","kind":"synthetic-satellite-style","tileResolution":1024,"detailResolution":[1536,1236],"extended":{"edition":3,"extent":96000,"textureResolution":1792,"edgeFadeFraction":0.205,"photographicClaim":false,"detailBeyondHistoricMap":true},"infiniteExtent":true}
 node:internal/modules/run_main:123
     triggerUncaughtException(
     ^
 
-AssertionError [ERR_ASSERTION]: Small camera movement must not create widespread terrain flicker
-    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:403:8 {
+AssertionError [ERR_ASSERTION]: Museum must load the v2 generated terrain
++ actual - expected
+
++ 'Baikonur Steppe v3'
+- 'Baikonur Steppe v2'
+                    ^
+
+    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:92:8 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
-  actual: false,
-  expected: true,
-  operator: '==',
+  actual: 'Baikonur Steppe v3',
+  expected: 'Baikonur Steppe v2',
+  operator: 'strictEqual',
   diff: 'simple'
 }
 
-Node.js v22.23.4
+Node.js v22.23.3
