@@ -17,6 +17,19 @@ const sidebarCleanup=await page.evaluate(()=>{
 });
 console.log('SIDEBAR',JSON.stringify(sidebarCleanup));
 assert.ok(Object.values(sidebarCleanup).every(Boolean),'Sidebar must hide implementation diagnostics without losing working navigation');
+// The large site catalogue is collapsed until the visitor expands it.
+const accordion=page.locator('#sitesAccordion');
+assert.equal(await accordion.count(),1,'Site catalogue must exist as a collapsible section');
+assert.equal(await accordion.evaluate(el=>el.open),false,'Site catalogue must start collapsed');
+assert.equal(await page.locator('#search').isVisible(),false,'Search must be hidden when site catalogue is collapsed');
+assert.ok(Number(await page.locator('#count').textContent())>=90,'The collapsed heading must display its object count');
+await page.locator('#sitesAccordion > summary').click();
+assert.equal(await accordion.evaluate(el=>el.open),true,'Clicking the heading must expand the catalogue');
+assert.equal(await page.locator('#search').isVisible(),true,'Search must appear inside expanded catalogue');
+assert.ok((await page.locator('#list .entry').count())>=90,'Expanded catalogue must display all museum objects');
+await page.locator('#sitesAccordion > summary').click();
+assert.equal(await accordion.evaluate(el=>el.open),false,'Clicking the heading again must collapse the catalogue');
+console.log('ACCORDION: collapsed, expands with search and object list, then collapses');
 // Verify the exact supplied brand graphic and the separate bottom history dock.
 await page.waitForFunction(()=>{const image=document.querySelector('.rockettrip-logo');return !!(image&&image.complete&&image.naturalWidth>=300)},{timeout:15000});
 const layout=await page.evaluate(()=>{
@@ -68,9 +81,13 @@ assert.ok((await page.locator('.detail-card:visible').count())>0,'Level 4: on-si
 assert.equal(await page.locator('#title').textContent(),'пл. 1 · Гагаринский старт');
 const siteTags=await page.locator('.site-label:not(.is-provisional) .tag').allTextContents();
 assert.ok(siteTags.length>=80 && siteTags.every(v=>v.startsWith('пл. ')),'All numbered site labels must use the short «пл.» prefix');
+await page.locator('#sitesAccordion > summary').click();
+assert.equal(await accordion.evaluate(el=>el.open),true);
 await page.locator('#search').fill('Протон');
 assert.ok(Number(await page.locator('#count').textContent())>=2,'Search by verified purpose should find both Proton sites');
 await page.locator('#search').fill('');
+await page.locator('#sitesAccordion > summary').click();
+assert.equal(await accordion.evaluate(el=>el.open),false,'Site catalogue stays independently collapsible after filtering');
 await page.locator('#detailMore').click();assert.equal(await page.locator('#infoExtra').evaluate(e=>e.style.display),'block');
 assert.ok((await page.locator('#infoExtra a').count())>=1,'At least one original historical source must be linked in a site detail');
 const terrain=await page.evaluate(()=>({proceduralGround:document.querySelector('canvas')!==null,flag:document.getElementById('view')!==null,gridElements:document.querySelectorAll('canvas').length}));
