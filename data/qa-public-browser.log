@@ -9,7 +9,18 @@ PASSPORT {"inline":"1","computed":"1","visible":true}
 FLANK DISTRICTS {"alpha":1,"zoneCount":3,"visibleZones":3,"visibleBoundaries":2,"thematicOnly":true}
 DETAIL CARDS 3
 TERRAIN {"proceduralGround":true,"flag":true,"gridElements":1}
-UKSS: 6 piers, 11 open service decks, 4 light screens, below-grade trench, stable scale
-TERRAIN STABILITY {"largeChanges":0.0014058355437665782,"meanChange":0.24836516357193975}
-MOBILE {"dockFits":true,"dockWidth":372,"sidebarEndsAboveDock":true,"logoVisible":true}
-BAIKONUR 3D smoke checks PASSED: 3 cyberpunk school districts with fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+page.screenshot: Timeout 30000ms exceeded.
+Call log:
+  - taking page screenshot
+  - waiting for fonts to load...
+  - fonts loaded
+
+    at /home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:282:13 {
+  name: 'TimeoutError'
+}
+
+Node.js v22.23.3
