@@ -1,4 +1,5 @@
 BROWSER CONSOLE: Failed to load resource: the server responded with a status of 404 ()
+ENTERPRISE LOGOS: local silver assets loaded on all attributed site cards
 SIDEBAR {"noPrototypeNote":true,"noPlanToggle":true,"noRoadDiagnostics":true,"noSatelliteDisclaimer":true,"roadsToggle":true,"railsToggle":true,"labelsToggle":true,"noYandexButton":true,"statusHidden":true}
 ACCORDION: collapsed, expands with search and object list, then collapses
 LEFT STACK desktop-collapsed {"stack":{"x":15,"y":15,"right":335,"bottom":592.078125,"h":577.078125},"ui":{"x":15,"y":15,"bottom":532.484375,"h":517.484375},"guide":{"x":15,"y":541.484375,"bottom":592.078125,"h":50.59375},"dockTop":718,"open":false,"siteOpen":false}
@@ -22,7 +23,7 @@ node:internal/modules/run_main:123
     ^
 
 AssertionError [ERR_ASSERTION]: Small camera movement must not create widespread terrain flicker
-    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:438:8 {
+    at file:///home/runner/work/baikonur-3d/baikonur-3d/tests/smoke.mjs:455:8 {
   generatedMessage: false,
   code: 'ERR_ASSERTION',
   actual: false,
@@ -31,4 +32,4 @@ AssertionError [ERR_ASSERTION]: Small camera movement must not create widespread
   diff: 'simple'
 }
 
-Node.js v22.23.4
+Node.js v22.23.3
