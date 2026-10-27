@@ -1,0 +1,396 @@
+{
+  "version": 1,
+  "coordinateSystem": {
+    "description": "Нормализованные координаты исходного изображения схемы; НЕ географические координаты",
+    "width": 1300,
+    "height": 1045,
+    "xAxis": "left-to-right",
+    "yAxis": "top-to-bottom"
+  },
+  "sources": {
+    "original-plan-3993x3208": {
+      "title": "Схема комплекса «Байконур»",
+      "kind": "user-provided-historical-schematic",
+      "image": "baykonur-plan.png",
+      "pixelWidth": 3993,
+      "pixelHeight": 3208,
+      "method": "Ручная проверка подписей по увеличенным фрагментам"
+    },
+    "service-photo-2026": {
+      "title": "Фотография схемы объектов комплекса «Байконур»",
+      "kind": "user-provided-photograph",
+      "imageNotYetInRepository": true,
+      "note": "Второй источник идентификации; фотосъёмка под углом, требуется перспективная калибровка до точной оцифровки"
+    }
+  },
+  "statusLegend": {
+    "label-read": "Номер прочитан на исходной схеме; точное положение требует сверки",
+    "provisional-sector": "Условный сектор или ориентир — не атрибутированный объект"
+  },
+  "sites": [
+    {
+      "id": "pad-1",
+      "name": "Площадка № 1 — Гагаринский старт",
+      "x": 699,
+      "y": 365,
+      "model": "launch",
+      "firstYear": 1955,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-2a",
+      "name": "Площадка № 2А",
+      "x": 594,
+      "y": 421,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-2b",
+      "name": "Площадка № 2Б",
+      "x": 676,
+      "y": 333,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-110a",
+      "name": "Площадка № 110А",
+      "x": 617,
+      "y": 338,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-112a",
+      "name": "Площадка № 112А",
+      "x": 664,
+      "y": 327,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-118",
+      "name": "Площадка № 118",
+      "x": 556,
+      "y": 356,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-254",
+      "name": "Площадка № 254",
+      "x": 585,
+      "y": 407,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-113",
+      "name": "Площадка № 113",
+      "x": 578,
+      "y": 397,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-141",
+      "name": "Площадка № 141",
+      "x": 711,
+      "y": 395,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-115b",
+      "name": "Площадка № 115Б",
+      "x": 580,
+      "y": 456,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-194",
+      "name": "Площадка № 194",
+      "x": 623,
+      "y": 481,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "pad-193",
+      "name": "Площадка № 193",
+      "x": 764,
+      "y": 307,
+      "model": "tech",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "original-map-pixels",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Обозначение прочитано на исходной схеме; точка поставлена ориентировочно по области объекта. 3D-форма не атрибутирована."
+    },
+    {
+      "id": "sector-nw1",
+      "name": "Северо-западный сектор — группа А",
+      "x": 117,
+      "y": 80,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-nw2",
+      "name": "Северо-западный сектор — группа Б",
+      "x": 190,
+      "y": 96,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-north",
+      "name": "Северный протяжённый комплекс",
+      "x": 552,
+      "y": 113,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-north-center",
+      "name": "Северо-центральный сектор",
+      "x": 608,
+      "y": 239,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-northeast",
+      "name": "Северо-восточный сектор",
+      "x": 1040,
+      "y": 228,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-east",
+      "name": "Восточный комплекс",
+      "x": 1145,
+      "y": 278,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-south-junction",
+      "name": "Южная транспортная группа",
+      "x": 675,
+      "y": 518,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-south",
+      "name": "Южная техническая группа",
+      "x": 667,
+      "y": 755,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "city",
+      "name": "Город Байконур",
+      "x": 658,
+      "y": 958,
+      "model": "city",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "airfield",
+      "name": "Аэродром у города",
+      "x": 539,
+      "y": 962,
+      "model": "air",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-east-center",
+      "name": "Восточно-центральный сектор",
+      "x": 840,
+      "y": 448,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-west-center",
+      "name": "Западно-центральный сектор",
+      "x": 503,
+      "y": 305,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-south-east",
+      "name": "Юго-восточный сектор",
+      "x": 815,
+      "y": 676,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    },
+    {
+      "id": "sector-citynorth",
+      "name": "Северная городская инфраструктура",
+      "x": 664,
+      "y": 898,
+      "model": "tech",
+      "firstYear": null,
+      "status": "provisional-sector",
+      "positionBasis": "original-map-overview",
+      "sources": [
+        "original-plan-3993x3208"
+      ],
+      "note": "Временный макет области. Точный состав и название объектов ожидают атрибуции."
+    }
+  ]
+}
