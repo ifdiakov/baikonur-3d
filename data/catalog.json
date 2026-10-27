@@ -1,5 +1,5 @@
 {
-  "version": 3,
+  "version": 4,
   "coordinateSystem": {
     "description": "Нормализованные координаты исходного изображения схемы; НЕ географические координаты",
     "width": 1300,
@@ -34,7 +34,8 @@
   },
   "statusLegend": {
     "label-read": "Номер прочитан на исходной схеме; точное положение требует сверки",
-    "provisional-sector": "Условный сектор или ориентир — не атрибутированный объект"
+    "provisional-sector": "Условный сектор или ориентир — не атрибутированный объект",
+    "externally-attributed": "Номер и назначение подтверждены внешними источниками; положение по предварительной геопривязке"
   },
   "sites": [
     {
@@ -2110,6 +2111,79 @@
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false
+    },
+    {
+      "id": "pad-23",
+      "name": "Площадка № 23 — ИП-5 «Сатурн»",
+      "number": "23",
+      "titleShort": "ИП-5 «Сатурн-МС»",
+      "titleFull": "пл. №23 · ИП-5 «Сатурн-МС»",
+      "x": 709,
+      "y": 806,
+      "model": "saturn-ms-photo-v1",
+      "firstYear": 1966,
+      "status": "externally-attributed",
+      "positionBasis": "approximate three-landmark affine positioning of published GPS; no cadastral registration",
+      "positionVerified": false,
+      "coordinateConfidence": "low: geographic-coordinate source and historical-image alignment independently unverified",
+      "geographicPoint": {
+        "lat": 45.70416667,
+        "lon": 63.34,
+        "approximate": true,
+        "source": "https://wildticketasia.com/1039-measuring-complex-saturn-ip-5.html"
+      },
+      "modelStatus": "Фотографическая 3D-реконструкция RocketTrip: характерные антенные сооружения воспроизведены по архиву, взаимные расстояния и масштаб вспомогательных зданий ориентировочные.",
+      "modelFeatures": [
+        "Две 25-метровые сетчатые параболические антенны П-200 с радиальными фермами",
+        "Многоярусная высокая башня с бетонными поясками и узкими окнами",
+        "Вторая антенно-поворотная установка на отдельной опорной башне",
+        "Белый радиопрозрачный купол и малые антенны",
+        "Технические корпуса с окнами и плоскими крышами",
+        "Подъездная дорога, инженерная территория и редкая степная растительность"
+      ],
+      "note": "ИП-5 «Сатурн-МС» на горе Мургудук, пл. №23. Номер и назначение подтверждены. Точка (x=709, y=806) введена как ПРЕДВАРИТЕЛЬНАЯ геопривязка по внешней опубликованной координате 45.70417° N, 63.34000° E и трём опорным точкам музейной карты; требуется независимая проверка на спутниковой подложке. Не использовать позицию для навигации.",
+      "organisation": {
+        "org": "Измерительный комплекс космодрома",
+        "role": "исторический командно-измерительный пункт; текущее ведомственное подчинение уточняется",
+        "source": "https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/"
+      },
+      "category": "измерительный",
+      "purpose": "Наземный измерительный пункт ИП-5 для связи и контроля космических аппаратов; комплекс «Сатурн-МС».",
+      "purposeLong": "Площадка №23 — измерительный пункт «Сатурн-МС» (ИП-5). Создание комплекса началось в 1966 году; крупнейшие приёмная и передающая антенны П-200 с диаметром зеркал 25 м применялись для сопровождения кораблей «Союз», орбитальных станций и межпланетных аппаратов. Площадка включает две крупные поворотные антенны, наземную радиоаппаратуру, технические здания и радиопрозрачный купол.",
+      "evidenceLevel": "public-source-confirmed-function; approximate externally supplied coordinates",
+      "publicReferences": [
+        "https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/",
+        "https://epizodsspace.airbase.ru/bibl/kudryashov/kudryashov-ikk-50.pdf",
+        "https://www.advantour.com/rus/kazakhstan/baikonur-cosmodrome/saturn-ms.htm",
+        "https://wildticketasia.com/1039-measuring-complex-saturn-ip-5.html"
+      ],
+      "photoFolder": {
+        "name": "пл. №23 ИП Сатурн",
+        "id": "1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk",
+        "url": "https://drive.google.com/drive/folders/1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk"
+      },
+      "photoArchive": [
+        {
+          "fileName": "IMG_5342.JPG",
+          "driveId": "1SW9m0RbEU5bASeqy_VlynvoqpWRE9gQD",
+          "subject": "Аэрофотоснимок всего измерительного комплекса, дорог и антенных сооружений"
+        },
+        {
+          "fileName": "IMG_6181.JPG",
+          "driveId": "1nAZYnXiQEsdjQstIkF8pOZybITQ7D81y",
+          "subject": "Главная башня и большая параболическая антенна, вторая антенна и белый радиопрозрачный купол"
+        },
+        {
+          "fileName": "IMG_3645.JPG",
+          "driveId": "1cvLkc_fMtIlbS7bw3AeZMAzZxOkdK8Ec",
+          "subject": "Силуэты больших и вспомогательных антенн на закате"
+        },
+        {
+          "fileName": "ajU0__nxd72-1nHRqhn1V-4roA7o10_EtIjkOhxor9EQr1kUMQ6jOlqLjH8FZuvmQwvp3__w.jpg",
+          "driveId": "1Vn_-DCu89H_0e9LPTGF5W37AyipOs8-w",
+          "subject": "Детальная решётчатая конструкция, облучатель и балконы главной антенны"
+        }
+      ]
     }
   ],
   "notes": "Номера добавлены по визуальному чтению схем, указанные координаты относительные и требуют индивидуальной проверки. Новые площадки имеют условные 3D-макеты, не реальные размеры зданий.",
@@ -2124,17 +2198,6 @@
       ],
       "positionVerified": false,
       "note": "Не смешивать с площадками 2А и 2Б. Точная точка пока не нанесена."
-    },
-    {
-      "number": "23",
-      "titleShort": "Измерительный пункт «Сатурн»",
-      "purposeLong": "Пристартовый измерительный пункт № 5 (ИП-5) с системой «Сатурн-МС».",
-      "publicReferences": [
-        "https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/",
-        "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38"
-      ],
-      "positionVerified": false,
-      "note": "Положение на нашей карте пока не установлено."
     },
     {
       "number": "41",
