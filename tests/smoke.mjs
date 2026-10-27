@@ -225,7 +225,23 @@ assert.ok(transport.yardTracks>=14,'Stations need several diverging yard tracks'
 assert.ok(transport.stationNames.includes('ст. Нагорная'),'Station names from the historical scheme must be included');
 assert.ok(transport.facilityDriveways>=12,'Pads must connect to the main road network');
 assert.ok(transport.renderedRailLength>14000,'Render long continuously curved rail networks');
+const saturn=overviewScale.saturn;
+console.log('SATURN SITE 23',JSON.stringify(saturn));
+assert.equal(saturn.version,'1.0','The Saturn IP-5 photo model must be integrated');
+assert.equal(saturn.sourceFolder,'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk','Saturn must reference dedicated user Drive folder');
+assert.equal(saturn.dishDiameterMetres,25);
+assert.equal(saturn.largeAntennaCount,2,'Saturn must have two 25m P-200 parabolic antennas');
+for(const [key,min] of [
+ ['25m-parabolic-reflector',2],['dish-radial-rib',400],['dish-support-web',40],
+ ['tower-horizontal-cornice',8],['control-building',4],['white-radome',1],
+ ['access-from-highway',1],['murguduk-hill',1],['feed-support-truss',8]
+]) assert.ok((saturn.featureCounts[key]||0)>=min,'Saturn model lacks photoreferenced architectural element '+key);
+assert.ok(saturn.primitiveCount>=800,'Saturn dishes need structural detail, not a few generic cones');
+assert.ok(overviewScale.saturnScale>=1,'The 25m dishes must be visible relative to the road width');
+assert.deepEqual(overviewScale.saturnPlacement,[709,806],'Satellite site is located at provisional 3-anchor coordinates');
 const count=overviewScale.sites;
+assert.equal(count,98,'Museums contains 97 existing sites plus photo-grounded Saturn site 23');
+
 assert.ok(count>=90,'The museum must load the extended site catalogue');
 assert.ok((await page.locator('.site-label').count())>=80,'Must have labels for the catalogue');
 await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));
@@ -301,6 +317,18 @@ await page.locator('.rockettrip-logo').click();
 assert.equal(await labelEye.isVisible(),false,'Clicking outside hides the eye');
 await page.screenshot({path:'qa-sites.png'});
 await page.screenshot({path:'qa-steppe-intermediate.png'});
+// The museum's new Saturn-IP5 entry must open in its own 3D close-up with
+// the genuine parabolic dish geometry rather than a generic building.
+await page.evaluate(()=>window.__BAIKONUR_QA.focusSite(window.__BAIKONUR_QA.stats().saturnIndex));
+await page.waitForTimeout(450);
+assert.ok((await page.locator('#title').textContent()).includes('ИП-5 «Сатурн-МС»'));
+assert.ok((await page.locator('#description').textContent()).includes('предварительная'));
+await page.screenshot({path:'qa-saturn-ip5.png'});
+await page.locator('#detailMore').click();
+const saturnDriveRefs=await page.locator('#infoExtra a[href*="drive.google.com/file/"]').count();
+assert.equal(saturnDriveRefs,4,'Saturn details should link all 4 user reference photographs');
+await page.locator('#close').click();
+// Existing Gagarin benchmark remains unchanged.
 await page.evaluate(()=>window.__BAIKONUR_QA.focusSite(0));
 const closeup=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 assert.equal(closeup.gagarinDetailView,true,'Clicking Site 1 must activate dedicated pad close-up');
