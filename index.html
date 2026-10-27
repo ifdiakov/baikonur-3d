@@ -313,7 +313,7 @@ try{
 const MODEL_SCALE=0.28;
 const SCENE_SCALE=3.40/1.45;
 const GAGARIN_SCALE=.43*MODEL_SCALE/1.5;
-const SATURN_SCALE=1.05;
+const SATURN_SCALE=0.525;
 const UKSS_SCALE=.5*MODEL_SCALE*1.5;
 const groundMaterials=new Set();let ukssCutout=null;
 function registerGroundSurface(mesh){
@@ -1005,11 +1005,13 @@ const saturnSite=objects[saturnIndex],saturnGroup=saturnSite.g;
 saturnGroup.clear();
 for(let j=clickable.length-1;j>=0;j--)
  if(clickable[j].userData.idx===saturnIndex)clickable.splice(j,1);
-buildSaturnIP5(saturnGroup);
+// Rotation is +90 degrees counterclockwise from the previous model pose.
+// Resolve the mesh's UVs in world space against the existing terrain texture.
 saturnGroup.scale.setScalar(SATURN_SCALE);
-// Route the site's access lane toward the highway west of the hill; orientation provisional.
-saturnGroup.rotation.y=-Math.PI/2;
-saturnGroup.position.y=-2.4; // hill edges join the surrounding steppe
+saturnGroup.rotation.y=0;
+saturnGroup.position.y=-2.55;
+saturnGroup.updateMatrixWorld(true);
+buildSaturnIP5(saturnGroup,{terrainTexture:satelliteTexture,terrainWidth:W*S,terrainHeight:H*S});
 saturnSite.type='saturn-ms';
 saturnGroup.traverse(o=>{
  if(o.isMesh){o.userData.idx=saturnIndex;clickable.push(o)}
