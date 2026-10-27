@@ -197,6 +197,37 @@
 /* Keep the enterprise cards readable above 3D scenery. */
 .flank-label{opacity:calc(var(--level-alpha,1)*.97);box-shadow:0 13px 46px #000b,inset 0 1px #ffffff25;border-color:#c4d6df52;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 .flank-label .flank-name{color:#fff}
+
+/* Archival portraits and designer names restored without removing enterprise facts. */
+.flank-label{width:318px;min-height:0;padding:12px 13px;white-space:normal;align-items:flex-start;text-align:left}
+.flank-label .flank-copy{width:100%;gap:8px}
+.flank-label .flank-head{display:flex;align-items:center;gap:12px;min-height:93px;width:100%;min-width:0}
+.flank-label .flank-portrait{display:grid;place-items:center;position:relative;flex:0 0 77px;
+  width:77px;height:91px;border-radius:9px;overflow:hidden;
+  background:linear-gradient(145deg,#748388,#182d36 80%);
+  box-shadow:inset 0 0 0 1px #ffffff46,0 6px 16px #0008;border:1px solid #c5d1d249}
+.flank-label .flank-portrait img{display:block;position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center 26%;opacity:0;filter:grayscale(1) contrast(1.15);
+  transition:opacity .3s ease}
+.flank-label .flank-portrait.is-loaded img{opacity:1}
+.flank-label .flank-portrait-fallback{font:600 22px Bounded,Montserrat,Arial;color:#f0f3f5;letter-spacing:.03em}
+.flank-label .flank-identity{display:flex;flex-direction:column;justify-content:center;gap:6px;min-width:0}
+.flank-label .flank-engineer{display:block;color:#fff;font:500 22px/1.04 Bounded,Montserrat,Arial;letter-spacing:-.025em;white-space:normal}
+.flank-label .flank-fullname{display:block;color:#d3e0e8;font:600 10px/1.5 Montserrat,Arial;white-space:normal}
+.flank-label .flank-name{display:flex;flex-direction:column;gap:3px;font:600 11px/1.35 Montserrat,Arial;color:#f0f3f5}
+.flank-label .flank-enterprises{padding-top:8px;border-top:1px solid #d0dae12d}
+.flank-label[data-district="left"] .flank-engineer{color:#f4a6d0}
+.flank-label[data-district="center"] .flank-engineer{color:#90e6f5}
+.flank-label[data-district="right"] .flank-engineer{color:#ffe0a9}
+@media(max-width:850px){
+ .flank-label{width:244px;padding:9px}
+ .flank-label .flank-head{min-height:70px;gap:8px}
+ .flank-label .flank-portrait{flex-basis:54px;width:54px;height:68px}
+ .flank-label .flank-engineer{font-size:15px}
+ .flank-label .flank-fullname{font-size:8px}
+ .flank-label .flank-name{font-size:9px}
+ .flank-label .flank-copy{gap:6px}
+}
 </style></head><body><div id="view"></div><section id="hero" aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ROCKETTRIP / ИНТЕРАКТИВНЫЙ МУЗЕЙ</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" aria-label="Подписи площадок"></div><div id="error"></div><aside id="ui"><div id="museumIdentity"><img class="rockettrip-logo" src="./assets/rockettrip-logo.svg" alt="RocketTrip" width="278" height="105" decoding="async"><div class="identity-rule"></div><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-version">3D</span></div></div><div class="buttons"><button id="all">Весь космодром</button><button id="top">Сверху</button><button id="fly">Облёт</button></div><div class="label">СЛОИ СЦЕНЫ</div><label class="filter"><input type="checkbox" checked data-layer="sites"> Площадки и сооружения</label><label class="filter"><input type="checkbox" checked data-layer="roads"> Автодороги</label><label class="filter"><input type="checkbox" checked data-layer="rails"> Железнодорожные пути</label><label class="filter"><input type="checkbox" checked data-layer="city"> Город и аэродром</label><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><label class="filter"><input type="checkbox" id="showLabels" checked> <strong>Подписи / фланги</strong></label><details id="sitesAccordion" class="sites-accordion"><summary aria-label="Раскрыть или свернуть площадки и узлы"><span class="sites-accordion-title">ПЛОЩАДКИ И УЗЛЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество объектов"></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body"><input class="search" id="search" type="search" aria-label="Поиск площадок и узлов" placeholder="Поиск по номеру и названию…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><p class="small">ЛКМ — перемещение над картой; ПКМ — вращение; колёсико — масштаб. WASD / стрелки — полёт над территорией, Shift — ускорение. Нажми на модель или выбери объект.</p></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ РАКЕТУ Р-7 · ЭКСПОНАТ</button><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div><div class="timeline-events-heading"><span>СОБЫТИЯ</span><span id="timelineYearHint">Нажмите на событие, чтобы узнать больше</span></div><div id="timelineEvents" class="timeline-events" role="group" aria-label="Ключевые события истории Байконура"></div><section id="timelineEventPanel" class="timeline-event-panel" hidden aria-label="Историческое событие"><button type="button" id="timelineEventClose" class="timeline-event-close" aria-label="Закрыть историческую справку">×</button><div id="timelineEventDate" class="timeline-event-date"></div><h3 id="timelineEventTitle"></h3><p id="timelineEventDescription"></p><div class="timeline-event-actions"><a id="timelineEventSource" href="#" target="_blank" rel="noopener noreferrer">ИСТОЧНИК ↗</a><button type="button" id="timelineGoToSite">К ПЛОЩАДКЕ ↗</button></div></section></footer><script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}</script><script type="module">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad} from './src/gagarin-pad.js';
@@ -580,20 +611,41 @@ for(let i=0;i<objects.length;i++){
  labels.push({i,el,world:new THREE.Vector3(),priority:identified?1:2});
 }
 const flanks=[
- {key:"left",zone:"ЛЕВЫЙ ФЛАНГ",x:440,y:410},
- {key:"center",zone:"ЦЕНТРАЛЬНЫЙ ФЛАНГ",x:660,y:435},
- {key:"right",zone:"ПРАВЫЙ ФЛАНГ",x:1100,y:400}
+ {key:"left",zone:"ЛЕВЫЙ ФЛАНГ",x:440,y:410,
+  surname:"ЧЕЛОМЕЙ",fullname:"Владимир Николаевич Челомей",initials:"ВН",
+  photo:"https://commons.wikimedia.org/wiki/Special:FilePath/Vladimir_Chelomey.jpg"},
+ {key:"center",zone:"ЦЕНТРАЛЬНЫЙ ФЛАНГ",x:660,y:435,
+  surname:"КОРОЛЁВ",fullname:"Сергей Павлович Королёв",initials:"СП",
+  photo:"https://commons.wikimedia.org/wiki/Special:FilePath/Sergei_Korolev_portrait.jpg"},
+ {key:"right",zone:"ПРАВЫЙ ФЛАНГ",x:1100,y:400,
+  surname:"ЯНГЕЛЬ",fullname:"Михаил Кузьмич Янгель",initials:"МК",
+  photo:"https://commons.wikimedia.org/wiki/Special:FilePath/Myhajlo_jangel_a.jpg"}
 ].map(f=>{
  const district=FLANK_DISTRICTS.find(d=>d.key===f.key);
  const el=document.createElement("button");el.type="button";el.className="flank-label";
- el.dataset.district=f.key;el.title=f.zone+" — "+district.name;
- const copy=document.createElement("span");copy.className="flank-copy";
+ el.dataset.district=f.key;el.title=f.zone+" — "+f.fullname;
+ const head=document.createElement("span");head.className="flank-head";
+ const portrait=document.createElement("span");portrait.className="flank-portrait";
+ const fallback=document.createElement("span");fallback.className="flank-portrait-fallback";fallback.textContent=f.initials;
+ const photo=document.createElement("img");photo.src=f.photo;photo.alt="Архивный портрет: "+f.fullname;
+ photo.loading="eager";photo.decoding="async";photo.referrerPolicy="no-referrer";
+ photo.addEventListener("load",()=>{portrait.classList.add("is-loaded");portrait.classList.remove("is-error")});
+ photo.addEventListener("error",()=>{portrait.classList.remove("is-loaded");portrait.classList.add("is-error")});
+ portrait.append(fallback,photo);
+ const identity=document.createElement("span");identity.className="flank-identity";
  const kicker=document.createElement("span");kicker.className="flank-kicker";kicker.textContent=f.zone;
+ const surname=document.createElement("span");surname.className="flank-engineer";surname.textContent=f.surname;
+ const fullname=document.createElement("span");fullname.className="flank-fullname";fullname.textContent=f.fullname;
+ identity.append(kicker,surname,fullname);head.append(portrait,identity);
+ const copy=document.createElement("span");copy.className="flank-copy";
+ copy.append(head);
  const name=document.createElement("span");name.className="flank-name";
  for(const enterprise of district.enterprises){
   const line=document.createElement("span");line.textContent=enterprise;name.appendChild(line);
  }
- copy.append(kicker,name);
+ const enterprises=document.createElement("span");enterprises.className="flank-field flank-enterprises";
+ const enterpriseTitle=document.createElement("span");enterpriseTitle.className="flank-field-title";enterpriseTitle.textContent="Конструкторская школа · предприятия";
+ enterprises.append(enterpriseTitle,name);copy.append(enterprises);
  for(const [key,title] of [["rockets","Основные ракеты"],["purpose","Цели и задачи"],["features","Особенности"]]){
   const field=document.createElement("span");field.className="flank-field";
   const label=document.createElement("span");label.className="flank-field-title";label.textContent=title;
@@ -602,9 +654,10 @@ const flanks=[
  }
  el.appendChild(copy);
  el.addEventListener("click",()=>{
-  const at=point(f.x,f.y);ctl.target.copy(at);camera.position.copy(at).add(new THREE.Vector3(0,510,720));
+  const at=point(f.x,f.y);ctl.target.copy(at);
+  camera.position.copy(at).add(new THREE.Vector3(0,510*SCENE_SCALE,720*SCENE_SCALE));
  });
- labelLayer.appendChild(el);return {...f,el,world:point(f.x,f.y,110)};
+ labelLayer.appendChild(el);return {...f,el,portrait,photo,world:point(f.x,f.y,110)};
 });
 detailCards=objects.map((o,i)=>{
  const r=o.record,org=r.organisation?.org||"Не установлено",isEnergia=/Энергия/.test(org);
