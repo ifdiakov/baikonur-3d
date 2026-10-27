@@ -34,6 +34,34 @@ assert.ok((await page.locator('#list .entry').count())>=90,'Expanded catalogue m
 await page.locator('#sitesAccordion > summary').click();
 assert.equal(await accordion.evaluate(el=>el.open),false,'Clicking the heading again must collapse the catalogue');
 console.log('ACCORDION: collapsed, expands with search and object list, then collapses');
+async function verifyMenuAndGuideStack(page,where){
+  const layout=await page.evaluate(()=>{
+    const stack=document.getElementById('museumLeftStack').getBoundingClientRect(),
+          ui=document.getElementById('ui').getBoundingClientRect(),
+          guide=document.getElementById('navigationGuide').getBoundingClientRect(),
+          dock=document.getElementById('timeDock').getBoundingClientRect();
+    return {stack:{x:stack.x,y:stack.y,right:stack.right,bottom:stack.bottom,h:stack.height},
+      ui:{x:ui.x,y:ui.y,bottom:ui.bottom,h:ui.height},
+      guide:{x:guide.x,y:guide.y,bottom:guide.bottom,h:guide.height},
+      dockTop:dock.top,open:document.getElementById('navigationGuide').open,
+      siteOpen:document.getElementById('sitesAccordion').open};
+  });
+  console.log('LEFT STACK '+where,JSON.stringify(layout));
+  assert.ok(Math.abs(layout.ui.x-layout.guide.x)<=2,'Navigation hint must align with sidebar');
+  assert.ok(layout.guide.y>=layout.ui.bottom+5,'Navigation hint must sit BELOW the sidebar without overlap');
+  assert.ok(layout.guide.bottom<=layout.dockTop-4,'The menu and navigation guide must stay above timeline');
+  return layout;
+}
+assert.equal(await page.locator('#navigationGuide').count(),1,'Illustrated navigation guide must exist separately');
+assert.equal(await page.locator('#navigationGuide').evaluate(e=>e.open),false,'Navigation guide must begin collapsed');
+await verifyMenuAndGuideStack(page,'desktop-collapsed');
+await page.locator('#sitesAccordion > summary').click();
+await page.locator('#navigationGuide > summary').click();
+assert.equal(await page.locator('#navigationGuide .guide-item').count(),4,'Guide must show illustrated mouse and keyboard controls');
+await verifyMenuAndGuideStack(page,'desktop-expanded-both');
+await page.locator('#navigationGuide > summary').click();
+await page.locator('#sitesAccordion > summary').click();
+
 assert.equal(await page.locator('.hud').count(),0,'Bottom-right debug badge must be removed');
 assert.equal(await page.locator('#ui').getByText('Источники портретов').count(),0,'Portrait-source accordion must be removed');
 assert.equal(await page.locator('#researchAccordion').count(),0,'Field research must not have a separate menu');
@@ -89,7 +117,9 @@ const yandexControl=await page.evaluate(()=>document.querySelector('#ui #satelli
 assert.equal(yandexControl,null,'Yandex external link must be removed from the museum sidebar');
 const terrainInfo=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
-assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v2','Museum must load the v2 generated terrain');
+assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v3','Museum must load the expanded generated terrain');
+assert.ok(terrainInfo.outerTerrain.extent>=90000,'Expanded ground must reach beyond the visible horizon');
+assert.ok(terrainInfo.cameraMinElevationDeg===30,'Viewer must remain at least 30 degrees above the horizontal plane');
 assert.equal(terrainInfo.terrain?.tileResolution,1024,'Background terrain must use 1024px seamless base');
 assert.deepEqual(terrainInfo.terrain?.detailResolution,[1536,1236],'Local satellite-style mosaic must use high-resolution synthetic detail');
 assert.ok(terrainInfo.terrainExtent>=100000,'The desert may not terminate at the historical map edge');
@@ -163,6 +193,11 @@ const overviewScale=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 assert.equal(overviewScale.modelScale,.28,'Schematic pad models must be reduced to 28% of their model-space size');
 assert.ok(overviewScale.sceneScale>2.3,'Cosmodrome extent must be more than doubled');
 assert.equal(overviewScale.gagarinScale,.43*.28/1.5,'Pad 1 must retain its detailed model at reduced world scale');
+const highway=overviewScale.highwaySigns;
+console.log('HIGHWAY SIGNS',JSON.stringify(highway));
+assert.equal(highway.signCount,2,'One western and one eastern road sign must be rendered');
+assert.deepEqual(highway.cities.map(c=>c.name),['АКТОБЕ','САМАРА','КЫЗЫЛОРДА','АЛМАТЫ']);
+assert.ok(highway.locations[0].x>-2000 && highway.locations[1].x<1900,'Signposts must move inward nearer to the crossroads');
 const transport=overviewScale.transport;
 console.log('TRANSPORT NETWORK',JSON.stringify(transport));
 assert.equal(transport.roadRoutes,18,'Road system should use historical-schema corridors');
@@ -415,6 +450,12 @@ const mobile=await page.evaluate(()=>{
  return {dockFits:Math.abs(innerHeight-dock.bottom-9)<1,dockWidth:dock.width,sidebarEndsAboveDock:sidebar.bottom<=dock.top+2,logoVisible:logo.width>100&&logo.height>35};
 });
 console.log('MOBILE',JSON.stringify(mobile));
+await verifyMenuAndGuideStack(page,'mobile-collapsed');
+await page.locator('#sitesAccordion > summary').click();
+await page.locator('#navigationGuide > summary').click();
+await verifyMenuAndGuideStack(page,'mobile-expanded-both');
+await page.locator('#navigationGuide > summary').click();
+await page.locator('#sitesAccordion > summary').click();
 assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.logoVisible,'Floating timeline and expanding menu must fit mobile');
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
