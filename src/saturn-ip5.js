@@ -74,14 +74,19 @@ export function buildSaturnIP5(root) {
   function groundPatch(){
     // A slight berm on the Murguduk hill, fading into the real procedural
     // steppe, not a big raised rectangular slab.
-    const N=32,extent=238,vertices=[],uv=[],indices=[];
+    const N=40,extent=280,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
       const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent,
-        radius=Math.sqrt((xx/119)**2+(zz/104)**2),
+        radius=Math.sqrt((xx/158)**2+(zz/147)**2),
         r=(Math.sin(xx*.085+zz*.035)+Math.sin(xx*.038-zz*.076))*.22,
-        fade=Math.max(0,1-radius*radius),
-        height=7.3*Math.pow(fade,1.5)+r*fade;
+        t=Math.max(0,Math.min(1,(radius-.83)/.38)),
+        fade=1-t*t*(3-2*t),
+        height=7.8*fade+r*fade;
       vertices.push(xx,height-.22,zz);uv.push(x/N,z/N);
+      const patina=(Math.sin(xx*.055+zz*.03)*.055+Math.cos(xx*.012-zz*.083)*.04+
+        Math.sin(xx*.21+zz*.34)*.012)*fade;
+      const color=new THREE.Color(0x9d8e76).multiplyScalar(1+patina);
+      colors.push(color.r,color.g,color.b);
       if(x<N&&z<N){
         const a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;
         indices.push(a,c,b,b,c,d);
@@ -89,15 +94,20 @@ export function buildSaturnIP5(root) {
     }
     const geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices);
-    geo.computeVertexNormals();
-    add(new THREE.Mesh(geo,mat.steppe),'murguduk-hill');
+    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
+    geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+    geo.setIndex(indices);geo.computeVertexNormals();
+    const groundMaterial=new THREE.MeshStandardMaterial({
+      vertexColors:true,roughness:1,metalness:0,side:THREE.DoubleSide
+    });
+    add(new THREE.Mesh(geo,groundMaterial),'murguduk-hill');
   }
   groundPatch();
 
   // Engineering area and curved approach. North edge connects to highway
   // as seen in the aerial photograph; internal service loop faces the radomes.
-  box(167,.45,126,0,7.12,0,'gravel','measurement-compound');
+  // Preserve natural hill soil between separately modelled buildings and roads;
+  // a single 170×126m rectangle used to look like a container depot.
   box(141,.23,13,-7,7.42,24,'asphalt','internal-access-road');
   box(12,.25,70,10,7.48,-34,'asphalt','service-lane');
   box(8,.24,40,-80,7.47,32,'asphalt','antenna-service-access');
