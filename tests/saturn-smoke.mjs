@@ -43,6 +43,23 @@ const viewport=await page.evaluate(()=>{
 assert.ok(viewport.w>=1200&&viewport.h>=800,'3D renderer must paint viewport');
 assert.equal(viewport.webglError,'','No runtime failure visible in museum error overlay');
 await page.screenshot({path:'qa-saturn-ip5.png'});
+// Independent workshop route verifies the model can be examined on its own.
+const workshopURL=new URL('workshop/saturn.html',origin);
+await page.goto(workshopURL.toString(),{waitUntil:'domcontentloaded',timeout:40000});
+await page.waitForFunction(()=>window.__SATURN_PREVIEW__?.rendererReady===true,{timeout:60000});
+const preview=await page.evaluate(()=>window.__SATURN_PREVIEW__.stats());
+console.log('SATURN WORKSHOP',JSON.stringify(preview));
+assert.equal(preview.antennas,2,'Workshop renders both large dishes');
+assert.equal(preview.diameter,25);
+assert.ok(preview.meshCount>60,'Workshop must contain distinct buildings and antenna geometry');
+assert.equal(await page.locator('#error').isVisible(),false);
+await page.locator('#grid').click();
+assert.equal(await page.locator('#grid').getAttribute('aria-pressed'),'true');
+await page.locator('#wireframe').click();
+assert.equal(await page.locator('#wireframe').getAttribute('aria-pressed'),'true');
+await page.locator('#wireframe').click();
+await page.locator('#grid').click();
+await page.screenshot({path:'qa-saturn-workshop.png'});
 assert.deepEqual(errors,[],'No uncaught JavaScript errors');
 await browser.close();
 console.log('SATURN IP-5 browser smoke PASSED: 2x 25m P-200, instanced trusses, radome, buildings, provisional geolocation, direct link, 4 photo refs.');
