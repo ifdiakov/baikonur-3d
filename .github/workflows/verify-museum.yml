@@ -32,7 +32,9 @@ jobs:
           sleep 2
       - name: Smoke test - Three.js and semantic zoom
         id: browser
-        run: node tests/smoke.mjs
+        run: |
+          set -o pipefail
+          node tests/smoke.mjs 2>&1 | tee /tmp/baikonur-test.log
       - name: Save 4 level screenshots
         if: always()
         uses: actions/upload-artifact@v4
@@ -54,6 +56,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [ -f /tmp/baikonur-browser-install.log ]; then tail -n 80 /tmp/baikonur-browser-install.log > data/qa-install.log; fi
-          git add data/qa-status.json data/qa-install.log 2>/dev/null || git add data/qa-status.json
+          if [ -f /tmp/baikonur-test.log ]; then tail -n 140 /tmp/baikonur-test.log > data/qa-test.log; fi
+          git add data/qa-status.json data/qa-install.log data/qa-test.log 2>/dev/null || git add data/qa-status.json
           git diff --cached --quiet || git commit -m "ci: update Baikonur museum browser check result"
           git push
