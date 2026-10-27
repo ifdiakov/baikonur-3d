@@ -306,12 +306,14 @@ import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js';
 import {buildTransportNetwork} from './src/transport-network.js';
 import {buildExtendedTerrain, sampleSteppe} from './src/terrain-extent.js';
 import {buildHighwaySigns} from './src/road-signs.js';
+import {buildSaturnIP5} from './src/saturn-ip5.js';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js';
 try{
 // Common display scale for structures on the schematic; geometry stays fully detailed.
 const MODEL_SCALE=0.28;
 const SCENE_SCALE=3.40/1.45;
 const GAGARIN_SCALE=.43*MODEL_SCALE/1.5;
+const SATURN_SCALE=1.05;
 const UKSS_SCALE=.5*MODEL_SCALE*1.5;
 const groundMaterials=new Set();let ukssCutout=null;
 function registerGroundSurface(mesh){
@@ -757,7 +759,7 @@ document.addEventListener("pointerdown",e=>{
 });
 document.addEventListener("keydown",e=>{if(e.key==="Escape")selectSiteCard(null)});
 for(let i=0;i<objects.length;i++){
- const o=objects[i],item=o.record,identified=item.status==="label-read";
+ const o=objects[i],item=o.record,identified=item.status==="label-read"||item.status==="externally-attributed";
  const match=o.name.match(/№\s*([\dА-ЯA-Z]+)/u);
  const badgeText=identified&&match?"пл. №"+match[1]:"◇";
  const fullText=identified?(item.titleShort||o.name.replace(/^Площадка\s*№\s*[\dА-ЯA-Z]+\s*[—-]?\s*/u,"").trim()):o.name;
@@ -923,7 +925,7 @@ function updateLabels(){
  for(const l of labels){
   const o=objects[l.i],el=l.el;
   if(siteAlpha<.04||!o.g.visible||!o.g.parent.visible){el.style.display="none";continue}
-  o.g.getWorldPosition(l.world);l.world.y+=l.i===0?Math.max(10,75*GAGARIN_SCALE):l.i===ukssIndex?Math.max(12,48*UKSS_SCALE):Math.max(10,38*MODEL_SCALE);
+  o.g.getWorldPosition(l.world);l.world.y+=l.i===0?Math.max(10,75*GAGARIN_SCALE):l.i===ukssIndex?Math.max(12,48*UKSS_SCALE):l.i===saturnIndex?72*SATURN_SCALE:Math.max(10,38*MODEL_SCALE);
   const p=projectToScreen(l.world);if(!p){el.style.display="none";continue}
   const near=camera.position.distanceTo(l.world);
   el.classList.toggle("compact",near>600);el.style.display="flex";
@@ -947,7 +949,7 @@ function updateLabels(){
   if(detailAlpha<.05||!o.g.visible||!o.g.parent.visible){el.style.display="none";continue}
   o.g.getWorldPosition(d.world);const fromTarget=d.world.distanceTo(ctl.target);
   if(fromTarget>240){el.style.display="none";continue}
-  d.world.y+=d.i===0?Math.max(11,95*GAGARIN_SCALE):Math.max(11,38*MODEL_SCALE);
+  d.world.y+=d.i===0?Math.max(11,95*GAGARIN_SCALE):d.i===saturnIndex?85*SATURN_SCALE:Math.max(11,38*MODEL_SCALE);
   const p=projectToScreen(d.world);if(!p){el.style.display="none";continue}
   candidates.push({d,p,fromTarget});
  }
@@ -994,6 +996,23 @@ ukssGroup.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=ukssIndex;clickable.
 ukssCutout={origin:ukssGroup.position.clone(),scale:UKSS_SCALE,enabled:{value:1}};
 for(const mat of groundMaterials)maskUkssTerrain(mat,ukssCutout.origin,ukssCutout.scale,ukssCutout.enabled);
 
+// Site 23 / Saturn-MS is based on the dedicated RocketTrip archive and
+// its two real 25-metre parabolic antennas; never substitute a generic hangar.
+const saturnIndex=objects.findIndex(o=>o.record.id==='pad-23');
+if(saturnIndex<0)throw new Error('В каталоге отсутствует ИП-5 «Сатурн», пл. №23');
+const saturnSite=objects[saturnIndex],saturnGroup=saturnSite.g;
+saturnGroup.clear();
+for(let j=clickable.length-1;j>=0;j--)
+ if(clickable[j].userData.idx===saturnIndex)clickable.splice(j,1);
+buildSaturnIP5(saturnGroup);
+saturnGroup.scale.setScalar(SATURN_SCALE);
+saturnGroup.position.y=-2.4; // hill edges join the surrounding steppe
+saturnSite.type='saturn-ms';
+saturnGroup.traverse(o=>{
+ if(o.isMesh){o.userData.idx=saturnIndex;clickable.push(o)}
+});
+// Coordinates are provisional — the numbered facility itself is documented.
+
 const tex=new THREE.TextureLoader().load('./baykonur-plan.png');tex.colorSpace=THREE.SRGBColorSpace;const plan=new THREE.Mesh(new THREE.PlaneGeometry(W*S,H*S),new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:.75,side:THREE.DoubleSide,depthWrite:false}));plan.rotation.x=-Math.PI/2;plan.position.y=-.2;plan.renderOrder=4;layers.plan.add(plan);registerGroundSurface(plan);layers.plan.visible=false;
 let currentObject=0;let currentResearch=null;
 let gagarinDetailView=false;
@@ -1011,6 +1030,10 @@ function focus(i){
  }else if(i===ukssIndex){
   ctl.target.add(new THREE.Vector3(0,25,45).multiplyScalar(UKSS_SCALE));
   camera.position.copy(ctl.target).add(new THREE.Vector3(370,310,-480).multiplyScalar(UKSS_SCALE));
+ }else if(i===saturnIndex){
+  // View both large dishes, their control buildings, radome and highway access.
+  ctl.target.add(new THREE.Vector3(0,32,5).multiplyScalar(SATURN_SCALE));
+  camera.position.copy(ctl.target).add(new THREE.Vector3(235,220,275).multiplyScalar(SATURN_SCALE));
  }else camera.position.copy(o.g.position).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  document.getElementById("title").textContent=displaySiteName(o);
  setOrganisationBrand(document.getElementById("infoOrg"),r.organisation?.org,"Принадлежность не установлена");
@@ -1166,7 +1189,7 @@ document.getElementById('close').onclick=()=>{setGagarinDetailView(false);docume
  camera.position.set(0,n*SCENE_SCALE,Math.max(240,n*.6)*SCENE_SCALE);
  ctl.update();ctl.enableDamping=wasDamping;
  camera.updateMatrixWorld(true);updateLabels()
-},focusSite:focus,inspectSurface(site,part){const root=site==='ukss'?ukssGroup:padGroup;const target=site==='ukss'?(part==='concrete'?new THREE.Vector3(95,-10,30):new THREE.Vector3(0,61,166)):new THREE.Vector3(0,65,0);const offset=part==='concrete'?new THREE.Vector3(90,65,95):new THREE.Vector3(85,35,-115);root.updateWorldMatrix(true,false);ctl.target.copy(root.localToWorld(target.clone()));camera.position.copy(root.localToWorld(target.add(offset)));ctl.update();camera.updateMatrixWorld(true)},stats(){return{sites:objects.length,highwaySigns:highwaySigns.stats(),flankCardLayout:flankLayoutMode,flankCardRects:flanks.filter(f=>f.el.style.display==='flex').map(f=>{const b=f.el.getBoundingClientRect();return {id:f.key,x:b.x,y:b.y,w:b.width,h:b.height}}),cameraMinElevationDeg:30,outerTerrain:outerTerrain.stats(),riverCoverage:riverStats,sceneScale:SCENE_SCALE,modelScale:MODEL_SCALE,transport:transport.stats(),visibleSites:objects.filter(o=>o.g.visible).length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,surfaceMaterials:{gagarin:padGroup.userData.surfaceMaterials,ukss:ukssGroup.userData.surfaceMaterials},gagarin:padGroup.userData.gagarinModel,ukss:ukssGroup.userData.ukssModel,ukssIndex,ukssScale:ukssGroup.scale.x,ukssPlacement:[ukssSite.record.x,ukssSite.record.y],ukssTerrainCutout:groundMaterials.size,ukssCutoutEnabled:ukssCutout.enabled.value,shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100*SCENE_SCALE,780*SCENE_SCALE,Math.sin(angle)*1100*SCENE_SCALE);ctl.target.set(0,0,0)}if(camera.position.y>1650*SCENE_SCALE)camera.position.y=1650*SCENE_SCALE;if(camera.position.y<7*MODEL_SCALE)camera.position.y=7*MODEL_SCALE;ctl.update();updateLabels();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;renderer.render(scene,camera)}animate();
+},focusSite:focus,inspectSurface(site,part){const root=site==='ukss'?ukssGroup:padGroup;const target=site==='ukss'?(part==='concrete'?new THREE.Vector3(95,-10,30):new THREE.Vector3(0,61,166)):new THREE.Vector3(0,65,0);const offset=part==='concrete'?new THREE.Vector3(90,65,95):new THREE.Vector3(85,35,-115);root.updateWorldMatrix(true,false);ctl.target.copy(root.localToWorld(target.clone()));camera.position.copy(root.localToWorld(target.add(offset)));ctl.update();camera.updateMatrixWorld(true)},stats(){return{sites:objects.length,saturn:saturnGroup.userData.saturnModel,saturnScale:saturnGroup.scale.x,saturnPlacement:[saturnSite.record.x,saturnSite.record.y],highwaySigns:highwaySigns.stats(),flankCardLayout:flankLayoutMode,flankCardRects:flanks.filter(f=>f.el.style.display==='flex').map(f=>{const b=f.el.getBoundingClientRect();return {id:f.key,x:b.x,y:b.y,w:b.width,h:b.height}}),cameraMinElevationDeg:30,outerTerrain:outerTerrain.stats(),riverCoverage:riverStats,sceneScale:SCENE_SCALE,modelScale:MODEL_SCALE,transport:transport.stats(),visibleSites:objects.filter(o=>o.g.visible).length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,surfaceMaterials:{gagarin:padGroup.userData.surfaceMaterials,ukss:ukssGroup.userData.surfaceMaterials},gagarin:padGroup.userData.gagarinModel,ukss:ukssGroup.userData.ukssModel,ukssIndex,ukssScale:ukssGroup.scale.x,ukssPlacement:[ukssSite.record.x,ukssSite.record.y],ukssTerrainCutout:groundMaterials.size,ukssCutoutEnabled:ukssCutout.enabled.value,shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100*SCENE_SCALE,780*SCENE_SCALE,Math.sin(angle)*1100*SCENE_SCALE);ctl.target.set(0,0,0)}if(camera.position.y>1650*SCENE_SCALE)camera.position.y=1650*SCENE_SCALE;if(camera.position.y<7*MODEL_SCALE)camera.position.y=7*MODEL_SCALE;ctl.update();updateLabels();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;renderer.render(scene,camera)}animate();
 }catch(err){document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}
 </script></body></html>
 
