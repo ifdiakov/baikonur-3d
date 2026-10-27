@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "verifiedOn": "2026-10-27",
+  "scope": "События, связанные с пусками с космодрома Байконур; годы задают исторический слой 3D-музея",
+  "events": [
+    {
+      "id": "r7-first",
+      "date": "1957-05-15",
+      "title": "Первое испытание Р-7",
+      "short": "Испытание Р-7",
+      "type": "испытания",
+      "description": "Первый испытательный пуск межконтинентальной ракеты Р-7 с площадки № 1. Полёт завершился аварией — это был первый шаг программы.",
+      "site": "1",
+      "source": "https://space.skyrocket.de/doc_lau_fam/r-7.htm"
+    },
+    {
+      "id": "sputnik-1",
+      "date": "1957-10-04",
+      "title": "Первый спутник Земли",
+      "short": "Первый спутник",
+      "type": "первенство",
+      "description": "С Гагаринского старта выведен ПС-1 — первый искусственный спутник Земли.",
+      "site": "1",
+      "source": "https://www.prlib.ru/history/619601"
+    },
+    {
+      "id": "belka-strelka",
+      "date": "1960-08-19",
+      "title": "Белка и Стрелка",
+      "short": "Белка и Стрелка",
+      "type": "космонавтика",
+      "description": "Старт «Корабля-спутника — 2» с собаками Белкой и Стрелкой. Они благополучно вернулись на Землю после орбитального полёта.",
+      "site": "1",
+      "source": "https://www.nasa.gov/history/a-brief-history-of-animals-in-space/"
+    },
+    {
+      "id": "gagarin",
+      "date": "1961-04-12",
+      "title": "Первый полёт человека",
+      "short": "Юрий Гагарин",
+      "type": "первенство",
+      "description": "Юрий Гагарин стартовал на корабле «Восток» с площадки № 1 и совершил первый полёт человека в космос.",
+      "site": "1",
+      "source": "https://www.prlib.ru/history/619601"
+    },
+    {
+      "id": "tereshkova",
+      "date": "1963-06-16",
+      "title": "Валентина Терешкова",
+      "short": "Терешкова",
+      "type": "космонавтика",
+      "description": "«Восток-6»: первая женщина в космосе.",
+      "site": "1",
+      "source": "https://www.esa.int/About_Us/50_years_of_ESA/50_years_of_humans_in_space/First_woman_in_space_Valentina"
+    },
+    {
+      "id": "leonov",
+      "date": "1965-03-18",
+      "title": "Алексей Леонов",
+      "short": "Леонов",
+      "type": "космонавтика",
+      "description": "«Восход-2»: первый выход человека в открытый космос.",
+      "site": "1",
+      "source": "https://researchguides.library.vanderbilt.edu/c.php?g=68842&p=447292"
+    },
+    {
+      "id": "proton",
+      "date": "1965-07-16",
+      "title": "Первый старт «Протона»",
+      "short": "Первый «Протон»",
+      "type": "ракеты",
+      "description": "Первый старт УР-500 с научным аппаратом «Протон-1»; история тяжёлой ракеты началась с Байконура.",
+      "site": "81",
+      "source": "https://www.prlib.ru/history/619392"
+    },
+    {
+      "id": "salyut-1",
+      "date": "1971-04-19",
+      "title": "Первая орбитальная станция",
+      "short": "«Салют-1»",
+      "type": "станции",
+      "description": "«Протон» вывел на орбиту первую в мире долговременную орбитальную станцию «Салют-1».",
+      "site": "81",
+      "source": "https://www.russianspaceweb.com/spacecraft_manned_salyut.html"
+    },
+    {
+      "id": "almaz-1",
+      "date": "1973-04-03",
+      "title": "Первый «Алмаз»",
+      "short": "«Алмаз» / «Салют-2»",
+      "type": "станции",
+      "description": "С площадки № 81 стартовала первая орбитальная пилотируемая станция программы «Алмаз», публично обозначенная «Салют-2».",
+      "site": "81",
+      "source": "https://www.nasa.gov/wp-content/uploads/2023/04/sp-4110-vol4.pdf"
+    },
+    {
+      "id": "almaz-2",
+      "date": "1974-06-25",
+      "title": "Второй «Алмаз»",
+      "short": "«Алмаз» / «Салют-3»",
+      "type": "станции",
+      "description": "Пуск военной орбитальной станции «Алмаз» («Салют-3»).",
+      "site": "81",
+      "source": "https://www.russianspaceweb.com/spacecraft_manned_salyut.html"
+    },
+    {
+      "id": "almaz-3",
+      "date": "1976-06-22",
+      "title": "Третий «Алмаз»",
+      "short": "«Алмаз» / «Салют-5»",
+      "type": "станции",
+      "description": "Выведена третья орбитальная станция серии «Алмаз» под обозначением «Салют-5».",
+      "site": "81",
+      "source": "https://www.russianspaceweb.com/spacecraft_manned_salyut.html"
+    },
+    {
+      "id": "mir-core",
+      "date": "1986-02-20",
+      "title": "Станция «Мир»",
+      "short": "Базовый блок «Мир»",
+      "type": "станции",
+      "description": "С Байконура запущен базовый блок станции «Мир» — начало многомодульной орбитальной станции.",
+      "site": "200",
+      "source": "https://www.esa.int/About_Us/Corporate_news/Mir_FAQs_-_Facts_and_history"
+    },
+    {
+      "id": "kvant",
+      "date": "1987-03-31",
+      "title": "Первый модуль «Мира»",
+      "short": "Модуль «Квант»",
+      "type": "модули",
+      "description": "Пуск астрофизического модуля «Квант-1», первого дополнительного модуля станции «Мир».",
+      "site": "200",
+      "source": "https://ntrs.nasa.gov/api/citations/19970013805/downloads/19970013805.pdf"
+    },
+    {
+      "id": "buran",
+      "date": "1988-11-15",
+      "title": "Полёт «Бурана»",
+      "short": "«Энергия — Буран»",
+      "type": "космонавтика",
+      "description": "Единственный орбитальный полёт корабля «Буран», запуск ракетой «Энергия» с площадки № 110.",
+      "site": "110",
+      "source": "https://www.nasa.gov/wp-content/uploads/2023/04/sp-4110-vol4.pdf"
+    },
+    {
+      "id": "kvant2",
+      "date": "1989-11-26",
+      "title": "Модуль «Квант-2»",
+      "short": "«Квант-2»",
+      "type": "модули",
+      "description": "Пуск модуля станции «Мир» с системами жизнеобеспечения и шлюзовой камерой.",
+      "site": "200",
+      "source": "https://ntrs.nasa.gov/api/citations/19970013805/downloads/19970013805.pdf"
+    },
+    {
+      "id": "kristall",
+      "date": "1990-05-31",
+      "title": "Модуль «Кристалл»",
+      "short": "«Кристалл»",
+      "type": "модули",
+      "description": "Пуск технологического модуля «Кристалл» для станции «Мир».",
+      "site": "200",
+      "source": "https://rdataspace.github.io/station_mir/mir-components.html"
+    },
+    {
+      "id": "zarya",
+      "date": "1998-11-20",
+      "title": "Первый модуль МКС",
+      "short": "МКС: «Заря»",
+      "type": "модули",
+      "description": "С Байконура ракетой «Протон-К» запущен функционально-грузовой блок «Заря» — первый модуль МКС.",
+      "site": "81",
+      "source": "https://www.nasa.gov/international-space-station/zarya-module/"
+    },
+    {
+      "id": "zvezda",
+      "date": "2000-07-12",
+      "title": "Служебный модуль МКС",
+      "short": "МКС: «Звезда»",
+      "type": "модули",
+      "description": "С Байконура ракетой «Протон-К» стартовал служебный модуль «Звезда», обеспечивший системы жизнеобеспечения МКС.",
+      "site": "81",
+      "source": "https://www.nasa.gov/international-space-station/zvezda-service-module/"
+    }
+  ]
+}
