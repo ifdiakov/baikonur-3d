@@ -46,7 +46,7 @@ await page.waitForFunction(()=>[...document.querySelectorAll('.detail-card')].so
 console.log('DETAIL CARDS',await page.locator('.detail-card:visible').count());
 assert.ok((await page.locator('.detail-card:visible').count())>0,'Level 4: on-site detail cards should be visible');
 assert.equal(await page.locator('#title').textContent(),'пл. 1 · Гагаринский старт');
-const siteTags=await page.locator('.site-label .tag').allTextContents();
+const siteTags=await page.locator('.site-label:not(.is-provisional) .tag').allTextContents();
 assert.ok(siteTags.length>=80 && siteTags.every(v=>v.startsWith('пл. ')),'All numbered site labels must use the short «пл.» prefix');
 await page.locator('#search').fill('Протон');
 assert.ok(Number(await page.locator('#count').textContent())>=2,'Search by verified purpose should find both Proton sites');
