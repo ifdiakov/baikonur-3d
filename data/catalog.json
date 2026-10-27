@@ -19,8 +19,12 @@
     "service-photo-2026": {
       "title": "Фотография схемы объектов комплекса «Байконур»",
       "kind": "user-provided-photograph",
-      "imageNotYetInRepository": true,
-      "note": "Второй источник идентификации; фотосъёмка под углом, требуется перспективная калибровка до точной оцифровки"
+      "imageNotYetInRepository": false,
+      "note": "Фотография пользователя, выпрямленная в приблизительный прямоугольный план; используется как источник линий инфраструктуры в 3D. Подложка и координаты остаются условными до индивидуальной геопривязки.",
+      "imageAsset": "assets/service-photo-rectified.b64",
+      "imageEncoding": "base64-encoded WebP (480×386, optimized visitor-photo extraction)",
+      "perspectiveCorrected": true,
+      "geographicallyReferenced": false
     },
     "numbered-site-reference": {
       "title": "Публичный перечень объектов из приложения к договору аренды комплекса «Байконур»",
