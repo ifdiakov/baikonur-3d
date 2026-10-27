@@ -179,19 +179,23 @@
 .site-label.compact:hover .name,.site-label.compact:focus-within .name{display:inline}
 .site-label .site-mini-number{display:none;font:700 9px Bounded,Montserrat,Arial;color:#dde6f2}
 .site-eye-toggle{flex:0 0 auto;display:grid;place-items:center;border:1px solid #ffffff24;border-radius:6px;background:#ffffff10;color:#c6e1e5;width:26px;height:24px;cursor:pointer;padding:3px;transition:color .14s,border-color .14s,background .14s}
+.site-eye-toggle[hidden]{display:none}
+.site-label.is-selected,.detail-card.is-selected{border-color:#ef554d;z-index:12}
+.site-label.is-selected{opacity:var(--level-alpha,1);background:#122637f0}
+.site-mini-number,.detail-mini-number{border:0;background:transparent;padding:2px;color:inherit;cursor:pointer;white-space:nowrap}
+.site-mini-number:focus-visible,.detail-mini-number:focus-visible,.detail-card:focus-visible{outline:1px solid #ef867d;outline-offset:3px;border-radius:4px}
 .site-eye-toggle:hover,.site-eye-toggle:focus-visible{color:#fff;border-color:#ea8f89;background:#e06a6054;outline:none}
 .site-label.is-collapsed{opacity:calc(var(--level-alpha,1)*.22);min-width:62px;max-width:94px;padding:3px 4px;gap:4px;justify-content:center;background:#1028388a;box-shadow:0 1px 8px #0005}
 .site-label.is-collapsed .site-label-main{display:none}
 .site-label.is-collapsed .site-mini-number{display:inline}
-.site-label.is-collapsed .site-eye-toggle{height:21px;width:22px}
 .site-label.is-collapsed:hover,.site-label.is-collapsed:focus-within{opacity:var(--level-alpha,1)}
-.detail-card{padding-top:35px;transition:opacity .18s,border-color .18s,background .18s}
+.detail-card{padding-top:11px;cursor:pointer;transition:opacity .18s,border-color .18s,background .18s}
+.detail-card.is-selected:not(.is-collapsed){padding-top:35px}
 .detail-card .site-eye-toggle{position:absolute;top:7px;right:8px}
 .detail-card .detail-mini-number{display:none}
-.detail-card.is-collapsed{width:79px;min-height:38px;max-width:79px;padding:6px 5px 6px 7px;display:flex;align-items:center;gap:5px;opacity:calc(var(--level-alpha,1)*.24);border-color:#ffffff3c;background:#0e243296}
+.detail-card.is-collapsed{width:79px;min-height:30px;max-width:79px;padding:6px 5px;display:flex;align-items:center;justify-content:center;opacity:calc(var(--level-alpha,1)*.24);border-color:#ffffff3c;background:#0e243296}
 .detail-card.is-collapsed .detail-head,.detail-card.is-collapsed p,.detail-card.is-collapsed .more{display:none!important}
 .detail-card.is-collapsed .detail-mini-number{display:inline;font:700 9px Bounded,Montserrat,Arial;color:#d7e9ed}
-.detail-card.is-collapsed .site-eye-toggle{position:static;width:25px;height:23px;order:2}
 .detail-card.is-collapsed:hover,.detail-card.is-collapsed:focus-within{opacity:var(--level-alpha,1)}
 @media(max-width:850px){
  .flank-label{width:222px;min-height:129px;gap:7px;padding:7px;font-size:9px}
@@ -449,34 +453,69 @@ function displaySiteName(o){
 }
 const labelLayer=document.getElementById("labelLayer");
 const labels=[],collapsedSites=new Set();
-let detailCards=[];
-const eyeSVG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+let detailCards=[],activeSiteCard=null;
 const eyeOffSVG='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l16 16"/><path d="M10.9 5.6c.36-.06.72-.1 1.1-.1C18.4 5.5 22 12 22 12a16.7 16.7 0 0 1-3.2 3.7M6.7 6.8C3.8 8.5 2 12 2 12s3.6 6.5 10 6.5c1.1 0 2.15-.2 3.1-.52"/><path d="M10.3 10.3a2.5 2.5 0 0 0 3.4 3.4"/></svg>';
-function updateSiteCollapse(i,collapsed){
- if(collapsed)collapsedSites.add(i);else collapsedSites.delete(i);
- const object=objects[i];
- for(const box of [labels[i]?.el,detailCards[i]?.el]){
-  if(!box)continue;
-  box.classList.toggle("is-collapsed",collapsed);
-  box.dataset.collapsed=collapsed?"true":"false";
-  const eye=box.querySelector(".site-eye-toggle");
-  if(!eye)continue;
-  eye.setAttribute("aria-label",(collapsed?"Развернуть ":"Свернуть ")+displaySiteName(object));
-  eye.setAttribute("aria-pressed",String(collapsed));
-  eye.title=collapsed?"Показать карточку":"Свернуть карточку";
-  eye.innerHTML=collapsed?eyeSVG:eyeOffSVG;
+function selectSiteCard(i){
+ if(activeSiteCard===i)return;
+ const previous=activeSiteCard;activeSiteCard=i;
+ for(const index of [previous,i]){
+  if(index===null)continue;
+  for(const box of [labels[index]?.el,detailCards[index]?.el]){
+   if(!box)continue;
+   const selected=index===i;
+   box.classList.toggle("is-selected",selected);
+   box.querySelector(".site-eye-toggle").hidden=!selected||collapsedSites.has(index);
+  }
  }
  updateLabels();
 }
+function bindSiteCard(el,i){
+ el.dataset.collapsed="false";
+ el.addEventListener("click",e=>{if(!e.target.closest("button"))selectSiteCard(i)});
+ el.addEventListener("keydown",e=>{
+  if(e.target===el&&(e.key==="Enter"||e.key===" ")){e.preventDefault();selectSiteCard(i)}
+ });
+}
+function updateSiteCollapse(i,collapsed){
+ if(collapsed)collapsedSites.add(i);else collapsedSites.delete(i);
+ for(const box of [labels[i]?.el,detailCards[i]?.el]){
+  if(!box)continue;
+  box.classList.toggle("is-collapsed",collapsed);
+  box.dataset.collapsed=String(collapsed);
+  box.querySelector(".site-eye-toggle").hidden=collapsed||activeSiteCard!==i;
+ }
+ if(collapsed&&activeSiteCard===i)selectSiteCard(null);
+ updateLabels();
+}
 function makeSiteEye(i){
- const eye=document.createElement("button");eye.type="button";
+ const eye=document.createElement("button");eye.type="button";eye.hidden=true;
  eye.className="site-eye-toggle";eye.dataset.siteIndex=String(i);
  eye.setAttribute("aria-label","Свернуть "+displaySiteName(objects[i]));
- eye.setAttribute("aria-pressed","false");
  eye.title="Свернуть карточку";eye.innerHTML=eyeOffSVG;
- eye.addEventListener("click",e=>{e.stopPropagation();updateSiteCollapse(i,!collapsedSites.has(i))});
+ eye.addEventListener("click",e=>{
+  e.stopPropagation();const box=eye.parentElement;
+  updateSiteCollapse(i,true);
+  box.querySelector(".site-mini-number,.detail-mini-number").focus({preventScroll:true});
+ });
  return eye;
 }
+function makeSiteMini(i,className){
+ const mini=document.createElement("button");mini.type="button";mini.className=className;
+ const o=objects[i],number=o.record.number||o.name.match(/№\s*([\dА-ЯA-Z]+)/u)?.[1];
+ mini.textContent=number?"Пл. №"+number:"◇";
+ mini.setAttribute("aria-label","Развернуть "+displaySiteName(o));
+ mini.title="Развернуть карточку";
+ mini.addEventListener("click",e=>{
+  e.stopPropagation();const box=mini.parentElement;
+  updateSiteCollapse(i,false);selectSiteCard(i);
+  (box.querySelector(".site-label-main")||box).focus({preventScroll:true});
+ });
+ return mini;
+}
+document.addEventListener("pointerdown",e=>{
+ if(!e.target.closest(".site-label,.detail-card"))selectSiteCard(null);
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")selectSiteCard(null)});
 for(let i=0;i<objects.length;i++){
  const o=objects[i],item=o.record,identified=item.status==="label-read";
  const match=o.name.match(/№\s*([\dА-ЯA-Z]+)/u);
@@ -488,8 +527,8 @@ for(let i=0;i<objects.length;i++){
  const main=document.createElement("button");main.type="button";main.className="site-label-main";main.setAttribute("aria-label","Открыть "+displaySiteName(o));
  const badge=document.createElement("span");badge.className="tag";badge.textContent=badgeText;
  const caption=document.createElement("span");caption.className="name";caption.textContent=fullText||"";
- main.append(badge,caption);main.addEventListener("click",()=>focus(i));
- const mini=document.createElement("span");mini.className="site-mini-number";mini.textContent=match?"№"+match[1]:"◇";
+ main.append(badge,caption);main.addEventListener("click",()=>{selectSiteCard(i);focus(i)});
+ const mini=makeSiteMini(i,"site-mini-number");bindSiteCard(el,i);
  el.append(main,mini,makeSiteEye(i));labelLayer.appendChild(el);
  labels.push({i,el,world:new THREE.Vector3(),priority:identified?1:2});
 }
@@ -522,6 +561,7 @@ const flanks=[
 detailCards=objects.map((o,i)=>{
  const r=o.record,org=r.organisation?.org||"Не установлено",isEnergia=/Энергия/.test(org);
  const el=document.createElement("div");el.className="detail-card";el.dataset.siteIndex=String(i);
+ el.tabIndex=0;el.setAttribute("role","group");el.setAttribute("aria-label",displaySiteName(o));bindSiteCard(el,i);
  const head=document.createElement("div");head.className="detail-head";
  const logo=document.createElement("div");logo.className="logo-box";logo.textContent=org==="Не установлено"?"?":org.replace(/[^А-ЯA-ZЁ]/g,"").slice(0,5)||org.slice(0,5);
  if(isEnergia){
@@ -531,8 +571,8 @@ detailCards=objects.map((o,i)=>{
  const orgName=document.createElement("div");orgName.className="detail-org";orgName.textContent=org;
  names.append(title,orgName);head.append(logo,names);
  const purpose=document.createElement("p");purpose.textContent=r.purposeLong||r.purpose||"Назначение и профиль объекта уточняются по архивным материалам";
- const more=document.createElement("button");more.type="button";more.className="more";more.textContent="ПОДРОБНЕЕ ↗";more.addEventListener("click",()=>focus(i));
- const mini=document.createElement("span");mini.className="detail-mini-number";mini.textContent=r.number?"№"+r.number:"◇";
+ const more=document.createElement("button");more.type="button";more.className="more";more.textContent="ПОДРОБНЕЕ ↗";more.addEventListener("click",()=>{selectSiteCard(i);focus(i)});
+ const mini=makeSiteMini(i,"detail-mini-number");
  el.append(makeSiteEye(i),mini,head,purpose,more);labelLayer.append(el);return {i,el,world:new THREE.Vector3()};
 });
 const flankDistricts=buildFlankDistricts(scene,point,W,H);
@@ -576,7 +616,7 @@ function updateLabels(){
   el.style.setProperty("--level-alpha",siteAlpha.toFixed(3));
   visible.push({l,x:p.x,y:p.y,near});
  }
- visible.sort((a,b)=>a.l.priority-b.l.priority||a.near-b.near);
+ visible.sort((a,b)=>Number(b.l.i===activeSiteCard)-Number(a.l.i===activeSiteCard)||Number(collapsedSites.has(b.l.i))-Number(collapsedSites.has(a.l.i))||a.l.priority-b.l.priority||a.near-b.near);
  const occupied=[];for(const a of visible){
   const el=a.l.el,w=el.offsetWidth||72,h=el.offsetHeight||23;
   const rect={left:a.x-w/2,right:a.x+w/2,top:a.y-h-12,bottom:a.y-10};
@@ -595,12 +635,12 @@ function updateLabels(){
   const p=projectToScreen(d.world);if(!p){el.style.display="none";continue}
   candidates.push({d,p,fromTarget});
  }
- candidates.sort((a,b)=>Number(b.d.i===currentObject)-Number(a.d.i===currentObject)||a.fromTarget-b.fromTarget);
+ candidates.sort((a,b)=>Number(b.d.i===activeSiteCard)-Number(a.d.i===activeSiteCard)||Number(collapsedSites.has(b.d.i))-Number(collapsedSites.has(a.d.i))||Number(b.d.i===currentObject)-Number(a.d.i===currentObject)||a.fromTarget-b.fromTarget);
  const used=[];let shown=0;
  for(const a of candidates){
   const el=a.d.el;if(shown>=3){el.style.display="none";continue}
   const shrunk=collapsedSites.has(a.d.i);
-  const halfWidth=shrunk?39:118,cardHeight=shrunk?57:183;
+  const halfWidth=shrunk?39:118,cardHeight=shrunk?43:a.d.i===activeSiteCard?183:159;
   const rect={left:a.p.x-halfWidth,right:a.p.x+halfWidth,top:a.p.y-cardHeight,bottom:a.p.y-5};
   const conflict=used.some(b=>!(rect.right<b.left||rect.left>b.right||rect.bottom<b.top||rect.top>b.bottom));
   if(conflict){el.style.display="none";continue}
