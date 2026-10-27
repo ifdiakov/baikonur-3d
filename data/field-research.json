@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "investigation": "Рейд в степь",
+  "recordedAt": "2026-10-27",
+  "georeferencedToSchematic": false,
+  "positionPolicy": "Географические координаты сохраняются отдельно. Никаких 3D-координат без опорных точек трансформации.",
+  "objects": [
+    {
+      "id": "BAI-001",
+      "title": "Разрушенный комплекс сооружений",
+      "description": "Группа разрушенных зданий. Назначение и датировка не подтверждены.",
+      "latitude": 46.005175,
+      "longitude": 63.946131,
+      "source": "https://maps.app.goo.gl/Q49GFXiBMELkADb38",
+      "hypothesis": "Технический или хозяйственный комплекс",
+      "confidence": "location-known-identity-unverified"
+    },
+    {
+      "id": "BAI-002",
+      "title": "Земляные позиции",
+      "description": "Инженерные земляные сооружения. Возможная прежняя позиция ПВО — непроверенная гипотеза.",
+      "latitude": 46.016476,
+      "longitude": 64.02319,
+      "source": "https://maps.app.goo.gl/rSkQ5ZsFbmRPacbq6",
+      "hypothesis": "Позиция ПВО (гипотеза)",
+      "confidence": "location-known-identity-unverified"
+    },
+    {
+      "id": "BAI-003",
+      "title": "Разрушенный технический комплекс",
+      "description": "На спутниковых снимках виден объект, похожий на технический участок. Точное положение в координатах пока не извлечено.",
+      "latitude": null,
+      "longitude": null,
+      "source": "https://maps.app.goo.gl/5PDqCg9DjbykLr1J7",
+      "hypothesis": "Технические или испытательные сооружения",
+      "confidence": "identity-and-location-unverified"
+    },
+    {
+      "id": "BAI-004",
+      "title": "Разрушенный комплекс",
+      "description": "Группа разрушенных технических или испытательных объектов; назначение требует архивного исследования.",
+      "latitude": null,
+      "longitude": null,
+      "source": "https://maps.app.goo.gl/1CKAGMvWydigoShf9",
+      "hypothesis": "Испытательный комплекс",
+      "confidence": "identity-and-location-unverified"
+    },
+    {
+      "id": "BAI-005",
+      "title": "Земляные сооружения",
+      "description": "Поле земляных сооружений неизвестного назначения.",
+      "latitude": null,
+      "longitude": null,
+      "source": "https://maps.app.goo.gl/GQEshzxkTYWMBmxJ9",
+      "hypothesis": "Инженерное или учебное поле",
+      "confidence": "identity-and-location-unverified"
+    },
+    {
+      "id": "BAI-006",
+      "title": "Предполагаемая позиция ЗРК",
+      "description": "Наблюдаются обвалованные позиции; возможная связь с зенитно-ракетным комплексом С-75 остаётся гипотезой.",
+      "latitude": null,
+      "longitude": null,
+      "source": "https://maps.app.goo.gl/mXp3T5Tj8YbgVMum9",
+      "hypothesis": "Позиция ЗРК С-75 (гипотеза)",
+      "confidence": "identity-and-location-unverified"
+    },
+    {
+      "id": "BAI-007",
+      "title": "Самолёт на отдельной площадке",
+      "description": "Сохранившийся самолёт или самолёт-памятник. Версия о Ту-16 по виду не подтверждена.",
+      "latitude": null,
+      "longitude": null,
+      "source": "https://maps.app.goo.gl/ChRT2sr75d6XUSm39",
+      "hypothesis": "Ту-16 или похожая машина (гипотеза)",
+      "confidence": "identity-and-location-unverified"
+    }
+  ]
+}
