@@ -127,8 +127,14 @@ const yandexControl=await page.evaluate(()=>document.querySelector('#ui #satelli
 assert.equal(yandexControl,null,'Yandex external link must be removed from the museum sidebar');
 const terrainInfo=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
-assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v3','Museum must load the expanded generated terrain');
-assert.ok(terrainInfo.outerTerrain.extent>=90000,'Expanded ground must reach beyond the visible horizon');
+assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v4','Museum must load the unified v4 earth textures');
+assert.equal(terrainInfo.outerTerrain.edition,4,'Shared-coordinate terrain generator must be active');
+assert.equal(terrainInfo.outerTerrain.continuousWorldCoordinates,true,'Near/far terrain must sample shared coordinates');
+assert.deepEqual(terrainInfo.outerTerrain.textureResolutions,[1152,1792],'Two world-scale texture bands must be present');
+assert.ok(terrainInfo.outerTerrain.mediumExtent>17000,'Intermediate terrain must cover territory beyond site map');
+assert.ok(terrainInfo.outerTerrain.riparianShrubs>100,'Sparse alluvial shrub vegetation must be placed along the river');
+assert.equal(terrainInfo.terrain?.photographicClaim,undefined,'Generated ground must not be misrepresented as satellite imagery');
+assert.ok(terrainInfo.outerTerrain.extent>=110000,'Expanded ground must reach beyond the visible horizon');
 assert.ok(terrainInfo.cameraMinElevationDeg===30,'Viewer must remain at least 30 degrees above the horizontal plane');
 assert.equal(terrainInfo.terrain?.tileResolution,1024,'Background terrain must use 1024px seamless base');
 assert.deepEqual(terrainInfo.terrain?.detailResolution,[1536,1236],'Local satellite-style mosaic must use high-resolution synthetic detail');
@@ -294,6 +300,7 @@ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().collapsedSiteC
 await page.locator('.rockettrip-logo').click();
 assert.equal(await labelEye.isVisible(),false,'Clicking outside hides the eye');
 await page.screenshot({path:'qa-sites.png'});
+await page.screenshot({path:'qa-steppe-intermediate.png'});
 await page.evaluate(()=>window.__BAIKONUR_QA.focusSite(0));
 const closeup=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 assert.equal(closeup.gagarinDetailView,true,'Clicking Site 1 must activate dedicated pad close-up');
@@ -476,7 +483,7 @@ await page.locator('#sitesAccordion > summary').click();
 assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.logoVisible,'Floating timeline and expanding menu must fit mobile');
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
-await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: archival portraits and designer names restored; expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 enterprise districts with rockets, purposes, features and fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
+await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: unified steppe v4, salt flats, alluvial scrub and edge-free multi-resolution earth; archival portraits and designer names restored; expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 enterprise districts with rockets, purposes, features and fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
 
 
 
