@@ -40,15 +40,16 @@ jobs:
           node tests/smoke.mjs 2>&1 | tee /tmp/baikonur-test.log
       - name: Verify published GitHub Pages contains current museum
         id: public
+        if: always()
         run: |
           set -e
-          for attempt in $(seq 1 14); do
+          for attempt in $(seq 1 9); do
             if curl --connect-timeout 8 --max-time 22 -fsSL "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/baikonur-public.html && grep -q 'syntheticGroundReady=true' /tmp/baikonur-public.html; then
               echo "Published museum includes the new synthetic terrain"
               exit 0
             fi
             echo "GitHub Pages not updated yet: attempt $attempt"
-            sleep 12
+            sleep 10
           done
           echo "Current museum update was not verified on the published URL"
           exit 1
