@@ -1,3 +1,4 @@
+SIDEBAR {"noPrototypeNote":true,"noPlanToggle":true,"noRoadDiagnostics":true,"noSatelliteDisclaimer":true,"roadsToggle":true,"railsToggle":true,"labelsToggle":true,"satelliteButton":true,"statusHidden":true}
 LAYOUT {"dockBottom":0,"dockWidth":1600,"logoNatural":360,"logoVisible":true,"sliderOutsideSidebar":true,"sliderBottom":true,"sidebarAboveDock":true}
 PASSPORT {"inline":"1","computed":"1","visible":true}
 DETAIL CARDS 3
