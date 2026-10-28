@@ -90,13 +90,14 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
         if(!center)return .8;
         const dx=(sample.pos.x-center.x)/modelScale;
         const dz=(sample.pos.z-center.z)/modelScale;
-        const radius=Math.hypot(dx/150,dz/140);
-        const v=Math.max(0,Math.min(1,(radius-.68)/.49));
+        const radius=Math.hypot(dx/340,dz/460);
+        const v=Math.max(0,Math.min(1,(radius-.28)/.90));
         const fade=1-v*v*(3-2*v);
-        const relief=7.8*fade+1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+
+        const relief=-190.476+198.2*fade+
+          1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+
           (Math.sin(dx*.085+dz*.035)+Math.sin(dx*.038-dz*.076))*.22*fade;
-        const surface=-2.55+modelScale*(relief-.22);
-        return Math.max(.78,surface+.13);
+        const surface=97.45+modelScale*(relief-.22);
+        return Math.max(.78,surface+.38);
       }
       // Match the arterial at the west end and paved site apron at the east.
       const ramp=sample=>{
@@ -106,7 +107,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
         const raised=.76*(1-eased)+height*eased;
         // Finish flush with Saturn's western internal road (local y=7.42),
         // rather than ending visibly above it on the hill.
-        const apronY=-2.55+.525*(7.42+.23/2);
+        const apronY=97.45+.525*(7.42+.23/2);
         const endBlend=Math.max(0,Math.min(1,(t-.78)/.22));
         const endEase=endBlend*endBlend*(3-2*endBlend);
         return raised*(1-endEase)+apronY*endEase;
