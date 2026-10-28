@@ -9,13 +9,13 @@ const errors=[],shaderErrors=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION|compile shader/i.test(m.text()))shaderErrors.push(m.text());});
 try{
- const url=new URL(origin);url.searchParams.set('site','112');url.searchParams.set('v','mik112-photo-v1.1');
+ const url=new URL(origin);url.searchParams.set('site','112');url.searchParams.set('v','mik112-layout-ne-v3');
  await page.goto(url.toString(),{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.mik112?.transporterCount===2,{timeout:90000});
  await page.waitForTimeout(1500);
  const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
- assert.equal(s.mik112.version,'1.1-clean-feeder');assert.equal(s.mik112.transporterCount,2);
- assert.deepEqual(s.mik112Placement,[680,331]);
+ assert.equal(s.mik112.version,'1.2-plan-aligned-ne');assert.equal(s.mik112.transporterCount,2);
+ assert.deepEqual(s.mik112Placement,[640,361]);
  assert.ok(s.mik112.features['perforated-lifting-cheek']>=16);
  assert.ok(s.mik112.features['ochre-perforated-fork']>=16);
  assert.ok(s.mik112.features['bogie-wheel']>=100);
@@ -26,8 +26,33 @@ try{
  assert.ok(s.mik112.instancedBatches<80,'GPU draw-call count must remain controlled');
  assert.ok(s.mik112Rail.connected);assert.equal(s.mik112Rail.tracks.length,4);
  assert.equal(s.mik112Rail.sourceRoute,'t-central-north','western trunk, not phantom feeder');
- assert.deepEqual(s.mik112.suppressedFallbackGeometry,['pad-2b']);
+ assert.deepEqual(s.mik112.suppressedFallbackGeometry,[]);
  for(const track of s.mik112Rail.tracks){assert.ok([...track.start,...track.end].every(Number.isFinite));}
+ // MIK112_LAYOUT_GEOMETRY_ASSERTIONS: numerical checks of the rendered transforms.
+ const lay=s.mik112.layout;
+ assert.deepEqual(lay.scale,[.14,.14,.14]);assert.equal(lay.yaw,-Math.PI/4);
+ assert.equal(lay.highDoorEndZ,-120);assert.equal(lay.lowDoorEndZ,120);
+ assert.equal(lay.transporterSide,'north-east');
+ for(const c of lay.transporterLocal)assert.ok(c[2]<-150,'TUA must stand beyond opposite end, not inside hall');
+ for(const c of lay.transporterWorld){
+  assert.ok(c[0]>lay.centerWorld[0]&&c[2]<lay.centerWorld[2],'TUA must be NE of the hall on the museum map');
+ }
+ const rootX=(640-650)*3.4,rootZ=(361-522.5)*3.4;
+ assert.ok(Math.hypot(lay.centerWorld[0]-rootX,lay.centerWorld[2]-rootZ)<1e-7);
+ for(const r of s.mik112Rail.tracks){
+  assert.ok(r.localStart[2]<-258&&r.junctionGap<1e-7);
+  assert.ok(Math.hypot(...r.localStart.map((v,i)=>v-r.localEntry[i]))<1e-6);
+ }
+ assert.equal(s.mik112Rail.version,'ne-end-halfscale-v3');
+ assert.ok(s.mik112Rail.joinGap<1e-7);
+ // An approach spline may not cross through the assembly building.
+ const cs=Math.cos(lay.yaw),sn=Math.sin(lay.yaw),inverse=p=>{
+  const dx=p[0]-rootX,dz=p[2]-rootZ;
+  return [(cs*dx-sn*dz)/.14,(sn*dx+cs*dz)/.14];
+ };
+ for(const p of [...s.mik112Rail.stemSamples,...s.mik112Rail.tracks.flatMap(r=>r.curveSamples)]){
+  const [x,z]=inverse(p);assert.ok(!(x>-97&&x<97&&z>-123&&z<123),'Railway must not cross the hall walls');
+ }
  assert.ok(s.shadersValid,'Custom surface materials compile');
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.ok((await page.locator('#title').textContent()).includes('112'));
@@ -38,6 +63,9 @@ try{
  await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers-clear.png`});
  await page.locator('#mik112Top').click();await page.waitForTimeout(700);
  await page.screenshot({path:`qa-mik112/${prefix}-plan.png`});
+ await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(95,'pad-112'));
+ await page.waitForTimeout(400);
+ await page.screenshot({path:`qa-mik112/${prefix}-map-placement.png`});
  await page.locator('#showLabels').check();
  await page.locator('#year').evaluate(el=>{el.value='1988';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().mik112.roofState),'historical-intact');

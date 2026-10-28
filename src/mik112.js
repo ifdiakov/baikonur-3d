@@ -5,7 +5,7 @@ import {createSurfacePalette} from './surface-materials.js';
 // Sources: RocketTrip Drive 1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk (MIK),
 // 1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3 (two Energia transporter/erectors).
 // Recognisable proportions and photo layout, not a measured engineering model.
-export const MIK112={version:'1.1-clean-feeder',scale:.28,yaw:-Math.PI/4,roofCollapseYear:2002};
+export const MIK112={version:'1.2-plan-aligned-ne',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002};
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
 export function buildMik112(root,{year=2026}={}){
  root.name='Пл. №112 · МИК и два ТУА «Кузнечики»';
@@ -56,27 +56,29 @@ export function buildMik112(root,{year=2026}={}){
  box(188,.6,240,0,floor-.3,0,'concrete','hall-floor');
  // The finished slab occludes schematic map paint beneath the real hall.
  box(188,.9,240,0,floor+.45,0,'concrete','mik-floor-finish');
- box(196,.28,35,0,floor-.14,138,'concrete','front-apron');
- box(114,.28,102,-39,floor-.14,202,'concrete','transporter-apron');
+ // The Soyuz low-hall doors remain at the SW end. Energia/TUA gates face NE.
+ box(88,.28,35,54,floor-.14,138,'concrete','front-apron');
+ box(114,.28,35,-39,floor-.14,-138,'concrete','high-hall-apron');
+ box(114,.28,102,-39,floor-.14,-202,'concrete','transporter-apron');
  // Side and rear envelope. The northwestern high roof is missing in the recent photos.
  box(1.8,60,240,-94,floor+30,0,'wall','high-sidewall');
  box(1.6,60,240,14,floor+30,0,'wall','high-divider');
- box(108,60,1.8,-40,floor+30,-120,'wall','high-rearwall');
+ box(108,60,1.8,-40,floor+30,120,'wall','high-rearwall');
  box(1.6,28,240,94,floor+14,0,'wall','low-sidewall');
  box(80,28,1.6,54,floor+14,-120,'wall','low-rearwall');
  // Five individually panelled front door assemblies.
  for(const [cx,w,h,opening] of [[-76,36,60,false],[-40,36,60,false],[-4,36,60,false],[34,40,28,true],[74,40,28,false]]){
-  const dw=w-7,dh=h-6;
-  for(const side of [-1,1])box(3.5,h,2,cx+side*(w/2-1.75),floor+h/2,120,'wall','door-pier');
-  box(w,6,2,cx,floor+h-3,120,'wall','door-lintel');
+  const dw=w-7,dh=h-6,face=h===60?-1:1;
+  for(const side of [-1,1])box(3.5,h,2,cx+side*(w/2-1.75),floor+h/2,face*120,'wall','door-pier');
+  box(w,6,2,cx,floor+h-3,face*120,'wall','door-lintel');
   if(opening){
    // A recessed doorway with visible crane girders, not a rocket pasted on the facade.
    box(dw,dh,1,cx,floor+dh/2,106,'dark','open-door-interior');
    box(dw*.46,dh,1,cx+dw*.27,floor+dh/2,121,'steel','sliding-door-leaf');
    box(dw-3,1,2,cx,floor+dh-3,111,'yellow','overhead-crane');
-  }else box(dw,dh,1,cx,floor+dh/2,121,'steel','closed-sliding-door');
-  for(let x=cx-dw/2;x<cx+dw/2+.1;x+=2.1)box(.16,dh,.23,x,floor+dh/2,121.65,'seam','door-rib');
-  for(let y=8;y<dh;y+=5.8)box(dw,.18,.22,cx,floor+y,121.7,'seam','door-horizontal-seam');
+  }else box(dw,dh,1,cx,floor+dh/2,face*121,'steel','closed-sliding-door');
+  for(let x=cx-dw/2;x<cx+dw/2+.1;x+=2.1)box(.16,dh,.23,x,floor+dh/2,face*121.65,'seam','door-rib');
+  for(let y=8;y<dh;y+=5.8)box(dw,.18,.22,cx,floor+y,face*121.7,'seam','door-horizontal-seam');
  }
  // Precast panel rhythm and narrow green-grey glazing bands from the ground photos.
  for(let z=-114;z<=114;z+=12){
@@ -99,7 +101,7 @@ export function buildMik112(root,{year=2026}={}){
  // Taller striped stair tower and low service wings.
  box(9,46,10,22,floor+23,110,'wall','stair-tower');
  for(let y=8;y<44;y+=6)box(9.25,2.4,10.2,22,floor+y,110,'glass','tower-glass-belt');
- for(const [x,z,w,d,h] of [[120,-95,52,27,12],[115,57,42,63,9],[65,144,62,18,10],[-67,-137,32,30,9]]){
+ for(const [x,z,w,d,h] of [[120,-95,52,27,12],[115,57,42,63,9],[65,144,62,18,10],[-113,-92,32,30,9]]){
   box(w,h,d,x,floor+h/2,z,'wall','service-wing');box(w+1,.6,d+1,x,floor+h+.3,z,'roof','service-roof');
   for(let xx=x-w/2+4;xx<x+w/2;xx+=5.5)box(3,2,.18,xx,floor+h*.6,z+d/2+.12,'glass','annex-window');
  }
@@ -134,7 +136,7 @@ export function buildMik112(root,{year=2026}={}){
  const wheelGeo=new THREE.CylinderGeometry(.88,.88,.42,12);
  function plate(x,y,z,rot,m,parent,tag){const o=mesh(plateGeo,m,x,y,z,tag,parent);o.rotation.x=rot;o.rotation.y=Math.PI/2;return o;}
  function grasshopper(cx,cz,index){
-  const p=new THREE.Group();p.position.set(cx,0,cz);p.name='Кузнечик '+index;p.userData.museumComponent='energia-transporter';machines.add(p);count('energia-transporter');
+  const p=new THREE.Group();p.position.set(cx,0,cz);p.rotation.y=Math.PI;p.name='Кузнечик '+index;p.userData.museumComponent='energia-transporter';machines.add(p);count('energia-transporter');
   // Two widely spaced railway chassis, cross members and a hollow centre.
   for(const side of [-1,1]){
    const x=side*11.4;
@@ -187,16 +189,22 @@ export function buildMik112(root,{year=2026}={}){
   box(3.4,3.8,4,-13.8,12,-18,'steel','operator-cabin',p);
   box(.12,1.5,2.8,-15.55,12.8,-18,'glass','cab-window',p);
  }
- grasshopper(-71,183,1);grasshopper(-19,183,2);
+ grasshopper(-71,-183,1);grasshopper(-19,-183,2);
  // Double railway track under each transporter, aligned with the high doors.
  const railEntries=[];
  for(const cx of [-71,-19])for(const track of [-11.4,11.4]){
-  const x=cx+track;railEntries.push([x,4.25,258]);
-  for(const side of [-1,1])box(.18,.27,253,x+side*.76,4.17,132,'rail','transporter-running-rail');
-  for(let z=9;z<259;z+=2.4)box(2.5,.16,.32,x,3.97,z,'seam','rail-sleeper');
+  const x=cx+track;railEntries.push([x,4.17,-258.5]);
+  for(const side of [-1,1])box(.18,.27,253,x+side*.76,4.17,-132,'rail','transporter-running-rail');
+  for(let z=-257;z<-8;z+=2.4)box(2.5,.16,.32,x,3.97,z,'seam','rail-sleeper');
  }
  // Smaller normal-gauge track into the retained assembly hall.
  for(const side of [-1,1])box(.18,.27,220,34+side*.76,4.17,132,'rail','low-hall-track');
+ // Shallow ramp from the shared road (world y=.72) into the low-hall apron.
+ const rampGeo=new THREE.BufferGeometry();
+ rampGeo.setAttribute('position',new THREE.Float32BufferAttribute([
+  96,2.6,141,122,.72/MIK112.scale,141,96,2.6,169,122,.72/MIK112.scale,169
+ ],3));rampGeo.setIndex([0,2,1,1,2,3]);rampGeo.computeVertexNormals();
+ mesh(rampGeo,'asphalt',0,0,0,'service-entry-ramp');
  // Finalise a few GPU batches instead of thousands of draw calls.
  for(const b of batches.values()){
   const im=new THREE.InstancedMesh(b.geo,mat[b.m],b.transforms.length);
@@ -210,9 +218,19 @@ export function buildMik112(root,{year=2026}={}){
   accuracy:'Photo-interpreted museum reconstruction; no surveyed footprint, hidden structure or operating machinery claimed.',
   instancedBatches:batches.size,meshCount:all.length,railEntries,year};
  function setYear(y){info.year=y;intact.visible=y<2002;ruins.visible=y>=2002;machines.visible=y>=1986;info.roofState=y<2002?'historical-intact':'photo-ruined';}
+ // Expose measured transforms for browser geometry tests, not just labels.
+ root.updateWorldMatrix(true,true);
+ info.layout={scale:root.scale.toArray(),yaw:root.rotation.y,
+   centerWorld:root.getWorldPosition(V(0,0,0)).toArray(),
+   transporterLocal:machines.children.map(o=>o.position.toArray()),
+   transporterWorld:machines.children.map(o=>o.getWorldPosition(V(0,0,0)).toArray()),
+   highDoorEndZ:-120,lowDoorEndZ:120,transporterSide:'north-east',
+   hallCorners:[[-94,-120],[94,-120],[94,120],[-94,120]].map(([x,z])=>root.localToWorld(V(x,0,z)).toArray()),
+   source:'original-plan-3993x3208; hall centre approximately (640,361) in 1300x1045 map space'};
+ info.suppressedFallbackGeometry=[];
  setYear(year);root.userData.mik112Model=info;
- return {stats:()=>info,setYear,railEntries,focusTarget:V(-8,22,55),focusOffset:V(330,250,400)};
+ return {stats:()=>info,setYear,railEntries,focusTarget:V(-8,22,-40),focusOffset:V(330,250,-400)};
 }
 
 // Verified clean western rail connection.
-export {connectMik112Rails} from './mik112-rail.js?v=clean-west-v2';
+export {connectMik112Rails} from './mik112-rail.js?v=plan-ne-v3';

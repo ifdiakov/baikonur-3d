@@ -563,6 +563,33 @@
           ]
         ],
         "confidence": "schematic access to west KAZ gate following move to x=708"
+      },
+      {
+        "id": "r-site112-mik-access",
+        "class": "service",
+        "points": [
+          [
+            659,
+            370
+          ],
+          [
+            653,
+            373
+          ],
+          [
+            646,
+            374
+          ],
+          [
+            640.727,
+            370.753
+          ],
+          [
+            639.039,
+            369.065
+          ]
+        ],
+        "confidence": "schematic driveway terminates outside the low-hall SW service yard; not a surveyed trace"
       }
     ],
     "rail": [
@@ -1063,7 +1090,6 @@
     "81",
     "200",
     "110",
-    "112",
     "250",
     "251",
     "254",

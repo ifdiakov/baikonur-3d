@@ -2022,17 +2022,17 @@
     {
       "id": "pad-112",
       "name": "Площадка № 112 — МИК и «Кузнечики»",
-      "x": 680,
-      "y": 331,
+      "x": 640,
+      "y": 361,
       "model": "mik112-photo-v1",
       "firstYear": 1967,
       "status": "label-read",
-      "positionBasis": "visual-reference-plan",
+      "positionBasis": "digitised-original-plan-MIK112-footprint",
       "sources": [
         "original-plan-3993x3208",
         "service-photo-2026"
       ],
-      "note": "Техническая позиция программы «Энергия» по договору аренды. История корпуса включает сборку Н1 и работы по программе «Энергия — Буран»; позднее часть инфраструктуры использовалась для «Союзов». У площадки несколько объектов с разной принадлежностью, поэтому одна организация не описывает всю территорию.",
+      "note": "МИК установлен на контуре площадки №112 исходной схемы, а не на площадке 2Б. Комплекс уменьшен вдвое; «Кузнечики», ворота высоких пролётов и пути вынесены к северо-восточному торцу. Привязка к исторической схеме ориентировочная, не геодезическая. Площадки 112А и 2Б сохранены отдельно.",
       "purpose": "Монтажно-испытательные корпуса Н1 и «Энергии»",
       "number": "112",
       "titleShort": "МИК и «Кузнечики»",
@@ -2095,7 +2095,21 @@
       "modelSourceFolders": [
         "https://drive.google.com/drive/folders/1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk",
         "https://drive.google.com/drive/folders/1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3"
-      ]
+      ],
+      "mapPlacement": {
+        "source": "original-plan-3993x3208",
+        "mapSize": [
+          1300,
+          1045
+        ],
+        "centre": [
+          640,
+          361
+        ],
+        "confidence": "schematic alignment, not surveyed geolocation",
+        "transporterSide": "north-east",
+        "displayScale": 0.14
+      }
     },
     {
       "id": "pad-104",
