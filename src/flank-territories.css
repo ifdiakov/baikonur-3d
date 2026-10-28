@@ -1,0 +1,27 @@
+/* Plane-aligned maps remain in world coordinates; no viewport lane layout. */
+.flank-territory-layer{position:absolute;inset:0;pointer-events:none}
+.flank-portrait-credits{position:absolute;top:20px;right:20px;pointer-events:auto;color:#c4dce9;background:#0b2233c9;padding:8px 11px;border:1px solid #7694a74d;border-radius:7px;font:500 10px/1.4 Montserrat,Arial;text-decoration:none}
+.flank-portrait-credits[hidden]{display:none}.flank-portrait-credits:hover{color:#fff;border-color:#a2d4e9}
+.flank-label.flank-on-terrain{width:660px;min-height:0;height:auto;max-height:none;overflow:visible;padding:29px 32px 25px;gap:0;border:2px solid var(--district-color);border-left:8px solid var(--district-color);border-radius:0 24px 0 24px;background:linear-gradient(120deg,#071b29ef,#0a2330ed);box-shadow:0 0 0 6px #071b296b,0 0 35px color-mix(in srgb,var(--district-color) 28%,transparent);opacity:var(--level-alpha);text-align:left;white-space:normal;backdrop-filter:none;-webkit-backdrop-filter:none;backface-visibility:hidden;transition:opacity .16s,border-color .16s,background .16s}
+.flank-label.flank-on-terrain[data-district="left"]{--district-color:#ff7cbd}
+.flank-label.flank-on-terrain[data-district="center"]{--district-color:#64e2f6}
+.flank-label.flank-on-terrain[data-district="right"]{--district-color:#ffd184}
+.flank-label.flank-on-terrain:hover,.flank-label.flank-on-terrain:focus-visible{background:#0b2739f7;border-color:#fff;outline:5px solid var(--district-color);outline-offset:5px}
+.flank-label.flank-on-terrain .flank-copy{gap:20px;width:100%}
+.flank-label.flank-on-terrain .flank-head{gap:25px;min-height:148px}
+.flank-label.flank-on-terrain .flank-portrait{flex:0 0 125px;width:125px;height:148px;border-radius:4px 16px 4px 4px;border:2px solid var(--district-color);background:#16303d;filter:none}
+.flank-label.flank-on-terrain .flank-portrait img{filter:grayscale(1) contrast(1.12);mix-blend-mode:screen;opacity:0}
+.flank-label.flank-on-terrain .flank-portrait.is-loaded img{opacity:.95}
+.flank-label.flank-on-terrain .flank-portrait.is-loaded .flank-portrait-fallback{visibility:hidden}
+.flank-label.flank-on-terrain .flank-portrait-fallback{font-size:42px}
+.flank-label.flank-on-terrain .flank-identity{gap:10px}
+.flank-label.flank-on-terrain .flank-kicker{font:800 18px/1.3 Montserrat,Arial;letter-spacing:.12em;color:var(--district-color)}
+.flank-label.flank-on-terrain .flank-engineer{font:600 50px/1.1 Bounded,Montserrat,Arial;letter-spacing:-.03em;color:#f5fbff}
+.flank-label.flank-on-terrain .flank-fullname{font:500 20px/1.4 Montserrat,Arial;color:#bed0db}
+.flank-label.flank-on-terrain .flank-field{gap:7px;font:500 24px/1.36 Montserrat,Arial;color:#e1ebf1}
+.flank-label.flank-on-terrain .flank-field-title{font:800 15px/1.3 Montserrat,Arial;color:#91acba;letter-spacing:.09em}
+.flank-label.flank-on-terrain .flank-name{gap:4px;font:650 25px/1.25 Montserrat,Arial;color:#f3f7fa}
+.flank-label.flank-on-terrain .flank-enterprises{padding-top:19px;border-top:1px solid #b4d7df55}
+.flank-label.flank-on-terrain .flank-rockets{color:var(--district-color);font-weight:700}
+.flank-label.flank-on-terrain .flank-cta{display:flex;align-items:center;justify-content:space-between;padding:16px 0 0;border-top:1px solid #b4d7df55;font:800 19px/1.3 Montserrat,Arial;letter-spacing:.06em;color:var(--district-color)}
+.flank-label.flank-on-terrain .flank-cta:after{content:'↗';font-size:30px;line-height:1}

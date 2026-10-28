@@ -1,0 +1,39 @@
+[
+  {
+    "file": "chelomey.jpg",
+    "subject": "Владимир Николаевич Челомей",
+    "source": "https://commons.wikimedia.org/wiki/File:Vladimir_Chelomey.jpg",
+    "originalImageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/8e/Vladimir_Chelomey.jpg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original",
+    "mediaType": "image/jpeg",
+    "credit": "Г. Корабельников / Главархив Москвы / Mos.ru, 1967",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "attributionUrl": "https://www.mos.ru/news/item/86218073/",
+    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged."
+  },
+  {
+    "file": "korolev.jpg",
+    "subject": "Сергей Павлович Королёв",
+    "source": "https://commons.wikimedia.org/wiki/File:Sergei_Korolev_portrait.jpg",
+    "originalImageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/d0/Sergei_Korolev_portrait.jpg?utm_source=commons.wikimedia.org&utm_campaign=index&utm_content=original",
+    "mediaType": "image/jpeg",
+    "credit": "NASA; Wikimedia Commons",
+    "license": "Public domain (PD-USGov-NASA on Wikimedia Commons)",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-NASA",
+    "attributionUrl": "https://www.nasa.gov/audience/foreducators/rocketry/home/sergei-korolev.html",
+    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged."
+  },
+  {
+    "file": "yangel.jpg",
+    "subject": "Михаил Кузьмич Янгель",
+    "source": "https://commons.wikimedia.org/wiki/File:Mikhail_Yangel_2011.jpg",
+    "originalImageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/da/Mikhail_Yangel_2011.jpg",
+    "mediaType": "image/jpeg",
+    "credit": "Укрпочта, памятная почтовая марка, 2011",
+    "license": "Public domain (PD-UA-exempt on Wikimedia Commons)",
+    "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-UA-exempt",
+    "attributionUrl": "https://commons.wikimedia.org/wiki/File:Mikhail_Yangel_2011.jpg",
+    "note": "Corrected the previous coin-obverse URL, which did not depict Yangel’s face.",
+    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged."
+  }
+]

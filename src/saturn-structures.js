@@ -87,8 +87,12 @@ export function buildSaturnIP5(root,terrain={}) {
       vertices.push(xx,height,zz);
       const world=root.localToWorld(new THREE.Vector3(xx,0,zz));
       uv.push(.5+world.x/(terrain.terrainWidth||4420),.5-world.z/(terrain.terrainHeight||3553));
-      // Feather alpha from the raised center into the exact underlying map.
-      colors.push(1,1,1,opacity);
+      // Keep the shared map colour at the edge and summit, but shade the actual
+      // slopes. An unlit, uniformly coloured mesh made this relief look flat.
+      const dx=(saturnTerrainSample(xx+2,zz).height-saturnTerrainSample(xx-2,zz).height)/4;
+      const dz=(saturnTerrainSample(xx,zz+2).height-saturnTerrainSample(xx,zz-2).height)/4;
+      const shade=1+THREE.MathUtils.clamp((-dx*.8+dz*.5)*1.8,-.29,.15)*opacity;
+      colors.push(shade,shade,shade,opacity);
       if(x<N&&z<N){
         const a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;
         indices.push(a,c,b,b,c,d);
@@ -105,7 +109,7 @@ export function buildSaturnIP5(root,terrain={}) {
       map:terrain.terrainTexture||null,color:terrain.terrainTexture?0xffffff:0x9d8e76,
       side:THREE.DoubleSide
     });
-    Object.assign(groundMaterial,{vertexColors:true,transparent:true,depthWrite:false,
+    Object.assign(groundMaterial,{vertexColors:true,transparent:true,depthWrite:true,alphaTest:.01,
       polygonOffset:true,polygonOffsetFactor:-2});
     const hill=add(new THREE.Mesh(geo,groundMaterial),'murguduk-hill');
     // The shared satellite overlay uses renderOrder=2. Render the relief AFTER
@@ -113,6 +117,7 @@ export function buildSaturnIP5(root,terrain={}) {
     hill.renderOrder=3;
     hill.userData.terrainElevationWorld=SATURN_ACCESS.verticalRaise;
     hill.userData.surfaceStyle='shared-steppe-world-uv';
+    hill.userData.reliefStyle='normal-shaded-depth-v1';
   }
   groundPatch();
 

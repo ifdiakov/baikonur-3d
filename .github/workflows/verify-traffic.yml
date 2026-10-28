@@ -1,4 +1,4 @@
-name: Nose-up landing, highway traffic and motor locomotive
+name: Museum 3 — traffic, four coaches and flank territories
 on:
   push:
     branches: [main]
@@ -7,6 +7,12 @@ on:
       - 'src/**'
       - 'tests/traffic-geometry.mjs'
       - 'tests/traffic-browser.mjs'
+      - 'tests/road-vehicles-geometry.mjs'
+      - 'tests/road-vehicles-browser.mjs'
+      - 'tests/train-consist.mjs'
+      - 'tests/train-browser.mjs'
+      - 'tests/flanks-browser.mjs'
+      - 'assets/flank-portraits/**'
       - '.github/workflows/verify-traffic.yml'
   workflow_dispatch:
 concurrency:
@@ -15,7 +21,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 14
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -30,6 +36,8 @@ jobs:
       - name: Verify wheel contacts, pitch, lanes and track continuity
         run: |
           node tests/traffic-geometry.mjs
+          node tests/road-vehicles-geometry.mjs
+          node tests/train-consist.mjs
           node tests/arrival-geometry.mjs
           node tests/transport-geometry.mjs
       - name: Start local museum
@@ -37,21 +45,33 @@ jobs:
           python3 -m http.server 8765 --bind 127.0.0.1 &
           sleep 2
       - name: Verify traffic and landing in Chromium
-        run: node tests/traffic-browser.mjs
+        run: |
+          node tests/traffic-browser.mjs
+          node tests/road-vehicles-browser.mjs
+          node tests/train-browser.mjs
+          node tests/flanks-browser.mjs
       - name: Wait for public traffic interface
         run: |
           for attempt in $(seq 1 24); do
-            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q '20261028-traffic-v1'; then exit 0; fi
+            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q '20261028-museum3-v2'; then exit 0; fi
             sleep 8
           done
           exit 1
       - name: Verify published traffic and landing
         env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?museum3=${{ github.sha }}
           QA_PREFIX: public
-        run: node tests/traffic-browser.mjs
+        run: |
+          node tests/traffic-browser.mjs
+          node tests/road-vehicles-browser.mjs
+          node tests/train-browser.mjs
+          node tests/flanks-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: traffic-landing-qa
-          path: qa-traffic/
+          path: |
+            qa-traffic/
+            qa-road-vehicles/
+            qa-train/
+            qa-flanks/

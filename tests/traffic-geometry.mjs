@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {createArrivalPath,arrivalPose} from '../src/arrival-flight.js';
 import {buildTransportNetwork} from '../src/transport-network.js';
 import {buildHighwayPath} from '../src/traffic-paths.js';
+import {TRAIN_START_DISTANCE} from '../src/rail-vehicles.js';
 import {highwayVehiclePose,trainDistance,TRAIN_DURATION} from '../src/ground-traffic.js';
 const airport=new THREE.Group();airport.scale.setScalar(.28);airport.rotation.y=2.06;airport.position.set((539-650)*3.4,0,(962-522.5)*3.4);
 const flight=createArrivalPath(airport);
@@ -36,7 +37,7 @@ for(const section of plan.sections){
 }
 assert.ok(maxDeviation<.06,'Animation follows the rendered track buffers');
 for(const t of [0,1,30,120,300,420,480,1000]){
- const distance=trainDistance(t,plan.path.length);assert.ok(distance>=7&&distance<=plan.path.length-8);
+ const distance=trainDistance(t,plan.path.length);assert.ok(distance>=TRAIN_START_DISTANCE&&distance<=plan.path.length-8);
  const states=Array.from({length:6},(_,i)=>highwayVehiclePose(highway,t,i));
  for(const s of states){assert.ok(s.position.y>=.72);assert.equal(Math.abs(s.laneOffset),highway.width/4);assert.ok([...s.position.toArray(),...s.tangent.toArray()].every(Number.isFinite));}
  for(const dir of [-1,1]){const cars=states.filter(s=>s.direction===dir);for(let i=0;i<3;i++)for(let j=i+1;j<3;j++){

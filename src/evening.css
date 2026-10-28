@@ -11,3 +11,13 @@
 .following-arrival #hero,.following-train #hero{display:none}
 #trainFollow[aria-pressed="true"]{background:#516150;border-color:#c5c08a88}
 @media(max-width:750px){.arrival-panel{padding:8px 7px}.arrival-title{font-size:7px;letter-spacing:0}.arrival-bottom{font-size:8px}.arrival-bottom button{font-size:8px;padding:5px}}
+
+/* The train gets the full narrow viewport while its follow mode is active. */
+@media(max-width:750px){
+ body.following-train #museumLeftStack{left:10px!important;right:10px!important;top:10px!important;width:calc(100vw - 20px)!important}
+ body.following-train #museumLeftStack #ui{width:100%!important;max-height:100px!important;padding:9px!important;overflow:visible!important}
+ body.following-train #ui>:not(.buttons){display:none!important}
+ body.following-train #ui>.buttons{display:flex;align-items:center;gap:6px}
+ body.following-train #ui>.buttons>:not(#all):not(#eveningToggle):not(#trainFollow){display:none!important}
+ body.following-train #trainFollow::after{content:' · 4 вагона'}
+}

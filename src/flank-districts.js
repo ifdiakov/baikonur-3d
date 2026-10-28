@@ -26,118 +26,68 @@ export const FLANK_DISTRICTS = [
    sources:['https://www.unoosa.org/pdf/pres/stsc2010/tech-41.pdf','https://yuzhmash.com/en/about-company/','https://www.testpilot.ru/espace/bibl/kb-ujn/05.php']}
 ];
 
-export function buildFlankDistricts(scene, point, W, H) {
-  const startY=58,endY=735,segments=40;
-  const leftEdge=y=>440+34*Math.sin(y/122)+18*Math.sin(y/54);
-  const rightEdge=y=>875+31*Math.sin(y/150+.6)-22*Math.sin(y/70);
-  const zoneMeshes=[],boundaries=[],accents=[];
-  const cursor=new THREE.Vector3();
-  const leftX=y=>[0,leftEdge(y),rightEdge(y)][0];
-  const boundaryCoords=[leftEdge,rightEdge];
-
-  function world(x,y,height=-1.7){return point(x,y,height)}
-  for(let index=0;index<3;index++){
-    const def=FLANK_DISTRICTS[index];
-    const x0=index===0?(()=>0):(index===1?leftEdge:rightEdge);
-    const x1=index===0?leftEdge:(index===1?rightEdge:(()=>W));
-    const positions=[],fades=[],triangles=[];
-    const columns=7;
-    for(let j=0;j<=segments;j++){
-      const y=startY+(endY-startY)*j/segments;
-      const fadeY=Math.max(0,Math.min(1,(y-startY)/75,(endY-y)/82));
-      for(let k=0;k<=columns;k++){
-        const t=k/columns,x=x0(y)+(x1(y)-x0(y))*t;
-        const at=world(x,y,-1.72);
-        positions.push(at.x,at.y,at.z);
-        const fadeOuter=Math.max(0,Math.min(1,x/52,(W-x)/52));
-        fades.push(fadeY*fadeOuter);
-      }
-    }
-    for(let j=0;j<segments;j++)for(let k=0;k<columns;k++){
-      const a=j*(columns+1)+k,b=a+1,c=a+columns+1,d=c+1;
-      triangles.push(a,c,b,b,c,d);
-    }
-    const geo=new THREE.BufferGeometry();
-    geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
-    geo.setAttribute('districtFade',new THREE.Float32BufferAttribute(fades,1));
-    geo.setIndex(triangles);
-    geo.computeVertexNormals();
-    const shader=new THREE.ShaderMaterial({
-      uniforms:{uColor:{value:new THREE.Color(def.color)},uOpacity:{value:0}},
-      vertexShader: `attribute float districtFade;
-varying float vFade;
-void main(){vFade=districtFade;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}`,
-      fragmentShader: `uniform vec3 uColor;
-uniform float uOpacity;
-varying float vFade;
-void main(){gl_FragColor=vec4(uColor,uOpacity*vFade);}`,
-      transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide
-    });
-    const mesh=new THREE.Mesh(geo,shader);
-    mesh.name='Тематический район '+def.name;mesh.visible=false;mesh.renderOrder=3;
-    scene.add(mesh);zoneMeshes.push(mesh);
+// Graphic, thematic boundaries only: deliberately angular, not cadastral lines.
+export const FLANK_BORDERS=[
+ [[425,40],[425,190],[480,245],[480,390],[430,440],[430,610],[480,660],[480,800]],
+ [[890,40],[890,175],[830,235],[830,400],[880,450],[880,620],[925,665],[925,800]]
+];
+export function buildFlankDistricts(scene,point,W,H){
+ const root=new THREE.Group();root.name='Фланги · тематические территории';scene.add(root);
+ const zones=[],boundaries=[],materials=[];
+ // Self-lit map graphics must retain their color when the evening scene tints
+ // ordinary MeshBasicMaterials. Log-depth chunks match the museum renderer.
+ function ink(color,strength,additive=false){
+  const mat=new THREE.ShaderMaterial({
+   uniforms:{uColor:{value:new THREE.Color(color)},uOpacity:{value:0}},
+   vertexShader:`#include <common>
+#include <logdepthbuf_pars_vertex>
+void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
+#include <logdepthbuf_vertex>
+}`,
+   fragmentShader:`uniform vec3 uColor;uniform float uOpacity;
+#include <common>
+#include <logdepthbuf_pars_fragment>
+void main(){
+#include <logdepthbuf_fragment>
+gl_FragColor=vec4(uColor,uOpacity);
+#include <colorspace_fragment>
+}`,
+   transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,
+   blending:additive?THREE.AdditiveBlending:THREE.NormalBlending
+  });mat.toneMapped=false;materials.push({mat,strength});return mat;
+ }
+ const polygons=[
+  [[0,40],...FLANK_BORDERS[0],[0,800]],
+  [...FLANK_BORDERS[0],...FLANK_BORDERS[1].slice().reverse()],
+  [...FLANK_BORDERS[1],[W,800],[W,40]]
+ ];
+ for(let i=0;i<3;i++){
+  const shape=new THREE.Shape();polygons[i].forEach(([x,z],j)=>{const p=point(x,z);j?shape.lineTo(p.x,-p.z):shape.moveTo(p.x,-p.z);});shape.closePath();
+  const mesh=new THREE.Mesh(new THREE.ShapeGeometry(shape),ink(FLANK_DISTRICTS[i].color,.19));
+  mesh.rotation.x=-Math.PI/2;mesh.position.y=-2.56;mesh.renderOrder=3;
+  mesh.name='Тематическая зона · '+FLANK_DISTRICTS[i].name;mesh.userData.pickable=false;root.add(mesh);zones.push(mesh);
+ }
+ function ribbon(parent,points,width,material,height,offset=0){
+  for(let j=1;j<points.length;j++){
+   const a=point(...points[j-1],height),b=point(...points[j],height),delta=b.clone().sub(a);
+   const side=new THREE.Vector3(-delta.z,0,delta.x).normalize().multiplyScalar(offset);
+   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,delta.length()+width*.6),material);
+   mesh.rotation.set(-Math.PI/2,0,Math.atan2(delta.x,delta.z));mesh.position.copy(a).lerp(b,.5).add(side);
+   mesh.renderOrder=5;mesh.userData.pickable=false;parent.add(mesh);
   }
-  // Floating cyber-map borders in two tones. They follow the SAME level alpha as
-  // the flank cards. No borders remain when the cards are faded.
-  for(let i=0;i<2;i++){
-    const points=[];
-    for(let j=0;j<=segments*2;j++){
-      const y=startY+(endY-startY)*j/(segments*2);
-      const x=boundaryCoords[i](y);
-      points.push(world(x,y,-1.52));
-    }
-    const geometry=new THREE.BufferGeometry().setFromPoints(points);
-    const lineMaterial=new THREE.LineDashedMaterial({
-      color:i===0?0xe983b3:0x8fd8d9,dashSize:19,gapSize:10,
-      transparent:true,opacity:0,depthWrite:false,depthTest:false
-    });
-    const line=new THREE.Line(geometry,lineMaterial);
-    line.computeLineDistances();line.renderOrder=5;line.visible=false;
-    scene.add(line);boundaries.push(line);
-    // A muted inner rail gives the district boundary the layered Night-City feel.
-    const secondMaterial=new THREE.LineBasicMaterial({
-      color:i===0?0x82456c:0x428fa2,transparent:true,opacity:0,
-      depthTest:false,depthWrite:false
-    });
-    const second=new THREE.Line(geometry,secondMaterial);
-    second.visible=false;second.renderOrder=4;scene.add(second);accents.push(second);
-  }
-  // Thin perpendicular grid ticks are graphical district-map details, not roads.
-  for(let i=0;i<3;i++){
-    const points=[];
-    for(let y=158;y<695;y+=74){
-      const x=i===0?Math.max(35,leftEdge(y)-76):
-              i===1?(leftEdge(y)+rightEdge(y))*.5:
-              Math.min(W-35,rightEdge(y)+76);
-      const a=world(x-19,y,-1.47),b=world(x+19,y,-1.47);
-      points.push(a.x,a.y,a.z,b.x,b.y,b.z);
-    }
-    const geo=new THREE.BufferGeometry();
-    geo.setAttribute('position',new THREE.Float32BufferAttribute(points,3));
-    const mesh=new THREE.LineSegments(geo,new THREE.LineBasicMaterial({
-      color:FLANK_DISTRICTS[i].color,transparent:true,opacity:0,
-      depthTest:false,depthWrite:false
-    }));
-    mesh.name='Скан-линии тематического района '+FLANK_DISTRICTS[i].name;
-    mesh.visible=false;scene.add(mesh);accents.push(mesh);
-  }
-  let alpha=0;
-  const setOpacity=level=>{
-    alpha=Math.max(0,Math.min(1,level));
-    const visible=alpha>.035;
-    for(const m of zoneMeshes){
-      m.visible=visible;
-      m.material.uniforms.uOpacity.value=alpha*.18;
-    }
-    for(const b of boundaries){b.visible=visible;b.material.opacity=alpha*.89;}
-    for(const a of accents){a.visible=visible;a.material.opacity=alpha*.30;}
-  };
-  setOpacity(0);
-  return {setOpacity,state:()=>({
-    alpha,zoneCount:zoneMeshes.length,
-    visibleZones:zoneMeshes.filter(x=>x.visible).length,
-    visibleBoundaries:boundaries.filter(x=>x.visible).length,
-    thematicOnly:true
-  })};
+ }
+ FLANK_BORDERS.forEach((points,i)=>{
+  const border=new THREE.Group();border.name='Граница тематических флангов '+(i+1);root.add(border);boundaries.push(border);
+  ribbon(border,points,32,ink(FLANK_DISTRICTS[i].color,.14,true),-1.85,-8);
+  ribbon(border,points,32,ink(FLANK_DISTRICTS[i+1].color,.14,true),-1.83,8);
+  ribbon(border,points,8,ink(FLANK_DISTRICTS[i].color,.58,true),-1.65,-3.3);
+  ribbon(border,points,8,ink(FLANK_DISTRICTS[i+1].color,.58,true),-1.63,3.3);
+  ribbon(border,points,2.2,ink(0xecfbff,1,true),-1.42);
+ });
+ let alpha=0;
+ function setOpacity(level){alpha=THREE.MathUtils.clamp(level,0,1);root.visible=alpha>.035;for(const{mat,strength}of materials)mat.uniforms.uOpacity.value=alpha*strength;}
+ setOpacity(0);
+ return {setOpacity,state:()=>({version:'angular-territories-v2',alpha,zoneCount:zones.length,
+  visibleZones:root.visible?zones.length:0,visibleBoundaries:root.visible?boundaries.length:0,
+  thematicOnly:true,informationPlane:'terrain',boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
 }
-

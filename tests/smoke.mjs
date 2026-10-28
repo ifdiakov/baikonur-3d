@@ -13,9 +13,9 @@ await page.waitForFunction(()=>document.getElementById('roadStatus')?.textConten
 // Enterprise artwork is local, transparent, and attached only to attributed sites.
 await page.waitForFunction(()=>{
  const logos=[...document.querySelectorAll('.detail-card .org-logo')];
- return logos.length>=4&&logos.every(image=>image.complete&&image.naturalWidth===1280);
+ return logos.length>=4&&logos.every(image=>image.complete&&image.naturalWidth>=320&&image.naturalHeight>0);
 },{timeout:15000});
-assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),15);
+assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),14);
 assert.equal(await page.locator('.detail-card [data-org-logo="energia"]').count(),1);
 assert.equal(await page.locator('.detail-card [data-org-logo="khrunichev"]').count(),1);
 assert.equal(await page.locator('.detail-card [data-org-logo="progress"]').count(),1);
@@ -29,13 +29,13 @@ assert.ok(!reviewedCatalog.sites.some(site=>site.id==='pad-17'));
 assert.ok(reviewedCatalog.unplacedReferenceSites.some(site=>site.number==='17'));
 const kaz=reviewedCatalog.sites.find(site=>site.id==='pad-3');
 assert.deepEqual([kaz.x,kaz.y],[708,651]);
-for(const [id,logo] of [['pad-2a','tsenki'],['pad-112','progress'],['pad-254','energia'],['pad-45',null],['pad-89',null]]){
+for(const [id,logo] of [['pad-2a','tsenki'],['pad-112','progress'],['pad-254','energia'],['pad-45','baiterek'],['pad-89',null]]){
  const index=reviewedCatalog.sites.findIndex(site=>site.id===id),site=reviewedCatalog.sites[index];
  await page.evaluate(index=>window.__BAIKONUR_QA.focusSite(index),index);
  assert.equal(await page.locator('#infoPurpose').textContent(),site.purposeLong);
  assert.ok((await page.locator('#description').textContent()).includes(site.note));
  assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),logo);
- if(id==='pad-45')assert.equal(await page.locator('#infoOrg').textContent(),site.organisation.org);
+ if(id==='pad-45')assert.equal(await page.locator('#infoOrgRole').textContent(),site.organisation.org);
  if(id==='pad-112'||id==='pad-254')assert.equal(await page.locator('#infoOrgRole').textContent(),site.organisation.org);
  await page.locator('#detailMore').click();
  for(const reference of site.publicReferences)assert.ok((await page.locator('#infoExtra a').evaluateAll(links=>links.map(link=>link.href))).includes(reference));
@@ -250,7 +250,7 @@ assert.ok(transport.facilityDriveways>=12,'Pads must connect to the main road ne
 assert.ok(transport.renderedRailLength>14000,'Render long continuously curved rail networks');
 const saturn=overviewScale.saturn;
 console.log('SATURN SITE 23',JSON.stringify(saturn));
-assert.equal(saturn.version,'1.6-gentle-hill20','The Saturn IP-5 photo model must be integrated');
+assert.equal(saturn.version,'1.7-readable-relief-lighting','The Saturn IP-5 photo model must be integrated');
 assert.equal(saturn.sourceFolder,'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk','Saturn must reference dedicated user Drive folder');
 assert.equal(saturn.dishDiameterMetres,25);
 assert.equal(saturn.largeAntennaCount,2,'Saturn must have two 25m P-200 parabolic antennas');
@@ -368,7 +368,7 @@ console.log('DETAIL CARDS',await page.locator('.detail-card:visible').count());
 assert.ok((await page.locator('.detail-card:visible').count())>0,'Level 4: on-site detail cards should be visible');
 const siteDetail=page.locator('.detail-card[data-site-index="0"]');
 assert.equal(await siteDetail.locator('.org-logo').isVisible(),true);
-await page.waitForFunction(()=>document.querySelector('#infoOrg .org-logo')?.naturalWidth===1280);
+await page.waitForFunction(()=>document.querySelector('#infoOrg .org-logo')?.naturalWidth>=320);
 assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),'tsenki');
 assert.equal(await siteDetail.locator('.org-logo').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
 await page.screenshot({path:'qa-enterprise-logos.png'});

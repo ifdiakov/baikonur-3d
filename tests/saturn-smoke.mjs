@@ -1,23 +1,39 @@
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 
-const browser=await chromium.launch({headless:true,args:[
+const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:[
  '--no-sandbox','--use-gl=angle','--use-angle=swiftshader',
  '--enable-webgl','--disable-gpu-sandbox'
 ]});
 try {
  const page=await browser.newPage({viewport:{width:1600,height:900},deviceScaleFactor:1});
  const errors=[];
+ if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',route=>route.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(route.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
+ await page.addInitScript(()=>{
+  const nativeRAF=requestAnimationFrame.bind(window);
+  window.__SATURN_PENDING=null;
+  window.requestAnimationFrame=fn=>fn.name==='animate'?nativeRAF(()=>{window.__SATURN_PENDING=fn;}):nativeRAF(fn);
+  window.__SATURN_FRAME=()=>{const fn=window.__SATURN_PENDING;window.__SATURN_PENDING=null;fn?.(performance.now());};
+ });
+ async function snapshot(path){console.log('SNAPSHOT',path);await page.evaluate(()=>window.__SATURN_FRAME());await page.waitForFunction(()=>window.__SATURN_PENDING,null,{polling:100});await page.screenshot({path,timeout:90000});}
  page.on('pageerror',e=>errors.push(e.message||String(e)));
  const origin=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
  const url=new URL(origin);url.searchParams.set('site','23');
  url.searchParams.set('check',process.env.GITHUB_SHA||'northwest');
  await page.goto(url.toString(),{waitUntil:'domcontentloaded',timeout:60000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.transport?.saturnAccess?.revision==='northwest-hill20-v2',{timeout:90000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.saturn?.version==='1.7-readable-relief-lighting',null,{timeout:120000,polling:100});
  await page.waitForTimeout(800);
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  const model=stats.saturn,access=stats.transport.saturnAccess;
- assert.equal(model.version,'1.6-gentle-hill20');
+ assert.equal(model.version,'1.7-readable-relief-lighting');
+ assert.equal(model.terrain.relief,'normal-shaded-depth-v1');
+ assert.equal(model.terrain.depthWrite,true);
+ assert.equal(stats.evening.saturnLights.length,4);
+ assert.ok(stats.evening.saturnRoadLights.length>0);
+ for(const light of [...stats.evening.saturnLights,...stats.evening.saturnRoadLights]){
+  assert.ok(light.y>light.terrainY&&light.y-light.terrainY<.06,'Saturn lamp base must meet the actual hillside');
+ }
+ assert.ok(stats.evening.saturnLights.every(l=>l.y>21),'Summit lamps must be above the hill');
  assert.equal(model.siteNumber,23);
  assert.equal(model.access.preservedVerticalRaise,20);
  assert.equal(model.largeAntennaCount,2);
@@ -40,7 +56,13 @@ try {
  assert.ok(access.sectionCount>=160);
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.deepEqual(errors,[]);
- await page.screenshot({path:'qa-saturn-ip5.png'});
+ await snapshot('qa-saturn-ip5.png');
+ await page.locator('#close').click();await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.inspectSaturnHill());
+ await snapshot('qa-saturn-hill-evening.png');
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));
+ await snapshot('qa-saturn-hill-day.png');
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
  // Independently instantiate the exact modules and inspect the real buffers.
  const geometry=await page.evaluate(async()=>{
   const THREE=await import('three');
@@ -96,11 +118,11 @@ try {
  console.log('SATURN NORTHWEST QA',JSON.stringify({access,geometry,errors}));
  const workshop=new URL('workshop/saturn.html',origin);
  await page.goto(workshop.toString(),{waitUntil:'domcontentloaded',timeout:60000});
- await page.waitForFunction(()=>window.__SATURN_PREVIEW__?.rendererReady===true,{timeout:60000});
+ await page.waitForFunction(()=>window.__SATURN_PREVIEW__?.rendererReady===true,null,{timeout:60000,polling:100});
  const preview=await page.evaluate(()=>window.__SATURN_PREVIEW__.stats());
  assert.equal(preview.antennas,2);assert.equal(preview.diameter,25);assert.ok(preview.meshCount>60);
  assert.equal(await page.locator('#error').isVisible(),false);
- await page.screenshot({path:'qa-saturn-workshop.png'});
+ await snapshot('qa-saturn-workshop.png');
  assert.deepEqual(errors,[]);
  console.log('SATURN northwest access: Chromium render and buffer geometry passed');
 } finally {await browser.close();}

@@ -1,13 +1,20 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js';
+import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js';
 
 export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange}){
  const hemisphere=scene.children.find(o=>o.isHemisphereLight),fields=[],originals=new Map();
  let evening=true,lastSync=-1;
+ const saturn=objects.find(o=>o.record.id==='pad-23');
+ scene.updateMatrixWorld(true);
+ function saturnGround(x,z){
+  const local=saturn.g.worldToLocal(new THREE.Vector3(x,0,z));
+  return saturn.g.localToWorld(new THREE.Vector3(local.x,saturnTerrainHeight(local.x,local.z),local.z)).y;
+ }
  // Basic terrain materials ignore scene lighting; tint every shared surface
  // equally, including Saturn's world-UV hill, so their joins remain invisible.
  scene.traverse(o=>{if(!o.isMesh)return;for(const m of Array.isArray(o.material)?o.material:[o.material]){
-  if(m?.isMeshBasicMaterial&&m.color&&!originals.has(m))originals.set(m,m.color.clone());
+  if(m?.isMeshBasicMaterial&&m.color&&!m.userData.keepBrightness&&!originals.has(m))originals.set(m,m.color.clone());
  }});
  const sky=new THREE.Mesh(new THREE.SphereGeometry(35000,48,24),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,
   uniforms:{night:{value:1}},vertexShader:`varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
@@ -26,8 +33,10 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
    while(next<=covered+len){const t=(next-covered)/len;
     for(const side of [-1,1]){const nx=-dz/len*side,nz=dx/len*side,offset=road.width/2+1.1;
      const x=a.x+dx*t+nx*offset,z=a.z+dz*t+nz*offset,key=Math.round(x/10)+':'+Math.round(z/10);
-     if(!occupied.has(key)){occupied.add(key);const surface=a.y+(b.y-a.y)*t;roadLights.push({x,y:surface-.055,z,height:2.8,yaw:Math.atan2(-nx,-nz),
-      poolY:surface+.015,poolX:x-nx*offset*.72,poolZ:z-nz*offset*.72,radius:9,color:0xffbd70});}
+     if(!occupied.has(key)){occupied.add(key);const surface=a.y+(b.y-a.y)*t;
+      const onSaturn=road.id===SATURN_ACCESS.routeId&&saturn;
+      roadLights.push({x,y:onSaturn?saturnGround(x,z)+.035:surface-.055,z,height:2.8,yaw:Math.atan2(-nx,-nz),
+      poolY:surface+.015,poolX:x-nx*offset*.72,poolZ:z-nz*offset*.72,radius:9,color:0xffbd70,terrain:onSaturn?'saturn':'road'});}
     }next+=58;
    }covered+=len;
   }
@@ -41,11 +50,14 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   if(o.type==='air')continue;
   const center=o.g.getWorldPosition(new THREE.Vector3()),id=o.record.id;
   const radius=id==='pad-1'?19:id==='pad-250'?36:id==='pad-112'?25:id==='pad-23'?53:o.type==='city'?23:10;
-  const height=id==='pad-23'?20.8:id==='pad-1'?2:1.2;
+  const height=id==='pad-1'?2:1.2;
   const surfaces=[...groundMeshes];o.g.traverse(m=>{if(m.isMesh)surfaces.push(m);});
   const count=o.type==='city'?12:4;
   for(let j=0;j<count;j++){const angle=(j+.5)*Math.PI*2/count;
-   const x=center.x+Math.cos(angle)*radius,z=center.z+Math.sin(angle)*radius,y=baseAt(x,z,surfaces,height)+.02;
+   const x=center.x+Math.cos(angle)*radius,z=center.z+Math.sin(angle)*radius;
+   // Saturn's summit is above the former raycast ceiling. Sample its actual
+   // height field, so bases and light pools cannot drop to the flat map below.
+   const y=(id==='pad-23'?saturnGround(x,z):baseAt(x,z,surfaces,height))+.02;
    (o.type==='city'?cityLights:siteLights).push({x,y,z,
     height:id==='pad-1'?1.8:id==='pad-250'?3.6:2.6,radius:10,owner:o.g,color:j%3?0xffcf94:0xd6e8ff});
   }
@@ -68,7 +80,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  const floods=[];
  for(const id of ['pad-1','pad-250','pad-112','pad-23']){const o=objects.find(o=>o.record.id===id);if(!o)continue;
   const c=o.g.getWorldPosition(new THREE.Vector3()),light=new THREE.PointLight(0xffc48a,100,75,1.4);
-  light.position.set(c.x-9,(id==='pad-23'?20:0)+13,c.z+8);scene.add(light);floods.push({light,owner:o.g});
+  light.position.set(c.x-9,(id==='pad-23'?saturnGround(c.x-9,c.z+8):0)+13,c.z+8);scene.add(light);floods.push({light,owner:o.g});
  }
  function setEvening(value){evening=!!value;sky.visible=evening;
   scene.background.set(evening?0x172844:0xb7b5a4);scene.fog.color.set(evening?0x202c46:0xb7b5a4);scene.fog.density=evening?.00007:.000085;
@@ -83,5 +95,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  button.addEventListener('click',()=>setEvening(!evening));setEvening(true);
  return {setEvening,get evening(){return evening;},update(now){sky.position.copy(camera.position);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
   stats:()=>({version:'evening-baikonur-v1',evening,roadLights:roadLights.length,siteLights:siteLights.length,runwayLights:runway.length,
+   saturnLights:siteLights.filter(l=>l.owner===saturn?.g).map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
+   saturnRoadLights:roadLights.filter(l=>l.terrain==='saturn').map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
    lightBatches:fields.reduce((n,f)=>n+f.stats().drawCalls,0),dynamicLights:floods.length,terrainMaterials:originals.size})};
 }
