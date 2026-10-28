@@ -5,6 +5,21 @@ const V=(x,y,z)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,t)=>{const u=clamp((t-a)/(b-a),0,1);return u*u*(3-2*u);};
 export const FLIGHT_DURATION=120,TOUCHDOWN_TIME=108;
 
+// Attitude is independent of the descending flight path: positive angle of
+// attack on final, a gentle flare, then the nose gear settles after the mains.
+export function arrivalPose(path,seconds){
+ const t=clamp(seconds,0,120),state=path.sample(t),horizontal=state.heading.clone().setY(0).normalize();
+ const pathPitch=Math.atan2(state.heading.y,Math.hypot(state.heading.x,state.heading.z))*180/Math.PI;
+ const approach=THREE.MathUtils.lerp(pathPitch,3.5,smooth(46,58,t));
+ const pitchDeg=(approach+2.5*smooth(96,107,t))*(1-smooth(109,115,t)),pitch=pitchDeg*Math.PI/180;
+ const airframeHeading=horizontal.multiplyScalar(Math.cos(pitch)).setY(Math.sin(pitch));
+ // Rotate around the main-gear contact line, not through the runway surface.
+ const gearLift=.55*(2.72*(Math.cos(pitch)-1)+3*Math.sin(pitch))*smooth(96,108,t);
+ const bodyPosition=state.position.clone();bodyPosition.y+=gearLift;
+ const attitude=new THREE.Quaternion().setFromEuler(new THREE.Euler(-pitch,Math.atan2(state.heading.x,state.heading.z),0,'YXZ'));
+ return {...state,pitchDeg,airframeHeading,bodyPosition,attitude};
+}
+
 // Position and velocity share the same Hermite segments. The final segment
 // runs exactly on the existing runway centreline and ends with zero velocity.
 export function createArrivalPath(airfield){
@@ -131,10 +146,10 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,conta
  document.addEventListener('keydown',e=>{if(!e.target.matches('input,textarea,select')&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase()))stopFollowing();});
  document.addEventListener('visibilitychange',()=>{paused=document.hidden;lastNow=null;});
  const direction=V(0,0,1),rot=new THREE.Quaternion(),bankQ=new THREE.Quaternion(),lastTrailCamera=V(Infinity,Infinity,Infinity);
- function render(t){state=path.sample(t);craft.model.position.copy(state.position);
+ function render(t){state=arrivalPose(path,t);craft.model.position.copy(state.bodyPosition);
   const ahead=path.sample(Math.min(120,t+.2)).heading,turn=new THREE.Vector3().crossVectors(state.heading,ahead).y;
   const bank=t<96?clamp(-turn*12,-.32,.32):0;
-  rot.setFromUnitVectors(direction,state.heading);bankQ.setFromAxisAngle(direction,bank);craft.model.quaternion.copy(rot).multiply(bankQ);
+  rot.copy(state.attitude);bankQ.setFromAxisAngle(direction,bank);craft.model.quaternion.copy(rot).multiply(bankQ);
   craft.gear.visible=state.gear>.01;craft.gear.rotation.x=(1-state.gear)*Math.PI*.48;
   craft.strobes.root.visible=t<120&&(t%1.2<.075||(t%1.2>.17&&t%1.2<.245));
   craft.beacon.root.visible=Math.sin(t*2*Math.PI/1.4)>.65;
@@ -147,6 +162,10 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,conta
  return {path,stopFollowing,restart,seek(seconds){elapsed=clamp(seconds,0,120);forced=elapsed;render(elapsed);},resume(){forced=null;lastNow=null;},
   update(now){if(lastNow===null)lastNow=now;if(!paused&&forced===null)elapsed=Math.min(120,elapsed+(now-lastNow)/1000);lastNow=now;render(elapsed);},
   stats:()=>({version:'krayniy-arrival-v1',duration:120,elapsed,phase:state.phase,following,position:state.position.toArray(),velocity:state.velocity.toArray(),
+   attitudeVersion:'positive-approach-v2',pitchDeg:state.pitchDeg,bodyPosition:craft.model.position.toArray(),
+   renderedPitchDeg:Math.asin(V(0,0,1).applyQuaternion(craft.model.quaternion).y)*180/Math.PI,
+   mainWheelBottom:craft.model.localToWorld(V(3,-2.72,-3)).y-.46*.55,
+   noseWheelBottom:craft.model.localToWorld(V(0,-2.72,12)).y-.46*.55,
    gear:state.gear,onGround:state.onGround,runwayY:path.runwayY,touchdown:path.touchdown.toArray(),axis:path.axis.toArray(),
    strobeVisible:craft.strobes.root.visible,beaconVisible:craft.beacon.root.visible,trail:trail.stats()})};
 }

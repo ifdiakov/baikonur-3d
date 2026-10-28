@@ -7,7 +7,7 @@ import {RAIL_PROFILE} from './gagarin-rail-approach.js';
  * NOT CAD/surveyed. Station tracks and turnouts are museum reconstruction.
  * All route coordinates use the original plan 1300×1045 coordinate plane.
  */
-export function buildTransportNetwork({data,point,layers,siteRecords,roadElevation=()=>0,railElevation=()=>0,gagarinRail}) {
+export function buildTransportNetwork({data,point,layers,siteRecords,roadElevation=()=>0,railElevation=()=>0,gagarinRail,extraRails=[]}) {
   const RAIL_SCALE=RAIL_PROFILE.gauge/2.1;
   const junctions=[...(data.junctions||[])];
   const state={
@@ -215,6 +215,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     const curve=rail.id===gagarinRail?.id?gagarinRail.curve:curveFor(rail.points,.75);
     renderTrack(rail.id,curve,rail.role);
   }
+  for(const connection of extraRails)renderTrack(connection.id,connection.curve,'connection',false);
   for(const yard of data.yards){
     const base=routeCurves.get(yard.railRoute);if(!base)continue;
     const target=point(yard.x,yard.y,1),near=nearestParameter(base,target);
@@ -303,7 +304,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
       label:route.id==='r-site3-kaz-access'?'Подъезд к пл. №3':route.id==='r-site75-seven-winds-access'?'Подъезд к пл. №75':'Автодорога',width,
       points:baseSamples(curve,Math.max(30,Math.ceil(curve.getLength()/5))).map(s=>new THREE.Vector3(s.pos.x,.72+roadElevation(route.id,s.pos),s.pos.z))})),...drivewayPaths],
     stationLabels:()=>stationLabels.map(label=>({...label,world:label.anchor.getWorldPosition(new THREE.Vector3())})),
-    stats:()=>({...state,roadRoutes:state.roadRoutes,railRoutes:state.railRoutes,
+    stats:()=>({...state,roadRoutes:state.roadRoutes,railRoutes:state.railRoutes,trafficConnections:extraRails.length,
       siteAccess:connected,stationNames:data.yards.map(s=>s.label)}),
     routes:data.routes,confidence:data.realismNotes
   };

@@ -8,5 +8,6 @@
 .arrival-bottom button{border:1px solid #ffffff2c;border-radius:6px;background:#30425585;color:#e8eff6;padding:5px 7px;font:600 9px Montserrat,Arial;cursor:pointer}
 .arrival-bottom button:hover,.arrival-bottom button[aria-pressed="true"]{border-color:#e2b98883;background:#66534888}
 #arrivalReplay{font:17px/12px Arial;padding:5px 6px}
-.following-arrival #hero{display:none}
+.following-arrival #hero,.following-train #hero{display:none}
+#trainFollow[aria-pressed="true"]{background:#516150;border-color:#c5c08a88}
 @media(max-width:750px){.arrival-panel{padding:8px 7px}.arrival-title{font-size:7px;letter-spacing:0}.arrival-bottom{font-size:8px}.arrival-bottom button{font-size:8px;padding:5px}}
