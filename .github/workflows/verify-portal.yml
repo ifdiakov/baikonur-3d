@@ -1,0 +1,99 @@
+name: Portal photo models, terrain excavation and organisations
+on:
+  push:
+    branches: [main]
+    paths: ['src/archive-*.js','src/terrain-voids.js','scripts/integrate-portal.mjs','scripts/optimise-archive.mjs','scripts/patch-gagarin.mjs','scripts/partner-logos.py','archive.html','tests/portal-browser.mjs','.github/workflows/verify-portal.yml']
+  workflow_dispatch:
+concurrency:
+  group: portal-model-release
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  portal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install reproducible test dependencies
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+          python3 -m pip install pillow numpy
+          mkdir -p qa-portal/vendor
+          cp node_modules/three/build/three.module.js qa-portal/vendor/
+          cp node_modules/three/examples/jsm/controls/OrbitControls.js qa-portal/vendor/
+      - name: Integrate scoped models, excavation and ownership
+        run: |
+          node scripts/integrate-portal.mjs
+          python3 scripts/partner-logos.py
+          node --check /tmp/portal-check/main.mjs
+          for f in src/archive-*.js src/terrain-voids.js src/gagarin-pad.js src/organisation-logos.js; do node --check --input-type=module < "$f"; done
+      - name: Start local museum
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/portal-http.log 2>&1 &
+          sleep 2
+      - name: Verify all model groups and actual WebGL rendering
+        run: node tests/portal-browser.mjs
+      - name: Publish only verified scene integration
+        id: publish
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html src/archive-kit.js src/gagarin-pad.js src/gagarin-rail-approach.js src/organisation-logos.js data/catalog.json data/portal-source-register.json assets/org-logos/infracos.png assets/org-logos/baiterek.png assets/org-logos/portal-partner-sources.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Integrate portal photo models; excavate Gagarin flame duct; attribute Infracos and Baiterek sites'
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Verify exact public deployment
+        run: |
+          for n in $(seq 1 30); do
+            ok=true
+            for path in index.html src/gagarin-pad.js data/catalog.json src/archive-models.js src/archive-kit.js src/terrain-voids.js assets/org-logos/infracos.png assets/org-logos/baiterek.png; do
+              file="/tmp/check-$(basename "$path")"
+              if ! curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/$path?portal=${GITHUB_SHA}&n=$n" -o "$file" || ! cmp -s "$path" "$file"; then ok=false; fi
+            done
+            if $ok; then exit 0; fi
+            sleep 8
+          done
+          exit 1
+      - name: Verify published browser scene and gallery
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+        run: node tests/portal-browser.mjs
+      - name: Record verified results
+        env:
+          TARGET: ${{ steps.publish.outputs.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("qa-portal/public-result.json"));fs.writeFileSync("data/qa-portal.json",JSON.stringify({...r,targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success"},null,2)+"\n")'
+          git add data/qa-portal.json
+          git commit -m 'ci: verify portal model batch, terrain excavation and partner brands'
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Archive browser evidence and exact tested source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: portal-model-browser-qa
+          path: |
+            qa-portal/
+            index.html
+            archive.html
+            src/
+            data/*.json
+            assets/
+            tests/portal-browser.mjs
+            scripts/*portal*
+            scripts/optimise-archive.mjs
+            scripts/partner-logos.py
+            scripts/patch-gagarin.mjs
+            baykonur-plan.png
