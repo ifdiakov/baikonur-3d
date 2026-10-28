@@ -490,6 +490,33 @@
             104
           ]
         ]
+      },
+      {
+        "id": "r-site23-saturn-access",
+        "class": "service",
+        "points": [
+          [
+            680,
+            716
+          ],
+          [
+            689,
+            716
+          ],
+          [
+            703,
+            719
+          ],
+          [
+            716,
+            723
+          ],
+          [
+            729,
+            727
+          ]
+        ],
+        "confidence": "museum schematic; endpoint snapped to road r-nw-center at map y=716; site apron derived from Saturn placement and scale"
       }
     ],
     "rail": [
