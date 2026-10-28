@@ -77,6 +77,8 @@ jobs:
           TARGET: ${{ steps.commit.outputs.sha }}
           RUN_ID: ${{ github.run_id }}
         run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           node -e 'const fs=require("fs");fs.writeFileSync("data/qa-mik112.json",JSON.stringify({targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success",version:"1.3-photo-frames",mapPlacement:[640,361],scale:0.14,transporterSide:"north-east",checkedAt:new Date().toISOString()},null,2)+"\n")'
           git add data/qa-mik112.json
           git commit -m 'ci: record verified MIK112 scale, opposite-end transporters and plan placement'
