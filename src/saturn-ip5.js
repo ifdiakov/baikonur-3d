@@ -125,7 +125,9 @@ export function buildSaturnIP5(root,terrain={}) {
   // as seen in the aerial photograph; internal service loop faces the radomes.
   // Preserve natural hill soil between separately modelled buildings and roads;
   // a single 170×126m rectangle used to look like a container depot.
-  box(147,.23,10,-6,7.42,74,'asphalt','internal-access-road');
+  // Stop the paved entrance at its junction with the internal north-south service lane.
+  // The former 147m strip continued past the junction into empty steppe.
+  box(90,.23,10,-35,7.42,74,'asphalt','internal-access-road');
   box(9,.25,106,10,7.48,14,'asphalt','service-lane');
   box(7,.24,86,-92,7.47,9,'asphalt','antenna-service-access');
   // The external approach is now drawn in the shared road network,
