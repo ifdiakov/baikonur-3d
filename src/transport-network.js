@@ -123,11 +123,11 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
   function sleeperInstances(group,locations,scale=1) {
     if(!locations.length)return;
     const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),materials.sleepers,locations.length);
-    const matrix=new THREE.Matrix4(),rotation=new THREE.Quaternion(),pos=new THREE.Vector3(),size=new THREE.Vector3(6.1*scale,.19*scale,.74*scale);
+    const matrix=new THREE.Matrix4(),rotation=new THREE.Quaternion(),pos=new THREE.Vector3(),size=new THREE.Vector3(3.45*scale,.12*scale,.66*scale);
     locations.forEach((s,i)=>{
       const yaw=Math.atan2(s.tan.x,s.tan.z);
       rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
-      pos.set(s.pos.x,1.04,s.pos.z);
+      pos.set(s.pos.x,.955,s.pos.z);
       matrix.compose(pos,rotation,size);mesh.setMatrixAt(i,matrix);
     });
     mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;group.add(mesh);
@@ -198,8 +198,8 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
       simpleBuilding(group,edge,dir,.35,2,14.5,materials.stationDark,'station-window-strip');
     }
     const post=loc.clone().addScaledVector(normal,11);
-    post.y=10.2;
-    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.20,.20,16,7),materials.signal);
+    post.y=18;
+    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.16,.18,31,7),materials.signal);
     mast.position.copy(post);group.add(mast);
     const labelText=yard.label.toUpperCase();
     const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
@@ -209,7 +209,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(labelText,256,62,480);
     const tx=new THREE.CanvasTexture(canvas);tx.colorSpace=THREE.SRGBColorSpace;
     const sign=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthTest:false}));
-    sign.position.copy(post);sign.position.y=22;sign.scale.set(47,11.75,1);group.add(sign);
+    sign.position.copy(post);sign.position.y=36;sign.scale.set(42,10.5,1);group.add(sign);
     group.userData={stationName:yard.label,confidence:yard.confidence,stationId:yard.id};
     state.stationCount++;
   }
