@@ -1182,7 +1182,7 @@ for(let j=clickable.length-1;j>=0;j--)
 // Resolve the mesh's UVs in world space against the existing terrain texture.
 saturnGroup.scale.setScalar(SATURN_SCALE);
 saturnGroup.rotation.y=0;
-saturnGroup.position.y=-2.55;
+saturnGroup.position.y=97.45; // raised by 100 world/map-height units
 saturnGroup.updateMatrixWorld(true);
 buildSaturnIP5(saturnGroup,{terrainTexture:satelliteTexture,terrainWidth:W*S,terrainHeight:H*S});
 saturnSite.type='saturn-ms';
