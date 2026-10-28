@@ -1,0 +1,112 @@
+name: Camera navigation and intentional site selection
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/scene-selection.js'
+      - 'scripts/fix-scene-selection.mjs'
+      - 'tests/scene-selection-browser.mjs'
+      - '.github/workflows/verify-scene-selection.yml'
+  workflow_dispatch:
+concurrency:
+  group: museum-scene-selection
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  selection:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install reproducible browser
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+          mkdir -p qa-selection/vendor
+          cp node_modules/three/build/three.module.js qa-selection/vendor/
+          cp node_modules/three/examples/jsm/controls/OrbitControls.js qa-selection/vendor/
+      - name: Start preview server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/selection-server.log 2>&1 &
+          sleep 2
+      - name: Capture original background-click behaviour
+        continue-on-error: true
+        env:
+          QA_PREFIX: baseline
+        run: node tests/scene-selection-browser.mjs --baseline
+      - name: Apply targeted fix and validate syntax
+        run: |
+          node scripts/fix-scene-selection.mjs
+          node --check /tmp/museum-selection/main.mjs
+          node --check --input-type=module < src/scene-selection.js
+          node --check tests/scene-selection-browser.mjs
+      - name: Verify navigation, background clicks and intentional selection
+        id: local
+        run: node tests/scene-selection-browser.mjs
+      - name: Publish tested entry
+        id: commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html
+          if ! git diff --cached --quiet; then
+            git commit -m 'Prevent Saturn hill and camera gestures from stealing site focus'
+            for n in 1 2 3; do
+              git pull --rebase origin main
+              if git push origin HEAD:main; then break; fi
+              test "$n" -lt 3
+              sleep 3
+            done
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Verify exact published source
+        run: |
+          set -e
+          for n in $(seq 1 24); do
+            ok=true
+            for path in index.html src/scene-selection.js; do
+              target="/tmp/public-$(basename "$path")"
+              if ! curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/$path?verify=${GITHUB_SHA}&attempt=$n" -o "$target" || ! cmp -s "$path" "$target"; then ok=false; fi
+            done
+            if $ok; then exit 0; fi
+            sleep 8
+          done
+          exit 1
+      - name: Verify published browser interaction
+        id: publicbrowser
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+        run: node tests/scene-selection-browser.mjs
+      - name: Record verified camera fix
+        if: success()
+        env:
+          TARGET: ${{ steps.commit.outputs.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("qa-selection/public-result.json"));let b={};try{b=JSON.parse(fs.readFileSync("qa-selection/baseline.json"))}catch{}fs.writeFileSync("data/qa-selection.json",JSON.stringify({targetCommit:process.env.TARGET,runId:process.env.RUN_ID,version:"1.0-no-terrain-jump",local:"success",publicBrowser:"success",legacyJumpReproduced:!!b.reproduced,checks:r.checks,errors:r.errors,checkedAt:new Date().toISOString()},null,2)+"\n")'
+          git add data/qa-selection.json
+          git commit -m 'ci: confirm map no longer jumps to Saturn during navigation'
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Archive actual browser evidence and exact source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scene-selection-browser-qa
+          path: |
+            qa-selection/
+            index.html
+            src/
+            data/*.json
+            assets/
+            baykonur-plan.png
+            tests/scene-selection-browser.mjs
+            scripts/fix-scene-selection.mjs
+          if-no-files-found: ignore
