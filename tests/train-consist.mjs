@@ -6,7 +6,7 @@ import {createGroundTraffic,TRAIN_DURATION} from '../src/ground-traffic.js';
 import {COACH_OFFSETS,TRAIN_START_DISTANCE} from '../src/rail-vehicles.js';
 
 const node={addEventListener(){},setAttribute(){}};
-globalThis.document={...node,body:{classList:{add(){},remove(){}}},hidden:false};
+globalThis.document={...node,querySelector(){return null;},body:{classList:{add(){},remove(){}}},hidden:false};
 const data=JSON.parse(fs.readFileSync('data/transport-network.json'));
 const siteRecords=JSON.parse(fs.readFileSync('data/catalog.json')).sites;
 const layers={roads:new THREE.Group(),rails:new THREE.Group()};
