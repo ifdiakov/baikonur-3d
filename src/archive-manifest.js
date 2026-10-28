@@ -3,6 +3,7 @@ import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261028
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';
 export const ARCHIVE_MAP=[
+ {id:'pad-109',kind:'silo',title:'Шахтная пусковая установка · пл.109',scale:.28,yaw:0,orientation:'illustrative-layout-public-photos',references:['https://rvsn.ruzhany.info/kbu_002_03_2.html','https://habr.com/ru/articles/87341/'],modelVersion:'r36m-museum-silo-v1'},
  {id:'pad-81',kind:'proton',title:'Два старта «Протона» · пл.81',scale:.20,yaw:0,satellite:'1vcxpuL94AAEsfmwW0hDPCc5vQH0qIcdZ',folder:'199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd',orientation:'image-traced',reviewImage:[1300,1000]},
  {id:'pad-200',kind:'proton',title:'Два старта «Протона» · пл.200',scale:.20,yaw:0,satellite:'1txB3LDU8wx-fP_hJngeWH3nIGvNlE0Zb',folder:'199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd',orientation:'image-traced',reviewImage:[1300,1000]},
  {id:'pad-92',kind:'proton-halls',title:'МИК «Протон» · пл.92',scale:.14,yaw:0,satellite:'1eVJZ3hWXMuNqe-zMPDXJzRMUUfNS5KQs',orientation:'image-traced',reviewImage:[1300,1000]},

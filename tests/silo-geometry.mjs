@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {buildSiloPad,siloController,SILO_REFERENCE,SILO_VERSION} from '../src/silo-pad.js';
+const scene=new THREE.Scene(),root=new THREE.Group();scene.add(root);root.scale.setScalar(.28);root.position.set(35,-2.72,19);
+const features=buildSiloPad(root),silo=siloController(root),camera=new THREE.PerspectiveCamera(52,1.5,.1,80000),target=new THREE.Vector3();
+const controls={target,update(){camera.lookAt(target);camera.updateMatrixWorld(true);}};let now=0;
+function advance(seconds){for(let i=0;i<seconds*60;i++){now+=1000/60;silo.update(now,camera,target);}scene.updateMatrixWorld(true);}
+silo.inspect('all',camera,controls);advance(1);assert.equal(silo.stats().state,'closed');assert.equal(silo.stats().steamVisible,false);
+assert.equal(root.userData.archiveCutouts.length,1);assert.equal(root.userData.archiveCutouts[0].rx-.04,SILO_REFERENCE.openingRadius);
+const ray=new THREE.Raycaster(root.localToWorld(new THREE.Vector3(0,20,0)),new THREE.Vector3(0,-1,0));
+const closed=ray.intersectObject(root,true).filter(h=>h.object.isMesh);assert(closed.length);assert(closed[0].object.parent.parent.name.includes('шарнир'),'Closed lid occludes the rocket');
+silo.inspect('close',camera,controls);advance(1);assert.equal(silo.stats().state,'opening');assert(silo.stats().lidAngleDeg>0&&silo.stats().lidAngleDeg<108);
+advance(3);assert.equal(silo.stats().state,'open');assert.equal(silo.stats().steamParticles,36);assert.equal(silo.stats().lidAngleDeg,108);
+assert(silo.stats().noseTipY<silo.stats().rimY,'Nose remains inside the shaft');
+const opened=ray.intersectObject(root,true).filter(h=>h.object.isMesh);assert.equal(opened[0].object.userData.museumComponent,'silo-rocket-nose','The aperture reveals the nose through a real hole');
+camera.position.copy(root.localToWorld(new THREE.Vector3(0,28,23)));advance(.5);assert.equal(silo.stats().state,'open','Hysteresis prevents flapping at the zoom threshold');
+silo.inspect('all',camera,controls);advance(1);assert.equal(silo.stats().state,'closing');advance(3);assert.equal(silo.stats().state,'closed');assert.equal(silo.stats().steamVisible,false);
+silo.inspect('close',camera,controls);advance(4);scene.visible=false;advance(.2);assert.equal(silo.stats().progress,0);assert.equal(silo.stats().steamVisible,false);scene.visible=true;
+let draws=0,triangles=0;root.traverse(o=>{if(o.isMesh){draws++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3*(o.count||1);for(const v of o.geometry.attributes.position.array)assert(Number.isFinite(v));}});
+assert(draws<60);assert(triangles<80000);
+console.log('SILO_GEOMETRY_PASS',JSON.stringify({version:SILO_VERSION,draws,triangles,features:features.primitiveCount,openSeconds:SILO_REFERENCE.openSeconds}));
