@@ -1,0 +1,106 @@
+name: MIK112 and Energia transporters — verified publication
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/mik112.js'
+      - 'scripts/integrate-mik112.mjs'
+      - 'tests/mik112-browser.mjs'
+      - '.github/workflows/verify-mik112.yml'
+  workflow_dispatch:
+concurrency:
+  group: museum-mik112
+  cancel-in-progress: true
+permissions:
+  contents: write
+jobs:
+  mik112:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Integrate only Site 112 and validate module syntax
+        run: |
+          node scripts/integrate-mik112.mjs
+          node -e 'const fs=require("fs");let h=fs.readFileSync("index.html","utf8");if(!h.includes("#mik112Controls[hidden]"))h=h.replace("</head>","<style>#mik112Controls[hidden]{display:none!important}</style></head>");fs.writeFileSync("index.html",h)'
+          node --check /tmp/mik112-check/main.mjs
+          node --check --input-type=module < src/mik112.js
+      - name: Install browser and vendor source for reproducibility
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+          mkdir -p qa-mik112/vendor
+          cp node_modules/three/build/three.module.js qa-mik112/vendor/
+          cp node_modules/three/examples/jsm/controls/OrbitControls.js qa-mik112/vendor/
+      - name: Start preview server
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/mik112-server.log 2>&1 &
+          sleep 2
+      - name: Test actual local WebGL scene before publishing
+        id: local
+        run: node tests/mik112-browser.mjs
+      - name: Publish tested integration
+        id: commit
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html data/catalog.json src/mik112.js
+          if ! git diff --cached --quiet; then
+            git commit -m 'Integrate verified photo-based MIK112 and paired Energia transporters'
+            for n in 1 2 3; do
+              git pull --rebase origin main
+              if git push origin HEAD:main; then break; fi
+              test "$n" -lt 3
+              sleep 3
+            done
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Confirm current public deployment
+        id: publicassets
+        run: |
+          set -e
+          for n in $(seq 1 24); do
+            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?site=112&verify=${GITHUB_SHA}&attempt=$n" -o /tmp/mik112-public.html \
+              && grep -Fq MIK112_INTEGRATION_V1 /tmp/mik112-public.html \
+              && curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/mik112.js?attempt=$n" -o /tmp/mik112-public.js \
+              && grep -Fq 'const mat=palette;' /tmp/mik112-public.js; then exit 0; fi
+            sleep 8
+          done
+          exit 1
+      - name: Test published WebGL scene
+        id: publicbrowser
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+        run: node tests/mik112-browser.mjs
+      - name: Record verified release
+        if: success()
+        env:
+          TARGET: ${{ steps.commit.outputs.sha }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-mik112.json",JSON.stringify({targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success",version:"1.0-photo-112",checkedAt:new Date().toISOString()},null,2)+"\n")'
+          git add data/qa-mik112.json
+          git commit -m 'ci: record verified MIK112 and transporter publication'
+          git pull --rebase origin main
+          git push origin HEAD:main
+      - name: Save screenshots and exact tested source
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mik112-browser-qa
+          path: |
+            qa-mik112/
+            index.html
+            src/
+            data/*.json
+            assets/
+            baykonur-plan.png
+            scripts/integrate-mik112.mjs
+            tests/mik112-browser.mjs
+          if-no-files-found: ignore

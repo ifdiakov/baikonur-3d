@@ -1,0 +1,246 @@
+import * as THREE from 'three';
+import {createSurfacePalette} from './surface-materials.js';
+
+// Site 112, NOT the neighbouring MZK/SDI at 112A. Photo-interpreted exterior.
+// Sources: RocketTrip Drive 1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk (MIK),
+// 1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3 (two Energia transporter/erectors).
+// Recognisable proportions and photo layout, not a measured engineering model.
+export const MIK112={version:'1.0-photo-112',scale:.28,yaw:-Math.PI/4,roofCollapseYear:2002};
+const V=(x,y,z)=>new THREE.Vector3(x,y,z);
+export function buildMik112(root,{year=2026}={}){
+ root.name='Пл. №112 · МИК и два ТУА «Кузнечики»';
+ const palette=createSurfacePalette(root,{
+  wall:0xd1d0c5,concrete:0xa09e90,seam:0x9c9e94,roof:0x8e9894,
+  whiteRoof:0xd5dad2,steel:0x7f8c88,dark:0x333e3b,rust:0x82573c,
+  yellow:0xbca36d,glass:0x536b64,rail:0x6e7774,asphalt:0x726e60
+ },{wall:'concrete',concrete:'concrete',seam:'concrete',roof:'sheet',whiteRoof:'sheet',
+  steel:'paint',dark:'metal',rust:'rust',yellow:'paint',rail:'metal'});
+ const mat=palette.materials;
+ const boxGeo=new THREE.BoxGeometry(1,1,1),rodGeo=new THREE.CylinderGeometry(1,1,1,7);
+ const batches=new Map(),counts={},all=[];
+ const intact=new THREE.Group(),ruins=new THREE.Group(),machines=new THREE.Group();
+ intact.name='МИК · историческая кровля';ruins.name='МИК · раскрытые разрушенные пролёты';
+ machines.name='Два транспортно-установочных агрегата';root.add(intact,ruins,machines);
+ function count(tag){counts[tag]=(counts[tag]||0)+1;}
+ function instance(geo,m,p,q,scale,tag,parent=root){
+  const key=parent.uuid+':'+m+':'+geo.uuid;let batch=batches.get(key);
+  if(!batch){batch={geo,m,parent,transforms:[]};batches.set(key,batch);}
+  batch.transforms.push(new THREE.Matrix4().compose(p,q,scale));count(tag);
+ }
+ const Q=new THREE.Quaternion();
+ function box(w,h,d,x,y,z,m,tag,parent=root){instance(boxGeo,m,V(x,y,z),Q,V(w,h,d),tag,parent);}
+ function beam(a,b,w,d,m,tag,parent=root){
+  const p=new THREE.Vector3(...a),dir=new THREE.Vector3(...b).sub(p),len=dir.length();
+  if(len<.001)return;const q=new THREE.Quaternion().setFromUnitVectors(V(0,1,0),dir.clone().normalize());
+  instance(boxGeo,m,p.addScaledVector(dir,.5),q,V(w,len,d),tag,parent);
+ }
+ function rod(a,b,r,m,tag,parent=root){
+  const p=new THREE.Vector3(...a),dir=new THREE.Vector3(...b).sub(p),len=dir.length();
+  if(len<.001)return;const q=new THREE.Quaternion().setFromUnitVectors(V(0,1,0),dir.clone().normalize());
+  instance(rodGeo,m,p.addScaledVector(dir,.5),q,V(r,len,r),tag,parent);
+ }
+ function mesh(geo,m,x,y,z,tag,parent=root){
+  const obj=new THREE.Mesh(geo,mat[m]);obj.position.set(x,y,z);obj.receiveShadow=true;
+  obj.name=tag;obj.userData.museumComponent=tag;parent.add(obj);all.push(obj);count(tag);return obj;
+ }
+ function railing(a,b,height=1.2,parent=root){
+  rod([a[0],a[1]+height,a[2]],[b[0],b[1]+height,b[2]],.055,'steel','guardrail',parent);
+  rod([a[0],a[1]+height*.5,a[2]],[b[0],b[1]+height*.5,b[2]],.045,'steel','guardrail',parent);
+  const len=Math.hypot(b[0]-a[0],b[2]-a[2]),n=Math.max(1,Math.ceil(len/2.8));
+  for(let i=0;i<=n;i++){const t=i/n,x=a[0]+(b[0]-a[0])*t,z=a[2]+(b[2]-a[2])*t;
+   rod([x,a[1],z],[x,a[1]+height,z],.05,'steel','rail-post',parent);}
+ }
+ // Building: three high assembly bays + two lower retained bays, separate annexes.
+ // The floor is a set of low aprons, never a town-sized raised pedestal.
+ const floor=2.6;
+ box(188,.6,240,0,floor-.3,0,'concrete','hall-floor');
+ box(196,.28,35,0,floor-.14,138,'concrete','front-apron');
+ box(114,.28,102,-39,floor-.14,202,'concrete','transporter-apron');
+ // Side and rear envelope. The northwestern high roof is missing in the recent photos.
+ box(1.8,60,240,-94,floor+30,0,'wall','high-sidewall');
+ box(1.6,60,240,14,floor+30,0,'wall','high-divider');
+ box(108,60,1.8,-40,floor+30,-120,'wall','high-rearwall');
+ box(1.6,28,240,94,floor+14,0,'wall','low-sidewall');
+ box(80,28,1.6,54,floor+14,-120,'wall','low-rearwall');
+ // Five individually panelled front door assemblies.
+ for(const [cx,w,h,opening] of [[-76,36,60,false],[-40,36,60,false],[-4,36,60,false],[34,40,28,true],[74,40,28,false]]){
+  const dw=w-7,dh=h-6;
+  for(const side of [-1,1])box(3.5,h,2,cx+side*(w/2-1.75),floor+h/2,120,'wall','door-pier');
+  box(w,6,2,cx,floor+h-3,120,'wall','door-lintel');
+  if(opening){
+   // A recessed doorway with visible crane girders, not a rocket pasted on the facade.
+   box(dw,dh,1,cx,floor+dh/2,106,'dark','open-door-interior');
+   box(dw*.46,dh,1,cx+dw*.27,floor+dh/2,121,'steel','sliding-door-leaf');
+   box(dw-3,1,2,cx,floor+dh-3,111,'yellow','overhead-crane');
+  }else box(dw,dh,1,cx,floor+dh/2,121,'steel','closed-sliding-door');
+  for(let x=cx-dw/2;x<cx+dw/2+.1;x+=2.1)box(.16,dh,.23,x,floor+dh/2,121.65,'seam','door-rib');
+  for(let y=8;y<dh;y+=5.8)box(dw,.18,.22,cx,floor+y,121.7,'seam','door-horizontal-seam');
+ }
+ // Precast panel rhythm and narrow green-grey glazing bands from the ground photos.
+ for(let z=-114;z<=114;z+=12){
+  for(const [x,h] of [[-95,60],[95,28]]){
+   box(.28,h,.2,x,floor+h/2,z,'seam','vertical-panel-joint');
+   box(.34,4.1,9.8,x,floor+6,z,'glass','side-window');
+  }
+ }
+ for(let y=5;y<60;y+=3.3)box(.25,.1,240,-95.1,floor+y,0,'seam','horizontal-panel-joint');
+ for(let y=5;y<28;y+=3.3)box(.25,.1,240,95.1,floor+y,0,'seam','horizontal-panel-joint');
+ // Low roof: light strip next to the tall hall and weathered dark outer sheet roof.
+ box(25,.8,242,27,floor+28.3,0,'whiteRoof','retained-light-roof');
+ box(55,.8,242,67,floor+28.3,0,'roof','retained-dark-roof');
+ for(let x=15;x<=94;x+=2.7)box(.12,.15,239,x,floor+28.8,0,'seam','roof-sheet-rib');
+ for(let z=-110;z<=110;z+=22)box(78,.15,.18,54,floor+28.8,z,'seam','roof-seam');
+ // Narrow glazed raised volume visible in the approach photograph.
+ box(11,12,226,18,floor+35,-4,'wall','clerestory');
+ for(let z=-108;z<108;z+=8)box(.2,7,6.8,23.6,floor+36,z,'glass','clerestory-window');
+ box(12,.65,228,18,floor+41.3,-4,'whiteRoof','clerestory-cap');
+ // Taller striped stair tower and low service wings.
+ box(9,46,10,22,floor+23,110,'wall','stair-tower');
+ for(let y=8;y<44;y+=6)box(9.25,2.4,10.2,22,floor+y,110,'glass','tower-glass-belt');
+ for(const [x,z,w,d,h] of [[120,-95,52,27,12],[115,57,42,63,9],[65,144,62,18,10],[-67,-137,32,30,9]]){
+  box(w,h,d,x,floor+h/2,z,'wall','service-wing');box(w+1,.6,d+1,x,floor+h+.3,z,'roof','service-roof');
+  for(let xx=x-w/2+4;xx<x+w/2;xx+=5.5)box(3,2,.18,xx,floor+h*.6,z+d/2+.12,'glass','annex-window');
+ }
+ // High-bay structural skeleton, exposed from above in the current state.
+ for(let z=-114;z<=114;z+=19){
+  for(const x of [-92,-58,-22,12])beam([x,floor,z],[x,floor+57,z],1,1,'steel','hall-column');
+  for(const cx of [-76,-40,-4]){
+   beam([cx-17,floor+56,z],[cx+17,floor+56,z],.48,.48,'steel','high-roof-truss',intact);
+   beam([cx-17,floor+60,z],[cx+17,floor+60,z],.48,.48,'steel','high-roof-truss',intact);
+   for(let k=0;k<6;k++)beam([cx-17+k*5.67,floor+56,z],[cx-17+(k+1)*5.67,floor+(k%2?56:60),z],.28,.28,'steel','truss-web',intact);
+   // Broken remnants follow a reproducible, deliberately irregular fracture pattern.
+   if(z<-74||z>83||Math.abs(z)<10){
+    beam([cx-17,floor+54,z],[cx+10,floor+39+(z%7),z+3],.52,.52,'rust','fallen-roof-frame',ruins);
+    beam([cx+10,floor+39+(z%7),z+3],[cx+17,floor+55,z],.45,.45,'steel','broken-frame-tip',ruins);
+   }
+  }
+ }
+ for(const cx of [-76,-40,-4])box(35.4,.8,240,cx,floor+60.6,0,'roof','historical-roof-panel',intact);
+ for(let k=0;k<42;k++){
+  const x=-88+(k*37%99),z=-106+(k*53%214),h=.5+(k%4)*.22;
+  const o=mesh(new THREE.BoxGeometry(5+k%7,h,3+k%9),'concrete',x,floor+1.2+k%3,z,'roof-debris',ruins);
+  o.rotation.set(.12*(k%3),k*1.67,.16*(k%4));
+ }
+ // A steel ladder at the building edge.
+ for(const x of [-96,-97.2])rod([x,3,115],[x,61,115],.12,'steel','external-ladder');
+ for(let y=4;y<61;y+=.9)rod([-97.2,y,115],[-96,y,115],.08,'steel','ladder-rung');
+ // Real open holes in the load-bearing cheek plates, rather than dark discs.
+ const plateShape=new THREE.Shape();plateShape.moveTo(-1.25,0);plateShape.lineTo(1.25,0);
+ plateShape.lineTo(1.1,12);plateShape.quadraticCurveTo(0,14,-1.1,12);plateShape.closePath();
+ for(const y of [2.0,4.8,7.6,10.4]){const hole=new THREE.Path();hole.absarc(0,y,.58,0,Math.PI*2,true);plateShape.holes.push(hole);}
+ const plateGeo=new THREE.ExtrudeGeometry(plateShape,{depth:.52,bevelEnabled:false,curveSegments:10});
+ const wheelGeo=new THREE.CylinderGeometry(.88,.88,.42,12);
+ function plate(x,y,z,rot,m,parent,tag){const o=mesh(plateGeo,m,x,y,z,tag,parent);o.rotation.x=rot;o.rotation.y=Math.PI/2;return o;}
+ function grasshopper(cx,cz,index){
+  const p=new THREE.Group();p.position.set(cx,0,cz);p.name='Кузнечик '+index;p.userData.museumComponent='energia-transporter';machines.add(p);count('energia-transporter');
+  // Two widely spaced railway chassis, cross members and a hollow centre.
+  for(const side of [-1,1]){
+   const x=side*11.4;
+   box(4.2,4.5,56.3,x,8.2,0,'steel','longitudinal-chassis',p);
+   box(4.6,.45,57,x,10.7,0,'steel','maintenance-walkway',p);
+   for(let z=-26;z<=26;z+=3.3)box(.15,4.5,.22,x+side*2.15,8.2,z,'seam','chassis-panel-rib',p);
+   for(const z of [-22,-8,8,22]){
+    box(4.5,2.5,7,x,5.7,z,'steel','rail-bogie',p);
+    for(const dz of [-2.4,-.8,.8,2.4])for(const wx of [-.92,.92]){
+     const wheel=mesh(wheelGeo,'dark',x+wx,4.75,z+dz,'bogie-wheel',p);wheel.rotation.z=Math.PI/2;
+    }
+    box(4.7,.7,6.8,x,7.3,z,'yellow','bogie-bearing',p);
+   }
+   railing([x+side*2.5,10.9,-28],[x+side*2.5,10.9,28],1.2,p);
+   railing([x-side*2.4,10.9,-28],[x-side*2.4,10.9,28],1.2,p);
+  }
+  for(const z of [-26,-9,9,26])box(29.5,4,2.2,0,10.3,z,'steel','massive-cross-girder',p);
+  // Four repeating pairs of inclined lifting frames and ochre perforated forks.
+  for(const z of [-21,-7,7,21]){
+   for(const side of [-1,1]){
+    const x=side*10.3;
+    beam([x,11,z-6],[x,22.4,z+1.5],1.25,1.25,'steel','inclined-lifting-arm',p);
+    beam([x,11,z+6],[x,22.4,z+1.5],1.25,1.25,'steel','inclined-lifting-arm',p);
+    beam([x,13,z-4.7],[x,19.5,z+3.6],.5,.5,'steel','open-truss-brace',p);
+    beam([x,13,z+4.7],[x,19.5,z-.5],.5,.5,'steel','open-truss-brace',p);
+    plate(x+side*.8,11,z-5,-.52,'steel',p,'perforated-lifting-cheek');
+    const fork=plate(x,20,z+.8,.03,'yellow',p,'ochre-perforated-fork');fork.scale.y=.75;
+    // Cylinder, polished rod, pin hub and small guarded work platforms.
+    rod([x,12,z+7],[x,20,z+2],.46,'yellow','hydraulic-cylinder',p);
+    rod([x,20,z+2],[x,25,z],.25,'steel','hydraulic-piston',p);
+    const hub=mesh(new THREE.CylinderGeometry(1.15,1.15,1.8,16),'yellow',x,22.3,z+1.3,'hinge-hub',p);hub.rotation.z=Math.PI/2;
+    for(const y of [18.5,25.3,30]){
+     box(3.6,.24,3.5,x+side*1.8,y,z+1,'yellow','fork-platform',p);
+     railing([x+side*3.6,y+.13,z-.75],[x+side*3.6,y+.13,z+2.75],1,p);
+    }
+    rod([x+side*2.2,11,z+1],[x+side*2.2,29,z+1],.09,'yellow','fork-ladder',p);
+    rod([x+side*3,11,z+1],[x+side*3,29,z+1],.09,'yellow','fork-ladder',p);
+    for(let y=12;y<29;y+=.8)rod([x+side*2.2,y,z+1],[x+side*3,y,z+1],.055,'yellow','fork-ladder-rung',p);
+   }
+   rod([-10.3,29,z+1],[10.3,29,z+1],.29,'yellow','upper-cross-tie',p);
+   // The concave receiving cradle bridges the longitudinal frame.
+   const pts=[];for(let i=0;i<=20;i++){const x=-10+i;pts.push(V(x,18+6*(x/10)**2,z));}
+   const cradle=new THREE.CatmullRomCurve3(pts);mesh(new THREE.TubeGeometry(cradle,24,.5,8,false),'yellow',0,0,0,'curved-receiving-cradle',p);
+  }
+  for(const z of [-27,27]){
+   railing([-14.8,12.5,z],[14.8,12.5,z],1.2,p);
+   box(6,3.7,2.8,0,7,z,'dark','central-equipment-box',p);
+   rod([-12,5.7,z],[12,5.7,z],.32,'steel','lower-cross-pipe',p);
+  }
+  box(3.4,3.8,4,-13.8,12,-18,'steel','operator-cabin',p);
+  box(.12,1.5,2.8,-15.55,12.8,-18,'glass','cab-window',p);
+ }
+ grasshopper(-71,183,1);grasshopper(-19,183,2);
+ // Double railway track under each transporter, aligned with the high doors.
+ const railEntries=[];
+ for(const cx of [-71,-19])for(const track of [-11.4,11.4]){
+  const x=cx+track;railEntries.push([x,4.25,258]);
+  for(const side of [-1,1])box(.18,.27,253,x+side*.76,4.17,132,'rail','transporter-running-rail');
+  for(let z=9;z<259;z+=2.4)box(2.5,.16,.32,x,3.97,z,'seam','rail-sleeper');
+ }
+ // Smaller normal-gauge track into the retained assembly hall.
+ for(const side of [-1,1])box(.18,.27,220,34+side*.76,4.17,132,'rail','low-hall-track');
+ // Finalise a few GPU batches instead of thousands of draw calls.
+ for(const b of batches.values()){
+  const im=new THREE.InstancedMesh(b.geo,mat[b.m],b.transforms.length);
+  b.transforms.forEach((m,i)=>im.setMatrixAt(i,m));im.instanceMatrix.needsUpdate=true;
+  im.computeBoundingBox();im.computeBoundingSphere();im.receiveShadow=true;
+  im.name='МИК112 · '+b.m+' · '+b.transforms.length;im.userData.museumComponent='mik112-instanced-detail';b.parent.add(im);all.push(im);
+ }
+ const info={version:MIK112.version,siteNumber:112,transporterCount:2,features:counts,
+  photoFolders:['1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk','1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3'],
+  evidence:'Eleven visually inspected user photos: MIK satellite, facade and doors; TUA front, side, overhead and perforated-fork closeups.',
+  accuracy:'Photo-interpreted museum reconstruction; no surveyed footprint, hidden structure or operating machinery claimed.',
+  instancedBatches:batches.size,meshCount:all.length,railEntries,year};
+ function setYear(y){info.year=y;intact.visible=y<2002;ruins.visible=y>=2002;machines.visible=y>=1986;info.roofState=y<2002?'historical-intact':'photo-ruined';}
+ setYear(year);root.userData.mik112Model=info;
+ return {stats:()=>info,setYear,railEntries,focusTarget:V(-8,22,55),focusOffset:V(330,250,400)};
+}
+
+// Add a modest feeder to the actual museum railway, never a floating line.
+export function connectMik112Rails(root,{data,point,parent}){
+ root.updateWorldMatrix(true,true);
+ const tracks=[-82.4,-59.6,-30.4,-7.6],gauge=.76*MIK112.scale;
+ const end=root.localToWorld(V(-45,4.25,258));
+ const route=data.routes.rail.find(r=>r.id==='t-r7-feeder')||data.routes.rail.find(r=>r.id==='t-central-north');
+ if(!route)return {connected:false};
+ const base=new THREE.CatmullRomCurve3(route.points.map(([x,z])=>point(x,z,1.29)),false,'centripetal',.3);
+ let near=0,best=Infinity;for(let i=0;i<=1200;i++){const t=i/1200,d=base.getPoint(t).distanceToSquared(end);if(d<best){best=d;near=t;}}
+ const join=base.getPoint(near);join.y=1.29;
+ const group=new THREE.Group();group.name='МИК112 · примыкание железнодорожных путей';parent.add(group);
+ const material=new THREE.MeshStandardMaterial({color:0x626a66,metalness:.55,roughness:.7});
+ const sleeperMat=new THREE.MeshStandardMaterial({color:0x827c6d,roughness:1});
+ const ties=[],unit=new THREE.BoxGeometry(1,1,1),railReports=[];
+ for(const x of tracks){
+  const start=root.localToWorld(V(x,4.25,258));
+  const forward=V(0,0,1).applyQuaternion(root.quaternion);
+  const mid=start.clone().addScaledVector(forward,22);
+  const curve=new THREE.CatmullRomCurve3([start,mid,mid.clone().lerp(join,.6),join],false,'centripetal');
+  for(const side of [-1,1]){
+   const pts=[];for(let i=0;i<=72;i++){const t=i/72,p=curve.getPoint(t),d=curve.getTangent(t),n=V(-d.z,0,d.x).normalize();
+    const localGauge=THREE.MathUtils.lerp(gauge,1.05,THREE.MathUtils.smoothstep(t,.7,1));pts.push(p.addScaledVector(n,side*localGauge));}
+   const rail=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),72,.07,5,false),material);group.add(rail);
+  }
+  const length=curve.getLength();for(let d=0;d<length;d+=2.8){const t=d/length,p=curve.getPointAt(t),dir=curve.getTangentAt(t);
+   p.y-=.15;const q=new THREE.Quaternion().setFromAxisAngle(V(0,1,0),Math.atan2(dir.x,dir.z));
+   ties.push(new THREE.Matrix4().compose(p,q,V(THREE.MathUtils.lerp(.8,3.45,t),.09,.22)));}
+  railReports.push({start:start.toArray(),end:join.toArray()});
+ }
+ const sleepers=new THREE.InstancedMesh(unit,sleeperMat,ties.length);ties.forEach((m,i)=>sleepers.setMatrixAt(i,m));sleepers.instanceMatrix.needsUpdate=true;group.add(sleepers);
+ return {connected:true,sourceRoute:route.id,tracks:railReports,group};
+}
