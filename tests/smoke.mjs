@@ -239,7 +239,7 @@ assert.deepEqual(highway.cities.map(c=>c.name),['АКТОБЕ','САМАРА','�
 assert.ok(highway.locations[0].x>-2000 && highway.locations[1].x<1900,'Signposts must move inward nearer to the crossroads');
 const transport=overviewScale.transport;
 console.log('TRANSPORT NETWORK',JSON.stringify(transport));
-assert.equal(transport.roadRoutes,18,'Road system should use historical-schema corridors');
+assert.equal(transport.roadRoutes,21,'Road system must retain the existing corridors and added site approaches');
 assert.equal(transport.railRoutes,14,'Rail layout should include main corridors and branch sidings');
 assert.equal(transport.stationCount,7,'Render seven historical or interpretative station yards');
 assert.ok(transport.railSwitches>=18,'Rail turnouts and station throat switches must be modeled');
