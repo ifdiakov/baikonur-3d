@@ -21,7 +21,7 @@ try{
  assert.ok(stats.transport.kazGateGap<.001);
  assert.equal(stats.transport.interchange.bridges.length,2);
  assert.ok(stats.transport.interchange.bridges.every(b=>b.clearance>5));
- assert.equal(stats.transport.gagarinRail.version,'pad1-matched-track-v1');
+ assert.equal(stats.transport.gagarinRail.version,'pad1-matched-track-v2-below-grade');
  assert.equal(stats.saturn.access.preservedVerticalRaise,20);
  assert.equal(stats.saturn.terrain.material,'MeshBasicMaterial');assert.equal(stats.saturn.terrain.sharedMap,true);
  assert.equal(await page.locator('.station-screen-label').count(),0);

@@ -164,7 +164,7 @@ assert.deepEqual(terrainInfo.terrain?.detailResolution,[1024,824],'Local satelli
 assert.ok(terrainInfo.terrainExtent>=100000,'The desert may not terminate at the historical map edge');
 const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
 console.log('GAGARIN START',JSON.stringify(gagarin));
-assert.equal(gagarin.version,'3.2','Pad 1 must use the model with real circular rocket openings');
+assert.equal(gagarin.version,'3.3-below-grade','Pad 1 must keep circular rocket openings and the below-grade flame duct');
 assert.equal(gagarin.archiveFolder,'1JAaawXTM0I9P-0C6br3d_xSiaUsLMOpC');
 assert.ok(gagarin.meshCount>700,'Detailed model must contain a large set of photo-informed structural primitives');
 assert.ok(gagarin.renderMeshCount<100,'Optimized geometry should not produce a huge number of WebGL draw calls');
@@ -239,7 +239,7 @@ assert.deepEqual(highway.cities.map(c=>c.name),['АКТОБЕ','САМАРА','�
 assert.ok(highway.locations[0].x>-2000 && highway.locations[1].x<1900,'Signposts must move inward nearer to the crossroads');
 const transport=overviewScale.transport;
 console.log('TRANSPORT NETWORK',JSON.stringify(transport));
-assert.equal(transport.roadRoutes,22,'Road system must retain the existing corridors and added site approaches, including MIK-112');
+assert.equal(transport.roadRoutes,23,'Road system must retain the existing corridors and added site approaches, including MIK-112 and the city');
 assert.equal(transport.railRoutes,14,'Rail layout should include main corridors and branch sidings');
 assert.equal(transport.stationCount,7,'Render seven historical or interpretative station yards');
 assert.ok(transport.railSwitches>=18,'Rail turnouts and station throat switches must be modeled');
