@@ -19,7 +19,7 @@ const step=()=>page.evaluate(()=>window.__M4_FRAME());
 async function shot(name){await step();await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});}
 try{
  await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().museumRevision==='20261028-museum4-v1',null,{timeout:120000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().museumRevision==='20261028-museum4-v2',null,{timeout:120000});
  await step();const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(s.sites,97);assert.equal(s.catalogEntries,98);assert.deepEqual(s.catalogAliases,[{id:'sector-east',aliasOf:'pad-43'}]);
  assert.equal(await page.locator('#error').isVisible(),false);
@@ -43,6 +43,7 @@ try{
   evidence.sites.push(site);
  }
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.siteState('sector-east')),null);
+ await page.locator('#showLabels').uncheck();
  await page.evaluate(()=>{window.__BAIKONUR_QA.evening.setEvening(false);window.__BAIKONUR_QA.focusSite('pad-31');});await step();
  const pad31=await page.evaluate(()=>window.__BAIKONUR_QA.stats().portalArchive.models.find(m=>m.id==='pad-31'));
  assert.equal(pad31.features.site31.version,'site31-detailed-v2');assert.equal(pad31.features.site31.serviceMasts,2);assert.equal(pad31.features.site31.supportingArms,4);
@@ -55,6 +56,7 @@ try{
  assert.equal(road.roadRoutes,24);assert.equal(road.roadMarkings,'arc-length-paint-with-junction-gaps');
  assert.ok(road.roadSurface.clippedPavementSections>0);assert.ok(road.roadSurface.fillets>0);assert.ok(road.roadSurface.junctionCount>10);
  assert.ok(road.gatePorts.includes('pad-110')&&road.gatePorts.includes('pad-42'));evidence.roads=road.roadSurface;
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.traffic.stopFollowing();q.evening.setEvening(false);q.focusInterchange();});await shot('roads-junctions-day');
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(true);q.showFlanks();});await step();
  const flanks=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
  assert.equal(flanks.reliefCount,1);assert.equal(flanks.visibleReliefSurfaces,1);assert.deepEqual(flanks.reliefFlanks,['center']);await shot('saturn-flank-relief');
@@ -76,7 +78,10 @@ try{
   phases.push({t,leg:a.leg,phase:a.segment,visible:a.visible,progress:a.runwayProgress,direction:a.direction});
  }
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.seek(158);q.arrival.inspect('port');});await shot('alrosa-stop-at-four-fifths');evidence.flight=phases;
- await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-43'));await shot('mobile-menu');
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-43'));await step();
+ const mobileCard=await page.evaluate(()=>{const card=document.getElementById('info');return card.contains(document.elementFromPoint(100,50));});
+ assert.ok(mobileCard,'The open site card must remain readable above the mobile menu');await shot('mobile-site43');
+ await page.locator('#close').click();await shot('mobile-menu');
  assert.equal(await page.locator('#ui a[href*="archive.html"],#trainFollow,#flanksView').count(),0);
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,errors,shaderErrors,checkedAt:new Date().toISOString()},null,2));console.log('MUSEUM4_BROWSER_PASS',JSON.stringify({prefix,sites:s.sites,cycle:812,runways}));
