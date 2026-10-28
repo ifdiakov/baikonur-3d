@@ -517,6 +517,29 @@
           ]
         ],
         "confidence": "museum schematic; endpoint snapped to road r-nw-center at map y=716; site apron derived from Saturn placement and scale"
+      },
+      {
+        "id": "r-site75-seven-winds-access",
+        "class": "service",
+        "points": [
+          [
+            680,
+            551
+          ],
+          [
+            670,
+            550
+          ],
+          [
+            654,
+            550
+          ],
+          [
+            639,
+            551
+          ]
+        ],
+        "confidence": "schematic museum connection; exact driveway unverified"
       }
     ],
     "rail": [
