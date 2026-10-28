@@ -644,15 +644,44 @@ if(kazIndex>=0){
  hall({x:-54,z:31,w:30,d:27,h:7});
  hall({x:72,z:-43,w:20,d:24,h:6,windows:false});
  hall({x:71,z:71,w:22,d:22,h:5,windows:false});
- // Compact cylindrical industrial tanks, with catwalks and pipes;
- // not speculative huge spherical tanks.
- for(const [x,z,r,h] of [[75,-2,4.6,13],[85,13,4.8,14],[64,-72,3.8,11],[82,-64,3.4,9]]){
-   cylinder(r,h,x,h/2,z,'tank','vertical-process-tank',20);
-   cylinder(r+.3,.36,x,h+.15,z,'pipe','tank-lid',20);
-   for(const yy of [h*.33,h*.7]){
-    const ring=mesh(new THREE.TorusGeometry(r+.1,.12,6,20),'steel','tank-hoop');
-    ring.rotation.x=Math.PI/2;ring.position.set(x,yy,z);
-   }
+ // Distinctive white spherical high-pressure gas storage vessels
+ // (шаробаллоны) are the visual signature of this oxygen/nitrogen plant.
+ // The spherical silhouette, equatorial seam, saddles, access ladders and
+ // pipe header must remain distinct from cylindrical processing vessels.
+ const sphereWhite=new THREE.MeshStandardMaterial({color:0xf1f1e9,roughness:.78,metalness:.08});
+ const equator=new THREE.MeshStandardMaterial({color:0xb8c2c2,metalness:.42,roughness:.6});
+ const ballGeometry=new THREE.SphereGeometry(1,28,20);
+ const vesselPositions=[
+  [-69,-83,7.8],[-50,-83,7.8],[-31,-83,7.8],
+  [-69,-63,7.8],[-50,-63,7.8],[-31,-63,7.8],
+  [69,13,6.5],[85,13,6.5]
+ ];
+ for(const [x,z,r] of vesselPositions){
+  const shell=new THREE.Mesh(ballGeometry,sphereWhite);
+  shell.scale.setScalar(r);shell.position.set(x,r+4.0,z);
+  shell.name='КАЗ · белый шаробаллон';g.add(shell);
+  counts['white-spherical-pressure-vessel']=(counts['white-spherical-pressure-vessel']||0)+1;
+  // Four individual concrete pedestals keep the spheres visibly raised.
+  for(const dx of [-r*.52,r*.52])for(const dz of [-r*.52,r*.52])
+   block(1.65,4,1.65,x+dx,2,z+dz,'concrete','vessel-support-pier');
+  const seam=new THREE.Mesh(new THREE.TorusGeometry(r,.13,8,42),equator);
+  seam.position.set(x,r+4,z);seam.rotation.x=Math.PI/2;
+  seam.name='шаробаллон · экваториальный сварной шов';g.add(seam);
+  cylinder(.7,1.3,x,r*2+4.7,z,'steel','vessel-top-fitting',10);
+  beam(x+r,2.5,z,x+r,r+4,z,.13,'steel','vessel-access-ladder');
+  for(let y=4;y<r+4;y+=1.2)
+   beam(x+r-.35,y,z,x+r+.35,y,z,.09,'steel','vessel-ladder-rung');
+ }
+ // Gas distribution header, connected to the rows of spherical vessels.
+ for(const z of [-83,-63]){
+  beam(-79,2,z,-21,2,z,.26,'pipe','spherical-vessel-gas-header');
+  for(const x of [-69,-50,-31])
+   beam(x,2,z,x,4,z,.18,'pipe','vessel-header-connection');
+ }
+ // Smaller upright cylinders are secondary and visually distinct.
+ for(const [x,z,r,h] of [[75,-30,3.2,9],[85,-39,3.0,8]]){
+  cylinder(r,h,x,h/2,z,'tank','small-process-cylinder',20);
+  cylinder(r+.2,.35,x,h+.18,z,'pipe','cylinder-cap',20);
  }
  for(const z of [-44,6,43]){
   beam(-46,10,z,67,10,z,.35,'pipe','elevated-process-pipe');
@@ -666,10 +695,10 @@ if(kazIndex>=0){
  block(26,.2,12,-67,.35,53,'asphalt','site-gate-apron');
  // No huge rectangular raised slab: desert terrain must remain visible.
  g.traverse(o=>{if(o.isMesh){o.userData.idx=kazIndex;clickable.push(o)}});
- g.userData.kazModel={version:'2.0-rebuild',sourceFolder:'1xqTo-hcQ61D_DV6JDZfqF_L-HoYFRnoM',
+ g.userData.kazModel={version:'3.0-white-spherical-vessels',sourceFolder:'1xqTo-hcQ61D_DV6JDZfqF_L-HoYFRnoM',
   sourceImages:['IMG_9625.jpeg','Снимок экрана 06.12.12','Снимок экрана 06.10.39','Снимок экрана 06.10.18'],
   confidence:'photo-interpreted, dimensions and relative placement provisional',
-  components:counts};
+  components:counts,highlight:'eight large white spherical gas vessels; positions illustrative based on photo reference'};
  unit.type='kaz-industrial';
 }
 
