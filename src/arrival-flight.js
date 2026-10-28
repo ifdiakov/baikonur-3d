@@ -106,7 +106,8 @@ function buildContrails(parent,path){
    p.addScaledVector(right,lane?3.3:-3.3).addScaledVector(state.heading,-3.5);
    p.x+=Math.sin(emitted*.4+lane)*age*.055;p.y+=age*.07;
    const across=new THREE.Vector3().crossVectors(state.heading,camera.position.clone().sub(p).normalize()).normalize();
-   const width=.42+age*.14,opacity=enabled?.82*(1-age/38)*smooth(0,.3,age):0;
+   const pixelWidth=camera.position.distanceTo(p)*Math.tan(camera.fov*Math.PI/360)/(globalThis.innerHeight||1000)*2.4;
+   const width=Math.max(.42+age*.14,pixelWidth),opacity=enabled?.82*(1-age/38)*smooth(0,.3,age):0;
    if(opacity>.001)visibleSamples++;
    for(let side=0;side<2;side++){const n=(lane*count+i)*2+side,q=p.clone().addScaledVector(across,(side?1:-1)*width);positions.set(q.toArray(),n*3);alphas[n]=opacity;}
   }
@@ -129,7 +130,7 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,conta
  canvas.addEventListener('pointerdown',stopFollowing,{passive:true});canvas.addEventListener('wheel',stopFollowing,{passive:true});
  document.addEventListener('keydown',e=>{if(!e.target.matches('input,textarea,select')&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase()))stopFollowing();});
  document.addEventListener('visibilitychange',()=>{paused=document.hidden;lastNow=null;});
- const direction=V(0,0,1),rot=new THREE.Quaternion(),bankQ=new THREE.Quaternion();
+ const direction=V(0,0,1),rot=new THREE.Quaternion(),bankQ=new THREE.Quaternion(),lastTrailCamera=V(Infinity,Infinity,Infinity);
  function render(t){state=path.sample(t);craft.model.position.copy(state.position);
   const ahead=path.sample(Math.min(120,t+.2)).heading,turn=new THREE.Vector3().crossVectors(state.heading,ahead).y;
   const bank=t<96?clamp(-turn*12,-.32,.32):0;
@@ -138,8 +139,8 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,conta
   craft.strobes.root.visible=t<120&&(t%1.2<.075||(t%1.2>.17&&t%1.2<.245));
   craft.beacon.root.visible=Math.sin(t*2*Math.PI/1.4)>.65;
   craft.landing.root.visible=t>=72&&t<119;
-  if(Math.abs(t-lastTrail)>.1||lastTrail<0){trail.update(t,camera);lastTrail=t;}
   if(following){const target=state.position.clone();controls.target.copy(target);camera.position.copy(target).add(V(52,47,65));controls.update();}
+  if(Math.abs(t-lastTrail)>.1||lastTrail<0||lastTrailCamera.distanceToSquared(camera.position)>.01){trail.update(t,camera);lastTrail=t;lastTrailCamera.copy(camera.position);}
   const sec=Math.ceil(120-t);if(sec!==uiSecond){uiSecond=sec;clock.textContent=t>=120?'✓':String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');label.textContent=labels[state.phase];}
  }
  render(0);
