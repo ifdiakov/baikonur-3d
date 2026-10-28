@@ -21,6 +21,7 @@ try{
  assert.ok(s.mik112.features['bogie-wheel']>=100);
  assert.ok(s.mik112.features['closed-sliding-door']>=4);
  assert.ok(s.mik112.features['retained-light-roof']>=1);
+ assert.equal(s.mik112.features['mik-floor-finish'],1);
  assert.ok(s.mik112.features['fallen-roof-frame']>=1);
  assert.ok(s.mik112.instancedBatches<80,'GPU draw-call count must remain controlled');
  assert.ok(s.mik112Rail.connected);assert.equal(s.mik112Rail.tracks.length,4);

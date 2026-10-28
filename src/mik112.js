@@ -54,6 +54,8 @@ export function buildMik112(root,{year=2026}={}){
  // The floor is a set of low aprons, never a town-sized raised pedestal.
  const floor=2.6;
  box(188,.6,240,0,floor-.3,0,'concrete','hall-floor');
+ // The finished slab occludes schematic map paint beneath the real hall.
+ box(188,.9,240,0,floor+.45,0,'concrete','mik-floor-finish');
  box(196,.28,35,0,floor-.14,138,'concrete','front-apron');
  box(114,.28,102,-39,floor-.14,202,'concrete','transporter-apron');
  // Side and rear envelope. The northwestern high roof is missing in the recent photos.
