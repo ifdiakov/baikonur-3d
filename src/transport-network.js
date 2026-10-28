@@ -103,7 +103,13 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
         const t=sample.t,blend=Math.min(1,Math.max(0,t/.12));
         const eased=blend*blend*(3-2*blend);
         const height=groundAt(sample);
-        return (.76*(1-eased)+height*eased);
+        const raised=.76*(1-eased)+height*eased;
+        // Finish flush with Saturn's western internal road (local y=7.42),
+        // rather than ending visibly above it on the hill.
+        const apronY=-2.55+.525*(7.42+.23/2);
+        const endBlend=Math.max(0,Math.min(1,(t-.78)/.22));
+        const endEase=endBlend*endBlend*(3-2*endBlend);
+        return raised*(1-endEase)+apronY*endEase;
       };
       ribbon(layers.roads,samples,w+3.1,.05,materials.shoulder,0,s=>ramp(s)-.07);
       ribbon(layers.roads,samples,w,.05,materials.service,0,ramp);
