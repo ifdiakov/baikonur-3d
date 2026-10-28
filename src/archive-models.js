@@ -26,6 +26,7 @@ export function installArchiveModels({objects,clickable,voids}){
   o.archive=entry;o.type='archive-'+spec.kind;root.userData.archiveModel=entry;records.push(entry);
  }
  function focus(index,camera,controls){const o=objects[index];if(!o?.archive)return false;
+  if(o.archive.kind==='mzk'){controls.target.copy(o.g.localToWorld(new THREE.Vector3(25,35,40)));camera.position.copy(o.g.localToWorld(new THREE.Vector3(255,215,300)));return true;}
   const b=new THREE.Box3().setFromObject(o.g),size=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3()),r=Math.max(size.x,size.z,size.y*2);
   controls.target.copy(c);camera.position.copy(c).add(new THREE.Vector3(.75,.92,1.0).multiplyScalar(r));return true;
  }

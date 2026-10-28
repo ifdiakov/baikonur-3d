@@ -3,12 +3,14 @@ import { SATURN_ACCESS, buildSaturnNorthwestAccess } from './saturn-access.js?v=
 import { connectedRoadData } from './road-layout.js';
 import { buildSouthInterchange } from './south-interchange.js';
 import { buildGagarinRailApproach } from './gagarin-rail-approach.js';
+import {buildFacilityRailApproaches} from './facility-rails.js';
 import {buildTrainRoutePlan} from './traffic-paths.js';
 
 export function buildTransportNetwork(options) {
   const data=connectedRoadData(options.data,options.point,options.siteRecords);
   const interchange=buildSouthInterchange({...options,data});
   const gagarinRail=buildGagarinRailApproach({...options,data});
+  const facilityRails=buildFacilityRailApproaches({...options,data});
   const trainPlan=buildTrainRoutePlan({...options,data,gagarinRail});
   // Replace the previous southwest route, never draw a second road over it.
   // The northwest route is resolved from the current site transform and the
@@ -18,7 +20,7 @@ export function buildTransportNetwork(options) {
     facilityDriveways:(data.facilityDriveways||[]).filter(n=>String(n)!=='23')};
   filtered.junctions=filtered.junctions.filter(p=>!interchange.isCrossing(p));
   const network=buildBaseNetwork({...options,data:filtered,
-    roadElevation:interchange.roadElevation,railElevation:interchange.railElevation,gagarinRail,extraRails:trainPlan.extraRails});
+    roadElevation:interchange.roadElevation,railElevation:interchange.railElevation,gagarinRail,facilityRails,extraRails:[...trainPlan.extraRails,...facilityRails.extras]});
   const access=buildSaturnNorthwestAccess({...options,data});
   return {...network,
     trainPath:()=>trainPlan,
@@ -28,7 +30,7 @@ export function buildTransportNetwork(options) {
       const stats=network.stats();
       return {...stats,roadRoutes:stats.roadRoutes+1,
         siteAccess:[...new Set([...(stats.siteAccess||[]),'23'])],
-        saturnAccess:access.report,interchange:interchange.stats(),gagarinRail:gagarinRail.stats()};
+        saturnAccess:access.report,interchange:interchange.stats(),facilityRailPorts:facilityRails.reports,gagarinRail:gagarinRail.stats()};
     }
   };
 }

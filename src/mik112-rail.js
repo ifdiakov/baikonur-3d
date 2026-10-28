@@ -55,7 +55,7 @@ export function connectMik112Rails(root,{data,point,parent}){
   const c1=start.clone().addScaledVector(forward,10);
   const c2=throat.clone().addScaledVector(forward,-9);
   const fan=new THREE.CubicBezierCurve3(start,c1,c2,throat);
-  draw(fan,.76*SCALE,mainGauge);
+  draw(fan,mainGauge,mainGauge);
   reports.push({start:start.toArray(),end:join.toArray(),throat:throat.toArray(),
    localEntry:entry,localStart:root.worldToLocal(start.clone()).toArray(),
    junctionGap:fan.getPoint(1).distanceTo(stem.getPoint(0)),
@@ -65,6 +65,6 @@ export function connectMik112Rails(root,{data,point,parent}){
  const ties=new THREE.InstancedMesh(unit,tieMat,matrices.length);
  matrices.forEach((m,i)=>ties.setMatrixAt(i,m));ties.instanceMatrix.needsUpdate=true;group.add(ties);
  return {connected:true,sourceRoute:route.id,tracks:reports,group,
-  version:'ne-end-halfscale-v3',joinGap:stem.getPoint(1).distanceTo(join),railGauge:mainGauge*2,stemLength:stem.getLength(),
+  version:'ne-end-common-gauge-v4',joinGap:stem.getPoint(1).distanceTo(join),railGauge:mainGauge*2,stemLength:stem.getLength(),
   stemSamples:Array.from({length:81},(_,i)=>stem.getPoint(i/80).toArray())};
 }

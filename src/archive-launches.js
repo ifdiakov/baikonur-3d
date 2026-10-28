@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {flamePetal} from './flame-petals.js';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js';
 function ring(k,x,y,z,r,t=.35,m='steel',tag='ring'){const o=k.direct(new THREE.TorusGeometry(r,t,7,48),m,tag);o.rotation.x=Math.PI/2;o.position.set(x,y,z);return o;}
 function protonPosition(parent,x,z,yaw,scale=1){
@@ -22,8 +23,19 @@ export function protonComplex(root,id){
 }
 export function energia110(root){
  const k=archiveKit(root),P=imageFrame([589,484],.42),centres=[[442,492],[727,710]];
- for(const [ix,iz]of centres){const[x,z]=P([ix,iz]);k.pit(x,z,25,25,28);for(let i=0;i<6;i++){const a=i*Math.PI/3+.25,c=Math.cos(a),s=Math.sin(a),n=[-s,c];const points=[[x+c*18+n[0]*7,z+s*18+n[1]*7],[x+c*52+n[0]*10,z+s*52+n[1]*10],[x+c*52-n[0]*10,z+s*52-n[1]*10],[x+c*18-n[0]*7,z+s*18-n[1]*7]];k.poly(points,.15,'concrete','radial-launch-apron');k.rod([x+c*19,3,z+s*19],[x+c*45,1,z+s*45],.6,'steel','radial-service-gallery');}
-  for(const s of [-1,1]){k.lattice(x+s*13,z-9,60,11,15,{levels:10,deck:true,tag:'energia-service-pylon'});k.box(8,22,1,x+s*13,36,z-16.5,'light','service-pylon-cladding');}ring(k,x,6,z,12,.7,'steel','energia-service-ring');for(const[dx,dz]of[[-45,-31],[36,-43],[-39,42],[40,42]]){k.lattice(x+dx,z+dz,84,4,4,{levels:14,tag:'energia-lightning-mast'});k.rod([x+dx,84,z+dz],[x+dx,90,z+dz],.11,'red','lightning-tip');}}
+ for(const [ix,iz]of centres){const[x,z]=P([ix,iz]);k.pit(x,z,25,25,28);
+  for(const angle of [-2.12,.0,2.12])flamePetal(k,{x,z,angle,length:64,width:23,depth:28});
+  for(const side of [-1,1]){const gx=x+side*14,gz=z-9;k.lattice(gx,gz,60,11,15,{levels:12,deck:true,tag:'energia-service-pylon'});k.box(8,22,1,gx,36,gz-7.5,'light','service-pylon-cladding');
+   for(let y=10;y<57;y+=6){k.box(16,.45,9,gx-side*3,y,gz+4,'steel','energia-open-service-platform');for(const dz of [-.5,8.5]){k.rod([gx-8,y+1.2,gz+dz],[gx+8,y+1.2,gz+dz],.09,'yellow','platform-handrail');for(let dx=-8;dx<=8;dx+=4)k.rod([gx+dx,y,gz+dz],[gx+dx,y+1.2,gz+dz],.07,'yellow','platform-post');}}
+   for(const z0 of [-27,27])k.box(15,3,9,x+side*27,1.5,z+z0,'concrete','launch-bridge-pier');
+   k.box(11,3,67,x+side*27,3,z,'concrete','launch-service-bridge');
+   k.rod([gx,8,gz],[gx,59,gz],.45,'light','vertical-feed-main');
+  }
+  ring(k,x,6,z,12,.7,'steel','energia-service-ring');
+  for(let i=0;i<8;i++){const a=i*Math.PI/4;k.box(3,2.5,3,x+Math.cos(a)*13,5,z+Math.sin(a)*13,'yellow','energia-launch-support');}
+  for(const[dx,dz]of[[-45,-31],[36,-43],[-39,42],[40,42]]){k.lattice(x+dx,z+dz,84,4,4,{levels:14,tag:'energia-lightning-mast'});k.rod([x+dx,84,z+dz],[x+dx,90,z+dz],.11,'red','lightning-tip');}
+ }
+ root.userData.flamePetals={perLaunch:3,launches:2,belowGrade:true};
  const buildings=[[680,63,80,131,58],[814,155,88,116,58],[739,402,73,170,7],[653,525,60,100,6],[589,604,56,100,5],[528,685,50,89,5],[365,790,73,118,6],[366,892,33,98,5],[866,532,36,102,6],[821,489,34,102,6],[482,302,31,89,5],[519,309,30,88,5]];
  for(const[ix,iz,w,d,h]of buildings){const[x,z]=P([ix,iz]);k.hall({x,z,w:w*.42,d:d*.42,h:h>50?25:h,yaw:.63,gates:1,windows:false,tag:'energia-technical-building'});}
  for(const pts of[[[204,956],[271,806],[349,652],[442,492]],[[318,992],[476,849],[620,801],[727,710]],[[410,538],[596,269],[692,97]],[[743,700],[857,491],[939,351],[779,239],[657,172]],[[150,179],[88,298],[71,831],[179,939]]])k.rail(pts.map(P));k.path([[245,950],[333,793],[477,588],[613,424],[730,288],[938,350],[1030,510]].map(P),7,.13);root.userData.tracedPads=centres;return k.finish();

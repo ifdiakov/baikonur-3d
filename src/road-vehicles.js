@@ -39,14 +39,19 @@ export function buildRoadVehicleRoutes(roads){
   section({...distancePath([last.position,end]),width:baseHighway.width})]);
  highway.width=baseHighway.width;highway.bridgeDistance=baseHighway.bridgeDistance+EXTENSION;highway.routeIds=baseHighway.routeIds;highway.joinGap=baseHighway.joinGap;
  const source=id=>{const road=roads.find(r=>r.id===id);if(!road)throw Error('Missing car road '+id);return {...distancePath(road.points),width:road.width,id};};
- const trunk=source('r-nw-center'),city=source('r-city');
+ const trunk=source('r-nw-center'),city=source('r-city-photo-access');
  const cityRoute=compose('city-cosmodrome','Город ↔ космодром',[section(city,city.length,0),section(trunk,trunk.length,0)]);
  const routes=[highway,cityRoute];
  const joins=[];
+ const outer=source('south-interchange-city'),loop=source('south-interchange-loop-1');
  for(const side of [-1,1]){
-  const ramp=source('south-interchange-ramp-'+side),highwayJoin=nearest(highway,ramp.points[0]),trunkJoin=nearest(trunk,ramp.points.at(-1));
+  // Westbound and eastbound approaches use the real east-side half-cloverleaf:
+  // from the west take the inner return loop; from the east take the outer arm.
+  let ramp;
+  if(side<0){const onOuter=nearest(outer,loop.points[0]),parts=[section(loop,loop.length,0),section(outer,onOuter.along,0)];parts[0][parts[0].length-1].position.copy(onOuter.point);ramp=compose('south-interchange-loop-1','Внутренняя петля в город',parts);ramp.width=loop.width;}
+  else{ramp={...distancePath([...outer.points].reverse()),id:outer.id,width:outer.width};}
+  const highwayJoin=nearest(highway,ramp.points[0]),trunkJoin=nearest(trunk,ramp.points.at(-1));
   joins.push({id:ramp.id,highwayGap:highwayJoin.distance,trunkGap:trunkJoin.distance});
-  // Width changes over the merge apron; traffic never shortcuts the loop.
   const rampPoints=ramp.points.map(p=>p.clone());rampPoints[0].copy(highwayJoin.point);rampPoints[rampPoints.length-1].copy(trunkJoin.point);
   const onRamp={...distancePath(rampPoints),width:ramp.width};
   const route=compose('highway-city-'+side,side<0?'Аральск ↔ город':'Кызылорда ↔ город',[

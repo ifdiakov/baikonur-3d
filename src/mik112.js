@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js';
 import {createSurfacePalette} from './surface-materials.js';
 
 // Site 112, NOT the neighbouring MZK/SDI at 112A. Photo-interpreted exterior.
 // Sources: RocketTrip Drive 1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk (MIK),
 // 1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3 (two Energia transporter/erectors).
 // Recognisable proportions and photo layout, not a measured engineering model.
-export const MIK112={version:'1.2-plan-aligned-ne',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002};
+export const MIK112={version:'1.3-photo-frames',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002};
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
 export function buildMik112(root,{year=2026}={}){
  root.name='Пл. №112 · МИК и два ТУА «Кузнечики»';
@@ -145,7 +146,7 @@ export function buildMik112(root,{year=2026}={}){
    for(let z=-26;z<=26;z+=3.3)box(.15,4.5,.22,x+side*2.15,8.2,z,'seam','chassis-panel-rib',p);
    for(const z of [-22,-8,8,22]){
     box(4.5,2.5,7,x,5.7,z,'steel','rail-bogie',p);
-    for(const dz of [-2.4,-.8,.8,2.4])for(const wx of [-.92,.92]){
+    for(const dz of [-2.4,-.8,.8,2.4])for(const wx of [-RAIL_PROFILE.gauge/(2*MIK112.scale),RAIL_PROFILE.gauge/(2*MIK112.scale)]){
      const wheel=mesh(wheelGeo,'dark',x+wx,4.75,z+dz,'bogie-wheel',p);wheel.rotation.z=Math.PI/2;
     }
     box(4.7,.7,6.8,x,7.3,z,'yellow','bogie-bearing',p);
@@ -154,32 +155,26 @@ export function buildMik112(root,{year=2026}={}){
    railing([x-side*2.4,10.9,-28],[x-side*2.4,10.9,28],1.2,p);
   }
   for(const z of [-26,-9,9,26])box(29.5,4,2.2,0,10.3,z,'steel','massive-cross-girder',p);
-  // Four repeating pairs of inclined lifting frames and ochre perforated forks.
-  for(const z of [-21,-7,7,21]){
-   for(const side of [-1,1]){
-    const x=side*10.3;
-    beam([x,11,z-6],[x,22.4,z+1.5],1.25,1.25,'steel','inclined-lifting-arm',p);
-    beam([x,11,z+6],[x,22.4,z+1.5],1.25,1.25,'steel','inclined-lifting-arm',p);
-    beam([x,13,z-4.7],[x,19.5,z+3.6],.5,.5,'steel','open-truss-brace',p);
-    beam([x,13,z+4.7],[x,19.5,z-.5],.5,.5,'steel','open-truss-brace',p);
-    plate(x+side*.8,11,z-5,-.52,'steel',p,'perforated-lifting-cheek');
-    const fork=plate(x,20,z+.8,.03,'yellow',p,'ochre-perforated-fork');fork.scale.y=.75;
-    // Cylinder, polished rod, pin hub and small guarded work platforms.
-    rod([x,12,z+7],[x,20,z+2],.46,'yellow','hydraulic-cylinder',p);
-    rod([x,20,z+2],[x,25,z],.25,'steel','hydraulic-piston',p);
-    const hub=mesh(new THREE.CylinderGeometry(1.15,1.15,1.8,16),'yellow',x,22.3,z+1.3,'hinge-hub',p);hub.rotation.z=Math.PI/2;
-    for(const y of [18.5,25.3,30]){
-     box(3.6,.24,3.5,x+side*1.8,y,z+1,'yellow','fork-platform',p);
-     railing([x+side*3.6,y+.13,z-.75],[x+side*3.6,y+.13,z+2.75],1,p);
-    }
-    rod([x+side*2.2,11,z+1],[x+side*2.2,29,z+1],.09,'yellow','fork-ladder',p);
-    rod([x+side*3,11,z+1],[x+side*3,29,z+1],.09,'yellow','fork-ladder',p);
-    for(let y=12;y<29;y+=.8)rod([x+side*2.2,y,z+1],[x+side*3,y,z+1],.055,'yellow','fork-ladder-rung',p);
+  // Each photographed machine has two long triangular cheek frames and FOUR forks.
+  const cheek=new THREE.Shape();cheek.moveTo(27,11);cheek.lineTo(11,32);cheek.lineTo(-27,11);cheek.closePath();
+  const opening=new THREE.Path();opening.moveTo(21,15);opening.lineTo(-14,15);opening.lineTo(10.5,27);opening.closePath();cheek.holes.push(opening);
+  for(let z=-20;z<=20;z+=6){const hole=new THREE.Path();hole.absarc(-z,12.5,.64,0,Math.PI*2,true);cheek.holes.push(hole);}
+  for(const [z,y] of [[-23,15],[-19,20],[-15,25],[-10.5,29.5],[1,23],[11,18]]){const h=new THREE.Path();h.absarc(-z,y,.65,0,Math.PI*2,true);cheek.holes.push(h);}
+  const cheekGeo=new THREE.ExtrudeGeometry(cheek,{depth:.65,bevelEnabled:false,curveSegments:12});
+  for(const side of [-1,1]){const x=side*10.3;const m=mesh(cheekGeo,'steel',x-side*.3,0,0,'triangular-perforated-cheek',p);m.rotation.y=Math.PI/2;
+   for(const [z,base] of [[-11,29],[23,13]]){
+    plate(x,base,z,0,'yellow',p,'ochre-perforated-fork');
+    rod([x,11,z+3],[x,base+7,z],.58,'yellow','hydraulic-cylinder',p);rod([x,base+7,z],[x,base+12,z],.28,'steel','hydraulic-piston',p);
+    const hub=mesh(new THREE.CylinderGeometry(1.15,1.15,1.5,16),'yellow',x,base,z,'hinge-hub',p);hub.rotation.z=Math.PI/2;
+    for(const y of [base+2,base+9]){box(4,.25,4,x+side*2,y,z,'yellow','fork-platform',p);railing([x+side*4,y,z-2],[x+side*4,y,z+2],1.1,p);}
+    for(const dx of [2.2,3.2])rod([x+side*dx,11,z],[x+side*dx,base+10,z],.09,'yellow','fork-ladder',p);
+    for(let y=12;y<base+10;y+=.9)rod([x+side*2.2,y,z],[x+side*3.2,y,z],.06,'yellow','fork-ladder-rung',p);
    }
-   rod([-10.3,29,z+1],[10.3,29,z+1],.29,'yellow','upper-cross-tie',p);
-   // The concave receiving cradle bridges the longitudinal frame.
-   const pts=[];for(let i=0;i<=20;i++){const x=-10+i;pts.push(V(x,18+6*(x/10)**2,z));}
-   const cradle=new THREE.CatmullRomCurve3(pts);mesh(new THREE.TubeGeometry(cradle,24,.5,8,false),'yellow',0,0,0,'curved-receiving-cradle',p);
+  }
+  for(const [z,y] of [[-11,32],[23,16]]){
+   rod([-10.3,y+10,z],[10.3,y+10,z],.45,'yellow','upper-cross-tie',p);
+   const v=[],ids=[];for(let i=0;i<=24;i++){const x=-10.3+i*20.6/24,h=y-3+6*(x/10.3)**2;v.push(x,h,z-1.8,x,h,z+1.8);if(i<24){const n=i*2;ids.push(n,n+2,n+1,n+1,n+2,n+3);}}
+   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(v,3));geo.setIndex(ids);geo.computeVertexNormals();mat.yellow.side=THREE.DoubleSide;mesh(geo,'yellow',0,0,0,'broad-concave-receiving-cradle',p);
   }
   for(const z of [-27,27]){
    railing([-14.8,12.5,z],[14.8,12.5,z],1.2,p);
@@ -194,11 +189,11 @@ export function buildMik112(root,{year=2026}={}){
  const railEntries=[];
  for(const cx of [-71,-19])for(const track of [-11.4,11.4]){
   const x=cx+track;railEntries.push([x,4.17,-258.5]);
-  for(const side of [-1,1])box(.18,.27,253,x+side*.76,4.17,-132,'rail','transporter-running-rail');
-  for(let z=-257;z<-8;z+=2.4)box(2.5,.16,.32,x,3.97,z,'seam','rail-sleeper');
+  for(const side of [-1,1])box(.18,.27,253,x+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,-132,'rail','transporter-running-rail');
+  for(let z=-257;z<-8;z+=2.4)box(RAIL_PROFILE.sleeperLength/MIK112.scale,.16,.32,x,3.97,z,'seam','rail-sleeper');
  }
  // Smaller normal-gauge track into the retained assembly hall.
- for(const side of [-1,1])box(.18,.27,220,34+side*.76,4.17,132,'rail','low-hall-track');
+ for(const side of [-1,1])box(.18,.27,220,34+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,132,'rail','low-hall-track');
  // Shallow ramp from the shared road (world y=.72) into the low-hall apron.
  const rampGeo=new THREE.BufferGeometry();
  rampGeo.setAttribute('position',new THREE.Float32BufferAttribute([

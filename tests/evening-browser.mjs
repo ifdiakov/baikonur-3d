@@ -22,7 +22,7 @@ try{
  await page.waitForTimeout(500);
  await frame();
  let s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
- assert.equal(s.sites,98);assert.equal(s.stations,7);assert.equal(s.mik112.version,'1.2-plan-aligned-ne');
+ assert.equal(s.sites,98);assert.equal(s.stations,7);assert.equal(s.mik112.version,'1.3-photo-frames');
  assert.equal(s.evening.evening,true);assert.ok(s.evening.roadLights>100);assert.ok(s.evening.siteLights>300);assert.ok(s.evening.runwayLights>90);
  assert.ok(s.arrival.elapsed>0&&s.arrival.elapsed<30);assert.equal(s.arrival.duration,120);assert.ok(s.shadersValid);
  const night=s.arrival.appearance;
@@ -67,8 +67,8 @@ try{
  assert.notEqual(blink1,blink2,'Strobes must blink');
  await page.locator('#arrivalReplay').click();await page.waitForTimeout(250);
  assert.ok((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).elapsed<10);
- await page.mouse.move(800,450);await page.mouse.wheel(0,-50);
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).following,false);
+ await page.evaluate(()=>window.__BAIKONUR_QA.arrival.setFollowing(true));await page.mouse.move(800,450);await page.mouse.wheel(0,-50);
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).following,true);
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite(0);q.arrival.seek(50);});
  await page.locator('#close').click();await snapshot('gagarin');
  await page.locator('#lightingToggle').click();const count=await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats().count);

@@ -29,7 +29,7 @@ assert.equal(decks.length,2);
 for(const deck of decks){deck.updateWorldMatrix(true,false);const box=new THREE.Box3().setFromObject(deck);assert.ok(box.min.y-.72>5,'The lower entrance road needs a clear underpass');}
 const lower=network.roadPaths().find(r=>r.id==='r-nw-center');
 assert.ok(lower.points.every(p=>Math.abs(p.y-.72)<1e-8),'The north-south entrance must remain beneath both bridges');
-assert.equal(network.roadPaths().filter(r=>r.id.startsWith('south-interchange-ramp')).length,2);
+assert.equal(network.roadPaths().filter(r=>r.id.startsWith('south-interchange-')).length,4);
 assert.equal(layers.roads.children.filter(m=>m.name==='road-center-dashes').length,1,'Road paint should use one draw call');
 assert.ok(stats.markingSegments>100);
 console.log('TRANSPORT GEOMETRY PASS',JSON.stringify({railGauge:stats.railGauge,

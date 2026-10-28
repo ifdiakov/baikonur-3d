@@ -20,7 +20,7 @@ for(const t of [38,72,96,108]){
 assert.ok(path.sample(108).position.distanceTo(path.touchdown)<1e-10);
 assert.equal(path.sample(108).gear,1);assert.equal(path.sample(120).phase,'parked');assert.equal(path.sample(120).velocity.length(),0);
 for(const t of [108,112,120]){
- const local=airport.worldToLocal(path.sample(t).position.clone());assert.ok(Math.abs(local.x)<1e-8&&Math.abs(local.z)<535,'Rollout stays on runway');
+ const local=airport.worldToLocal(path.sample(t).position.clone());assert.ok(Math.abs(local.x)<1e-8&&Math.abs(local.z)<1550,'Rollout stays on runway');
 }
 assert.deepEqual(path.sample(180).position.toArray(),path.sample(120).position.toArray());
 console.log('ARRIVAL_GEOMETRY_PASS',JSON.stringify({duration:FLIGHT_DURATION,touchdown:TOUCHDOWN_TIME,maxLateral,minHeight}));

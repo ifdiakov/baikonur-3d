@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
+import {AIRCRAFT_SCALE} from '../src/aircraft-livery.js';
 import {createArrivalPath,arrivalPose} from '../src/arrival-flight.js';
 import {buildTransportNetwork} from '../src/transport-network.js';
 import {buildHighwayPath} from '../src/traffic-paths.js';
@@ -12,12 +13,12 @@ for(let t=58;t<=108;t+=.25){const p=arrivalPose(flight,t);assert.ok(p.pitchDeg>=
 let noseGap;
 for(const t of [108,109,110,112,114,115,120]){
  const p=arrivalPose(flight,t),q=p.attitude;
- const bottom=z=>new THREE.Vector3(3,-2.72,z).multiplyScalar(.55).applyQuaternion(q).add(p.bodyPosition).y-.46*.55;
- assert.ok(Math.abs(bottom(-3)-flight.runwayY-.011)<1e-6,'Main wheels stay on the runway while nose is lowered');
+ const bottom=z=>new THREE.Vector3(3,-2.72,z).multiplyScalar(AIRCRAFT_SCALE).applyQuaternion(q).add(p.bodyPosition).y-.46*AIRCRAFT_SCALE;
+ assert.ok(Math.abs(bottom(-3)-flight.runwayY)<1e-6,'Main wheels stay on the runway while nose is lowered');
  assert.ok(bottom(12)>=bottom(-3)-1e-9);if(t===108)noseGap=bottom(12)-bottom(-3);
  if(t>=115)assert.equal(p.pitchDeg,0);
 }
-assert.ok(noseGap>.8,'Touch the main gear first');
+assert.ok(noseGap>.4,'Touch the main gear first');
 const data=JSON.parse(fs.readFileSync('data/transport-network.json')),siteRecords=JSON.parse(fs.readFileSync('data/catalog.json')).sites;
 const layers={roads:new THREE.Group(),rails:new THREE.Group()},point=(x,y,z=0)=>new THREE.Vector3((x-650)*3.4,z,(y-522.5)*3.4);
 const network=buildTransportNetwork({data,siteRecords,point,layers}),plan=network.trainPath(),highway=buildHighwayPath(network.roadPaths());

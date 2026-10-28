@@ -1,0 +1,99 @@
+{
+  "revision": "2026-10-28-aircraft-and-museum-refinement",
+  "basis": "Photograph-interpreted museum geometry; site centres stay on the user's historical schematic.",
+  "aircraft": {
+    "livery": "АЛРОСА",
+    "family": "737-family exterior interpretation",
+    "reference": "https://assets.wego.com/image/upload/v1600400641/flights/airlines_hero/6R_1.jpg",
+    "features": [
+      "white upper fuselage and navy belly",
+      "blue bands",
+      "Cyrillic titles",
+      "diamond tail emblem",
+      "panel seams and rivets",
+      "lit cockpit and 60 cabin windows"
+    ],
+    "gear": {
+      "doorsOpenSeconds": [
+        73,
+        78
+      ],
+      "legsDeploySeconds": [
+        76,
+        94
+      ],
+      "doorsCloseSeconds": [
+        94,
+        98
+      ]
+    },
+    "camera": "Mouse left/right drag and one-finger touch orbit the aircraft while following; wheel and pinch zoom. Normal map bindings are restored on exit.",
+    "officialReferences": [
+      "https://aero.alrosa.ru/airline/our-fleet/",
+      "https://aero.alrosa.ru/upload/iblock/a65/i8u390pze2nj43m8ig7bd5jswglisyf0.png",
+      "https://aero.alrosa.ru/upload/iblock/c58/wiai7alnm3tmcjdrqlz9w3tgea2v7qp1.png"
+    ]
+  },
+  "airfields": {
+    "metresToWorld": 0.28,
+    "krayniyRunwayMetres": [
+      3100,
+      45
+    ],
+    "yubileinyRunwayMetres": [
+      4500,
+      84
+    ],
+    "lengthSources": [
+      "https://www.russian.space/press-tsentr/novosti/aerodrom-krayniy-na-baykonure-regulyarnoe-aviasoobshchenie-posle-rekonstruktsii-vpp.html",
+      "https://www.buran.ru/htm/pk.htm",
+      "https://www.buran.ru/htm/str140.htm"
+    ],
+    "loadingDevicePhoto": "https://drive.google.com/file/d/1xXKNybNVj9awYSf_geAnaW5S_icrCXqg/view",
+    "yubileinyExhibit": "An-225 with Buran on the apron, loading gantries, PAPI, approach, edge and taxiway lights"
+  },
+  "structures": {
+    "110": {
+      "scaleBefore": 0.22,
+      "scaleAfter": 0.33,
+      "flamePetalsPerLaunch": 3,
+      "satellite": "https://drive.google.com/file/d/1eYjF4gq89TBHBkKu_1r8VZt9xRU5EI8F/view"
+    },
+    "250": {
+      "flameChannels": 1,
+      "shape": "Broad chamber with one elongated tapering southeast outlet",
+      "satellite": "https://drive.google.com/file/d/1trxKwfRxSPO7YuoezOjEmHTA8OAKhqU0/view"
+    },
+    "112": {
+      "yellowForksPerTransporter": 4,
+      "features": [
+        "long perforated triangular cheeks",
+        "hollow twin chassis",
+        "concave cradles",
+        "hydraulics",
+        "guardrails and ladders"
+      ],
+      "photos": [
+        "1cr82R9HGJagOoiQlVf3VrP5q5YkV4Q67",
+        "14jTNN_uO4bq_AoN4mfRZri9smAORe-o2",
+        "1CIxhw2_ngJO1QVWZO2UYM2fzVkRpYGL1"
+      ]
+    },
+    "112A": {
+      "photo": "https://drive.google.com/file/d/1NqzXME6wQ-LEpyckXaQ1TOV_qVdxZCgk/view",
+      "features": [
+        "two full-height glazed gate bays",
+        "projecting control gallery",
+        "straight-sided SDI frame",
+        "white crown",
+        "projecting crane and hoist"
+      ]
+    }
+  },
+  "roads": {
+    "interchangeReference": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=63.315,45.674,63.331,45.684&bboxSR=4326&size=1600,1100&imageSR=4326&format=jpg&f=image",
+    "layout": "Elongated east-side half-cloverleaf; two bridge positions retained on the museum schematic",
+    "connections": "Road gates and rail approaches use model transforms; original site centre coordinates are preserved",
+    "railWorldGauge": 0.5859466666666666
+  }
+}

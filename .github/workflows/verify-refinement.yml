@@ -1,0 +1,53 @@
+name: Alrosa aircraft and museum refinements
+on:
+  push:
+    branches: [main]
+    paths: ['index.html', 'src/**', 'tests/refinement-*.mjs', '.github/workflows/verify-refinement.yml']
+  workflow_dispatch:
+concurrency:
+  group: baikonur-refinement
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser and geometry dependencies
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Geometry, routes and wheel contacts
+        run: |
+          node tests/refinement-geometry.mjs
+          node tests/arrival-geometry.mjs
+          node tests/traffic-geometry.mjs
+          node tests/transport-geometry.mjs
+          node tests/road-vehicles-geometry.mjs
+          node tests/train-consist.mjs
+      - name: Serve museum
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Orbit, gear and model browser checks
+        run: node tests/refinement-browser.mjs
+      - name: Wait for public aircraft revision
+        run: |
+          for attempt in $(seq 1 24); do
+            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/arrival-flight.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q 'krayniy-alrosa-orbit-v2'; then exit 0; fi
+            sleep 8
+          done
+          exit 1
+      - name: Published museum browser checks
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+        run: node tests/refinement-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aircraft-museum-refinement-qa
+          path: qa-refinement/

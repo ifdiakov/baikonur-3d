@@ -4,7 +4,7 @@ import * as THREE from 'three';
  * of Baikonur's historical plan. Distances are rounded road-route distances
  * from Baikonur city, NOT precise kilometer-post chainage.
  */
-export function buildHighwaySigns({data,point,parent}) {
+export function buildHighwaySigns({data,point,parent,roads=[]}) {
   const signs=[];
   const blue=new THREE.MeshStandardMaterial({color:0x21558c,roughness:.8,metalness:.08,side:THREE.DoubleSide});
   const steel=new THREE.MeshStandardMaterial({color:0x8b9696,roughness:.51,metalness:.65});
@@ -35,11 +35,22 @@ export function buildHighwaySigns({data,point,parent}) {
     tex.anisotropy=8;tex.minFilter=THREE.LinearMipmapLinearFilter;
     const group=new THREE.Group();group.name='Указатель '+spec.direction.toUpperCase();
     group.position.copy(point(spec.x,spec.y));
+    // The long axis of the panel follows the local road tangent.
+    let nearest=Infinity,tangent=new THREE.Vector3(1,0,0);
+    for(const road of roads.filter(r=>r.id=== (spec.direction==='west'?'r-south-west':'r-south-east'))){
+      for(let i=1;i<road.points.length;i++){
+        const a=road.points[i-1],b=road.points[i],line=new THREE.Line3(a,b),p=line.closestPointToPoint(group.position,true,new THREE.Vector3()),d=p.distanceToSquared(group.position);
+        if(d<nearest){nearest=d;tangent.copy(b).sub(a).setY(0).normalize();}
+      }
+    }
+    group.rotation.y=-Math.atan2(tangent.z,tangent.x);
+    group.userData.roadTangent=tangent.toArray();
     // Two legs and narrow rectangular frame keep sign looking like road furniture.
     const height=28,signWidth=76,signHeight=38;
     const panel=new THREE.Mesh(new THREE.PlaneGeometry(signWidth,signHeight),
       new THREE.MeshBasicMaterial({map:tex,transparent:false,side:THREE.DoubleSide}));
     panel.position.y=height+11;panel.position.z=.5;group.add(panel);
+    panel.material.userData.keepBrightness=true;
     const backplate=new THREE.Mesh(new THREE.BoxGeometry(signWidth+1.8,signHeight+1.2,1.1),blue);
     backplate.position.y=height+11;backplate.position.z=-.35;group.add(backplate);
     for(const side of [-1,1]){
@@ -49,13 +60,13 @@ export function buildHighwaySigns({data,point,parent}) {
     const base=new THREE.Mesh(new THREE.BoxGeometry(63,.9,5),steel);
     base.position.y=.6;group.add(base);
     // Viewer looking from map's north or south can read both faces.
-    group.userData={id:spec.id,source:'data/road-signs.json',
+    group.userData={...group.userData,id:spec.id,source:'data/road-signs.json',
       approximateFromCity:true,destinations:spec.destinations.map(d=>({name:d.city,km:d.distanceKm}))};
     parent.add(group);signs.push(group);
   }
   paintSign(data.west);paintSign(data.east);
   return {signs,stats:()=>({
-    signCount:signs.length,locations:signs.map(s=>({x:s.position.x,z:s.position.z})),
+    signCount:signs.length,locations:signs.map(s=>({x:s.position.x,z:s.position.z,yaw:s.rotation.y,roadTangent:s.userData.roadTangent})),
     cities:signs.flatMap(s=>s.userData.destinations),
     distancesFrom:'Baikonur city',approximate:true
   })};

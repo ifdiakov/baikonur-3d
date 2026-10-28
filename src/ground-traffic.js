@@ -63,7 +63,7 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
   focusHighway(){stopFollowing();onFollow?.();const at=highway.sample(highway.bridgeDistance);controls.target.copy(at.position);camera.position.copy(at.position).add(V(65,70,90));controls.update();},
   update(now){if(lastNow===null)lastNow=now;if(!document.hidden&&forced===null)elapsed+=(now-lastNow)/1000;lastNow=now;render(elapsed);},
   stats:()=>({version:'ground-traffic-v2',elapsed,night,cars:cars.length,highwayRoutes:highway.routeIds,highwayLength:highway.length,highwayJoinGap:highway.joinGap,bridgeDistance:highway.bridgeDistance,
-   roadVehicles:roadVehicles.stats(),carStates:roadVehicles.stats().carStates,
+   cityRoutes:roadVehicles.stats().routes.filter(r=>r.id.startsWith('highway-city-')),roadVehicles:roadVehicles.stats(),carStates:roadVehicles.stats().carStates,
    train:{from:plan.from,to:plan.to,duration:TRAIN_DURATION,distance:engineDistance,length:rail.length,phase:lastPhase,following,gauge:plan.gauge,
     version:'motovoz-four-coaches-v2',coachCount:coaches.length,consistLength:TRAIN_CONSIST_LENGTH,startDistance:TRAIN_START_DISTANCE,
     locomotive:engine.root.position.toArray(),wagon:coaches[0].root.position.toArray(),coaches:coaches.map((v,i)=>({number:i+1,position:v.root.position.toArray(),distance:vehicleDistances.get(v),offset:COACH_OFFSETS[i],tailLights:v.last,lights:v.lightCount,detailCounts:v.detailCounts})),joins:plan.joins,

@@ -426,7 +426,7 @@ assert.equal(restored.gagarinScale,overviewScale.gagarinScale,'Closing Pad 1 mus
 assert.equal(restored.visibleSites,overviewScale.visibleSites,'Closing Pad 1 must keep the same surrounding sites');
 // UKSS must use separate architecture and keep the reduced map scale on focus.
 const ukssOverview=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
-assert.equal(ukssOverview.ukss.version,'1.0');
+assert.equal(ukssOverview.ukss.version,'2.0-single-petal');assert.equal(ukssOverview.ukss.trench.branches,1);
 assert.equal(ukssOverview.ukssScale,.5*.28*1.5,'UKSS architecture must scale with the reduced buildings');
 assert.deepEqual(ukssOverview.ukssPlacement,[635,220],'Keep Site 250 on the original schematic');
 assert.equal(ukssOverview.ukss.bridge.piers,6);
@@ -479,7 +479,7 @@ const ukssGeometry=await page.evaluate(async()=>{
  const THREE=await import('three');const {buildUkssPad}=await import('./src/ukss-pad.js');
  const root=new THREE.Group();buildUkssPad(root);root.updateMatrixWorld(true);
  const ray=new THREE.Raycaster(),decks=root.children.filter(o=>o.userData.aperture);
- let blocked=0;for(const deck of decks){const {axis,y,radius}=deck.userData.aperture;for(let i=0;i<24;i++){const a=i*Math.PI/12;ray.set(new THREE.Vector3(axis[0]+Math.cos(a)*radius*.95,y+2,axis[1]+Math.sin(a)*radius*.95),new THREE.Vector3(0,-1,0));blocked+=!!ray.intersectObject(deck).length}}
+ let blocked=0;for(const deck of decks){const {axis,y,radius}=deck.userData.aperture;for(let i=0;i<24;i++){const a=i*Math.PI/12;ray.set(root.localToWorld(new THREE.Vector3(axis[0]+Math.cos(a)*radius*.95,y+2,axis[1]+Math.sin(a)*radius*.95)),new THREE.Vector3(0,-1,0));blocked+=!!ray.intersectObject(deck).length}}
  ray.set(new THREE.Vector3(0,10,0),new THREE.Vector3(0,-1,0));const first=ray.intersectObject(root,true)[0];
  const result={decks:decks.length,blocked,firstY:first?.point.y};
  const geometries=new Set(),materials=new Set();root.traverse(o=>{if(o.geometry)geometries.add(o.geometry);if(o.material)materials.add(o.material)});geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());

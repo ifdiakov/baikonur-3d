@@ -9,14 +9,14 @@ if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm
 try{
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:60000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic,null,{timeout:90000});
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(stats.traffic.cars,20);assert.equal(stats.traffic.version,'ground-traffic-v2');assert.equal(stats.sites,98);
- assert.equal(stats.arrival.attitudeVersion,'positive-approach-v2');assert.equal(stats.mik112.version,'1.2-plan-aligned-ne');assert.ok(stats.shadersValid);
+ assert.equal(stats.arrival.attitudeVersion,'positive-approach-v2');assert.equal(stats.mik112.version,'1.3-photo-frames');assert.ok(stats.shadersValid);
  await page.locator('#showLabels').uncheck();await page.locator('#arrivalFollow').click();
  for(const t of [84,100,108,112,115]){
   await page.evaluate(t=>window.__BAIKONUR_QA.arrival.seek(t),t);await page.waitForTimeout(120);
   const a=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
   if(t<=108)assert.ok(a.renderedPitchDeg>3);
-  if(t>=108){assert.ok(Math.abs(a.mainWheelBottom-a.runwayY-.011)<1e-5);assert.ok(a.noseWheelBottom>=a.mainWheelBottom-1e-6);}
-  if(t===108){assert.ok(a.noseWheelBottom-a.mainWheelBottom>.8);await page.screenshot({path:`qa-traffic/${prefix}-main-gear-first.png`,timeout:60000});}
+  if(t>=108){assert.ok(Math.abs(a.mainWheelBottom-a.runwayY)<1e-5);assert.ok(a.noseWheelBottom>=a.mainWheelBottom-1e-6);}
+  if(t===108){assert.ok(a.noseWheelBottom-a.mainWheelBottom>.4);await page.screenshot({path:`qa-traffic/${prefix}-main-gear-first.png`,timeout:60000});}
   if(t===115)assert.ok(Math.abs(a.noseWheelBottom-a.mainWheelBottom)<1e-6);
  }
  await page.evaluate(()=>window.__BAIKONUR_QA.traffic.seek(2));await page.locator('#trainFollow').click();await page.waitForTimeout(200);

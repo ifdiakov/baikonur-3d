@@ -14,10 +14,10 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.mik112?.transporterCount===2,{timeout:90000});
  await page.waitForTimeout(1500);
  const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
- assert.equal(s.mik112.version,'1.2-plan-aligned-ne');assert.equal(s.mik112.transporterCount,2);
+ assert.equal(s.mik112.version,'1.3-photo-frames');assert.equal(s.mik112.transporterCount,2);
  assert.deepEqual(s.mik112Placement,[640,361]);
- assert.ok(s.mik112.features['perforated-lifting-cheek']>=16);
- assert.ok(s.mik112.features['ochre-perforated-fork']>=16);
+ assert.ok(s.mik112.features['triangular-perforated-cheek']===4);
+ assert.ok(s.mik112.features['ochre-perforated-fork']===8);
  assert.ok(s.mik112.features['bogie-wheel']>=100);
  assert.ok(s.mik112.features['closed-sliding-door']>=4);
  assert.ok(s.mik112.features['retained-light-roof']>=1);
@@ -43,7 +43,7 @@ try{
   assert.ok(r.localStart[2]<-258&&r.junctionGap<1e-7);
   assert.ok(Math.hypot(...r.localStart.map((v,i)=>v-r.localEntry[i]))<1e-6);
  }
- assert.equal(s.mik112Rail.version,'ne-end-halfscale-v3');
+ assert.equal(s.mik112Rail.version,'ne-end-common-gauge-v4');
  assert.ok(s.mik112Rail.joinGap<1e-7);
  // An approach spline may not cross through the assembly building.
  const cs=Math.cos(lay.yaw),sn=Math.sin(lay.yaw),inverse=p=>{

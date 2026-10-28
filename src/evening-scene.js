@@ -64,19 +64,22 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  }
  fields.push(createLightField(layers.sites,siteLights,{poles:true,pools:true,name:'Вечер · свет площадок'}));
  fields.push(createLightField(layers.city,cityLights,{poles:true,pools:true,name:'Вечер · город'}));
- // Exact transforms of the existing airport geometry, not a second runway.
- const runway=[];airfield.updateWorldMatrix(true,false);
- function runwayLight(x,z,color,size=3){const p=airfield.localToWorld(new THREE.Vector3(x,2.2,z));runway.push({x:p.x,y:p.y,z:p.z,height:0,color,size,owner:airfield});}
- for(let z=-530;z<=530;z+=38)for(const x of [-45,45])runwayLight(x,z,0xffefc5);
- for(let x=-38;x<=38;x+=9.5){runwayLight(x,535,0x64ffbc,4);runwayLight(x,-535,0xff4c42,4);}
- for(let z=-530;z<=535;z+=50)runwayLight(0,z,z< -350?0xffb76b:0xf4f3dd,2.4);
- for(let z=-320;z<130;z+=40)runwayLight(82,z,0x68aaff,3.5);
- for(let z=580;z<850;z+=50)runwayLight(0,z,0xffeac0,3);
- fields.push(createLightField(layers.city,runway,{name:'Крайний · огни ВПП',minPixels:2.3}));
- const apron=[];for(const [x,z] of [[60,-350],[235,-350],[235,-190],[60,-190]]){
-  const p=airfield.localToWorld(new THREE.Vector3(x,1.6,z));apron.push({x:p.x,y:p.y,z:p.z,height:4,radius:15,color:0xffdba4,owner:airfield});
+ // Both airfields use their measured runway dimensions and existing transforms.
+ const runway=[],apron=[];
+ for(const airport of objects.filter(o=>o.g.userData.airport)){
+  const field=airport.g,spec=field.userData.airport,H=spec.length/2,W=spec.width;field.updateWorldMatrix(true,false);
+  function light(x,z,color,size=3){const p=field.localToWorld(new THREE.Vector3(x,2.1,z));runway.push({x:p.x,y:p.y,z:p.z,height:0,color,size,owner:field});}
+  for(let z=-H+15;z<=H-15;z+=60)for(const x of [-W/2-1,W/2+1])light(x,z,0xffefc5,2.2);
+  for(let x=-W/2;x<=W/2;x+=W/8){light(x,H-10,0x64ffbc,3);light(x,-H+10,0xff4c42,3);}
+  for(let z=-H+20;z<H;z+=45)light(0,z,z< -H+600?0xffb76b:0xf4f3dd,1.8);
+  const taxiX=spec.key==='yubileiny'?-150:100;
+  for(let z=-H+60;z<H-60;z+=70)light(taxiX,z,0x68aaff,2);
+  for(const side of [-1,1])for(let d=60;d<=480;d+=60){light(0,side*(H+d),0xffeac0,2.5);if(d===300)for(const x of [-16,-8,8,16])light(x,side*(H+d),0xffeac0,2.5);}
+  for(const side of [-1,1])for(let i=0;i<4;i++)light(-W/2-18-i*3,side*(H-300),i<2?0xff3930:0xfff6e0,2.6);
+  for(const dx of [-110,110])for(const dz of [-185,185]){const p=field.localToWorld(new THREE.Vector3(spec.apron[0]+dx,1.8,spec.apron[1]+dz));apron.push({x:p.x,y:p.y,z:p.z,height:6,radius:23,color:0xffdba4,owner:field});}
  }
- fields.push(createLightField(layers.city,apron,{poles:true,pools:true,name:'Крайний · перрон'}));
+ fields.push(createLightField(layers.city,runway,{name:'Аэродромы · ВПП, глиссада и рулёжные огни',minPixels:1.8}));
+ fields.push(createLightField(layers.city,apron,{poles:true,pools:true,name:'Аэродромы · перроны'}));
  const floods=[];
  for(const id of ['pad-1','pad-250','pad-112','pad-23']){const o=objects.find(o=>o.record.id===id);if(!o)continue;
   const c=o.g.getWorldPosition(new THREE.Vector3()),light=new THREE.PointLight(0xffc48a,100,75,1.4);

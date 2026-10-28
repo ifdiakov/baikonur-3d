@@ -99,22 +99,30 @@ export function buildSouthInterchange({data,point,layers}){
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));g.setIndex(indices);g.computeVertexNormals();
     const m=new THREE.Mesh(g,mat);m.name=name;m.userData.groundSurface=true;layers.roads.add(m);
   }
-  for(const [route,side] of [[roadWest,-1],[roadEast,1]]){
-    const highway=path(route),start=nearestRoadPoint(highway,center.clone().add(new THREE.Vector3(side*135,.72,0))).position;
-    start.y=.72+roadElevation(route.id,start);
-    const end=nearestRoadPoint(trunk,center.clone().add(new THREE.Vector3(0,.72,-112+side*13))).position;
-    const curve=new THREE.CatmullRomCurve3([start,
-      start.clone().lerp(end,.38).add(new THREE.Vector3(side*13,0,-30)),
-      start.clone().lerp(end,.78).add(new THREE.Vector3(side*10,0,-18)),end],false,'centripetal',.3);
-    const samples=Array.from({length:81},(_,i)=>{
-      const t=i/80,p=curve.getPointAt(t),d=curve.getTangentAt(t),len=Math.hypot(d.x,d.z)||1;
-      p.y=THREE.MathUtils.lerp(start.y,.72,smooth(0,1,t));return {p,nx:-d.z/len,nz:d.x/len};
-    });
-    strip(samples,7.2,-.06,earth,'interchange-ramp-shoulder');strip(samples,4.6,0,asphalt,'interchange-ramp-pavement');
-    ramps.push({id:'south-interchange-ramp-'+side,label:'Съезд южной развязки',width:4.6,points:samples.map(s=>s.p)});
+  // Owner-requested satellite reference: elongated, east-side half-cloverleaf.
+  // Preserve both separately modelled bridges on the museum's schematic.
+  const south=new THREE.Vector3(-roadDirection.z,0,roadDirection.x);
+  const local=(east,north)=>center.clone().addScaledVector(roadDirection,east).addScaledVector(south,north).setY(.72);
+  const eastPath=path(roadEast),merge=nearestRoadPoint(eastPath,local(330,0)).position;
+  const northJoin=nearestRoadPoint(trunk,local(0,-105)).position,southJoin=nearestRoadPoint(trunk,local(0,115)).position;
+  function ramp(id,points,width=4.6){
+   const curve=new THREE.CatmullRomCurve3(points,false,'centripetal',.3),samples=Array.from({length:121},(_,i)=>{const t=i/120,p=curve.getPointAt(t),d=curve.getTangentAt(t),len=Math.hypot(d.x,d.z)||1;return {p,nx:-d.z/len,nz:d.x/len};});
+   strip(samples,width+2.2,-.06,earth,'interchange-ramp-shoulder');strip(samples,width,0,asphalt,'interchange-ramp-pavement');
+   for(const side of [-1,1]){const edge=samples.map(s=>({...s,p:s.p.clone().add(new THREE.Vector3(s.nx,0,s.nz).multiplyScalar(side*(width/2-.22)))}));strip(edge,.10,.025,new THREE.MeshBasicMaterial({color:0xc9c5b6}),'interchange-edge-paint');}
+   ramps.push({id,label:'Восточные съезды южной развязки',width,points:samples.map(s=>s.p),curve});
+  }
+  // Outer arms connect to the eastbound highway with parallel tangent joins.
+  for(const [sign,join,id] of [[-1,northJoin,'north'],[1,southJoin,'city']]){
+   const lead=join.clone().addScaledVector(south,-sign*12);
+   ramp('south-interchange-'+id,[join,lead,local(30,sign*105),local(70,sign*112),local(160,sign*110),local(230,sign*83),merge.clone().addScaledVector(roadDirection,-25),merge]);
+  }
+  // Return loops join the opposite lane; all merging points lie on the highway.
+  for(const sign of [-1,1]){
+   const onRoad=nearestRoadPoint(eastPath,local(150,0)).position;onRoad.y=.72+roadElevation(roadEast.id,onRoad);
+   ramp('south-interchange-loop-'+sign,[local(150,sign*110),local(186,sign*108),local(218,sign*84),local(221,sign*44),local(191,sign*13),onRoad.clone().addScaledVector(roadDirection,18),onRoad],3.8);
   }
   return {roadElevation,railElevation,ramps,
     isCrossing:p=>Math.hypot(p.x-center.x,p.z-center.z)<28,
-    stats:()=>({version:'southern-two-bridges-v1',bridges:reports,ramps:ramps.length,
-      source:'User-identified road and railway bridges; placement follows museum schematic; dimensions illustrative'})};
+    stats:()=>({version:'southern-east-half-cloverleaf-v2',bridges:reports,ramps:ramps.length,
+      source:'Esri World Imagery 63.315,45.674,63.331,45.684; east-side elongated ramps. Museum bridge positions remain schematic.'})};
 }

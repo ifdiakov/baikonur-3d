@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {buildMzkSdi} from './mzk-sdi.js';
+import {buildAirport} from './airport-models.js';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
 export function protonHalls(root){
@@ -20,13 +22,8 @@ export function mik42Facade(root){
  for(const z of[-17.2,17.2]){for(let f=0;f<3;f++){k.box(142,3.8,.25,0,6+f*5,z,'red','red-window-belt');for(let x=-65;x<=66;x+=6.2){k.box(4.2,2.9,.24,x,6+f*5,z+(z>0?.19:-.19),'glass','frontage-window');k.box(.13,2.9,.26,x,6+f*5,z+(z>0?.33:-.33),'light','window-mullion');}}for(let x=-65;x<68;x+=10)k.box(.4,2,.22,x,25,z,'dark','upper-slit');}
  for(const x of[-15,56]){k.box(7,31,9,x,15.5,20,'red','red-stair-tower');k.box(1,31,9.3,x+3.5,15.5,20,'light','stair-tower-rim');}k.box(144,.7,35,0,28.6,0,'red','red-parapet');k.lattice(-59,-5,14,2,2,{y:29,levels:5,tag:'roof-floodlight-tower'});k.box(3,3,1,-59,44,-5,'dark','floodlight');k.path([[-78,32],[-40,32],[0,32],[78,32]],7,.1);for(let x=-65;x<=62;x+=13){k.cyl(.23,5,x,2.5,42,'rust','tree-trunk');for(const dx of[-2,0,2])k.rod([x,3,42],[x+dx,8,42+dx],.1,'rust','bare-tree-branch');}return k.finish();
 }
-export function mzk112a(root){
- const k=archiveKit(root);k.hall({x:55,z:35,w:58,d:135,h:52,roof:'roof',floors:2,gates:2,tag:'mzk-main-high-hall'});k.hall({x:120,z:35,w:52,d:135,h:37,roof:'light',floors:2,gates:2,tag:'mzk-adjoining-hall'});k.hall({x:86,z:113,w:117,d:18,h:9,gates:2,tag:'mzk-low-annex'});k.lattice(-78,-42,105,32,36,{levels:18,deck:true,tag:'sdi-grid-tower'});k.box(39,17,41,-78,114,-42,'light','sdi-white-crown');k.box(48,3,13,-78,124,-42,'yellow','sdi-overhead-crane');k.box(6,13,12,-53,114,-42,'rust','sdi-crane-end');for(let y=14;y<100;y+=14)k.path([[-97,-60],[-59,-60],[-59,-24],[-97,-24],[-97,-60]],1,y,'yellow','sdi-balcony');for(const x of[39,72,108,133])k.rail([[x,104],[x,177]]);return k.finish();
-}
-export function yubileiny(root){
- const k=archiveKit(root);k.box(31,.18,1180,0,.10,0,'asphalt','runway');for(const x of[-14.5,14.5])k.box(.32,.04,1170,x,.23,0,'white','runway-edge');for(let z=-560;z<=560;z+=27)k.box(.52,.04,13,0,.23,z,'white','runway-centre-mark');for(const side of[-1,1]){for(const x of[-10.5,-7,-3.5,3.5,7,10.5])k.box(1.6,.04,21,x,.23,side*545,'white','threshold-bars');for(const x of[-9,9])k.box(3,.04,40,x,.23,side*454,'white','touchdown-zone');}
- k.path([[-73,-578],[-73,578]],17,.15,'asphalt','parallel-taxiway');for(const z of[-530,-185,185,530])k.path([[0,z],[-28,z+20],[-73,z+20]],14,.15,'asphalt','taxiway-link');k.box(154,.2,210,-158,.15,140,'concrete','aircraft-apron');k.path([[-73,37],[-154,37],[-220,120]],17,.21);k.hall({x:-267,z:139,w:44,d:94,h:11,floors:2,gates:0,tag:'terminal-building'});k.hall({x:-234,z:250,w:40,d:54,h:14,gates:2,tag:'maintenance-hangar'});k.box(9,24,9,-291,12,90,'concrete','control-tower');k.box(14,4,14,-291,26,90,'glass','control-room');k.box(15,.7,15,-291,28.4,90,'light','control-room-roof');for(let z=72;z<221;z+=42){k.path([[-122,z],[-175,z]],.3,.28,'yellow','apron-guideline');k.path([[-137,z-7],[-137,z+7]],.3,.28,'yellow','parking-tee');}return k.finish();
-}
+export function mzk112a(root){return buildMzkSdi(root);}
+export function yubileiny(root){return buildAirport(root,'yubileiny');}
 export function checkpoint7(root){
  const k=archiveKit(root);k.hall({w:28,d:12,h:6.3,wall:'light',roof:'blue',windows:false,gates:0,tag:'checkpoint-gatehouse'});k.box(5,3,.18,-8,2.3,6.15,'blue','entry-door');for(const x of[0,6,12])k.box(3.8,2,.18,x,3.3,6.15,'glass','checkpoint-window');k.box(32,2.1,4,0,8,1,'light','sign-canopy');k.sign('КОСМОДРОМ БАЙКОНУР',0,8.2,3.1,29,1.6);k.path([[-40,20],[40,20]],12,.1);for(const x of[-34,34]){k.box(.55,7,.55,x,3.5,13,'steel','barrier-post');k.box(16,.24,.32,x+(x<0?8:-8),3.5,13,'red','barrier-arm');}for(let x=-55;x<=55;x+=4)if(Math.abs(x)>19)k.box(.12,2.5,.12,x,1.25,-5,'steel','fence-post');return k.finish();
 }

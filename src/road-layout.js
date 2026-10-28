@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js';
 
 export const KAZ_GATE = Object.freeze({x:-67,z:53,scaleX:.29,scaleZ:.48});
 
@@ -41,6 +42,9 @@ export function connectedRoadData(data,point,siteRecords) {
       if(best){road.points[end]=map(best.position);junctions.push({roadId:best.roadId,x:best.position.x,z:best.position.z});}
     }
   }
+  const ports={};
+  for(const [id,spec] of Object.entries(FACILITY_PORTS)){const site=siteRecords.find(s=>s.id===id);if(!site)continue;const gate=portWorld(spec,spec.road,site,point);ports[id]={position:gate.toArray(),outward:new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0),spec.yaw).toArray()};}
+  for(const [routeId,siteId] of [['r-complex-110','pad-110'],['r-jubilee','pad-251'],['r-31-service','pad-31'],['r-zenit-service','pad-45']]){const route=roads.find(r=>r.id===routeId),port=ports[siteId];if(!route||!port)continue;const gate=new THREE.Vector3(...port.position),out=new THREE.Vector3(...port.outward);route.points.splice(-1,1,map(gate.clone().addScaledVector(out,12)),map(gate));route.gateWorld=gate.toArray();route.gateHeight=gate.y;}
   const kaz=siteRecords.find(s=>s.id==='pad-3'),access=roads.find(r=>r.id==='r-site3-kaz-access');
   if(kaz&&access){
     const center=point(kaz.x,kaz.y,0);
@@ -49,6 +53,6 @@ export function connectedRoadData(data,point,siteRecords) {
     access.points=[access.points[0],map(gate.clone().add(new THREE.Vector3(-14,0,0))),map(gate)];
     access.gateWorld=gate.toArray();
   }
-  return {...data,routes:{...data.routes,road:roads,
+  return {...data,facilityPorts:ports,routes:{...data.routes,road:roads,
     rail:data.routes.rail.map(r=>({...r,points:r.points.map(p=>[...p])}))},junctions};
 }

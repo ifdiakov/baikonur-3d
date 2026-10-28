@@ -8,14 +8,15 @@ import {createSurfacePalette} from './surface-materials.js';
  * IMG_0998: bridge, piers, fixed fuelling mast and service galleries.
  * IMG_1004 / IMG_7999: service tower, open decks, sheet sides and rail bogies.
  * IMG_2893 / IMG_2894 / IMG_2906: trench lining, sump, rail deck and pipe trestle.
- * Local +Z is the rail approach; the flame channels open along ±X.
+ * Local +Z is the rail approach; ONE petal-shaped flame channel opens toward +X.
  * y=0 is ground level. The trench is genuinely below grade, down to y=-32.
  * Dimensions and schematic orientation are interpretative, not surveyed.
  */
+export const UKSS_YAW=-.56;
 export const UKSS_TRENCH = [
-  // Distance from launch axis, rim half-width, floor half-width, floor elevation.
-  [0,54,16,-32], [32,54,18,-32], [80,62,23,-27],
-  [150,80,35,-12], [215,96,48,0]
+ // One elongated petal, traced from the owner's overhead photograph.
+ [-64,2,1,-32],[-45,34,8,-32],[0,59,16,-32],[35,76,26,-31],
+ [70,79,35,-28],[110,65,30,-21],[160,45,22,-11],[215,23,12,-4],[280,1,.7,0]
 ];
 
 // Cut only the terrain and schematic overlays, leaving the real 3D trench visible.
@@ -33,18 +34,18 @@ export function maskUkssTerrain(material, origin, scale, enabled={value:1}) {
       '#include <project_vertex>\nvUkssWorld=(modelMatrix*vec4(transformed,1.0)).xyz;');
     const widthCode=UKSS_TRENCH.slice(1).map((s,i)=>{
       const a=UKSS_TRENCH[i];
-      return `${i?'else ':''}if(ax<=${s[0].toFixed(1)})hw=mix(${a[1].toFixed(1)},${s[1].toFixed(1)},clamp((ax-${a[0].toFixed(1)})/${(s[0]-a[0]).toFixed(1)},0.0,1.0));`;
+      return `${i?'else ':''}if(ax<=${s[0].toFixed(1)})hw=mix(${a[1].toFixed(1)},${s[1].toFixed(1)},clamp((ax-(${a[0].toFixed(1)}))/${(s[0]-a[0]).toFixed(1)},0.0,1.0));`;
     }).join('\n');
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
       '#include <common>\nvarying vec3 vUkssWorld;\nuniform vec3 ukssCutout;\nuniform float ukssCutoutEnabled;').replace('#include <clipping_planes_fragment>',
-      `#include <clipping_planes_fragment>\nvec2 up=(vUkssWorld.xz-ukssCutout.xy)/ukssCutout.z;\nfloat ax=abs(up.x);float hw=0.0;\n${widthCode}\nif(ukssCutoutEnabled>0.5&&ax<214.98&&abs(up.y)<hw-0.02)discard;`);
+      `#include <clipping_planes_fragment>\nvec2 up=(vUkssWorld.xz-ukssCutout.xy)/ukssCutout.z;\nup=mat2(0.84725511,-0.53118620,0.53118620,0.84725511)*up;float ax=up.x;float hw=0.0;\n${widthCode}\nif(ukssCutoutEnabled>0.5&&ax>-63.98&&ax<279.98&&abs(up.y)<hw-0.02)discard;`);
   };
-  material.customProgramCacheKey=()=> 'ukss-ground-cutout-v1.1';
+  material.customProgramCacheKey=()=> 'ukss-single-petal-v2';
   material.needsUpdate=true;
 }
 
 export function buildUkssPad(root) {
-  root.name='Пл. 250 — УКСС «Энергия» / реконструкция 1.0';
+  root.name='Пл. 250 — УКСС «Энергия» / один лепестковый газоотвод';root.rotation.y=UKSS_YAW;
   const colors={concrete:0xa8a59b,edge:0xc4bfb2,oldConcrete:0x77766c,
     steel:0x6c786d,green:0x6f7e59,dark:0x353e3a,rust:0x85513e,
     sheet:0x87928f,rail:0x454844,pipe:0xb3b5a9,gravel:0x969182,yellow:0xc1a04e,
@@ -54,6 +55,7 @@ export function buildUkssPad(root) {
     steel:'metal',green:'paint',dark:'metal',rust:'rust',sheet:'sheet',
     rail:'metal',pipe:'paint',yellow:'paint',white:'paint',red:'paint'
   },{water:{roughness:.38},glass:{roughness:.3}});
+  mats.concrete.side=THREE.DoubleSide;mats.oldConcrete.side=THREE.DoubleSide;
   const geometries={box:new THREE.BoxGeometry(1,1,1),rod:new THREE.CylinderGeometry(1,1,1,6)};
   const batches=new Map(),surfaces=new Map(),features={};let primitives=0;
   const p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(),matrix=new THREE.Matrix4(),up=new THREE.Vector3(0,1,0);
@@ -89,8 +91,8 @@ export function buildUkssPad(root) {
     }
   }
 
-  // Open concrete flame trench: two rising branches cross beneath the launch bridge.
-  for(const side of [-1,1])for(let i=0;i<UKSS_TRENCH.length-1;i++){
+  // One deep petal: broad rounded chamber and a long tapering outlet.
+  for(const side of [1])for(let i=0;i<UKSS_TRENCH.length-1;i++){
     const a=UKSS_TRENCH[i],b=UKSS_TRENCH[i+1],x0=side*a[0],x1=side*b[0];
     quad([x0,a[3],-a[2]],[x1,b[3],-b[2]],[x1,b[3],b[2]],[x0,a[3],a[2]],'oldConcrete','flame-floor');
     for(const bank of [-1,1]){
@@ -107,14 +109,14 @@ export function buildUkssPad(root) {
     }
   }
   // Recessed rectangular catch basins visible in IMG_2894 / IMG_1002.
-  for(const side of [-1,1]){
+  for(const side of [1]){
     box(side*48,-30.32,0,20,.1,26,'water','sumps');
     for(const z of [-13.5,13.5])box(side*48,-30.12,z,22,.5,.7,'edge','sumps');
     for(const x of [-11,11])box(side*48+x,-30.12,0,.7,.5,27,'edge','sumps');
   }
-  // Curved central flame deflector, open to both trench branches.
+  // Curved central deflector redirects the exhaust into the single outlet.
   for(let i=0;i<12;i++){
-    const x0=-15+i*2.5,x1=x0+2.5,y0=-30+14*Math.cos(x0/15*Math.PI/2),y1=-30+14*Math.cos(x1/15*Math.PI/2);
+    const x0=-20+i*3.75,x1=x0+3.75,y0=-32+20*(1-Math.sin((x0+20)/45*Math.PI/2)),y1=-32+20*(1-Math.sin((x1+20)/45*Math.PI/2));
     quad([x0,y0,-12],[x1,y1,-12],[x1,y1,12],[x0,y0,12],'dark','flame-deflector');
   }
 
@@ -274,11 +276,11 @@ export function buildUkssPad(root) {
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(f.vertices,3));g.computeVertexNormals();
     const mesh=new THREE.Mesh(g,mats[f.mat]);mesh.name='УКСС / '+f.key;mesh.userData.museumComponent=f.key;root.add(mesh);
   }
-  const metadata={version:'1.0',site:'250',name:'Универсальный комплекс стенд-старт «Энергия»',
+  const metadata={version:'2.0-single-petal',site:'250',name:'Универсальный комплекс стенд-старт «Энергия»',
     archiveFolder:'1e8kuX4iVjO6N5nHknJ8zKJClJCpLv7Ku',referenceImageCount:16,
     configuration:'empty launch position; mobile service tower retracted along approach rails',
     positionBasis:'existing historical schematic; not georeferenced',dimensionsVerified:false,
-    trench:{axis:'X',belowGrade:true,depth:32,stations:UKSS_TRENCH,branches:2},
+    trench:{axis:'X',belowGrade:true,depth:32,stations:UKSS_TRENCH,branches:1,outline:'one broad chamber tapering into a southeast outlet',yaw:UKSS_YAW},
     bridge:{piers:6,openExhaustBay:true},serviceTower:{parkedZ:gz,decks,openDecks:true},
     lightScreens:4,lightningTowers:2,featureCounts:features,primitiveCount:primitives,renderMeshCount:root.children.length,
     references:['IMG_3883.WEBP','IMG_0998.WEBP','IMG_1004.JPG','IMG_7999.jpeg','IMG_2893.jpeg','IMG_2894.jpeg','IMG_2906.jpeg']};

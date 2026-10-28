@@ -6,7 +6,7 @@ export const ARCHIVE_MAP=[
  {id:'pad-200',kind:'proton',title:'Два старта «Протона» · пл.200',scale:.20,yaw:0,satellite:'1txB3LDU8wx-fP_hJngeWH3nIGvNlE0Zb',folder:'199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd',orientation:'image-traced',reviewImage:[1300,1000]},
  {id:'pad-92',kind:'proton-halls',title:'МИК «Протон» · пл.92',scale:.14,yaw:0,satellite:'1eVJZ3hWXMuNqe-zMPDXJzRMUUfNS5KQs',orientation:'image-traced',reviewImage:[1300,1000]},
  {id:'pad-95',kind:'settlement',title:'Городок · пл.95',scale:.14,yaw:0,satellite:'1kYur_BaNa6xrjT-iuhdipTElHMJPsTNR',orientation:'image-traced',reviewImage:[1400,1000]},
- {id:'pad-110',kind:'energia',title:'Два старта «Энергии» · пл.110',scale:.22,yaw:0,satellite:'1eYjF4gq89TBHBkKu_1r8VZt9xRU5EI8F',folder:'1G7BvhrGYZrnXHjuHsDiGsnVBxi7jrnn7',orientation:'image-traced',reviewImage:[1125,1000]},
+ {id:'pad-110',kind:'energia',title:'Два старта «Энергии» · пл.110',scale:.33,yaw:0,satellite:'1eYjF4gq89TBHBkKu_1r8VZt9xRU5EI8F',folder:'1G7BvhrGYZrnXHjuHsDiGsnVBxi7jrnn7',orientation:'image-traced',reviewImage:[1125,1000]},
  {id:'pad-251',kind:'yubileiny',title:'Аэродром Юбилейный',scale:.28,yaw:1.948,satellite:'19t1sFdi7uFk5tAe7gQ5AAYEUjvyTnHIE',folder:'15WuQR5kx9kWrsKp-DORaRxWapXQolNPl',orientation:'image-traced',axis:'WSW-ENE'},
  {id:'pad-31',kind:'soyuz',title:'Стартовый комплекс «Восток» · пл.31',scale:.28,yaw:0,folder:'17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII',orientation:'not-verified-no-overhead',photo:'1zSC1DyLBfQotgBUz5G8gKS1yrfcly4LO'},
  {id:'pad-45',kind:'zenit',title:'СК «Зенит» / «Байтерек» · пл.45',scale:.28,yaw:0,folder:'1UD2cFm-qIJjWK6CcjF7V7zGnjVpS5H3i',orientation:'not-verified-no-overhead',photo:'1H4sLmBqg1EbUZ0jWRNFC72T0FtQ0X7lp'},

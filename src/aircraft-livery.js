@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js';
 
 export const AIRCRAFT_APPEARANCE_VERSION='alrosa-realistic-v1';
-export const AIRCRAFT_SCALE=.55;
+export const AIRCRAFT_SCALE=.28;
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const SOURCES=Object.freeze([
  'https://aero.alrosa.ru/airline/our-fleet/',
@@ -35,6 +35,7 @@ function bodySkin(){
  x.strokeStyle='rgba(48,67,80,.105)';x.lineWidth=.6;
  for(let z=-15;z<18;z+=2.15){const py=(20-z)/40*c.height;x.beginPath();x.moveTo(0,py);x.lineTo(c.width,py);x.stroke();}
  for(let u=64;u<c.width;u+=128){x.beginPath();x.moveTo(u,0);x.lineTo(u,c.height);x.stroke();}
+ x.fillStyle='rgba(48,67,80,.13)';for(let py=32;py<1024;py+=55)for(let u=16;u<2048;u+=22)x.fillRect(u,py,1.2,1.2);
  x.strokeStyle='rgba(30,44,63,.23)';x.lineWidth=1.3;const nose=(20-17.6)/40*c.height;x.beginPath();x.moveTo(0,nose);x.lineTo(c.width,nose);x.stroke();
  return texture(c);
 }
@@ -226,10 +227,10 @@ export function buildAlrosaAircraft(parent){
  for(const [mat,geometries]of bins){const merged=mergeGeometries(geometries,false);if(!merged)throw Error('Aircraft detail batch failed');add(merged,mat,V(),staticParts,'Объединённые детали планера');geometries.forEach(g=>g.dispose());}
  let night=true;
  function setEvening(value){night=!!value;cabin.emissiveIntensity=night?1.15:.09;cockpit.emissiveIntensity=night?.32:.035;cabinGlow.setStrength(night?.18:.012);}
- function setGear(progress){gear.visible=progress>.002;for(const leg of legs){leg.root.rotation.set(leg.nose?-(1-progress)*1.44:0,0,leg.nose?0:-leg.side*(1-progress)*1.34);}for(const d of gearDoors){d.root.rotation.z=d.side*Math.sin(progress*Math.PI)*1.1;}}
+ function setGear(progress,time=null){gear.visible=progress>.002;for(const leg of legs){leg.root.rotation.set(leg.nose?-(1-progress)*1.44:0,0,leg.nose?0:-leg.side*(1-progress)*1.34);}for(const d of gearDoors){d.root.rotation.z=d.side*(time===null?Math.sin(progress*Math.PI):THREE.MathUtils.smoothstep(time,73,78)*(1-THREE.MathUtils.smoothstep(time,94,98)))*1.3;}}
  setEvening(true);setGear(0);
- return {model,gear,nav,strobes,beacon,landing,setEvening,setGear,updateDetails(time){fanGroups.forEach((g,i)=>g.rotation.z=time*(12+i*.15));},
-  stats:()=>({version:AIRCRAFT_APPEARANCE_VERSION,livery:'АЛРОСА',night,cabinWindows:60,cockpitPanels:6,fuselageTitles:2,tailEmblems:2,engineCount:2,fanBladesPerEngine:18,
+ return {model,gear,nav,strobes,beacon,landing,setEvening,setGear,updateGear:setGear,updateDetails(time){fanGroups.forEach((g,i)=>g.rotation.z=time*(12+i*.15));},
+  stats:()=>({skin:'panel-seams-and-rivets',litWindows:60,cockpitLit:cockpit.emissiveIntensity>0,gearVisible:gear.visible,gearLegRotations:legs.map(l=>l.root.rotation.toArray().slice(0,3)),gearDoorAngles:gearDoors.map(d=>d.root.rotation.z),version:AIRCRAFT_APPEARANCE_VERSION,livery:'АЛРОСА',night,cabinWindows:60,cockpitPanels:6,fuselageTitles:2,tailEmblems:2,engineCount:2,fanBladesPerEngine:18,
    cabinLightIntensity:cabin.emissiveIntensity,cockpitLightIntensity:cockpit.emissiveIntensity,windowSurfaceOffset:.036,pointLights:0,sourceUrls:[...SOURCES],
    airframe:'737-family museum interpretation',wingProfile:'swept-airfoil',gearLegs:legs.length,gearWheelCount:6,bodyLength:40,wingspan:36.16,scale:AIRCRAFT_SCALE})};
 }
