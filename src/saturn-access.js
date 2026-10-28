@@ -3,8 +3,8 @@ import * as THREE from 'three';
 // Museum coordinates: east = +X, north = -Z. Dimensions are illustrative.
 // The entry corner was identified by RocketTrip, not inferred from a map.
 export const SATURN_ACCESS = Object.freeze({
-  revision: 'northwest-v1', routeId: 'r-site23-saturn-access',
-  mainRoadId: 'r-nw-center', scale: .525, elevation: 97.45,
+  revision: 'northwest-hill20-v2', routeId: 'r-site23-saturn-access',
+  mainRoadId: 'r-nw-center', scale: .525, elevation: 17.45, verticalRaise: 20,
   gate: Object.freeze({x: -96, y: 7.59, z: -79}),
   internalJoin: Object.freeze({x: -92, y: 7.59, z: -29})
 });
@@ -13,17 +13,23 @@ const smooth = (a,b,v) => {
   return t*t*(3-2*t);
 };
 
-export function saturnTerrainHeight(x,z) {
-  const radius=Math.hypot(x/340,z/460);
-  const fade=1-smooth(.28,1.18,radius);
-  const raw=-190.476+198.2*fade+
-    1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+
-    (Math.sin(x*.085+z*.035)+Math.sin(x*.038-z*.076))*.22*fade-.22;
-  // The roads and buildings stand on a level summit. The old sine ripples
-  // protruded through their paving. The outer mountain stays unchanged.
-  const terrace=Math.hypot(x/155,z/125);
-  return THREE.MathUtils.lerp(7.25,raw,smooth(.95,1.35,terrace));
+export function saturnTerrainSample(x,z) {
+  // Broad, slightly asymmetric foothills; no circular cone or raised slab.
+  // The zero-slope outer edge fades into the existing steppe at its old height.
+  const angle=Math.atan2(z,x);
+  const outline=1+.045*Math.sin(3*angle+.45)+.025*Math.cos(5*angle-.8);
+  const cos=Math.cos(angle),sin=Math.sin(angle);
+  const inner=1/Math.hypot(cos/155,sin/125);
+  const outer=1.16*outline/Math.hypot(cos/330,sin/385);
+  const t=THREE.MathUtils.clamp((Math.hypot(x,z)-inner)/(outer-inner),0,1);
+  const fade=1-smooth(0,1,t);
+  const base=-SATURN_ACCESS.verticalRaise/SATURN_ACCESS.scale-.22;
+  const relief=(Math.sin(x*.014+z*.009)+.55*Math.sin(x*.008-z*.017))*.65*fade*(1-fade);
+  // Retain level ground beneath the antennas, buildings and northwest gate.
+  const height=base+(7.25-base)*fade+relief;
+  return {height,opacity:1-smooth(.86,1,t)};
 }
+export const saturnTerrainHeight=(x,z)=>saturnTerrainSample(x,z).height;
 
 function curve(points) {
   return new THREE.CatmullRomCurve3(points,false,'centripetal',.3);

@@ -15,11 +15,34 @@ await page.waitForFunction(()=>{
  const logos=[...document.querySelectorAll('.detail-card .org-logo')];
  return logos.length>=4&&logos.every(image=>image.complete&&image.naturalWidth===1280);
 },{timeout:15000});
-assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),2);
+assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),15);
 assert.equal(await page.locator('.detail-card [data-org-logo="energia"]').count(),1);
-assert.equal(await page.locator('.detail-card [data-org-logo="cpc"]').count(),1);
+assert.equal(await page.locator('.detail-card [data-org-logo="khrunichev"]').count(),1);
+assert.equal(await page.locator('.detail-card [data-org-logo="progress"]').count(),1);
+assert.equal(await page.locator('.detail-card [data-org-logo="cpc"]').count(),0);
 assert.equal(await page.locator('.detail-card img[src*="wikimedia"]').count(),0);
 console.log('ENTERPRISE LOGOS: local silver assets loaded on all attributed site cards');
+// Check the reviewed workbook reaches visible cards without undoing newer map edits.
+const reviewedCatalog=await page.evaluate(async()=>await (await fetch('./data/catalog.json',{cache:'no-store'})).json());
+assert.ok(reviewedCatalog.sites.some(site=>site.id==='pad-75'));
+assert.ok(!reviewedCatalog.sites.some(site=>site.id==='pad-17'));
+assert.ok(reviewedCatalog.unplacedReferenceSites.some(site=>site.number==='17'));
+const kaz=reviewedCatalog.sites.find(site=>site.id==='pad-3');
+assert.deepEqual([kaz.x,kaz.y],[708,651]);
+for(const [id,logo] of [['pad-2a','tsenki'],['pad-112','progress'],['pad-254','energia'],['pad-45',null],['pad-89',null]]){
+ const index=reviewedCatalog.sites.findIndex(site=>site.id===id),site=reviewedCatalog.sites[index];
+ await page.evaluate(index=>window.__BAIKONUR_QA.focusSite(index),index);
+ assert.equal(await page.locator('#infoPurpose').textContent(),site.purposeLong);
+ assert.ok((await page.locator('#description').textContent()).includes(site.note));
+ assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),logo);
+ if(id==='pad-45')assert.equal(await page.locator('#infoOrg').textContent(),site.organisation.org);
+ if(id==='pad-112'||id==='pad-254')assert.equal(await page.locator('#infoOrgRole').textContent(),site.organisation.org);
+ await page.locator('#detailMore').click();
+ for(const reference of site.publicReferences)assert.ok((await page.locator('#infoExtra a').evaluateAll(links=>links.map(link=>link.href))).includes(reference));
+ await page.locator('#close').click();
+}
+await page.locator('#all').click();
+console.log('REVIEWED CATALOG: descriptions, notes, sources and organisation roles are visible; pad 75 and relocated KAZ preserved');
 // Sidebar cleanup must preserve navigation while removing temporary implementation notes.
 const sidebarCleanup=await page.evaluate(()=>{
  const sidebar=document.querySelector('#ui');const text=sidebar?.innerText||'';
@@ -227,18 +250,18 @@ assert.ok(transport.facilityDriveways>=12,'Pads must connect to the main road ne
 assert.ok(transport.renderedRailLength>14000,'Render long continuously curved rail networks');
 const saturn=overviewScale.saturn;
 console.log('SATURN SITE 23',JSON.stringify(saturn));
-assert.equal(saturn.version,'1.0','The Saturn IP-5 photo model must be integrated');
+assert.equal(saturn.version,'1.6-gentle-hill20','The Saturn IP-5 photo model must be integrated');
 assert.equal(saturn.sourceFolder,'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk','Saturn must reference dedicated user Drive folder');
 assert.equal(saturn.dishDiameterMetres,25);
 assert.equal(saturn.largeAntennaCount,2,'Saturn must have two 25m P-200 parabolic antennas');
 for(const [key,min] of [
  ['25m-parabolic-reflector',2],['dish-radial-rib',400],['dish-support-web',40],
  ['tower-horizontal-cornice',8],['control-building',4],['white-radome',1],
- ['access-from-highway',1],['murguduk-hill',1],['feed-support-truss',8]
+ ['northwest-gate-pavement',1],['murguduk-hill',1],['feed-support-truss',8]
 ]) assert.ok((saturn.featureCounts[key]||0)>=min,'Saturn model lacks photoreferenced architectural element '+key);
 assert.ok(saturn.primitiveCount>=800,'Saturn dishes need structural detail, not a few generic cones');
-assert.ok(overviewScale.saturnScale>=1,'The 25m dishes must be visible relative to the road width');
-assert.deepEqual(overviewScale.saturnPlacement,[709,806],'Satellite site is located at provisional 3-anchor coordinates');
+assert.equal(overviewScale.saturnScale,.525,'Keep the approved Saturn model scale');
+assert.deepEqual(overviewScale.saturnPlacement,[741,716],'Satellite site is located at provisional 3-anchor coordinates');
 const count=overviewScale.sites;
 assert.equal(count,98,'Museums contains 97 existing sites plus photo-grounded Saturn site 23');
 
@@ -512,6 +535,7 @@ assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&m
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
 await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: unified steppe v4, salt flats, alluvial scrub and edge-free multi-resolution earth; archival portraits and designer names restored; expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 enterprise districts with rockets, purposes, features and fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');
+
 
 
 

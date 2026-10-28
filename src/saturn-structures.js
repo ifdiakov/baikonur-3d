@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261028-hill20';
 
 /**
  * Baikonur Site 23: IP-5 Saturn-MS measuring station — museum reconstruction.
@@ -78,26 +79,16 @@ export function buildSaturnIP5(root,terrain={}) {
     mesh.position.set(x,y,z);return add(mesh,label,parent);
   }
   function groundPatch(){
-    // A broad 100-world-unit Murguduk mountain, fading into the real procedural
-    // steppe, not a big raised rectangular slab.
+    // A low, broad hill uses the same height field as its graded access road.
     const N=100,extent=1000,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
-      const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent,
-        radius=Math.sqrt((xx/340)**2+(zz/460)**2),
-        r=(Math.sin(xx*.085+zz*.035)+Math.sin(xx*.038-zz*.076))*.22,
-        t=Math.max(0,Math.min(1,(radius-.28)/.90)),
-        fade=1-t*t*(3-2*t),
-        height=-190.476+(198.2*fade)+1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+r*fade;
-      vertices.push(xx,height-.22,zz);
+      const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent;
+      const {height,opacity}=saturnTerrainSample(xx,zz);
+      vertices.push(xx,height,zz);
       const world=root.localToWorld(new THREE.Vector3(xx,0,zz));
       uv.push(.5+world.x/(terrain.terrainWidth||4420),.5-world.z/(terrain.terrainHeight||3553));
-      const patina=(Math.sin(xx*.055+zz*.03)*.055+Math.cos(xx*.012-zz*.083)*.04+
-        Math.sin(xx*.21+zz*.34)*.012)*fade;
-      const color=new THREE.Color(0x9d8e76).multiplyScalar(1+patina);
       // Feather alpha from the raised center into the exact underlying map.
-      const edgeAlpha=Math.max(0,Math.min(1,(1.12-radius)/.28));
-      const alpha=edgeAlpha*edgeAlpha*(3-2*edgeAlpha);
-      colors.push(1,1,1,alpha);
+      colors.push(1,1,1,opacity);
       if(x<N&&z<N){
         const a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;
         indices.push(a,c,b,b,c,d);
@@ -118,7 +109,7 @@ export function buildSaturnIP5(root,terrain={}) {
     // The shared satellite overlay uses renderOrder=2. Render the relief AFTER
     // that layer: otherwise the overlay visually flattens and hides the hill.
     hill.renderOrder=3;
-    hill.userData.terrainElevationWorld=100;
+    hill.userData.terrainElevationWorld=SATURN_ACCESS.verticalRaise;
   }
   groundPatch();
 

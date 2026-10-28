@@ -12,7 +12,10 @@ const logos = [
 ];
 
 export function organisationLogo(organisation) {
-  const match = logos.find(([, , pattern]) => pattern.test(organisation || ''));
+  // Several enterprises may be listed with different roles. Brand the first
+  // named enterprise while keeping the complete attribution in the card text.
+  const match = logos.map(logo => ({logo, index: (organisation || '').search(logo[2])}))
+    .filter(item => item.index >= 0).sort((a, b) => a.index - b.index)[0]?.logo;
   return match ? {id: match[0], name: match[1], src: `./assets/org-logos/${match[0]}.png`} : null;
 }
 
@@ -22,7 +25,7 @@ export function setOrganisationBrand(container, organisation, fallback = organis
   container.classList.toggle('has-org-logo', Boolean(logo));
   container.removeAttribute('data-org-logo');
   container.title = organisation || fallback || '';
-  if (!logo) { container.textContent = fallback || ''; return false; }
+  if (!logo) { container.textContent = organisation || fallback || ''; return false; }
   container.dataset.orgLogo = logo.id;
   const image = document.createElement('img');
   image.className = 'org-logo';
@@ -34,9 +37,10 @@ export function setOrganisationBrand(container, organisation, fallback = organis
     if (!container.contains(image)) return;
     container.classList.remove('has-org-logo');
     container.removeAttribute('data-org-logo');
-    container.textContent = fallback || logo.name;
+    container.textContent = organisation || fallback || logo.name;
   }, {once: true});
   image.src = logo.src;
   container.append(image);
   return true;
 }
+
