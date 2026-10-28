@@ -575,7 +575,11 @@ const kazIndex=objects.findIndex(o=>o.record.id==='pad-3');
 if(kazIndex>=0){
  const unit=objects[kazIndex],g=unit.g;g.clear();
  for(let n=clickable.length-1;n>=0;n--)if(clickable[n].userData.idx===kazIndex)clickable.splice(n,1);
- // Main north-south axis follows the adjacent cosmodrome arterial (map x≈680).\n // Elongate the plant parallel to the road, without widening into it.\n g.rotation.y=0;\n g.scale.set(.29,.32,.48);\n const km={
+ // Main north-south axis follows the adjacent cosmodrome arterial (map x≈680).
+ // Elongate the plant parallel to the road, without widening into it.
+ g.rotation.y=0;
+ g.scale.set(.29,.32,.48);
+ const km={
   plaster:new THREE.MeshStandardMaterial({color:0xd6d9d2,roughness:.91}),
   pale:new THREE.MeshStandardMaterial({color:0xbabeb7,roughness:.95}),
   concrete:new THREE.MeshStandardMaterial({color:0x999d97,roughness:.97}),
