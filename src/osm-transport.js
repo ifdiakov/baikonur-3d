@@ -1,6 +1,7 @@
 import * as THREE from 'three';
+import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261028-museum4-osm-live-v2';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261029-all-silos-v2';
 import {distancePath} from './traffic-paths.js?v=20261028-museum4-osm-live-v2';
 import {buildSaturnNorthwestAccess,SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261028-museum4-osm-live-v2';
 
@@ -203,7 +204,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-1':16})){
   const s=siteRecords.find(s=>s.id===id);if(s)masks.set(id,{center:point(s.x,s.y,0),radius});
  }
- function masked(p,tags,margin=0){for(const m of masks.values())if((p.x-m.center.x)**2+(p.z-m.center.z)**2<(m.radius+margin)**2)return true;return false;}
+ const hotelSite=siteRecords.find(s=>s.id==='pad-75');if(hotelSite)masks.set('pad-75',{center:point(hotelSite.x,hotelSite.y,0),rectangle:{halfX:10.8,minZ:-3.4,maxZ:12.4}});
+ // Reserve the same compact museum footprint as each detailed shaft model.
+ for(const id of SILO_SITE_IDS){const site=siteRecords.find(s=>s.id===id);if(site)masks.set(id,{center:point(site.x,site.y,0),radius:10.5});}
+ function masked(p,tags,margin=0){for(const m of masks.values()){const x=p.x-m.center.x,z=p.z-m.center.z;if(m.rectangle){if(['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;const r=m.rectangle;if(Math.abs(x)<r.halfX+margin&&z>r.minZ-margin&&z<r.maxZ+margin)return true;}else if(x*x+z*z<(m.radius+margin)**2)return true;}return false;}
  function drawRoad(points,width,tags={},marked=false,force=false,wayId=null,renderedRuns=null){
   if(points.length<2)return false;const samples=conformPath(points,width),path=distancePath(samples);if(path.length<.001)return false;
   const dirt=tags.highway==='track'||['unpaved','ground','dirt','sand'].includes(tags.surface),pavement=dirt?unpaved:asphalt;
@@ -275,7 +279,15 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).applyAxisAngle(V(0,1,0),spec.yaw),target=gate.clone().addScaledVector(out,30);
   const near=nearestSegment(roadGraph,target,e=>e.tags.highway!=='track'&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));if(!near||near.distance>300**2)continue;
   const tangent=near.edge.b.position.clone().sub(near.edge.a.position).normalize();if(tangent.dot(gate.clone().sub(near.point))<0)tangent.negate();const reach=Math.min(30,near.point.distanceTo(gate)*.35);
-  const curve=new THREE.CubicBezierCurve3(near.point,near.point.clone().addScaledVector(tangent,reach),gate.clone().addScaledVector(out,Math.min(20,reach)),gate),points=sampleCurve(curve);
+  const curve=new THREE.CubicBezierCurve3(near.point,near.point.clone().addScaledVector(tangent,reach),gate.clone().addScaledVector(out,Math.min(20,reach)),gate);let points=sampleCurve(curve);
+  if(spec.silo){
+   // Keep the entry outside the fence, then descend smoothly to its front gate.
+   const center=point(site.x,site.y,0),radius=13,angle=Math.atan2(near.point.x-center.x,near.point.z-center.z),endAngle=Math.atan2(out.x,out.z);let sweep=endAngle-angle;
+   while(sweep>Math.PI)sweep-=Math.PI*2;while(sweep<-Math.PI)sweep+=Math.PI*2;
+   const via=[near.point.clone()];for(let j=0;j<=12;j++){const a=angle+sweep*j/12;via.push(V(center.x+Math.sin(a)*radius,near.point.y,center.z+Math.cos(a)*radius));}
+   via.push(gate.clone().addScaledVector(out,2.5),gate);points=sampleCurve(new THREE.CatmullRomCurve3(via,false,'centripetal'));
+   const path=distancePath(points);let length=0;points.forEach((p,j)=>{if(j)length+=p.clone().setY(0).distanceTo(points[j-1].clone().setY(0));const t=THREE.MathUtils.clamp(length/path.length,0,1);p.y=THREE.MathUtils.lerp(near.point.y,gate.y,t*t*(3-2*t));});points.at(-1).copy(gate);
+  }
   drawRoad(points,1.8,{},false,true);roadPaths.push({id:'osm-access-'+id,label:site.titleShort||site.name,points,width:1.8,source:'museum-model-port',osmWayIds:[near.edge.wayId]});accessReports.push({id,sourceWayId:near.edge.wayId,roadGap:points.at(-1).distanceTo(gate),gate:gate.toArray()});connections++;
   for(const local of spec.rail||[]){
    const headCenter=portWorld(spec,local,site,point),end=headCenter.clone().add(V(0,-RAIL_PROFILE.headY,0)),rr=nearestSegment(railGraph,end.clone().addScaledVector(out,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(!rr||rr.distance>250**2)continue;

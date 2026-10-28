@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import * as THREE from 'three';
+import {buildSevenWinds,SEVEN_WINDS_REFERENCE} from '../src/seven-winds.js';
+import {ARCHIVE_MAP} from '../src/archive-manifest.js';
+import {FACILITY_PORTS} from '../src/facility-ports.js';
+const root=new THREE.Group(),result=buildSevenWinds(root),entry=ARCHIVE_MAP.find(s=>s.id==='pad-75');
+assert.equal(entry.kind,'seven-winds');assert.equal(entry.scale,SEVEN_WINDS_REFERENCE.scale);assert.equal(entry.yaw,SEVEN_WINDS_REFERENCE.yaw);
+assert.equal(root.userData.sevenWinds.floors,4);assert.equal(result.features['window-glazing'],128);assert.equal(result.features['gazebo-floor'],2);assert.equal(result.features['gazebo-post'],16);
+assert.equal(result.features['slanted-canopy-column'],2);assert.equal(result.features['balcony-slab'],8);
+assert.equal(FACILITY_PORTS['pad-75'].yaw,entry.yaw);assert.deepEqual(FACILITY_PORTS['pad-75'].road,[-36,.085,20]);
+let draws=0,triangles=0;root.traverse(o=>{if(!o.isMesh)return;draws++;triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3*(o.count||1);for(const v of o.geometry.attributes.position.array)assert(Number.isFinite(v));});
+let roofFaces=0;root.traverse(o=>{if(!o.isMesh||o.material.color?.getHex()!==0x544044)return;const n=o.geometry.attributes.normal;for(let i=0;i<n.count;i++){if(Math.hypot(n.getX(i),n.getY(i),n.getZ(i))<.1)continue;assert(n.getY(i)>.2,'Gazebo roof must face upward');roofFaces++;}});assert(roofFaces>=48);
+assert(draws<40,'Photo details must remain batched');assert(triangles<150000);
+root.userData.setHotelEvening(false);root.traverse(o=>{if(o.material?.emissive?.getHex())assert.equal(o.material.emissiveIntensity,0);});root.userData.setHotelEvening(true);
+console.log('SEVEN_WINDS_GEOMETRY_PASS',JSON.stringify({draws,triangles,floors:4,gazebos:2}));

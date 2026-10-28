@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork,buildOsmGraph} from '../src/osm-transport.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
+import {ARCHIVE_MAP} from '../src/archive-manifest.js';
 import {SATURN_ACCESS,saturnTerrainHeight} from '../src/saturn-access.js';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
@@ -85,9 +86,12 @@ layers.roads.traverse(m=>{if(m.name!=='OSM · разметка')return;const p=m
 assert(paintVertices>1000);
 const plan=buildRoadVehicleRoutes(transport.roadPaths());assert.equal(plan.source,'OpenStreetMap');assert.equal(plan.routes.length,4);
 for(const route of plan.routes){assert(route.length>500);assert(route.osmWayIds.length>3);assert(route.nodeIds.length>20);for(const id of route.osmWayIds)assert(!stats.cityRoadSimplification.hiddenWayIds.includes(id),'An active traffic road was hidden');for(let t=0;t<1000;t+=7.3){const pose=roadVehiclePose(route,t,{phase:.2,direction:1,speed:12});assert(pose.position.toArray().every(Number.isFinite));assert(Math.abs(pose.tangent.length()-1)<1e-6);assert(Math.abs(pose.laneOffset)+.9*route.vehicleScale<route.widthAt(pose.distance)/2,'car does not fit inside the narrowed road');}}
+const hotelSpec=ARCHIVE_MAP.find(s=>s.id==='pad-75'),hotelSite=geography.sites.find(s=>s.id==='pad-75'),hotelOrigin=point(hotelSite.x,hotelSite.y),up=new THREE.Vector3(0,1,0);
 for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route.length-2;d+=2){
  const pose=roadVehiclePose(route,0,{phase:d/route.length,direction,speed:12}),p=pose.position,heights=pavementHeights(p.x,p.z);
  assert(heights.some(y=>Math.abs(p.y-y)<.08),'A moving car leaves the rendered OSM pavement');
+ const hotelLocal=p.clone().sub(hotelOrigin).applyAxisAngle(up,-hotelSpec.yaw).divideScalar(hotelSpec.scale);
+ assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }
 const train=transport.trainPath();assert.equal(train.source,'OpenStreetMap');assert(train.path.length>500);assert(train.osmWayIds.length>5);
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}

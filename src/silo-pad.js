@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {archiveKit} from './archive-kit.js';
 
 // Exterior museum interpretation of the owner's R-36M references, not a surveyed
 // reconstruction or a working launch mechanism. Only the visible upper cavity is modelled.
-export const SILO_VERSION='r36m-museum-silo-v1';
+export const SILO_VERSION='museum-silos-v2';
 export const SILO_REFERENCE=Object.freeze({
  sources:['https://rvsn.ruzhany.info/kbu_002_03_2.html','https://habr.com/ru/articles/87341/'],
  interpretation:'Photo-guided exterior; layout, lid animation and white vapour are museum effects.',
@@ -60,8 +61,8 @@ function createVapour(root){
  return {points,update,count};
 }
 
-export function buildSiloPad(root){
- const k=archiveKit(root);root.name='Площадка 109 · шахтная пусковая установка';
+export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пусковая установка · пл.'+siteId.slice(4)}={}){
+ const k=archiveKit(root);root.name=title;
  k.mat.green.color.setHex(0x50664a);k.mat.concrete.color.setHex(0xaaa89a);k.mat.dark.color.setHex(0x242b28);
  // Concrete apron has a real central opening; the map terrain uses the same void.
  const apron=clippedShape(24,25,2);const hole=new THREE.Path();hole.absarc(0,0,3.2,0,Math.PI*2,true);apron.holes.push(hole);
@@ -118,7 +119,7 @@ export function buildSiloPad(root){
  }
  for(const x of [-4,4])k.box(.28,2.8,.28,x,1.4,25,'concrete','gate-post');
  for(const side of [-1,1]){k.box(3.8,1.3,.09,side*5.8,1.0,25,'green','folded-gate');k.box(.24,3.2,.24,side*8,1.6,21,'steel','site-light-pole');k.box(.8,.17,.45,side*8,3.2,21,'white','site-lamp');}
- k.cutouts.push({x:0,z:0,rx:3.24,rz:3.24,shape:'ellipse'});
+ k.cutouts.push({x:0,z:0,rx:3.24,rz:3.24,shape:'ellipse',compactCircle:true});
  const features=k.finish(),vapour=createVapour(root),localCamera=V(),localTarget=V(),a=V(),b=V(),direction=V(),up=V(0,1,0);
  let progress=0,wanted=false,lastTime=null,distance=Infinity,aimDistance=Infinity,vapourAmount=0;
  function pose(){
@@ -129,19 +130,46 @@ export function buildSiloPad(root){
    s.piston.position.copy(a).lerp(b,.76);s.piston.quaternion.copy(q);s.piston.scale.y=length*.48;
   }
  }
- const api={
+ const api={siteId,
   update(now,camera,target){
    root.updateWorldMatrix(true,false);localCamera.copy(camera.position);root.worldToLocal(localCamera);localTarget.copy(target);root.worldToLocal(localTarget);
    distance=localCamera.distanceTo(V(0,.8,0));aimDistance=Math.hypot(localTarget.x,localTarget.z);
    const shown=visible(root),dt=lastTime===null?0:THREE.MathUtils.clamp((now-lastTime)/1000,0,.12);lastTime=now;
+   const previous=progress;
    if(!shown){wanted=false;progress=0;}else if(!wanted&&distance<SILO_REFERENCE.openDistance&&aimDistance<12)wanted=true;else if(wanted&&(distance>SILO_REFERENCE.closeDistance||aimDistance>18))wanted=false;
-   const step=dt/SILO_REFERENCE.openSeconds;progress=THREE.MathUtils.clamp(progress+(wanted?step:-step),0,1);pose();
+   const step=dt/SILO_REFERENCE.openSeconds;progress=THREE.MathUtils.clamp(progress+(wanted?step:-step),0,1);
+   if(detail.visible&&distance>300)detail.visible=false;else if(!detail.visible&&distance<260)detail.visible=true;proxy.visible=!detail.visible;
+   if(progress!==previous)pose();
    vapourAmount=shown?smooth((progress-.12)/.60):0;vapour.update(now/1000,vapourAmount);
   },
   inspect(view,camera,controls){root.updateWorldMatrix(true,false);const near=view==='close';controls.target.copy(root.localToWorld(V(0,near?.8:1,0)));camera.position.copy(root.localToWorld(near?V(9,19,18):V(66,74,82)));controls.update();},
-  stats(){return {version:SILO_VERSION,siteId:SILO_REFERENCE.siteId,progress,open:wanted,state:progress===0?'closed':progress===1?'open':wanted?'opening':'closing',lidAngleDeg:108*smooth(progress),cameraDistance:distance,aimDistance,steamVisible:vapour.points.visible,steamParticles:vapour.points.visible?vapour.count:0,noseTipY:.70,rimY:.87,openingRadius:3.2,visible:visible(root),features:{...features.features,...lidFeatures.features}};}
+  stats(){return {version:SILO_VERSION,siteId,detailVisible:detail.visible,progress,open:wanted,state:progress===0?'closed':progress===1?'open':wanted?'opening':'closing',lidAngleDeg:108*smooth(progress),cameraDistance:distance,aimDistance,steamVisible:vapour.points.visible,steamParticles:vapour.points.visible?vapour.count:0,noseTipY:.70,rimY:.87,openingRadius:3.2,visible:visible(root),features:{...features.features,...lidFeatures.features}};}
  };
- pose();controllers.set(root,api);root.userData.siloExhibit={version:SILO_VERSION,reference:SILO_REFERENCE};
+ const detail=new THREE.Group();detail.name='ШПУ · подробная модель';for(const child of [...root.children])detail.add(child);root.add(detail);shareGeometry(detail);
+ const proxy=createFarSilo();root.add(proxy);detail.visible=false;proxy.visible=true;
+ pose();controllers.set(root,api);root.userData.siloExhibit={version:SILO_VERSION,siteId,reference:SILO_REFERENCE};
  return {...features,meshCount:features.meshCount+lidFeatures.meshCount+9,primitiveCount:features.primitiveCount+lidFeatures.primitiveCount,features:{...features.features,...lidFeatures.features},version:SILO_VERSION};
 }
 export function siloController(root){return controllers.get(root);}
+
+const geometryPool=new Map();
+function shareGeometry(root){
+ root.traverse(mesh=>{if(!mesh.isMesh)return;const g=mesh.geometry;let h=2166136261,key='';
+  const arrays=[...Object.entries(g.attributes).sort(([a],[b])=>a.localeCompare(b)),...(g.index?[['index',g.index]]:[])];
+  for(const [name,a]of arrays){key+=name+':'+a.itemSize+':'+a.count+':'+a.normalized+';';const bytes=new Uint8Array(a.array.buffer,a.array.byteOffset,a.array.byteLength);for(const b of bytes)h=Math.imul(h^b,16777619);}
+  key+=h>>>0;const cached=geometryPool.get(key);
+  // Verify bytes on a hash hit; never substitute a merely similar geometry.
+  const equal=cached&&arrays.every(([name,a])=>{const b=name==='index'?cached.index:cached.attributes[name];return b&&a.array.length===b.array.length&&a.array.every((v,i)=>v===b.array[i]);});
+  if(equal&&cached!==g){mesh.geometry=cached;g.dispose();}else if(!cached)geometryPool.set(key,g);
+ });
+}
+let farGeometry,farMaterial;
+function createFarSilo(){
+ if(!farGeometry){const parts=[];
+  const box=(w,h,d,x,y,z,color)=>{const g=new THREE.BoxGeometry(w,h,d).toNonIndexed();g.translate(x,y,z);const c=new THREE.Color(color),a=new Float32Array(g.attributes.position.count*3);for(let i=0;i<a.length;i+=3)c.toArray(a,i);g.setAttribute('color',new THREE.BufferAttribute(a,3));parts.push(g);};
+  box(24,.28,25,0,.14,0,0xaaa89a);box(8.9,1.12,9.8,0,1.54,0,0x526749);box(7,3.1,8,18,1.55,13,0xc9c7bd);box(7.4,.3,8.4,18,3.25,13,0x7f9295);box(6.5,.08,13,0,.04,18.5,0x686a63);
+  for(const x of [-26,26])box(.08,1.4,47,x,.7,1.5,0x6c7b76);box(52,1.4,.08,0,.7,-22,0x6c7b76);for(const x of [-15,15])box(22,1.4,.08,x,.7,25,0x6c7b76);
+  farGeometry=mergeGeometries(parts,false);for(const g of parts)g.dispose();farMaterial=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9});
+ }
+ const mesh=new THREE.Mesh(farGeometry,farMaterial);mesh.name='ШПУ · общий план';mesh.userData.museumComponent='silo-overview';return mesh;
+}

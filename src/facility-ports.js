@@ -1,8 +1,11 @@
 import * as THREE from 'three';
+import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 // Gate points come from the model's visible aprons and internal rails.
 // Site centres remain anchored to the user's historical plan.
 export const FACILITY_PORTS={
+ 'pad-75':{scale:.28,elevation:-2.72,yaw:0,road:[-36,.085,20],roadOutward:[-1,0,0]},
+ ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,{scale:.28,yaw:0,elevation:-2.72,road:[0,.08,25],silo:true}])),
  'pad-110':{scale:.33,yaw:0,road:[-144.48,.13,195.72],rail:[[-161.7,.48,198.24],[-113.82,.48,213.36]]},
  'pad-250':{scale:.21,elevation:-2.755,yaw:-.56,road:[-40,.2,225],rail:[[-18,1.55,227],[18,1.55,227]]},
  'pad-251':{scale:.28,yaw:1.948,road:[-410,1.78,170]},

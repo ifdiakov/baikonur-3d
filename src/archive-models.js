@@ -1,12 +1,14 @@
 import * as THREE from 'three';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261029-silo-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261029-all-silos-v2';
 import * as buildings from './archive-buildings.js?v=20261028-mriya-paint-v2';
 import * as launches from './archive-launches.js?v=20261028-museum4-osm-live-v2';
 import {photoCity} from './archive-city.js?v=20261028-museum4-osm-live-v2';
 import {buildSite31Pad} from './site31-pad.js?v=20261028-museum4-osm-live-v2';
-import {buildSiloPad,siloController} from './silo-pad.js?v=20261029-silo-v1';
+import {buildSiloPad,siloController} from './silo-pad.js?v=20261029-all-silos-v2';
+import {buildSevenWinds} from './seven-winds.js?v=20261029-seven-winds-v1';
 export function buildArchiveModel(root,entry){
- const builders={silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildings.nedelinRuins,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:launches.energia110,soyuz:buildSite31Pad,zenit:launches.zenit45,city:photoCity};
+ const builders={'seven-winds':buildSevenWinds,silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildings.nedelinRuins,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:launches.energia110,soyuz:buildSite31Pad,zenit:launches.zenit45,city:photoCity};
+ if(entry.kind==='silo')return buildSiloPad(root,{siteId:entry.id,title:entry.title});
  if(entry.kind==='proton')return launches.protonComplex(root,entry.id);
  if(!builders[entry.kind])throw Error('Unknown archive model '+entry.kind);
  return builders[entry.kind](root);
@@ -33,11 +35,17 @@ export function installArchiveModels({objects,clickable,voids}){
   o.archive=entry;o.type='archive-'+spec.kind;root.userData.archiveModel=entry;records.push(entry);
  }
  function focus(index,camera,controls){const o=objects[index];if(!o?.archive)return false;
+  if(o.archive.kind==='seven-winds')return inspectHotel('all',camera,controls);
   if(o.record.id==='pad-31')return inspectSite31('duct',camera,controls);
   if(o.archive.kind==='silo'){siloController(o.g).inspect('all',camera,controls);return true;}
   if(o.archive.kind==='mzk'){controls.target.copy(o.g.localToWorld(new THREE.Vector3(25,35,40)));camera.position.copy(o.g.localToWorld(new THREE.Vector3(255,215,300)));return true;}
   const b=new THREE.Box3().setFromObject(o.g),size=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3()),r=Math.max(size.x,size.z,size.y*2);
   controls.target.copy(c);camera.position.copy(c).add(new THREE.Vector3(.75,.92,1.0).multiplyScalar(r));return true;
+ }
+ function inspectHotel(view,camera,controls){
+  const root=objects.find(o=>o.record.id==='pad-75')?.g;if(!root)return false;root.updateWorldMatrix(true,false);
+  const [target,eye]=view==='garden'?[[22,1.5,33],[44,23,60]]:view==='front'?[[0,6,4],[-40,48,62]]:[[0,3,13],[-64,61,92]];
+  controls.target.copy(root.localToWorld(new THREE.Vector3(...target)));camera.position.copy(root.localToWorld(new THREE.Vector3(...eye)));controls.update();return true;
  }
  function inspectSite31(view,camera,controls){
   const o=objects.find(o=>o.record.id==='pad-31');if(!o?.archive)return false;
@@ -52,5 +60,5 @@ export function installArchiveModels({objects,clickable,voids}){
   }
   return true;
  }
- return {focus,inspectSite31,inspectSilo:(view,camera,controls)=>silos[0]?.inspect(view,camera,controls),update:(now,camera,target)=>silos.forEach(s=>s.update(now,camera,target)),silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
+ return {focus,inspectHotel,inspectSite31,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>silos.forEach(s=>s.update(now,camera,target)),silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
 }
