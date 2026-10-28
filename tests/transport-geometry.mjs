@@ -11,7 +11,7 @@ const layers={roads:new THREE.Group(),rails:new THREE.Group()};
 const network=buildTransportNetwork({data,siteRecords,point,layers});
 assert.equal(JSON.stringify(data),original,'Rendering must not mutate the source plan');
 const stats=network.stats(),pad=siteRecords.find(p=>p.id==='pad-1'),scale=.43*.28/1.5;
-assert.equal(stats.roadRoutes,21);assert.equal(stats.railRoutes,14);
+assert.equal(stats.roadRoutes,22,'Include the existing MIK-112 access road');assert.equal(stats.railRoutes,14);
 assert.ok(stats.kazGateGap<1e-6);assert.ok(Math.abs(RAIL_PROFILE.gauge-7.3*scale)<1e-10);
 const root=new THREE.Group();root.position.copy(point(pad.x,pad.y));root.rotation.y=-Math.PI/2;root.scale.setScalar(scale);root.updateMatrixWorld(true);
 const expected=[-3.65,3.65].map(x=>root.localToWorld(new THREE.Vector3(x,1.3,171))).sort((a,b)=>a.z-b.z);

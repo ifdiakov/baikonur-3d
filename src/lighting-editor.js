@@ -1,10 +1,13 @@
 import * as THREE from 'three';
+import {createLightField} from './light-field.js';
 
 const STORAGE_KEY='rockettrip-baikonur-lighting-v1',LIMIT=1500;
 export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,button,onActiveChange}){
   let active=false,mode='single',selected=null,items=[],history=[],nextId=1;
   const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),group=new THREE.Group();
   group.name='Фонари RocketTrip';scene.add(group);
+  let evening=true;
+  const lightField=createLightField(group,[],{pools:true,maxCount:LIMIT,name:'Пользовательские фонари · свет'});
   const metal=new THREE.MeshStandardMaterial({color:0x657177,metalness:.65,roughness:.52});
   const baseMaterial=new THREE.MeshStandardMaterial({color:0xaaa79e,roughness:.95});
   const lensMaterial=new THREE.MeshStandardMaterial({color:0xfff2d2,emissive:0xffdfa3,emissiveIntensity:.65,roughness:.35});
@@ -58,6 +61,9 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
       mesh.instanceMatrix.needsUpdate=true;
       mesh.computeBoundingSphere();
     }
+    lightField.refresh(items.map(l=>({x:l.x+Math.cos(l.yaw)*1.55,y:l.y,z:l.z-Math.sin(l.yaw)*1.55,
+      height:l.height-.1,poolX:l.x+Math.cos(l.yaw)*2,poolZ:l.z-Math.sin(l.yaw)*2,radius:l.height*1.4,color:0xffcf89})));
+    lightField.root.visible=evening;
     const chosen=items.find(l=>l.id===selected);
     marker.visible=active&&!!chosen;if(chosen)marker.position.set(chosen.x,chosen.y+.035,chosen.z);
     panel.querySelector('#lightingCount').textContent='Фонарей на макете: '+items.length;
@@ -180,6 +186,6 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
     if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='z'){event.preventDefault();undo();}
   });
   setMode('single');render();
-  return {get active(){return active;},setActive,undo,snapshot:()=>({version:1,lamps:copy()}),
+  return {get active(){return active;},setActive,undo,setEvening(value){evening=!!value;lightField.root.visible=evening;lensMaterial.emissiveIntensity=evening?2.2:.65;},snapshot:()=>({version:1,lamps:copy()}),
     stats:()=>({count:items.length,active,mode,selected,history:history.length,instancedMeshes:parts.length})};
 }

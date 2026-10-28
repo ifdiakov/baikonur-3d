@@ -1,0 +1,58 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {mkdir,writeFile} from 'node:fs/promises';
+const prefix=process.env.QA_PREFIX||'local';await mkdir('qa-evening',{recursive:true});
+const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),
+ args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
+const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});page.setDefaultTimeout(45000);
+const errors=[],shaderErrors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION|compile shader/i.test(m.text()))shaderErrors.push(m.text());});
+if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',route=>route.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(route.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
+try{
+ await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded',timeout:60000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().arrival?.version==='krayniy-arrival-v1',null,{timeout:90000});
+ await page.waitForTimeout(500);
+ let s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
+ assert.equal(s.sites,98);assert.equal(s.stations,7);assert.equal(s.mik112.version,'1.2-plan-aligned-ne');
+ assert.equal(s.evening.evening,true);assert.ok(s.evening.roadLights>100);assert.ok(s.evening.siteLights>300);assert.ok(s.evening.runwayLights>90);
+ assert.ok(s.arrival.elapsed>0&&s.arrival.elapsed<30);assert.equal(s.arrival.duration,120);assert.ok(s.shadersValid);
+ await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(26));
+ await page.screenshot({path:`qa-evening/${prefix}-overview.png`,timeout:60000});
+ await page.locator('#arrivalFollow').click();await page.waitForTimeout(300);
+ await page.screenshot({path:`qa-evening/${prefix}-aircraft.png`,timeout:60000});
+ assert.ok((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).following);
+ await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(96));await page.waitForTimeout(200);
+ await page.screenshot({path:`qa-evening/${prefix}-approach.png`,timeout:60000});
+ await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(108));await page.waitForTimeout(200);
+ s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(s.arrival.onGround,true);assert.equal(s.arrival.gear,1);
+ await page.screenshot({path:`qa-evening/${prefix}-touchdown.png`,timeout:60000});
+ await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(120));await page.waitForTimeout(200);
+ assert.equal(await page.locator('#arrivalPhase').textContent(),'Посадка завершена');
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).trail.visibleSamples,0);
+ const stopped=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().position);await page.waitForTimeout(200);
+ assert.deepEqual(await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().position),stopped);
+ await page.locator('#eveningToggle').click();assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.stats())).evening.evening,false);
+ await page.screenshot({path:`qa-evening/${prefix}-day.png`,timeout:60000});
+ await page.locator('#eveningToggle').click();
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.seek(.02);});
+ const blink1=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().strobeVisible);
+ await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(.7));const blink2=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().strobeVisible);
+ assert.notEqual(blink1,blink2,'Strobes must blink');
+ await page.locator('#arrivalReplay').click();await page.waitForTimeout(250);
+ assert.ok((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).elapsed<10);
+ await page.mouse.move(800,450);await page.mouse.wheel(0,-50);
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).following,false);
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite(0);q.arrival.seek(50);});
+ await page.locator('#close').click();await page.screenshot({path:`qa-evening/${prefix}-gagarin.png`,timeout:60000});
+ await page.locator('#lightingToggle').click();const count=await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats().count);
+ await page.mouse.click(1050,730);assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats().count),count+1);
+ await page.locator('[data-action="undo"]').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats().count),count);
+ await page.locator('[data-action="close"]').click();
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);
+ assert.ok(await page.locator('#arrivalFollow').isVisible());assert.equal(await page.locator('#error').isVisible(),false);
+ await page.screenshot({path:`qa-evening/${prefix}-mobile.png`,timeout:60000});
+ assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);assert.ok((await page.evaluate(()=>window.__BAIKONUR_QA.stats())).shadersValid);
+ await writeFile(`qa-evening/${prefix}-result.json`,JSON.stringify({passed:true,stats:s,errors,shaderErrors},null,2));
+ console.log('EVENING_BROWSER_PASS',JSON.stringify(s.evening));
+}catch(e){await page.screenshot({path:`qa-evening/${prefix}-failure.png`,timeout:30000}).catch(()=>{});console.error('EVENING_FAILURE',JSON.stringify({message:e.message,errors,shaderErrors}));throw e;}
+finally{await browser.close();}
