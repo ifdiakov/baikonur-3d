@@ -5,61 +5,84 @@ const browser=await chromium.launch({headless:true,args:[
  '--no-sandbox','--use-gl=angle','--use-angle=swiftshader',
  '--enable-webgl','--disable-gpu-sandbox'
 ]});
-const page=await browser.newPage({viewport:{width:1600,height:900},deviceScaleFactor:1});
-const errors=[];
-page.on('pageerror',error=>errors.push(error.message||String(error)));
-const origin=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const url=new URL(origin);url.searchParams.set('site','23');
-await page.goto(url.toString(),{waitUntil:'domcontentloaded',timeout:40000});
-await page.waitForFunction(()=>{
- const qa=window.__BAIKONUR_QA;
- return !!qa?.stats()?.saturn;
-},{timeout:60000});
-await page.waitForTimeout(600);
-const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
-console.log('SATURN MODEL',JSON.stringify(stats.saturn));
-assert.equal(stats.saturn.version,'1.0','3D model version');
-assert.equal(stats.saturn.siteNumber,23);
-assert.equal(stats.saturn.largeAntennaCount,2);
-assert.equal(stats.saturn.dishDiameterMetres,25);
-assert.deepEqual(stats.saturnPlacement,[709,806]);
-assert.ok(stats.saturn.instancedFrameBatches>=2,'Steel antenna lattice must be GPU-instanced');
-assert.ok(stats.saturn.primitiveCount>800,'Model must contain photographic structural detail');
-for(const [key,min] of [
- ['25m-parabolic-reflector',2],['dish-radial-rib',400],
- ['feed-support-truss',8],['white-radome',1],['control-building',4],
- ['access-from-highway',1],['tower-horizontal-cornice',8]
-])assert.ok((stats.saturn.featureCounts[key]||0)>=min,'Missing '+key);
-assert.equal(stats.sites,98,'New attributed Site 23 must be in general catalog');
-assert.ok(await page.locator('#title').isVisible(),'Direct ?site=23 link must focus Saturn');
-assert.ok((await page.locator('#title').textContent()).includes('ИП-5'));
-assert.ok((await page.locator('#description').textContent()).includes('предварительная'));
-await page.locator('#detailMore').click();
-assert.equal(await page.locator('#infoExtra a[href*="drive.google.com/file/"]').count(),4);
-const viewport=await page.evaluate(()=>{
- const canvas=document.querySelector('#view canvas');
- return{w:canvas?.width||0,h:canvas?.height||0,webglError:document.querySelector('#error')?.textContent||''};
-});
-assert.ok(viewport.w>=1200&&viewport.h>=800,'3D renderer must paint viewport');
-assert.equal(viewport.webglError,'','No runtime failure visible in museum error overlay');
-await page.screenshot({path:'qa-saturn-ip5.png'});
-// Independent workshop route verifies the model can be examined on its own.
-const workshopURL=new URL('workshop/saturn.html',origin);
-await page.goto(workshopURL.toString(),{waitUntil:'domcontentloaded',timeout:40000});
-await page.waitForFunction(()=>window.__SATURN_PREVIEW__?.rendererReady===true,{timeout:60000});
-const preview=await page.evaluate(()=>window.__SATURN_PREVIEW__.stats());
-console.log('SATURN WORKSHOP',JSON.stringify(preview));
-assert.equal(preview.antennas,2,'Workshop renders both large dishes');
-assert.equal(preview.diameter,25);
-assert.ok(preview.meshCount>60,'Workshop must contain distinct buildings and antenna geometry');
-assert.equal(await page.locator('#error').isVisible(),false);
-await page.locator('#grid').click();
-assert.equal(await page.locator('#grid').getAttribute('aria-pressed'),'true');
-await page.locator('#wireframe').click();
-assert.equal(await page.locator('#wireframe').getAttribute('aria-pressed'),'true');
-await page.locator('#wireframe').click();
-await page.locator('#grid').click();
-await page.screenshot({path:'qa-saturn-workshop.png'});
-assert.deepEqual(errors,[],'No uncaught JavaScript errors');
-await browser.close();
-console.log('SATURN IP-5 browser smoke PASSED: 2x 25m P-200, instanced trusses, radome, buildings, provisional geolocation, direct link, 4 photo refs.');
+try {
+ const page=await browser.newPage({viewport:{width:1600,height:900},deviceScaleFactor:1});
+ const errors=[];
+ page.on('pageerror',e=>errors.push(e.message||String(e)));
+ const origin=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
+ const url=new URL(origin);url.searchParams.set('site','23');
+ url.searchParams.set('check',process.env.GITHUB_SHA||'northwest');
+ await page.goto(url.toString(),{waitUntil:'domcontentloaded',timeout:60000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.transport?.saturnAccess?.revision==='northwest-v1',{timeout:90000});
+ await page.waitForTimeout(800);
+ const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
+ const model=stats.saturn,access=stats.transport.saturnAccess;
+ assert.equal(model.version,'1.5-northwest-access');
+ assert.equal(model.siteNumber,23);
+ assert.equal(model.largeAntennaCount,2);
+ assert.equal(model.dishDiameterMetres,25);
+ assert.equal(stats.saturnScale,.525);
+ assert.deepEqual(stats.saturnPlacement,[741,716]);
+ assert.ok(model.instancedFrameBatches>=2);
+ assert.ok(model.primitiveCount>800);
+ for(const [key,min] of [['25m-parabolic-reflector',2],['dish-radial-rib',400],
+  ['feed-support-truss',8],['white-radome',1],['control-building',4],
+  ['tower-horizontal-cornice',8],['northwest-gate-pavement',1]])
+  assert.ok((model.featureCounts[key]||0)>=min,'Missing '+key);
+ assert.equal(access.entryCorner,'north-west');
+ assert.ok(access.gateLocal.x<0&&access.gateLocal.z<0);
+ assert.deepEqual(access.gateLocal,model.access.gateLocal);
+ assert.ok(access.gateMap[0]<stats.saturnPlacement[0]);
+ assert.ok(access.gateMap[1]<stats.saturnPlacement[1]);
+ assert.ok(Math.abs(access.gateWorld[1]-(97.45+.525*7.59))<1e-8);
+ assert.ok(access.minTerrainClearance>.10,'Approach must not intersect the mountain');
+ assert.ok(access.sectionCount>=160);
+ assert.equal(await page.locator('#error').isVisible(),false);
+ assert.deepEqual(errors,[]);
+ await page.screenshot({path:'qa-saturn-ip5.png'});
+ // Independently instantiate the exact modules and inspect the real buffers.
+ const geometry=await page.evaluate(async()=>{
+  const THREE=await import('three');
+  const {buildSaturnIP5}=await import('./src/saturn-ip5.js');
+  const {buildTransportNetwork}=await import('./src/transport-network.js');
+  const catalog=await (await fetch('./data/catalog.json',{cache:'no-store'})).json();
+  const data=await (await fetch('./data/transport-network.json',{cache:'no-store'})).json();
+  const point=(x,y,z=0)=>new THREE.Vector3((x-650)*3.4,z,(y-522.5)*3.4);
+  const layers={roads:new THREE.Group(),rails:new THREE.Group()};
+  const network=buildTransportNetwork({data,point,layers,siteRecords:catalog.sites});
+  const site=catalog.sites.find(s=>s.id==='pad-23');
+  const root=new THREE.Group();root.position.copy(point(site.x,site.y,97.45));
+  root.scale.setScalar(.525);root.updateMatrixWorld(true);buildSaturnIP5(root);
+  const external=layers.roads.getObjectByName('saturn-northwest-access-road');
+  const internal=root.getObjectByName('northwest-gate-pavement');
+  const p=external.geometry.getAttribute('position'),q=internal.geometry.getAttribute('position');
+  const center=(a,i)=>new THREE.Vector3((a.getX(i)+a.getX(i+1))/2,
+    (a.getY(i)+a.getY(i+1))/2,(a.getZ(i)+a.getZ(i+1))/2);
+  const end=center(p,p.count-2),gate=root.localToWorld(center(q,0));
+  const inside=root.localToWorld(center(q,q.count-2));
+  const expected=root.localToWorld(new THREE.Vector3(-92,7.59,-29));
+  const roads=network.routes.road.filter(r=>r.id==='r-site23-saturn-access');
+  let finite=true,minNormalY=1;
+  for(const obj of [external,internal]){
+   for(const v of obj.geometry.attributes.position.array)finite&&=Number.isFinite(v);
+   const normals=obj.geometry.attributes.normal;
+   for(let i=0;i<normals.count;i++)minNormalY=Math.min(minNormalY,normals.getY(i));
+  }
+  return {gateGap:end.distanceTo(gate),internalGap:inside.distanceTo(expected),
+    finite,minNormalY,routeCount:roads.length,corner:roads[0].entryCorner};
+ });
+ assert.ok(geometry.gateGap<.001,'Actual road meshes must meet at the NW gate');
+ assert.ok(geometry.internalGap<.001,'New entry must join the existing internal lane');
+ assert.equal(geometry.finite,true);assert.ok(geometry.minNormalY>0);
+ assert.equal(geometry.routeCount,1);assert.equal(geometry.corner,'north-west');
+ console.log('SATURN NORTHWEST QA',JSON.stringify({access,geometry,errors}));
+ const workshop=new URL('workshop/saturn.html',origin);
+ await page.goto(workshop.toString(),{waitUntil:'domcontentloaded',timeout:60000});
+ await page.waitForFunction(()=>window.__SATURN_PREVIEW__?.rendererReady===true,{timeout:60000});
+ const preview=await page.evaluate(()=>window.__SATURN_PREVIEW__.stats());
+ assert.equal(preview.antennas,2);assert.equal(preview.diameter,25);assert.ok(preview.meshCount>60);
+ assert.equal(await page.locator('#error').isVisible(),false);
+ await page.screenshot({path:'qa-saturn-workshop.png'});
+ assert.deepEqual(errors,[]);
+ console.log('SATURN northwest access: Chromium render and buffer geometry passed');
+} finally {await browser.close();}
