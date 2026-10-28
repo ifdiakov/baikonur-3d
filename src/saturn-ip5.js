@@ -128,43 +128,11 @@ export function buildSaturnIP5(root,terrain={}) {
   box(147,.23,10,-6,7.42,74,'asphalt','internal-access-road');
   box(9,.25,106,10,7.48,14,'asphalt','service-lane');
   box(7,.24,86,-92,7.47,9,'asphalt','antenna-service-access');
-  // A real connected access corridor: the old TubeGeometry was a black,
-  // disconnected hose ending in the steppe. The arterial road at map x≈680
-  // intersects site latitude y≈716; local endpoint below follows from the
-  // museum map transform (scale 3.4 / SATURN_SCALE 0.525).
-  // Connection is schematic, not a surveyed driveway trace.
-  const approach=new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-78,7.55,74),
-    new THREE.Vector3(-122,6.6,63),
-    new THREE.Vector3(-190,6.1,43),
-    new THREE.Vector3(-272,6.1,23),
-    new THREE.Vector3(-395,6.23,0)
-  ],false,'centripetal');
-  function roadRibbon(width,material,label,order){
-    const verts=[],indices=[],uv=[],samples=60;
-    for(let i=0;i<=samples;i++){
-      const t=i/samples,p=approach.getPoint(t),dir=approach.getTangent(t);
-      const len=Math.hypot(dir.x,dir.z)||1,nx=-dir.z/len,nz=dir.x/len;
-      for(const side of [-1,1]){
-        verts.push(p.x+side*width*.5*nx,p.y+.06,p.z+side*width*.5*nz);
-        uv.push(t,side>0?1:0);
-      }
-      if(i<samples){const j=i*2;indices.push(j,j+2,j+1,j+1,j+2,j+3);}
-    }
-    const geo=new THREE.BufferGeometry();
-    geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));
-    geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
-    geo.setIndex(indices);geo.computeVertexNormals();
-    const mesh=new THREE.Mesh(geo,material);
-    mesh.renderOrder=order;mesh.receiveShadow=true;
-    return add(mesh,label);
-  }
-  const roadShoulder=new THREE.MeshStandardMaterial({color:0x918777,roughness:1,side:THREE.DoubleSide,transparent:true,depthWrite:false});
-  const roadSurface=new THREE.MeshStandardMaterial({color:0x65645e,roughness:1,side:THREE.DoubleSide,transparent:true,depthWrite:false});
-  roadRibbon(12,roadShoulder,'saturn-road-shoulder-connected',5);
-  roadRibbon(8.5,roadSurface,'saturn-road-connected-to-arterial',6);
+  // The external approach is now drawn in the shared road network,
+  // from the real schematic trunk route to the western edge of this apron.
+  // This avoids disconnected or duplicated road meshes on the site model.
 
-  // Main long flat-roof control/processing buildings in the aerial centre.
+    // Main long flat-roof control/processing buildings in the aerial centre.
   function offices({x,z,w,d,h,levels=2,brick=false}){
     const baseY=7.6,base=brick?'brick':'concrete',countW=Math.max(4,Math.floor(w/5));
     box(w,h,d,x,baseY+h/2,z,base,'control-building');
