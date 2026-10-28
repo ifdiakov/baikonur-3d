@@ -550,19 +550,23 @@
             651
           ],
           [
-            691,
-            652
-          ],
-          [
-            703,
+            690,
             653
           ],
           [
-            711,
-            653
+            700,
+            656
+          ],
+          [
+            708,
+            659
+          ],
+          [
+            713,
+            659
           ]
         ],
-        "confidence": "schematic main-road to KAZ gate, calibrated to current display-scale model; historical roadway alignment pending verification"
+        "confidence": "schematic driveway to the west KAZ gate after road-parallel elongation"
       }
     ],
     "rail": [
