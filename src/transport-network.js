@@ -30,7 +30,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     signal:new THREE.MeshStandardMaterial({color:0x536366,metalness:.36,roughness:.64}),
     signalLamp:new THREE.MeshBasicMaterial({color:0xde7c65})
   };
-  const routeCurves=new Map(),roadCurves=[],railGroups=[];
+  const routeCurves=new Map(),roadCurves=[],railGroups=[],stationLabels=[];
   const tmp=new THREE.Vector3(),p=new THREE.Vector3(),q=new THREE.Vector3();
   const rootY=.75;
   function curveFor(points,elevation) {
@@ -197,19 +197,10 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
       const edge=house.clone().addScaledVector(normal,sign*5.5);edge.y=4.8;
       simpleBuilding(group,edge,dir,.35,2,14.5,materials.stationDark,'station-window-strip');
     }
-    const post=loc.clone().addScaledVector(normal,11);
-    post.y=18;
-    const mast=new THREE.Mesh(new THREE.CylinderGeometry(.16,.18,31,7),materials.signal);
-    mast.position.copy(post);group.add(mast);
-    const labelText=yard.label.toUpperCase();
-    const canvas=document.createElement('canvas');canvas.width=512;canvas.height=128;
-    const ctx=canvas.getContext('2d');ctx.fillStyle='rgba(12,28,40,.92)';ctx.fillRect(0,0,512,128);
-    ctx.strokeStyle='rgba(213,155,115,.95)';ctx.lineWidth=7;ctx.strokeRect(3,3,506,122);
-    ctx.fillStyle='#f5ede0';ctx.font='bold 31px Montserrat,Arial,sans-serif';
-    ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(labelText,256,62,480);
-    const tx=new THREE.CanvasTexture(canvas);tx.colorSpace=THREE.SRGBColorSpace;
-    const sign=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthTest:false}));
-    sign.position.copy(post);sign.position.y=36;sign.scale.set(42,10.5,1);group.add(sign);
+    // Station labels are projected into the HTML overlay, not painted onto
+    // terrain-facing sprites. Their typography remains readable at any zoom.
+    const anchor=house.clone();anchor.y=29;
+    stationLabels.push({id:yard.id,name:yard.label,world:anchor});
     group.userData={stationName:yard.label,confidence:yard.confidence,stationId:yard.id};
     state.stationCount++;
   }
@@ -300,6 +291,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     state.facilityDriveways++;
   }
   return {
+    stationLabels:()=>stationLabels.map(label=>({id:label.id,name:label.name,world:label.world.clone()})),
     stats:()=>({...state,roadRoutes:state.roadRoutes,railRoutes:state.railRoutes,
       siteAccess:connected,stationNames:data.yards.map(s=>s.label)}),
     routes:data.routes,confidence:data.realismNotes
