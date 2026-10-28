@@ -47,12 +47,12 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     }
     return samples;
   }
-  function ribbon(group,samples,width,y,material,edgeOffset=0) {
+  function ribbon(group,samples,width,y,material,edgeOffset=0,elevationAt=null) {
     if(samples.length<2)return null;
     const xyz=[],uv=[],ids=[];
     samples.forEach((s,i)=>{
       const half=width/2;for(const side of [-1,1]){
-        xyz.push(s.pos.x+s.nx*(side*half+edgeOffset),y,s.pos.z+s.nz*(side*half+edgeOffset));
+        xyz.push(s.pos.x+s.nx*(side*half+edgeOffset),elevationAt?elevationAt(s):y,s.pos.z+s.nz*(side*half+edgeOffset));
         uv.push(i/8,side>0?1:0);
       }
       if(i<samples.length-1){const k=i*2;ids.push(k,k+1,k+2,k+1,k+3,k+2)}
@@ -80,8 +80,37 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     const main=route.class==='arterial',urban=route.class==='urban';
     const w=main?8.5:urban?7.2:5.2;
     const laneMaterial=main||urban?materials.asphalt:materials.service;
-    ribbon(layers.roads,samples,w+3.1,.66,materials.shoulder);
-    ribbon(layers.roads,samples,w,.72,laneMaterial);
+    if(route.id==='r-site23-saturn-access'){
+      // The access climbs the Murguduk relief and joins the modelled elevated
+      // Saturn service apron. A fixed y=.72 was buried under the hill mesh.
+      const site=siteRecords.find(s=>s.id==='pad-23');
+      const center=site?point(site.x,site.y,0):null;
+      const modelScale=.525;
+      function groundAt(sample){
+        if(!center)return .8;
+        const dx=(sample.pos.x-center.x)/modelScale;
+        const dz=(sample.pos.z-center.z)/modelScale;
+        const radius=Math.hypot(dx/150,dz/140);
+        const v=Math.max(0,Math.min(1,(radius-.68)/.49));
+        const fade=1-v*v*(3-2*v);
+        const relief=7.8*fade+1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+
+          (Math.sin(dx*.085+dz*.035)+Math.sin(dx*.038-dz*.076))*.22*fade;
+        const surface=-2.55+modelScale*(relief-.22);
+        return Math.max(.78,surface+.13);
+      }
+      // Match the arterial at the west end and paved site apron at the east.
+      const ramp=sample=>{
+        const t=sample.t,blend=Math.min(1,Math.max(0,t/.12));
+        const eased=blend*blend*(3-2*blend);
+        const height=groundAt(sample);
+        return (.76*(1-eased)+height*eased);
+      };
+      ribbon(layers.roads,samples,w+3.1,.05,materials.shoulder,0,s=>ramp(s)-.07);
+      ribbon(layers.roads,samples,w,.05,materials.service,0,ramp);
+    }else{
+      ribbon(layers.roads,samples,w+3.1,.66,materials.shoulder);
+      ribbon(layers.roads,samples,w,.72,laneMaterial);
+    }
     if(main){tube(layers.roads,samples,0,.10,materials.asphaltEdge,.795,4)}
     state.roadRoutes++;
   }
