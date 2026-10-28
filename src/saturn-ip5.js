@@ -14,6 +14,7 @@ export function buildSaturnIP5(root,terrain={}) {
     mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
   });
   info.access=addSaturnNorthwestGate(root);
+  info.access.preservedVerticalRaise=100;
   info.version='1.5-northwest-access';
   info.featureCounts['northwest-gate-pavement']=1;
   info.featureCounts['northwest-gate-shoulder']=1;
