@@ -2,12 +2,13 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js?v=20261028-site41-v1';
 
-// An illustrative service train, sized to the museum's shared rail gauge.
-// These details do not attribute the model to a particular real locomotive.
+// Photo-based Baikonur service train, sized to the museum's shared rail gauge.
+// Principal reference: the teal shunter and pale coaches in the owner's Мотовоз folder.
+// The geometry is interpretive; no fleet number or exact surveyed dimensions are claimed.
 export const COACH_COUNT=4;
-export const COACH_OFFSETS=Object.freeze([4.72,10.11,15.50,20.89]);
-export const TRAIN_START_DISTANCE=COACH_OFFSETS.at(-1)+3.3;
-export const TRAIN_CONSIST_LENGTH=COACH_OFFSETS.at(-1)+2.76+2.09;
+export const COACH_OFFSETS=Object.freeze([7.90,16.90,25.90,34.90]);
+export const TRAIN_START_DISTANCE=COACH_OFFSETS.at(-1)+5.4;
+export const TRAIN_CONSIST_LENGTH=COACH_OFFSETS.at(-1)+4.51+3.41;
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const standard=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:.61,metalness:.34,...extra});
 
@@ -64,121 +65,157 @@ function beamTexture(){
  const texture=new THREE.DataTexture(data,width,height);texture.needsUpdate=true;return texture;
 }
 
+function roundedRoof(b,width,base,rise,length,z,material,name='rounded-roof'){
+ const shape=new THREE.Shape();shape.moveTo(-width/2,base);shape.lineTo(-width*.44,base+rise*.55);shape.quadraticCurveTo(0,base+rise*1.4,width*.44,base+rise*.55);shape.lineTo(width/2,base);shape.closePath();
+ const g=new THREE.ExtrudeGeometry(shape,{depth:length,bevelEnabled:false,curveSegments:12});g.translate(0,0,z-length/2);b.custom(g,material,name);
+}
+function stripe(b,x1,y1,x2,y2,z,width,material,name){
+ const dx=x2-x1,dy=y2-y1,g=new THREE.BoxGeometry(Math.hypot(dx,dy),width,.012);g.rotateZ(Math.atan2(dy,dx));g.translate((x1+x2)/2,(y1+y2)/2,z);b.custom(g,material,name);
+}
+function lettering(){
+ const material=standard(0xffffff,{roughness:.8,metalness:.05});material.name='reference-lettering';
+ // No network image or font dependency. The non-browser geometry tests use a
+ // plain material; the live scene draws the reference wording into one atlas.
+ if(globalThis.document?.createElement){
+  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=256;const c=canvas.getContext('2d');
+  if(c){c.fillStyle='#196b76';c.fillRect(0,0,1024,256);c.fillStyle='#e5d89d';c.textAlign='center';c.font='bold 70px sans-serif';c.fillText('КОСМИЧЕСКИЙ ЦЕНТР',512,100);c.font='bold 82px sans-serif';c.fillText('«ЮЖНЫЙ»',512,211);const map=new THREE.CanvasTexture(canvas);map.colorSpace=THREE.SRGBColorSpace;map.anisotropy=4;material.map=map;}
+ }
+ return material;
+}
+
 export function buildRailVehicle(parent,{wagon=false,gauge,index=0,last=false}){
- const root=new THREE.Group();root.name=wagon?'Служебный вагон '+(index+1):'Мотовоз';
+ const root=new THREE.Group();root.name=wagon?'Пассажирский вагон '+(index+1):'Мотовоз · маневровый тепловоз';
  root.userData.pickable=false;root.userData.railVehicle=wagon?'coach':'locomotive';parent.add(root);
- const paint=standard(wagon?[0x4e7175,0x547b7b,0x557176,0x5b7b78][index]:0x617348);
- const cream=standard(0xd9ccb1),dark=standard(0x252f32),red=standard(0x943f31),steel=standard(0x767f7e,{metalness:.72,roughness:.37});
- const glass=standard(0x314b55,{emissive:0xffd28c,emissiveIntensity:1.35,roughness:.23,metalness:.1});
+ const paint=standard(wagon?0xc3c9c4:0x176b78),cream=standard(wagon?0x7fa792:0xe4bf48),dark=standard(0x202a2e),red=standard(0x9b4937),steel=standard(0x7e898a,{metalness:.72,roughness:.42});
+ const roofPaint=standard(wagon?0xb5b9b4:0xc6c3a6,{roughness:.83,metalness:.22});
+ const glass=standard(0x193943,{emissive:0xffc67b,emissiveIntensity:.68,roughness:.19,metalness:.14});
  const lens=standard(0xffe6b2,{emissive:0xffd68b,emissiveIntensity:2.4,roughness:.2});
- const tail=standard(0xc83e32,{emissive:0xff3326,emissiveIntensity:1.8});
- const hub=standard(0x9a9f98,{metalness:.6});
- for(const [name,material] of Object.entries({paint,cream,dark,red,steel,glass,lens,tail,hub}))material.name=name;
- const b=batches(root),half=wagon?2.4:1.73;
- b.box(1.12,.20,half*2,0,.45,0,dark,'frame');
- b.box(1.15,.07,half*2,0,.57,0,steel,'walkway');
- b.box(.59,.27,wagon?1.5:.8,0,.28,0,dark,'underfloor-equipment');
- b.cylinder(.11,.11,wagon?1.5:.7,0,.3,wagon?.15:.7,steel,'reservoir','z');
+ const tail=standard(0xc83e32,{emissive:0xff3326,emissiveIntensity:1.8}),hub=standard(0x8f9898,{metalness:.6});
+ for(const [name,material] of Object.entries({paint,cream,dark,red,steel,roofPaint,glass,lens,tail,hub}))material.name=name;
+ const b=batches(root),half=wagon?4.15:3.05,wheelRadius=wagon?.18:.20;
+ b.box(1.17,.19,half*2,0,.48,0,dark,'frame');
+ b.box(1.23,.065,half*2,0,.61,0,roofPaint,'walkway');
+ b.box(.72,.24,wagon?2.2:1.65,0,.29,wagon?0:-.1,dark,'underfloor-equipment');
+ for(const side of [-1,1])b.cylinder(.11,.11,wagon?1.3:1.5,side*.34,.33,.15,steel,'reservoir','z');
  if(wagon){
-  b.box(1.10,.99,4.8,0,1.08,0,paint,'coach-body');
+  b.box(1.14,.95,8.3,0,1.13,0,paint,'coach-body');
   for(const side of [-1,1]){
-   b.box(.018,.07,4.68,side*.559,.81,0,cream,'waist-stripe');
-   b.box(.018,.034,4.68,side*.559,1.52,0,cream,'cantrail');
-   for(let n=0;n<5;n++){
-    const z=-1.38+n*.69;
-    b.box(.029,.48,.51,side*.564,1.24,z,dark,'window-seal');
-    b.box(.032,.39,.42,side*.582,1.25,z,glass,'lit-window');
-    b.box(.037,.025,.42,side*.59,1.31,z,cream,'window-divider');
+   b.box(.02,.085,8.20,side*.58,.89,0,cream,'waist-stripe');
+   b.box(.024,.048,8.22,side*.583,.70,0,red,'lower-red-stripe');
+   b.box(.018,.028,8.20,side*.58,1.62,0,steel,'cantrail');
+   for(let n=0;n<11;n++){
+    const z=-2.75+n*.55;
+    b.box(.026,.48,.39,side*.582,1.30,z,dark,'window-seal');
+    b.box(.03,.405,.325,side*.597,1.305,z,glass,'lit-window');
+    b.box(.034,.022,.326,side*.603,1.39,z,steel,'window-divider');
    }
    for(const end of [-1,1]){
-    const z=end*2.06;
-    b.box(.024,.84,.46,side*.564,1.03,z,cream,'vestibule-door');
-    b.box(.035,.32,.28,side*.582,1.26,z,glass,'door-window');
-    b.box(.045,.025,.07,side*.599,.98,z-.14,steel,'door-handle');
-    for(const y of [.30,.43])b.box(.21,.045,.45,side*.6,y,z,steel,'entry-step');
-    for(const zz of [z-.28,z+.28])b.cylinder(.012,.012,.62,side*.62,.94,zz,cream,'entry-handrail');
+    const z=end*3.65;
+    b.box(.023,.87,.50,side*.582,1.09,z,steel,'vestibule-door');
+    b.box(.029,.79,.44,side*.595,1.10,z,paint,'vestibule-door-panel');
+    b.box(.034,.34,.28,side*.611,1.32,z,glass,'door-window');
+    b.box(.039,.024,.08,side*.619,1.03,z-.14,dark,'door-handle');
+    for(const y of [.28,.42,.56])b.box(.22,.042,.47,side*.63,y,z,steel,'entry-step');
+    for(const zz of [z-.29,z+.29])b.cylinder(.011,.011,.70,side*.641,1.0,zz,steel,'entry-handrail');
    }
-   for(let n=0;n<12;n++)b.box(.018,.21,.025,side*.56,.67,-2.3+n*.418,paint,'body-rib');
+   for(const y of [.76,.80,.98])b.box(.016,.015,7.0,side*.581,y,0,steel,'body-corrugation');
   }
-  const roofShape=new THREE.Shape();roofShape.moveTo(-.61,1.58);roofShape.lineTo(-.54,1.73);roofShape.quadraticCurveTo(0,1.91,.54,1.73);roofShape.lineTo(.61,1.58);roofShape.closePath();
-  const roof=new THREE.ExtrudeGeometry(roofShape,{depth:4.9,bevelEnabled:false,curveSegments:10});roof.translate(0,0,-2.45);b.custom(roof,cream,'rounded-roof');
-  for(const z of [-1.55,0,1.55]){b.box(.25,.08,.35,0,1.82,z,steel,'roof-vent');b.box(.32,.028,.43,0,1.87,z,cream,'vent-cap');}
+  roundedRoof(b,1.22,1.61,.23,8.4,0,roofPaint);
+  for(const z of [-2.9,-1.45,0,1.45,2.9]){b.box(.22,.06,.31,0,1.84,z,steel,'roof-vent');b.box(.28,.025,.38,0,1.885,z,roofPaint,'vent-cap');}
   for(const end of [-1,1]){
-   b.box(.54,.8,.038,0,1.01,end*2.422,dark,'gangway-frame');
-   b.box(.4,.68,.05,0,1.02,end*2.445,cream,'end-door');
-   b.box(.27,.27,.057,0,1.22,end*2.45,glass,'end-window');
-   for(const side of [-1,1])b.cylinder(.014,.014,.59,side*.36,.95,end*2.46,steel,'end-handrail');
+   b.box(.63,.88,.06,0,1.12,end*4.18,dark,'gangway-frame');
+   for(const x of [-.30,.30])for(let n=0;n<4;n++)b.box(.06,.84,.022,x,1.13,end*(4.20+n*.04),dark,'gangway-bellows');
+   b.box(.42,.75,.09,0,1.13,end*4.24,steel,'end-door');
+   b.box(.26,.28,.10,0,1.32,end*4.25,glass,'end-window');
+   for(const side of [-1,1])b.cylinder(.012,.012,.62,side*.41,1.01,end*4.21,steel,'end-handrail');
   }
  }else{
-  b.box(.88,.66,1.78,0,.93,.62,paint,'engine-hood');
-  b.box(.91,.08,1.80,0,1.30,.62,cream,'hood-top');
-  b.box(1.09,1.04,1.10,0,1.10,-.78,cream,'driver-cab');
-  b.box(1.20,.12,1.27,0,1.68,-.78,dark,'cab-roof');
-  b.box(.95,.13,.12,0,1.59,-.14,cream,'sun-visor');
-  for(const z of [-.214,-1.342]){
-   b.box(.88,.42,.034,0,1.33,z,dark,'cab-window-gasket');
-   for(const x of [-.21,.21])b.box(.36,.34,.041,x,1.34,z,glass,'cab-window');
-   b.box(.034,.38,.05,0,1.33,z,cream,'windshield-pillar');
+  // Long high hood, offset cab and short rear hood: the reference shunter silhouette.
+  b.box(.91,1.08,3.78,0,1.18,.55,paint,'engine-hood');
+  b.box(.934,.095,3.80,0,1.68,.55,cream,'hood-top-stripe');
+  roundedRoof(b,.93,1.72,.08,3.79,.55,paint,'hood-roof');
+  b.box(1.15,1.12,1.30,0,1.22,-1.92,paint,'driver-cab');
+  roundedRoof(b,1.25,1.80,.20,1.43,-1.92,roofPaint,'cab-roof');
+  b.box(.92,.77,.39,0,1.02,-2.72,paint,'short-hood');
+  b.box(.94,.06,.43,0,1.43,-2.72,cream,'short-hood-stripe');
+  for(const z of [-1.253,-2.587]){
+   b.box(1.03,.42,.033,0,1.52,z,dark,'cab-window-gasket');
+   for(const x of [-.255,.255])b.box(.435,.34,.04,x,1.53,z,glass,'cab-window');
+   b.box(.035,.40,.046,0,1.52,z,roofPaint,'windshield-pillar');
+   b.box(1.20,.055,.14,0,1.80,z,roofPaint,'sun-visor');
+   for(const x of [-.22,.22]){const w=new THREE.BoxGeometry(.014,.23,.016);w.rotateZ(-.22);w.translate(x,1.51,z+(z>-2?1:-1)*.026);b.custom(w,dark,'windshield-wiper');}
   }
   for(const side of [-1,1]){
-   b.box(.03,.43,.73,side*.559,1.32,-.77,dark,'cab-side-gasket');
-   b.box(.034,.35,.65,side*.578,1.33,-.77,glass,'cab-side-window');
-   b.box(.04,.48,.65,side*.558,.88,-.77,paint,'cab-door');
-   b.box(.043,.028,.11,side*.584,1.06,-.98,steel,'cab-handle');
-   for(let n=0;n<9;n++)b.box(.028,.39,.047,side*.453,.97,-.05+n*.174,dark,'engine-louvre');
-   for(const z of [-1.48,-.16,1.51])b.cylinder(.014,.014,.49,side*.58,.85,z,cream,'handrail-post');
-   for(const z of [.63,-.81])b.cylinder(.014,.014,z>0?1.67:1.27,side*.58,1.095,z,cream,'side-handrail','z');
-   for(const y of [.26,.40])b.box(.26,.055,.46,side*.56,y,-1.34,steel,'cab-step');
-   b.box(.035,.46,.018,side*.585,1.2,-1.22,cream,'rear-door-rail');
+   b.box(.025,.43,.90,side*.584,1.52,-1.91,dark,'cab-side-gasket');
+   b.box(.031,.35,.80,side*.60,1.53,-1.91,glass,'cab-side-window');
+   b.box(.04,.40,.025,side*.619,1.53,-1.92,roofPaint,'sliding-window-pillar');
+   b.box(.022,.65,.54,side*.586,.99,-2.18,dark,'cab-door-seam');
+   b.box(.028,.60,.49,side*.599,1.0,-2.18,paint,'cab-door');
+   b.box(.037,.025,.10,side*.618,1.16,-2.34,steel,'cab-handle');
+   b.box(.018,.065,5.30,side*.47,.72,-.21,cream,'lower-yellow-stripe');
+   for(let n=0;n<11;n++){
+    const z=-1.25+n*.32;b.box(.017,.80,.016,side*.463,1.17,z,dark,'hood-panel-seam');
+    b.box(.035,.045,.10,side*.476,1.31,z+.08,steel,'hood-handle');
+   }
+   for(let n=0;n<18;n++)b.box(.025,.58,.033,side*.468,1.24,1.66+n*.04,dark,'radiator-side-louvre');
+   for(let n=0;n<7;n++)b.box(.025,.22,.026,side*.468,1.53,-1.18+n*.09,dark,'engine-louvre');
+   for(const z of [-2.89,-2.56,-1.30,-.43,.55,1.57,2.88])b.cylinder(.011,.011,.55,side*.61,.93,z,roofPaint,'handrail-post');
+   b.cylinder(.011,.011,5.79,side*.61,1.205,0,roofPaint,'side-handrail','z');
+   b.cylinder(.009,.009,3.92,side*.61,.95,.91,roofPaint,'lower-handrail','z');
+   for(const z of [-2.83,2.88])for(const y of [.26,.39,.52])b.box(.25,.04,.32,side*.60,y,z,steel,'cab-step');
+   b.box(.017,.70,.015,side*.645,1.03,-2.56,roofPaint,'cab-door-rail');
   }
-  // Radiator mesh and two buffer lamps face the direction of travel (+Z).
-  b.box(.72,.48,.027,0,.97,1.525,dark,'radiator');
-  for(let n=0;n<8;n++)b.box(.66,.022,.032,0,.77+n*.057,1.547,steel,'radiator-slat');
-  b.cylinder(.055,.07,.55,.17,1.52,.45,dark,'exhaust');
-  b.cylinder(.078,.078,.035,.17,1.81,.45,steel,'exhaust-cap');
-  b.cylinder(.028,.045,.24,-.22,1.77,-.55,steel,'horn','z');
-  b.cylinder(.105,.105,.12,0,1.53,-.07,dark,'headlight-housing','z');
-  b.cylinder(.08,.08,.012,0,1.53,.0,lens,'headlight-lens','z');
-  for(const side of [-1,1])b.cylinder(.05,.05,.035,side*.39,.77,1.74,lens,'buffer-lamp','z');
+  const textMaterial=lettering();
+  for(const side of [-1,1]){const g=new THREE.PlaneGeometry(1.65,.41);g.rotateY(side*Math.PI/2);g.translate(side*.476,1.16,.18);b.custom(g,textMaterial,'kosmicheskiy-centr-yuzhnyy');}
+  b.box(.73,.69,.033,0,1.15,2.456,dark,'radiator');
+  for(let n=0;n<15;n++)b.box(.68,.018,.038,0,.83+n*.043,2.477,paint,'radiator-slat');
+  stripe(b,-.455,1.53,0,1.29,2.504,.12,cream,'nose-yellow-chevron');stripe(b,0,1.29,.455,1.53,2.504,.12,cream,'nose-yellow-chevron');
+  b.cylinder(.10,.10,.11,0,1.62,2.50,roofPaint,'headlight-rim','z');b.cylinder(.075,.075,.014,0,1.62,2.562,lens,'headlight-lens','z');
+  b.cylinder(.067,.08,.25,.16,1.92,.36,dark,'exhaust');b.cylinder(.09,.09,.035,.16,2.058,.36,steel,'exhaust-cap');
+  for(const x of [-.17,.17])b.cylinder(.031,.048,.27,x,1.99,-1.61,steel,'horn','z');
+  b.cylinder(.008,.008,.35,-.24,2.15,-2.16,steel,'radio-antenna');
+  b.cylinder(.26,.26,.045,0,1.82,1.67,dark,'roof-fan','y');
+  for(let i=0;i<8;i++){const a=i*Math.PI/4,g=new THREE.BoxGeometry(.40,.018,.016);g.rotateY(a);g.translate(0,1.85,1.67);b.custom(g,steel,'fan-grille');}
+  for(const side of [-1,1]){b.box(.23,.13,.035,side*.42,.74,3.08,roofPaint,'buffer-lamp-housing');b.cylinder(.049,.049,.025,side*.42,.74,3.11,lens,'buffer-lamp','z');}
  }
  for(const end of [-1,1]){
-  const z=end*(half+.07);
-  b.box(1.10,.18,.12,0,.47,z,red,'buffer-beam');
-  for(const side of [-1,1]){b.cylinder(.05,.05,.14,side*.34,.47,z+end*.10,dark,'buffer-stock','z');b.cylinder(.09,.09,.04,side*.34,.47,z+end*.18,steel,'buffer-face','z');}
-  b.box(.15,.10,.23,0,.44,z+end*.115,dark,'coupler');
-  b.box(.21,.13,.085,0,.44,z+end*.24,steel,'coupler-head');
+  const z=end*(half+.06);b.box(1.16,.19,.12,0,.48,z,red,'buffer-beam');
+  // Central automatic coupling; the reference has no European round side buffers.
+  b.box(.17,.105,.27,0,.45,z+end*.13,dark,'coupler');b.box(.24,.15,.085,0,.45,z+end*.245,steel,'coupler-head');
+  b.cylinder(.018,.018,.21,.15,.31,z+end*.05,dark,'brake-hose');
+  if(!wagon){
+   b.box(1.13,.28,.055,0,.28,z+end*.04,red,'pilot');
+   for(const side of [-1,1])stripe(b,side*.09,.40,side*.43,.18,z+end*.074,.09,cream,'pilot-chevron');
+   b.cylinder(.012,.012,1.16,0,1.20,z,roofPaint,'end-handrail','x');
+  }
  }
- if(last)for(const side of [-1,1]){b.box(.14,.15,.045,side*.42,1.16,-2.45,dark,'tail-lamp-housing');b.cylinder(.048,.048,.025,side*.42,1.16,-2.486,tail,'tail-lamp','z');}
+ if(last)for(const side of [-1,1]){b.box(.14,.15,.045,side*.43,1.22,-4.21,dark,'tail-lamp-housing');b.cylinder(.048,.048,.025,side*.43,1.22,-4.245,tail,'tail-lamp','z');}
  const detailCounts=b.finish();
- const markers=wagon?(last?[-1,1].map(s=>({x:s*.42,y:1.16,z:-2.51,height:0,color:0xff4537,size:2.4})):[]):[
-  {x:0,y:1.53,z:.03,height:0,color:0xffe9ba,size:4.8},
-  ...[-1,1].map(s=>({x:s*.39,y:.77,z:1.77,height:0,color:0xffedc9,size:2.8}))];
- const lights=createLightField(root,markers,{name:wagon?'Хвостовые огни · вагон 4':'Мотовоз · прожектор и буферные фонари',minPixels:wagon?4.2:6.2});
- const windows=createLightField(root,(wagon?[-1.03,1.03]:[-.78]).flatMap(z=>[-1,1].map(side=>({x:side*(wagon?.595:.59),y:wagon?1.25:1.34,z,height:0,color:0xffd896,size:wagon?.55:.7}))),{name:'Тёплый свет окон',minPixels:wagon?2.6:3.2});
+ const markers=wagon?(last?[-1,1].map(s=>({x:s*.43,y:1.22,z:-4.27,height:0,color:0xff4537,size:1.6})):[]):[
+  {x:0,y:1.62,z:2.58,height:0,color:0xffe9ba,size:3.4},...[-1,1].map(s=>({x:s*.42,y:.74,z:3.13,height:0,color:0xffedc9,size:1.9}))];
+ const lights=createLightField(root,markers,{name:wagon?'Хвостовые огни · вагон 4':'Мотовоз · прожектор и буферные фонари',minPixels:wagon?3.2:4.8});
+ const windows=createLightField(root,(wagon?[-2.2,0,2.2]:[-1.92]).flatMap(z=>[-1,1].map(side=>({x:side*(wagon?.62:.63),y:wagon?1.30:1.53,z,height:0,color:0xffd896,size:wagon?.37:.46}))),{name:'Тёплый свет окон',minPixels:2});
  let spill=null;
- if(!wagon){
-  const mat=new THREE.MeshBasicMaterial({map:beamTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false});
-  spill=new THREE.Mesh(new THREE.PlaneGeometry(4.4,12),mat);spill.rotation.x=-Math.PI/2;spill.position.set(0,.025,7.7);spill.renderOrder=5;spill.name='Мотовоз · свет на пути';root.add(spill);
- }
- const materials={dark,steel,hub},axles=[],bogies=[];
- const axleOffsets=wagon?[-2.00,-1.36,1.36,2.00]:[-1.15,1.15],wheelRadius=.155;
+ if(!wagon){const mat=new THREE.MeshBasicMaterial({map:beamTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false});spill=new THREE.Mesh(new THREE.PlaneGeometry(4.0,13),mat);spill.rotation.x=-Math.PI/2;spill.position.set(0,.025,9.4);spill.renderOrder=5;spill.name='Мотовоз · свет на пути';root.add(spill);}
+ const materials={dark,steel,hub},axles=[],bogies=[],bogieOffsets=wagon?[-2.95,2.95]:[-1.86,1.86];
+ const axleOffsets=bogieOffsets.flatMap(center=>(wagon?[-.38,.38]:[-.58,0,.58]).map(offset=>center+offset));
  for(const offset of axleOffsets){
   const axle=new THREE.Group();axle.name='Колёсная пара';parent.add(axle);
   const wheels=[-1,1].map(side=>wheel(axle,side*gauge/2,wheelRadius,materials,side));
   const ab=batches(axle);ab.cylinder(.045,.045,gauge,0,wheelRadius,0,steel,'axle-shaft','x');
-  for(const side of [-1,1]){ab.box(.16,.16,.16,side*(gauge/2+.09),.18,0,dark,'axlebox');ab.box(.20,.035,.22,side*(gauge/2+.09),.29,0,steel,'suspension-leaf');}
+  for(const side of [-1,1]){ab.box(.15,.14,.17,side*(gauge/2+.09),wheelRadius,0,dark,'axlebox');ab.box(.19,.03,.24,side*(gauge/2+.09),.32,0,steel,'suspension-leaf');}
   ab.finish();axles.push({root:axle,offset,wheels});
  }
- for(const offset of wagon?[-1.68,1.68]:[0]){
-  const bogie=new THREE.Group();bogie.name=wagon?'Тележка вагона':'Подвеска мотовоза';parent.add(bogie);const bb=batches(bogie);
+ for(const offset of bogieOffsets){
+  const bogie=new THREE.Group();bogie.name=wagon?'Двухосная тележка вагона':'Трёхосная тележка тепловоза';parent.add(bogie);const bb=batches(bogie),length=wagon?1.1:1.6;
   for(const side of [-1,1]){
-   bb.box(.12,.13,wagon?.94:2.64,side*(gauge/2+.09),.31,0,dark,'bogie-frame');
-   if(wagon)for(const z of [-.13,.13])bb.cylinder(.045,.045,.16,side*(gauge/2+.14),.25,z,steel,'suspension-spring');
+   bb.box(.14,.15,length,side*(gauge/2+.10),.35,0,dark,'bogie-frame');
+   for(const z of wagon?[-.17,.17]:[-.37,.37]){bb.cylinder(.055,.055,.17,side*(gauge/2+.17),.33,z,steel,'suspension-spring');for(let j=0;j<4;j++)bb.cylinder(.057,.057,.012,side*(gauge/2+.17),.265+j*.042,z,dark,'spring-coil');}
   }
-  bb.box(gauge+.22,.10,.18,0,.33,0,steel,'bogie-bolster');bb.finish();bogies.push({root:bogie,offset});
+  bb.box(gauge+.25,.11,.23,0,.40,0,steel,'bogie-bolster');bb.finish();bogies.push({root:bogie,offset});
  }
- return {root,axles,bogies,glass,lights,windows,wheelRadius,wheelbase:wagon?3.36:2.3,
-  kind:wagon?'coach':'locomotive',last,detailCounts,lightCount:markers.length+(wagon?4:2),
-  setEvening(night){glass.emissiveIntensity=night?1.35:.04;lens.emissiveIntensity=night?2.4:.06;tail.emissiveIntensity=night?1.8:.06;lights.setStrength(night?1:.06);windows.setStrength(night?.68:0);if(spill)spill.visible=night;}
+ return {root,axles,bogies,glass,lights,windows,wheelRadius,wheelbase:Math.abs(bogieOffsets[1]-bogieOffsets[0]),
+  kind:wagon?'coach':'locomotive',last,detailCounts,bodyLength:half*2,lightCount:markers.length+(wagon?6:2),
+  setEvening(night){glass.emissiveIntensity=night?.68:.025;lens.emissiveIntensity=night?2.4:.06;tail.emissiveIntensity=night?1.8:.06;lights.setStrength(night?1:.06);windows.setStrength(night?.46:0);if(spill)spill.visible=night;}
  };
 }

@@ -19,14 +19,14 @@ try{
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:90000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic&&window.__TRAIN_PENDING,null,{polling:100});
  await page.locator('#showLabels').uncheck();
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train);
- assert.equal(initial.coachCount,4);assert.equal(initial.version,'motovoz-four-coaches-v2');
+ assert.equal(initial.coachCount,4);assert.equal(initial.version,'motovoz-photo-shunter-v3');
  assert.equal(initial.coaches.filter(c=>c.tailLights).length,1);assert.equal(initial.coaches[3].tailLights,true);
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.traffic.seek(0);q.traffic.setFollowing(true);});
  await page.waitForTimeout(180);await snapshot('departure');
  for(const t of [80,200,420]){
   await page.evaluate(t=>window.__BAIKONUR_QA.traffic.seek(t),t);await page.waitForTimeout(180);
   const s=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train);
-  assert.equal(s.wheelContacts.length,18);assert.ok(s.wheelContacts.every(c=>Math.hypot(...c.position.map((v,i)=>v-c.railPosition[i]))<1e-6));
+  assert.equal(s.wheelContacts.length,22);assert.ok(s.wheelContacts.every(c=>Math.hypot(...c.position.map((v,i)=>v-c.railPosition[i]))<1e-6));
   if(t===80)await snapshot('close-evening');
   if(t===420){assert.equal(s.phase,'arrived');await snapshot('arrival');}
  }

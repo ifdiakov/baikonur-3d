@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createRoadVehicles} from './road-vehicles.js?v=20261028-museum4-osm-live-v2';
-import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH} from './rail-vehicles.js?v=20261028-museum4-osm-live-v2';
+import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH} from './rail-vehicles.js?v=20261028-motovoz-photo-v3';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,t)=>{const u=clamp((t-a)/(b-a),0,1);return u*u*(3-2*u);};
@@ -65,9 +65,9 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
   stats:()=>({version:'ground-traffic-v2',elapsed,night,cars:cars.length,highwayRoutes:highway.routeIds,highwayLength:highway.length,highwayJoinGap:highway.joinGap,bridgeDistance:highway.bridgeDistance,
    cityRoutes:roadVehicles.stats().routes.filter(r=>r.id.startsWith('highway-city-')),roadVehicles:roadVehicles.stats(),carStates:roadVehicles.stats().carStates,
    train:{from:plan.from,to:plan.to,duration:TRAIN_DURATION,distance:engineDistance,length:rail.length,phase:lastPhase,following,gauge:plan.gauge,
-    version:'motovoz-four-coaches-v2',coachCount:coaches.length,consistLength:TRAIN_CONSIST_LENGTH,startDistance:TRAIN_START_DISTANCE,
+    version:'motovoz-photo-shunter-v3',coachCount:coaches.length,consistLength:TRAIN_CONSIST_LENGTH,startDistance:TRAIN_START_DISTANCE,
     locomotive:engine.root.position.toArray(),wagon:coaches[0].root.position.toArray(),coaches:coaches.map((v,i)=>({number:i+1,position:v.root.position.toArray(),distance:vehicleDistances.get(v),offset:COACH_OFFSETS[i],tailLights:v.last,lights:v.lightCount,detailCounts:v.detailCounts})),joins:plan.joins,
-    vehicleDetails:vehicles.map(v=>({kind:v.kind,meshes:v.root.children.filter(c=>c.isMesh).length,lightCount:v.lightCount,detailCounts:v.detailCounts})),
+    vehicleDetails:vehicles.map(v=>({kind:v.kind,axles:v.axles.length,bogies:v.bogies.length,bodyLength:v.bodyLength,meshes:v.root.children.filter(c=>c.isMesh).length,lightCount:v.lightCount,detailCounts:v.detailCounts})),
     wheelContacts:vehicles.flatMap(v=>v.axles.map(a=>({vehicle:v.root.name,distance:vehicleDistances.get(v)+a.offset,position:a.root.position.toArray(),railPosition:rail.position(vehicleDistances.get(v)+a.offset).toArray()}))),
     wheels:vehicles.flatMap(v=>v.axles.flatMap(a=>a.wheels.map(w=>({center:w.getWorldPosition(V()).toArray(),bottom:w.getWorldPosition(V()).y-v.wheelRadius}))))}})};
 }
