@@ -15,7 +15,7 @@ export function buildMik112(root,{year=2026}={}){
   yellow:0xbca36d,glass:0x536b64,rail:0x6e7774,asphalt:0x726e60
  },{wall:'concrete',concrete:'concrete',seam:'concrete',roof:'sheet',whiteRoof:'sheet',
   steel:'paint',dark:'metal',rust:'rust',yellow:'paint',rail:'metal'});
- const mat=palette.materials;
+ const mat=palette;
  const boxGeo=new THREE.BoxGeometry(1,1,1),rodGeo=new THREE.CylinderGeometry(1,1,1,7);
  const batches=new Map(),counts={},all=[];
  const intact=new THREE.Group(),ruins=new THREE.Group(),machines=new THREE.Group();

@@ -2021,11 +2021,11 @@
     },
     {
       "id": "pad-112",
-      "name": "Площадка № 112",
+      "name": "Площадка № 112 — МИК и «Кузнечики»",
       "x": 680,
       "y": 331,
-      "model": "tech",
-      "firstYear": null,
+      "model": "mik112-photo-v1",
+      "firstYear": 1967,
       "status": "label-read",
       "positionBasis": "visual-reference-plan",
       "sources": [
@@ -2035,15 +2035,17 @@
       "note": "Техническая позиция программы «Энергия» по договору аренды. История корпуса включает сборку Н1 и работы по программе «Энергия — Буран»; позднее часть инфраструктуры использовалась для «Союзов». У площадки несколько объектов с разной принадлежностью, поэтому одна организация не описывает всю территорию.",
       "purpose": "Монтажно-испытательные корпуса Н1 и «Энергии»",
       "number": "112",
-      "titleShort": "МИК / комплекс «Энергия»",
-      "titleFull": "пл. №112 · МИК / комплекс «Энергия»",
-      "purposeShort": "Монтажно-испытательные корпуса Н1 и «Энергии»",
-      "purposeLong": "Монтажно-испытательные корпуса Н1 и «Энергии»",
+      "titleShort": "МИК и «Кузнечики»",
+      "titleFull": "пл. №112 · МИК и транспортно-установочные агрегаты",
+      "purposeShort": "Монтажно-испытательный корпус и два ТУА «Энергии»",
+      "purposeLong": "МИК площадки №112 и два транспортно-установочных агрегата «Кузнечики». Модель по фотографиям RocketTrip: высокий корпус с тремя раскрытыми пролётами, сохранившийся низкий корпус, ворота, пристройки, подъездные рельсы и детализированные транспортёры. Состояние кровли меняется на временной шкале: до 2002 года — реконструкция целой кровли; с 2002 года — разрушенные пролёты.",
       "category": "технический",
       "publicReferences": [
         "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38",
         "https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/",
-        "https://meganorm.ru/mega_doc/dop1/84/postanovlenie_pravitelstva_rf_ot_15_03_2017_N_300_red_ot_17/0/prikaz_goskorporatsii_roskosmos_ot_20_09_2024_N_306_red_ot.html"
+        "https://meganorm.ru/mega_doc/dop1/84/postanovlenie_pravitelstva_rf_ot_15_03_2017_N_300_red_ot_17/0/prikaz_goskorporatsii_roskosmos_ot_20_09_2024_N_306_red_ot.html",
+        "https://www.buran.ru/htm/transp.htm",
+        "https://www.buran.ru/htm/sk.htm"
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
@@ -2051,7 +2053,49 @@
         "org": "РКЦ «Прогресс» (МИК); ЦЭНКИ (объекты площадки)",
         "role": ""
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотографическая реконструкция видимой архитектуры и механизмов. Пропорции, расстановка и присоединение к схематической железнодорожной сети ориентировочные; не обмерная модель.",
+      "photoFolder": {
+        "id": "1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk",
+        "name": "пл. №112 МИК",
+        "url": "https://drive.google.com/drive/folders/1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk"
+      },
+      "photoArchive": [
+        {
+          "fileName": "Снимок экрана 10.37.32.png",
+          "driveId": "1LlDda6xlcYGUjflfVtu7SBEe1RfRW-Ud",
+          "subject": "Схема кровли и взаимное положение корпусов"
+        },
+        {
+          "fileName": "6983077E.jpeg",
+          "driveId": "145QNZxiY6xccOT95iSq-HjA76Ntu6iX3",
+          "subject": "Фасад, остекление и лестничная башня"
+        },
+        {
+          "fileName": "IMG_2149.JPG",
+          "driveId": "14jTNN_uO4bq_AoN4mfRZri9smAORe-o2",
+          "subject": "ТУА сверху: ходовые тележки, фермы, поперечные балки"
+        },
+        {
+          "fileName": "IMG_2148.JPG",
+          "driveId": "1cr82R9HGJagOoiQlVf3VrP5q5YkV4Q67",
+          "subject": "Боковой силуэт четырёх пар подъёмных механизмов"
+        },
+        {
+          "fileName": "0708.jpg",
+          "driveId": "1QzsORM0GgE25wYL56-7SFg7XLOy4nz3a",
+          "subject": "Два агрегата перед МИК"
+        },
+        {
+          "fileName": "0718.jpg",
+          "driveId": "1dS5JTB2Ot5xs3q-FOO-6qFaCL6J3Z_6G",
+          "subject": "Перфорированные стойки, площадки и ограждения"
+        }
+      ],
+      "modelSourceFolders": [
+        "https://drive.google.com/drive/folders/1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk",
+        "https://drive.google.com/drive/folders/1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3"
+      ]
     },
     {
       "id": "pad-104",
