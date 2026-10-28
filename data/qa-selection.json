@@ -1,0 +1,21 @@
+{
+  "targetCommit": "b2400d7343beb18502f7ea8465ec0180dada2150",
+  "runId": "40667268352",
+  "version": "1.0-no-terrain-jump",
+  "local": "success",
+  "publicBrowser": "success",
+  "legacyJumpReproduced": true,
+  "checks": [
+    "hill-not-pickable",
+    "pan-not-click",
+    "out-and-back-drag",
+    "wheel",
+    "keyboard",
+    "right-drag",
+    "intentional-click",
+    "touch-pinch",
+    "lighting-tool"
+  ],
+  "errors": [],
+  "checkedAt": "2026-10-28T09:53:47.552Z"
+}
