@@ -78,16 +78,16 @@ export function buildSaturnIP5(root,terrain={}) {
     mesh.position.set(x,y,z);return add(mesh,label,parent);
   }
   function groundPatch(){
-    // A slight berm on the Murguduk hill, fading into the real procedural
+    // A broad 100-world-unit Murguduk mountain, fading into the real procedural
     // steppe, not a big raised rectangular slab.
-    const N=64,extent=340,vertices=[],colors=[],uv=[],indices=[];
+    const N=100,extent=1250,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
       const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent,
-        radius=Math.sqrt((xx/150)**2+(zz/140)**2),
+        radius=Math.sqrt((xx/560)**2+(zz/515)**2),
         r=(Math.sin(xx*.085+zz*.035)+Math.sin(xx*.038-zz*.076))*.22,
         t=Math.max(0,Math.min(1,(radius-.68)/.49)),
         fade=1-t*t*(3-2*t),
-        height=7.8*fade+1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+r*fade;
+        height=-190.476+(198.2*fade)+1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+r*fade;
       vertices.push(xx,height-.22,zz);
       const world=root.localToWorld(new THREE.Vector3(xx,0,zz));
       uv.push(.5+world.x/(terrain.terrainWidth||4420),.5-world.z/(terrain.terrainHeight||3553));
@@ -118,6 +118,7 @@ export function buildSaturnIP5(root,terrain={}) {
     // The shared satellite overlay uses renderOrder=2. Render the relief AFTER
     // that layer: otherwise the overlay visually flattens and hides the hill.
     hill.renderOrder=3;
+    hill.userData.terrainElevationWorld=100;
   }
   groundPatch();
 
