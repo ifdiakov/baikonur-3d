@@ -44,4 +44,5 @@ if(!test.includes("features['mik-floor-finish']")){
 }
 write('tests/mik112-browser.mjs',test);
 write('/tmp/mik112-check/main.mjs',h.match(/<script type="module">([\s\S]*?)<\/script>/)[1]);
-console.log('MIK112 v1.1: clean western feeder, preserved 2B catalogue, finished unobstructed assembly-hall floor');
+// Apply the user's scale/end/plan correction after the compatible v1.1 fixes.
+await import('./relocate-mik112.mjs');

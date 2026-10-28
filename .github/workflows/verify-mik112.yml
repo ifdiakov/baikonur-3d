@@ -7,6 +7,7 @@ on:
       - 'src/mik112-rail.js'
       - 'scripts/integrate-mik112.mjs'
       - 'scripts/refine-mik112.mjs'
+      - 'scripts/relocate-mik112.mjs'
       - 'tests/mik112-browser.mjs'
       - '.github/workflows/verify-mik112.yml'
   workflow_dispatch:
@@ -18,7 +19,7 @@ permissions:
 jobs:
   mik112:
     runs-on: ubuntu-24.04
-    timeout-minutes: 14
+    timeout-minutes: 16
     steps:
       - uses: actions/checkout@v4
         with:
@@ -26,14 +27,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Integrate only Site 112 and validate module syntax
+      - name: Integrate Site 112 correction and validate syntax
         run: |
           node scripts/integrate-mik112.mjs
           node scripts/refine-mik112.mjs
-          node -e 'const fs=require("fs");let h=fs.readFileSync("index.html","utf8");if(!h.includes("#mik112Controls[hidden]"))h=h.replace("</head>","<style>#mik112Controls[hidden]{display:none!important}</style></head>");fs.writeFileSync("index.html",h)'
           node --check /tmp/mik112-check/main.mjs
           node --check --input-type=module < src/mik112.js
           node --check --input-type=module < src/mik112-rail.js
+          node --check tests/mik112-browser.mjs
       - name: Install browser and vendor source for reproducibility
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1
@@ -45,7 +46,7 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/mik112-server.log 2>&1 &
           sleep 2
-      - name: Test actual local WebGL scene before publishing
+      - name: Verify local geometry and browser rendering before publishing
         id: local
         run: node tests/mik112-browser.mjs
       - name: Publish tested integration
@@ -53,9 +54,9 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html data/catalog.json src/mik112.js tests/mik112-browser.mjs
+          git add index.html data/catalog.json data/transport-network.json src/mik112.js src/mik112-rail.js tests/mik112-browser.mjs
           if ! git diff --cached --quiet; then
-            git commit -m 'Polish verified MIK112 railroad and remove overlapping generic fallback geometry'
+            git commit -m 'Correct MIK112 plan position, halve scale and move Energia transporters to NE gates'
             for n in 1 2 3; do
               git pull --rebase origin main
               if git push origin HEAD:main; then break; fi
@@ -69,12 +70,12 @@ jobs:
         run: |
           set -e
           for n in $(seq 1 24); do
-            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?site=112&verify=${GITHUB_SHA}&attempt=$n" -o /tmp/mik112-public.html \
-              && grep -Fq MIK112_PLACEHOLDER_OCCLUSION /tmp/mik112-public.html \
-              && curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/mik112.js?verify=${GITHUB_SHA}&attempt=$n" -o /tmp/mik112-public.js \
-              && cmp -s src/mik112.js /tmp/mik112-public.js \
-              && curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/mik112-rail.js?verify=${GITHUB_SHA}&attempt=$n" -o /tmp/mik112-rail-public.js \
-              && cmp -s src/mik112-rail.js /tmp/mik112-rail-public.js; then exit 0; fi
+            ok=1
+            for file in index.html src/mik112.js src/mik112-rail.js data/catalog.json data/transport-network.json; do
+              if ! curl -fsSL --retry 2 --max-time 20 "https://ifdiakov.github.io/baikonur-3d/$file?verify=${GITHUB_SHA}&attempt=$n" -o /tmp/mik112-public-asset \
+                 || ! cmp -s "$file" /tmp/mik112-public-asset; then ok=0; break; fi
+            done
+            if [ "$ok" = 1 ]; then exit 0; fi
             sleep 8
           done
           exit 1
@@ -90,9 +91,9 @@ jobs:
           TARGET: ${{ steps.commit.outputs.sha }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-mik112.json",JSON.stringify({targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success",version:"1.1-clean-feeder",checkedAt:new Date().toISOString()},null,2)+"\n")'
+          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-mik112.json",JSON.stringify({targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success",version:"1.2-plan-aligned-ne",mapPlacement:[640,361],scale:0.14,transporterSide:"north-east",checkedAt:new Date().toISOString()},null,2)+"\n")'
           git add data/qa-mik112.json
-          git commit -m 'ci: record verified MIK112 and transporter publication'
+          git commit -m 'ci: record verified MIK112 scale, opposite-end transporters and plan placement'
           git pull --rebase origin main
           git push origin HEAD:main
       - name: Save screenshots and exact tested source
