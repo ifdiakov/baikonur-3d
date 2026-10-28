@@ -1,0 +1,18 @@
+#lightingPanel{position:absolute;z-index:15;right:15px;top:15px;width:320px;max-height:calc(100dvh - 215px);overflow:auto;padding:17px;border:1px solid #ffffff36;border-radius:14px;background:#081724f5;color:#e9f1f6;box-shadow:0 12px 40px #0005;font:12px/1.5 Montserrat,Arial,sans-serif;backdrop-filter:blur(14px)}
+#lightingPanel[hidden]{display:none}
+.lighting-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;letter-spacing:.08em}
+#lightingPanel button{border:1px solid #ffffff30;border-radius:7px;background:#1b3447;color:#eaf3f7;padding:8px 10px;font:600 10px Montserrat,Arial;cursor:pointer}
+#lightingPanel button:hover{border-color:#ef796e;background:#71312e}
+#lightingPanel button[aria-pressed=true]{background:#b7473e;border-color:#f18d81}
+#lightingPanel button:disabled{opacity:.4;cursor:default}
+#lightingPanel .lighting-heading button{font-size:20px;padding:0 7px;background:transparent;border:0}
+.lighting-modes,.lighting-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.lighting-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0 10px}
+.lighting-fields label,.lighting-side{display:flex;flex-direction:column;gap:5px;color:#c5d4df;font-size:10px}
+#lightingPanel input[type=number],#lightingPanel select{width:100%;padding:8px;border:1px solid #ffffff31;border-radius:7px;background:#112b3e;color:white;font:12px Montserrat,Arial}
+#lightingPanel input:disabled,#lightingPanel select:disabled{opacity:.4}
+.lighting-help{min-height:50px;color:#bfceda;font-size:11px}
+.lighting-count{padding:10px 0;color:#fff0dc;font-weight:700}
+.lighting-save{color:#92a9bb;font-size:9px;margin-bottom:0}
+#lightingStatus{color:#efb3a4;font-size:11px;min-height:18px}
+@media(max-width:750px){#lightingPanel{right:8px;top:8px;width:min(310px,calc(100vw - 16px));max-height:calc(100dvh - 185px)}}

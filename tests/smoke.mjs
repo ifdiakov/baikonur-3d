@@ -398,7 +398,7 @@ assert.equal(await page.locator('.site-label[data-site-index="0"]').getAttribute
 await page.locator('.rockettrip-logo').click();
 assert.equal(await detailEye.isVisible(),false);
 assert.equal(await page.locator('#title').textContent(),'пл. №1 · Гагаринский старт');
-const siteTags=await page.locator('.site-label:not(.is-provisional) .tag').allTextContents();
+const siteTags=await page.locator('.site-label:not(.is-provisional):not(.station-card) .tag').allTextContents();
 assert.ok(siteTags.length>=80 && siteTags.every(v=>/^пл\. №\d/.test(v)),'All numbered site labels must use the unified «пл. №» prefix');
 await page.locator('#sitesAccordion > summary').click();
 assert.equal(await accordion.evaluate(el=>el.open),true);

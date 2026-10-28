@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261028-hill20';
+import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261028-road-editor';
 
 /**
  * Baikonur Site 23: IP-5 Saturn-MS measuring station — museum reconstruction.
@@ -99,17 +99,20 @@ export function buildSaturnIP5(root,terrain={}) {
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
     geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));
     geo.setIndex(indices);geo.computeVertexNormals();
-    const groundMaterial=new THREE.MeshStandardMaterial({
-      map:terrain.terrainTexture||null,
-      color:terrain.terrainTexture?0xffffff:0x9d8e76,
-      vertexColors:true,transparent:true,depthWrite:false,roughness:1,metalness:0,
-      side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2
+    // Match the actual map surface: identical texture, world UVs and unlit
+    // colour response. Lit soil changed the palette into a visible brown patch.
+    const groundMaterial=terrain.terrainMaterial?.clone()||new THREE.MeshBasicMaterial({
+      map:terrain.terrainTexture||null,color:terrain.terrainTexture?0xffffff:0x9d8e76,
+      side:THREE.DoubleSide
     });
+    Object.assign(groundMaterial,{vertexColors:true,transparent:true,depthWrite:false,
+      polygonOffset:true,polygonOffsetFactor:-2});
     const hill=add(new THREE.Mesh(geo,groundMaterial),'murguduk-hill');
     // The shared satellite overlay uses renderOrder=2. Render the relief AFTER
     // that layer: otherwise the overlay visually flattens and hides the hill.
     hill.renderOrder=3;
     hill.userData.terrainElevationWorld=SATURN_ACCESS.verticalRaise;
+    hill.userData.surfaceStyle='shared-steppe-world-uv';
   }
   groundPatch();
 

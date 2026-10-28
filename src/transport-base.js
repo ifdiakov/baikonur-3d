@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js';
 
 /**
  * Baikonur transportation infrastructure / v1
@@ -6,9 +7,11 @@ import * as THREE from 'three';
  * NOT CAD/surveyed. Station tracks and turnouts are museum reconstruction.
  * All route coordinates use the original plan 1300×1045 coordinate plane.
  */
-export function buildTransportNetwork({data,point,layers,siteRecords}) {
+export function buildTransportNetwork({data,point,layers,siteRecords,roadElevation=()=>0,railElevation=()=>0,gagarinRail}) {
+  const RAIL_SCALE=RAIL_PROFILE.gauge/2.1;
+  const junctions=[...(data.junctions||[])];
   const state={
-    version:'1.0',stationCount:0,roadRoutes:0,railRoutes:0,railSwitches:0,
+    version:'1.0',railScale:RAIL_SCALE,railGauge:RAIL_PROFILE.gauge,roadMarkings:'flat-dashes',markingSegments:0,stationCount:0,roadRoutes:0,railRoutes:0,railSwitches:0,
     yardTracks:0,facilityDriveways:0,railTies:0,renderedRailLength:0,
     sources:'original Baikonur historical site plan + visually interpreted switches',
     confidence:'schematic-topology'
@@ -17,12 +20,12 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     asphalt:new THREE.MeshStandardMaterial({color:0x555550,roughness:.96,polygonOffset:true,polygonOffsetFactor:-2}),
     service:new THREE.MeshStandardMaterial({color:0x766d5d,roughness:.98,polygonOffset:true,polygonOffsetFactor:-2}),
     shoulder:new THREE.MeshStandardMaterial({color:0xa69b84,roughness:1,polygonOffset:true,polygonOffsetFactor:-2}),
-    asphaltEdge:new THREE.MeshBasicMaterial({color:0xb4a994}),
+    asphaltEdge:new THREE.MeshBasicMaterial({color:0xd8d4c7,transparent:true,opacity:.8,depthWrite:false}),
     gravel:new THREE.MeshStandardMaterial({color:0x786f5e,roughness:1}),
-    crushed:new THREE.MeshStandardMaterial({color:0x918675,roughness:1}),
-    rail:new THREE.MeshStandardMaterial({color:0x454749,roughness:.55,metalness:.64}),
+    crushed:new THREE.MeshStandardMaterial({color:0x988b78,roughness:1}),
+    rail:new THREE.MeshStandardMaterial({color:0x3f4242,roughness:.55,metalness:.64}),
     railHighlight:new THREE.MeshStandardMaterial({color:0x909390,metalness:.7,roughness:.45}),
-    sleepers:new THREE.MeshStandardMaterial({color:0x574d46,roughness:.96}),
+    sleepers:new THREE.MeshStandardMaterial({color:0x766c5c,roughness:.96}),
     station:new THREE.MeshStandardMaterial({color:0x999992,roughness:.9}),
     stationRoof:new THREE.MeshStandardMaterial({color:0x6f8b8a,roughness:.73,metalness:.16}),
     stationDark:new THREE.MeshStandardMaterial({color:0x35484c,roughness:.69}),
@@ -64,10 +67,10 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     const mesh=new THREE.Mesh(g,material);
     mesh.receiveShadow=true;group.add(mesh);return mesh;
   }
-  function tube(group,samples,offset,radius,material,y,segments=6) {
+  function tube(group,samples,offset,radius,material,y,segments=6,elevationAt=null) {
     if(samples.length<3)return null;
     const pts=samples.map(s=>new THREE.Vector3(
-      s.pos.x+s.nx*offset,y,s.pos.z+s.nz*offset
+      s.pos.x+s.nx*offset,elevationAt?elevationAt(s):y,s.pos.z+s.nz*offset
     ));
     const path=new THREE.CatmullRomCurve3(pts,false,'centripetal',.3);
     const obj=new THREE.Mesh(new THREE.TubeGeometry(path,Math.max(24,pts.length),radius,segments,false),material);
@@ -75,81 +78,54 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
   }
   function centerlineRoad(route) {
     const curve=curveFor(route.points,rootY);
-    roadCurves.push({route,curve});
+    roadCurves.push({route,curve,width:route.class==='arterial'?8.5:route.class==='urban'?7.2:5.2});
     const samples=baseSamples(curve);
     const main=route.class==='arterial',urban=route.class==='urban';
     const w=main?8.5:urban?7.2:5.2;
     const laneMaterial=main||urban?materials.asphalt:materials.service;
-    if(route.id==='r-site23-saturn-access'){
-      // The access climbs the Murguduk relief and joins the modelled elevated
-      // Saturn service apron. A fixed y=.72 was buried under the hill mesh.
-      const site=siteRecords.find(s=>s.id==='pad-23');
-      const center=site?point(site.x,site.y,0):null;
-      const modelScale=.525;
-      function groundAt(sample){
-        if(!center)return .8;
-        const dx=(sample.pos.x-center.x)/modelScale;
-        const dz=(sample.pos.z-center.z)/modelScale;
-        const radius=Math.hypot(dx/340,dz/460);
-        const v=Math.max(0,Math.min(1,(radius-.28)/.90));
-        const fade=1-v*v*(3-2*v);
-        const relief=-190.476+198.2*fade+
-          1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+
-          (Math.sin(dx*.085+dz*.035)+Math.sin(dx*.038-dz*.076))*.22*fade;
-        const surface=97.45+modelScale*(relief-.22);
-        return Math.max(.78,surface+.38);
-      }
-      // Match the arterial at the west end and paved site apron at the east.
-      const ramp=sample=>{
-        const t=sample.t,blend=Math.min(1,Math.max(0,t/.12));
-        const eased=blend*blend*(3-2*blend);
-        const height=groundAt(sample);
-        const raised=.76*(1-eased)+height*eased;
-        // Finish flush with Saturn's western internal road (local y=7.42),
-        // rather than ending visibly above it on the hill.
-        const apronY=97.45+.525*(7.42+.23/2);
-        const endBlend=Math.max(0,Math.min(1,(t-.78)/.22));
-        const endEase=endBlend*endBlend*(3-2*endBlend);
-        return raised*(1-endEase)+apronY*endEase;
-      };
-      ribbon(layers.roads,samples,w+3.1,.05,materials.shoulder,0,s=>ramp(s)-.07);
-      ribbon(layers.roads,samples,w,.05,materials.service,0,ramp);
-    }else{
-      ribbon(layers.roads,samples,w+3.1,.66,materials.shoulder);
-      ribbon(layers.roads,samples,w,.72,laneMaterial);
+    ribbon(layers.roads,samples,w+3.1,.66,materials.shoulder,0,s=>.66+roadElevation(route.id,s.pos));
+    ribbon(layers.roads,samples,w,.72,laneMaterial,0,s=>.72+roadElevation(route.id,s.pos));
+    if(route.gateWorld){
+      const end=curve.getPoint(1),gate=new THREE.Vector3(...route.gateWorld);
+      state.kazGateGap=Math.hypot(end.x-gate.x,end.z-gate.z);
     }
-    if(main){tube(layers.roads,samples,0,.10,materials.asphaltEdge,.795,4)}
     state.roadRoutes++;
   }
-  function sleeperInstances(group,locations,scale=1) {
+  function sleeperInstances(group,locations,scale=RAIL_SCALE) {
     if(!locations.length)return;
     const mesh=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),materials.sleepers,locations.length);
-    const matrix=new THREE.Matrix4(),rotation=new THREE.Quaternion(),pos=new THREE.Vector3(),size=new THREE.Vector3(3.45*scale,.12*scale,.66*scale);
+    const matrix=new THREE.Matrix4(),rotation=new THREE.Quaternion(),pos=new THREE.Vector3(),size=new THREE.Vector3(RAIL_PROFILE.sleeperLength,RAIL_PROFILE.sleeperHeight,RAIL_PROFILE.sleeperWidth);
     locations.forEach((s,i)=>{
       const yaw=Math.atan2(s.tan.x,s.tan.z);
       rotation.setFromAxisAngle(new THREE.Vector3(0,1,0),yaw);
-      pos.set(s.pos.x,.955,s.pos.z);
+      pos.set(s.pos.x,(s.datum??.75)+RAIL_PROFILE.sleeperY,s.pos.z);
       matrix.compose(pos,rotation,size);mesh.setMatrixAt(i,matrix);
     });
     mesh.instanceMatrix.needsUpdate=true;mesh.frustumCulled=false;group.add(mesh);
     state.railTies+=locations.length;
   }
   function renderTrack(id,curve,role,record=true){
-    const samples=baseSamples(curve),length=curve.getLength(),offset=1.05;
-    ribbon(layers.rails,samples,7.1,.77,materials.gravel);
-    ribbon(layers.rails,samples,4.5,.82,materials.crushed);
-    // Each railway consists of two physical rails, not one dark tube.
-    tube(layers.rails,samples,-offset,.21,materials.rail,1.29);
-    tube(layers.rails,samples,offset,.21,materials.rail,1.29);
-    tube(layers.rails,samples,-offset,.06,materials.railHighlight,1.50,5);
-    tube(layers.rails,samples,offset,.06,materials.railHighlight,1.50,5);
-    // Deliberately sparse ties at overview resolution, dense enough on zoom.
-    const positions=[],step=role==='yard'?6.2:7.7,stepCount=Math.floor(length/step);
+    const firstMesh=layers.rails.children.length;
+    const isGagarin=id===gagarinRail?.id;
+    const samples=baseSamples(curve,Math.max(32,Math.ceil(curve.getLength()/(isGagarin?2.5:8))));
+    const length=curve.getLength(),offset=RAIL_PROFILE.gauge/2;
+    const datum=s=>isGagarin?gagarinRail.datum(s.t):.75+railElevation(id,s.pos);
+    ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth*1.12,0,materials.gravel,0,s=>datum(s)+.01);
+    ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth,0,materials.crushed,0,s=>datum(s)+RAIL_PROFILE.ballastY);
+    for(const side of [-1,1]){
+      ribbon(layers.rails,samples,RAIL_PROFILE.bodyWidth,0,materials.rail,side*offset,s=>datum(s)+RAIL_PROFILE.bodyY);
+      tube(layers.rails,samples,side*offset,RAIL_PROFILE.headRadius,materials.rail,0,6,s=>datum(s)+RAIL_PROFILE.headY);
+    }
+    // Near the pad, sleeper spacing also matches its detailed track exactly.
+    // Distant network ties are sampled more sparsely to keep the large map fast.
+    const positions=[],step=RAIL_PROFILE.sleeperStep*(isGagarin?1:3),stepCount=Math.floor(length/step);
     for(let i=0;i<=stepCount;i++){
-      const fraction=wrap(i*step/Math.max(length,.01));const v=curve.getPointAt(fraction),tan=curve.getTangentAt(fraction);
-      positions.push({pos:v,tan});
+      const fraction=wrap(i*step/Math.max(length,.01)),v=curve.getPointAt(fraction),tan=curve.getTangentAt(fraction);
+      const t=curve.getUtoTmapping(fraction);
+      positions.push({pos:v,tan,datum:datum({pos:v,t})});
     }
     sleeperInstances(layers.rails,positions);
+    for(const mesh of layers.rails.children.slice(firstMesh))mesh.userData.railRoute=id;
     state.renderedRailLength+=length;
     if(record){state.railRoutes++;routeCurves.set(id,curve)}
     railGroups.push({id,role,curve});
@@ -200,15 +176,16 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     }
     // Station labels are projected into the HTML overlay, not painted onto
     // terrain-facing sprites. Their typography remains readable at any zoom.
-    const anchor=house.clone();anchor.y=29;
-    stationLabels.push({id:yard.id,name:yard.label,world:anchor});
+    const anchor=new THREE.Object3D();anchor.position.copy(house);anchor.position.y=1.2;
+    group.add(anchor);
+    stationLabels.push({id:yard.id,name:yard.label,anchor,group,record:yard});
     group.userData={stationName:yard.label,confidence:yard.confidence,stationId:yard.id};
     state.stationCount++;
   }
   function signalAt(curve,t,side=1){
     const pos=curve.getPointAt(wrap(t)),dir=curve.getTangentAt(wrap(t));
     const mag=Math.hypot(dir.x,dir.z)||1,normal=new THREE.Vector3(-dir.z/mag,0,dir.x/mag);
-    const group=new THREE.Group();group.position.copy(pos.addScaledVector(normal,side*7));group.position.y=2;
+    const group=new THREE.Group();group.position.copy(pos.addScaledVector(normal,side*7*RAIL_SCALE));group.position.y=1;group.scale.setScalar(RAIL_SCALE);
     layers.rails.add(group);
     const post=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,8,7),materials.signal);
     post.position.y=4;group.add(post);
@@ -224,18 +201,18 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     const normal=new THREE.Vector3(-dir.z/length,0,dir.x/length),forward=new THREE.Vector3(dir.x/length,0,dir.z/length);
     // two explicitly distinct point rails and a short lateral closure.
     for(const side of [-1,1]){
-      const start=p.clone().addScaledVector(forward,-6).addScaledVector(normal,side*1.06);
-      const tip=p.clone().addScaledVector(forward,7).addScaledVector(normal,side*1.06+2.35);
-      const middle=p.clone().addScaledVector(forward,1).addScaledVector(normal,side*1.06+.45);
+      const start=p.clone().addScaledVector(forward,-6).addScaledVector(normal,side*1.06*RAIL_SCALE);
+      const tip=p.clone().addScaledVector(forward,7).addScaledVector(normal,side*1.06*RAIL_SCALE+2.35*RAIL_SCALE);
+      const middle=p.clone().addScaledVector(forward,1).addScaledVector(normal,side*1.06*RAIL_SCALE+.45*RAIL_SCALE);
       const c=new THREE.CatmullRomCurve3([start,middle,tip]);
       const pts=baseSamples(c,12);
-      tube(layers.rails,pts,0,.16,materials.railHighlight,1.64,5);
+      tube(layers.rails,pts,0,.16*RAIL_SCALE,materials.railHighlight,.82+.82*RAIL_SCALE,5);
     }
     state.railSwitches++;
   }
   for(const road of data.routes.road)centerlineRoad(road);
   for(const rail of data.routes.rail){
-    const curve=curveFor(rail.points,1.03);
+    const curve=rail.id===gagarinRail?.id?gagarinRail.curve:curveFor(rail.points,.75);
     renderTrack(rail.id,curve,rail.role);
   }
   for(const yard of data.yards){
@@ -245,14 +222,14 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     const half=span/(length*2),t0=Math.max(.012,near.t-half),t1=Math.min(.988,near.t+half);
     let shownTracks=0;
     for(let k=1;k<yard.tracks;k++){
-      const sign=k%2===1?1:-1,offset=Math.ceil(k/2)*13;
+      const sign=k%2===1?1:-1,offset=Math.ceil(k/2)*13*RAIL_SCALE;
       const path=yardTrack(base,t0,t1,offset,sign);
       renderTrack(yard.id+'-yard-'+k,path,'yard',false);
       turnoutBlade(base,t0+k*.0018);
       turnoutBlade(base,t1-k*.0018);
       state.yardTracks++;shownTracks++;
     }
-    stampStation(yard,base,near.t,shownTracks?19:13);
+    stampStation(yard,base,near.t,(shownTracks?19:13)*RAIL_SCALE);
     signalAt(base,t0-.012,1);
     signalAt(base,t1+.012,-1);
   }
@@ -265,7 +242,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
   // and terminate at the facility apron; never create arbitrary town-sized
   // paved roads or fake station names.
   const wanted=new Set(data.facilityDriveways);
-  const connected=[];
+  const connected=[],drivewayPaths=[];
   for(const site of siteRecords){
     const number=site.number||site.name.match(/№\s*(\d+[А-ЯA-Z]?)/u)?.[1];
     if(!number||!wanted.has(number))continue;
@@ -286,13 +263,46 @@ export function buildTransportNetwork({data,point,layers,siteRecords}) {
     p3.y=.9;
     const cg=new THREE.CatmullRomCurve3([p0,pivot,p3],false,'centripetal',.15);
     const samples=baseSamples(cg,25);
-    ribbon(layers.roads,samples,6.4,.81,materials.shoulder);
-    ribbon(layers.roads,samples,4.0,.88,materials.service);
+    const startRaise=roadElevation(roadCurves.find(r=>r.curve===best.route)?.route.id,p0);
+    const drivewayHeight=s=>.88+startRaise*(1-s.t*s.t*(3-2*s.t));
+    ribbon(layers.roads,samples,6.4,.81,materials.shoulder,0,s=>drivewayHeight(s)-.07);
+    ribbon(layers.roads,samples,4.0,.88,materials.service,0,drivewayHeight);
+    junctions.push({x:p0.x,z:p0.z});
+    drivewayPaths.push({id:'driveway-'+number,label:'Подъезд к пл. №'+number,width:4,
+      points:samples.map(s=>new THREE.Vector3(s.pos.x,drivewayHeight(s),s.pos.z))});
     connected.push(number);
     state.facilityDriveways++;
   }
+  // Flat paint follows arc length and stops at branch junctions. Service
+  // tracks remain unmarked; raised continuous tubes are not road markings.
+  const paintVertices=[],paintIndices=[];
+  for(const {route,curve} of roadCurves){
+    if(route.class!=='arterial'&&route.class!=='urban')continue;
+    const length=curve.getLength();
+    for(let distance=12;distance<length-12;distance+=13.5){
+      const section=[];
+      for(let j=0;j<=3;j++){
+        const t=Math.min(1,(distance+j*5.5/3)/length),pos=curve.getPointAt(t),tan=curve.getTangentAt(t);
+        const norm=Math.hypot(tan.x,tan.z)||1;
+        section.push({pos,tan,nx:-tan.z/norm,nz:tan.x/norm});
+      }
+      if(section.some(s=>junctions.some(j=>Math.hypot(s.pos.x-j.x,s.pos.z-j.z)<13)))continue;
+      const offset=paintVertices.length/3;
+      section.forEach((s,i)=>{
+        for(const side of [-1,1])paintVertices.push(s.pos.x+side*s.nx*.08,.741+roadElevation(route.id,s.pos),s.pos.z+side*s.nz*.08);
+        if(i<section.length-1){const k=offset+i*2;paintIndices.push(k,k+1,k+2,k+1,k+3,k+2);}
+      });
+      state.markingSegments++;
+    }
+  }
+  const paintGeometry=new THREE.BufferGeometry();
+  paintGeometry.setAttribute('position',new THREE.Float32BufferAttribute(paintVertices,3));paintGeometry.setIndex(paintIndices);
+  const paint=new THREE.Mesh(paintGeometry,materials.asphaltEdge);paint.name='road-center-dashes';paint.renderOrder=4;layers.roads.add(paint);
   return {
-    stationLabels:()=>stationLabels.map(label=>({id:label.id,name:label.name,world:label.world.clone()})),
+    roadPaths:()=>[...roadCurves.map(({route,curve,width})=>({id:route.id,
+      label:route.id==='r-site3-kaz-access'?'Подъезд к пл. №3':route.id==='r-site75-seven-winds-access'?'Подъезд к пл. №75':'Автодорога',width,
+      points:baseSamples(curve,Math.max(30,Math.ceil(curve.getLength()/5))).map(s=>new THREE.Vector3(s.pos.x,.72+roadElevation(route.id,s.pos),s.pos.z))})),...drivewayPaths],
+    stationLabels:()=>stationLabels.map(label=>({...label,world:label.anchor.getWorldPosition(new THREE.Vector3())})),
     stats:()=>({...state,roadRoutes:state.roadRoutes,railRoutes:state.railRoutes,
       siteAccess:connected,stationNames:data.yards.map(s=>s.label)}),
     routes:data.routes,confidence:data.realismNotes

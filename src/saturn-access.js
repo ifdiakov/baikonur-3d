@@ -157,5 +157,6 @@ export function buildSaturnNorthwestAccess({data,point,layers,siteRecords}) {
     junctionParameter:snapped.t,junctionError:0,gateError:0,
     minTerrainClearance:minClearance,sectionCount:sections.length,routeId:route.id};
   group.userData.saturnAccess=report;
-  return {route,report,group};
+  return {route,report,group,lampPath:{id:route.id,label:'Подъезд к «Сатурну»',width:5.2,
+    points:sections.map(s=>new THREE.Vector3(s.p.x,s.y,s.p.z))}};
 }
