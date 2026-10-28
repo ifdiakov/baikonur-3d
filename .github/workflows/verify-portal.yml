@@ -2,7 +2,7 @@ name: Portal photo models, terrain excavation and organisations
 on:
   push:
     branches: [main]
-    paths: ['src/archive-*.js','src/terrain-voids.js','scripts/integrate-portal.mjs','scripts/optimise-archive.mjs','scripts/patch-gagarin.mjs','scripts/partner-logos.py','archive.html','tests/portal-browser.mjs','.github/workflows/verify-portal.yml']
+    paths: ['src/archive-*.js','src/terrain-voids.js','scripts/integrate-portal.mjs','scripts/review-portal.mjs','scripts/optimise-archive.mjs','scripts/patch-gagarin.mjs','scripts/partner-logos.py','archive.html','tests/portal-browser.mjs','.github/workflows/verify-portal.yml']
   workflow_dispatch:
 concurrency:
   group: portal-model-release
@@ -31,6 +31,7 @@ jobs:
       - name: Integrate scoped models, excavation and ownership
         run: |
           node scripts/integrate-portal.mjs
+          node scripts/review-portal.mjs
           python3 scripts/partner-logos.py
           node --check /tmp/portal-check/main.mjs
           for f in src/archive-*.js src/terrain-voids.js src/gagarin-pad.js src/organisation-logos.js; do node --check --input-type=module < "$f"; done
@@ -45,9 +46,9 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html src/archive-kit.js src/gagarin-pad.js src/gagarin-rail-approach.js src/organisation-logos.js data/catalog.json data/portal-source-register.json assets/org-logos/infracos.png assets/org-logos/baiterek.png assets/org-logos/portal-partner-sources.json
+          git add index.html src/archive-kit.js src/gagarin-pad.js src/gagarin-rail-approach.js src/organisation-logos.js data/catalog.json data/transport-network.json data/portal-source-register.json assets/org-logos/infracos.png assets/org-logos/baiterek.png assets/org-logos/portal-partner-sources.json
           if ! git diff --cached --quiet; then
-            git commit -m 'Integrate portal photo models; excavate Gagarin flame duct; attribute Infracos and Baiterek sites'
+            git commit -m 'Integrate reviewed portal models; retain terrain excavation and corrected partner brands'
             git pull --rebase origin main
             git push origin HEAD:main
           fi
@@ -56,7 +57,7 @@ jobs:
         run: |
           for n in $(seq 1 30); do
             ok=true
-            for path in index.html src/gagarin-pad.js data/catalog.json src/archive-models.js src/archive-kit.js src/terrain-voids.js assets/org-logos/infracos.png assets/org-logos/baiterek.png; do
+            for path in index.html src/gagarin-pad.js data/catalog.json data/transport-network.json src/archive-models.js src/archive-kit.js src/terrain-voids.js assets/org-logos/infracos.png assets/org-logos/baiterek.png; do
               file="/tmp/check-$(basename "$path")"
               if ! curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/$path?portal=${GITHUB_SHA}&n=$n" -o "$file" || ! cmp -s "$path" "$file"; then ok=false; fi
             done
@@ -76,7 +77,7 @@ jobs:
         run: |
           node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("qa-portal/public-result.json"));fs.writeFileSync("data/qa-portal.json",JSON.stringify({...r,targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success"},null,2)+"\n")'
           git add data/qa-portal.json
-          git commit -m 'ci: verify portal model batch, terrain excavation and partner brands'
+          git commit -m 'ci: verify portal models in day and evening, excavation and partner logos'
           git pull --rebase origin main
           git push origin HEAD:main
       - name: Archive browser evidence and exact tested source
