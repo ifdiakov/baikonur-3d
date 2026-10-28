@@ -313,6 +313,7 @@ import {SATURN_ACCESS} from './src/saturn-access.js?v=20261028-road-editor';
 import {createLightingEditor} from './src/lighting-editor.js';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=20261028-catalog';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=112-layout-ne-v3';
+import {installSceneSelection} from './src/scene-selection.js?v=no-terrain-jump-v1';
 try{
 // Common display scale for structures on the schematic; geometry stays fully detailed.
 const MODEL_SCALE=0.28;
@@ -1210,7 +1211,7 @@ saturnGroup.updateMatrixWorld(true);
 buildSaturnIP5(saturnGroup,{terrainTexture:satelliteTexture,terrainMaterial:satelliteGround.material,terrainWidth:W*S,terrainHeight:H*S});
 saturnSite.type='saturn-ms';
 saturnGroup.traverse(o=>{
- if(o.isMesh){o.userData.idx=saturnIndex;clickable.push(o)}
+ if(o.isMesh){o.userData.idx=saturnIndex;if(o.userData.museumComponent==='murguduk-hill')o.userData.pickable=false;clickable.push(o)}
 });
 // Coordinates are provisional — the numbered facility itself is documented.
 
@@ -1421,7 +1422,12 @@ if(requestedPad){
 document.getElementById('mik112All').onclick=()=>focusMik112('all');
 document.getElementById('mik112Tua').onclick=()=>focusMik112('tua');
 document.getElementById('mik112Top').onclick=()=>focusMik112('top');
-document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('all').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1450*SCENE_SCALE,1450*SCENE_SCALE)};document.getElementById('top').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1500*SCENE_SCALE,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();renderer.domElement.addEventListener('click',e=>{mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);const hit=ray.intersectObjects(clickable).find(h=>h.object.parent.visible&&h.object.parent.parent.visible);if(hit)focus(hit.object.userData.idx)});window.__BAIKONUR_QA={setAltitude(n,cardId){
+document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('all').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1450*SCENE_SCALE,1450*SCENE_SCALE)};document.getElementById('top').onclick=()=>{setGagarinDetailView(false);ctl.target.set(0,0,0);camera.position.set(0,1500*SCENE_SCALE,.01)};let fly=false,angle=0;document.getElementById('fly').onclick=()=>{fly=!fly;document.getElementById('fly').textContent=fly?'Остановить':'Облёт'};document.querySelectorAll('[data-layer]').forEach(c=>c.onchange=()=>{layers[c.dataset.layer].visible=c.checked});document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}// SCENE_SELECTION_NO_TERRAIN_JUMP_V1: do not interpret navigation as a click.
+const sceneSelection=installSceneSelection({element:renderer.domElement,camera,controls:ctl,
+ getObjects:()=>clickable,onSelect:focus,blocked:()=>Boolean(lightingEditor?.active),
+ onNavigate:()=>{if(fly){fly=false;document.getElementById('fly').textContent='Облёт';}}
+});
+window.__BAIKONUR_QA={selection:sceneSelection,selectionState(){return {...sceneSelection.snapshot(),currentObject,title:document.getElementById("title").textContent}},setAltitude(n,cardId){
  const wasDamping=ctl.enableDamping;
  ctl.enableDamping=false;ctl.update(); // drain residual mouse orbit before exact camera placement
  ctl.target.set(0,0,0);
