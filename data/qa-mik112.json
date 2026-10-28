@@ -1,6 +1,6 @@
 {
-  "targetCommit": "a2982c24715956072a6480bf1232b58fdb3ccdca",
-  "runId": "40698627954",
+  "targetCommit": "b074420c3224ced7647765bc7873788e47374d35",
+  "runId": "40716361375",
   "local": "success",
   "publicBrowser": "success",
   "version": "1.3-photo-frames",
@@ -10,5 +10,5 @@
   ],
   "scale": 0.14,
   "transporterSide": "north-east",
-  "checkedAt": "2026-10-28T13:42:31.597Z"
+  "checkedAt": "2026-10-28T15:31:50.076Z"
 }
