@@ -1994,37 +1994,33 @@
       "purpose": "Удалённый объект"
     },
     {
-      "id": "pad-17",
-      "name": "Площадка № 17",
+      "id": "pad-75",
+      "name": "Площадка № 75 — гостиница «7 ветров»",
       "x": 639,
       "y": 551,
       "model": "tech",
       "firstYear": null,
       "status": "label-read",
-      "positionBasis": "visual-reference-plan",
+      "positionBasis": "user-corrected-position-on-museum-map",
       "sources": [
         "original-plan-3993x3208",
         "service-photo-2026"
       ],
-      "note": "Номер площадки прочитан на схеме; положение оцифровано ориентировочно по рисунку. Для точной привязки и назначения необходима сверка. Функция сверена по публичным источникам, положение на 3D-плане предварительное.",
-      "purpose": "Предстартовое размещение экипажей, пресс-конференции и традиционный выход космонавтов. Рядом — Аллея космонавтов.",
+      "note": "Пользователь идентифицировал ранее ошибочно подписанную пл. №17 как площадку №75 — гостиница «7 ветров». Координаты (639,551) оставлены без изменения; точность геопривязки предварительная.",
+      "purpose": "Гостиничный комплекс «7 ветров» на территории космодрома.",
       "organisation": {
-        "org": "ЦПК",
-        "role": "подготовка экипажей; связь с гостиницей «Космонавт»",
-        "source": "https://www.gctc.ru/main.php?id=2227"
+        "org": "Принадлежность уточняется",
+        "role": "гостиница",
+        "source": null
       },
-      "number": "17",
-      "titleShort": "Гостиница «Космонавт»",
-      "titleFull": "пл. №17 · Гостиница «Космонавт»",
-      "purposeShort": "Гостиница «Космонавт»",
-      "purposeLong": "Предстартовое размещение экипажей, пресс-конференции и традиционный выход космонавтов. Рядом — Аллея космонавтов.",
-      "category": "мемориальный",
-      "publicReferences": [
-        "https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/",
-        "https://baikonurtour.ru/program.html",
-        "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38"
-      ],
-      "evidenceLevel": "public-source-confirmed-function",
+      "number": "75",
+      "titleShort": "Гостиница «7 ветров»",
+      "titleFull": "пл. №75 · гостиница «7 ветров»",
+      "purposeShort": "Гостиница «7 ветров»",
+      "purposeLong": "Гостиница «7 ветров». Исторические сведения, ведомственная принадлежность и даты эксплуатации требуют проверки.",
+      "category": "гостиничный",
+      "publicReferences": [],
+      "evidenceLevel": "user-identified-location",
       "positionVerified": false
     },
     {
