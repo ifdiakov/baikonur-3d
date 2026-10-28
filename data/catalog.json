@@ -2026,17 +2026,17 @@
     {
       "id": "pad-3",
       "name": "Площадка № 3 — КАЗ",
-      "x": 719,
+      "x": 708,
       "y": 651,
       "model": "kaz-industrial-photo-v1",
       "firstYear": null,
       "status": "label-read",
-      "positionBasis": "User-directed approximate placement: farther north along main cosmodrome road beyond IP Saturn, on eastern/right side",
+      "positionBasis": "User-directed adjustment closer to main arterial; museum map provisional",
       "sources": [
         "original-plan-3993x3208",
         "service-photo-2026"
       ],
-      "note": "Перенесена по уточнению пользователя: дальше ИП «Сатурн» по главной дороге, справа (восточнее) от неё. Привязка предварительная, точный план не подтверждён.",
+      "note": "КАЗ расположен восточнее главной дороги, вытянут вдоль неё; передвинут ближе к дороге с x=719 на x=708 по просьбе пользователя. Геопривязка предварительная.",
       "purpose": "Кислородно-азотный завод (КАЗ): производственный комплекс, технологические галереи, резервуары и железнодорожная инфраструктура.",
       "number": "3",
       "titleShort": "КАЗ",
