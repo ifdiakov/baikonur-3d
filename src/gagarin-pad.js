@@ -21,6 +21,8 @@ import {createSurfacePalette} from './surface-materials.js';
  * Schematized positions/sizes; do not treat as a surveyed facility.
  */
 
+// GAGARIN_GROUND_DATUM: the rim is terrain level; the channel stays below it.
+export const GAGARIN_RIM_Y=18.1;
 export function buildGagarinPad(root) {
   root.name='Пл. 1 — Гагаринский старт / Фотографическая реконструкция 3.2';
   const colors={
@@ -30,7 +32,7 @@ export function buildGagarinPad(root) {
     green:0x426e57, brightGreen:0x659078, olive:0x324b3b,
     steel:0x4b5e56, shadowSteel:0x2f3d37,
     paleSteel:0xa3b5ad, white:0xd1d2c8,
-    yellow:0xd3b04d, fadedYellow:0xa98539,
+    yellow:0xd3b04d, fadedYellow:0xa98539, warning:0xc66843,
     rail:0x3f4242, timber:0x766c5c, window:0x344852,
     blueRoof:0x698c97, grass:0x777d65, sky:0xa3a7a3
   };
@@ -55,12 +57,15 @@ export function buildGagarinPad(root) {
     return item;
   }
   function mark(name){if(name)features[name]=(features[name]||0)+1;primitiveCount++}
+  const atGrade=new Set(['western-forecourt','ballast-bed','rail-approach','rail-sleepers','service-road','duct-perimeter-road','lighting-tower','lighting-tower-bracing','lighting-array-head','floodlight-array','lightning-mast','lightning-mast-tip','utility-building','utility-roof','utility-door','utility-window']);
   function block(x,y,z,w,h,d,material,name,rotate=0) {
+    if(atGrade.has(name))y+=GAGARIN_RIM_Y;
     tmpQuat.setFromAxisAngle(up,rotate);tmpS.set(w,h,d);
     tmpM.compose(tmpP.set(x,y,z),tmpQuat,tmpS);
     bucket(material,'box').matrices.push(tmpM.clone());mark(name);
   }
   function bar(a,b,r,material,name){
+    if(atGrade.has(name)){a=[a[0],a[1]+GAGARIN_RIM_Y,a[2]];b=[b[0],b[1]+GAGARIN_RIM_Y,b[2]];}
     tmpP.set(a[0],a[1],a[2]);tmpQ.set(b[0],b[1],b[2]);
     const dir=tmpQ.clone().sub(tmpP),dist=dir.length();
     if(dist<.001)return;
@@ -71,6 +76,7 @@ export function buildGagarinPad(root) {
   }
   function direct(mesh,material,key,parent=root) {
     mesh.material=mats[material];mesh.userData.museumComponent=key;
+    if(atGrade.has(key))mesh.position.y+=GAGARIN_RIM_Y;
     mesh.receiveShadow=true;parent.add(mesh);mark(key);renderMeshCount++;return mesh;
   }
   function surface(points,y,material,key){
@@ -239,8 +245,8 @@ export function buildGagarinPad(root) {
       bar(innerA,innerB,.12,'cutFace','flame-duct-discolored-seam');
       // Radial panel seams run up each bank.
       bar(innerA,rimA,.06,'oldConcrete','concrete-tile-seam');
-      const outerA=fromPixel(a[0],a[side+1]+(side?22:-22),.28);
-      const outerB=fromPixel(b[0],b[side+1]+(side?22:-22),.28);
+      const outerA=fromPixel(a[0],a[side+1]+(side?22:-22),bankY);
+      const outerB=fromPixel(b[0],b[side+1]+(side?22:-22),bankY);
       ductQuad(rimA,rimB,outerA,outerB,'soil','flame-duct-embankment');
     }
   }
@@ -501,7 +507,8 @@ export function buildGagarinPad(root) {
     root.add(mesh);renderMeshCount++;
   }
   const metadata={
-    version:'3.2',
+    version:'3.3-below-grade',
+    terrainDatum:{rimY:GAGARIN_RIM_Y,baseSurfaceY:-2.755,channelFloorY:.32,voidFollowsRotation:true},
     rocketPassage:{axis:[0,0],crownRadius:5.2,serviceDecks:6,throughHole:true},
     flameDuctReview:'Plan visually traced from owner overhead screenshot 2026-10-27 20:41:25; elevations unverified',
     ductPlan:{reference:'2026-10-27 20:41:25',imageSize:[1920,1297],origin:planOrigin,scale:planScale,stations:ductPlan,outletWidth:(end[4]-end[3])*planScale,roadReturnsAroundOutlet:true},

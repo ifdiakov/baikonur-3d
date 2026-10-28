@@ -58,9 +58,9 @@
       ],
       "note": "№ 1 (ПУ-5) — Гагаринский старт. Модель v2 выстроена по специализированной папке Google Drive RocketTrip. Ось запад–восток: железнодорожный подъезд, стартовый стол, расходящийся газоотвод на восток. Положение точки сохранено по схеме проекта (x=699, y=365), координаты и размеры архитектуры пока ориентировочны.",
       "organisation": {
-        "org": "ЦЭНКИ",
-        "role": "эксплуатация стартовой инфраструктуры",
-        "source": "https://www.russian.space/kosmodromy/kosmodrom-baykonur/"
+        "org": "РГП «Инфракос»",
+        "role": "Принадлежность по уточнению владельца проекта",
+        "attributionSource": "owner-correction-2026-10-28"
       },
       "purpose": "Площадка № 1 (ПУ-5) — первый стартовый комплекс ракеты Р-7 на Байконуре. 4 октября 1957 года отсюда запущен первый спутник Земли, 12 апреля 1961 года — корабль «Восток» с Юрием Гагариным. Последний пуск состоялся в 2019 году. Сегодня комплекс сохраняется как памятник истории космонавтики.",
       "number": "1",
@@ -309,8 +309,8 @@
       ],
       "note": "Площадки 112 и 112А образуют техническую позицию «Энергии». В её составе договор аренды называет монтажно-заправочный комплекс, стенд динамических испытаний, компрессорную и заправочно-нейтрализационную станции. На ситуационной схеме 112А отмечена как МЗК. Для макета следует различать большие корпуса и самостоятельные стендовые сооружения.",
       "number": "112А",
-      "titleShort": "Техническая позиция «Энергия»",
-      "titleFull": "пл. №112А · Техническая позиция «Энергия»",
+      "titleShort": "МЗК и СДИ",
+      "titleFull": "пл. №112А · МЗК и СДИ",
       "purposeShort": "Монтажно-заправочный комплекс и стендовые объекты",
       "purposeLong": "Монтажно-заправочный комплекс и стендовые объекты",
       "purpose": "Монтажно-заправочный комплекс и стендовые объекты",
@@ -321,7 +321,21 @@
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "organisation": {
+        "org": "РГП «Инфракос»",
+        "role": "Принадлежность по уточнению владельца проекта",
+        "attributionSource": "owner-correction-2026-10-28"
+      },
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "mzk",
+        "orientation": "not-verified-ground-photo-only",
+        "satellite": null,
+        "folder": "1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09"
+      },
+      "modelOrientationVerified": false
     },
     {
       "id": "pad-118",
@@ -681,7 +695,16 @@
         "org": "Администрация города и городские организации",
         "role": ""
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "city",
+        "orientation": "image-traced",
+        "satellite": "1URocxjo-ZAYAWIIrBhBGMfwx1BKhKkGT",
+        "folder": "13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc"
+      },
+      "modelOrientationVerified": true
     },
     {
       "id": "airfield",
@@ -877,7 +900,16 @@
         "org": "ЦЭНКИ — КЦ «Южный»",
         "role": ""
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "proton-halls",
+        "orientation": "image-traced",
+        "satellite": "1eVJZ3hWXMuNqe-zMPDXJzRMUUfNS5KQs",
+        "folder": "13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc"
+      },
+      "modelOrientationVerified": true
     },
     {
       "id": "pad-92а",
@@ -998,7 +1030,16 @@
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "settlement",
+        "orientation": "image-traced",
+        "satellite": "1kYur_BaNa6xrjT-iuhdipTElHMJPsTNR",
+        "folder": "13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc"
+      },
+      "modelOrientationVerified": true
     },
     {
       "id": "pad-96",
@@ -1225,7 +1266,16 @@
         "org": "ЦЭНКИ — КЦ «Южный»",
         "role": ""
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "proton",
+        "orientation": "image-traced",
+        "satellite": "1vcxpuL94AAEsfmwW0hDPCc5vQH0qIcdZ",
+        "folder": "199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd"
+      },
+      "modelOrientationVerified": true
     },
     {
       "id": "pad-82",
@@ -1360,7 +1410,16 @@
         "org": "ЦЭНКИ — КЦ «Южный»",
         "role": ""
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "proton",
+        "orientation": "image-traced",
+        "satellite": "1txB3LDU8wx-fP_hJngeWH3nIGvNlE0Zb",
+        "folder": "199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd"
+      },
+      "modelOrientationVerified": true
     },
     {
       "id": "pad-132",
@@ -1812,7 +1871,16 @@
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "yubileiny",
+        "orientation": "image-traced",
+        "satellite": "19t1sFdi7uFk5tAe7gQ5AAYEUjvyTnHIE",
+        "folder": "15WuQR5kx9kWrsKp-DORaRxWapXQolNPl"
+      },
+      "modelOrientationVerified": true
     },
     {
       "id": "pad-250",
@@ -2017,7 +2085,16 @@
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "energia",
+        "orientation": "image-traced",
+        "satellite": "1eYjF4gq89TBHBkKu_1r8VZt9xRU5EI8F",
+        "folder": "1G7BvhrGYZrnXHjuHsDiGsnVBxi7jrnn7"
+      },
+      "modelOrientationVerified": true
     },
     {
       "id": "pad-112",
@@ -2300,7 +2377,16 @@
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "soyuz",
+        "orientation": "not-verified-no-overhead",
+        "satellite": null,
+        "folder": "17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII"
+      },
+      "modelOrientationVerified": false
     },
     {
       "id": "pad-105",
@@ -2411,10 +2497,20 @@
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
       "organisation": {
-        "org": "АО «СП «Байтерек» (проект)",
-        "role": ""
+        "org": "АО «СП «Байтерек»",
+        "role": "Принадлежность по уточнению владельца проекта",
+        "attributionSource": "owner-correction-2026-10-28"
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "mik42",
+        "orientation": "not-verified-no-overhead",
+        "satellite": null,
+        "folder": "1nhy66WCjZaGYK8VsVlEQHRre4IjkzzDZ"
+      },
+      "modelOrientationVerified": false
     },
     {
       "id": "pad-43",
@@ -2506,9 +2602,19 @@
       "positionVerified": false,
       "organisation": {
         "org": "АО «СП «Байтерек»",
-        "role": ""
+        "role": "Принадлежность по уточнению владельца проекта",
+        "attributionSource": "owner-correction-2026-10-28"
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "archiveModel": {
+        "version": "1.0-portal-photo-pass",
+        "kind": "zenit",
+        "orientation": "not-verified-no-overhead",
+        "satellite": null,
+        "folder": "1UD2cFm-qIJjWK6CcjF7V7zGnjVpS5H3i"
+      },
+      "modelOrientationVerified": false
     },
     {
       "id": "pad-241",

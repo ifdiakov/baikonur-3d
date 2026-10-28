@@ -1,0 +1,26 @@
+{
+  "infracos": {
+    "kind": "monochrome-adaptation-of-official-site-reference",
+    "sourcePage": "https://gh-ecology.agartu.kz/history?lang=ru",
+    "sourceImage": "https://cdn1.kdt.kz/files/sites/1724080693382947/files/images/ru/logo.jpg?_=1749447599",
+    "crop": [
+      0,
+      1,
+      560,
+      565
+    ],
+    "attribution": "Organisation assignments supplied by museum owner; logo source is not evidence of ownership."
+  },
+  "baiterek": {
+    "kind": "monochrome-adaptation-of-official-site-reference",
+    "sourcePage": "https://bayterek.kz/types_of_activities",
+    "sourceImage": "https://static.tildacdn.pro/tild6464-3361-4266-a334-643933363633/1_page-0001.jpg",
+    "crop": [
+      1269,
+      279,
+      1557,
+      615
+    ],
+    "attribution": "Organisation assignments supplied by museum owner; logo source is not evidence of ownership."
+  }
+}

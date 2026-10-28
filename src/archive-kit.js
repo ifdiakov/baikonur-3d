@@ -7,7 +7,17 @@ export function archiveKit(root){
  const geos={box:new THREE.BoxGeometry(1,1,1),rod:new THREE.CylinderGeometry(1,1,1,6),cyl:new THREE.CylinderGeometry(1,1,1,20),sphere:new THREE.SphereGeometry(1,24,16)};
  const batches=new Map(),counts={},meshes=[],cutouts=[],up=new THREE.Vector3(0,1,0),q0=new THREE.Quaternion();
  function count(tag){counts[tag]=(counts[tag]||0)+1;}
- function add(geo,m,p,q,size,tag,parent=root){if(!mat[m])throw Error('Unknown archive material '+m);const key=geo.uuid+':'+m+':'+parent.uuid;let b=batches.get(key);if(!b){b={geo,m,parent,matrices:[]};batches.set(key,b);}b.matrices.push(new THREE.Matrix4().compose(new THREE.Vector3(...p),q,new THREE.Vector3(...size)));count(tag);}
+ // STATIC_ARCHIVE_BATCHES: bake static hall-local transforms into exhibit space.
+ function add(geo,m,p,q,size,tag,parent=root){
+  if(!mat[m])throw Error('Unknown archive material '+m);
+  const transform=new THREE.Matrix4().compose(new THREE.Vector3(...p),q,new THREE.Vector3(...size));
+  let cursor=parent;
+  while(cursor&&cursor!==root){cursor.updateMatrix();transform.premultiply(cursor.matrix);cursor=cursor.parent;}
+  if(cursor!==root)throw Error('Archive primitive has an unrelated parent');
+  const key=geo.uuid+':'+m;
+  let batch=batches.get(key);if(!batch){batch={geo,m,parent:root,matrices:[]};batches.set(key,batch);}
+  batch.matrices.push(transform);count(tag);
+ }
  function box(w,h,d,x,y,z,m='wall',tag='block',yaw=0,parent=root){add(geos.box,m,[x,y,z],new THREE.Quaternion().setFromAxisAngle(up,yaw),[w,h,d],tag,parent);}
  function rod(a,b,r=.2,m='steel',tag='beam',parent=root){const av=new THREE.Vector3(...a),bv=new THREE.Vector3(...b),v=bv.clone().sub(av),len=v.length();if(len<1e-6)return;add(geos.rod,m,av.add(bv).multiplyScalar(.5).toArray(),new THREE.Quaternion().setFromUnitVectors(up,v.divideScalar(len)),[r,len,r],tag,parent);}
  function cyl(r,h,x,y,z,m='light',tag='tank',yaw=0,parent=root){add(geos.cyl,m,[x,y,z],new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),yaw),[r,h,r],tag,parent);}

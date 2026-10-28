@@ -26,9 +26,9 @@ export function buildGagarinRailApproach({data,point,siteRecords}){
   const approach=new THREE.CurvePath();
   approach.add(new THREE.CubicBezierCurve3(start,control,end.clone().add(new THREE.Vector3(-Math.min(95,length*.3),0,0)),straight));
   approach.add(new THREE.LineCurve3(straight,end));
-  const grade=t=>{const v=THREE.MathUtils.clamp((t-.25)/.75,0,1);return .75*(1-v*v*(3-2*v));};
+  const grade=t=>{const v=THREE.MathUtils.clamp((t-.25)/.75,0,1);return .75*(1-v*v*(3-2*v))-2.755*(v*v*(3-2*v));};
   return {id:'t-r7-feeder',curve:approach,datum:grade,
-    stats:()=>({version:'pad1-matched-track-v1',gauge:RAIL_PROFILE.gauge,
+    stats:()=>({version:'pad1-matched-track-v2-below-grade',gauge:RAIL_PROFILE.gauge,
       entryLocalZ:171,entryWorld:end.toArray(),joinGap:0,straightLength:18,
       source:'RocketTrip screenshot 2026-10-28 07:24:40 and existing Gagarin model rail geometry'})};
 }

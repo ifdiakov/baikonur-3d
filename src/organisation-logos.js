@@ -1,6 +1,8 @@
 // Museum adaptations approved as one silver palette. Only match the explicitly
 // attributed enterprise, never infer site ownership from its rocket programme.
 const logos = [
+  ['infracos','РГП «Инфракос»',/и(?:н)?фракос|infracos/iu],
+  ['baiterek','АО «СП «Байтерек»',/байтерек|бәйтерек|ba[yit]+erek/iu],
   ['tsenki', 'ЦЭНКИ', /цэнки|центр эксплуатации объектов наземной космической инфраструктуры/iu],
   ['energia', 'РКК «Энергия»', /энергия/iu],
   ['cpc', 'ЦПК имени Ю. А. Гагарина', /цпк|центр подготовки космонавтов/iu],
