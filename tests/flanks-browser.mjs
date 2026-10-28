@@ -18,13 +18,13 @@ try{
  await page.goto(origin,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__BAIKONUR_QA?.showFlanks,null,{timeout:120000});
  await page.evaluate(()=>window.__freezeMuseum());await step();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleZones),0);
- await page.locator('#flanksView').click();await step();await page.waitForTimeout(400);
+ await page.evaluate(()=>window.__BAIKONUR_QA.showFlanks());await step();await page.waitForTimeout(400);
  const state=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
- assert.equal(state.flankCardLayout,'horizontal');assert.equal(state.flankDistricts.version,'angular-territories-v2');
+ assert.equal(state.flankCardLayout,'horizontal');assert.equal(state.flankDistricts.version,'angular-territories-v3-relief');
  assert.equal(state.flankDistricts.visibleZones,3);assert.equal(state.flankDistricts.visibleBoundaries,2);
  assert.ok(state.flankDistricts.alpha>.9);assert.equal(state.flankCards.panels,3);
  assert.equal(state.flankCards.plane,'screen');assert.equal(state.flankCards.groundPanels,0);
- assert.equal(state.flankDistricts.groundTextPanels,0);
+ assert.equal(state.flankDistricts.groundTextPanels,0);assert.equal(state.flankDistricts.reliefCount,1);assert.deepEqual(state.flankDistricts.reliefFlanks,['center']);assert.equal(state.flankDistricts.visibleReliefSurfaces,1);
  assert.equal(await page.locator('.flank-territory-layer,.flank-on-terrain').count(),0,'No text or portrait panels remain on the ground');
  assert.deepEqual(await page.locator('.flank-engineer').allTextContents(),['ЧЕЛОМЕЙ','КОРОЛЁВ','ЯНГЕЛЬ']);
  const rects=await page.locator('.flank-label').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {id:e.dataset.district,x:r.x,y:r.y,w:r.width,h:r.height,transform:getComputedStyle(e).transform};}));
@@ -34,20 +34,20 @@ try{
  const portraits=await page.locator('.flank-portrait img').evaluateAll(es=>es.map(e=>({src:e.currentSrc||e.src,loaded:e.complete&&e.naturalWidth>0})));
  assert.ok(portraits.every(p=>p.loaded),'All three local archival portraits load');
  await page.screenshot({path:`qa-flanks/${prefix}-cards-evening.png`,timeout:90000});
- await page.locator('#eveningToggle').click();await step();await page.screenshot({path:`qa-flanks/${prefix}-cards-day.png`,timeout:90000});await page.locator('#eveningToggle').click();
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});await step();await page.screenshot({path:`qa-flanks/${prefix}-cards-day.png`,timeout:90000});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});
  await page.locator('#showLabels').uncheck();await step();await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleZones),0);assert.equal(await page.locator('.flank-label:visible').count(),0);await page.locator('#showLabels').check();await step();
  await page.locator('.flank-label[data-district="center"]').click();await step();await page.waitForTimeout(350);
  const close=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.ok(close.flankDistricts.alpha<.05);assert.ok(await page.locator('.site-label:visible').count()>0);
- await page.locator('#flanksView').click();await step();await page.locator('.flank-label[data-district="right"]').focus();await page.keyboard.press('Enter');await step();await page.waitForTimeout(350);assert.ok((await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.alpha))<.05);
+ await page.evaluate(()=>window.__BAIKONUR_QA.showFlanks());await step();await page.locator('.flank-label[data-district="right"]').focus();await page.keyboard.press('Enter');await step();await page.waitForTimeout(350);assert.ok((await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.alpha))<.05);
  await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleBoundaries),0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(460));assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleBoundaries),0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(180));assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleZones),0);
  // The user's hotel correction must reach the actual visible card and logo.
  const hotel=await page.evaluate(async()=>{
   const catalog=await (await fetch('./data/catalog.json',{cache:'no-store'})).json();
-  const index=catalog.sites.findIndex(site=>site.id==='pad-75');
+  const index=catalog.sites.filter(r=>!r.aliasOf&&r.render!==false).findIndex(site=>site.id==='pad-75');
   if(index<0)throw new Error('Missing Seven Winds hotel record');
-  window.__BAIKONUR_QA.focusSite(index);return catalog.sites[index];
+  window.__BAIKONUR_QA.focusSite(index);return catalog.sites.filter(r=>!r.aliasOf&&r.render!==false)[index];
  });await step();
  assert.equal(hotel.organisation.org,'ЦЭНКИ');assert.deepEqual([hotel.x,hotel.y],[639,551]);
  assert.ok((await page.locator('#title').textContent()).includes('7 ветров'));
@@ -57,7 +57,7 @@ try{
  await page.waitForFunction(()=>{const image=document.querySelector('#infoOrg img');return image?.complete&&image.naturalWidth>0;});
  await page.screenshot({path:`qa-flanks/${prefix}-seven-winds.png`,timeout:90000});
  await page.setViewportSize({width:390,height:844});await step();
- await page.locator('#flanksView').click();await step();await page.waitForTimeout(200);
+ await page.evaluate(()=>window.__BAIKONUR_QA.showFlanks());await step();await page.waitForTimeout(200);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankCardLayout),'vertical');
  const mobile=await page.evaluate(()=>({
   cards:[...document.querySelectorAll('.flank-label')].map(el=>{const r=el.getBoundingClientRect();return {x:r.x,y:r.y,w:r.width,h:r.height};}),

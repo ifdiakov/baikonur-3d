@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createRoadVehicles} from './road-vehicles.js?v=20261028-museum3-v2';
+import {createRoadVehicles} from './road-vehicles.js?v=20261028-museum4-v1';
 import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH} from './rail-vehicles.js?v=20261028-museum3-v2';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
@@ -28,9 +28,9 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
  let elapsed=0,lastNow=null,forced=null,night=true,following=false,lastPhase='';
  const quaternion=new THREE.Quaternion();let engineDistance=TRAIN_START_DISTANCE;
  const orient=t=>quaternion.setFromEuler(new THREE.Euler(-Math.asin(clamp(t.y,-1,1)),Math.atan2(t.x,t.z),0,'YXZ'));
- function stopFollowing(){following=false;button.setAttribute('aria-pressed','false');document.body.classList.remove('following-train');}
- function setFollowing(value){if(!value){stopFollowing();return;}layers.rails.visible=true;const toggle=document.querySelector('[data-layer="rails"]');if(toggle)toggle.checked=true;following=true;button.setAttribute('aria-pressed','true');document.body.classList.add('following-train');onFollow?.();render(elapsed);}
- button.textContent='Мотовоз';button.title='Мотовоз и 4 вагона: пл. №1 → Тюратам → город';button.addEventListener('click',()=>setFollowing(!following));
+ function stopFollowing(){following=false;button?.setAttribute('aria-pressed','false');document.body.classList.remove('following-train');}
+ function setFollowing(value){if(!value){stopFollowing();return;}layers.rails.visible=true;const toggle=document.querySelector('[data-layer="rails"]');if(toggle)toggle.checked=true;following=true;button?.setAttribute('aria-pressed','true');document.body.classList.add('following-train');onFollow?.();render(elapsed);}
+ if(button){button.textContent='Мотовоз';button.title='Мотовоз и 4 вагона: пл. №1 → Тюратам → город';button.addEventListener('click',()=>setFollowing(!following));}
  canvas.addEventListener('pointerdown',stopFollowing,{passive:true});canvas.addEventListener('wheel',stopFollowing,{passive:true});
  document.addEventListener('keydown',e=>{if(!e.target.matches('input,textarea,select')&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase()))stopFollowing();});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
@@ -47,7 +47,7 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
   engineDistance=trainDistance(t,rail.length);placeRailVehicle(engine,engineDistance);coaches.forEach((coach,i)=>placeRailVehicle(coach,engineDistance-COACH_OFFSETS[i]));
   if(following&&!layers.rails.visible)stopFollowing();
   if(following)frameTrain();
-  const phase=t>=TRAIN_DURATION?'arrived':'moving';if(lastPhase!==phase){lastPhase=phase;button.title=phase==='arrived'?'Мотовоз прибыл в станционный район Тюратам':'Мотовоз и 4 вагона: пл. №1 → Тюратам → город';}
+  const phase=t>=TRAIN_DURATION?'arrived':'moving';if(lastPhase!==phase){lastPhase=phase;if(button)button.title=phase==='arrived'?'Мотовоз прибыл в станционный район Тюратам':'Мотовоз и 4 вагона: пл. №1 → Тюратам → город';}
  }
  function frameTrain(distanceScale=1){
   const centerDistance=engineDistance-COACH_OFFSETS.at(-1)/2,at=rail.sample(centerDistance,4);

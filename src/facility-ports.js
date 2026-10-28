@@ -7,6 +7,7 @@ export const FACILITY_PORTS={
  'pad-251':{scale:.28,yaw:1.948,road:[-410,1.78,170]},
  'pad-112a':{scale:.14,yaw:-Math.PI/4,road:[160,.15,130]},
  'pad-31':{scale:.28,yaw:0,road:[60,.1,133],rail:[[0,.48,174]]},
+ 'pad-42':{scale:.28,yaw:0,road:[78,.1,32],roadOutward:[1,0,0]},
  'pad-45':{scale:.28,yaw:0,road:[78,.1,128],rail:[[0,.48,145]]},
  'pad-92':{scale:.14,yaw:0,road:[184.2,.16,184.8]},
 };

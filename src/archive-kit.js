@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
 import {createSurfacePalette} from './surface-materials.js';
 // Museum geometry kit. Dimensions are interpretive, not a survey.
 export function archiveKit(root){

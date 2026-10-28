@@ -8,18 +8,18 @@ const errors=[],shaderErrors=[];page.on('pageerror',e=>errors.push(e.message));p
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',r=>r.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(r.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 try{
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:60000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic,null,{timeout:90000});
- const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(stats.traffic.cars,20);assert.equal(stats.traffic.version,'ground-traffic-v2');assert.equal(stats.sites,98);
+ const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(stats.traffic.cars,20);assert.equal(stats.traffic.version,'ground-traffic-v2');assert.equal(stats.sites,97);
  assert.equal(stats.arrival.attitudeVersion,'positive-approach-v2');assert.equal(stats.mik112.version,'1.3-photo-frames');assert.ok(stats.shadersValid);
  await page.locator('#showLabels').uncheck();await page.locator('#arrivalFollow').click();
- for(const t of [84,100,108,112,115]){
+ for(const t of [84,100,120,124,127]){
   await page.evaluate(t=>window.__BAIKONUR_QA.arrival.seek(t),t);await page.waitForTimeout(120);
   const a=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
-  if(t<=108)assert.ok(a.renderedPitchDeg>3);
-  if(t>=108){assert.ok(Math.abs(a.mainWheelBottom-a.runwayY)<1e-5);assert.ok(a.noseWheelBottom>=a.mainWheelBottom-1e-6);}
-  if(t===108){assert.ok(a.noseWheelBottom-a.mainWheelBottom>.4);await page.screenshot({path:`qa-traffic/${prefix}-main-gear-first.png`,timeout:60000});}
-  if(t===115)assert.ok(Math.abs(a.noseWheelBottom-a.mainWheelBottom)<1e-6);
+  if(t<=120)assert.ok(a.renderedPitchDeg>3);
+  if(t>=120){assert.ok(Math.abs(a.mainWheelBottom-a.runwayY)<1e-5);assert.ok(a.noseWheelBottom>=a.mainWheelBottom-1e-6);}
+  if(t===120){assert.ok(a.noseWheelBottom-a.mainWheelBottom>.4);await page.screenshot({path:`qa-traffic/${prefix}-main-gear-first.png`,timeout:60000});}
+  if(t===127)assert.ok(Math.abs(a.noseWheelBottom-a.mainWheelBottom)<1e-6);
  }
- await page.evaluate(()=>window.__BAIKONUR_QA.traffic.seek(2));await page.locator('#trainFollow').click();await page.waitForTimeout(200);
+ await page.evaluate(()=>window.__BAIKONUR_QA.traffic.seek(2));await page.evaluate(()=>{const t=window.__BAIKONUR_QA.traffic;t.setFollowing(!t.stats().train.following);});await page.waitForTimeout(200);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().following),false);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),true);
  await page.screenshot({path:`qa-traffic/${prefix}-motovoz-departure.png`,timeout:60000});
@@ -38,11 +38,11 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA,s=q.traffic.stats();const car=s.carStates[0];q.traffic.seek(((s.bridgeDistance-car.phase*s.highwayLength+s.highwayLength)%s.highwayLength)/car.speed);q.traffic.focusHighway();});
  assert.ok((await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().carStates[0].position))[1]>8,'The car follows the upper bridge deck');
  await page.screenshot({path:`qa-traffic/${prefix}-highway.png`,timeout:60000});
- await page.locator('#eveningToggle').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().night),false);await page.locator('#eveningToggle').click();
- await page.locator('#trainFollow').click();await page.mouse.move(800,450);await page.mouse.wheel(0,-30);assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),false);
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().night),false);await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});
+ await page.evaluate(()=>{const t=window.__BAIKONUR_QA.traffic;t.setFollowing(!t.stats().train.following);});await page.mouse.move(800,450);await page.mouse.wheel(0,-30);assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),false);
  const url=new URL(origin);url.searchParams.set('view','motovoz');await page.goto(url.toString(),{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic,null,{timeout:90000});
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),true);
- await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);assert.ok(await page.locator('#trainFollow').isVisible());
+ await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250);assert.equal(await page.locator('#trainFollow').count(),0,'Train shortcut was removed from the visitor menu');
  await page.screenshot({path:`qa-traffic/${prefix}-mobile.png`,timeout:60000});
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  await writeFile(`qa-traffic/${prefix}-result.json`,JSON.stringify({passed:true,stats,errors,shaderErrors},null,2));console.log('TRAFFIC_BROWSER_PASS');

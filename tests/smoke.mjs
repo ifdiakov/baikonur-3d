@@ -6,17 +6,18 @@ const page=await browser.newPage({viewport:{width:1600,height:900},deviceScaleFa
 const errors=[];page.on('pageerror',err=>errors.push(String(err)));
 page.on('console',m=>{if(m.type()==='error')console.error('BROWSER CONSOLE:',m.text())});
 page.on('requestfailed',r=>console.error('FAILED REQUEST:',r.url(),r.failure()?.errorText));
+await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);window.requestAnimationFrame=fn=>fn.name==='animate'?setTimeout(()=>native(fn),180):native(fn);});
 const museumURL=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 await page.goto(museumURL,{waitUntil:'domcontentloaded'});
-await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA),{timeout:60000});
-await page.waitForFunction(()=>document.getElementById('roadStatus')?.textContent.includes('цветных пикселей'),{timeout:30000});
+await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA),null,{timeout:60000});
+await page.waitForFunction(()=>document.getElementById('roadStatus')?.textContent.includes('цветных пикселей'),null,{timeout:30000});
 // Enterprise artwork is local, transparent, and attached only to attributed sites.
 await page.waitForFunction(()=>{
  const logos=[...document.querySelectorAll('.detail-card .org-logo')];
  return logos.length>=4&&logos.every(image=>image.complete&&image.naturalWidth>=320&&image.naturalHeight>0);
-},{timeout:15000});
-assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),15);
-assert.equal(await page.locator('.detail-card [data-org-logo="energia"]').count(),1);
+},null,{timeout:15000});
+assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),17);
+assert.equal(await page.locator('.detail-card [data-org-logo="energia"]').count(),2);
 assert.equal(await page.locator('.detail-card [data-org-logo="khrunichev"]').count(),1);
 assert.equal(await page.locator('.detail-card [data-org-logo="progress"]').count(),1);
 assert.equal(await page.locator('.detail-card [data-org-logo="cpc"]').count(),0);
@@ -30,8 +31,8 @@ assert.ok(reviewedCatalog.unplacedReferenceSites.some(site=>site.number==='17'))
 const kaz=reviewedCatalog.sites.find(site=>site.id==='pad-3');
 assert.deepEqual([kaz.x,kaz.y],[708,651]);
 for(const [id,logo] of [['pad-2a','tsenki'],['pad-112','progress'],['pad-254','energia'],['pad-45','baiterek'],['pad-75','tsenki'],['pad-89',null]]){
- const index=reviewedCatalog.sites.findIndex(site=>site.id===id),site=reviewedCatalog.sites[index];
- await page.evaluate(index=>window.__BAIKONUR_QA.focusSite(index),index);
+ const site=reviewedCatalog.sites.find(site=>site.id===id);
+ await page.evaluate(id=>window.__BAIKONUR_QA.focusSite(id),id);
  assert.equal(await page.locator('#infoPurpose').textContent(),site.purposeLong);
  assert.ok((await page.locator('#description').textContent()).includes(site.note));
  assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),logo);
@@ -117,7 +118,7 @@ assert.ok((await page.locator('#infoExtra a').getAttribute('href')).startsWith('
 await page.locator('#close').click();
 await page.locator('#search').fill('');
 await page.locator('#sitesAccordion > summary').click();
-await page.waitForFunction(()=>document.querySelectorAll('#timelineEvents .timeline-chip').length===18,{timeout:15000});
+await page.waitForFunction(()=>document.querySelectorAll('#timelineEvents .timeline-chip').length===18,null,{timeout:15000});
 assert.equal(await page.locator('#timelineEvents .timeline-chip').count(),18,'History timeline must have 18 sourced events');
 await page.locator('[data-event-id="r7-first"]').click();
 assert.equal(await page.locator('#yearVal').textContent(),'1957');
@@ -134,7 +135,7 @@ assert.ok((await page.locator('#timelineEventSource').getAttribute('href')).star
 await page.locator('#timelineEventClose').click();
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='2026';slider.dispatchEvent(new Event('input',{bubbles:true}))});
 // Verify the exact supplied brand graphic and the separate bottom history dock.
-await page.waitForFunction(()=>{const image=document.querySelector('.rockettrip-logo');return !!(image&&image.complete&&image.naturalWidth>=300)},{timeout:15000});
+await page.waitForFunction(()=>{const image=document.querySelector('.rockettrip-logo');return !!(image&&image.complete&&image.naturalWidth>=300)},null,{timeout:15000});
 const layout=await page.evaluate(()=>{
  const dock=document.querySelector('#timeDock'),logo=document.querySelector('.rockettrip-logo'),slider=document.querySelector('#year'),sidebar=document.querySelector('#ui');
  const d=dock.getBoundingClientRect(),l=logo.getBoundingClientRect(),s=slider.getBoundingClientRect(),m=sidebar.getBoundingClientRect();
@@ -146,7 +147,7 @@ assert.ok(layout.logoVisible&&layout.logoNatural>=300,'User-supplied RocketTrip 
 assert.ok(layout.sliderOutsideSidebar&&layout.sliderBottom&&layout.sidebarAboveDock,'Time slider must live outside sidebar and remain inside bottom dock');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='1961';slider.dispatchEvent(new Event('input',{bubbles:true}))});assert.equal(await page.locator('#yearVal').textContent(),'1961','Year readout must follow timeline control');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='2026';slider.dispatchEvent(new Event('input',{bubbles:true}))});
-await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.serviceReference?.loaded===true,{timeout:20000});
+await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.serviceReference?.loaded===true,null,{timeout:20000});
 const photoOverlay=await page.evaluate(()=>window.__BAIKONUR_QA.stats().serviceReference);
 console.log('SERVICE SCHEME',JSON.stringify(photoOverlay));
 assert.equal(photoOverlay.source,'visitor-supplied-photograph','The actual user-supplied service scheme must be the overlay source');
@@ -244,7 +245,7 @@ assert.deepEqual(highway.cities.map(c=>c.name),['АКТОБЕ','САМАРА','�
 assert.ok(highway.locations[0].x>-2000 && highway.locations[1].x<1900,'Signposts must move inward nearer to the crossroads');
 const transport=overviewScale.transport;
 console.log('TRANSPORT NETWORK',JSON.stringify(transport));
-assert.equal(transport.roadRoutes,23,'Road system must retain the existing corridors and added site approaches, including MIK-112 and the city');
+assert.equal(transport.roadRoutes,24,'Road system retains the original corridors and includes the Site 42 driveway');
 assert.equal(transport.railRoutes,14,'Rail layout should include main corridors and branch sidings');
 assert.equal(transport.stationCount,7,'Render seven historical or interpretative station yards');
 assert.ok(transport.railSwitches>=18,'Rail turnouts and station throat switches must be modeled');
@@ -268,12 +269,12 @@ assert.ok(saturn.primitiveCount>=800,'Saturn dishes need structural detail, not 
 assert.equal(overviewScale.saturnScale,.525,'Keep the approved Saturn model scale');
 assert.deepEqual(overviewScale.saturnPlacement,[741,716],'Satellite site is located at provisional 3-anchor coordinates');
 const count=overviewScale.sites;
-assert.equal(count,98,'Museums contains 97 existing sites plus photo-grounded Saturn site 23');
+assert.equal(count,97,'Museum resolves the eastern-complex alias into one canonical Site 43');
 
 assert.ok(count>=90,'The museum must load the extended site catalogue');
 assert.ok((await page.locator('.site-label').count())>=80,'Must have labels for the catalogue');
 await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));
-await page.waitForFunction(()=>Number(document.getElementById('hero')?.style.opacity)>.90,{timeout:10000});
+await page.waitForFunction(()=>Number(document.getElementById('hero')?.style.opacity)>.90,null,{timeout:10000});
 await page.screenshot({path:'qa-overview.png'});
 const passport=await page.locator('#hero').evaluate(el=>({inline:el.style.opacity,computed:getComputedStyle(el).opacity,visible:el.getBoundingClientRect().width>0}));
 console.log('PASSPORT',JSON.stringify(passport));
@@ -292,7 +293,7 @@ assert.deepEqual(await page.locator('.flank-engineer').allTextContents(),['ЧЕ�
 assert.deepEqual(await page.locator('.flank-fullname').allTextContents(),[
  'Владимир Николаевич Челомей','Сергей Павлович Королёв','Михаил Кузьмич Янгель'
 ]);
-await page.waitForFunction(()=>[...document.querySelectorAll('.flank-portrait img')].every(im=>im.complete),{timeout:18000});
+await page.waitForFunction(()=>[...document.querySelectorAll('.flank-portrait img')].every(im=>im.complete),null,{timeout:18000});
 const portraits=await page.evaluate(()=>[...document.querySelectorAll('.flank-portrait img')].map(im=>({
  alt:im.alt,src:im.currentSrc,loaded:im.naturalWidth>0,
  width:im.naturalWidth,height:im.naturalHeight
@@ -363,18 +364,18 @@ assert.equal(closeup.gagarinDetailView,true,'Clicking Site 1 must activate dedic
 assert.equal(closeup.gagarinScale,overviewScale.gagarinScale,'Focusing Pad 1 must move the camera without enlarging the model');
 assert.equal(closeup.visibleSites,overviewScale.visibleSites,'Inspecting Pad 1 must keep neighbouring sites visible');
 await page.screenshot({path:'qa-gagarin-closeup.png'});
-await page.waitForFunction(()=>document.getElementById('rocketExhibitToggle')&&!document.getElementById('rocketExhibitToggle').hidden,{timeout:10000});
+await page.waitForFunction(()=>document.getElementById('rocketExhibitToggle')&&!document.getElementById('rocketExhibitToggle').hidden,null,{timeout:10000});
 await page.locator('#rocketExhibitToggle').click();
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),true,'Rocket exhibit must be toggled on');
 await page.locator('#rocketExhibitToggle').click();
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),false,'Rocket exhibit must be removable');
-await page.waitForFunction(()=>[...document.querySelectorAll('.detail-card')].some(e=>getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().height>0),{timeout:10000});
+await page.waitForFunction(()=>[...document.querySelectorAll('.detail-card')].some(e=>getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().height>0),null,{timeout:10000});
 console.log('DETAIL CARDS',await page.locator('.detail-card:visible').count());
 assert.ok((await page.locator('.detail-card:visible').count())>0,'Level 4: on-site detail cards should be visible');
 const siteDetail=page.locator('.detail-card[data-site-index="0"]');
 assert.equal(await siteDetail.locator('.org-logo').isVisible(),true);
 await page.waitForFunction(()=>document.querySelector('#infoOrg .org-logo')?.naturalWidth>=320);
-assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),'tsenki');
+assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),'infracos');
 assert.equal(await siteDetail.locator('.org-logo').evaluate(el=>getComputedStyle(el).backgroundColor),'rgba(0, 0, 0, 0)');
 await page.screenshot({path:'qa-enterprise-logos.png'});
 const detailEye=siteDetail.locator('.site-eye-toggle');

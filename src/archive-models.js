@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js';
-import * as buildings from './archive-buildings.js';
-import * as launches from './archive-launches.js';
-import {photoCity} from './archive-city.js';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261028-museum4-v1';
+import * as buildings from './archive-buildings.js?v=20261028-museum4-v1';
+import * as launches from './archive-launches.js?v=20261028-museum4-v1';
+import {photoCity} from './archive-city.js?v=20261028-museum4-v1';
+import {buildSite31Pad} from './site31-pad.js?v=20261028-museum4-v1';
 export function buildArchiveModel(root,entry){
- const builders={'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildings.nedelinRuins,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:launches.energia110,soyuz:launches.soyuz31,zenit:launches.zenit45,city:photoCity};
+ const builders={'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildings.nedelinRuins,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:launches.energia110,soyuz:buildSite31Pad,zenit:launches.zenit45,city:photoCity};
  if(entry.kind==='proton')return launches.protonComplex(root,entry.id);
  if(!builders[entry.kind])throw Error('Unknown archive model '+entry.kind);
  return builders[entry.kind](root);

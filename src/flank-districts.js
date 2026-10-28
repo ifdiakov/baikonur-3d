@@ -33,23 +33,25 @@ export const FLANK_BORDERS=[
 ];
 export function buildFlankDistricts(scene,point,W,H){
  const root=new THREE.Group();root.name='Фланги · тематические территории';scene.add(root);
- const zones=[],boundaries=[],materials=[];
+ const zones=[],boundaries=[],materials=[],reliefSurfaces=[];
  // Self-lit map graphics must retain their color when the evening scene tints
  // ordinary MeshBasicMaterials. Log-depth chunks match the museum renderer.
- function ink(color,strength,additive=false){
+ function ink(color,strength,additive=false,surfaceAlpha=false){
   const mat=new THREE.ShaderMaterial({
    uniforms:{uColor:{value:new THREE.Color(color)},uOpacity:{value:0}},
    vertexShader:`#include <common>
 #include <logdepthbuf_pars_vertex>
-void main(){gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
+${surfaceAlpha?'attribute vec4 color; varying float vSurfaceOpacity;':''}
+void main(){${surfaceAlpha?'vSurfaceOpacity=color.a;':''}gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
 #include <logdepthbuf_vertex>
 }`,
    fragmentShader:`uniform vec3 uColor;uniform float uOpacity;
 #include <common>
 #include <logdepthbuf_pars_fragment>
+${surfaceAlpha?'varying float vSurfaceOpacity;':''}
 void main(){
 #include <logdepthbuf_fragment>
-gl_FragColor=vec4(uColor,uOpacity);
+gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
 #include <colorspace_fragment>
 }`,
    transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,
@@ -85,9 +87,33 @@ gl_FragColor=vec4(uColor,uOpacity);
   ribbon(border,points,2.2,ink(0xecfbff,1,true),-1.42);
  });
  let alpha=0;
- function setOpacity(level){alpha=THREE.MathUtils.clamp(level,0,1);root.visible=alpha>.035;for(const{mat,strength}of materials)mat.uniforms.uOpacity.value=alpha*strength;}
+ // A flat map polygon sits below relief. Drape the same district colour over
+ // the actual hill mesh, retaining its feathered footprint and depth shading.
+ function addTerrainSurface(source,key){
+  const district=FLANK_DISTRICTS.find(d=>d.key===key);
+  if(!district||!source?.isMesh)throw new Error('A terrain mesh and known flank are required');
+  const geometry=source.geometry.clone(),position=geometry.attributes.position;
+  if(!geometry.attributes.normal)geometry.computeVertexNormals();
+  const normal=geometry.attributes.normal;
+  source.updateWorldMatrix(true,false);
+  const scale=source.getWorldScale(new THREE.Vector3()),lift=.08/Math.min(scale.x,scale.y,scale.z);
+  for(let i=0;i<position.count;i++)position.setXYZ(i,position.getX(i)+normal.getX(i)*lift,position.getY(i)+normal.getY(i)*lift,position.getZ(i)+normal.getZ(i)*lift);
+  position.needsUpdate=true;
+  if(geometry.attributes.color?.itemSize!==4){
+   const colors=new Float32Array(position.count*4);colors.fill(1);geometry.setAttribute('color',new THREE.BufferAttribute(colors,4));
+  }
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,true));
+  overlay.name='Цвет фланга на рельефе · '+key;overlay.renderOrder=4;
+  overlay.userData={pickable:false,groundSurface:false,museumComponent:'flank-relief-overlay',flank:key};
+  overlay.visible=alpha>.035;source.add(overlay);reliefSurfaces.push(overlay);
+  overlay.material.uniforms.uOpacity.value=alpha*.19;
+  return overlay;
+ }
+ function setOpacity(level){alpha=THREE.MathUtils.clamp(level,0,1);root.visible=alpha>.035;for(const{mat,strength}of materials)mat.uniforms.uOpacity.value=alpha*strength;for(const mesh of reliefSurfaces)mesh.visible=root.visible;}
  setOpacity(0);
- return {setOpacity,state:()=>({version:'angular-territories-v2',alpha,zoneCount:zones.length,
+ return {setOpacity,addTerrainSurface,state:()=>({version:'angular-territories-v3-relief',alpha,zoneCount:zones.length,
   visibleZones:root.visible?zones.length:0,visibleBoundaries:root.visible?boundaries.length:0,
+  reliefCount:reliefSurfaces.length,reliefFlanks:reliefSurfaces.map(m=>m.userData.flank),visibleReliefSurfaces:reliefSurfaces.filter(m=>m.visible&&m.parent.visible).length,
   thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
 }

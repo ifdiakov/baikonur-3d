@@ -36,12 +36,7 @@ jobs:
       - name: Verify local station cards and lighting actions
         run: node tests/map-editor-smoke.mjs
       - name: Await published interface
-        run: |
-          for attempt in $(seq 1 20); do
-            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q '20261028-stations-lighting'; then exit 0; fi
-            sleep 8
-          done
-          exit 1
+        run: node scripts/verify-published.mjs
       - name: Verify live museum
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?map-qa=${{ github.sha }}

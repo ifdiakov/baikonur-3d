@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261028-museum4-v1';
 
 export const KAZ_GATE = Object.freeze({x:-67,z:53,scaleX:.29,scaleZ:.48});
 
@@ -43,8 +43,17 @@ export function connectedRoadData(data,point,siteRecords) {
     }
   }
   const ports={};
-  for(const [id,spec] of Object.entries(FACILITY_PORTS)){const site=siteRecords.find(s=>s.id===id);if(!site)continue;const gate=portWorld(spec,spec.road,site,point);ports[id]={position:gate.toArray(),outward:new THREE.Vector3(0,0,1).applyAxisAngle(new THREE.Vector3(0,1,0),spec.yaw).toArray()};}
-  for(const [routeId,siteId] of [['r-complex-110','pad-110'],['r-jubilee','pad-251'],['r-31-service','pad-31'],['r-zenit-service','pad-45']]){const route=roads.find(r=>r.id===routeId),port=ports[siteId];if(!route||!port)continue;const gate=new THREE.Vector3(...port.position),out=new THREE.Vector3(...port.outward);route.points.splice(-1,1,map(gate.clone().addScaledVector(out,12)),map(gate));route.gateWorld=gate.toArray();route.gateHeight=gate.y;}
+  for(const [id,spec] of Object.entries(FACILITY_PORTS)){const site=siteRecords.find(s=>s.id===id);if(!site)continue;const gate=portWorld(spec,spec.road,site,point);ports[id]={position:gate.toArray(),outward:new THREE.Vector3(...(spec.roadOutward||[0,0,1])).applyAxisAngle(new THREE.Vector3(0,1,0),spec.yaw).toArray()};}
+  for(const [routeId,siteId] of [['r-complex-110','pad-110'],['r-jubilee','pad-251'],['r-31-service','pad-31'],['r-zenit-service','pad-45'],['r-site42-access','pad-42']]){const route=roads.find(r=>r.id===routeId),port=ports[siteId];if(!route||!port)continue;const gate=new THREE.Vector3(...port.position),out=new THREE.Vector3(...port.outward);route.points.splice(-1,1,map(gate.clone().addScaledVector(out,36)),map(gate.clone().addScaledVector(out,12)),map(gate));route.gateWorld=gate.toArray();route.gateHeight=gate.y;}
+  // Site 42's gate faces east. Its short drive attaches to the existing turn
+  // towards Site 45, rather than drawing another driveway to the arterial.
+  const mik42=roads.find(r=>r.id==='r-site42-access'),zenit=roads.find(r=>r.id==='r-zenit-service');
+  if(mik42&&zenit&&ports['pad-42']){
+    const curve=new THREE.CatmullRomCurve3(zenit.points.map(([x,y])=>point(x,y,.72)),false,'centripetal',.3),gate=new THREE.Vector3(...ports['pad-42'].position),n=nearestRoadPoint(curve,gate);
+    const lengths=curve.getLengths(1024),index=Math.min(1023,Math.floor(n.t*1024)),distance=THREE.MathUtils.lerp(lengths[index],lengths[index+1],n.t*1024-index),u=Math.max(0,(distance-24)/lengths.at(-1)),join=curve.getPointAt(u),tangent=curve.getTangentAt(u);
+    mik42.points=[map(join),map(join.clone().addScaledVector(tangent,10)),map(gate.clone().add(new THREE.Vector3(12,0,0))),map(gate)];
+    mik42.gateWorld=gate.toArray();mik42.gateHeight=gate.y;junctions.push({roadId:zenit.id,x:join.x,z:join.z});
+  }
   const kaz=siteRecords.find(s=>s.id==='pad-3'),access=roads.find(r=>r.id==='r-site3-kaz-access');
   if(kaz&&access){
     const center=point(kaz.x,kaz.y,0);

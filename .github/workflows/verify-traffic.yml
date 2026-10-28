@@ -51,12 +51,7 @@ jobs:
           node tests/train-browser.mjs
           node tests/flanks-browser.mjs
       - name: Wait for public traffic interface
-        run: |
-          for attempt in $(seq 1 24); do
-            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q "const MUSEUM_REVISION='20261028-museum3-v4'"; then exit 0; fi
-            sleep 8
-          done
-          exit 1
+        run: node scripts/verify-published.mjs
       - name: Verify published traffic and landing
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?museum3=${{ github.sha }}

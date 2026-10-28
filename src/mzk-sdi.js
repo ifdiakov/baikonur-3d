@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js';
+import {archiveKit} from './archive-kit.js?v=20261028-museum4-v1';
 // Visible architecture interpreted from owner IMG_0752; no invented measured plan.
 export function buildMzkSdi(root){
  const k=archiveKit(root),front=103;

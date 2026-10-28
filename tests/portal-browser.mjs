@@ -30,7 +30,7 @@ try{
  const orgs=[['pad-1','infracos'],['pad-112a','infracos'],['pad-42','baiterek'],['pad-45','baiterek']];
  const catalog=await (await page.request.get(base+'data/catalog.json?qa=portal-reviewed')).json();
  const city=catalog.sites.find(s=>s.id==='city');assert.deepEqual([city.x,city.y],[710,924]);
- for(const [id,logo]of orgs){const index=catalog.sites.findIndex(o=>o.id===id);assert.ok(index>=0);await page.evaluate(i=>window.__BAIKONUR_QA.focusSite(i),index);await page.waitForFunction(expected=>{const e=document.querySelector('#infoOrg');const img=e.querySelector('img');return e.dataset.orgLogo===expected&&img?.complete&&img.naturalWidth>0;},logo,{timeout:20000});await page.locator('#infoOrg img').evaluate(img=>img.decode());await page.waitForTimeout(200);await page.screenshot({path:`qa-portal/${prefix}-${id}-brand.png`});}
+ for(const [id,logo]of orgs){const index=catalog.sites.filter(r=>!r.aliasOf&&r.render!==false).findIndex(o=>o.id===id);assert.ok(index>=0);await page.evaluate(i=>window.__BAIKONUR_QA.focusSite(i),index);await page.waitForFunction(expected=>{const e=document.querySelector('#infoOrg');const img=e.querySelector('img');return e.dataset.orgLogo===expected&&img?.complete&&img.naturalWidth>0;},logo,{timeout:20000});await page.locator('#infoOrg img').evaluate(img=>img.decode());await page.waitForTimeout(200);await page.screenshot({path:`qa-portal/${prefix}-${id}-brand.png`});}
  const evidence=[];
  for(const model of s.portalArchive.models){
   assert.ok(model.features.primitiveCount>20,model.id+' has model geometry');assert.ok(model.bounds.every(Number.isFinite));assert.ok(model.bounds[0]>2&&model.bounds[2]>2);assert.ok(model.features.batches<180,model.id+' static geometry must be GPU-batched');

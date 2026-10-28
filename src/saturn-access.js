@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {buildRoadSurfaces} from './road-surface.js?v=20261028-museum4-v1';
 
 // Museum coordinates: east = +X, north = -Z. Dimensions are illustrative.
 // The entry corner was identified by RocketTrip, not inferred from a map.
@@ -51,7 +52,7 @@ function closestPoint(path,target) {
 }
 function pavementMaterial(color) {
   return new THREE.MeshStandardMaterial({color,roughness:1,
-    side:THREE.DoubleSide,transparent:true,opacity:1,depthWrite:true});
+    side:THREE.DoubleSide,transparent:false,depthWrite:true});
 }
 // Cross-sections are sampled by arc length. All vertices receive finite
 // heights, and the two strips share the exact same centerline and endpoint.
@@ -95,7 +96,7 @@ export function addSaturnNorthwestGate(root) {
   return {entryCorner:'north-west',gateLocal:{...gate},internalJoinLocal:{...internalJoin},revision:SATURN_ACCESS.revision};
 }
 
-export function buildSaturnNorthwestAccess({data,point,layers,siteRecords}) {
+export function buildSaturnNorthwestAccess({data,point,layers,siteRecords,deferRoadSurfaces=false}) {
   const site=siteRecords.find(s=>s.id==='pad-23');
   const arterial=data.routes.road.find(r=>r.id===SATURN_ACCESS.mainRoadId);
   if(!site||!arterial)throw new Error('Saturn northwest access requires Site 23 and the main road');
@@ -128,8 +129,8 @@ export function buildSaturnNorthwestAccess({data,point,layers,siteRecords}) {
     minClearance=Math.min(minClearance,s.y-highest);
   }
   const group=new THREE.Group();group.name='Сатурн · северо-западный подъезд';layers.roads.add(group);
-  strip(group,sections,s=>s.shoulderWidth,s=>s.y-.06,pavementMaterial(0xa69b84),'saturn-northwest-road-shoulder',4);
-  strip(group,sections,s=>s.width,s=>s.y,pavementMaterial(0x555550),'saturn-northwest-access-road',5);
+  const roadSurface={id:SATURN_ACCESS.routeId,width:5.2,samples:sections};
+  if(!deferRoadSurfaces)buildRoadSurfaces({roads:[roadSurface],parent:group});
   // Low embankment sides meet the sampled mountain; no suspended black tube.
   const edges=[],faces=[];
   for(const side of [-1,1]) {
@@ -157,6 +158,6 @@ export function buildSaturnNorthwestAccess({data,point,layers,siteRecords}) {
     junctionParameter:snapped.t,junctionError:0,gateError:0,
     minTerrainClearance:minClearance,sectionCount:sections.length,routeId:route.id};
   group.userData.saturnAccess=report;
-  return {route,report,group,lampPath:{id:route.id,label:'Подъезд к «Сатурну»',width:5.2,
+  return {route,report,group,roadSurface,lampPath:{id:route.id,label:'Подъезд к «Сатурну»',width:5.2,
     points:sections.map(s=>new THREE.Vector3(s.p.x,s.y,s.p.z))}};
 }

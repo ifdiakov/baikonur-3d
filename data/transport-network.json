@@ -442,18 +442,31 @@
             416
           ],
           [
-            677,
-            354
+            680,
+            374
+          ],
+          [
+            679,
+            347
+          ],
+          [
+            678,
+            330
+          ],
+          [
+            672,
+            320
           ],
           [
             664,
-            310
+            316
           ],
           [
-            649,
-            280
+            655.978,
+            299.996
           ]
-        ]
+        ],
+        "confidence": "Existing corridor refined to the relocated Site 110 road gate; museum reconstruction"
       },
       {
         "id": "r-complex-1",
@@ -613,6 +626,25 @@
           ]
         ],
         "confidence": "schematic connection to photo-grid western street; northern-bank placement provisional"
+      },
+      {
+        "id": "r-site42-access",
+        "class": "service",
+        "points": [
+          [
+            1144,
+            298
+          ],
+          [
+            1141,
+            297.635
+          ],
+          [
+            1138.424,
+            297.635
+          ]
+        ],
+        "confidence": "Site 42 at the Site 45 turn as corrected by RocketTrip; final gate is derived from the model"
       }
     ],
     "rail": [
@@ -1127,10 +1159,10 @@
     "113",
     "132",
     "241",
-    "200",
     "89",
     "70",
-    "163"
+    "163",
+    "42"
   ],
   "realismNotes": {
     "historic": "Key corridor order, branching topology and station names are based on the photographed/historical Baikonur diagram.",

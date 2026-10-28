@@ -1,0 +1,233 @@
+import * as THREE from 'three';
+import {archiveKit} from './archive-kit.js?v=20261028-museum4-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
+
+// Site 31 is its own exhibit, not Site 1's traced excavation transplanted to
+// a different map point. Photographs establish the two opening service masts,
+// four supporting arms, open bridge, lined excavation and lightning towers.
+// No overhead survey is available: the existing yaw and map anchor are kept.
+export const SITE31_VERSION='site31-detailed-v2';
+export const SITE31_SOURCES=Object.freeze([
+ 'https://www.russian.space/multimedia/foto/?PAGEN_1=2',
+ 'https://www.russian.space/upload/iblock/c07/11221_d.jpg',
+ 'https://sufps70.organizations.mchs.gov.ru/deyatelnost/press-centr/novosti/4233814'
+]);
+export const SITE31_PIT=Object.freeze({x:0,z:-16,rx:42,rz:58,yaw:0,shape:'ellipse'});
+export const SITE31_PORTS=Object.freeze({road:[60,.1,133],rail:[0,.48,174]});
+const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
+
+export function buildSite31Pad(root){
+ const k=archiveKit(root),apertures=[];
+ root.name='Пл. 31 · «Союз» · детализированная музейная реконструкция';
+ k.mat.green.color.set(0x426851);k.mat.steel.color.set(0x69736b);
+ // Components use the same textured concrete/paint/metal palette and static
+ // instancing as the detailed Gagarin model. There are no stacked decal planes.
+ function railings(points,y,h=1.2,parent=root,tag='service-safety-railing'){
+  for(let n=1;n<points.length;n++){
+   const a=points[n-1],b=points[n],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
+   for(const level of [h*.52,h])k.rod([a[0],y+level,a[1]],[b[0],y+level,b[1]],.065,'light',tag,parent);
+   const count=Math.max(1,Math.ceil(length/2.4));
+   for(let j=0;j<=count;j++){const t=j/count,x=THREE.MathUtils.lerp(a[0],b[0],t),z=THREE.MathUtils.lerp(a[1],b[1],t);k.rod([x,y,z],[x,y+h,z],.075,'steel',tag,parent);}
+  }
+ }
+ function ladder(a,b,width=1.2,parent=root,tag='service-ladder'){
+  const p=V(...a),q=V(...b),delta=q.clone().sub(p),n=Math.max(2,Math.ceil(delta.length()/.42));
+  for(const s of [-1,1])k.rod(p.clone().add(V(s*width/2,0,0)).toArray(),q.clone().add(V(s*width/2,0,0)).toArray(),.075,'light',tag,parent);
+  for(let i=0;i<=n;i++){const c=p.clone().addScaledVector(delta,i/n);k.rod(c.clone().add(V(-width/2,0,0)).toArray(),c.clone().add(V(width/2,0,0)).toArray(),.055,'steel',tag,parent);}
+ }
+ function ring(radius,tube,y,material,tag,parent=root){
+  const m=k.direct(new THREE.TorusGeometry(radius,tube,8,64),material,tag,parent);m.rotation.x=Math.PI/2;m.position.y=y;return m;
+ }
+
+ // The rim and the shader cutout have precisely the same ellipse. Each panel
+ // reaches below grade; the excavation is not a dark painted patch on terrain.
+ k.cutouts.push({...SITE31_PIT});
+ const rim=[],floor=[],segments=72,floorY=-24;
+ for(let i=0;i<segments;i++){
+  const a=i/segments*Math.PI*2;
+  rim.push([42*Math.cos(a),0,-16+58*Math.sin(a)]);
+  floor.push([20*Math.cos(a),floorY,-27+31*Math.sin(a)]);
+ }
+ for(let i=0;i<segments;i++){
+  const j=(i+1)%segments,a=rim[i],b=rim[j],c=floor[i],d=floor[j];
+  const midA=V(...a).lerp(V(...c),.55).toArray(),midB=V(...b).lerp(V(...d),.55).toArray();
+  k.quad(a,midA,midB,b,'concrete','lined-excavation-upper-bank');
+  k.quad(midA,c,d,midB,'concrete','lined-excavation-lower-bank');
+  k.rod([a[0],.07,a[2]],[b[0],.07,b[2]],.16,'wall','excavation-rim-coping');
+  if(i%3===0){const aa=V(...a).add(V(0,.035,0)),cc=V(...c).add(V(0,.035,0));k.rod(aa.toArray(),cc.toArray(),.032,'dark','concrete-panel-joint');}
+  k.rod(V(...midA).add(V(0,.035,0)).toArray(),V(...midB).add(V(0,.035,0)).toArray(),.035,'dark','concrete-panel-joint');
+ }
+ k.poly(floor.map(p=>[p[0],p[2]]),floorY,'dark','open-flame-chamber-floor');
+ // Thin apron pieces remain outside the hole, rather than covering it.
+ k.poly([[-47,44],[47,44],[50,150],[-50,150]],.06,'concrete','rail-forecourt');
+ k.poly([[-69,-78],[-47,-78],[-47,43],[-69,43]],.06,'concrete','western-utility-apron');
+ k.poly([[47,-78],[69,-78],[69,43],[47,43]],.06,'concrete','eastern-utility-apron');
+
+ // Open concrete bridge: separate cheeks and a rear crosswalk leave the
+ // axial launch passage and the space beneath the launch ring unobstructed.
+ for(const s of [-1,1]){
+  k.box(14,2.2,65,s*28,-.9,4,'concrete','launch-bridge-side');
+  k.box(11,17,11,s*27,-9.5,-20,'concrete','bridge-foundation-pier');
+  k.box(11,20,10,s*27,-11,24,'concrete','bridge-foundation-pier');
+  k.box(.45,2,65,s*35.3,.3,4,'rust','bridge-edge-girder');
+  for(let z=-26;z<=32;z+=3.1)k.box(.16,5.8,.23,s*34.9,-4.0,z,'light','bridge-corrugated-underside');
+  for(const y of [-14,-8]){
+   k.box(8,.35,44,s*27,y,0,'steel','underbridge-gallery');
+   railings([[s*23,-22],[s*23,22]],y,1.1);
+   for(let z=-22;z<22;z+=2.4)k.rod([s*23,y,z],[s*31,y,z],.045,'steel','underbridge-grating');
+  }
+  railings([[s*35,-28],[s*35,37]],.25,1.3);
+ }
+ k.box(48,1.1,13,0,-.33,34,'concrete','bridge-rear-crosswalk');
+ // The incoming track is supported up to the rear lip of the annular table.
+ // Its deck stops before the exhaust opening rather than floating over it.
+ k.box(10.4,1.1,28,0,-.33,23,'concrete','rail-approach-bridge-deck');
+ for(const s of [-1,1]){
+  k.rod([s*5.3,-1.0,9],[s*5.3,-1.0,37],.22,'steel','rail-approach-bridge-girder');
+  for(let z=10;z<35;z+=5)k.rod([s*5.3,-2.3,z],[s*5.3,-.8,z+4.5],.13,'steel','rail-approach-bridge-brace');
+ }
+ // Gallery and staircase descend alongside the opening, never through it.
+ for(const s of [-1,1]){
+  const start=V(s*36,-.1,25),end=V(s*20,-23,-24),count=42;
+  for(let i=0;i<=count;i++){const p=start.clone().lerp(end,i/count);k.box(2.2,.26,1.05,p.x,p.y,p.z,'concrete','excavation-stair-tread');}
+  for(const xoff of [-1.2,1.2]){
+   k.rod(start.clone().add(V(xoff,1.2,0)).toArray(),end.clone().add(V(xoff,1.2,0)).toArray(),.075,'light','excavation-stair-handrail');
+   for(let i=0;i<=count;i+=4){const p=start.clone().lerp(end,i/count);k.rod(p.clone().add(V(xoff,0,0)).toArray(),p.clone().add(V(xoff,1.2,0)).toArray(),.065,'steel','excavation-stair-post');}
+  }
+ }
+
+ // Annular steel table with a genuine hole, plus four independent R-7
+ // supporting arms. Nothing spans the exhaust axis at or below the ring.
+ ring(8.8,.62,3.8,'green','open-soyuz-launch-ring');
+ const deckShape=new THREE.Shape();deckShape.absarc(0,0,10.5,0,Math.PI*2,false);
+ const passage=new THREE.Path();passage.absarc(0,0,6.8,0,Math.PI*2,true);deckShape.holes.push(passage);
+ const collar=k.direct(new THREE.ExtrudeGeometry(deckShape,{depth:.35,bevelEnabled:false,curveSegments:64}),'steel','launch-table-annular-deck');
+ collar.rotation.x=-Math.PI/2;collar.position.y=3.18;
+ apertures.push({kind:'launch-table',center:[0,0],radius:6.8,y:3.18});
+ for(let n=0;n<4;n++){
+  const angle=Math.PI/4+n*Math.PI/2,c=Math.cos(angle),s=Math.sin(angle),t=V(-s,0,c);
+  const foot=V(c*21,1.5,s*21),head=V(c*5.2,19,s*5.2);
+  for(const offset of [-1.5,1.5]){
+   const a=foot.clone().addScaledVector(t,offset),b=head.clone().addScaledVector(t,offset*.55);
+   k.rod(a.toArray(),b.toArray(),.48,'green','tulip-support-main');
+   for(let i=0;i<8;i++){const u=i/8,v=(i+1)/8,p=foot.clone().lerp(head,u).addScaledVector(t,offset*(1-.45*u)),q=foot.clone().lerp(head,v).addScaledVector(t,-offset*(1-.45*v));k.rod(p.toArray(),q.toArray(),.13,'green','tulip-cross-brace');}
+  }
+  k.box(2.6,1.6,2.6,c*5.2,19,s*5.2,'green','support-arm-gripper',-angle);
+  k.rod([c*25,1,s*25],[c*18,12,s*18],.32,'steel','support-arm-actuator');
+  const drum=k.direct(new THREE.CylinderGeometry(1.7,1.7,3.4,20),'yellow','tulip-counterweight');
+  drum.position.set(c*24,3.4,s*24);drum.quaternion.setFromUnitVectors(V(0,1,0),t);
+ }
+
+ // Two opening service masts are the characteristic Site 31 silhouette.
+ // Their separate hinged lattice booms and U-shaped decks retain air gaps.
+ const mastAngles=[],serviceDecks=[];
+ for(const side of [-1,1]){
+  const pivot=new THREE.Group();pivot.position.set(side*20,1.2,5);pivot.rotation.z=-side*.34;pivot.name='Пл.31 · раскрытая мачта обслуживания';root.add(pivot);mastAngles.push(pivot.rotation.z);
+  const height=side<0?61:52,levels=18,width=4.7,depth=5.5;
+  for(let level=0;level<levels;level++){
+   const y0=level/levels*height,y1=(level+1)/levels*height,r0=1-.34*level/levels,r1=1-.34*(level+1)/levels;
+   for(const sx of [-1,1])for(const sz of [-1,1])k.rod([sx*width*r0/2,y0,sz*depth*r0/2],[sx*width*r1/2,y1,sz*depth*r1/2],.17,'green','service-mast-main-leg',pivot);
+   for(const face of [-1,1]){
+    k.rod([-width*r0/2,y0,face*depth*r0/2],[width*r1/2,y1,face*depth*r1/2],.105,'green','service-mast-cross-lattice',pivot);
+    k.rod([width*r0/2,y0,face*depth*r0/2],[-width*r1/2,y1,face*depth*r1/2],.105,'green','service-mast-cross-lattice',pivot);
+    k.rod([face*width*r0/2,y0,-depth*r0/2],[face*width*r1/2,y1,depth*r1/2],.105,'steel','service-mast-side-lattice',pivot);
+    k.rod([-width*r0/2,y0,face*depth*r0/2],[width*r0/2,y0,face*depth*r0/2],.12,'green','service-mast-level-belt',pivot);
+   }
+  }
+  for(let level=0;level<8;level++){
+   const y=14+level*(height-16)/7,reach=level<3?12:10.5,x=-side*(reach/2),d=level<3?6.5:5.2;
+   // The open U faces the rocket; three thin strips form the walking deck.
+   k.box(reach,.26,1.0,x,y,-d/2,'green','open-service-balcony',0,pivot);
+   k.box(reach,.26,1.0,x,y,d/2,'green','open-service-balcony',0,pivot);
+   k.box(1.2,.26,d,0,y,0,'green','open-service-balcony',0,pivot);
+   railings([[0,-d/2],[-side*reach,-d/2]],y,1.05,pivot,'service-balcony-railing');
+   railings([[0,d/2],[-side*reach,d/2]],y,1.05,pivot,'service-balcony-railing');
+   for(const z of [-d/2,d/2])k.rod([0,y-2.3,z],[-side*reach*.8,y,z],.10,'steel','balcony-diagonal-bracket',pivot);
+   serviceDecks.push({mast:side,y,openFront:true,reach});
+  }
+  ladder([side*1.8,1,3.1],[side*1.3,height-1,2.2],.9,pivot,'mast-access-ladder');
+  // Cable pipes follow the boom; hinges and hydraulic struts remain at grade.
+  for(const z of [-2.3,2.3])k.rod([side*2.4,2,z],[side*1.7,height,z*.7],.12,'light','mast-utility-pipe',pivot);
+  k.box(4.2,4.1,4.6,0,height-1.5,0,'green','mast-equipment-cabin',0,pivot);
+  k.box(3.1,1.1,.12,0,height-1.0,2.36,'glass','mast-cabin-window',0,pivot);
+  const hinge=k.direct(new THREE.CylinderGeometry(2.0,2.0,7,20),'yellow','service-mast-base-hinge');hinge.position.set(side*20,2.0,5);hinge.rotation.x=Math.PI/2;
+  k.rod([side*29,.5,7],[side*24,13,6],.45,'steel','mast-hydraulic-cylinder');
+  k.rod([side*24,13,6],[side*25.2,17.2,6],.24,'light','mast-hydraulic-rod');
+ }
+ // Rail erector: a low open truss along the retained incoming rail axis.
+ for(const side of [-1,1]){
+  k.rod([side*2.8,1.4,14],[side*2.8,1.4,72],.30,'green','rail-erector-longeron');
+  k.rod([side*2.8,4.0,14],[side*2.8,4.0,72],.23,'green','rail-erector-longeron');
+  for(let z=14;z<72;z+=4){k.rod([side*2.8,1.4,z],[side*2.8,4,z+4],.12,'green','rail-erector-brace');k.rod([side*2.8,4,z],[side*2.8,1.4,z+4],.12,'green','rail-erector-brace');}
+ }
+
+ // Generic Soyuz-family exhibit. This depicts an explanatory prelaunch
+ // arrangement, not a claim that a particular flight stands here today.
+ const rocket=new THREE.Group();rocket.name='«Союз» · музейная предстаровая композиция';root.add(rocket);
+ function rocketSection(r0,r1,h,y,material,tag,x=0,z=0){const mesh=k.direct(new THREE.CylinderGeometry(r1,r0,h,40),material,tag,rocket);mesh.position.set(x,y,z);return mesh;}
+ rocketSection(1.65,1.65,33,21,'steel','soyuz-core-stage');
+ rocketSection(1.68,1.68,2.2,37.4,'rust','soyuz-stage-band');
+ rocketSection(1.70,1.70,1.5,39.25,'dark','soyuz-interstage');
+ rocketSection(1.68,1.68,7.2,43.6,'white','soyuz-upper-stage');
+ rocketSection(1.69,2.05,2.3,48.35,'white','soyuz-fairing-adapter');
+ rocketSection(2.05,2.05,8.0,53.5,'white','soyuz-payload-fairing');
+ rocketSection(2.05,.04,4.9,59.95,'green','soyuz-fairing-nose');
+ for(let j=0;j<4;j++){
+  const a=j*Math.PI/2+Math.PI/4,x=Math.cos(a)*2.7,z=Math.sin(a)*2.7;
+  rocketSection(1.45,1.18,15.8,12.2,'steel','soyuz-booster-body',x,z);
+  rocketSection(1.19,.06,10.5,25.35,'green','soyuz-booster-cone',x,z);
+  rocketSection(1.47,1.47,1.1,4.85,'rust','soyuz-booster-lower-band',x,z);
+  rocketSection(.66,.45,1.4,3.5,'dark','soyuz-booster-engine',x,z);
+  for(const y of [7.8,14.7,19.8]){const band=ring(y<19?1.36:1.2,.034,y,'light','soyuz-booster-seam',rocket);band.position.x=x;band.position.z=z;}
+ }
+ for(const y of [8,17,26,33,45.5,51.5,55])ring(y>48?2.06:1.67,.028,y,'light','soyuz-core-seam',rocket);
+ for(const sx of [-1,1])for(const sz of [-1,1])rocketSection(.48,.32,1.2,3.6,'dark','soyuz-core-engine',sx*.64,sz*.64);
+
+ // Red/white lightning masts and lower floodlight frames from the photos.
+ for(const [x,z,h] of [[-70,-48,88],[70,-48,88]]){
+  const levels=20,w=5.3;
+  for(let j=0;j<levels;j++){
+   const y0=j/levels*h,y1=(j+1)/levels*h,r0=1-.88*j/levels,r1=1-.88*(j+1)/levels,mat=Math.floor(j/4)%2?'light':'red';
+   for(const sx of [-1,1])for(const sz of [-1,1])k.rod([x+sx*w*r0,y0,z+sz*w*r0],[x+sx*w*r1,y1,z+sz*w*r1],.12,mat,'soyuz-lightning-mast');
+   for(const s of [-1,1]){
+    k.rod([x-w*r0,y0,z+s*w*r0],[x+w*r1,y1,z+s*w*r1],.075,mat,'lightning-mast-cross-brace');
+    k.rod([x+w*r0,y0,z+s*w*r0],[x-w*r1,y1,z+s*w*r1],.075,mat,'lightning-mast-cross-brace');
+    k.rod([x+s*w*r0,y0,z-w*r0],[x+s*w*r1,y1,z+w*r1],.075,mat,'lightning-mast-cross-brace');
+   }
+  }
+  k.rod([x,h,z],[x,h+6,z],.075,'dark','lightning-rod-tip');
+ }
+ for(const [x,z] of [[-56,69],[52,54]]){
+  k.lattice(x,z,35,3.4,3.4,{levels:12,material:'steel',tag:'floodlight-tower'});
+  k.box(7,.4,1,x,35.4,z,'steel','floodlight-head');
+  for(let row=0;row<2;row++)for(let j=0;j<5;j++)k.box(.9,.72,.38,x-2.8+j*1.4,35.9+row*.9,z+.4,'white','floodlight-panel');
+ }
+ k.hall({x:61,z:91,w:22,d:40,h:7,roof:'blue',gates:1,tag:'soyuz-service-house'});
+ k.hall({x:-64,z:100,w:15,d:24,h:5.5,roof:'roof',gates:1,tag:'soyuz-utility-house'});
+ for(const s of [-1,1])for(let j=0;j<3;j++){
+  const x=s*(39+j*.65);
+  k.rod([x,.7,80],[x,.7,36],.13,'light','utility-pipe-gallery');
+  k.rod([x,.7,36],[s*34,1.4,18+j*.7],.13,'light','utility-pipe-gallery');
+ }
+
+ // The real network ports are unchanged: road [60,.1,133], track [0,.48,174].
+ // One continuous ribbon rounds the U-road; its apron has a lower datum.
+ const roadCurve=new THREE.CatmullRomCurve3([[-59,139],[-57,65],[-55,18],[-55,-53],[-47,-82],[0,-91],[47,-82],[56,-51],[57,32],[60,95],[60,133]].map(([x,z])=>V(x,0,z)),false,'centripetal');
+ const roadPoints=roadCurve.getPoints(180).map(p=>[p.x,p.z]);
+ k.path(roadPoints,6,.10,'asphalt','continuous-site31-access-road');
+ k.rail([[0,174],[0,42],[0,9]],{y:.30,tag:'site31-incoming-rail'});
+ // Keep the centreline over the deck clear. The high erector sides do not
+ // substitute for the two running rails and regularly spaced sleepers.
+ const result=k.finish();
+ const metadata={version:SITE31_VERSION,siteId:'pad-31',name:'Стартовая позиция 31/6 · семейство «Союз»',
+  status:'Приблизительная детализированная музейная реконструкция; размеры и азимут предварительны.',
+  referenceBasis:'Фотографии КЦ «Южный» / ЦЭНКИ; общая композиция и типы конструкций, не обмер.',
+  sources:[...SITE31_SOURCES],orientationVerified:false,groundDatum:0,pitFloorY:floorY,pit:{...SITE31_PIT},
+  launchPassage:{radius:6.8,openBelowDeck:true},serviceMasts:2,serviceDecks:serviceDecks.length,mastAngles,
+  supportingArms:4,rocketExhibit:true,rocketState:'illustrative-prelaunch',
+  roadPort:[...SITE31_PORTS.road],railPort:[...SITE31_PORTS.rail],
+  railGauge:RAIL_PROFILE.gauge,featureCounts:result.features,primitiveCount:result.primitiveCount,drawCalls:result.meshCount};
+ root.userData.site31Model=metadata;root.userData.orientationNote=metadata.status;
+ root.userData.site31Apertures=apertures;
+ return {...result,site31:metadata};
+}

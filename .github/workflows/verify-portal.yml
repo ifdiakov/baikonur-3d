@@ -69,8 +69,12 @@ jobs:
           node -e 'const fs=require("fs");const r=JSON.parse(fs.readFileSync("qa-portal/public-result.json"));fs.writeFileSync("data/qa-portal.json",JSON.stringify({...r,targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success"},null,2)+"\n")'
           git add data/qa-portal.json
           git commit -m 'ci: verify portal models in day and evening, excavation and partner logos'
-          git pull --rebase origin main
-          git push origin HEAD:main
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 4
+          done
+          exit 1
       - name: Archive browser evidence and exact tested source
         if: always()
         uses: actions/upload-artifact@v4

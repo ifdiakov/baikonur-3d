@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import {nearestRoadPoint} from './road-layout.js';
+import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-v1';
+import {buildRoadSurfaces,sampleRoadCurve,joinedRoadCurve} from './road-surface.js?v=20261028-museum4-v1';
 
 // Two separate overpasses in the southern entrance area of the museum plan.
 // Deck dimensions and supports are illustrative, not measured bridge drawings.
-export function buildSouthInterchange({data,point,layers}){
+export function buildSouthInterchange({data,point,layers,deferRoadSurfaces=false}){
   const path=r=>new THREE.CatmullRomCurve3(r.points.map(([x,y])=>point(x,y,.72)),false,'centripetal',.3);
   const roadIds=['r-south-west','r-south-east'],railIds=['t-center-west-south','t-center-south-east'];
   const roadWest=data.routes.road.find(r=>r.id===roadIds[0]),roadEast=data.routes.road.find(r=>r.id===roadIds[1]);
@@ -89,7 +90,7 @@ export function buildSouthInterchange({data,point,layers}){
   for(const r of [roadWest,roadEast])embankment(r,center,roadElevation,11.6,38);
   for(const r of [railWest,railEast])embankment(r,railCenter,railElevation,4.7,33);
 
-  const ramps=[],trunk=path(lower);
+  const ramps=[],roadSurfaces=[],trunk=path(lower);
   function strip(samples,width,offset,mat,name){
     const xyz=[],indices=[];
     samples.forEach((s,i)=>{
@@ -105,23 +106,23 @@ export function buildSouthInterchange({data,point,layers}){
   const local=(east,north)=>center.clone().addScaledVector(roadDirection,east).addScaledVector(south,north).setY(.72);
   const eastPath=path(roadEast),merge=nearestRoadPoint(eastPath,local(330,0)).position;
   const northJoin=nearestRoadPoint(trunk,local(0,-105)).position,southJoin=nearestRoadPoint(trunk,local(0,115)).position;
-  function ramp(id,points,width=4.6){
-   const curve=new THREE.CatmullRomCurve3(points,false,'centripetal',.3),samples=Array.from({length:121},(_,i)=>{const t=i/120,p=curve.getPointAt(t),d=curve.getTangentAt(t),len=Math.hypot(d.x,d.z)||1;return {p,nx:-d.z/len,nz:d.x/len};});
-   strip(samples,width+2.2,-.06,earth,'interchange-ramp-shoulder');strip(samples,width,0,asphalt,'interchange-ramp-pavement');
-   for(const side of [-1,1]){const edge=samples.map(s=>({...s,p:s.p.clone().add(new THREE.Vector3(s.nx,0,s.nz).multiplyScalar(side*(width/2-.22)))}));strip(edge,.10,.025,new THREE.MeshBasicMaterial({color:0xc9c5b6}),'interchange-edge-paint');}
-   ramps.push({id,label:'Восточные съезды южной развязки',width,points:samples.map(s=>s.p),curve});
+  function ramp(id,points,width=4.6,startDirection=null,endDirection=null){
+   const curve=joinedRoadCurve(points,startDirection,endDirection),samples=sampleRoadCurve(curve,{width,shoulder:2.2});
+   roadSurfaces.push({id,width,samples,edgePaint:true});
+   ramps.push({id,label:'Восточные съезды южной развязки',width,points:samples.map(s=>s.pos),curve});
   }
   // Outer arms connect to the eastbound highway with parallel tangent joins.
   for(const [sign,join,id] of [[-1,northJoin,'north'],[1,southJoin,'city']]){
-   const lead=join.clone().addScaledVector(south,-sign*12);
-   ramp('south-interchange-'+id,[join,lead,local(30,sign*105),local(70,sign*112),local(160,sign*110),local(230,sign*83),merge.clone().addScaledVector(roadDirection,-25),merge]);
+   ramp('south-interchange-'+id,[join,local(30,sign*120),local(70,sign*122),local(160,sign*110),local(230,sign*83),merge],4.6,south.clone().multiplyScalar(sign),roadDirection);
   }
   // Return loops join the opposite lane; all merging points lie on the highway.
   for(const sign of [-1,1]){
    const onRoad=nearestRoadPoint(eastPath,local(150,0)).position;onRoad.y=.72+roadElevation(roadEast.id,onRoad);
-   ramp('south-interchange-loop-'+sign,[local(150,sign*110),local(186,sign*108),local(218,sign*84),local(221,sign*44),local(191,sign*13),onRoad.clone().addScaledVector(roadDirection,18),onRoad],3.8);
+   const outer=ramps.find(r=>r.id==='south-interchange-'+(sign<0?'north':'city')),connection=nearestRoadPoint(outer.curve,local(150,sign*110)),start=connection.position;
+   ramp('south-interchange-loop-'+sign,[start,local(186,sign*104),local(218,sign*79),local(221,sign*44),local(191,sign*13),onRoad],3.8,outer.curve.getTangent(connection.t),roadDirection.clone().negate());
   }
-  return {roadElevation,railElevation,ramps,
+  if(!deferRoadSurfaces)buildRoadSurfaces({roads:roadSurfaces,parent:layers.roads});
+  return {roadElevation,railElevation,ramps,roadSurfaces,
     isCrossing:p=>Math.hypot(p.x-center.x,p.z-center.z)<28,
     stats:()=>({version:'southern-east-half-cloverleaf-v2',bridges:reports,ramps:ramps.length,
       source:'Esri World Imagery 63.315,45.674,63.331,45.684; east-side elongated ramps. Museum bridge positions remain schematic.'})};

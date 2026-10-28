@@ -15,8 +15,8 @@ try{
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats());assert.equal(initial.cars,20);assert.equal(initial.roadVehicles.routeCount,4);assert.equal(initial.roadVehicles.extensionLength,2900);assert.equal(initial.roadVehicles.extensionLamps,52);
  assert.ok(initial.carStates[0].position[1]>6,'Car is visibly on the highway bridge');
  await page.evaluate(()=>window.__qaMuseumFrame?.());await page.screenshot({animations:'disabled',path:`qa-road-vehicles/${prefix}-car-night.png`,timeout:90000});
- await page.locator('#eveningToggle').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().night),false);
- await page.evaluate(()=>window.__qaMuseumFrame?.());await page.screenshot({animations:'disabled',path:`qa-road-vehicles/${prefix}-car-day.png`,timeout:90000});await page.locator('#eveningToggle').click();
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().night),false);
+ await page.evaluate(()=>window.__qaMuseumFrame?.());await page.screenshot({animations:'disabled',path:`qa-road-vehicles/${prefix}-car-day.png`,timeout:90000});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.traffic.focusHighway();});await page.evaluate(()=>window.__qaMuseumFrame?.());await page.screenshot({animations:'disabled',path:`qa-road-vehicles/${prefix}-junction-wide.png`,timeout:90000});
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;const s=q.traffic.stats(),r=s.roadVehicles.routes.find(r=>r.id===s.carStates[16].routeId),car=s.carStates[16];const target=(r.rampStart+r.rampEnd)/2;q.traffic.seek((target-car.phase*car.routeLength)/car.speed);q.traffic.focusCars(16);});
  await page.evaluate(()=>window.__qaMuseumFrame?.());await page.screenshot({animations:'disabled',path:`qa-road-vehicles/${prefix}-turning-car.png`,timeout:90000});

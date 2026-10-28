@@ -20,11 +20,11 @@ try{
   await route.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+path,contentType:'text/javascript'});
  });
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().uiRevision==='20261028-stations-lighting',null,{timeout:90000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().uiRevision==='20261028-museum4-clean-menu',null,{timeout:90000});
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
- assert.equal(stats.sites,98);assert.equal(stats.stations,7);
+ assert.equal(stats.sites,97);assert.equal(stats.stations,7);
  assert.ok(Math.abs(stats.transport.railGauge-7.3*.43*.28/1.5)<1e-10);assert.equal(stats.transport.railRoutes,14);
- assert.equal(stats.transport.roadMarkings,'flat-dashes');assert.ok(stats.transport.markingSegments>100);
+ assert.equal(stats.transport.roadMarkings,'arc-length-paint-with-junction-gaps');assert.ok(stats.transport.markingSegments>100);
  assert.ok(stats.transport.kazGateGap<.001);
  assert.equal(stats.transport.interchange.bridges.length,2);
  assert.ok(stats.transport.interchange.bridges.every(b=>b.clearance>5));
@@ -90,7 +90,7 @@ try{
  console.log('SATURN TEXTURE PASS',JSON.stringify(terrain));
 
  await page.locator('#close').click();await page.locator('#showLabels').uncheck();await step();
- await page.locator('#lightingToggle').click();assert.equal(await page.locator('#lightingPanel').isVisible(),true);
+ await page.evaluate(()=>window.__BAIKONUR_QA.lighting.setActive(true));assert.equal(await page.locator('#lightingPanel').isVisible(),true);
  await page.mouse.click(1030,730);await step();
  let lamps=await page.evaluate(()=>window.__BAIKONUR_QA.lighting.snapshot().lamps);
  assert.equal(lamps.length,1);

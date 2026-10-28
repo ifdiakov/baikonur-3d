@@ -76,12 +76,16 @@ try {
   const site=catalog.sites.find(s=>s.id==='pad-23');
   const root=new THREE.Group();root.position.copy(point(site.x,site.y,17.45));
   root.scale.setScalar(.525);root.updateMatrixWorld(true);buildSaturnIP5(root);
-  const external=layers.roads.getObjectByName('saturn-northwest-access-road');
+  const external=layers.roads.getObjectByName('road-pavement-union');
+  const approach=network.roadPaths().find(r=>r.id==='r-site23-saturn-access').points;
   const internal=root.getObjectByName('northwest-gate-pavement');
-  const p=external.geometry.getAttribute('position'),q=internal.geometry.getAttribute('position');
+  const q=internal.geometry.getAttribute('position');
   const center=(a,i)=>new THREE.Vector3((a.getX(i)+a.getX(i+1))/2,
     (a.getY(i)+a.getY(i+1))/2,(a.getZ(i)+a.getZ(i+1))/2);
-  const end=center(p,p.count-2),gate=root.localToWorld(center(q,0));
+  const end=approach.at(-1),gate=root.localToWorld(center(q,0));
+  layers.roads.updateMatrixWorld(true);
+  const justBefore=end.clone().lerp(approach.at(-2),.005),ray=new THREE.Raycaster(justBefore.clone().add(new THREE.Vector3(0,20,0)),new THREE.Vector3(0,-1,0));
+  const pavementAtGate=ray.intersectObject(external,false)[0];
   const inside=root.localToWorld(center(q,q.count-2));
   const expected=root.localToWorld(new THREE.Vector3(-92,7.59,-29));
   const roads=network.routes.road.filter(r=>r.id==='r-site23-saturn-access');
@@ -101,12 +105,13 @@ try {
     if(Math.abs(hp.getX(i))===500||Math.abs(hp.getZ(i))===500)edge=Math.max(edge,hp.getY(i));
   }
   let maxRoadGrade=0;
-  for(let i=2;i<p.count;i+=2){const a=center(p,i-2),b=center(p,i);maxRoadGrade=Math.max(maxRoadGrade,Math.abs(b.y-a.y)/Math.hypot(b.x-a.x,b.z-a.z));}
+  for(let i=1;i<approach.length;i++){const a=approach[i-1],b=approach[i];maxRoadGrade=Math.max(maxRoadGrade,Math.abs(b.y-a.y)/Math.hypot(b.x-a.x,b.z-a.z));}
   return {hillRaise:hill.userData.terrainElevationWorld,peak,edge,maxSlope,maxRoadGrade,
-    gateGap:end.distanceTo(gate),internalGap:inside.distanceTo(expected),
+    gateGap:end.distanceTo(gate),pavementGateHeightError:pavementAtGate?Math.abs(pavementAtGate.point.y-justBefore.y):Infinity,internalGap:inside.distanceTo(expected),
     finite,minNormalY,routeCount:roads.length,corner:roads[0].entryCorner};
  });
- assert.ok(geometry.gateGap<.001,'Actual road meshes must meet at the NW gate');
+ assert.ok(geometry.gateGap<.001,'The road must meet the internal NW gate');
+ assert.ok(geometry.pavementGateHeightError<.001,'The shared pavement buffer must cover the NW gate approach');
  assert.ok(geometry.internalGap<.001,'New entry must join the existing internal lane');
  assert.equal(geometry.finite,true);assert.ok(geometry.minNormalY>0);
  assert.equal(geometry.hillRaise,20);

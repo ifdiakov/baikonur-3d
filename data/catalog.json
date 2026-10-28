@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "coordinateSystem": {
     "description": "Нормализованные координаты исходного изображения схемы; НЕ географические координаты",
     "width": 1300,
@@ -616,19 +616,22 @@
       "y": 278,
       "model": "tech",
       "firstYear": null,
-      "status": "provisional-sector",
+      "status": "merged-alias",
       "positionBasis": "original-map-overview",
       "sources": [
         "original-plan-3993x3208"
       ],
-      "note": "«Восточный комплекс» — рабочее название группы геометрии в нашем макете. Это не подтверждённый номер или официальное название площадки Байконура. Состав зданий, их назначение, история и принадлежность ещё не установлены; для заполнения нужны исходная карта с легендой либо привязка к конкретным объектам.",
+      "note": "Идентифицирован как площадка №43 по уточнению RocketTrip 28.10.2026. Геометрия и карточка находятся у канонической записи pad-43.",
       "purpose": "Условный сектор музейной схемы",
       "purposeLong": "Условный сектор музейной схемы",
       "purposeShort": "Условный сектор музейной схемы",
       "publicReferences": [
         "https://github.com/ifdiakov/baikonur-3d/blob/bacdceeb26fa7b6806440cd08dc16e0f9cda9c3b/data/catalog.json"
       ],
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "aliasOf": "pad-43",
+      "render": false,
+      "attributionSource": "owner-correction-museum4-2026-10-28"
     },
     {
       "id": "sector-south-junction",
@@ -709,29 +712,34 @@
     },
     {
       "id": "airfield",
-      "name": "Аэродром у города",
+      "name": "Аэродром «Крайний»",
       "x": 539,
       "y": 962,
       "model": "air",
       "firstYear": null,
-      "status": "provisional-sector",
+      "status": "owner-attributed",
       "positionBasis": "original-map-overview",
       "sources": [
         "original-plan-3993x3208"
       ],
-      "note": "В каталоге модель пока не имеет точной атрибуции. Ближайший к городу известный аэропорт «Крайний» расположен на площадке 15А и относится к КЦ «Южный». Связь именно этой модели с аэропортом остаётся гипотезой: для подтверждения нужно сопоставить её положение и контуры с картой.",
-      "purpose": "Аэродром у города — предположительно «Крайний»",
-      "purposeLong": "Аэродром у города — предположительно «Крайний»",
-      "purposeShort": "Аэродром у города — предположительно «Крайний»",
+      "note": "Аэродром «Крайний» у города Байконур. Принадлежность: ЦЭНКИ. Геометрия и положение на музейной схеме приблизительны.",
+      "purpose": "Аэродром города Байконур",
+      "purposeLong": "Аэродром «Крайний» — воздушные ворота города Байконур.",
+      "purposeShort": "Аэродром города Байконур",
       "publicReferences": [
         "https://e-ecolog.ru/crc/94.%D0%A4%D0%A3.01.000.%D0%9C.000003.04.21",
         "https://github.com/ifdiakov/baikonur-3d/blob/bacdceeb26fa7b6806440cd08dc16e0f9cda9c3b/data/catalog.json"
       ],
       "organisation": {
-        "org": "Не подтверждена для модели",
-        "role": ""
+        "org": "ЦЭНКИ",
+        "role": "",
+        "attributionSource": "owner-correction-museum4-2026-10-28"
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "titleShort": "Аэродром «Крайний»",
+      "titleFull": "Аэродром «Крайний»",
+      "evidenceLevel": "owner-confirmed-identity-and-organisation",
+      "attributionSource": "owner-correction-museum4-2026-10-28"
     },
     {
       "id": "sector-east-center",
@@ -2002,7 +2010,12 @@
           "subject": "Фасад отведённой башни обслуживания"
         }
       ],
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "organisation": {
+        "org": "ЦЭНКИ",
+        "role": "",
+        "attributionSource": "owner-correction-museum4-2026-10-28"
+      }
     },
     {
       "id": "pad-250а",
@@ -2032,8 +2045,9 @@
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
       "organisation": {
-        "org": "ЦЭНКИ (экскурсионный объект)",
-        "role": ""
+        "org": "ЦЭНКИ",
+        "role": "",
+        "attributionSource": "owner-correction-museum4-2026-10-28"
       },
       "contentSource": "reviewed-sites-workbook-20261028"
     },
@@ -2062,12 +2076,12 @@
     {
       "id": "pad-110",
       "name": "Площадка № 110",
-      "x": 650,
+      "x": 670,
       "y": 281,
       "model": "launch",
       "firstYear": null,
       "status": "label-read",
-      "positionBasis": "visual-reference-plan",
+      "positionBasis": "Коррекция RocketTrip 28.10.2026: +20 единиц вправо по координатам схемы (X 650 → 670), Y 281 без изменения.",
       "sources": [
         "original-plan-3993x3208",
         "service-photo-2026"
@@ -2095,7 +2109,12 @@
         "satellite": "1eYjF4gq89TBHBkKu_1r8VZt9xRU5EI8F",
         "folder": "1G7BvhrGYZrnXHjuHsDiGsnVBxi7jrnn7"
       },
-      "modelOrientationVerified": true
+      "modelOrientationVerified": true,
+      "organisation": {
+        "org": "РКК «Энергия»",
+        "role": "",
+        "attributionSource": "owner-correction-museum4-2026-10-28"
+      }
     },
     {
       "id": "pad-112",
@@ -2379,15 +2398,29 @@
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
       "contentSource": "reviewed-sites-workbook-20261028",
-      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "modelStatus": "Детализированная музейная реконструкция по фотографиям ЦЭНКИ; размеры и азимут предварительны. Ракета показана как предстартовая музейная композиция.",
       "archiveModel": {
-        "version": "1.0-portal-photo-pass",
+        "version": "site31-detailed-v2",
         "kind": "soyuz",
         "orientation": "not-verified-no-overhead",
         "satellite": null,
         "folder": "17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII"
       },
-      "modelOrientationVerified": false
+      "modelOrientationVerified": false,
+      "architectureReferences": [
+        {
+          "label": "Фотография старта 31/6 · ЦЭНКИ",
+          "url": "https://www.russian.space/upload/iblock/c07/11221_d.jpg"
+        },
+        {
+          "label": "Фотогалерея ЦЭНКИ",
+          "url": "https://www.russian.space/multimedia/foto/?PAGEN_1=2"
+        },
+        {
+          "label": "Фотографии КЦ «Южный» / ЦЭНКИ в публикации МЧС",
+          "url": "https://sufps70.organizations.mchs.gov.ru/deyatelnost/press-centr/novosti/4233814"
+        }
+      ]
     },
     {
       "id": "pad-105",
@@ -2472,12 +2505,12 @@
     {
       "id": "pad-42",
       "name": "Площадка № 42",
-      "x": 875,
-      "y": 334,
+      "x": 1132,
+      "y": 295,
       "model": "tech",
       "firstYear": null,
       "status": "label-read",
-      "positionBasis": "visual-reference-plan",
+      "positionBasis": "Коррекция RocketTrip 28.10.2026: у поворота с основной дороги на площадку 45; МИК размещён западнее съезда, с подключённым въездом.",
       "sources": [
         "original-plan-3993x3208",
         "service-photo-2026"
@@ -2511,17 +2544,26 @@
         "satellite": null,
         "folder": "1nhy66WCjZaGYK8VsVlEQHRre4IjkzzDZ"
       },
-      "modelOrientationVerified": false
+      "modelOrientationVerified": false,
+      "placementAnchor": {
+        "road": "r-zenit-service",
+        "junction": [
+          1147,
+          282
+        ],
+        "side": "west",
+        "source": "owner-correction-museum4-2026-10-28"
+      }
     },
     {
       "id": "pad-43",
-      "name": "Площадка № 43",
-      "x": 1089,
-      "y": 262,
+      "name": "Площадка № 43 — Восточный комплекс",
+      "x": 1145,
+      "y": 278,
       "model": "tech",
       "firstYear": null,
       "status": "label-read",
-      "positionBasis": "visual-reference-plan",
+      "positionBasis": "Коррекция RocketTrip 28.10.2026: ранее обозначенный «Восточный комплекс» идентифицирован как площадка 43.",
       "sources": [
         "original-plan-3993x3208",
         "service-photo-2026"
@@ -2529,8 +2571,8 @@
       "note": "В договоре аренды на площадке 43 названы пристартовый измерительный пункт ИП-2 и узел связи. Та же площадка входит в группу объектов комплекса «Зенит», позднее включённую в проект «Байтерек». Для макета важно различать её измерительные и обеспечивающие объекты и стартовые установки соседней площадки 45.",
       "purpose": "Измерительный пункт № 2, связь и инфраструктура «Зенита»",
       "number": "43",
-      "titleShort": "Комплекс «Зенит» / ИП-2",
-      "titleFull": "пл. №43 · Комплекс «Зенит» / ИП-2",
+      "titleShort": "Восточный комплекс / ИП-2",
+      "titleFull": "пл. №43 · Восточный комплекс",
       "purposeShort": "Измерительный пункт № 2, связь и инфраструктура «Зенита»",
       "purposeLong": "Измерительный пункт № 2, связь и инфраструктура «Зенита»",
       "category": "технический",
@@ -2544,7 +2586,12 @@
         "org": "АО «СП «Байтерек» (проект)",
         "role": ""
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "attributionSource": "owner-correction-museum4-2026-10-28",
+      "aliases": [
+        "Восточный комплекс",
+        "sector-east"
+      ]
     },
     {
       "id": "pad-44",

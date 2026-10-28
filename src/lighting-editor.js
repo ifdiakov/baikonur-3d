@@ -68,7 +68,7 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
     marker.visible=active&&!!chosen;if(chosen)marker.position.set(chosen.x,chosen.y+.035,chosen.z);
     panel.querySelector('#lightingCount').textContent='Фонарей на макете: '+items.length;
     panel.querySelector('[data-action="undo"]').disabled=!history.length;
-    button.textContent='Фонари'+(items.length?' · '+items.length:'');
+    if(button)button.textContent='Фонари'+(items.length?' · '+items.length:'');
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,lamps:items}));}catch{status.textContent='Расстановка видна, но браузер не смог сохранить её. Скачайте схему.';}
   }
   function setMode(value){
@@ -77,10 +77,10 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
     panel.querySelector('#lampSpacing').disabled=mode!=='road';panel.querySelector('#lampSide').disabled=mode!=='road';
     status.textContent='';render();
   }
-  function setActive(value){active=value;panel.hidden=!active;button.setAttribute('aria-pressed',String(active));
+  function setActive(value){active=value;panel.hidden=!active;button?.setAttribute('aria-pressed',String(active));
     canvas.style.cursor=active?'crosshair':'';if(!active){selected=null;marker.visible=false;}
     onActiveChange?.(active);}
-  button.addEventListener('click',()=>setActive(!active));
+  button?.addEventListener('click',()=>setActive(!active));
   function validate(data){
     if(data.version!==1||!Array.isArray(data.lamps)||data.lamps.length>LIMIT)throw Error('Нужна схема фонарей версии 1, не более '+LIMIT+' объектов.');
     return data.lamps.map((l,i)=>{

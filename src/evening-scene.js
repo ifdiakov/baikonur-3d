@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js';
-import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js';
+import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261028-museum4-v1';
 
 export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange}){
  const hemisphere=scene.children.find(o=>o.isHemisphereLight),fields=[],originals=new Map();
@@ -75,7 +75,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   const taxiX=spec.key==='yubileiny'?-150:100;
   for(let z=-H+60;z<H-60;z+=70)light(taxiX,z,0x68aaff,2);
   for(const side of [-1,1])for(let d=60;d<=480;d+=60){light(0,side*(H+d),0xffeac0,2.5);if(d===300)for(const x of [-16,-8,8,16])light(x,side*(H+d),0xffeac0,2.5);}
-  for(const side of [-1,1])for(let i=0;i<4;i++)light(-W/2-18-i*3,side*(H-300),i<2?0xff3930:0xfff6e0,2.6);
+  for(const side of [-1,1])for(let i=0;i<4;i++)light(-W/2-18-i*3,side*(H-(spec.papiSetback??300)),i<2?0xff3930:0xfff6e0,2.6);
   for(const dx of [-110,110])for(const dz of [-185,185]){const p=field.localToWorld(new THREE.Vector3(spec.apron[0]+dx,1.8,spec.apron[1]+dz));apron.push({x:p.x,y:p.y,z:p.z,height:6,radius:23,color:0xffdba4,owner:field});}
  }
  fields.push(createLightField(layers.city,runway,{name:'Аэродромы · ВПП, глиссада и рулёжные огни',minPixels:1.8}));
@@ -92,10 +92,10 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   for(const [m,c] of originals){m.color.copy(c);if(evening)m.color.multiply(new THREE.Color(0x53647f));}
   for(const field of fields){field.root.visible=evening;field.setStrength(evening?1:0);}
   for(const f of floods)f.light.visible=evening&&f.owner.visible;
-  button.textContent=evening?'Вечер · огни':'День';button.setAttribute('aria-pressed',String(evening));
-  button.title=evening?'Переключить на дневной свет':'Включить вечерний свет';onModeChange?.(evening);
+  if(button){button.textContent=evening?'Вечер · огни':'День';button.setAttribute('aria-pressed',String(evening));}
+  if(button)button.title=evening?'Переключить на дневной свет':'Включить вечерний свет';onModeChange?.(evening);
  }
- button.addEventListener('click',()=>setEvening(!evening));setEvening(true);
+ button?.addEventListener('click',()=>setEvening(!evening));setEvening(true);
  return {setEvening,get evening(){return evening;},update(now){sky.position.copy(camera.position);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
   stats:()=>({version:'evening-baikonur-v1',evening,roadLights:roadLights.length,siteLights:siteLights.length,runwayLights:runway.length,
    saturnLights:siteLights.filter(l=>l.owner===saturn?.g).map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),

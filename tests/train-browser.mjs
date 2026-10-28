@@ -33,13 +33,13 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.traffic.seek(80);q.traffic.focusTrain(24);});
  await page.waitForTimeout(180);await snapshot('distant-evening');
  await page.evaluate(()=>window.__BAIKONUR_QA.traffic.setFollowing(true));
- await page.locator('#eveningToggle').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().night),false);
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().night),false);
  await page.waitForTimeout(180);await snapshot('day');
- await page.locator('#eveningToggle').click();
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.traffic.setFollowing(true));await page.waitForTimeout(180);
  await snapshot('mobile');
  const mobileControls=await page.locator('#ui').boundingBox();assert.ok(mobileControls.height<110,'Follow controls leave the mobile train visible');
- assert.ok(await page.locator('#trainFollow').isVisible());
+ assert.equal(await page.locator('#trainFollow').count(),0,'Train shortcut was removed from the visitor menu');
  await page.mouse.move(310,450);await page.mouse.wheel(0,-10);assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),false);
  assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  const final=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats());

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
+import {buildRoadSurfaces,sampleRoadCurve} from './road-surface.js?v=20261028-museum4-v1';
 
 /**
  * Baikonur transportation infrastructure / v1
@@ -7,11 +8,11 @@ import {RAIL_PROFILE} from './gagarin-rail-approach.js';
  * NOT CAD/surveyed. Station tracks and turnouts are museum reconstruction.
  * All route coordinates use the original plan 1300×1045 coordinate plane.
  */
-export function buildTransportNetwork({data,point,layers,siteRecords,roadElevation=()=>0,railElevation=()=>0,gagarinRail,facilityRails,extraRails=[]}) {
+export function buildTransportNetwork({data,point,layers,siteRecords,roadElevation=()=>0,railElevation=()=>0,gagarinRail,facilityRails,extraRails=[],extraRoads=[]}) {
   const RAIL_SCALE=RAIL_PROFILE.gauge/2.1;
   const junctions=[...(data.junctions||[])];
   const state={
-    version:'1.0',railScale:RAIL_SCALE,railGauge:RAIL_PROFILE.gauge,roadMarkings:'flat-dashes',markingSegments:0,stationCount:0,roadRoutes:0,railRoutes:0,railSwitches:0,
+    version:'2.0',railScale:RAIL_SCALE,railGauge:RAIL_PROFILE.gauge,roadMarkings:'arc-length-paint-with-junction-gaps',markingSegments:0,stationCount:0,roadRoutes:0,railRoutes:0,railSwitches:0,
     yardTracks:0,facilityDriveways:0,railTies:0,renderedRailLength:0,
     sources:'original Baikonur historical site plan + visually interpreted switches',
     confidence:'schematic-topology'
@@ -33,7 +34,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     signal:new THREE.MeshStandardMaterial({color:0x536366,metalness:.36,roughness:.64}),
     signalLamp:new THREE.MeshBasicMaterial({color:0xde7c65})
   };
-  const routeCurves=new Map(),roadCurves=[],railGroups=[],stationLabels=[];
+  const routeCurves=new Map(),roadCurves=[],roadSurfaces=[],railGroups=[],stationLabels=[];
   const tmp=new THREE.Vector3(),p=new THREE.Vector3(),q=new THREE.Vector3();
   const rootY=.75;
   function curveFor(points,elevation) {
@@ -76,16 +77,13 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     const obj=new THREE.Mesh(new THREE.TubeGeometry(path,Math.max(24,pts.length),radius,segments,false),material);
     group.add(obj);return obj;
   }
-  function roadHeight(route,pos,t){const base=.72+roadElevation(route.id,pos);if(route.gateHeight===undefined)return base;const curve=roadCurves.find(r=>r.route===route)?.curve;if(!curve)return base;const remaining=curve.getLength()*(1-t),blend=1-THREE.MathUtils.smoothstep(remaining,0,45);return THREE.MathUtils.lerp(base,route.gateHeight,blend);}
+  function roadHeight(route,pos,t,u=t){const base=.72+roadElevation(route.id,pos);if(route.gateHeight===undefined)return base;const curve=roadCurves.find(r=>r.route===route)?.curve;if(!curve)return base;const length=curve.getLength(),remaining=length*(1-u),blend=1-THREE.MathUtils.smoothstep(remaining,0,Math.min(45,length));return THREE.MathUtils.lerp(base,route.gateHeight,blend);}
   function centerlineRoad(route) {
     const curve=curveFor(route.points,rootY);
     roadCurves.push({route,curve,width:route.class==='arterial'?8.5:route.class==='urban'?7.2:5.2});
-    const samples=baseSamples(curve);
     const main=route.class==='arterial',urban=route.class==='urban';
     const w=main?8.5:urban?7.2:5.2;
-    const laneMaterial=main||urban?materials.asphalt:materials.service;
-    ribbon(layers.roads,samples,w+3.1,.66,materials.shoulder,0,s=>roadHeight(route,s.pos,s.t)-.06);
-    ribbon(layers.roads,samples,w,.72,laneMaterial,0,s=>roadHeight(route,s.pos,s.t));
+    roadSurfaces.push({id:route.id,curve,width:w,marked:main||urban,heightAt:(pos,t,u)=>roadHeight(route,pos,t,u)});
     if(route.gateWorld&&route.id==='r-site3-kaz-access'){
       const end=curve.getPoint(1),gate=new THREE.Vector3(...route.gateWorld);
       state.kazGateGap=Math.hypot(end.x-gate.x,end.z-gate.z);
@@ -250,7 +248,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     const number=site.number||site.name.match(/№\s*(\d+[А-ЯA-Z]?)/u)?.[1];
     if(!number||!wanted.has(number))continue;
     const port=data.facilityPorts?.[site.id];
-    if(['pad-110','pad-251','pad-31','pad-45'].includes(site.id))continue;
+    if(['pad-110','pad-251','pad-31','pad-45','pad-42'].includes(site.id))continue;
     const target=port?new THREE.Vector3(...port.position):point(site.x,site.y,.88);
     let best=null;
     for(const route of roadCurves){
@@ -264,46 +262,25 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     const p0=outer.clone(),p3=target.clone();p0.y=.72;
     const reach=Math.min(32,best.distance*.32),outward=port?new THREE.Vector3(...port.outward):p3.clone().sub(p0).normalize().negate();
     const cg=new THREE.CubicBezierCurve3(p0,p0.clone().addScaledVector(routeDirection,reach),p3.clone().addScaledVector(outward,Math.min(18,reach)),p3);
-    const samples=baseSamples(cg,25);
     const startRaise=roadElevation(roadCurves.find(r=>r.curve===best.route)?.route.id,p0);
-    const drivewayHeight=s=>THREE.MathUtils.lerp(.72+startRaise,p3.y,s.t*s.t*(3-2*s.t));
-    ribbon(layers.roads,samples,6.4,.81,materials.shoulder,0,s=>drivewayHeight(s)-.07);
-    ribbon(layers.roads,samples,4.0,.88,materials.service,0,drivewayHeight);
+    const drivewayHeight=(pos,t)=>THREE.MathUtils.lerp(.72+startRaise,p3.y,t*t*(3-2*t));
+    const samples=sampleRoadCurve(cg,{width:4,heightAt:drivewayHeight,shoulder:2.4});
+    roadSurfaces.push({id:'driveway-'+number,width:4,samples});
     junctions.push({x:p0.x,z:p0.z});
     drivewayPaths.push({id:'driveway-'+number,label:'Подъезд к пл. №'+number,width:4,
-      points:samples.map(s=>new THREE.Vector3(s.pos.x,drivewayHeight(s),s.pos.z))});
+      points:samples.map(s=>s.pos.clone())});
     connected.push(number);
     state.facilityDriveways++;
   }
-  // Flat paint follows arc length and stops at branch junctions. Service
-  // tracks remain unmarked; raised continuous tubes are not road markings.
-  const paintVertices=[],paintIndices=[];
-  for(const {route,curve} of roadCurves){
-    if(route.class!=='arterial'&&route.class!=='urban')continue;
-    const length=curve.getLength();
-    for(let distance=12;distance<length-12;distance+=13.5){
-      const section=[];
-      for(let j=0;j<=3;j++){
-        const t=Math.min(1,(distance+j*5.5/3)/length),pos=curve.getPointAt(t),tan=curve.getTangentAt(t);
-        const norm=Math.hypot(tan.x,tan.z)||1;
-        section.push({pos,tan,nx:-tan.z/norm,nz:tan.x/norm});
-      }
-      if(section.some(s=>junctions.some(j=>Math.hypot(s.pos.x-j.x,s.pos.z-j.z)<13)))continue;
-      const offset=paintVertices.length/3;
-      section.forEach((s,i)=>{
-        for(const side of [-1,1])paintVertices.push(s.pos.x+side*s.nx*.08,.741+roadElevation(route.id,s.pos),s.pos.z+side*s.nz*.08);
-        if(i<section.length-1){const k=offset+i*2;paintIndices.push(k,k+1,k+2,k+1,k+3,k+2);}
-      });
-      state.markingSegments++;
-    }
-  }
-  const paintGeometry=new THREE.BufferGeometry();
-  paintGeometry.setAttribute('position',new THREE.Float32BufferAttribute(paintVertices,3));paintGeometry.setIndex(paintIndices);
-  const paint=new THREE.Mesh(paintGeometry,materials.asphaltEdge);paint.name='road-center-dashes';paint.renderOrder=4;layers.roads.add(paint);
+  // Roads, ramps and the Saturn entrance share a non-overlapping surface.
+  // Paint uses the same sampled elevation and leaves all merge mouths open.
+  const surfaceReport=buildRoadSurfaces({roads:[...roadSurfaces,...extraRoads],parent:layers.roads,junctions});
+  state.markingSegments=surfaceReport.markingSegments;
+  state.roadSurface=surfaceReport;
   return {
     roadPaths:()=>[...roadCurves.map(({route,curve,width})=>({id:route.id,
       label:route.id==='r-site3-kaz-access'?'Подъезд к пл. №3':route.id==='r-site75-seven-winds-access'?'Подъезд к пл. №75':'Автодорога',width,
-      points:baseSamples(curve,Math.max(30,Math.ceil(curve.getLength()/5))).map(s=>new THREE.Vector3(s.pos.x,roadHeight(route,s.pos,s.t),s.pos.z))})),...drivewayPaths],
+      points:sampleRoadCurve(curve,{width,heightAt:(pos,t,u)=>roadHeight(route,pos,t,u)}).map(s=>s.pos)})),...drivewayPaths],
     stationLabels:()=>stationLabels.map(label=>({...label,world:label.anchor.getWorldPosition(new THREE.Vector3())})),
     stats:()=>({...state,roadRoutes:state.roadRoutes,railRoutes:state.railRoutes,trafficConnections:extraRails.length,
       siteAccess:connected,gatePorts:Object.keys(data.facilityPorts||{}),stationNames:data.yards.map(s=>s.label)}),

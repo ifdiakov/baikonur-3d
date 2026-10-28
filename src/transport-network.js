@@ -1,14 +1,14 @@
-import { buildTransportNetwork as buildBaseNetwork } from './transport-base.js?v=20261028-traffic-v1';
-import { SATURN_ACCESS, buildSaturnNorthwestAccess } from './saturn-access.js?v=20261028-road-editor';
-import { connectedRoadData } from './road-layout.js';
-import { buildSouthInterchange } from './south-interchange.js';
-import { buildGagarinRailApproach } from './gagarin-rail-approach.js';
-import {buildFacilityRailApproaches} from './facility-rails.js';
-import {buildTrainRoutePlan} from './traffic-paths.js';
+import { buildTransportNetwork as buildBaseNetwork } from './transport-base.js?v=20261028-museum4-v1';
+import { SATURN_ACCESS, buildSaturnNorthwestAccess } from './saturn-access.js?v=20261028-museum4-v1';
+import { connectedRoadData } from './road-layout.js?v=20261028-museum4-v1';
+import { buildSouthInterchange } from './south-interchange.js?v=20261028-museum4-v1';
+import { buildGagarinRailApproach } from './gagarin-rail-approach.js?v=20261028-museum4-v1';
+import {buildFacilityRailApproaches} from './facility-rails.js?v=20261028-museum4-v1';
+import {buildTrainRoutePlan} from './traffic-paths.js?v=20261028-museum4-v1';
 
 export function buildTransportNetwork(options) {
   const data=connectedRoadData(options.data,options.point,options.siteRecords);
-  const interchange=buildSouthInterchange({...options,data});
+  const interchange=buildSouthInterchange({...options,data,deferRoadSurfaces:true});
   const gagarinRail=buildGagarinRailApproach({...options,data});
   const facilityRails=buildFacilityRailApproaches({...options,data});
   const trainPlan=buildTrainRoutePlan({...options,data,gagarinRail});
@@ -19,9 +19,9 @@ export function buildTransportNetwork(options) {
   const filtered={...data,routes:{...data.routes,road:remaining},
     facilityDriveways:(data.facilityDriveways||[]).filter(n=>String(n)!=='23')};
   filtered.junctions=filtered.junctions.filter(p=>!interchange.isCrossing(p));
+  const access=buildSaturnNorthwestAccess({...options,data,deferRoadSurfaces:true});
   const network=buildBaseNetwork({...options,data:filtered,
-    roadElevation:interchange.roadElevation,railElevation:interchange.railElevation,gagarinRail,facilityRails,extraRails:[...trainPlan.extraRails,...facilityRails.extras]});
-  const access=buildSaturnNorthwestAccess({...options,data});
+    roadElevation:interchange.roadElevation,railElevation:interchange.railElevation,gagarinRail,facilityRails,extraRails:[...trainPlan.extraRails,...facilityRails.extras],extraRoads:[...interchange.roadSurfaces,access.roadSurface]});
   return {...network,
     trainPath:()=>trainPlan,
     roadPaths:()=>[...network.roadPaths(),access.lampPath,...interchange.ramps],

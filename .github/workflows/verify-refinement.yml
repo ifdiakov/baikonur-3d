@@ -35,12 +35,7 @@ jobs:
       - name: Orbit, gear and model browser checks
         run: node tests/refinement-browser.mjs
       - name: Wait for public aircraft revision
-        run: |
-          for attempt in $(seq 1 24); do
-            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/arrival-flight.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q 'krayniy-alrosa-orbit-v2'; then exit 0; fi
-            sleep 8
-          done
-          exit 1
+        run: node scripts/verify-published.mjs
       - name: Published museum browser checks
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/

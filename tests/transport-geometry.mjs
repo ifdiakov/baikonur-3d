@@ -12,7 +12,7 @@ const layers={roads:new THREE.Group(),rails:new THREE.Group()};
 const network=buildTransportNetwork({data,siteRecords,point,layers});
 assert.equal(JSON.stringify(data),original,'Rendering must not mutate the source plan');
 const stats=network.stats(),pad=siteRecords.find(p=>p.id==='pad-1'),scale=.43*.28/1.5;
-assert.equal(stats.roadRoutes,23,'Include the MIK-112 and city access roads');assert.equal(stats.railRoutes,14);
+assert.equal(stats.roadRoutes,24,'Include the MIK-112, Site 42 and city access roads');assert.equal(stats.railRoutes,14);
 assert.ok(stats.kazGateGap<1e-6);assert.ok(Math.abs(RAIL_PROFILE.gauge-7.3*scale)<1e-10);
 const root=new THREE.Group();root.position.copy(point(pad.x,pad.y,-2.755-GAGARIN_RIM_Y*scale));root.rotation.y=-Math.PI/2;root.scale.setScalar(scale);root.updateMatrixWorld(true);
 const expected=[-3.65,3.65].map(x=>root.localToWorld(new THREE.Vector3(x,GAGARIN_RIM_Y+1.3,171))).sort((a,b)=>a.z-b.z);

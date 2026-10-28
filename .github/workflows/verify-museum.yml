@@ -42,18 +42,7 @@ jobs:
       - name: Verify published GitHub Pages contains current museum
         id: public
         if: always()
-        run: |
-          set -e
-          for attempt in $(seq 1 20); do
-            if curl --connect-timeout 8 --max-time 22 -fsSL "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" -o /tmp/baikonur-public.html && grep -q 'id="timeDock"' /tmp/baikonur-public.html && grep -Fq 'function selectSiteCard(i)' /tmp/baikonur-public.html && grep -Fq 'Пл. №' /tmp/baikonur-public.html && grep -Fq 'district.enterprises' /tmp/baikonur-public.html && grep -q 'rockettrip-logo.svg' /tmp/baikonur-public.html && grep -q 'buildGagarinPad' /tmp/baikonur-public.html && grep -Fq 'buildSaturnIP5' /tmp/baikonur-public.html && grep -Fq 'const MODEL_SCALE=0.28;' /tmp/baikonur-public.html && grep -Fq "Baikonur Steppe v4" /tmp/baikonur-public.html && grep -Fq 'buildTransportNetwork' /tmp/baikonur-public.html && grep -Fq 'Владимир Николаевич Челомей' /tmp/baikonur-public.html && grep -Fq 'Сергей Павлович Королёв' /tmp/baikonur-public.html && grep -Fq 'Михаил Кузьмич Янгель' /tmp/baikonur-public.html && grep -q 'buildUkssPad' /tmp/baikonur-public.html && grep -q 'ukssCutoutEnabled' /tmp/baikonur-public.html && grep -q 'logarithmicDepthBuffer:true' /tmp/baikonur-public.html && grep -Fq 'const GAGARIN_SCALE=.43*MODEL_SCALE/1.5;' /tmp/baikonur-public.html && grep -Fq 'const UKSS_SCALE=.5*MODEL_SCALE*1.5;' /tmp/baikonur-public.html && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/terrain-extent.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q "edition:4" && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/transport-network.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q 'buildTransportNetwork' && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/data/transport-network.json?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q 'st-nagornaya' && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/saturn-ip5.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -Fq "1.7-readable-relief-lighting" && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/data/catalog.json?check=${GITHUB_SHA}&attempt=${attempt}" | grep -Fq 'saturn-ms-photo-v1' && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/ukss-pad.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q "version:'1.0'" && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/gagarin-pad.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q "version:'3.3-below-grade'" && curl --connect-timeout 8 --max-time 15 -fsSL "https://ifdiakov.github.io/baikonur-3d/src/surface-materials.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q 'museum-surface-v1' && curl --connect-timeout 8 --max-time 15 -fsSL 'https://ifdiakov.github.io/baikonur-3d/assets/rockettrip-logo.svg' | grep -q 'data:image/png;base64'; then
-              echo "Published museum includes Saturn IP-5 v1 with 25m P-200 dishes, other two detailed pads and RocketTrip branding"
-              exit 0
-            fi
-            echo "GitHub Pages not updated yet: attempt $attempt"
-            sleep 10
-          done
-          echo "Current museum update was not verified on the published URL"
-          exit 1
+        run: node scripts/verify-published.mjs
       - name: Open published 3D museum in Chromium and test interaction
         id: publicbrowser
         if: always() && steps.public.outcome == 'success'
@@ -97,7 +86,12 @@ jobs:
           if [ -f /tmp/baikonur-public-browser.log ]; then tail -n 130 /tmp/baikonur-public-browser.log > data/qa-public-browser.log; fi
           git add data/qa-status.json data/qa-install.log data/qa-test.log data/qa-public-browser.log 2>/dev/null || git add data/qa-status.json
           git diff --cached --quiet || git commit -m "ci: update Baikonur museum browser check result"
-          git push
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 4
+          done
+          exit 1
 
 
 

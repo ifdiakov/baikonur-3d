@@ -74,8 +74,8 @@ try{
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(250);
   assert.equal((await state()).selections,before.selections);
   // The lighting tool owns its clicks, never the exhibit selector.
-  await page.locator('#lightingToggle').click();before=await state();await page.mouse.click(800,450);
-  assert.equal((await state()).selections,before.selections);await page.locator('#lightingToggle').click();
+  await page.evaluate(()=>window.__BAIKONUR_QA.lighting.setActive(true));before=await state();await page.mouse.click(800,450);
+  assert.equal((await state()).selections,before.selections);await page.evaluate(()=>window.__BAIKONUR_QA.lighting.setActive(true));
   assert.equal(await page.locator('#error').isVisible(),false);
   assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
   const home=new URL(origin);home.searchParams.set('v','selection-no-jump-v1');
