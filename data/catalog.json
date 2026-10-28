@@ -2025,10 +2025,10 @@
     },
     {
       "id": "pad-3",
-      "name": "Площадка № 3",
+      "name": "Площадка № 3 — КАЗ",
       "x": 719,
       "y": 651,
-      "model": "tech",
+      "model": "kaz-industrial-photo-v1",
       "firstYear": null,
       "status": "label-read",
       "positionBasis": "User-directed approximate placement: farther north along main cosmodrome road beyond IP Saturn, on eastern/right side",
@@ -2037,18 +2037,23 @@
         "service-photo-2026"
       ],
       "note": "Перенесена по уточнению пользователя: дальше ИП «Сатурн» по главной дороге, справа (восточнее) от неё. Привязка предварительная, точный план не подтверждён.",
-      "purpose": "Историческая промышленно-складская зона комплекса: кислородно-азотное производство и вспомогательные базы.",
+      "purpose": "Кислородно-азотный завод (КАЗ): производственный комплекс, технологические галереи, резервуары и железнодорожная инфраструктура.",
       "number": "3",
-      "titleShort": "Промышленно-складская зона",
-      "titleFull": "пл. №3 · Промышленно-складская зона",
-      "purposeShort": "Промышленно-складская зона",
-      "purposeLong": "Историческая промышленно-складская зона комплекса: кислородно-азотное производство и вспомогательные базы.",
+      "titleShort": "КАЗ",
+      "titleFull": "пл. №3 · Кислородно-азотный завод",
+      "purposeShort": "Кислородно-азотный завод",
+      "purposeLong": "Кислородно-азотный завод площадки №3. 3D-реконструкция по спутниковым и аэрофотоснимкам RocketTrip: длинный производственный корпус вдоль железной дороги, технические корпуса, трубопроводные галереи, резервуары. Геометрия предварительная.",
       "category": "производственный",
       "publicReferences": [
         "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38"
       ],
       "evidenceLevel": "public-source-confirmed-function",
-      "positionVerified": false
+      "positionVerified": false,
+      "photoFolder": {
+        "url": "https://drive.google.com/drive/folders/1xqTo-hcQ61D_DV6JDZfqF_L-HoYFRnoM",
+        "id": "1xqTo-hcQ61D_DV6JDZfqF_L-HoYFRnoM"
+      },
+      "modelStatus": "Фотореконструкция, архитектурные пропорции ориентировочные."
     },
     {
       "id": "pad-3а",
