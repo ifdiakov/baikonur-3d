@@ -23,7 +23,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum4-osm-20261028-v2
+  RELEASE_TAG: museum4-mriya-20261028-v1
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -59,6 +59,7 @@ jobs:
         run: |
           node tests/osm-release-browser.mjs
           node tests/flanks-browser.mjs
+          node tests/mriya-browser.mjs
       - name: Verify every published runtime source against this commit
         run: node scripts/verify-published.mjs
       - name: Verify the live museum and capture review images
@@ -68,6 +69,7 @@ jobs:
         run: |
           node tests/osm-release-browser.mjs
           node tests/flanks-browser.mjs
+          node tests/mriya-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -75,6 +77,7 @@ jobs:
           path: |
             qa-osm-release/
             qa-flanks/
+            qa-mriya/
           retention-days: 14
 
   release:
@@ -117,12 +120,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/museum4-osm-20261028-v2.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/mriya-yubileiny-20261028-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 4 — контур, фланги и площадки',
+                name: 'Интерактивный музей 4 — Мрия и Буран на Юбилейном',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

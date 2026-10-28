@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261028-museum4-osm-live-v2';
-import * as buildings from './archive-buildings.js?v=20261028-museum4-osm-live-v2';
+import * as buildings from './archive-buildings.js?v=20261028-mriya-v1';
 import * as launches from './archive-launches.js?v=20261028-museum4-osm-live-v2';
 import {photoCity} from './archive-city.js?v=20261028-museum4-osm-live-v2';
 import {buildSite31Pad} from './site31-pad.js?v=20261028-museum4-osm-live-v2';
@@ -18,6 +18,11 @@ export function installArchiveModels({objects,clickable,voids}){
   for(let n=clickable.length-1;n>=0;n--)if(clickable[n].userData.idx===i)clickable.splice(n,1);
   root.name=spec.title;
   const features=buildArchiveModel(root,spec);root.updateWorldMatrix(true,true);
+  root.addEventListener('museum-exhibit-loaded',event=>{
+   const removed=new Set(event.removed);
+   for(let n=clickable.length-1;n>=0;n--)if(removed.has(clickable[n]))clickable.splice(n,1);
+   for(const m of event.added){m.userData.idx=i;clickable.push(m);}
+  });
   root.traverse(m=>{
    if(m.userData.archiveCutouts)for(const shape of m.userData.archiveCutouts)voids.add(m,shape);
    if(m.isMesh){m.userData.idx=i;clickable.push(m);}

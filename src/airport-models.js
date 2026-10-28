@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {installMriyaExhibit} from './mriya-exhibit.js?v=20261028-mriya-v1';
 import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
@@ -32,28 +33,32 @@ export function buildAirport(root,key){
  // Four PAPI housings and localizer aerials mark the approach without a floating UI cone.
  for(const s of [-1,1]){for(let i=0;i<4;i++){k.box(1.4,1.1,.9,-W/2-18-i*3,2.2,s*(H-300*zScale),'white','papi-housing');k.box(1,.45,.06,-W/2-18-i*3,2.4,s*(H-300*zScale)+s*.5,i<2?'red':'white','papi-lens');}for(let x=-15;x<=15;x+=3){k.rod([x,0,s*(H+90)],[x,3,s*(H+90)],.12,'yellow','localizer-antenna');k.rod([x-1.1,3,s*(H+90)],[x+1.1,3,s*(H+90)],.08,'steel','localizer-dipole');}}
  if(isY)buildMriyaRamp(k,apronX,apronZ);
- const result=k.finish();root.userData.airport.features=result.features;return result;
+ const result=k.finish();Object.assign(result.features,root.userData.airport.fallbackFeatures||{});root.userData.airport.features=result.features;delete root.userData.airport.fallbackFeatures;return result;
 }
 function buildMriyaRamp(k,cx,cz){
  const plane=new THREE.Group();plane.position.set(cx,1.8,cz);plane.name='Ан-225 «Мрия» с «Бураном»';k.root.add(plane);
+ const aircraftKit=archiveKit(plane);
  // Local +Z points toward the aircraft's nose; 84 m fuselage, 88.4 m span.
- k.sphere(1,0,7,0,'white','mriya-fuselage',[4.5,4.5,42],plane);k.sphere(1,0,4.9,0,'light','mriya-lower-fuselage',[4.4,2.5,40],plane);
- k.sphere(1,0,8.9,32,'glass','mriya-cockpit',[3.4,1.2,4.5],plane);
+ aircraftKit.sphere(1,0,7,0,'white','mriya-fuselage',[4.5,4.5,42],plane);aircraftKit.sphere(1,0,4.9,0,'light','mriya-lower-fuselage',[4.4,2.5,40],plane);
+ aircraftKit.sphere(1,0,8.9,32,'glass','mriya-cockpit',[3.4,1.2,4.5],plane);
  for(const s of [-1,1]){
-  k.poly([[s*3,19],[s*44.2,-6],[s*43.7,-15],[s*6,-15]],7,'white','mriya-wing',plane);
-  k.path([[s*5,-14],[s*43.7,-14]],.3,7.03,'steel','mriya-flap-seam',plane);
-  k.poly([[s*1,-24],[s*16,-31],[s*16,-39],[s*1,-36]],10.5,'white','mriya-tailplane',plane);
-  k.quad([s*14,10,-29],[s*14,22,-34],[s*14,22,-39],[s*14,10,-39],'white','mriya-twin-tail',plane);
-  k.quad([s*14.05,17,-32],[s*14.05,20,-33.5],[s*14.05,20,-38.5],[s*14.05,17,-38.5],'red','mriya-tail-stripe',plane);
-  for(const [x,z] of [[12,7],[23,1],[33,-5]]){k.cyl(1.9,7,s*x,4.5,z,'light','mriya-engine',Math.PI/2,plane);k.cyl(1.55,.2,s*x,4.5,z+3.6,'dark','mriya-intake',Math.PI/2,plane);k.box(.7,2.8,5,s*x,6.3,z-1,'steel','mriya-engine-pylon',0,plane);}
-  for(let i=0;i<7;i++)for(const dx of [-.5,.5])k.cyl(.65,.45,s*3.6+dx,1.1,-8+i*2,'dark','mriya-main-wheel',Math.PI/2,plane);
-  for(const z of [-7,9])k.rod([s*3,10,z],[s*2.6,15,z],.35,'steel','buran-carrying-strut',plane);
+  aircraftKit.poly([[s*3,19],[s*44.2,-6],[s*43.7,-15],[s*6,-15]],7,'white','mriya-wing',plane);
+  aircraftKit.path([[s*5,-14],[s*43.7,-14]],.3,7.03,'steel','mriya-flap-seam',plane);
+  aircraftKit.poly([[s*1,-24],[s*16,-31],[s*16,-39],[s*1,-36]],10.5,'white','mriya-tailplane',plane);
+  aircraftKit.quad([s*14,10,-29],[s*14,22,-34],[s*14,22,-39],[s*14,10,-39],'white','mriya-twin-tail',plane);
+  aircraftKit.quad([s*14.05,17,-32],[s*14.05,20,-33.5],[s*14.05,20,-38.5],[s*14.05,17,-38.5],'red','mriya-tail-stripe',plane);
+  for(const [x,z] of [[12,7],[23,1],[33,-5]]){aircraftKit.cyl(1.9,7,s*x,4.5,z,'light','mriya-engine',Math.PI/2,plane);aircraftKit.cyl(1.55,.2,s*x,4.5,z+3.6,'dark','mriya-intake',Math.PI/2,plane);aircraftKit.box(.7,2.8,5,s*x,6.3,z-1,'steel','mriya-engine-pylon',0,plane);}
+  for(let i=0;i<7;i++)for(const dx of [-.5,.5])aircraftKit.cyl(.65,.45,s*3.6+dx,1.1,-8+i*2,'dark','mriya-main-wheel',Math.PI/2,plane);
+  for(const z of [-7,9])aircraftKit.rod([s*3,10,z],[s*2.6,15,z],.35,'steel','buran-carrying-strut',plane);
  }
- for(const x of [-.8,.8])k.cyl(.65,.45,x,1.1,28,'dark','mriya-nose-wheel',Math.PI/2,plane);
+ for(const x of [-.8,.8])aircraftKit.cyl(.65,.45,x,1.1,28,'dark','mriya-nose-wheel',Math.PI/2,plane);
  // Buran: black thermal belly, double-delta wings and vertical tail.
- k.sphere(1,0,16,-1,'white','buran-fuselage',[2.7,2.7,17.5],plane);k.sphere(1,0,14.3,-1,'dark','buran-thermal-belly',[2.7,1,17.2],plane);k.sphere(1,0,16,15,'dark','buran-nose-cap',[1.5,1.4,2.2],plane);k.sphere(1,0,18,10,'glass','buran-cockpit',[1.8,.6,2],plane);
- for(const s of [-1,1]){const p=[[s*2,5],[s*6,-3],[s*12,-11],[s*11,-15],[s*2,-13]];k.poly(p,15.4,'dark','buran-wing-edge',plane);k.poly(p.map(([x,z])=>[x*.96,z+.1]),15.5,'white','buran-delta-wing',plane);}
- k.quad([0,17,-7],[0,25,-13],[0,25,-17],[0,17,-17],'white','buran-fin',plane);for(const x of [-1.6,0,1.6])k.cyl(.7,2,x,16,-18,'dark','buran-engine',Math.PI/2,plane);
+ aircraftKit.sphere(1,0,16,-1,'white','buran-fuselage',[2.7,2.7,17.5],plane);aircraftKit.sphere(1,0,14.3,-1,'dark','buran-thermal-belly',[2.7,1,17.2],plane);aircraftKit.sphere(1,0,16,15,'dark','buran-nose-cap',[1.5,1.4,2.2],plane);aircraftKit.sphere(1,0,18,10,'glass','buran-cockpit',[1.8,.6,2],plane);
+ for(const s of [-1,1]){const p=[[s*2,5],[s*6,-3],[s*12,-11],[s*11,-15],[s*2,-13]];aircraftKit.poly(p,15.4,'dark','buran-wing-edge',plane);aircraftKit.poly(p.map(([x,z])=>[x*.96,z+.1]),15.5,'white','buran-delta-wing',plane);}
+ aircraftKit.quad([0,17,-7],[0,25,-13],[0,25,-17],[0,17,-17],'white','buran-fin',plane);for(const x of [-1.6,0,1.6])aircraftKit.cyl(.7,2,x,16,-18,'dark','buran-engine',Math.PI/2,plane);
+ const fallback=aircraftKit.finish();
+ k.root.userData.airport.fallbackFeatures=fallback.features;
+ installMriyaExhibit(k.root,plane,cx,cz);
  // Loading device: paired braced portal frames, overhead bridge and hoists.
  for(const z of [-18,18]){for(const side of [-1,1]){const x=side*24;for(const foot of [-11,11]){k.rod([cx+x+side*9,1.8,cz+z+foot],[cx+x,47,cz+z],.8,'steel','loading-ramp-raked-leg');k.rod([cx+x,1.8,cz+z+foot],[cx+x,47,cz+z],.65,'steel','loading-ramp-column');}for(let y=6;y<46;y+=6){k.rod([cx+x-2,y,cz+z],[cx+x+2,y,cz+z],.25,'steel','loading-ramp-level');k.rod([cx+x-2,y,cz+z],[cx+x+2,y+6,cz+z],.18,'steel','loading-ramp-brace');}}
   k.box(52,3,4,cx,47,cz+z,'steel','loading-ramp-crosshead');for(const x of [-4,4]){k.box(3,2,3,cx+x,45,cz+z,'yellow','loading-hoist');k.rod([cx+x,44,cz+z],[cx+x,29,cz+z],.07,'dark','loading-cable');}}
