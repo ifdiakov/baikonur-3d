@@ -590,6 +590,29 @@
           ]
         ],
         "confidence": "schematic driveway terminates outside the low-hall SW service yard; not a surveyed trace"
+      },
+      {
+        "id": "r-city-photo-access",
+        "class": "service",
+        "points": [
+          [
+            668,
+            911
+          ],
+          [
+            675,
+            911
+          ],
+          [
+            683,
+            911
+          ],
+          [
+            686.35,
+            911
+          ]
+        ],
+        "confidence": "schematic connection to photo-grid western street; northern-bank placement provisional"
       }
     ],
     "rail": [

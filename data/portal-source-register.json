@@ -132,7 +132,12 @@
       "yaw": 0,
       "satellite": "1URocxjo-ZAYAWIIrBhBGMfwx1BKhKkGT",
       "orientation": "image-traced",
-      "completeness": "first-pass"
+      "completeness": "first-pass",
+      "mapPosition": [
+        710,
+        924
+      ],
+      "positionVerified": false
     }
   ],
   "unlocatedStudies": [
