@@ -550,23 +550,19 @@
             651
           ],
           [
-            690,
+            687,
             653
           ],
           [
-            700,
+            694,
             656
           ],
           [
-            708,
-            659
-          ],
-          [
-            713,
+            702,
             659
           ]
         ],
-        "confidence": "schematic driveway to the west KAZ gate after road-parallel elongation"
+        "confidence": "schematic access to west KAZ gate following move to x=708"
       }
     ],
     "rail": [
