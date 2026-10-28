@@ -80,12 +80,12 @@ export function buildSaturnIP5(root,terrain={}) {
   function groundPatch(){
     // A broad 100-world-unit Murguduk mountain, fading into the real procedural
     // steppe, not a big raised rectangular slab.
-    const N=100,extent=1250,vertices=[],colors=[],uv=[],indices=[];
+    const N=100,extent=1000,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
       const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent,
-        radius=Math.sqrt((xx/560)**2+(zz/515)**2),
+        radius=Math.sqrt((xx/340)**2+(zz/460)**2),
         r=(Math.sin(xx*.085+zz*.035)+Math.sin(xx*.038-zz*.076))*.22,
-        t=Math.max(0,Math.min(1,(radius-.68)/.49)),
+        t=Math.max(0,Math.min(1,(radius-.28)/.90)),
         fade=1-t*t*(3-2*t),
         height=-190.476+(198.2*fade)+1.35*Math.sin(Math.min(radius,1)*Math.PI)*fade+r*fade;
       vertices.push(xx,height-.22,zz);
