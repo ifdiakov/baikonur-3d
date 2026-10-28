@@ -7,6 +7,13 @@ const browser=await chromium.launch({headless:true,
  args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 try{
  const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
+ await page.addInitScript(()=>{
+  const native=requestAnimationFrame.bind(window);window.__MAP_PENDING=null;
+  window.requestAnimationFrame=fn=>fn.name==='animate'?(window.__MAP_PENDING=fn,0):native(fn);
+  window.__MAP_FRAME=()=>{const fn=window.__MAP_PENDING;window.__MAP_PENDING=null;fn?.(performance.now());};
+ });
+ const step=()=>page.evaluate(()=>window.__MAP_FRAME());
+ const capture=page.screenshot.bind(page);page.screenshot=async options=>{await step();return capture({...options,timeout:90000});};
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',async route=>{
   const path=new URL(route.request().url()).pathname.split('/three@0.160.1/')[1];
@@ -50,9 +57,9 @@ try{
  assert.equal(await detail.getAttribute('data-collapsed'),'false');
  assert.equal(await label.getAttribute('data-collapsed'),'false');
  assert.equal(await label.locator('.site-eye-toggle').isVisible(),true);
- await page.locator('[data-layer="rails"]').uncheck();
+ await page.locator('[data-layer="rails"]').uncheck();await step();
  await label.waitFor({state:'hidden'});
- await page.locator('[data-layer="rails"]').check();await label.waitFor({state:'visible'});
+ await page.locator('[data-layer="rails"]').check();await step();await label.waitFor({state:'visible'});
  await page.locator('#sitesAccordion > summary').click();
  await page.locator('#search').fill('Нагорная');
  assert.equal(await page.locator('#list .entry-station').count(),1);
@@ -82,31 +89,31 @@ try{
  assert.equal(terrain.sameMap,true);assert.equal(terrain.type,'MeshBasicMaterial');assert.equal(terrain.color,0xffffff);
  console.log('SATURN TEXTURE PASS',JSON.stringify(terrain));
 
- await page.locator('#close').click();await page.locator('#showLabels').uncheck();
+ await page.locator('#close').click();await page.locator('#showLabels').uncheck();await step();
  await page.locator('#lightingToggle').click();assert.equal(await page.locator('#lightingPanel').isVisible(),true);
- await page.mouse.click(1030,730);
+ await page.mouse.click(1030,730);await step();
  let lamps=await page.evaluate(()=>window.__BAIKONUR_QA.lighting.snapshot().lamps);
  assert.equal(lamps.length,1);
  const original={...lamps[0]};
  const pole=await page.evaluate(l=>window.__BAIKONUR_QA.projectWorld(l.x,l.y+l.height*.5,l.z),original);
- await page.locator('[data-mode="move"]').click();await page.mouse.click(pole.x,pole.y);
+ await page.locator('[data-mode="move"]').click();await page.mouse.click(pole.x,pole.y);await step();
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats())).selected,original.id);
- await page.mouse.click(930,720);
+ await page.mouse.click(930,720);await step();
  lamps=await page.evaluate(()=>window.__BAIKONUR_QA.lighting.snapshot().lamps);
  assert.ok(Math.hypot(lamps[0].x-original.x,lamps[0].z-original.z)>1);
  await page.locator('[data-action="undo"]').click();
  assert.deepEqual((await page.evaluate(()=>window.__BAIKONUR_QA.lighting.snapshot().lamps))[0],original);
- await page.locator('[data-mode="remove"]').click();await page.mouse.click(pole.x,pole.y);
+ await page.locator('[data-mode="remove"]').click();await page.mouse.click(pole.x,pole.y);await step();
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats())).count,0);
  await page.locator('[data-action="undo"]').click();
  await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(90,'pad-3'));
  await page.locator('[data-mode="road"]').click();
  const roadPoint=await page.evaluate(()=>window.__BAIKONUR_QA.projectWorld(160,.72,462.34));
- await page.mouse.click(roadPoint.x,roadPoint.y);
+ await page.mouse.click(roadPoint.x,roadPoint.y);await step();
  const rowCount=(await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats())).count;
  assert.ok(rowCount>1,'Road mode must place a row from an actual road click');
  await page.locator('[data-action="undo"]').click();assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats())).count,1);
- await page.mouse.click(roadPoint.x,roadPoint.y);
+ await page.mouse.click(roadPoint.x,roadPoint.y);await step();
  const downloadPromise=page.waitForEvent('download');await page.locator('[data-action="export"]').click();
  const download=await downloadPromise;const exported=JSON.parse(await readFile(await download.path(),'utf8'));
  assert.equal(exported.version,1);assert.equal(exported.lamps.length,rowCount);
@@ -118,7 +125,7 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.lighting,null,{timeout:90000});
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats())).count,rowCount);
  assert.equal(await page.locator('#lightingPanel').isVisible(),false);
- await page.locator('#showLabels').uncheck();
+ await page.locator('#showLabels').uncheck();await step();
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite(0));await page.locator('#close').click();
  await page.screenshot({path:'qa-gagarin-track-join.png'});
  await page.evaluate(()=>window.__BAIKONUR_QA.focusInterchange());

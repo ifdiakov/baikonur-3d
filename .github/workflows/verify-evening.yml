@@ -38,7 +38,7 @@ jobs:
       - name: Wait for public arrival module
         run: |
           for attempt in $(seq 1 24); do
-            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/arrival-flight.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q 'alrosa-realistic-v1'; then exit 0; fi
+            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/src/arrival-flight.js?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q 'krayniy-alrosa-orbit-v2'; then exit 0; fi
             sleep 8
           done
           exit 1
