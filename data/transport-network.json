@@ -540,6 +540,29 @@
           ]
         ],
         "confidence": "schematic museum connection; exact driveway unverified"
+      },
+      {
+        "id": "r-site3-kaz-access",
+        "class": "service",
+        "points": [
+          [
+            680,
+            651
+          ],
+          [
+            691,
+            652
+          ],
+          [
+            703,
+            653
+          ],
+          [
+            711,
+            653
+          ]
+        ],
+        "confidence": "schematic main-road to KAZ gate, calibrated to current display-scale model; historical roadway alignment pending verification"
       }
     ],
     "rail": [
