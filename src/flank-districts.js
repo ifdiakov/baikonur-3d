@@ -89,5 +89,5 @@ gl_FragColor=vec4(uColor,uOpacity);
  setOpacity(0);
  return {setOpacity,state:()=>({version:'angular-territories-v2',alpha,zoneCount:zones.length,
   visibleZones:root.visible?zones.length:0,visibleBoundaries:root.visible?boundaries.length:0,
-  thematicOnly:true,informationPlane:'terrain',boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
+  thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
 }

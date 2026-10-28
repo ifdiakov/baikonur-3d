@@ -15,7 +15,7 @@ concurrency:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 18
     permissions:
       contents: read
     steps:
@@ -44,7 +44,7 @@ jobs:
           exit 1
       - name: Verify live museum
         env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?map-qa=${{ github.sha }}
         run: node tests/map-editor-smoke.mjs
       - name: Save visual checks
         if: always()

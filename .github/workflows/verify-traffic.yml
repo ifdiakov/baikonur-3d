@@ -53,7 +53,7 @@ jobs:
       - name: Wait for public traffic interface
         run: |
           for attempt in $(seq 1 24); do
-            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q '20261028-museum3-v2'; then exit 0; fi
+            if curl -fsSL --max-time 20 "https://ifdiakov.github.io/baikonur-3d/?check=${GITHUB_SHA}&attempt=${attempt}" | grep -q "const MUSEUM_REVISION='20261028-museum3-v3'"; then exit 0; fi
             sleep 8
           done
           exit 1

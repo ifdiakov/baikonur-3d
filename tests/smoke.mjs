@@ -15,7 +15,7 @@ await page.waitForFunction(()=>{
  const logos=[...document.querySelectorAll('.detail-card .org-logo')];
  return logos.length>=4&&logos.every(image=>image.complete&&image.naturalWidth>=320&&image.naturalHeight>0);
 },{timeout:15000});
-assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),14);
+assert.equal(await page.locator('.detail-card [data-org-logo="tsenki"]').count(),15);
 assert.equal(await page.locator('.detail-card [data-org-logo="energia"]').count(),1);
 assert.equal(await page.locator('.detail-card [data-org-logo="khrunichev"]').count(),1);
 assert.equal(await page.locator('.detail-card [data-org-logo="progress"]').count(),1);
@@ -29,12 +29,17 @@ assert.ok(!reviewedCatalog.sites.some(site=>site.id==='pad-17'));
 assert.ok(reviewedCatalog.unplacedReferenceSites.some(site=>site.number==='17'));
 const kaz=reviewedCatalog.sites.find(site=>site.id==='pad-3');
 assert.deepEqual([kaz.x,kaz.y],[708,651]);
-for(const [id,logo] of [['pad-2a','tsenki'],['pad-112','progress'],['pad-254','energia'],['pad-45','baiterek'],['pad-89',null]]){
+for(const [id,logo] of [['pad-2a','tsenki'],['pad-112','progress'],['pad-254','energia'],['pad-45','baiterek'],['pad-75','tsenki'],['pad-89',null]]){
  const index=reviewedCatalog.sites.findIndex(site=>site.id===id),site=reviewedCatalog.sites[index];
  await page.evaluate(index=>window.__BAIKONUR_QA.focusSite(index),index);
  assert.equal(await page.locator('#infoPurpose').textContent(),site.purposeLong);
  assert.ok((await page.locator('#description').textContent()).includes(site.note));
  assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),logo);
+ if(id==='pad-75'){
+  assert.equal(site.organisation.org,'ЦЭНКИ');
+  assert.equal(await page.locator('#infoOrgRole').textContent(),'Владелец — ЦЭНКИ');
+  assert.ok((await page.locator('#infoPurpose').textContent()).includes('принадлежит ЦЭНКИ'));
+ }
  if(id==='pad-45')assert.equal(await page.locator('#infoOrgRole').textContent(),site.organisation.org);
  if(id==='pad-112'||id==='pad-254')assert.equal(await page.locator('#infoOrgRole').textContent(),site.organisation.org);
  await page.locator('#detailMore').click();
