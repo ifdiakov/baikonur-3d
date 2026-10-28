@@ -1,10 +1,10 @@
 {
-  "targetCommit": "b2400d7343beb18502f7ea8465ec0180dada2150",
-  "runId": "40667268352",
+  "targetCommit": "b074420c3224ced7647765bc7873788e47374d35",
+  "runId": "40716361543",
   "version": "1.0-no-terrain-jump",
   "local": "success",
   "publicBrowser": "success",
-  "legacyJumpReproduced": true,
+  "legacyJumpReproduced": false,
   "checks": [
     "hill-not-pickable",
     "pan-not-click",
@@ -17,5 +17,5 @@
     "lighting-tool"
   ],
   "errors": [],
-  "checkedAt": "2026-10-28T09:53:47.552Z"
+  "checkedAt": "2026-10-28T15:37:28.394Z"
 }
