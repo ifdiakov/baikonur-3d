@@ -23,7 +23,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum4-osm-20261028-v1
+  RELEASE_TAG: museum4-osm-20261028-v2
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -37,11 +37,13 @@ jobs:
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1
           npx playwright install --with-deps chromium
-      - name: Verify geography, source topology and complete two-airport flight
+      - name: Verify geography, source topology and complete Krayniy flight circuit
         run: |
           node tests/osm-geography.mjs
           node tests/osm-transport-geometry.mjs
           node tests/osm-release-geometry.mjs
+          node tests/river-bank.mjs
+          node tests/overview-camera.mjs
       - name: Preserve the detailed Site 31, road, rail and flank invariants
         run: |
           node tests/site31-geometry.mjs
@@ -115,12 +117,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/museum4-osm-20261028-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/museum4-osm-20261028-v2.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 4 — география OSM',
+                name: 'Интерактивный музей 4 — контур, фланги и площадки',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

@@ -1,28 +1,48 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_REFERENCE,containsFlankPoint} from '../src/flank-boundaries.js';
+import {readFile} from 'node:fs/promises';
+import {projectOsm} from '../src/osm-geography.js';
+import {FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_REFERENCE,FLANK_COORDINATE_SYSTEM,FLANK_CENTERS,FLANK_BOUNDS,FLANK_REFERENCE_OUTLINE,FLANK_REFERENCE_DIVIDERS,referenceToPlan,containsFlankPoint} from '../src/flank-boundaries.js';
 import {buildFlankDistricts,FLANK_DISTRICTS} from '../src/flank-districts.js';
 
 const keys=['left','center','right'],colors=[0xd45a91,0x39bad2,0xefb65d];
 const point=(x,y,h=0)=>new THREE.Vector3((x-650)*3.4,h,(y-522.5)*3.4);
-const scene=new THREE.Scene(),districts=buildFlankDistricts(scene,point,1300,1045);
+const scene=new THREE.Scene(),districts=buildFlankDistricts(scene,point,1300,1045,{mapTransform:()=>{throw new Error('The OSM contour must never be warped through the old museum scheme');}});
 const root=scene.getObjectByName('Фланги · тематические территории');
 assert.ok(root);districts.setOpacity(1);scene.updateMatrixWorld(true);
 const zones=root.children.filter(o=>o.isMesh&&o.geometry.type==='ShapeGeometry');
-assert.equal(zones.length,3);assert.equal(FLANK_OUTLINE.length,6);
-assert.deepEqual(FLANK_BORDERS.map(p=>p.length),[3,3]);assert.equal(FLANK_POLYGONS.length,3);
-assert.equal(FLANK_REFERENCE.version,'owner-outline-20261028');assert.deepEqual(FLANK_REFERENCE.imageSize,[2048,1738]);
+assert.equal(zones.length,3);assert.equal(FLANK_OUTLINE.length,14);
+assert.deepEqual(FLANK_BORDERS.map(p=>p.length),[2,2]);assert.equal(FLANK_POLYGONS.length,3);
+assert.equal(FLANK_COORDINATE_SYSTEM,'osm-map');
+assert.equal(FLANK_REFERENCE.version,'owner-osm-outline-20261028-v2');assert.deepEqual(FLANK_REFERENCE.imageSize,[1986,1632]);
+assert.equal(FLANK_REFERENCE.sourceFile,'контур и фланги.png');
+assert.deepEqual(FLANK_POLYGONS.map(p=>p.length),[4,6,10]);
 const state=districts.state();
-assert.equal(state.version,'image-outline-territories-v4-relief');assert.equal(state.visibleZones,3);
-assert.equal(state.visibleBoundaries,2);assert.equal(state.visibleOuterBoundaries,1);assert.equal(state.outerBoundarySegments,10);
+assert.equal(state.version,'contours-three-level-v5');assert.equal(state.visibleZones,3);
+assert.equal(state.visibleBoundaries,2);assert.equal(state.visibleOuterBoundaries,1);assert.equal(state.outerBoundarySegments,16);
 assert.equal(state.groundTextPanels,0);assert.equal(state.informationPlane,'screen');
 
-// Independent registered checkpoints from the owner's image, not from the
-// renderer's generated metadata. White image margins are not map coordinates.
-const outlineFixture=[[-33.65,-78.82],[1587.24,98.01],[1554.90,341.33],[790.71,777.76],[570.09,752.70],[-57.22,182.00]];
-const borderFixtures=[[[335.41,-38.55],[567.88,303.02],[384.90,584.22]],[[800.47,12.18],[803.22,390.76],[1179.70,555.61]]];
-for(let i=0;i<6;i++)assert.ok(Math.hypot(FLANK_OUTLINE[i][0]-outlineFixture[i][0],FLANK_OUTLINE[i][1]-outlineFixture[i][1])<.5,'Outline vertex remains registered to the supplied image');
-for(let i=0;i<2;i++)for(let j=0;j<3;j++)assert.ok(Math.hypot(FLANK_BORDERS[i][j][0]-borderFixtures[i][j][0],FLANK_BORDERS[i][j][1]-borderFixtures[i][j][1])<.5,'Divider remains registered to the supplied image');
+// The outer contour must match the stored OSM ring itself, including the
+// 16-km northern spur. Raster registration only locates the thematic dividers.
+const features=JSON.parse(await readFile(new URL('../data/osm/facilities.geojson',import.meta.url),'utf8'));
+const sourceRing=features.features.find(f=>f.id==='relation/6725906').geometry.coordinates[0][0].slice(0,-1);
+assert.equal(sourceRing.length,14);
+sourceRing.forEach((lonLat,i)=>{
+ const expected=projectOsm(lonLat);
+ assert.ok(Math.hypot(...expected.map((n,k)=>n-FLANK_OUTLINE[i][k]))<1e-9,'Outer vertex must retain the OSM source coordinates');
+ const registered=referenceToPlan(FLANK_REFERENCE_OUTLINE[i]);
+ assert.ok(Math.hypot(...registered.map((n,k)=>n-expected[k]))<3.1,'Image control point agrees with source within its stated registration tolerance');
+});
+const borderFixtures=[[[448.390251,85.947286],[414.582568,594.788777]],[[701.921728,90.941896],[758.364915,635.178765]]];
+for(let i=0;i<2;i++)for(let j=0;j<2;j++)assert.ok(Math.hypot(FLANK_BORDERS[i][j][0]-borderFixtures[i][j][0],FLANK_BORDERS[i][j][1]-borderFixtures[i][j][1])<1e-5,'Divider remains registered to the new supplied image');
+assert.deepEqual(FLANK_REFERENCE_DIVIDERS.map(p=>p.length),[2,2]);
+assert(FLANK_BOUNDS.minY< -150&&FLANK_BOUNDS.maxX>1517,'Full overview includes both the northern spur and eastern tip');
+assert(FLANK_OUTLINE[4][0]-FLANK_OUTLINE[3][0]>17&&FLANK_OUTLINE[4][0]-FLANK_OUTLINE[3][0]<18,'Narrow northern spur remains narrow');
+assert(FLANK_OUTLINE[2][1]-FLANK_OUTLINE[3][1]>254,'Northern spur is not clipped to the former terrain rectangle');
+assert.equal(state.coordinateSystem,'osm-map');
+assert.deepEqual(state.outerBoundary,FLANK_OUTLINE);
+assert.deepEqual(state.polygons,FLANK_POLYGONS);
+keys.forEach(key=>assert(containsFlankPoint(key,FLANK_CENTERS[key]),'Card focus lies within '+key));
 
 const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
 const area=p=>Math.abs(signedArea(p));
@@ -58,7 +78,7 @@ FLANK_POLYGONS.forEach((polygon,i)=>edges(polygon).forEach(([a,b])=>{
  owners.get(key).push({district:keys[i],a,b});
 }));
 const shared=[...owners.values()].filter(list=>list.length===2),outer=[...owners.entries()].filter(([,list])=>list.length===1);
-assert.equal(shared.length,4);assert.equal(outer.length,10);
+assert.equal(shared.length,2);assert.equal(outer.length,16);
 assert.ok([...owners.values()].every(list=>list.length===1||list.length===2));
 for(const pair of shared){
  assert.deepEqual(pair[0].a,pair[1].b);assert.deepEqual(pair[0].b,pair[1].a,'Shared boundaries use identical vertices in opposite directions');
@@ -73,7 +93,7 @@ const perimeterEdges=FLANK_PERIMETER.flatMap(({key,points})=>{
   assert.equal(owner[0].district,key,'Perimeter glow uses its adjacent district color');return id;
  });
 });
-assert.equal(new Set(perimeterEdges).size,10,'No external neon edge is drawn twice');
+assert.equal(new Set(perimeterEdges).size,16,'No external neon edge is drawn twice');
 assert.deepEqual(perimeterEdges.sort(),outer.map(([key])=>key).sort());
 
 // Inspect the physical triangulation: it must neither overlap a neighbour
@@ -127,10 +147,10 @@ for(let x=Math.min(...xs)-30;x<Math.max(...xs)+30;x+=23.7)for(let y=Math.min(...
  coverageProbes++;if(expected.length)insideProbes++;else outsideProbes++;
 }
 assert.ok(insideProbes>500&&outsideProbes>500);
-for(const [p,expected]of [[[145,114],0],[[699,365],1],[[741,716],1],[[1017,228],2]]){
+for(const [p,expected]of [[[210.851692,143.772978],0],[[640.779239,402.329595],1],[[638.091630,771.738127],1],[[904.877190,272.624297],2],[[600.755931,324.306744],1],[[1291,-100],2]]){
  assert.deepEqual(coverage(p),[expected],'Known site has the intended district: '+p);
 }
-for(const p of [[710,924],[539,962],[200,700],[400,900],[1250,700]])assert.deepEqual(coverage(p),[],'The southern space stays unpainted: '+p);
+for(const p of [[594.604513,902.943874],[484.333902,914.482160],[200,700],[400,900],[1250,700],[1270,-100],[1320,-100]])assert.deepEqual(coverage(p),[],'The southern space stays unpainted: '+p);
 for(let i=0;i<FLANK_BORDERS.length;i++)for(let j=1;j<FLANK_BORDERS[i].length;j++){
  const a=FLANK_BORDERS[i][j-1],b=FLANK_BORDERS[i][j],dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);
  for(const t of [.2,.5,.8]){
@@ -151,7 +171,7 @@ zones.forEach((mesh,i)=>{
 });
 const neon=[];root.traverse(mesh=>{if(mesh.isMesh&&mesh.geometry.type==='PlaneGeometry')neon.push(mesh);});
 const cores=neon.filter(mesh=>mesh.geometry.parameters.width===2.2&&mesh.material.uniforms.uColor.value.getHex()===0xecfbff);
-assert.equal(cores.length,14,'Four internal and ten external bright segments are drawn once');
+assert.equal(cores.length,18,'Two internal and sixteen external bright segments are drawn once');
 const segments=[...FLANK_BORDERS.flatMap(p=>p.slice(1).map((b,i)=>[p[i],b])),...FLANK_PERIMETER.flatMap(({points})=>points.slice(1).map((b,i)=>[points[i],b]))];
 for(const [a,b]of segments){
  const pa=point(...a,-1.42),pb=point(...b,-1.42),mid=pa.clone().lerp(pb,.5),delta=pb.clone().sub(pa).normalize();
@@ -170,7 +190,7 @@ for(const mesh of neon){
 // Retain the real hill's feathering and height offset. The browser test also
 // renders a crossing surface to prove the shader clips outside the centre.
 const terrain=new THREE.Mesh(new THREE.PlaneGeometry(500,500,2,2),new THREE.MeshBasicMaterial());
-terrain.rotation.x=-Math.PI/2;terrain.position.copy(point(741,716,17.45));terrain.scale.setScalar(.525);scene.add(terrain);
+terrain.rotation.x=-Math.PI/2;terrain.position.copy(point(638.091630,771.738127,17.45));terrain.scale.setScalar(.525);scene.add(terrain);
 const rgba=new Float32Array(terrain.geometry.attributes.position.count*4);for(let i=0;i<rgba.length;i+=4){rgba[i]=rgba[i+1]=rgba[i+2]=1;rgba[i+3]=i/rgba.length;}
 terrain.geometry.setAttribute('color',new THREE.BufferAttribute(rgba,4));scene.updateMatrixWorld(true);
 const originalPositions=Array.from(terrain.geometry.attributes.position.array),overlay=districts.addTerrainSurface(terrain,'center');scene.updateMatrixWorld(true);
@@ -184,4 +204,4 @@ for(let i=0;i<terrain.geometry.attributes.position.count;i++){
 assert.equal(districts.state().reliefClipped,true);assert.equal(districts.state().visibleReliefSurfaces,1);
 districts.setOpacity(0);assert.equal(root.visible,false);assert.equal(overlay.visible,false);
 assert.equal(districts.state().visibleZones,0);assert.equal(districts.state().visibleBoundaries,0);assert.equal(districts.state().visibleOuterBoundaries,0);
-console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false}));
+console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false}));

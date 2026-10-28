@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION} from './aircraft-livery.js?v=20261028-museum4-osm-live-v1';
+import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION} from './aircraft-livery.js?v=20261028-museum4-osm-live-v2';
 
-import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261028-museum4-osm-live-v1';
+import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261028-museum4-osm-live-v2';
 export {FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION};
 // Airport transforms and the complex centre define the complete two-sortie circuit.
 const V=(x,y,z)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
@@ -58,11 +58,10 @@ function buildContrails(parent,path){
 }
 
 export function createArrivalFlight({scene,camera,controls,canvas,airfield,firstAirfield=airfield,complexCenter,container,onFollow}){
- const path=createArrivalPath(airfield,{firstAirfield,complexCenter}),root=new THREE.Group();root.name='Юбилейный — Крайний · непрерывный цикл полётов';root.userData.pickable=false;scene.add(root);
+ const path=createArrivalPath(airfield,{firstAirfield,complexCenter}),root=new THREE.Group();root.name='Крайний · непрерывный цикл полётов';root.userData.pickable=false;scene.add(root);
  const craft=buildAircraft(root),trail=buildContrails(scene,path);
  let elapsed=0,following=false,paused=false,lastNow=null,uiSecond=-1,lastTrail=-1,state=path.sample(0),forced=null;
  container.innerHTML='<div class="arrival-title"><span class="arrival-dot"></span><span>КРАЙНИЙ · ПОЛЁТ ПО КРУГУ</span><time id="arrivalClock" title="До следующего этапа">02:00</time></div><div class="arrival-bottom"><span id="arrivalPhase">Над космодромом</span><button id="arrivalFollow" type="button" aria-pressed="false">Следить</button><button id="arrivalReplay" type="button" aria-label="Начать цикл полёта заново" title="Начать цикл заново">↺</button></div><div class="arrival-hint">Мышь или палец — вращение · колесо — приближение</div>';
- if(firstAirfield!==airfield)container.querySelector('.arrival-title span:nth-child(2)').textContent='ЮБИЛЕЙНЫЙ · КРАЙНИЙ';
  const follow=container.querySelector('#arrivalFollow'),replay=container.querySelector('#arrivalReplay'),clock=container.querySelector('#arrivalClock'),label=container.querySelector('#arrivalPhase');
  const labels={overflight:'Над космодромом',approach:'Заход на посадку',flare:'Над полосой',rollout:'Пробег до 4/5 ВПП',hold:'Стоянка · 20 секунд','turn-back':'Разворот для руления','taxi-back':'Возвращение к началу ВПП','turn-takeoff':'Разворот перед взлётом',takeoff:'Разгон и взлёт',departure:'Пролёт через комплекс',away:'Возвращение через минуту'};
  const followTarget=new THREE.Vector3(),savedControls={};

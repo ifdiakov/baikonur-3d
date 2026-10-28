@@ -2,15 +2,18 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createMuseumGeography} from '../src/osm-geography.js';
+import {createNorthBankMask} from '../src/river-bank.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261028-museum4-osm-live-v1';
+const revision='20261028-museum4-osm-live-v2';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const matches=JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'));
 const geography=createMuseumGeography({catalog,matches});
 const airportFeatures=JSON.parse(await readFile('data/osm/airports.geojson','utf8')).features;
+const river=JSON.parse(await readFile('data/osm/river.geojson','utf8')).features.find(f=>f.geometry.type==='LineString');
+const northBank=createNorthBankMask(river.geometry.coordinates.map(c=>{const [x,y]=geography.project(c);return [(x-650)*3.4,(y-522.5)*3.4];}));
 const expectedSites=new Map(geography.sites.map(s=>[s.id,s]));
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
@@ -31,6 +34,29 @@ async function shot(name){await step();return page.screenshot({path:`${out}/${pr
 function inside(p,ring){let value=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){
  const a=ring[j],b=ring[i];if((a[1]>p[1])!==(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])value=!value;
 }return value;}
+async function hierarchy(level,{details=false}={}){
+ const state=await page.evaluate(()=>window.__BAIKONUR_QA.stats()),f=state.flankDistricts;
+ const flankCards=await page.locator('.flank-label:visible').count();
+ const siteLabels=await page.locator('.site-label:visible').count();
+ const detailCards=await page.locator('.detail-card:visible').count();
+ assert.equal(state.mapHierarchy.level,level);
+ assert.equal(f.version,'contours-three-level-v5');
+ if(level==='overview'){
+  assert.ok(state.mapHierarchy.overviewAlpha>.99&&f.overviewAlpha>.99);
+  assert.equal(f.visibleOverviewBoundary,1);assert.equal(f.visibleOverviewFill,1);
+  assert.ok(f.overviewFillOpacity>0&&f.overviewFillOpacity<=.035,'The initial contour fill remains almost transparent');
+  assert.ok(f.overviewBoundaryOpacity>=.2&&f.overviewBoundaryOpacity<=.3);
+  assert.equal(f.visibleZones,0);assert.equal(f.visibleBoundaries,0);assert.equal(f.visibleReliefSurfaces,0);
+  assert.equal(flankCards,0);assert.equal(siteLabels,0);assert.equal(detailCards,0);
+ }else if(level==='flanks'){
+  assert.ok(state.mapHierarchy.flankAlpha>.9);assert.equal(f.visibleOverviewBoundary,0);assert.equal(f.visibleOverviewFill,0);
+  assert.equal(f.visibleZones,3);assert.equal(flankCards,3);assert.equal(siteLabels,0);assert.equal(detailCards,0);
+ }else{
+  assert.equal(f.visibleOverviewBoundary,0);assert.equal(f.visibleOverviewFill,0);assert.equal(f.visibleZones,0);assert.equal(flankCards,0);
+  assert.ok(details?detailCards>0:siteLabels>0,details?'Nearby objects expose detailed cards':'Sites and stations appear at the object level');
+ }
+ return {level,altitude:state.mapHierarchy.altitude,overviewAlpha:f.overviewAlpha,flankAlpha:f.alpha,flankCards,siteLabels,detailCards};
+}
 
 try{
  await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
@@ -39,10 +65,28 @@ try{
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.equal(initial.sites,97);assert.equal(initial.catalogEntries,98);
+ evidence.hierarchy=[await hierarchy('overview')];
  assert.equal(initial.geography.version,'osm-geography-v1');assert.equal(initial.geography.anchored,71);assert.equal(initial.geography.inferred,26);
  assert.equal(initial.transport.version,'osm-transport-v1');assert.equal(initial.transport.source,'OpenStreetMap');
  assert.equal(initial.transport.roadFeatureCount,3185);assert.equal(initial.transport.railFeatureCount,543);
  assert.ok(initial.transport.roadRoutes>2500&&initial.transport.railRoutes>400);
+ assert.ok(initial.transport.renderedRoadWays>0&&initial.transport.renderedRoadWays<initial.transport.roadRoutes,'Settlement filtering changes the display while retaining the full source graph');
+ assert.equal(initial.transport.cityRoadSimplification.sourceBoundary,'way/39209179');
+ assert.ok(initial.transport.cityRoadSimplification.hiddenWays>500);
+ const settlementFilters=new Map(initial.transport.settlementRoadSimplification.map(s=>[s.id,s]));
+ assert.equal(settlementFilters.size,3);
+ for(const [id,boundary,profile]of [['baikonur','way/39209179','main-streets-only'],['akai','relation/16783113','minimum-through-routes'],['tyuratam','relation/15005695','minimum-through-routes']]){
+  const filter=settlementFilters.get(id);assert.ok(filter,id+' has an active geographic road filter');
+  assert.equal(filter.sourceBoundary,boundary);assert.equal(filter.minimalProfile,profile);
+  assert.equal(filter.sourceWayCount,filter.renderedWayCount+filter.hiddenWays);
+  assert.equal(new Set(filter.keptWayIds).size,filter.renderedWayCount);
+  assert.ok(filter.renderedWayCount>0&&filter.hiddenWays>filter.renderedWayCount,id+' keeps a sparse main-road network');
+  for(const wayId of filter.preservedTrafficWayIds)assert.ok(filter.keptWayIds.includes(wayId),id+' retains every moving-traffic road');
+ }
+ const roadStyle=initial.transport.roadStyle,roadColor=roadStyle.asphaltColor.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i)?.slice(1).map(s=>parseInt(s,16));
+ assert.ok(roadColor?.every(c=>c>=160)&&Math.max(...roadColor)-Math.min(...roadColor)<=12,'Roads use a light, neutral gray');
+ assert.ok(roadStyle.widths.primary<=3.6&&roadStyle.widths.residential<=2&&roadStyle.widths.service<=1.6,'Roads are visibly narrower at every scale');
+ assert.ok(roadStyle.paintWidth>0&&roadStyle.paintWidth<=.12);
  assert.ok(initial.transport.junctionCount>100&&initial.transport.markingSegments>100);
  assert.ok(initial.transport.mergedMeshCount<=32,'OSM detail must be batched for a usable scene');
  assert.ok(initial.transport.vehicleRoutes.length>=4&&initial.transport.vehicleRoutes.every(r=>r.source==='OpenStreetMap'&&r.osmWayCount>5));
@@ -52,6 +96,14 @@ try{
  assert.ok(initial.transport.facilityPorts.some(p=>p.id==='pad-42'&&p.roadGap<1e-5));
  assert.ok(initial.transport.gagarinRail.joinGap<1e-5);
  assert.ok(initial.transport.saturnAccess?.gateError<1e-5);
+ assert.equal(initial.evening.version,'evening-north-bank-v2');assert.equal(initial.evening.bankFilter.rule,'north-of-syr-darya-v1');
+ assert.equal(initial.evening.bankFilter.outsideBankCount,0);assert.ok(initial.evening.bankFilter.remaining>0);assert.ok(initial.evening.bankFilter.excludedByBank.road>0);
+ const lightPositions=await page.evaluate(()=>({scene:window.__BAIKONUR_QA.evening.lightPositions(),editor:window.__BAIKONUR_QA.lighting.visibleLightPositions()}));
+ assert.equal(lightPositions.scene.length,initial.evening.bankFilter.remaining);
+ assert.equal(lightPositions.editor.length,initial.lighting.visibleCount);
+ assert.equal(initial.lighting.visibleCount+initial.lighting.hiddenByBank,initial.lighting.count,'Filtering retained saved lamp positions');
+ for(const p of [...lightPositions.scene,...lightPositions.editor])assert.ok(p.every(Number.isFinite)&&northBank.contains(p[0],p[2]),'Every rendered stationary light stays on the cosmodrome side of the river');
+ evidence.lighting={bankFilter:initial.evening.bankFilter,editor:initial.lighting,checkedPositions:lightPositions.scene.length+lightPositions.editor.length};
  assert.equal(await page.locator('#flanksView,#eveningToggle,#lightingToggle,#trainFollow,#carsFocus,#ui a[href*="archive.html"]').count(),0);
  for(const id of ['all','top','fly','arrivalPanel','showLabels'])assert.equal(await page.locator('#'+id).count(),1);
  assert.ok(await page.locator('a[href="https://www.openstreetmap.org/copyright"]').count()>0,'Visible OSM attribution is part of the live map');
@@ -65,6 +117,9 @@ try{
  },overview.toString('base64'));
  assert.ok(pixels.variance>20&&pixels.mean>5,'The main WebGL view contains rendered terrain and objects');evidence.overviewPixels=pixels;
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await shot('overview-evening');
+ await page.evaluate(()=>window.__BAIKONUR_QA.showFlanks());await step();evidence.hierarchy.push(await hierarchy('flanks'));
+ await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(460,'pad-31'));await step();evidence.hierarchy.push(await hierarchy('sites'));await shot('site-station-level');
+ await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(180,'pad-31'));await step();evidence.hierarchy.push(await hierarchy('sites',{details:true}));
 
  const sites=[];
  for(const [id,logo] of [['pad-110','energia'],['pad-250','tsenki'],['pad-42','baiterek'],['pad-43','baiterek'],['pad-75','tsenki'],['pad-1',null],['pad-31',null]]){
@@ -76,6 +131,11 @@ try{
   assert.ok((await page.locator('#title').textContent()).includes(id.slice(4)));sites.push(actual);
  }
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.siteState('sector-east')),null);
+ const cityModel=initial.portalArchive.models.find(m=>m.id==='city');
+ assert.ok(cityModel&&cityModel.features.primitiveCount<250,'The city uses a compact set of representative buildings');
+ assert.equal(cityModel.features.features['photo-city-residential'],25);assert.equal(cityModel.features.features['photo-city-civic'],5);
+ assert.equal(cityModel.features.features['photo-city-street']??0,0,'The simplified city does not add a second dense street grid');
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('city');q.evening.setEvening(false);});await shot('city-simplified-day');
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('airfield'));await step();
  assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),'tsenki');
  assert.ok((await page.locator('#title').textContent()).includes('Крайний'));
@@ -83,8 +143,10 @@ try{
  evidence.sites=sites;
 
  assert.deepEqual(initial.airports.map(a=>[a.key,a.length]).sort(),[['krayniy',1550],['yubileiny',2250]]);
- assert.equal(initial.arrival.version,'osm-two-airport-circuit-v5');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);
- assert.deepEqual(initial.arrival.airports.map(a=>a.key),['yubileiny','krayniy']);
+ assert.equal(initial.arrival.version,'krayniy-osm-circuit-v6');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);
+ assert.deepEqual(initial.arrival.airports.map(a=>a.key),['krayniy','krayniy']);
+ assert.ok((await page.locator('#arrivalPanel .arrival-title').textContent()).includes('КРАЙНИЙ'));
+ assert.ok(!(await page.locator('#arrivalPanel .arrival-title').textContent()).includes('ЮБИЛЕЙНЫЙ'));
  for(const a of initial.arrival.airports){
   const f=airportFeatures.find(f=>f.properties.osmId===(a.key==='yubileiny'?24949215:37591623));
   const first=f.geometry.coordinates[0],last=f.geometry.coordinates.at(-1),mid=geography.project((first[0]+last[0])/2,(first[1]+last[1])/2);
@@ -95,7 +157,7 @@ try{
   await page.evaluate(t=>window.__BAIKONUR_QA.arrival.seek(t),t);
   const a=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
   assert.ok([...a.position,...a.velocity].every(Number.isFinite));
-  assert.equal(a.airport,a.leg===1?'yubileiny':'krayniy');
+  assert.equal(a.airport,'krayniy');
   if(a.segment==='hold'){assert.ok(Math.abs(a.runwayProgress-.8)<1e-8);assert.ok(a.velocity.every(v=>v===0));}
   if(a.onGround)assert.ok(Math.abs(a.mainWheelBottom-a.runwayY)<1e-5,'Rendered main wheels touch the active runway');
   if(a.segment==='away')assert.equal(a.visible,false);
@@ -104,7 +166,7 @@ try{
  }
  assert.equal(initial.arrival.timeline.filter(p=>p.phase==='hold'&&p.duration===20).length,2);
  assert.equal(initial.arrival.timeline.filter(p=>p.phase==='away'&&p.duration===60).length,2);
- for(const [t,name]of [[158,'aircraft-yubileiny-stop'],[564,'aircraft-krayniy-stop']]){
+ for(const [t,name]of [[158,'aircraft-krayniy-first-stop'],[564,'aircraft-krayniy-second-stop']]){
   await page.evaluate(t=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.arrival.seek(t);q.arrival.inspect('port');},t);await shot(name);
  }
  evidence.flight=flight;
@@ -138,7 +200,8 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.traffic.stopFollowing();q.showFlanks();q.evening.setEvening(false);});await step();
  const flank=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
  assert.equal(flank.coordinateSystem,'osm-map');assert.equal(flank.visibleZones,3);assert.equal(flank.visibleBoundaries,2);assert.equal(flank.visibleOuterBoundaries,1);
- assert.equal(flank.outerBoundarySegments,10);assert.equal(flank.reference.version,'owner-outline-20261028');
+ assert.equal(flank.reference.version,'owner-osm-outline-20261028-v2');assert.equal(flank.visibleOverviewBoundary,0);
+ assert.equal(flank.outerBoundarySegments,16);assert.deepEqual(flank.polygons.map(p=>p.length),[4,6,10]);
  assert.equal(flank.reliefCount,1);assert.equal(flank.visibleReliefSurfaces,1);assert.equal(flank.reliefClipped,true);assert.deepEqual(flank.reliefFlanks,['center']);
  const saturn=await page.evaluate(()=>window.__BAIKONUR_QA.siteState('pad-23'));
  assert.ok(inside(saturn.map,flank.polygons[1]),'Saturn remains inside the central authored flank after registration');
@@ -151,15 +214,40 @@ try{
  await hideCards.evaluate(e=>e.remove());evidence.flanks=flank;
 
  await page.setViewportSize({width:390,height:844});
+ await page.locator('#all').click();await step();evidence.hierarchy.push({mobile:true,...await hierarchy('overview')});
+ const mobileMenu=page.locator('#mobileMenuToggle');
+ assert.equal(await mobileMenu.isVisible(),true);assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
+ assert.equal(await page.locator('#showLabels').isVisible(),false);
+ await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');assert.equal(await page.locator('#showLabels').isVisible(),true);
+ await page.locator('#showLabels').uncheck();await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),0);
+ await page.locator('#showLabels').check();await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),1);
+ await mobileMenu.click();await step();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');assert.equal(await page.locator('#showLabels').isVisible(),false);
+ assert.equal(await page.locator('#hero').isVisible(),false);
+ const mobileMap=await page.evaluate(()=>{
+  const q=window.__BAIKONUR_QA,ui=document.getElementById('ui').getBoundingClientRect(),dock=document.getElementById('timeDock').getBoundingClientRect(),top=ui.bottom+12,bottom=dock.top-12;
+  const at=document.elementFromPoint(innerWidth/2,(top+bottom)/2),outline=q.stats().flankDistricts.outline,visibleEdges=new Set();let visibleSamples=0;
+  outline.forEach((a,i)=>{const b=outline[(i+1)%outline.length];for(let k=0;k<=20;k++){
+   const t=k/20,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,p=q.projectWorld((x-650)*3.4,-2.4,(y-522.5)*3.4);
+   if(p&&p.x>=9&&p.x<=innerWidth-9&&p.y>=top&&p.y<=bottom){visibleSamples++;visibleEdges.add(i);}
+  }});
+  return {uiBottom:ui.bottom,freeMapHeight:bottom-top,canvasAccessible:at===document.querySelector('#view canvas'),visibleSamples,visibleEdges:visibleEdges.size};
+ });
+ assert.ok(mobileMap.uiBottom<220&&mobileMap.freeMapHeight>350,'The compact phone toolbar leaves a substantial map area');
+ assert.ok(mobileMap.canvasAccessible,'The phone overview is available for map gestures');
+ assert.equal(mobileMap.visibleEdges,14,'Every contour edge fits in the unobstructed phone map');
+ assert.equal(mobileMap.visibleSamples,294,'The full contour remains inside the phone map after rendering and camera constraints');
+ evidence.mobileMap=mobileMap;await shot('mobile-overview');
+ await page.evaluate(()=>window.__BAIKONUR_QA.showFlanks());await step();evidence.hierarchy.push({mobile:true,...await hierarchy('flanks')});await shot('mobile-flanks');
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-43'));await step();
  assert.ok(await page.evaluate(()=>document.getElementById('info').contains(document.elementFromPoint(100,50))));
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.stats().mapHierarchy)).level,'sites');
  await shot('mobile-site43');await page.locator('#close').click();await page.locator('#all').click();await shot('mobile-map');
  assert.equal(await page.locator('#trainFollow,#carsFocus,#flanksView,#eveningToggle,#lightingToggle,#ui a[href*="archive.html"]').count(),0);
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);assert.deepEqual(failedResources,[]);
  assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  evidence.geography=initial.geography;evidence.transport=initial.transport;
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,errors,shaderErrors,failedResources,checkedAt:new Date().toISOString()},null,2));
- console.log('OSM_RELEASE_BROWSER_PASS',JSON.stringify({prefix,revision,sites:initial.sites,roadFeatures:3185,railFeatures:543,cycle:812,airports:['yubileiny','krayniy']}));
+ console.log('OSM_RELEASE_BROWSER_PASS',JSON.stringify({prefix,revision,sites:initial.sites,roadFeatures:3185,railFeatures:543,cycle:812,airports:['krayniy','krayniy']}));
 }catch(error){
  await shot('failure').catch(()=>{});
  await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({message:error.message,stack:error.stack,errors,shaderErrors,failedResources},null,2));throw error;

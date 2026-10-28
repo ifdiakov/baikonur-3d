@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v1';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v1';
-import {buildSite31Trench} from './site31-trench.js?v=20261028-museum4-osm-live-v1';
-import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v1';
-export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v1';
+import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
+import {buildSite31Trench} from './site31-trench.js?v=20261028-museum4-osm-live-v2';
+import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
+export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 
 // Site 31 is its own exhibit, not Site 1's traced excavation transplanted to
 // a different map point. Photographs establish the two opening service masts,

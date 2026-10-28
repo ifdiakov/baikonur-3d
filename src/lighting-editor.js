@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import {createLightField} from './light-field.js';
 
 const STORAGE_KEY='rockettrip-baikonur-lighting-v1',LIMIT=1500;
-export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,button,onActiveChange}){
-  let active=false,mode='single',selected=null,items=[],history=[],nextId=1;
+export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,button,onActiveChange,isLightAllowed=()=>true}){
+  let active=false,mode='single',selected=null,items=[],renderedItems=[],history=[],nextId=1;
   const ray=new THREE.Raycaster(),mouse=new THREE.Vector2(),group=new THREE.Group();
   group.name='Фонари RocketTrip';scene.add(group);
   let evening=true;
@@ -48,10 +48,11 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
   function checkpoint(){history.push(copy());if(history.length>30)history.shift();}
   function render(){
     nextId=Math.max(nextId,...items.map(l=>l.id+1));
+    renderedItems=items.filter(l=>isLightAllowed(l.x,l.z)&&isLightAllowed(l.x+Math.cos(l.yaw)*2,l.z-Math.sin(l.yaw)*2));
     const dummy=new THREE.Object3D();
     for(const {mesh,part} of parts){
-      mesh.count=items.length;
-      items.forEach((lamp,i)=>{
+      mesh.count=renderedItems.length;
+      renderedItems.forEach((lamp,i)=>{
         const localX=part==='arm'?.8:part==='head'||part==='lens'?1.55:0;
         const localY=part==='pole'?lamp.height/2:part==='base'?.125:part==='lens'?lamp.height-.105:lamp.height;
         dummy.position.set(lamp.x+Math.cos(lamp.yaw)*localX,lamp.y+localY,lamp.z-Math.sin(lamp.yaw)*localX);
@@ -61,12 +62,12 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
       mesh.instanceMatrix.needsUpdate=true;
       mesh.computeBoundingSphere();
     }
-    lightField.refresh(items.map(l=>({x:l.x+Math.cos(l.yaw)*1.55,y:l.y,z:l.z-Math.sin(l.yaw)*1.55,
+    lightField.refresh(renderedItems.map(l=>({x:l.x+Math.cos(l.yaw)*1.55,y:l.y,z:l.z-Math.sin(l.yaw)*1.55,
       height:l.height-.1,poolX:l.x+Math.cos(l.yaw)*2,poolZ:l.z-Math.sin(l.yaw)*2,radius:l.height*1.4,color:0xffcf89})));
     lightField.root.visible=evening;
-    const chosen=items.find(l=>l.id===selected);
+    const chosen=renderedItems.find(l=>l.id===selected);
     marker.visible=active&&!!chosen;if(chosen)marker.position.set(chosen.x,chosen.y+.035,chosen.z);
-    panel.querySelector('#lightingCount').textContent='Фонарей на макете: '+items.length;
+    panel.querySelector('#lightingCount').textContent='Фонарей на макете: '+renderedItems.length;
     panel.querySelector('[data-action="undo"]').disabled=!history.length;
     if(button)button.textContent='Фонари'+(items.length?' · '+items.length:'');
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify({version:1,lamps:items}));}catch{status.textContent='Расстановка видна, но браузер не смог сохранить её. Скачайте схему.';}
@@ -140,7 +141,7 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
         for(const sign of signs){
           const nx=-dz/length*sign,nz=dx/length*sign;
           const x=a.x+t*dx+nx*(road.width/2+1.4),z=a.z+t*dz+nz*(road.width/2+1.4);
-          if(!items.some(l=>Math.hypot(l.x-x,l.z-z)<2))created.push({id:nextId++,x,y:surfaceAt(x,z)+.025,z,height,yaw:Math.atan2(nz,-nx)});
+          if(isLightAllowed(x,z)&&!items.some(l=>Math.hypot(l.x-x,l.z-z)<2))created.push({id:nextId++,x,y:surfaceAt(x,z)+.025,z,height,yaw:Math.atan2(nz,-nx)});
         }
         next+=step;
       }
@@ -160,13 +161,14 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
     if(mode==='remove'||mode==='move'&&selected===null){
       const hit=ray.intersectObjects(parts.map(p=>p.mesh),false)[0];
       if(!hit){status.textContent='Нажмите на сам фонарь.';return;}
-      const lamp=items[hit.instanceId];
-      if(mode==='remove'){checkpoint();items.splice(hit.instanceId,1);render();status.textContent='Фонарь удалён.';}
+      const lamp=renderedItems[hit.instanceId];
+      if(mode==='remove'){checkpoint();items.splice(items.indexOf(lamp),1);render();status.textContent='Фонарь удалён.';}
       else{selected=lamp.id;render();status.textContent='Теперь нажмите на новое место.';}
       return;
     }
     const hit=ray.intersectObjects(groundMeshes,false)[0];if(!hit){status.textContent='Выберите место на земле.';return;}
     const point=hit.point;
+    if(!isLightAllowed(point.x,point.z)){status.textContent='Освещение размещается на стороне космодрома от Сырдарьи.';return;}
     if(mode==='road'){
       const near=nearestRoad(point);
       if(!near||near.distance>Math.max(12,near.road.width*1.5)){status.textContent='Нажмите ближе к выбранной автодороге.';return;}
@@ -187,5 +189,6 @@ export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,but
   });
   setMode('single');render();
   return {get active(){return active;},setActive,undo,setEvening(value){evening=!!value;lightField.root.visible=evening;lensMaterial.emissiveIntensity=evening?2.2:.65;},snapshot:()=>({version:1,lamps:copy()}),
-    stats:()=>({count:items.length,active,mode,selected,history:history.length,instancedMeshes:parts.length})};
+    visibleLightPositions:()=>renderedItems.map(l=>[l.x,l.y,l.z]),
+    stats:()=>({count:items.length,visibleCount:renderedItems.length,hiddenByBank:items.length-renderedItems.length,active,mode,selected,history:history.length,instancedMeshes:parts.length})};
 }

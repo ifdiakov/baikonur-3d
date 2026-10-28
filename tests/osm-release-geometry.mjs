@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
 import {createMuseumGeography} from '../src/osm-geography.js';
-import {createFlightCircuit,flightPose,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION} from '../src/flight-circuit.js';
+import {createFlightCircuit,flightPose,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from '../src/flight-circuit.js';
 import {AIRPORT_DIMENSIONS,AIRPORT_SCALE} from '../src/airport-models.js';
 
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
@@ -38,16 +38,18 @@ function airport(id,key){
  root.position.copy(a.clone().lerp(b,.5)).setY(-2.72);root.rotation.y=Math.atan2(b.x-a.x,b.z-a.z);root.scale.setScalar(AIRPORT_SCALE);
  root.userData.airport={...spec,key,threshold:H-15,touchdown:H-380*spec.longitudinalScale};return root;
 }
-const first=airport('pad-251','yubileiny'),second=airport('airfield','krayniy');
+const krayniy=airport('airfield','krayniy');
 const hub=point(...geography.project(63.33,45.94));
-const circuit=createFlightCircuit(second,{firstAirfield:first,complexCenter:hub,aircraftScale:.28});
+const circuit=createFlightCircuit(krayniy,{complexCenter:hub,aircraftScale:.28});
+assert.equal(FLIGHT_CIRCUIT_VERSION,'krayniy-osm-circuit-v6');
 assert.equal(FLIGHT_CYCLE_DURATION,812);assert.equal(FLIGHT_LEG_DURATION,406);
-assert.deepEqual(circuit.runways.map(r=>r.key),['yubileiny','krayniy']);
-assert.deepEqual(circuit.runways.map(r=>r.length),[2250,1550]);
+assert.deepEqual(circuit.runways.map(r=>r.key),['krayniy','krayniy']);
+assert.deepEqual(circuit.runways.map(r=>r.length),[1550,1550]);
 assert.equal(circuit.phases.length,18);
 let probes=0,maxWheelError=0,maxLateral=0,minFlightHeight=Infinity;
 for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){
  const s=circuit.sample(t),pose=flightPose(circuit,t),r=circuit.runways[s.leg-1];probes++;
+ assert.equal(s.airport,'krayniy','Every flight phase returns to Krayniy');
  assert.ok([...s.position.toArray(),...s.velocity.toArray(),...pose.bodyPosition.toArray(),...pose.attitude.toArray()].every(Number.isFinite));
  const height=s.position.y-s.runwayY-r.clearance;minFlightHeight=Math.min(minFlightHeight,height);
  assert.ok(height>=-1e-7,'Flight remains above the active airport at t='+t);

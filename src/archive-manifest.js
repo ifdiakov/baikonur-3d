@@ -1,4 +1,4 @@
-import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v1';
+import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 // Scope is ONLY the confirmed owner folder, never the whole Google Drive.
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';

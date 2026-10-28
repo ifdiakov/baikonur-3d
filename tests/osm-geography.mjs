@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {createMuseumGeography,OSM_RUNTIME_ANCHORS} from '../src/osm-geography.js';
-import {FLANK_POLYGONS} from '../src/flank-boundaries.js';
+import * as FLANK_GEOMETRY from '../src/flank-boundaries.js';
+const {FLANK_POLYGONS,FLANK_COORDINATE_SYSTEM}=FLANK_GEOMETRY;
 
 const load=async path=>JSON.parse(await readFile(new URL(path,import.meta.url),'utf8'));
 const [catalog,matches,airports,facilities]=await Promise.all([
@@ -91,7 +92,7 @@ function inside(p,polygon){
   }
   return yes;
 }
-const districts=FLANK_POLYGONS.map(polygon=>polygon.map(p=>geo.legacyPoint(p)));
+const districts=FLANK_COORDINATE_SYSTEM==='osm-map'?FLANK_POLYGONS:FLANK_POLYGONS.map(polygon=>polygon.map(p=>geo.legacyPoint(p)));
 for(const [id,expected] of [['pad-81',0],['pad-200',0],['pad-1',1],['pad-110',1],['pad-23',1],['pad-31',2],['pad-42',2],['pad-43',2],['pad-45',2],['city',-1],['airfield',-1]]){
   const site=byId.get(id),hits=districts.map((polygon,i)=>inside([site.x,site.y],polygon)?i:-1).filter(i=>i!==-1);
   assert.deepEqual(hits,expected===-1?[]:[expected],`${id}: moved into a wrong flank`);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js';
-import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261028-museum4-osm-live-v1';
+import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261028-museum4-osm-live-v2';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -65,7 +65,8 @@ export function buildRoadVehicleRoutes(roads){
 
 export function roadVehiclePose(route,elapsed,vehicle){
  const s=((vehicle.phase*route.length+vehicle.direction*vehicle.speed*elapsed)%route.length+route.length)%route.length;
- const at=route.sample(s,1.5),right=V(-at.tangent.z,0,at.tangent.x).normalize(),laneOffset=vehicle.direction*route.widthAt(s)/4;
+ const at=route.sample(s,1.5),right=V(-at.tangent.z,0,at.tangent.x).normalize(),width=route.widthAt(s),halfCar=.9*(route.vehicleScale||1);
+ const laneOffset=vehicle.direction*(route.source==='OpenStreetMap'?Math.min(width/4,Math.max(0,width/2-halfCar-.035)):width/4);
  const position=at.position.clone().addScaledVector(right,laneOffset);position.y+=.022;
  return {position,tangent:at.tangent.multiplyScalar(vehicle.direction),direction:vehicle.direction,speed:vehicle.speed,distance:s,laneOffset,opacity:fade(s,route.length),phase:vehicle.phase,routeId:route.id,routeLength:route.length};
 }
@@ -152,6 +153,7 @@ export function createRoadVehicles({parent,roads,camera,controls}){
   }
  });
  const cars=configs.map((_,i)=>createCar(parent,i)),states=[];let night=true;
+ cars.forEach((car,i)=>car.root.scale.setScalar(configs[i].route.vehicleScale||1));
  const museumBounds=new THREE.Box3().setFromPoints(roads.flatMap(r=>r.points)).expandByScalar(15),junction=plan.highway.position(plan.highway.bridgeDistance);
  function update(elapsed){configs.forEach((config,i)=>{const state=roadVehiclePose(config.route,elapsed,config);states[i]=state;cars[i].update(state,night);});}
  function focus(index=null){

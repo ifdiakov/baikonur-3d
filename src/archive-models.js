@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261028-museum4-osm-live-v1';
-import * as buildings from './archive-buildings.js?v=20261028-museum4-osm-live-v1';
-import * as launches from './archive-launches.js?v=20261028-museum4-osm-live-v1';
-import {photoCity} from './archive-city.js?v=20261028-museum4-osm-live-v1';
-import {buildSite31Pad} from './site31-pad.js?v=20261028-museum4-osm-live-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261028-museum4-osm-live-v2';
+import * as buildings from './archive-buildings.js?v=20261028-museum4-osm-live-v2';
+import * as launches from './archive-launches.js?v=20261028-museum4-osm-live-v2';
+import {photoCity} from './archive-city.js?v=20261028-museum4-osm-live-v2';
+import {buildSite31Pad} from './site31-pad.js?v=20261028-museum4-osm-live-v2';
 export function buildArchiveModel(root,entry){
  const builders={'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildings.nedelinRuins,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:launches.energia110,soyuz:buildSite31Pad,zenit:launches.zenit45,city:photoCity};
  if(entry.kind==='proton')return launches.protonComplex(root,entry.id);

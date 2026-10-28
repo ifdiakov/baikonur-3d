@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createRoadVehicles} from './road-vehicles.js?v=20261028-museum4-osm-live-v1';
-import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH} from './rail-vehicles.js?v=20261028-museum4-osm-live-v1';
+import {createRoadVehicles} from './road-vehicles.js?v=20261028-museum4-osm-live-v2';
+import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH} from './rail-vehicles.js?v=20261028-museum4-osm-live-v2';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,t)=>{const u=clamp((t-a)/(b-a),0,1);return u*u*(3-2*u);};

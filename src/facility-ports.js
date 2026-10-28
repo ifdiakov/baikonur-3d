@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v1';
+import {SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 // Gate points come from the model's visible aprons and internal rails.
 // Site centres remain anchored to the user's historical plan.
 export const FACILITY_PORTS={

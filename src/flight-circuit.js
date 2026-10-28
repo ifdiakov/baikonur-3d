@@ -10,7 +10,7 @@ export const TOUCHDOWN_TIME=120;
 export const FLIGHT_TIMINGS=Object.freeze({approach:120,rollout:28,hold:20,turn:12,taxi:50,takeoff:24,departure:80,away:60});
 export const FLIGHT_LEG_DURATION=Object.values(FLIGHT_TIMINGS).reduce((a,b)=>a+b,0)+FLIGHT_TIMINGS.turn;
 export const FLIGHT_CYCLE_DURATION=FLIGHT_LEG_DURATION*2;
-export const FLIGHT_CIRCUIT_VERSION='osm-two-airport-circuit-v5';
+export const FLIGHT_CIRCUIT_VERSION='krayniy-osm-circuit-v6';
 
 function hermite(nodes,t){
  let i=0;while(i<nodes.length-2&&t>nodes[i+1].t)i++;
@@ -45,9 +45,9 @@ function runwayFrame(airfield,aircraftScale){
   stopLocal,stop,turnRadius,taxiStartLocal,takeoffEndLocal,startTakeoff,endTakeoff,rolloutDistance,landingSpeed,takeoffDistance,takeoffSpeed,forward,along,near};
 }
 
-// Each landing uses the actual airport model's transform. The first landing
-// is Yubileiny when supplied, and the return is Krayniy. The hidden one-minute
-// away phase is the only place where the aircraft may change position abruptly.
+// Both museum sorties land at Krayniy and use its actual model transform.
+// An optional firstAirfield remains available to callers with another route.
+// The hidden one-minute away phase is the only position discontinuity.
 export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=airfield,complexCenter}={}){
  const hub=complexCenter?.clone?.()||V();hub.y=0;
  const atHub=(x,y,z)=>hub.clone().add(V(x,y,z));

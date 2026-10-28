@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {SITE31_FLOOR_Y,SITE31_PIT,SITE31_REFERENCE,SITE31_RIM,site31RimAt} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v1';
+import {SITE31_FLOOR_Y,SITE31_PIT,SITE31_REFERENCE,SITE31_RIM,site31RimAt} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 
 // The plan follows the georeferenced WV03 image. Heights and the chamber
 // hidden under the launch bridge remain an interpretive museum section.

@@ -1,0 +1,550 @@
+{
+  "version": "owner-osm-outline-20261028-v2",
+  "sourceFile": "контур и фланги.png",
+  "sourceSha256": "c1a425ecefb82d17b046244ba2e6b7daceff55574bbcb3a40fb88772eeaac417",
+  "imageSize": [
+    1986,
+    1632
+  ],
+  "coordinateSystem": "osm-map",
+  "boundarySource": {
+    "relation": 6725906,
+    "way": 52101489,
+    "polygonIndex": 0,
+    "ringIndex": 0,
+    "url": "https://www.openstreetmap.org/relation/6725906",
+    "snapshot": "data/osm/facilities.geojson",
+    "snapshotDate": "2026-10-28"
+  },
+  "method": "The 14 corners of the supplied red contour match the main outer ring of OSM relation/6725906 (way/52101489). The outer geometry is taken directly from that ring. A least-squares affine registration from image pixels to Web Mercator locates the two owner-drawn straight dividers; upper endpoints snap to the matching northern OSM edge, lower endpoints use the matching southern OSM kink vertices. No old museum coordinates or legacyPoint warp are used.",
+  "pixelExtraction": "Solid red stroke pixels, excluding pale hatching; orthogonal least-squares fit of each straight edge, then intersection of adjacent fitted edge centre-lines. Dividers are fitted in the same way.",
+  "imageToMercator": [
+    [
+      76.49704397141458,
+      0.17697271623183042,
+      6988901.345017955
+    ],
+    [
+      0.07566062284100862,
+      -76.5544830432118,
+      5829524.671885517
+    ]
+  ],
+  "webMercatorRadiusMetres": 6378137.0,
+  "projection": {
+    "kind": "local-equirectangular",
+    "originLonLat": [
+      63.35,
+      45.85
+    ],
+    "originMap": [
+      650,
+      522.5
+    ],
+    "referenceLatitude": 45.9256,
+    "earthRadiusMetres": 6371008.8,
+    "metresPerMapUnit": 65
+  },
+  "controlPoints": [
+    {
+      "id": "outer-corner-0",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 0,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        68.57438131791102,
+        677.5353280127872
+      ],
+      "lonLat": [
+        62.830811,
+        45.983604
+      ],
+      "errorPixels": 0.8671472965855871
+    },
+    {
+      "id": "outer-corner-1",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 1,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        70.40929722519135,
+        412.58187207089924
+      ],
+      "lonLat": [
+        62.8316178,
+        46.1099723
+      ],
+      "errorPixels": 0.6608405114356846
+    },
+    {
+      "id": "outer-corner-2",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 2,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1576.491646994075,
+        442.5517516436838
+      ],
+      "lonLat": [
+        63.865663,
+        46.0958025
+      ],
+      "errorPixels": 1.2709576893102754
+    },
+    {
+      "id": "outer-corner-3",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 3,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1605.5715066134687,
+        128.06434503874428
+      ],
+      "lonLat": [
+        63.8867774,
+        46.244493
+      ],
+      "errorPixels": 3.2157950375280513
+    },
+    {
+      "id": "outer-corner-4",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 4,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1629.4429480070776,
+        134.03519022443578
+      ],
+      "lonLat": [
+        63.9011283,
+        46.2429289
+      ],
+      "errorPixels": 1.745007575069401
+    },
+    {
+      "id": "outer-corner-5",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 5,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1601.5448938003522,
+        422.78571408070434
+      ],
+      "lonLat": [
+        63.8828911,
+        46.1069922
+      ],
+      "errorPixels": 3.1954255692983455
+    },
+    {
+      "id": "outer-corner-6",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 6,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1632.2634084144715,
+        444.39508169130943
+      ],
+      "lonLat": [
+        63.9062239,
+        46.0955277
+      ],
+      "errorPixels": 2.2297731401721754
+    },
+    {
+      "id": "outer-corner-7",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 7,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1767.560477279005,
+        442.61310548717347
+      ],
+      "lonLat": [
+        63.9965463,
+        46.0966001
+      ],
+      "errorPixels": 1.9187660178489352
+    },
+    {
+      "id": "outer-corner-8",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 8,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1883.0604349107834,
+        578.8152899790099
+      ],
+      "lonLat": [
+        64.0787806,
+        46.0310548
+      ],
+      "errorPixels": 2.1882069318633577
+    },
+    {
+      "id": "outer-corner-9",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 9,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        1394.7757976059906,
+        953.0114150184858
+      ],
+      "lonLat": [
+        63.7422214,
+        45.8521824
+      ],
+      "errorPixels": 0.3233356948524194
+    },
+    {
+      "id": "outer-corner-10",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 10,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        956.6454476109127,
+        1095.093149462691
+      ],
+      "lonLat": [
+        63.4410672,
+        45.7841327
+      ],
+      "errorPixels": 1.0147247385288807
+    },
+    {
+      "id": "outer-corner-11",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 11,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        859.1707906798712,
+        1292.2096669436546
+      ],
+      "lonLat": [
+        63.3759993,
+        45.688779
+      ],
+      "errorPixels": 1.8182718345458007
+    },
+    {
+      "id": "outer-corner-12",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 12,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        678.4755143533592,
+        1330.4939305771534
+      ],
+      "lonLat": [
+        63.2495278,
+        45.6706509
+      ],
+      "errorPixels": 1.7397704997688357
+    },
+    {
+      "id": "outer-corner-13",
+      "sourceWay": 52101489,
+      "sourceVertexIndex": 13,
+      "osmUrl": "https://www.openstreetmap.org/way/52101489",
+      "imagePixel": [
+        535.5616831509228,
+        1042.5634934148807
+      ],
+      "lonLat": [
+        63.152161,
+        45.807743
+      ],
+      "errorPixels": 2.0828190998962905
+    }
+  ],
+  "independentCheckPoints": [
+    {
+      "id": "central-road-and-rail-junction",
+      "sourceNode": 1833467471,
+      "sourceWay": 173082916,
+      "osmUrl": "https://www.openstreetmap.org/node/1833467471",
+      "lonLat": [
+        63.3267047,
+        45.8496584
+      ],
+      "imagePixel": [
+        788.96,
+        956.53
+      ],
+      "predictedImagePixel": [
+        789.9094547617424,
+        957.4216371423827
+      ],
+      "errorPixels": 1.3024903601453681,
+      "manualReadingTolerancePixels": 3
+    },
+    {
+      "id": "eastern-road-rail-crossing",
+      "sourceNode": 2620204358,
+      "sourceWay": 28164443,
+      "osmUrl": "https://www.openstreetmap.org/node/2620204358",
+      "lonLat": [
+        63.5815279,
+        45.9606383
+      ],
+      "imagePixel": [
+        1161.9,
+        725.33
+      ],
+      "predictedImagePixel": [
+        1161.2671599777823,
+        725.872731785028
+      ],
+      "errorPixels": 0.8336931595019103,
+      "manualReadingTolerancePixels": 3
+    },
+    {
+      "id": "site-81-rail-approach",
+      "sourceNode": 1834616610,
+      "sourceWay": 172458468,
+      "osmUrl": "https://www.openstreetmap.org/node/1834616610",
+      "lonLat": [
+        62.9291098,
+        46.0589005
+      ],
+      "imagePixel": [
+        211.98,
+        519.07
+      ],
+      "predictedImagePixel": [
+        212.3379889435164,
+        519.2072370755923
+      ],
+      "errorPixels": 0.3833928776035057,
+      "manualReadingTolerancePixels": 3
+    },
+    {
+      "id": "yubileiny-rail-approach-bend",
+      "sourceNode": 1834615359,
+      "sourceWay": 172571069,
+      "osmUrl": "https://www.openstreetmap.org/node/1834615359",
+      "lonLat": [
+        63.1851305,
+        46.0433378
+      ],
+      "imagePixel": [
+        583.78,
+        551.93
+      ],
+      "predictedImagePixel": [
+        584.8263454944827,
+        552.1827529787406
+      ],
+      "errorPixels": 1.076439948202643,
+      "manualReadingTolerancePixels": 3
+    },
+    {
+      "id": "e38-eastern-highway-bend",
+      "sourceNode": 271097379,
+      "sourceWay": 228075981,
+      "osmUrl": "https://www.openstreetmap.org/node/271097379",
+      "lonLat": [
+        63.7013902,
+        45.7646644
+      ],
+      "imagePixel": [
+        1335.34,
+        1136.73
+      ],
+      "predictedImagePixel": [
+        1334.7452329197986,
+        1135.260285592085
+      ],
+      "errorPixels": 1.5854993915244069,
+      "manualReadingTolerancePixels": 3
+    },
+    {
+      "id": "tyuratam-rail-corridor-north-of-city",
+      "sourceNode": 1839128762,
+      "sourceWay": 173086748,
+      "osmUrl": "https://www.openstreetmap.org/node/1839128762",
+      "lonLat": [
+        63.3234824,
+        45.6532197
+      ],
+      "imagePixel": [
+        784.42,
+        1366.8
+      ],
+      "predictedImagePixel": [
+        784.2732778629579,
+        1366.7846079762385
+      ],
+      "errorPixels": 0.14752728525143843,
+      "manualReadingTolerancePixels": 3
+    }
+  ],
+  "accuracy": {
+    "registrationRmsPixels": 1.9207175776453578,
+    "registrationMedianPixels": 1.781639704807601,
+    "registrationMaxPixels": 3.2157950375280513,
+    "checkPointRmsPixels": 1.019216292351908,
+    "manualCheckTolerancePixels": 3,
+    "approximateGroundMetresPerPixel": 53.2,
+    "estimatedDividerUncertaintyMetres": 200,
+    "interpretation": "Registration residuals and the 200 m divider tolerance describe the supplied raster and its red stroke, not surveyed boundary accuracy. The outer ring uses the stored OSM coordinates without raster digitisation error. Internal divisions remain the owner’s thematic layout; they are not ownership or administrative boundaries."
+  },
+  "outlineImagePixels": [
+    [
+      68.57438131791102,
+      677.5353280127872
+    ],
+    [
+      70.40929722519135,
+      412.58187207089924
+    ],
+    [
+      1576.491646994075,
+      442.5517516436838
+    ],
+    [
+      1605.5715066134687,
+      128.06434503874428
+    ],
+    [
+      1629.4429480070776,
+      134.03519022443578
+    ],
+    [
+      1601.5448938003522,
+      422.78571408070434
+    ],
+    [
+      1632.2634084144715,
+      444.39508169130943
+    ],
+    [
+      1767.560477279005,
+      442.61310548717347
+    ],
+    [
+      1883.0604349107834,
+      578.8152899790099
+    ],
+    [
+      1394.7757976059906,
+      953.0114150184858
+    ],
+    [
+      956.6454476109127,
+      1095.093149462691
+    ],
+    [
+      859.1707906798712,
+      1292.2096669436546
+    ],
+    [
+      678.4755143533592,
+      1330.4939305771534
+    ],
+    [
+      535.5616831509228,
+      1042.5634934148807
+    ]
+  ],
+  "outlineLonLat": [
+    [
+      62.830811,
+      45.983604
+    ],
+    [
+      62.8316178,
+      46.1099723
+    ],
+    [
+      63.865663,
+      46.0958025
+    ],
+    [
+      63.8867774,
+      46.244493
+    ],
+    [
+      63.9011283,
+      46.2429289
+    ],
+    [
+      63.8828911,
+      46.1069922
+    ],
+    [
+      63.9062239,
+      46.0955277
+    ],
+    [
+      63.9965463,
+      46.0966001
+    ],
+    [
+      64.0787806,
+      46.0310548
+    ],
+    [
+      63.7422214,
+      45.8521824
+    ],
+    [
+      63.4410672,
+      45.7841327
+    ],
+    [
+      63.3759993,
+      45.688779
+    ],
+    [
+      63.2495278,
+      45.6706509
+    ],
+    [
+      63.152161,
+      45.807743
+    ]
+  ],
+  "dividerImagePixels": [
+    [
+      [
+        578.4892835539873,
+        422.69227274450964
+      ],
+      [
+        535.5616831509228,
+        1042.5634934148807
+      ]
+    ],
+    [
+      [
+        888.530118250474,
+        428.86184672559057
+      ],
+      [
+        956.6454476109127,
+        1095.093149462691
+      ]
+    ]
+  ],
+  "dividerSnap": {
+    "topEdgeVertices": [
+      1,
+      2
+    ],
+    "bottomVertices": [
+      13,
+      10
+    ]
+  },
+  "northernSpurVertices": [
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "attribution": "© OpenStreetMap contributors",
+  "attributionUrl": "https://www.openstreetmap.org/copyright",
+  "imageAsset": "assets/references/cosmodrome-flanks-20261028.png"
+}

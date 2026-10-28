@@ -1,10 +1,10 @@
-import { buildTransportNetwork as buildBaseNetwork } from './transport-base.js?v=20261028-museum4-osm-live-v1';
-import { SATURN_ACCESS, buildSaturnNorthwestAccess } from './saturn-access.js?v=20261028-museum4-osm-live-v1';
-import { connectedRoadData } from './road-layout.js?v=20261028-museum4-osm-live-v1';
-import { buildSouthInterchange } from './south-interchange.js?v=20261028-museum4-osm-live-v1';
-import { buildGagarinRailApproach } from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v1';
-import {buildFacilityRailApproaches} from './facility-rails.js?v=20261028-museum4-osm-live-v1';
-import {buildTrainRoutePlan} from './traffic-paths.js?v=20261028-museum4-osm-live-v1';
+import { buildTransportNetwork as buildBaseNetwork } from './transport-base.js?v=20261028-museum4-osm-live-v2';
+import { SATURN_ACCESS, buildSaturnNorthwestAccess } from './saturn-access.js?v=20261028-museum4-osm-live-v2';
+import { connectedRoadData } from './road-layout.js?v=20261028-museum4-osm-live-v2';
+import { buildSouthInterchange } from './south-interchange.js?v=20261028-museum4-osm-live-v2';
+import { buildGagarinRailApproach } from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
+import {buildFacilityRailApproaches} from './facility-rails.js?v=20261028-museum4-osm-live-v2';
+import {buildTrainRoutePlan} from './traffic-paths.js?v=20261028-museum4-osm-live-v2';
 
 export function buildTransportNetwork(options) {
   const data=connectedRoadData(options.data,options.point,options.siteRecords);

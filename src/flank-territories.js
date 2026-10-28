@@ -20,7 +20,8 @@ function arrangeFlankCards(visible){
  if(visible.length===0)return;
  const ui=document.getElementById('ui'),dock=document.getElementById('timeDock');
  const uiRect=ui.getBoundingClientRect(),dockRect=dock.getBoundingClientRect();
- const leftLimit=Math.min(innerWidth-34,Math.max(15,uiRect.right+12));
+ const mobileToolbar=innerWidth<=640&&uiRect.width>innerWidth*.7;
+ const leftLimit=mobileToolbar?12:Math.min(innerWidth-34,Math.max(15,uiRect.right+12));
  const rightLimit=innerWidth-12;
  const available=Math.max(54,rightLimit-leftLimit);
  const horizontal=available>=visible.length*205+Math.max(0,visible.length-1)*12;
@@ -42,8 +43,8 @@ function arrangeFlankCards(visible){
    e.style.left=x+'px';e.style.top=y+'px';
   }
  }else{
-  const width=Math.min(244,available);
-  const upper=45,lower=Math.max(upper+205,dockRect.top-15);
+  const width=Math.min(mobileToolbar?318:244,available);
+  const upper=mobileToolbar?uiRect.bottom+14:45,lower=Math.max(upper+205,dockRect.top-15);
   const height=Math.max(90,Math.min(190,(lower-upper-gap*(visible.length-1))/visible.length-1));
   const total=visible.length*height+(visible.length-1)*gap;
   const start=Math.max(upper,(upper+lower-total)*.50);
@@ -54,7 +55,7 @@ function arrangeFlankCards(visible){
    e.style.height=height+'px';
    e.style.maxHeight=height+'px';
    e.style.overflowY='auto';
-   e.style.left=(leftLimit+width*.5)+'px';
+   e.style.left=(mobileToolbar?innerWidth*.5:leftLimit+width*.5)+'px';
    e.style.top=(start+height*(j+.5)+j*gap)+'px';
   }
  }
