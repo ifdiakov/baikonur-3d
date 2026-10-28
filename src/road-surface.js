@@ -170,11 +170,17 @@ function paintMaterial(){
  mat.extensions={derivatives:true};
  mat.onBeforeCompile=shader=>{
   shader.vertexShader='varying float vRoadSide;\n'+shader.vertexShader.replace('#include <uv_vertex>','#include <uv_vertex>\nvRoadSide = uv.x;');
-  shader.fragmentShader='varying float vRoadSide;\n'+shader.fragmentShader.replace('#include <alphamap_fragment>','#include <alphamap_fragment>\nfloat roadPixel = max(fwidth(vRoadSide), 0.0001);\nfloat roadEdge = min(vRoadSide, 1.0 - vRoadSide);\ndiffuseColor.a *= smoothstep(0.0, min(0.49, roadPixel * 0.9), roadEdge) * (1.0 - smoothstep(0.6, 1.8, roadPixel));');
- };mat.customProgramCacheKey=()=>ROAD_SURFACE_VERSION+'-paint';mat.userData.roadPaint=true;return mat;
+  // Integrate the actual painted interval [0,1] over a pixel footprint.
+  // Subpixel paint keeps proportional coverage instead of fading to zero
+  // once fwidth exceeds 1.8 (which hid every dash in the bridge close-up).
+  shader.fragmentShader='varying float vRoadSide;\n'+shader.fragmentShader.replace('#include <alphamap_fragment>','#include <alphamap_fragment>\nfloat roadPixel = max(fwidth(vRoadSide), 0.0001);\nfloat roadPixelLo = vRoadSide - 0.5 * roadPixel;\nfloat roadPixelHi = vRoadSide + 0.5 * roadPixel;\nfloat roadCoverage = clamp((min(roadPixelHi, 1.0) - max(roadPixelLo, 0.0)) / roadPixel, 0.0, 1.0);\ndiffuseColor.a *= roadCoverage;');
+ };mat.customProgramCacheKey=()=>ROAD_SURFACE_VERSION+'-paint-coverage-v2';mat.userData.roadPaint=true;return mat;
 }
 function paintGeometry(sections){
- const xyz=[],uv=[],indices=[];for(const section of sections){const start=xyz.length/3;section.forEach((s,i)=>{for(const side of [-1,1]){xyz.push(s.pos.x+s.nx*side*s.paintWidth/2,s.pos.y+ROAD_PROFILE.paintLift,s.pos.z+s.nz*side*s.paintWidth/2);uv.push(side<0?0:1,i);}if(i<section.length-1){const k=start+i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}});}
+ // Transparent padding gives the pixel filter fragments on both sides of a
+ // thin stripe. UV 0..1 still spans exactly paintWidth; it does not widen the
+ // physical paint or introduce a minimum-width bright line in distant views.
+ const padding=2,xyz=[],uv=[],indices=[];for(const section of sections){const start=xyz.length/3;section.forEach((s,i)=>{for(const side of [-1,1]){xyz.push(s.pos.x+s.nx*side*s.paintWidth*(1+2*padding)/2,s.pos.y+ROAD_PROFILE.paintLift,s.pos.z+s.nz*side*s.paintWidth*(1+2*padding)/2);uv.push(side<0?-padding:1+padding,i);}if(i<section.length-1){const k=start+i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2);}});}
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(indices);g.computeVertexNormals();return g;
 }
 function sampleAt(road,distance,offset=0,paintWidth=ROAD_PROFILE.paintWidth){

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {buildRoadSurfaces} from './road-surface.js?v=20261028-museum4-v1';
+import {buildRoadSurfaces} from './road-surface.js?v=20261028-museum4-v3';
 
 // Museum coordinates: east = +X, north = -Z. Dimensions are illustrative.
 // The entry corner was identified by RocketTrip, not inferred from a map.

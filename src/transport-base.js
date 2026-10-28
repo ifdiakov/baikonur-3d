@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
-import {buildRoadSurfaces,sampleRoadCurve} from './road-surface.js?v=20261028-museum4-v1';
+import {buildRoadSurfaces,sampleRoadCurve} from './road-surface.js?v=20261028-museum4-v3';
 
 /**
  * Baikonur transportation infrastructure / v1

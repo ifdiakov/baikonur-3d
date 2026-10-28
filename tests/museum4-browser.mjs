@@ -16,10 +16,10 @@ await page.addInitScript(()=>{
  window.__M4_FRAME=()=>{const fn=pending;pending=null;fn?.(performance.now());};
 });
 const step=()=>page.evaluate(()=>window.__M4_FRAME());
-async function shot(name){await step();await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});}
+async function shot(name){await step();return page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});}
 try{
  await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().museumRevision==='20261028-museum4-v2',null,{timeout:120000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().museumRevision==='20261028-museum4-v3',null,{timeout:120000});
  await step();const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(s.sites,97);assert.equal(s.catalogEntries,98);assert.deepEqual(s.catalogAliases,[{id:'sector-east',aliasOf:'pad-43'}]);
  assert.equal(await page.locator('#error').isVisible(),false);
@@ -56,7 +56,20 @@ try{
  assert.equal(road.roadRoutes,24);assert.equal(road.roadMarkings,'arc-length-paint-with-junction-gaps');
  assert.ok(road.roadSurface.clippedPavementSections>0);assert.ok(road.roadSurface.fillets>0);assert.ok(road.roadSurface.junctionCount>10);
  assert.ok(road.gatePorts.includes('pad-110')&&road.gatePorts.includes('pad-42'));evidence.roads=road.roadSurface;
- await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.traffic.stopFollowing();q.evening.setEvening(false);q.focusInterchange();});await shot('roads-junctions-day');
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.traffic.stopFollowing();q.evening.setEvening(false);q.focusInterchange();});const roadFrame=await shot('roads-junctions-day');
+ // These six bridge-dash centres were flat asphalt before the coverage fix.
+ // Verify rendered paint, not merely that a marking mesh exists in the scene.
+ const roadPaint=await page.evaluate(async encoded=>{
+  const source=new Image();source.src='data:image/png;base64,'+encoded;await source.decode();
+  const canvas=document.createElement('canvas');canvas.width=source.width;canvas.height=source.height;
+  const context=canvas.getContext('2d');context.drawImage(source,0,0);
+  return [[815,462],[756,447],[700,432],[842,469],[906,485],[972,502]].map(([x,y])=>{
+   const data=context.getImageData(x-1,y-1,3,3).data,values=[];
+   for(let i=0;i<data.length;i+=4)values.push(.2126*data[i]+.7152*data[i+1]+.0722*data[i+2]);
+   return {x,y,contrast:Math.max(...values)-Math.min(...values)};
+  });
+ },roadFrame.toString('base64'));
+ assert.ok(roadPaint.filter(sample=>sample.contrast>8).length>=4,'Subpixel road dashes must remain visible: '+JSON.stringify(roadPaint));evidence.roadPaint=roadPaint;
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(true);q.showFlanks();});await step();
  const flanks=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
  assert.equal(flanks.reliefCount,1);assert.equal(flanks.visibleReliefSurfaces,1);assert.deepEqual(flanks.reliefFlanks,['center']);await shot('saturn-flank-relief');

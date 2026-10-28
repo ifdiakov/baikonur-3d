@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261028-museum4-v1';
+import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261028-museum4-v3';
 
 /**
  * Baikonur Site 23: IP-5 Saturn-MS measuring station — museum reconstruction.
