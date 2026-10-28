@@ -10,7 +10,7 @@ export const TOUCHDOWN_TIME=120;
 export const FLIGHT_TIMINGS=Object.freeze({approach:120,rollout:28,hold:20,turn:12,taxi:50,takeoff:24,departure:80,away:60});
 export const FLIGHT_LEG_DURATION=Object.values(FLIGHT_TIMINGS).reduce((a,b)=>a+b,0)+FLIGHT_TIMINGS.turn;
 export const FLIGHT_CYCLE_DURATION=FLIGHT_LEG_DURATION*2;
-export const FLIGHT_CIRCUIT_VERSION='krayniy-circuit-v4';
+export const FLIGHT_CIRCUIT_VERSION='osm-two-airport-circuit-v5';
 
 function hermite(nodes,t){
  let i=0;while(i<nodes.length-2&&t>nodes[i+1].t)i++;
@@ -22,9 +22,7 @@ function hermite(nodes,t){
  return {position,velocity};
 }
 
-// The two sorties share one runway transform and one deterministic timeline.
-// Only the off-scene return changes position discontinuously, while invisible.
-export function createFlightCircuit(airfield,{aircraftScale=.28}={}){
+function runwayFrame(airfield,aircraftScale){
  airfield.updateWorldMatrix(true,false);
  const spec=airfield.userData.airport||{length:1550,width:45,threshold:760,touchdown:585};
  const length=spec.length,width=spec.width,H=length/2;
@@ -43,33 +41,45 @@ export function createFlightCircuit(airfield,{aircraftScale=.28}={}){
  const takeoffDistance=startTakeoff.distanceTo(endTakeoff),takeoffSpeed=2*takeoffDistance/FLIGHT_TIMINGS.takeoff;
  const forward=axis.clone().negate(),along=(speed,y=0)=>forward.clone().multiplyScalar(speed).setY(y);
  const near=(distance,altitude)=>touchdown.clone().addScaledVector(axis,distance).setY(runwayY+clearance+altitude);
+ return {airfield,key:spec.key||'krayniy',length,width,H,center,runwayY,clearance,axis,right,localToGround,threshold,touchdown,
+  stopLocal,stop,turnRadius,taxiStartLocal,takeoffEndLocal,startTakeoff,endTakeoff,rolloutDistance,landingSpeed,takeoffDistance,takeoffSpeed,forward,along,near};
+}
+
+// Each landing uses the actual airport model's transform. The first landing
+// is Yubileiny when supplied, and the return is Krayniy. The hidden one-minute
+// away phase is the only place where the aircraft may change position abruptly.
+export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=airfield,complexCenter}={}){
+ const hub=complexCenter?.clone?.()||V();hub.y=0;
+ const atHub=(x,y,z)=>hub.clone().add(V(x,y,z));
+ const runways=[runwayFrame(firstAirfield,aircraftScale),runwayFrame(airfield,aircraftScale)];
  const phases=[];
  for(let leg=0;leg<2;leg++){
   let start=leg*FLIGHT_LEG_DURATION;
   for(const [phase,duration] of [['approach',120],['rollout',28],['hold',20],['turn-back',12],['taxi-back',50],['turn-takeoff',12],['takeoff',24],['departure',80],['away',60]]){
-   phases.push(Object.freeze({leg,phase,start,end:start+duration,duration,direction:leg===0?'northeast':'north'}));start+=duration;
+   phases.push(Object.freeze({leg,phase,start,end:start+duration,duration,direction:leg===0?'northeast':'north',airport:runways[leg].key}));start+=duration;
   }
  }
  const approachNodes=[
-  [{t:0,p:V(-2700,520,-2100),v:V(45,-.6,20)}, {t:42,p:V(-600,400,-300),v:V(44,-4,28)}],
-  [{t:0,p:V(-2900,500,-450),v:V(48,-.6,6)}, {t:38,p:V(-350,400,-200),v:V(48,-3,14)}]
- ].map(prefix=>[...prefix,
+  [{t:0,p:atHub(-2700,520,-2100),v:V(45,-.6,20)}, {t:42,p:atHub(-600,400,-300),v:V(44,-4,28)}],
+  [{t:0,p:atHub(-2900,500,-450),v:V(48,-.6,6)}, {t:38,p:atHub(0,400,0),v:V(48,-3,14)}]
+ ].map((prefix,leg)=>{const {near,along,touchdown,landingSpeed}=runways[leg];return [...prefix,
   {t:82,p:near(690,690*Math.tan(Math.PI/60)),v:along(22,-22*Math.tan(Math.PI/60))},
   {t:105,p:near(260,260*Math.tan(Math.PI/60)),v:along(19,-19*Math.tan(Math.PI/60))},
-  {t:120,p:touchdown.clone(),v:along(landingSpeed,0)}]);
- const departureStart=endTakeoff.clone().add(V(0,35,0));
- const departureNodes=[0,1].map(leg=>[
+  {t:120,p:touchdown.clone(),v:along(landingSpeed,0)}];});
+ const departureNodes=runways.map(({endTakeoff,along,takeoffSpeed,forward},leg)=>{const departureStart=endTakeoff.clone().add(V(0,35,0));return [
   {t:0,p:departureStart.clone(),v:along(takeoffSpeed,0)},
   {t:16,p:departureStart.clone().addScaledVector(forward,250).add(V(-160,100,50)),v:V(-16,5,-6)},
-  {t:36,p:V(-950,260,650),v:V(12,5,-60)},
-  {t:56,p:V(-150,410,-430),v:leg===0?V(38,4,-42):V(5,4,-60)},
-  {t:80,p:leg===0?V(2900,650,-3000):V(-40,650,-3500),v:leg===0?V(80,2,-80):V(0,3,-100)}
- ]);
+  {t:36,p:atHub(-950,260,650),v:V(12,5,-60)},
+  {t:56,p:atHub(0,410,0),v:leg===0?V(38,4,-42):V(5,4,-60)},
+  {t:80,p:leg===0?atHub(2900,650,-3000):atHub(0,650,-3500),v:leg===0?V(80,2,-80):V(0,3,-100)}
+ ];});
 
  function sample(seconds){
   const total=Math.max(0,Number.isFinite(seconds)?seconds:0),cycleTime=total%FLIGHT_CYCLE_DURATION;
   const descriptor=phases.find(p=>cycleTime<p.end)||phases[0];
   const {leg,phase,start,duration,direction}=descriptor,t=cycleTime-start,u=clamp(t/duration,0,1);
+  const {airfield,key,length,width,H,center,runwayY,clearance,axis,right,localToGround,touchdown,stop,stopLocal,
+   turnRadius,taxiStartLocal,startTakeoff,endTakeoff,rolloutDistance,landingSpeed,takeoffSpeed,forward,along}=runways[leg];
   let position,velocity,heading=forward.clone(),gear=1,onGround=true,pitchDeg=0,visible=true;
   if(phase==='approach'){
    ({position,velocity}=hermite(approachNodes[leg],t));heading.copy(velocity).normalize();onGround=false;gear=smooth(76,94,t);
@@ -106,11 +116,14 @@ export function createFlightCircuit(airfield,{aircraftScale=.28}={}){
   const phaseLabel=phase==='approach'?(t<58?'overflight':t<108?'approach':'flare'):phase;
   return {position,velocity,heading,gear,onGround,pitchDeg,visible,phase:phaseLabel,segment:phase,phaseTime:t,
    phaseRemaining:duration-t,phaseDuration:duration,leg:leg+1,direction,cycleTime,cycleIndex:Math.floor(total/FLIGHT_CYCLE_DURATION),
+   airport:key,runwayY,runwayLength:length,runwayWidth:width,clearance,axis:axis.clone(),touchdown:touchdown.clone(),stop:stop.clone(),
    runwayProgress:(H-airfield.worldToLocal(position.clone()).z)/length};
  }
- return {sample,phases,axis,right,center,threshold,touchdown,stop,runwayY,clearance,duration:FLIGHT_CYCLE_DURATION,
-  arrivalDuration:FLIGHT_DURATION,legDuration:FLIGHT_LEG_DURATION,runwayLength:length,runwayWidth:width,stopFraction:.8,
-  taxiStart:startTakeoff.clone(),turnRadius,arrivalEntryPoints:approachNodes.map(n=>n[0].p.clone()),departureNodes};
+ const first=runways[0];
+ return {sample,phases,axis:first.axis,right:first.right,center:first.center,threshold:first.threshold,touchdown:first.touchdown,stop:first.stop,
+  runwayY:first.runwayY,clearance:first.clearance,duration:FLIGHT_CYCLE_DURATION,runways,complexCenter:hub,
+  arrivalDuration:FLIGHT_DURATION,legDuration:FLIGHT_LEG_DURATION,runwayLength:first.length,runwayWidth:first.width,stopFraction:.8,
+  taxiStart:first.startTakeoff.clone(),turnRadius:first.turnRadius,arrivalEntryPoints:approachNodes.map(n=>n[0].p.clone()),departureNodes};
 }
 
 export function flightPose(path,seconds,{aircraftScale=.28}={}){

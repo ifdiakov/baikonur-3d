@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "sourceUrl": "https://www.openstreetmap.org/#map=11/45.9256/63.4598",
+  "endpoint": "https://overpass-api.de/api/interpreter",
+  "osmBaseTimestamp": "2026-10-28T17:10:51Z",
+  "sourceSha256": "022b52c660c3195ec7815a2b65e1d21d617d680e002a0f1d2240b56d13ead744",
+  "sourceArchive": "source-overpass.json.gz",
+  "sourceElementCount": 6312,
+  "attribution": "© OpenStreetMap contributors",
+  "attributionUrl": "https://www.openstreetmap.org/copyright",
+  "license": "ODbL-1.0",
+  "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "queryFile": "baikonur.overpassql",
+  "selectionBBoxWsen": [
+    62.75,
+    45.58,
+    64.25,
+    46.25
+  ],
+  "coordinateSystem": "WGS84 longitude, latitude (GeoJSON); source coordinates are unchanged",
+  "wayGeometryPolicy": "Whole selected OSM ways are retained, including endpoints beyond the selection bbox. No smoothing, snapping, geometric intersection or gap repair was applied.",
+  "topologyPolicy": "Use sourceNodeIds for road/rail junctions; preserve bridge, tunnel, layer, service, disused and abandoned tags. A visual crossing alone is not a junction.",
+  "museumIntegration": "Geographic source only. Existing schematic catalogue, model transforms, ownership corrections, runway display lengths, flight cycle and authored flank boundaries are not overwritten.",
+  "coverageLimits": [
+    "The query retrieves roads, railway, aeroway, named/ref-tagged objects, military/industrial areas and selected structures; it does not retrieve all unnamed building footprints.",
+    "OSM facility outlines and names do not establish the exact anchor, orientation, dimensions or elevation of a detailed 3D model.",
+    "Runway area and centerline are separate features; do not count them as two physical runways.",
+    "The spaceport outline is an OSM feature, not the owner's authored flank boundary.",
+    "No ownership or historical narrative was inferred from this source."
+  ],
+  "layers": {
+    "airports": {
+      "file": "airports.geojson",
+      "features": 66,
+      "geometryTypes": {
+        "MultiPolygon": 1,
+        "LineString": 47,
+        "Polygon": 18
+      },
+      "vertices": 821,
+      "lineLengthKm": 20.912,
+      "sha256": "a0acf7a31c34011aa9031a5e535ba4e3ee4294fa9df01cf7fc5a9ad96193bea1"
+    },
+    "facilities": {
+      "file": "facilities.geojson",
+      "features": 181,
+      "geometryTypes": {
+        "Point": 19,
+        "MultiPolygon": 1,
+        "Polygon": 161
+      },
+      "vertices": 1794,
+      "lineLengthKm": 0.0,
+      "sha256": "e8c26d022b039c84052b97111be07cbfe4627aa6eb11ef1165c0bb91febf5f0b"
+    },
+    "named-buildings": {
+      "file": "named-buildings.geojson",
+      "features": 211,
+      "geometryTypes": {
+        "Point": 2,
+        "MultiPolygon": 5,
+        "Polygon": 204
+      },
+      "vertices": 2701,
+      "lineLengthKm": 0.0,
+      "sha256": "8eaf7e618bd33c0bc3857312537b86ccee22c857165d5454a1ade426250888a2"
+    },
+    "places": {
+      "file": "places.geojson",
+      "features": 41,
+      "geometryTypes": {
+        "Point": 25,
+        "MultiPolygon": 7,
+        "Polygon": 9
+      },
+      "vertices": 307,
+      "lineLengthKm": 0.0,
+      "sha256": "33a354b6ebc2874bb4f3200748a0c09742659a06220912c56fa8d1e4c2713f91"
+    },
+    "rail-points": {
+      "file": "rail-points.geojson",
+      "features": 629,
+      "geometryTypes": {
+        "Point": 629
+      },
+      "vertices": 629,
+      "lineLengthKm": 0.0,
+      "sha256": "3944afd44e2d20d8f31c898da1cac595827d65b8bac0b4a230d44dc7fb956c24"
+    },
+    "railways": {
+      "file": "railways.geojson",
+      "features": 543,
+      "geometryTypes": {
+        "LineString": 543
+      },
+      "vertices": 6780,
+      "lineLengthKm": 654.798,
+      "sha256": "306122403b4ec8614db41648e6b6229e0afdcce714e297c3f99cd5a8dbdee345"
+    },
+    "roads": {
+      "file": "roads.geojson",
+      "features": 3185,
+      "geometryTypes": {
+        "LineString": 3178,
+        "Polygon": 7
+      },
+      "vertices": 29704,
+      "lineLengthKm": 2308.103,
+      "sha256": "d1a4d9cd0b93e9bcc3262281bd76b0b0669a92df4bc8fb9e3ee9f4f3e929cfde"
+    },
+    "walking-paths": {
+      "file": "walking-paths.geojson",
+      "features": 920,
+      "geometryTypes": {
+        "LineString": 920
+      },
+      "vertices": 5197,
+      "lineLengthKm": 96.321,
+      "sha256": "967d167c8eb989b0a0c3c42a62be2b965f338ed382494e61f7a3d718fdb2a58e"
+    }
+  }
+}

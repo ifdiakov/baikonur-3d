@@ -1,8 +1,7 @@
 name: Museum 4 requested changes
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths: ['index.html','src/**','data/catalog.json','data/transport-network.json','tests/museum4-browser.mjs','tests/site31-geometry.mjs','tests/road-surfaces-geometry.mjs','scripts/verify-published.mjs','.github/workflows/verify-museum4.yml']
   workflow_dispatch:
 concurrency:
   group: baikonur-museum4

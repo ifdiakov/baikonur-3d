@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js';
-import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261028-museum4-v3';
+import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261028-museum4-osm-live-v1';
 
 export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange}){
  const hemisphere=scene.children.find(o=>o.isHemisphereLight),fields=[],originals=new Map();
@@ -54,12 +54,16 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   const surfaces=[...groundMeshes];o.g.traverse(m=>{if(m.isMesh)surfaces.push(m);});
   const count=o.type==='city'?12:4;
   for(let j=0;j<count;j++){const angle=(j+.5)*Math.PI*2/count;
-   const x=center.x+Math.cos(angle)*radius,z=center.z+Math.sin(angle)*radius;
+   // Site 31's traced bowl is wider than the former generic light circle.
+   // Keep its poles and pools on the solid service yards, not above the void.
+   const site31Local=[[-86,.10,-40],[80,.10,-40],[-83,.10,118],[94,.10,117]];
+   const site31Base=id==='pad-31'?o.g.localToWorld(new THREE.Vector3(...site31Local[j])):null;
+   const x=site31Base?.x??center.x+Math.cos(angle)*radius,z=site31Base?.z??center.z+Math.sin(angle)*radius;
    // Saturn's summit is above the former raycast ceiling. Sample its actual
    // height field, so bases and light pools cannot drop to the flat map below.
-   const y=(id==='pad-23'?saturnGround(x,z):baseAt(x,z,surfaces,height))+.02;
+   const y=(site31Base?site31Base.y:id==='pad-23'?saturnGround(x,z):baseAt(x,z,surfaces,height))+.02;
    (o.type==='city'?cityLights:siteLights).push({x,y,z,
-    height:id==='pad-1'?1.8:id==='pad-250'?3.6:2.6,radius:10,owner:o.g,color:j%3?0xffcf94:0xd6e8ff});
+    height:id==='pad-1'?1.8:id==='pad-250'?3.6:2.6,radius:site31Base?4:10,owner:o.g,color:j%3?0xffcf94:0xd6e8ff});
   }
  }
  fields.push(createLightField(layers.sites,siteLights,{poles:true,pools:true,name:'Вечер · свет площадок'}));

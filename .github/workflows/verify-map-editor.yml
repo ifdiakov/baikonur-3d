@@ -1,13 +1,7 @@
 name: Map cards, terrain, transport and lighting editor
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'src/**'
-      - 'tests/map-editor-smoke.mjs'
-      - 'tests/transport-geometry.mjs'
-      - '.github/workflows/verify-map-editor.yml'
   workflow_dispatch:
 concurrency:
   group: baikonur-map-editor

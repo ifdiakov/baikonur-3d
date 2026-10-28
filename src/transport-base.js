@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
-import {buildRoadSurfaces,sampleRoadCurve} from './road-surface.js?v=20261028-museum4-v3';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v1';
+import {buildRoadSurfaces,sampleRoadCurve} from './road-surface.js?v=20261028-museum4-osm-live-v1';
 
 /**
  * Baikonur transportation infrastructure / v1
@@ -42,10 +42,15 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     return new THREE.CatmullRomCurve3(pathPoints,false,'centripetal',.3);
   }
   function wrap(t){return Math.min(1,Math.max(0,t))}
-  function baseSamples(curve,segments) {
+  function baseSamples(curve,segments,refineEnd=false) {
     const samples=[],N=segments||Math.max(28,Math.ceil(curve.getLength()/13));
-    for(let i=0;i<=N;i++){
-      let t=i/N,v=curve.getPoint(t),d=curve.getTangent(t);
+    const parameters=Array.from({length:N+1},(_,i)=>i/N);
+    // The rail-head CatmullRom below takes its end tangent from the last
+    // chord. Refine facility gates locally so that chord follows the source
+    // approach without changing the endpoint, gauge or distant network mesh.
+    if(refineEnd)parameters.splice(-1,0,1-1/(N*4),1-1/(N*16),1-1/(N*64));
+    for(const t of parameters){
+      const v=curve.getPoint(t),d=curve.getTangent(t);
       const len=Math.hypot(d.x,d.z)||1;
       samples.push({t,pos:v,tan:d,nx:-d.z/len,nz:d.x/len});
     }
@@ -106,9 +111,9 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
   function renderTrack(id,curve,role,record=true){
     const firstMesh=layers.rails.children.length;
     const isGagarin=id===gagarinRail?.id;
-    const samples=baseSamples(curve,Math.max(32,Math.ceil(curve.getLength()/(isGagarin?2.5:8))));
-    const length=curve.getLength(),offset=RAIL_PROFILE.gauge/2;
     const custom=facilityRails?.replacements.get(id)||extraRails.find(r=>r.id===id&&r.datum);
+    const samples=baseSamples(curve,Math.max(32,Math.ceil(curve.getLength()/(isGagarin?2.5:8))),!!custom);
+    const length=curve.getLength(),offset=RAIL_PROFILE.gauge/2;
     const datum=s=>isGagarin?gagarinRail.datum(s.t):custom?.datum?custom.datum(s.t):.75+railElevation(id,s.pos);
     ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth*1.12,0,materials.gravel,0,s=>datum(s)+.01);
     ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth,0,materials.crushed,0,s=>datum(s)+RAIL_PROFILE.ballastY);

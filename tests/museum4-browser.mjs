@@ -19,7 +19,7 @@ const step=()=>page.evaluate(()=>window.__M4_FRAME());
 async function shot(name){await step();return page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});}
 try{
  await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().museumRevision==='20261028-museum4-v3',null,{timeout:120000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().museumRevision==='20261028-site31-trench-v1',null,{timeout:120000});
  await step();const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(s.sites,97);assert.equal(s.catalogEntries,98);assert.deepEqual(s.catalogAliases,[{id:'sector-east',aliasOf:'pad-43'}]);
  assert.equal(await page.locator('#error').isVisible(),false);
@@ -46,9 +46,35 @@ try{
  await page.locator('#showLabels').uncheck();
  await page.evaluate(()=>{window.__BAIKONUR_QA.evening.setEvening(false);window.__BAIKONUR_QA.focusSite('pad-31');});await step();
  const pad31=await page.evaluate(()=>window.__BAIKONUR_QA.stats().portalArchive.models.find(m=>m.id==='pad-31'));
- assert.equal(pad31.features.site31.version,'site31-detailed-v2');assert.equal(pad31.features.site31.serviceMasts,2);assert.equal(pad31.features.site31.supportingArms,4);
+ assert.equal(pad31.features.site31.version,'site31-satellite-trench-v3');assert.equal(pad31.features.site31.serviceMasts,2);assert.equal(pad31.features.site31.supportingArms,4);
  assert.equal(pad31.features.site31.serviceDecks,16);assert.ok(pad31.features.site31.pitFloorY<0);assert.ok(pad31.features.site31.launchPassage.openBelowDeck);assert.ok(pad31.features.primitiveCount>2000);
- await shot('site31-day');await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await shot('site31-evening');evidence.site31=pad31;
+ const site31=pad31.features.site31,pad31State=await page.evaluate(()=>window.__BAIKONUR_QA.siteState('pad-31'));
+ assert.equal(site31.orientationVerified,true);assert.equal(site31.orientationScope,'local-plan-from-satellite');
+ assert.equal(site31.heightsVerified,false);assert.equal(site31.globalMapAnchorSurveyed,false);
+ assert.equal(site31.satellite.imageryDate,'2025-08-09');assert.equal(site31.satellite.satellite,'WorldView-3');
+ assert.equal(site31.satellite.heightsVerified,false);assert.equal(site31.satellite.globalMapAnchorSurveyed,false);
+ assert.ok(site31.sources.includes(site31.satellite.sourceUrl));assert.ok(site31.sources.includes(site31.satellite.metadataUrl));
+ assert.deepEqual(pad31State.map,[1017,228]);assert.deepEqual(pad31State.scale,[.28,.28,.28]);
+ assert.ok(Math.abs(pad31State.rotationY-Math.atan2(245,210))<1e-8,'The rendered site follows the south-east railway vector in the satellite image');
+ assert.ok(Math.abs(site31.yaw-pad31State.rotationY)<1e-8);
+ assert.equal(site31.pit.shape,'polygon');assert.ok(site31.pit.polygon.length>=20);
+ assert.ok(site31.pit.polygon.flat().every(Number.isFinite));
+ assert.ok(site31.trench.sections.length>40&&site31.trench.floorTriangles>100&&site31.trench.bankTriangles>500);
+ assert.ok(site31.trench.sections.every(s=>[s.z,s.left,s.right,s.floorLeft,s.floorRight,s.floorY].every(Number.isFinite)));
+ const site31Cutout=s.terrainVoids.items.find(item=>item.name.startsWith('Пл. 31'));
+ assert.ok(site31Cutout,'The rendered site has a terrain cutout');assert.deepEqual(site31Cutout.shape.polygon,site31.pit.polygon);
+ await shot('site31-day');
+ const site31Views=[];
+ for(const view of ['top','duct','connections']){
+  await page.evaluate(view=>window.__BAIKONUR_QA.inspectSite31(view),view);await shot('site31-'+view);
+  const camera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+  assert.ok([...camera.position,...camera.target].every(Number.isFinite));
+  if(view==='top')assert.ok(camera.position[1]-camera.target[1]>10*Math.hypot(camera.position[0]-camera.target[0],camera.position[2]-camera.target[2]),'Top inspection remains near vertical');
+  site31Views.push({view,...camera});
+ }
+ assert.equal(new Set(site31Views.map(view=>view.position.map(n=>n.toFixed(2)).join(','))).size,3,'The three inspection views have distinct cameras');
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectSite31('duct');q.evening.setEvening(true);});await shot('site31-evening');
+ evidence.site31={...pad31,state:pad31State,views:site31Views};
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.focusSite('pad-110');});await shot('site110-entry');
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-42');q.setAltitude(95,'pad-42');});await shot('sites42-43-turn');
 

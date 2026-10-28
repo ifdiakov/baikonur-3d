@@ -1,4 +1,4 @@
-import {archiveKit,imageFrame} from './archive-kit.js?v=20261028-museum4-v1';
+import {archiveKit,imageFrame} from './archive-kit.js?v=20261028-museum4-osm-live-v1';
 // First-pass roof centres and streets from город.jpg, not a complete city survey.
 export function photoCity(root){
  const k=archiveKit(root),P=imageFrame([600,490],1);

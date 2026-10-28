@@ -1,13 +1,7 @@
 name: Museum 3D browser smoke test
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'data/**'
-      - 'tests/**'
-      - 'src/**'
-      - '.github/workflows/verify-museum.yml'
   workflow_dispatch:
 concurrency:
   group: baikonur-3d-browser-smoke

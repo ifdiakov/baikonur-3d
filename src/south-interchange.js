@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-v1';
-import {buildRoadSurfaces,sampleRoadCurve,joinedRoadCurve} from './road-surface.js?v=20261028-museum4-v3';
+import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-osm-live-v1';
+import {buildRoadSurfaces,sampleRoadCurve,joinedRoadCurve} from './road-surface.js?v=20261028-museum4-osm-live-v1';
 
 // Two separate overpasses in the southern entrance area of the museum plan.
 // Deck dimensions and supports are illustrative, not measured bridge drawings.

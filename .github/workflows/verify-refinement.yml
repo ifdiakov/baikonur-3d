@@ -1,8 +1,7 @@
 name: Alrosa aircraft and museum refinements
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths: ['index.html', 'src/**', 'tests/refinement-*.mjs', '.github/workflows/verify-refinement.yml']
   workflow_dispatch:
 concurrency:
   group: baikonur-refinement

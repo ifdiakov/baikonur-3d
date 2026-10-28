@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {flamePetal} from './flame-petals.js';
-import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261028-museum4-v1';
+import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261028-museum4-osm-live-v1';
 function ring(k,x,y,z,r,t=.35,m='steel',tag='ring'){const o=k.direct(new THREE.TorusGeometry(r,t,7,48),m,tag);o.rotation.x=Math.PI/2;o.position.set(x,y,z);return o;}
 function protonPosition(parent,x,z,yaw,scale=1){
  const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;g.scale.setScalar(scale);parent.add(g);const k=archiveKit(g);k.pit(0,0,13,13,24);

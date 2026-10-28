@@ -1,0 +1,575 @@
+{
+  "status": "PASS",
+  "checksScope": "Exact exported-source fidelity; coverage of query selection, not complete physical mapping or validated traffic topology. Does not audit catalog-matches.json.",
+  "source": {
+    "sha256": "022b52c660c3195ec7815a2b65e1d21d617d680e002a0f1d2240b56d13ead744",
+    "elements": 6312,
+    "types": {
+      "node": 1008,
+      "way": 5252,
+      "relation": 52
+    },
+    "timestamp": "2026-10-28T17:10:51Z",
+    "queryBytesIdentical": true,
+    "archiveDecompressesToExactSource": true
+  },
+  "layers": {
+    "airports": {
+      "features": 66,
+      "vertices": 821,
+      "geometryTypes": {
+        "MultiPolygon": 1,
+        "LineString": 47,
+        "Polygon": 18
+      },
+      "bbox": [
+        62.8761327,
+        45.6073903,
+        63.9384583,
+        46.0753577
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "a0acf7a31c34011aa9031a5e535ba4e3ee4294fa9df01cf7fc5a9ad96193bea1"
+    },
+    "facilities": {
+      "features": 181,
+      "vertices": 1794,
+      "geometryTypes": {
+        "Point": 19,
+        "MultiPolygon": 1,
+        "Polygon": 161
+      },
+      "bbox": [
+        62.830811,
+        45.6169569,
+        64.0787806,
+        46.244493
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "e8c26d022b039c84052b97111be07cbfe4627aa6eb11ef1165c0bb91febf5f0b"
+    },
+    "named-buildings": {
+      "features": 211,
+      "vertices": 2701,
+      "geometryTypes": {
+        "Point": 2,
+        "MultiPolygon": 5,
+        "Polygon": 204
+      },
+      "bbox": [
+        62.8612682,
+        45.6027993,
+        63.6562496,
+        46.0708288
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "8eaf7e618bd33c0bc3857312537b86ccee22c857165d5454a1ade426250888a2"
+    },
+    "places": {
+      "features": 41,
+      "vertices": 307,
+      "geometryTypes": {
+        "Point": 25,
+        "MultiPolygon": 7,
+        "Polygon": 9
+      },
+      "bbox": [
+        62.7950514,
+        45.4721804,
+        64.1212499,
+        46.1659443
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "33a354b6ebc2874bb4f3200748a0c09742659a06220912c56fa8d1e4c2713f91"
+    },
+    "rail-points": {
+      "features": 629,
+      "vertices": 629,
+      "geometryTypes": {
+        "Point": 629
+      },
+      "bbox": [
+        62.8207139,
+        45.5859842,
+        63.9583449,
+        46.0821826
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "3944afd44e2d20d8f31c898da1cac595827d65b8bac0b4a230d44dc7fb956c24"
+    },
+    "railways": {
+      "features": 543,
+      "vertices": 6780,
+      "geometryTypes": {
+        "LineString": 543
+      },
+      "bbox": [
+        62.709176,
+        45.4941219,
+        64.0818528,
+        46.0892203
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "306122403b4ec8614db41648e6b6229e0afdcce714e297c3f99cd5a8dbdee345"
+    },
+    "roads": {
+      "features": 3185,
+      "vertices": 29704,
+      "geometryTypes": {
+        "LineString": 3178,
+        "Polygon": 7
+      },
+      "bbox": [
+        62.2135014,
+        44.8887482,
+        64.6287652,
+        46.3076272
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "d1a4d9cd0b93e9bcc3262281bd76b0b0669a92df4bc8fb9e3ee9f4f3e929cfde"
+    },
+    "walking-paths": {
+      "features": 920,
+      "vertices": 5197,
+      "geometryTypes": {
+        "LineString": 920
+      },
+      "bbox": [
+        62.9345786,
+        45.6034036,
+        63.942621,
+        46.0635407
+      ],
+      "duplicateIds": [],
+      "exactCoordinates": true,
+      "exactTags": true,
+      "sha256": "967d167c8eb989b0a0c3c42a62be2b965f338ed382494e61f7a3d718fdb2a58e"
+    }
+  },
+  "totals": {
+    "featuresAcrossLayers": 5776,
+    "uniqueSourceElementsExported": 5768,
+    "omittedSourceElements": 544,
+    "verticesAcrossLayers": 47933,
+    "wayNodeReferencesAcrossLayers": 46769,
+    "uniqueWayNodeIds": 38731,
+    "nodeCoordinateConflicts": 0,
+    "selectedWaysWithCoordinatesOutsideBbox": 33
+  },
+  "relations": [
+    {
+      "id": "relation/20700858",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 0,
+      "sourceEdges": 76,
+      "ringEdges": 76
+    },
+    {
+      "id": "relation/6725906",
+      "polygons": 2,
+      "outerRings": 2,
+      "holes": 0,
+      "sourceEdges": 32,
+      "ringEdges": 32
+    },
+    {
+      "id": "relation/2310101",
+      "polygons": 2,
+      "outerRings": 2,
+      "holes": 1,
+      "sourceEdges": 35,
+      "ringEdges": 35
+    },
+    {
+      "id": "relation/2314947",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 1,
+      "sourceEdges": 16,
+      "ringEdges": 16
+    },
+    {
+      "id": "relation/2316269",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 1,
+      "sourceEdges": 49,
+      "ringEdges": 49
+    },
+    {
+      "id": "relation/2316289",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 1,
+      "sourceEdges": 50,
+      "ringEdges": 50
+    },
+    {
+      "id": "relation/2316323",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 2,
+      "sourceEdges": 32,
+      "ringEdges": 32
+    },
+    {
+      "id": "relation/15005695",
+      "polygons": 2,
+      "outerRings": 2,
+      "holes": 0,
+      "sourceEdges": 61,
+      "ringEdges": 61
+    },
+    {
+      "id": "relation/16783112",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 0,
+      "sourceEdges": 12,
+      "ringEdges": 12
+    },
+    {
+      "id": "relation/16783113",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 0,
+      "sourceEdges": 12,
+      "ringEdges": 12
+    },
+    {
+      "id": "relation/18320793",
+      "polygons": 2,
+      "outerRings": 2,
+      "holes": 0,
+      "sourceEdges": 9,
+      "ringEdges": 9
+    },
+    {
+      "id": "relation/18320794",
+      "polygons": 1,
+      "outerRings": 1,
+      "holes": 0,
+      "sourceEdges": 9,
+      "ringEdges": 9
+    },
+    {
+      "id": "relation/18324253",
+      "polygons": 4,
+      "outerRings": 4,
+      "holes": 0,
+      "sourceEdges": 33,
+      "ringEdges": 33
+    },
+    {
+      "id": "relation/19007870",
+      "polygons": 2,
+      "outerRings": 2,
+      "holes": 0,
+      "sourceEdges": 35,
+      "ringEdges": 35
+    }
+  ],
+  "nonGeometryRelationMembersPreservedAsReferences": [
+    {
+      "relation": "relation/18320794",
+      "member": 3774949789,
+      "role": "subarea"
+    },
+    {
+      "relation": "relation/19007870",
+      "member": 3774949445,
+      "role": "label"
+    }
+  ],
+  "crossLayerDuplicateIdentities": [
+    {
+      "id": "way/172704643",
+      "layers": [
+        "named-buildings",
+        "airports"
+      ]
+    },
+    {
+      "id": "way/172704656",
+      "layers": [
+        "named-buildings",
+        "airports"
+      ]
+    },
+    {
+      "id": "way/172836916",
+      "layers": [
+        "facilities",
+        "airports"
+      ]
+    },
+    {
+      "id": "way/241008142",
+      "layers": [
+        "facilities",
+        "airports"
+      ]
+    },
+    {
+      "id": "way/297488780",
+      "layers": [
+        "roads",
+        "airports"
+      ]
+    },
+    {
+      "id": "node/687062703",
+      "layers": [
+        "named-buildings",
+        "facilities"
+      ]
+    },
+    {
+      "id": "node/12191888876",
+      "layers": [
+        "named-buildings",
+        "facilities"
+      ]
+    },
+    {
+      "id": "way/221132591",
+      "layers": [
+        "places",
+        "facilities"
+      ]
+    }
+  ],
+  "railwayStatus": {
+    "rail": 513,
+    "abandoned": 30
+  },
+  "preservedTaggedFeatures": {
+    "bridge": 13,
+    "tunnel": 3,
+    "layer": 30,
+    "ele": 1,
+    "height": 4,
+    "level": 1,
+    "building:levels": 21
+  },
+  "runways": [
+    {
+      "id": "way/24949215",
+      "type": "LineString",
+      "tags": {
+        "aeroway": "runway",
+        "ref": "06/24",
+        "surface": "concrete"
+      },
+      "lengthMetres": 4489.799048989517,
+      "nodeCount": 4,
+      "endpoints": [
+        [
+          63.2224604,
+          46.0443881
+        ],
+        [
+          63.2758234,
+          46.0604768
+        ]
+      ],
+      "insideRunwayAreas": {
+        "way/173450653": {
+          "samplesInside": 0,
+          "sampleCount": 33
+        }
+      }
+    },
+    {
+      "id": "way/37591623",
+      "type": "LineString",
+      "tags": {
+        "aeroway": "runway",
+        "length": "3100 m",
+        "name": "05/23",
+        "ref": "05/23",
+        "surface": "asphalt",
+        "width": "54 m"
+      },
+      "lengthMetres": 3074.4911180726162,
+      "nodeCount": 7,
+      "endpoints": [
+        [
+          63.2272132,
+          45.6294972
+        ],
+        [
+          63.1941252,
+          45.6143654
+        ]
+      ],
+      "insideRunwayAreas": {
+        "way/173450653": {
+          "samplesInside": 66,
+          "sampleCount": 66
+        }
+      }
+    },
+    {
+      "id": "way/173450653",
+      "type": "Polygon",
+      "tags": {
+        "aeroway": "runway",
+        "area": "yes",
+        "name": "05/23",
+        "surface": "asphalt"
+      },
+      "ringPoints": 19
+    }
+  ],
+  "omittedCategories": {
+    "railway": {
+      "stop": 2,
+      "platform": 20,
+      "facility": 1
+    },
+    "highway": {
+      "bus_stop": 4,
+      "rest_area": 3
+    },
+    "military": {
+      "bunker": 107
+    },
+    "aeroway": {},
+    "landuse": {
+      "commercial": 1,
+      "residential": 4
+    },
+    "man_made": {
+      "mast": 4,
+      "tower": 12,
+      "pipeline": 1
+    },
+    "building": {
+      "yes": 14,
+      "bunker": 93
+    },
+    "type": {
+      "waterway": 1,
+      "route": 17,
+      "disused:route": 6,
+      "multipolygon": 8,
+      "boundary": 4,
+      "public_transport": 1,
+      "route_master": 1
+    }
+  },
+  "errors": [],
+  "limitations": [
+    {
+      "category": "coverage",
+      "detail": "Eight thematic layers export 5768 unique OSM elements from 6312 returned; 544 are omitted from these layers, but all 6312 are retained byte-for-byte in source-overpass.json.gz. Omitted categories include 107 military=bunker ways, 20 railway=platform ways, 2 railway=stop nodes and railway=facility relation/6100898."
+    },
+    {
+      "category": "topology",
+      "detail": "Source node references are preserved; grade separation, lifecycle restrictions, crossings and routability are not inferred or validated."
+    },
+    {
+      "category": "physicalCounts",
+      "detail": "3185 road ways and 543 rail ways are OSM feature counts, not counts of physical roads or lines. Runway centerline and runway area are representations of the same 05/23 runway."
+    },
+    {
+      "category": "bbox",
+      "detail": "Selection bbox is not output clipping. Thirty-three selected exported ways extend beyond it; roads layer extent is 62.2135014,44.8887482,64.6287652,46.3076272."
+    },
+    {
+      "category": "sourceDuplicates",
+      "detail": "Different OSM identities may describe coincident geometry; these are preserved, not importer-created duplicates. See sameGeometryDifferentSourceIds."
+    }
+  ],
+  "sameGeometryDifferentSourceIds": {
+    "places": [
+      [
+        "relation/16783112",
+        "relation/16783113"
+      ]
+    ]
+  },
+  "incrementalRevalidation": {
+    "scope": "Three historical/disused launchpad additions to facilities plus updated layer metadata; previous geometry audit retained for unchanged records. No network requests or scene changes.",
+    "previousFacilitiesSha256": "951d659b67af95dc2088a68a4032141a9cc7739aa7b6ebba6c6dbd6a6091f92e",
+    "previousFacilitiesReconstructedExactly": true,
+    "featuresAdded": 3,
+    "coordinateOccurrencesAdded": 55,
+    "nodeReferencesAdded": 55,
+    "uniqueNodeIdsAdded": 48,
+    "features": [
+      {
+        "id": "way/169401566",
+        "name": "Launchpad 110L",
+        "geometryType": "Polygon",
+        "nodeReferences": 25,
+        "uniqueNodeIds": 24,
+        "lifecycleTags": {
+          "disused:aeroway": "launchpad"
+        },
+        "checks": {
+          "exactSourceCoordinates": true,
+          "exactSourceNodeIds": true,
+          "exactSourceTags": true,
+          "closedRing": true,
+          "nodeCountMatchesCoordinates": true,
+          "noCrossLayerDuplicate": true
+        }
+      },
+      {
+        "id": "way/169401625",
+        "name": "Launchpad 110R",
+        "geometryType": "Polygon",
+        "nodeReferences": 25,
+        "uniqueNodeIds": 24,
+        "lifecycleTags": {
+          "disused:aeroway": "launchpad"
+        },
+        "checks": {
+          "exactSourceCoordinates": true,
+          "exactSourceNodeIds": true,
+          "exactSourceTags": true,
+          "closedRing": true,
+          "nodeCountMatchesCoordinates": true,
+          "noCrossLayerDuplicate": true
+        }
+      },
+      {
+        "id": "way/172571408",
+        "name": "Гагаринский старт",
+        "geometryType": "Polygon",
+        "nodeReferences": 5,
+        "uniqueNodeIds": 4,
+        "lifecycleTags": {
+          "disused:aeroway": "launchpad",
+          "historic": "launchpad"
+        },
+        "checks": {
+          "exactSourceCoordinates": true,
+          "exactSourceNodeIds": true,
+          "exactSourceTags": true,
+          "closedRing": true,
+          "nodeCountMatchesCoordinates": true,
+          "noCrossLayerDuplicate": true
+        }
+      }
+    ],
+    "errors": []
+  }
+}

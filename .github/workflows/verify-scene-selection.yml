@@ -1,12 +1,7 @@
 name: Camera navigation and intentional site selection
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/scene-selection.js'
-      - 'scripts/fix-scene-selection.mjs'
-      - 'tests/scene-selection-browser.mjs'
-      - '.github/workflows/verify-scene-selection.yml'
   workflow_dispatch:
 concurrency:
   group: museum-scene-selection

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
-import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v1';
+import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-osm-live-v1';
 
 export function distancePath(points){
  const clean=points.filter((p,i)=>!i||p.distanceTo(points[i-1])>1e-8).map(p=>p.clone());

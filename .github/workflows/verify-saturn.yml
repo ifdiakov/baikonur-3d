@@ -1,17 +1,7 @@
 name: Saturn IP-5 3D model — isolated browser verification
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/saturn-ip5.js'
-      - 'src/saturn-structures.js'
-      - 'src/saturn-access.js'
-      - 'src/transport-network.js'
-      - 'data/catalog.json'
-      - 'index.html'
-      - 'tests/saturn-smoke.mjs'
-      - 'workshop/saturn.html'
-      - '.github/workflows/verify-saturn.yml'
   workflow_dispatch:
 concurrency:
   group: baikonur-3d-saturn-check

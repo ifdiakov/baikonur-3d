@@ -1,19 +1,7 @@
 name: Museum 3 — traffic, four coaches and flank territories
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'src/**'
-      - 'tests/traffic-geometry.mjs'
-      - 'tests/traffic-browser.mjs'
-      - 'tests/road-vehicles-geometry.mjs'
-      - 'tests/road-vehicles-browser.mjs'
-      - 'tests/train-consist.mjs'
-      - 'tests/train-browser.mjs'
-      - 'tests/flanks-browser.mjs'
-      - 'assets/flank-portraits/**'
-      - '.github/workflows/verify-traffic.yml'
   workflow_dispatch:
 concurrency:
   group: baikonur-traffic
@@ -35,6 +23,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Verify wheel contacts, pitch, lanes and track continuity
         run: |
+          node tests/flanks-geometry.mjs
           node tests/traffic-geometry.mjs
           node tests/road-vehicles-geometry.mjs
           node tests/train-consist.mjs

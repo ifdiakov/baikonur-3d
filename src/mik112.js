@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v1';
 import {createSurfacePalette} from './surface-materials.js';
 
 // Site 112, NOT the neighbouring MZK/SDI at 112A. Photo-interpreted exterior.

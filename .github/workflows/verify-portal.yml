@@ -1,8 +1,7 @@
 name: Portal photo models, terrain excavation and organisations
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths: ['src/archive-*.js','src/terrain-voids.js','scripts/integrate-portal.mjs','scripts/review-portal.mjs','scripts/optimise-archive.mjs','scripts/patch-gagarin.mjs','scripts/partner-logos.py','archive.html','tests/portal-browser.mjs','.github/workflows/verify-portal.yml']
   workflow_dispatch:
 concurrency:
   group: portal-model-release

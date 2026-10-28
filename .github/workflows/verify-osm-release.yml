@@ -1,0 +1,131 @@
+name: Museum 4 — OSM live product and release
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'data/**'
+      - 'assets/**'
+      - 'tests/**'
+      - 'scripts/verify-published.mjs'
+      - 'docs/releases/**'
+      - '.github/workflows/verify-osm-release.yml'
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Create the immutable release after local and public checks pass
+        type: boolean
+        default: false
+concurrency:
+  group: baikonur-osm-live-release
+  cancel-in-progress: true
+permissions:
+  contents: read
+env:
+  RELEASE_TAG: museum4-osm-20261028-v1
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Verify geography, source topology and complete two-airport flight
+        run: |
+          node tests/osm-geography.mjs
+          node tests/osm-transport-geometry.mjs
+          node tests/osm-release-geometry.mjs
+      - name: Preserve the detailed Site 31, road, rail and flank invariants
+        run: |
+          node tests/site31-geometry.mjs
+          node tests/road-surfaces-geometry.mjs
+          node tests/arrival-geometry.mjs
+          node tests/flanks-geometry.mjs
+          node tests/train-consist.mjs
+      - name: Serve this exact checkout
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-preview.log 2>&1 &
+          curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Verify the complete local product in Chromium
+        run: |
+          node tests/osm-release-browser.mjs
+          node tests/flanks-browser.mjs
+      - name: Verify every published runtime source against this commit
+        run: node scripts/verify-published.mjs
+      - name: Verify the live museum and capture review images
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?release=${{ github.sha }}
+          QA_PREFIX: public
+        run: |
+          node tests/osm-release-browser.mjs
+          node tests/flanks-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: museum4-osm-live-qa
+          path: |
+            qa-osm-release/
+            qa-flanks/
+          retention-days: 14
+
+  release:
+    needs: verify
+    if: github.event_name == 'push' || inputs.publish_release == true
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish a release for the verified, unchanged main commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('node:fs');
+            const {owner, repo} = context.repo;
+            const tag = process.env.RELEASE_TAG;
+            const sha = context.sha;
+            const head = await github.rest.git.getRef({owner, repo, ref: 'heads/main'});
+            if (head.data.object.sha !== sha) {
+              throw new Error('main changed after verification; the newer commit must pass the live gate before release');
+            }
+            let tagObject;
+            try {
+              tagObject = (await github.rest.git.getRef({owner, repo, ref: 'tags/' + tag})).data.object;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            for (let i = 0; tagObject?.type === 'tag' && i < 5; i++) {
+              tagObject = (await github.rest.git.getTag({owner, repo, tag_sha: tagObject.sha})).data.object;
+            }
+            if (tagObject && (tagObject.type !== 'commit' || tagObject.sha !== sha)) {
+              throw new Error('Release tags are immutable. Increment RELEASE_TAG for this new commit.');
+            }
+            let release;
+            try {
+              release = (await github.rest.repos.getReleaseByTag({owner, repo, tag})).data;
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
+            if (!release) {
+              const body = fs.readFileSync('docs/releases/museum4-osm-20261028-v1.md', 'utf8') +
+                '\n\nVerified commit: `' + sha + '`\n\n' +
+                '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
+              release = (await github.rest.repos.createRelease({
+                owner, repo, tag_name: tag, target_commitish: sha,
+                name: 'Интерактивный музей 4 — география OSM',
+                body, draft: false, prerelease: false, make_latest: 'true'
+              })).data;
+            }
+            core.info('Published release: ' + release.html_url);
+            await core.summary.addHeading('Verified live museum')
+              .addLink('Open the museum', 'https://ifdiakov.github.io/baikonur-3d/')
+              .addBreak().addLink('GitHub release', release.html_url)
+              .addRaw('\n\nCommit: `' + sha + '`\n').write();

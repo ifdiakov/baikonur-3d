@@ -2398,16 +2398,28 @@
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
       "contentSource": "reviewed-sites-workbook-20261028",
-      "modelStatus": "Детализированная музейная реконструкция по фотографиям ЦЭНКИ; размеры и азимут предварительны. Ракета показана как предстартовая музейная композиция.",
+      "modelStatus": "План газоотводного лотка и разворот старта сверены по спутниковому снимку WorldView-3 от 09.08.2025 (Esri / Vantor). Газоотвод направлен на северо-запад, железная дорога подходит с юго-востока. Высоты и скрытые под мостом участки реконструированы приблизительно. Ракета показана как предстартовая музейная композиция.",
       "archiveModel": {
-        "version": "site31-detailed-v2",
+        "version": "site31-satellite-trench-v3",
         "kind": "soyuz",
-        "orientation": "not-verified-no-overhead",
-        "satellite": null,
-        "folder": "17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII"
+        "orientation": "satellite-traced-local-plan",
+        "satellite": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=7075420.9808345605%2C5779324.26454728%2C7076380.9808345605%2C5780124.26454728&bboxSR=3857&imageSR=3857&size=800%2C667&format=jpg&f=image",
+        "folder": "17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII",
+        "imageryDate": "2025-08-09",
+        "ductBearingDegreesApprox": 310.6,
+        "railBearingDegreesApprox": 130.6,
+        "yawRadians": 0.8621700546672264,
+        "planAccuracyMetresApprox": 5,
+        "heightsVerified": false,
+        "underBridgeRimInferred": true,
+        "globalMapAnchorSurveyed": false
       },
-      "modelOrientationVerified": false,
+      "modelOrientationVerified": true,
       "architectureReferences": [
+        {
+          "label": "Спутниковый контур площадки31/6 · WorldView-3, 09.08.2025 · Esri / Vantor",
+          "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/export?bbox=7075420.9808345605%2C5779324.26454728%2C7076380.9808345605%2C5780124.26454728&bboxSR=3857&imageSR=3857&size=800%2C667&format=jpg&f=image"
+        },
         {
           "label": "Фотография старта 31/6 · ЦЭНКИ",
           "url": "https://www.russian.space/upload/iblock/c07/11221_d.jpg"
@@ -2420,7 +2432,8 @@
           "label": "Фотографии КЦ «Южный» / ЦЭНКИ в публикации МЧС",
           "url": "https://sufps70.organizations.mchs.gov.ru/deyatelnost/press-centr/novosti/4233814"
         }
-      ]
+      ],
+      "modelOrientationScope": "local-plan-from-satellite"
     },
     {
       "id": "pad-105",

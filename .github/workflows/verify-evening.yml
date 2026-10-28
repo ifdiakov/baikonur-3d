@@ -1,13 +1,7 @@
 name: Evening lighting and Krayniy arrival
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'src/**'
-      - 'tests/arrival-geometry.mjs'
-      - 'tests/evening-browser.mjs'
-      - '.github/workflows/verify-evening.yml'
   workflow_dispatch:
 concurrency:
   group: baikonur-evening

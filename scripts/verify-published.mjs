@@ -5,7 +5,8 @@ import {createHash} from 'node:crypto';
 // A stale CDN module must not be mistaken for a tested publication.
 const base=process.env.BAIKONUR_PUBLIC_URL||'https://ifdiakov.github.io/baikonur-3d/';
 const files=['index.html','data/catalog.json','data/transport-network.json',
- ...(await readdir('src')).filter(file=>file.endsWith('.js')).map(file=>'src/'+file)];
+ ...(await readdir('src')).filter(file=>/\.(?:js|css)$/.test(file)).map(file=>'src/'+file),
+ ...(await readdir('data/osm',{recursive:true})).filter(file=>/\.(?:json|geojson)$/.test(file)).map(file=>'data/osm/'+file)];
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const expected=new Map(await Promise.all(files.map(async file=>[file,digest(await readFile(file))])));
 let pending=[...files];

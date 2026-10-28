@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import {FLANK_BOUNDARY_VERSION,FLANK_REFERENCE,FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER} from './flank-boundaries.js?v=20261028-museum4-osm-live-v1';
+export {FLANK_BORDERS} from './flank-boundaries.js?v=20261028-museum4-osm-live-v1';
 
 /**
  * Thematic RocketTrip enterprise districts, not administrative borders or
- * surveyed launch-site ownership. Boundaries follow the historical diagram
- * loosely and exist ONLY at the flank zoom level.
+ * surveyed launch-site ownership. Boundaries follow the owner's marked image
+ * and exist ONLY at the flank zoom level. The existing visual style is retained.
  */
 export const FLANK_DISTRICTS = [
   {key:'left',name:'НПО машиностроения · Центр Хруничева',color:0xd45a91,
@@ -26,31 +28,43 @@ export const FLANK_DISTRICTS = [
    sources:['https://www.unoosa.org/pdf/pres/stsc2010/tech-41.pdf','https://yuzhmash.com/en/about-company/','https://www.testpilot.ru/espace/bibl/kb-ujn/05.php']}
 ];
 
-// Graphic, thematic boundaries only: deliberately angular, not cadastral lines.
-export const FLANK_BORDERS=[
- [[425,40],[425,190],[480,245],[480,390],[430,440],[430,610],[480,660],[480,800]],
- [[890,40],[890,175],[830,235],[830,400],[880,450],[880,620],[925,665],[925,800]]
-];
-export function buildFlankDistricts(scene,point,W,H){
+export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const root=new THREE.Group();root.name='Фланги · тематические территории';scene.add(root);
  const zones=[],boundaries=[],materials=[],reliefSurfaces=[];
+ const mapped=new Map();
+ const transform=p=>{if(!mapTransform)return p;const key=p.join(',');if(!mapped.has(key))mapped.set(key,mapTransform(...p));return mapped.get(key);};
+ const polygons=FLANK_POLYGONS.map(p=>p.map(transform));
+ const borders=FLANK_BORDERS.map(p=>p.map(transform));
+ const outline=FLANK_OUTLINE.map(transform);
+ const outerFragments=FLANK_PERIMETER.map(p=>({...p,points:p.points.map(transform)}));
  // Self-lit map graphics must retain their color when the evening scene tints
  // ordinary MeshBasicMaterials. Log-depth chunks match the museum renderer.
- function ink(color,strength,additive=false,surfaceAlpha=false){
+ function ink(color,strength,additive=false,surfaceAlpha=false,clipPolygon=null){
+  let clipFunction='';
+  if(clipPolygon){
+   const outline=clipPolygon.map(p=>{const v=point(...p);return [v.x,v.z];}),f=n=>Number(n).toFixed(6);
+   clipFunction='bool insideFlank(vec2 p){bool inside=false;';
+   outline.forEach((a,j)=>{const b=outline[(j+1)%outline.length];if(Math.abs(b[1]-a[1])<1e-9)return;
+    clipFunction+=`if(p.y>${f(Math.min(a[1],b[1]))}&&p.y<=${f(Math.max(a[1],b[1]))}&&p.x<${f(a[0])}+(p.y-(${f(a[1])}))*${f((b[0]-a[0])/(b[1]-a[1]))})inside=!inside;`;
+   });clipFunction+='return inside;}';
+  }
   const mat=new THREE.ShaderMaterial({
    uniforms:{uColor:{value:new THREE.Color(color)},uOpacity:{value:0}},
    vertexShader:`#include <common>
 #include <logdepthbuf_pars_vertex>
 ${surfaceAlpha?'attribute vec4 color; varying float vSurfaceOpacity;':''}
-void main(){${surfaceAlpha?'vSurfaceOpacity=color.a;':''}gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
+${clipPolygon?'varying vec2 vFlankWorld;':''}
+void main(){${surfaceAlpha?'vSurfaceOpacity=color.a;':''}${clipPolygon?'vFlankWorld=(modelMatrix*vec4(position,1.)).xz;':''}gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);
 #include <logdepthbuf_vertex>
 }`,
    fragmentShader:`uniform vec3 uColor;uniform float uOpacity;
 #include <common>
 #include <logdepthbuf_pars_fragment>
 ${surfaceAlpha?'varying float vSurfaceOpacity;':''}
+${clipPolygon?'varying vec2 vFlankWorld;'+clipFunction:''}
 void main(){
 #include <logdepthbuf_fragment>
+${clipPolygon?'if(!insideFlank(vFlankWorld))discard;':''}
 gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
 #include <colorspace_fragment>
 }`,
@@ -58,16 +72,12 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
    blending:additive?THREE.AdditiveBlending:THREE.NormalBlending
   });mat.toneMapped=false;materials.push({mat,strength});return mat;
  }
- const polygons=[
-  [[0,40],...FLANK_BORDERS[0],[0,800]],
-  [...FLANK_BORDERS[0],...FLANK_BORDERS[1].slice().reverse()],
-  [...FLANK_BORDERS[1],[W,800],[W,40]]
- ];
  for(let i=0;i<3;i++){
   const shape=new THREE.Shape();polygons[i].forEach(([x,z],j)=>{const p=point(x,z);j?shape.lineTo(p.x,-p.z):shape.moveTo(p.x,-p.z);});shape.closePath();
   const mesh=new THREE.Mesh(new THREE.ShapeGeometry(shape),ink(FLANK_DISTRICTS[i].color,.19));
   mesh.rotation.x=-Math.PI/2;mesh.position.y=-2.56;mesh.renderOrder=3;
   mesh.name='Тематическая зона · '+FLANK_DISTRICTS[i].name;mesh.userData.pickable=false;root.add(mesh);zones.push(mesh);
+  mesh.userData.flank=FLANK_DISTRICTS[i].key;
  }
  function ribbon(parent,points,width,material,height,offset=0){
   for(let j=1;j<points.length;j++){
@@ -78,7 +88,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
    mesh.renderOrder=5;mesh.userData.pickable=false;parent.add(mesh);
   }
  }
- FLANK_BORDERS.forEach((points,i)=>{
+ borders.forEach((points,i)=>{
   const border=new THREE.Group();border.name='Граница тематических флангов '+(i+1);root.add(border);boundaries.push(border);
   ribbon(border,points,32,ink(FLANK_DISTRICTS[i].color,.14,true),-1.85,-8);
   ribbon(border,points,32,ink(FLANK_DISTRICTS[i+1].color,.14,true),-1.83,8);
@@ -86,6 +96,13 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   ribbon(border,points,8,ink(FLANK_DISTRICTS[i+1].color,.58,true),-1.63,3.3);
   ribbon(border,points,2.2,ink(0xecfbff,1,true),-1.42);
  });
+ const perimeter=new THREE.Group();perimeter.name='Внешняя граница тематических флангов';root.add(perimeter);
+ for(const {key,points} of outerFragments){
+  const district=FLANK_DISTRICTS.find(d=>d.key===key);
+  ribbon(perimeter,points,32,ink(district.color,.14,true),-1.85);
+  ribbon(perimeter,points,8,ink(district.color,.58,true),-1.65);
+  ribbon(perimeter,points,2.2,ink(0xecfbff,1,true),-1.42);
+ }
  let alpha=0;
  // A flat map polygon sits below relief. Drape the same district colour over
  // the actual hill mesh, retaining its feathered footprint and depth shading.
@@ -103,17 +120,20 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
    const colors=new Float32Array(position.count*4);colors.fill(1);geometry.setAttribute('color',new THREE.BufferAttribute(colors,4));
   }
   geometry.computeBoundingBox();geometry.computeBoundingSphere();
-  const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,true));
+  const clipPolygon=polygons[FLANK_DISTRICTS.indexOf(district)];
+  const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,true,clipPolygon));
   overlay.name='Цвет фланга на рельефе · '+key;overlay.renderOrder=4;
-  overlay.userData={pickable:false,groundSurface:false,museumComponent:'flank-relief-overlay',flank:key};
+  overlay.userData={pickable:false,groundSurface:false,museumComponent:'flank-relief-overlay',flank:key,clipToDistrict:true};
   overlay.visible=alpha>.035;source.add(overlay);reliefSurfaces.push(overlay);
   overlay.material.uniforms.uOpacity.value=alpha*.19;
   return overlay;
  }
  function setOpacity(level){alpha=THREE.MathUtils.clamp(level,0,1);root.visible=alpha>.035;for(const{mat,strength}of materials)mat.uniforms.uOpacity.value=alpha*strength;for(const mesh of reliefSurfaces)mesh.visible=root.visible;}
  setOpacity(0);
- return {setOpacity,addTerrainSurface,state:()=>({version:'angular-territories-v3-relief',alpha,zoneCount:zones.length,
+ return {setOpacity,addTerrainSurface,state:()=>({version:FLANK_BOUNDARY_VERSION,alpha,zoneCount:zones.length,
   visibleZones:root.visible?zones.length:0,visibleBoundaries:root.visible?boundaries.length:0,
+  visibleOuterBoundaries:root.visible?1:0,outerBoundarySegments:FLANK_PERIMETER.reduce((n,p)=>n+p.points.length-1,0),
+  reference:FLANK_REFERENCE,outerBoundary:outline,polygons,reliefClipped:true,coordinateSystem:mapTransform?'osm-map':'original-schematic',
   reliefCount:reliefSurfaces.length,reliefFlanks:reliefSurfaces.map(m=>m.userData.flank),visibleReliefSurfaces:reliefSurfaces.filter(m=>m.visible&&m.parent.visible).length,
   thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
 }

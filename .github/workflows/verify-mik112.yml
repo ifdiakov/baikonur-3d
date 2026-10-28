@@ -1,15 +1,7 @@
 name: MIK112 and Energia transporters — verified publication
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/mik112.js'
-      - 'src/mik112-rail.js'
-      - 'scripts/integrate-mik112.mjs'
-      - 'scripts/refine-mik112.mjs'
-      - 'scripts/relocate-mik112.mjs'
-      - 'tests/mik112-browser.mjs'
-      - '.github/workflows/verify-mik112.yml'
   workflow_dispatch:
 concurrency:
   group: museum-mik112

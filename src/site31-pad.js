@@ -1,18 +1,23 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261028-museum4-v1';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-v1';
+import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v1';
+import {buildSite31Trench} from './site31-trench.js?v=20261028-museum4-osm-live-v1';
+import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v1';
+export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v1';
 
 // Site 31 is its own exhibit, not Site 1's traced excavation transplanted to
 // a different map point. Photographs establish the two opening service masts,
 // four supporting arms, open bridge, lined excavation and lightning towers.
-// No overhead survey is available: the existing yaw and map anchor are kept.
-export const SITE31_VERSION='site31-detailed-v2';
+// The local plan and compass orientation now follow north-up WV03 imagery.
+// Heights and the museum diagram's global anchor remain approximate.
+export const SITE31_VERSION='site31-satellite-trench-v3';
 export const SITE31_SOURCES=Object.freeze([
+ SITE31_REFERENCE.sourceUrl,
+ SITE31_REFERENCE.metadataUrl,
  'https://www.russian.space/multimedia/foto/?PAGEN_1=2',
  'https://www.russian.space/upload/iblock/c07/11221_d.jpg',
  'https://sufps70.organizations.mchs.gov.ru/deyatelnost/press-centr/novosti/4233814'
 ]);
-export const SITE31_PIT=Object.freeze({x:0,z:-16,rx:42,rz:58,yaw:0,shape:'ellipse'});
 export const SITE31_PORTS=Object.freeze({road:[60,.1,133],rail:[0,.48,174]});
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 
@@ -39,35 +44,20 @@ export function buildSite31Pad(root){
   const m=k.direct(new THREE.TorusGeometry(radius,tube,8,64),material,tag,parent);m.rotation.x=Math.PI/2;m.position.y=y;return m;
  }
 
- // The rim and the shader cutout have precisely the same ellipse. Each panel
- // reaches below grade; the excavation is not a dark painted patch on terrain.
- k.cutouts.push({...SITE31_PIT});
- const rim=[],floor=[],segments=72,floorY=-24;
- for(let i=0;i<segments;i++){
-  const a=i/segments*Math.PI*2;
-  rim.push([42*Math.cos(a),0,-16+58*Math.sin(a)]);
-  floor.push([20*Math.cos(a),floorY,-27+31*Math.sin(a)]);
- }
- for(let i=0;i<segments;i++){
-  const j=(i+1)%segments,a=rim[i],b=rim[j],c=floor[i],d=floor[j];
-  const midA=V(...a).lerp(V(...c),.55).toArray(),midB=V(...b).lerp(V(...d),.55).toArray();
-  k.quad(a,midA,midB,b,'concrete','lined-excavation-upper-bank');
-  k.quad(midA,c,d,midB,'concrete','lined-excavation-lower-bank');
-  k.rod([a[0],.07,a[2]],[b[0],.07,b[2]],.16,'wall','excavation-rim-coping');
-  if(i%3===0){const aa=V(...a).add(V(0,.035,0)),cc=V(...c).add(V(0,.035,0));k.rod(aa.toArray(),cc.toArray(),.032,'dark','concrete-panel-joint');}
-  k.rod(V(...midA).add(V(0,.035,0)).toArray(),V(...midB).add(V(0,.035,0)).toArray(),.035,'dark','concrete-panel-joint');
- }
- k.poly(floor.map(p=>[p[0],p[2]]),floorY,'dark','open-flame-chamber-floor');
- // Thin apron pieces remain outside the hole, rather than covering it.
+ // One georeferenced outline drives both the actual concrete banks and the
+ // terrain cutout. The floor continues under the table and rises to the mouth.
+ const trench=buildSite31Trench(k),floorY=trench.floorY;
+ // Service yards sit behind/beside the launch position, outside its wide bowl.
+ const forecourtRight=z=>47+(z-44)*3/106;
  k.poly([[-47,44],[47,44],[50,150],[-50,150]],.06,'concrete','rail-forecourt');
- k.poly([[-69,-78],[-47,-78],[-47,43],[-69,43]],.06,'concrete','western-utility-apron');
- k.poly([[47,-78],[69,-78],[69,43],[47,43]],.06,'concrete','eastern-utility-apron');
+ k.poly([[-177,1],[-130,3],[-105,38],[-98,79],[-58,81],[-52,115],[-87,126],[-124,100],[-156,52]],.06,'concrete','southwestern-service-yard');
+ k.poly([[113,21],[174,18],[188,42],[172,68],[132,96],[106,121],[forecourtRight(122),122],[forecourtRight(59),59],[82,59]],.06,'concrete','northeastern-service-yard');
 
  // Open concrete bridge: separate cheeks and a rear crosswalk leave the
  // axial launch passage and the space beneath the launch ring unobstructed.
  for(const s of [-1,1]){
   k.box(14,2.2,65,s*28,-.9,4,'concrete','launch-bridge-side');
-  k.box(11,17,11,s*27,-9.5,-20,'concrete','bridge-foundation-pier');
+  k.box(11,24,11,s*27,-13,-20,'concrete','bridge-foundation-pier');
   k.box(11,20,10,s*27,-11,24,'concrete','bridge-foundation-pier');
   k.box(.45,2,65,s*35.3,.3,4,'rust','bridge-edge-girder');
   for(let z=-26;z<=32;z+=3.1)k.box(.16,5.8,.23,s*34.9,-4.0,z,'light','bridge-corrugated-underside');
@@ -87,12 +77,29 @@ export function buildSite31Pad(root){
   for(let z=10;z<35;z+=5)k.rod([s*5.3,-2.3,z],[s*5.3,-.8,z+4.5],.13,'steel','rail-approach-bridge-brace');
  }
  // Gallery and staircase descend alongside the opening, never through it.
+ function bankHeight(x,z){
+  const i=trench.sections.findIndex(s=>s.z<=z);if(i<1)return 0;
+  const a=trench.sections[i-1],b=trench.sections[i],t=(a.z-z)/(a.z-b.z);
+  const at=key=>THREE.MathUtils.lerp(a[key],b[key],t),left=at('left'),right=at('right');
+  if(x<left||x>right)return 0;
+  const fl=at('floorLeft'),fr=at('floorRight'),y=at('floorY');
+  if(x>=fl&&x<=fr)return y;
+  const fraction=x<fl?(x-fl)/(left-fl):(x-fr)/(right-fr);
+  const rise=fraction<.18?fraction*.72:.1296+(fraction-.18)*(.8704/.82);
+  return y*(1-rise);
+ }
  for(const s of [-1,1]){
-  const start=V(s*36,-.1,25),end=V(s*20,-23,-24),count=42;
-  for(let i=0;i<=count;i++){const p=start.clone().lerp(end,i/count);k.box(2.2,.26,1.05,p.x,p.y,p.z,'concrete','excavation-stair-tread');}
+  const start=s<0?V(-52,0,1):V(43,0,9),end=s<0?V(-20,0,-20):V(10,0,-20),count=58;
+  const direction=end.clone().sub(start),yaw=Math.atan2(direction.x,direction.z),normal=V(direction.z,0,-direction.x).normalize();
+  const steps=Array.from({length:count+1},(_,i)=>{const p=start.clone().lerp(end,i/count);p.y=bankHeight(p.x,p.z)+.19;return p;});
+  for(const p of steps)k.box(2.2,.26,1.05,p.x,p.y,p.z,'concrete','excavation-stair-tread',yaw);
   for(const xoff of [-1.2,1.2]){
-   k.rod(start.clone().add(V(xoff,1.2,0)).toArray(),end.clone().add(V(xoff,1.2,0)).toArray(),.075,'light','excavation-stair-handrail');
-   for(let i=0;i<=count;i+=4){const p=start.clone().lerp(end,i/count);k.rod(p.clone().add(V(xoff,0,0)).toArray(),p.clone().add(V(xoff,1.2,0)).toArray(),.065,'steel','excavation-stair-post');}
+   for(let i=1;i<steps.length;i++){
+    const a=steps[i-1].clone().addScaledVector(normal,xoff),b=steps[i].clone().addScaledVector(normal,xoff);
+    k.rod(a.clone().add(V(0,1.2,0)).toArray(),b.clone().add(V(0,1.2,0)).toArray(),.075,'light','excavation-stair-handrail');
+    k.rod(a.clone().add(V(0,-.13,0)).toArray(),b.clone().add(V(0,-.13,0)).toArray(),.09,'steel','excavation-stair-stringer');
+   }
+   for(let i=0;i<=count;i+=4){const p=steps[i].clone().addScaledVector(normal,xoff);k.rod(p.toArray(),p.clone().add(V(0,1.2,0)).toArray(),.065,'steel','excavation-stair-post');}
   }
  }
 
@@ -211,21 +218,26 @@ export function buildSite31Pad(root){
  }
 
  // The real network ports are unchanged: road [60,.1,133], track [0,.48,174].
- // One continuous ribbon rounds the U-road; its apron has a lower datum.
- const roadCurve=new THREE.CatmullRomCurve3([[-59,139],[-57,65],[-55,18],[-55,-53],[-47,-82],[0,-91],[47,-82],[56,-51],[57,32],[60,95],[60,133]].map(([x,z])=>V(x,0,z)),false,'centripetal');
- const roadPoints=roadCurve.getPoints(180).map(p=>[p.x,p.z]);
+ // The two service courts connect behind the pad, as in the image. There is
+ // no U-road across the exhaust outlet. The south edge of the straight rear
+ // section is the existing port at [60,133], forming one clean T-junction.
+ const accessControlPoints=[[-158,14],[-143,24],[-131,42],[-122,65],[-118,89],[-109,109],[-93,123],[-72,130],[-40,130],[-8,130],[24,130],[48,130],[72,130],[79,130],[88,126],[97,116],[109,100],[116,80],[128,61],[149,49],[171,44]];
+ const roadCurve=new THREE.CatmullRomCurve3(accessControlPoints.map(([x,z])=>V(x,0,z)),false,'centripetal');
+ const roadPoints=roadCurve.getSpacedPoints(240).map(p=>[p.x,p.z]);
  k.path(roadPoints,6,.10,'asphalt','continuous-site31-access-road');
  k.rail([[0,174],[0,42],[0,9]],{y:.30,tag:'site31-incoming-rail'});
  // Keep the centreline over the deck clear. The high erector sides do not
  // substitute for the two running rails and regularly spaced sleepers.
  const result=k.finish();
  const metadata={version:SITE31_VERSION,siteId:'pad-31',name:'Стартовая позиция 31/6 · семейство «Союз»',
-  status:'Приблизительная детализированная музейная реконструкция; размеры и азимут предварительны.',
-  referenceBasis:'Фотографии КЦ «Южный» / ЦЭНКИ; общая композиция и типы конструкций, не обмер.',
-  sources:[...SITE31_SOURCES],orientationVerified:false,groundDatum:0,pitFloorY:floorY,pit:{...SITE31_PIT},
+  status:'Контур газоотвода и разворот сверены по спутниковому снимку WorldView-3 от 09.08.2025. Высоты и скрытые под мостом участки реконструированы приблизительно.',
+  referenceBasis:'Esri World Imagery / Vantor Vivid: плановая обводка; фотографии КЦ «Южный» / ЦЭНКИ: конструкции. Не инженерный обмер.',
+  sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'local-plan-from-satellite',
+  heightsVerified:false,globalMapAnchorSurveyed:false,yaw:SITE31_YAW,satellite:SITE31_REFERENCE,
+  groundDatum:0,pitFloorY:floorY,pit:SITE31_PIT,trench,
   launchPassage:{radius:6.8,openBelowDeck:true},serviceMasts:2,serviceDecks:serviceDecks.length,mastAngles,
   supportingArms:4,rocketExhibit:true,rocketState:'illustrative-prelaunch',
-  roadPort:[...SITE31_PORTS.road],railPort:[...SITE31_PORTS.rail],
+  roadPort:[...SITE31_PORTS.road],railPort:[...SITE31_PORTS.rail],roadLayout:'two-service-yards-connected-behind-launch-pad',
   railGauge:RAIL_PROFILE.gauge,featureCounts:result.features,primitiveCount:result.primitiveCount,drawCalls:result.meshCount};
  root.userData.site31Model=metadata;root.userData.orientationNote=metadata.status;
  root.userData.site31Apertures=apertures;

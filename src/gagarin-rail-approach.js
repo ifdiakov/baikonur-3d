@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-v1';
+import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-osm-live-v1';
 
 // Exact dimensions of the existing Pad 1 track, transformed by its approved
 // model scale. Network railwork uses the same cross-section throughout.

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261028-museum4-v1';
+import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v1';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
  krayniy:{length:1550,referenceLength:3100,longitudinalScale:.5,width:45,heading:2.06},

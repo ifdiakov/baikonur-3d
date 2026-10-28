@@ -1,0 +1,42 @@
+name: Flank boundaries — registered outline and preserved style
+# Historical schematic checks are retained for manual inspection.
+# The OSM live product is checked and released by verify-osm-release.yml.
+on:
+  workflow_dispatch:
+concurrency:
+  group: baikonur-flank-boundaries
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser and geometry dependencies
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Verify actual fill, shared edges and unchanged materials
+        run: node tests/flanks-geometry.mjs
+      - name: Verify local contours, relief clipping and flank cards
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/flanks-browser.mjs
+      - name: Verify the published source bytes
+        run: node scripts/verify-published.mjs
+      - name: Verify published contours, relief clipping and flank cards
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?flanks=${{ github.sha }}
+          QA_PREFIX: public
+        run: node tests/flanks-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: flank-boundaries-qa
+          path: qa-flanks/

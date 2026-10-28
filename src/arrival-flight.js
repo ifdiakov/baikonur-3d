@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION} from './aircraft-livery.js?v=20261028-alrosa-orbit-v2';
+import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION} from './aircraft-livery.js?v=20261028-museum4-osm-live-v1';
 
-import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261028-museum4-v1';
+import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261028-museum4-osm-live-v1';
 export {FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION};
-// krayniy-circuit-v4: automatic two-sortie circuit, including runway turnaround.
+// Airport transforms and the complex centre define the complete two-sortie circuit.
 const V=(x,y,z)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,t)=>{const u=clamp((t-a)/(b-a),0,1);return u*u*(3-2*u);};
-export const createArrivalPath=airfield=>createFlightCircuit(airfield,{aircraftScale:AIRCRAFT_SCALE});
+export const createArrivalPath=(airfield,options={})=>createFlightCircuit(airfield,{...options,aircraftScale:AIRCRAFT_SCALE});
 export const arrivalPose=(path,seconds)=>flightPose(path,seconds,{aircraftScale:AIRCRAFT_SCALE});
 
 function buildContrails(parent,path){
@@ -39,7 +39,7 @@ function buildContrails(parent,path){
  function update(time,camera){visibleSamples=0;const lastVisible=[null,null];
   for(let lane=0;lane<2;lane++)for(let i=0;i<count;i++){
    const age=i/(count-1)*38,emitted=time-age,state=path.sample(Math.max(0,emitted)),p=state.position.clone();
-   const enabled=emitted>=0&&state.visible&&!state.onGround&&state.position.y-path.runwayY>90;
+   const enabled=emitted>=0&&state.visible&&!state.onGround&&state.position.y-state.runwayY>90;
    const right=new THREE.Vector3().crossVectors(state.heading,V(0,1,0)).normalize();
    p.addScaledVector(right,(lane?6:-6)*AIRCRAFT_SCALE).addScaledVector(state.heading,-4*AIRCRAFT_SCALE);p.y-=1.65*AIRCRAFT_SCALE;
    p.x+=Math.sin(emitted*.4+lane)*age*.055;p.y+=age*.07;
@@ -57,11 +57,12 @@ function buildContrails(parent,path){
  return {mesh,update,stats:()=>({visibleSamples,maxAge:38,emissionAbove:90,cycleDuration:FLIGHT_CYCLE_DURATION})};
 }
 
-export function createArrivalFlight({scene,camera,controls,canvas,airfield,container,onFollow}){
- const path=createArrivalPath(airfield),root=new THREE.Group();root.name='Крайний · непрерывный цикл полётов';root.userData.pickable=false;scene.add(root);
+export function createArrivalFlight({scene,camera,controls,canvas,airfield,firstAirfield=airfield,complexCenter,container,onFollow}){
+ const path=createArrivalPath(airfield,{firstAirfield,complexCenter}),root=new THREE.Group();root.name='Юбилейный — Крайний · непрерывный цикл полётов';root.userData.pickable=false;scene.add(root);
  const craft=buildAircraft(root),trail=buildContrails(scene,path);
  let elapsed=0,following=false,paused=false,lastNow=null,uiSecond=-1,lastTrail=-1,state=path.sample(0),forced=null;
  container.innerHTML='<div class="arrival-title"><span class="arrival-dot"></span><span>КРАЙНИЙ · ПОЛЁТ ПО КРУГУ</span><time id="arrivalClock" title="До следующего этапа">02:00</time></div><div class="arrival-bottom"><span id="arrivalPhase">Над космодромом</span><button id="arrivalFollow" type="button" aria-pressed="false">Следить</button><button id="arrivalReplay" type="button" aria-label="Начать цикл полёта заново" title="Начать цикл заново">↺</button></div><div class="arrival-hint">Мышь или палец — вращение · колесо — приближение</div>';
+ if(firstAirfield!==airfield)container.querySelector('.arrival-title span:nth-child(2)').textContent='ЮБИЛЕЙНЫЙ · КРАЙНИЙ';
  const follow=container.querySelector('#arrivalFollow'),replay=container.querySelector('#arrivalReplay'),clock=container.querySelector('#arrivalClock'),label=container.querySelector('#arrivalPhase');
  const labels={overflight:'Над космодромом',approach:'Заход на посадку',flare:'Над полосой',rollout:'Пробег до 4/5 ВПП',hold:'Стоянка · 20 секунд','turn-back':'Разворот для руления','taxi-back':'Возвращение к началу ВПП','turn-takeoff':'Разворот перед взлётом',takeoff:'Разгон и взлёт',departure:'Пролёт через комплекс',away:'Возвращение через минуту'};
  const followTarget=new THREE.Vector3(),savedControls={};
@@ -107,6 +108,7 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,conta
    renderedPitchDeg:Math.asin(V(0,0,1).applyQuaternion(craft.model.quaternion).y)*180/Math.PI,
    mainWheelBottom:craft.model.localToWorld(V(3,-2.72,-3)).y-.46*AIRCRAFT_SCALE,
    noseWheelBottom:craft.model.localToWorld(V(0,-2.72,12)).y-.46*AIRCRAFT_SCALE,
-   gear:state.gear,onGround:state.onGround,runwayY:path.runwayY,touchdown:path.touchdown.toArray(),axis:path.axis.toArray(),stop:path.stop.toArray(),stopFraction:path.stopFraction,runwayProgress:state.runwayProgress,timeline:path.phases,
+   gear:state.gear,onGround:state.onGround,airport:state.airport,runwayY:state.runwayY,touchdown:state.touchdown.toArray(),axis:state.axis.toArray(),stop:state.stop.toArray(),stopFraction:path.stopFraction,runwayProgress:state.runwayProgress,timeline:path.phases,
+   complexCenter:path.complexCenter.toArray(),airports:path.runways.map(r=>({key:r.key,center:r.center.toArray(),length:r.length,width:r.width,touchdown:r.touchdown.toArray(),stop:r.stop.toArray()})),
    strobeVisible:craft.strobes.root.visible,beaconVisible:craft.beacon.root.visible,trail:trail.stats()})};
 }

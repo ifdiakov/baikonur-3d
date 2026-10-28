@@ -1,0 +1,4055 @@
+{
+  "schemaVersion": 1,
+  "descriptionRussian": "Независимое сопоставление 98 записей музейного каталога с явно именованными объектами OpenStreetMap. Это таблица доказательств для последующей геопривязки; размещение сцены не изменено.",
+  "source": {
+    "sourceUrl": "https://www.openstreetmap.org/#map=11/45.9256/63.4598",
+    "endpoint": "https://overpass-api.de/api/interpreter",
+    "osmBaseTimestamp": "2026-10-28T17:10:51Z",
+    "sourceSha256": "022b52c660c3195ec7815a2b65e1d21d617d680e002a0f1d2240b56d13ead744",
+    "elementCount": 6312,
+    "queryFile": "baikonur.overpassql",
+    "selectionBBoxWsen": [
+      62.75,
+      45.58,
+      64.25,
+      46.25
+    ],
+    "attribution": "© OpenStreetMap contributors",
+    "attributionUrl": "https://www.openstreetmap.org/copyright",
+    "license": "ODbL-1.0",
+    "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/"
+  },
+  "catalog": {
+    "file": "../catalog.json",
+    "sha256": "5b8a6465bca5cb7d85ddd9a025ad82bdf54fd913b66aff53a7b385490cc6a3e3",
+    "recordCount": 98,
+    "schematicMapSize": [
+      1300,
+      1045
+    ]
+  },
+  "coordinateConvention": "representativeLonLat is WGS84 [longitude, latitude]; originalSchematic is the unchanged museum [x, y] plan coordinate pair.",
+  "statusLegendRussian": {
+    "exact-facility": "Однозначное именованное сооружение или аэродром: выбран его собственный контур. Совпадение не подтверждает начало координат 3D-модели.",
+    "exact-compound": "Однозначно именованная площадка, общая территория или городской контур. Внутренние модельные опоры не определены.",
+    "multiple-candidates": "Есть несколько точных совпадений номера или конфликт номера с именем; объект и координаты не выбраны.",
+    "unmatched": "В выбранной выгрузке не найдено достаточного именованного совпадения; это не доказательство физического отсутствия.",
+    "inactive-alias": "Неактивный псевдоним каталога; самостоятельного объекта и координат не получает."
+  },
+  "matchingPolicyRussian": [
+    "Каждая исходная запись каталога присутствует ровно один раз; originalSchematic скопирован без изменений.",
+    "Основание совпадения — явно указанное имя или номер в name/name:ru/name:en/key. Транспортные ref, похожие числа и близость к музейной метке не являются основанием сопоставления.",
+    "Буквенный суффикс номера сохраняется. Латинское A и кириллическое А сопоставлены как написания одного суффикса; площадка без суффикса не приравнена к площадке с суффиксом.",
+    "Служебное слово аэродром/аэропорт и кавычки нормализованы при совпадении собственных имён. Для гостиницы 7/семь зафиксирован кандидат по имени; конфликт с номером 75 оставлен нерешённым.",
+    "representativeLonLat заполнен только для exact-facility или exact-compound и только по явно выбранному замкнутому контуру. Это вычисленная представительная точка, а не стартовый стол, антенна, воротный проём или подтверждённое начало координат модели.",
+    "Единый контур Site 106 & 109 отмечен у обеих записей как общая территория; это не две независимо определённые площадки.",
+    "OSM — отдельный источник. Владельцы, назначения, история, модельные метаданные, размеры и повороты существующего проекта не перезаписаны."
+  ],
+  "coverageLimitationsRussian": [
+    "Выгрузка выбирает дороги, железную дорогу, aeroway, именованные/ref-объекты, military/industrial территории и некоторые сооружения. Она не содержит всех безымянных зданий.",
+    "Отсутствие совпадения означает отсутствие достаточного именованного свидетельства в этой выгрузке; другие теги, неполнота картографирования и объекты за пределами bbox отдельно не исследованы.",
+    "Статус exact относится к однозначности имени/номера и выбранного контура в текущих данных OSM, а не к проверке геодезической точности, исторической достоверности или актуальной эксплуатации.",
+    "Отдельные площадки представлены несколькими уровнями: общий контур, сооружения и точки подписи. Эти уровни не считаются автоматически взаимозаменяемыми.",
+    "Высоты, ориентация и точные опоры всех активных музейных моделей остаются unresolved."
+  ],
+  "summary": {
+    "records": 98,
+    "statusCounts": {
+      "exact-facility": 5,
+      "unmatched": 26,
+      "exact-compound": 63,
+      "inactive-alias": 1,
+      "multiple-candidates": 3
+    },
+    "withRepresentativeCoordinates": 68,
+    "unresolvedActiveModelAnchors": 97,
+    "multipleCandidatesSiteIds": [
+      "pad-92",
+      "pad-104",
+      "pad-75"
+    ],
+    "unmatchedSiteIds": [
+      "pad-2a",
+      "pad-2b",
+      "pad-112a",
+      "pad-141",
+      "pad-115b",
+      "pad-194",
+      "sector-nw1",
+      "sector-nw2",
+      "sector-north",
+      "sector-north-center",
+      "sector-northeast",
+      "sector-south-junction",
+      "sector-south",
+      "sector-east-center",
+      "sector-west-center",
+      "sector-south-east",
+      "sector-citynorth",
+      "pad-91",
+      "pad-83",
+      "pad-201",
+      "pad-204",
+      "pad-57",
+      "pad-241",
+      "pad-3",
+      "pad-3а",
+      "pad-3б"
+    ],
+    "inactiveAliasSiteIds": [
+      "sector-east"
+    ]
+  },
+  "matches": [
+    {
+      "siteId": "pad-1",
+      "catalogName": "Площадка № 1 — Гагаринский старт",
+      "catalogNumber": "1",
+      "status": "exact-facility",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172571408,
+          "url": "https://www.openstreetmap.org/way/172571408",
+          "name": "Гагаринский старт",
+          "role": "facility-footprint",
+          "nameTags": {
+            "key": "Pad 1",
+            "name": "Гагаринский старт",
+            "name:en": "Gagarin's Start"
+          },
+          "featureTags": {
+            "disused:aeroway": "launchpad",
+            "historic": "launchpad",
+            "wikidata": "Q2580456"
+          }
+        },
+        {
+          "type": "way",
+          "id": 169400814,
+          "url": "https://www.openstreetmap.org/way/169400814",
+          "name": "Launch Complex 1 (Gagarin's_Start)",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Launch Complex 1 (Gagarin's_Start)",
+            "name:en": "Launchpad 1/5  (Gagarin's_Start)",
+            "name:ru": "Площадка 1 (Гагаринский старт)"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "area": "yes",
+            "landuse": "military",
+            "wikidata": "Q2580456"
+          }
+        }
+      ],
+      "reasonRussian": "Точное совпадение имени «Гагаринский старт» и тега key=Pad 1 у контура стартового сооружения; отдельный контур явно подписан «Площадка 1 (Гагаринский старт)». Безконтекстное здание с именем Pad 1 не использовано для этой площадки.",
+      "representativeLonLat": [
+        63.3422511,
+        45.9202466
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172571408,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 699,
+        "y": 365
+      }
+    },
+    {
+      "siteId": "pad-2a",
+      "catalogName": "Площадка № 2А",
+      "catalogNumber": "2А",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Точного имени или номера 2А в выгрузке нет. Имеющийся Site 2 не подтверждает отдельную площадку 2А.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 594,
+        "y": 421
+      }
+    },
+    {
+      "siteId": "pad-2b",
+      "catalogName": "Площадка № 2Б",
+      "catalogNumber": "2Б",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Точного имени или номера 2Б в выгрузке нет. Имеющийся Site 2 не подтверждает отдельную площадку 2Б.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 676,
+        "y": 333
+      }
+    },
+    {
+      "siteId": "pad-110a",
+      "catalogName": "Площадка № 110А",
+      "catalogNumber": "110А",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454774742,
+          "url": "https://www.openstreetmap.org/way/454774742",
+          "name": "Site 110A",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 110A"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 110А: «Site 110A». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.2912745,
+        45.9490514
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454774742,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 617,
+        "y": 338
+      }
+    },
+    {
+      "siteId": "pad-112a",
+      "catalogName": "Площадка № 112А",
+      "catalogNumber": "112А",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Номер 112А в выгрузке не подтверждён. Найдены два отдельных здания с явными названиями MZK и SDI, соответствующими именам компонентов музейной модели «МЗК и СДИ». Это свидетельство об отдельных сооружениях, а не подтверждение номера или общей опоры модели.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 664,
+        "y": 327
+      },
+      "relatedNamedComponents": [
+        {
+          "type": "way",
+          "id": 172704643,
+          "url": "https://www.openstreetmap.org/way/172704643",
+          "name": "MZK fueling for Energia/Buran",
+          "role": "named-component-without-confirmed-site-number",
+          "tags": {
+            "aeroway": "hangar",
+            "building": "yes",
+            "height": "62",
+            "name": "MZK fueling for Energia/Buran"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172704656,
+          "url": "https://www.openstreetmap.org/way/172704656",
+          "name": "SDI test stand used for Energia/Buran",
+          "role": "named-component-without-confirmed-site-number",
+          "tags": {
+            "aeroway": "hangar",
+            "building": "yes",
+            "name": "SDI test stand used for Energia/Buran"
+          }
+        }
+      ]
+    },
+    {
+      "siteId": "pad-118",
+      "catalogName": "Площадка № 118",
+      "catalogNumber": "118",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454776754,
+          "url": "https://www.openstreetmap.org/way/454776754",
+          "name": "Site 118",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 118"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "brownfield"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 118: «Site 118». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.2574322,
+        45.9193433
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454776754,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 556,
+        "y": 356
+      }
+    },
+    {
+      "siteId": "pad-254",
+      "catalogName": "Площадка № 254",
+      "catalogNumber": "254",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454775433,
+          "url": "https://www.openstreetmap.org/way/454775433",
+          "name": "Site 254 Buran Testing/Maintenance",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 254 Buran Testing/Maintenance"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 254. Его имя в OSM — «Site 254 Buran Testing/Maintenance»; совпадение номера не подтверждает назначение «Союз» / «Прогресс» в каталоге. Описания и принадлежность не изменены.",
+      "representativeLonLat": [
+        63.3033508,
+        45.9226592
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454775433,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 585,
+        "y": 407
+      }
+    },
+    {
+      "siteId": "pad-113",
+      "catalogName": "Площадка № 113",
+      "catalogNumber": "113",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454775162,
+          "url": "https://www.openstreetmap.org/way/454775162",
+          "name": "Site 113 Energy/Housing",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 113 Energy/Housing"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 113: «Site 113 Energy/Housing». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.2816941,
+        45.9172942
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454775162,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 578,
+        "y": 397
+      }
+    },
+    {
+      "siteId": "pad-141",
+      "catalogName": "Площадка № 141",
+      "catalogNumber": "141",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В этой выгрузке не найден объект с явно указанным номером 141 или точным собственным именем из каталога. Это отсутствие подтверждённого совпадения в выбранных данных, а не доказательство отсутствия объекта на местности или в полной базе OSM.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 711,
+        "y": 395
+      }
+    },
+    {
+      "siteId": "pad-115b",
+      "catalogName": "Площадка № 115Б",
+      "catalogNumber": "115Б",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Точного имени или номера 115Б в выгрузке нет. Site 114B имеет другой номер и не принят как совпадение.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 580,
+        "y": 456
+      }
+    },
+    {
+      "siteId": "pad-194",
+      "catalogName": "Площадка № 194",
+      "catalogNumber": "194",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В этой выгрузке не найден объект с явно указанным номером 194 или точным собственным именем из каталога. Это отсутствие подтверждённого совпадения в выбранных данных, а не доказательство отсутствия объекта на местности или в полной базе OSM.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 623,
+        "y": 481
+      }
+    },
+    {
+      "siteId": "pad-193",
+      "catalogName": "Площадка № 193",
+      "catalogNumber": "193",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454778513,
+          "url": "https://www.openstreetmap.org/way/454778513",
+          "name": "Site 193",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 193"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 193: «Site 193». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.3887625,
+        45.9530689
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454778513,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 764,
+        "y": 307
+      }
+    },
+    {
+      "siteId": "sector-nw1",
+      "catalogName": "Северо-западный сектор — группа А",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 117,
+        "y": 80
+      }
+    },
+    {
+      "siteId": "sector-nw2",
+      "catalogName": "Северо-западный сектор — группа Б",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 190,
+        "y": 96
+      }
+    },
+    {
+      "siteId": "sector-north",
+      "catalogName": "Северный протяжённый комплекс",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 552,
+        "y": 113
+      }
+    },
+    {
+      "siteId": "sector-north-center",
+      "catalogName": "Северо-центральный сектор",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 608,
+        "y": 239
+      }
+    },
+    {
+      "siteId": "sector-northeast",
+      "catalogName": "Северо-восточный сектор",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 1040,
+        "y": 228
+      }
+    },
+    {
+      "siteId": "sector-east",
+      "catalogName": "Восточный комплекс",
+      "catalogNumber": null,
+      "status": "inactive-alias",
+      "active": false,
+      "osmRefs": [],
+      "reasonRussian": "Неактивный псевдоним каталога; самостоятельное географическое сопоставление не выполняется. Каноническая запись — pad-43.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "not-applicable",
+        "reasonRussian": "Самостоятельная модель псевдонима не размещается; используется каноническая запись."
+      },
+      "originalSchematic": {
+        "x": 1145,
+        "y": 278
+      },
+      "aliasOf": "pad-43"
+    },
+    {
+      "siteId": "sector-south-junction",
+      "catalogName": "Южная транспортная группа",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 675,
+        "y": 518
+      }
+    },
+    {
+      "siteId": "sector-south",
+      "catalogName": "Южная техническая группа",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 667,
+        "y": 755
+      }
+    },
+    {
+      "siteId": "city",
+      "catalogName": "Город Байконур",
+      "catalogNumber": null,
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 39209179,
+          "url": "https://www.openstreetmap.org/way/39209179",
+          "name": "Байқоңыр",
+          "role": "settlement-boundary",
+          "nameTags": {
+            "name": "Байқоңыр",
+            "name:en": "Baikonur",
+            "name:ru": "Байконур"
+          },
+          "featureTags": {
+            "place": "city"
+          }
+        },
+        {
+          "type": "node",
+          "id": 271092323,
+          "url": "https://www.openstreetmap.org/node/271092323",
+          "name": "Байқоңыр",
+          "role": "place-label",
+          "nameTags": {
+            "int_name": "Bayqoñır",
+            "name": "Байқоңыр",
+            "name:en": "Baikonur",
+            "name:ru": "Байконур"
+          },
+          "featureTags": {
+            "place": "city",
+            "wikidata": "Q165413"
+          }
+        }
+      ],
+      "reasonRussian": "Совпали name:ru=Байконур, name:en=Baikonur и place=city у контура города и узла подписи. Представительная точка рассчитана по городскому контуру. Административная граница и весь космодром — другие объекты и сюда не включены.",
+      "representativeLonLat": [
+        63.303447,
+        45.6276084
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 39209179,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 710,
+        "y": 924
+      }
+    },
+    {
+      "siteId": "airfield",
+      "catalogName": "Аэродром «Крайний»",
+      "catalogNumber": null,
+      "status": "exact-facility",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 46410994,
+          "url": "https://www.openstreetmap.org/way/46410994",
+          "name": "Крайный әуежайы - Байқоңыр",
+          "role": "facility-footprint",
+          "nameTags": {
+            "int_name": "Kraynıy äwejayı - Bayqoñır",
+            "name": "Крайный әуежайы - Байқоңыр",
+            "name:en": "Baikonur Krayniy Airport",
+            "name:ru": "Аэропорт Крайний — Байконур"
+          },
+          "featureTags": {
+            "aeroway": "aerodrome",
+            "wikidata": "Q4237467"
+          }
+        }
+      ],
+      "reasonRussian": "Точное именованное соответствие аэродрому «Крайний»: name:ru=Аэропорт Крайний — Байконур, name:en=Baikonur Krayniy Airport. Использован общий контур аэродрома.",
+      "representativeLonLat": [
+        63.2107783,
+        45.6208636
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 46410994,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 539,
+        "y": 962
+      }
+    },
+    {
+      "siteId": "sector-east-center",
+      "catalogName": "Восточно-центральный сектор",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 840,
+        "y": 448
+      }
+    },
+    {
+      "siteId": "sector-west-center",
+      "catalogName": "Западно-центральный сектор",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 503,
+        "y": 305
+      }
+    },
+    {
+      "siteId": "sector-south-east",
+      "catalogName": "Юго-восточный сектор",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 815,
+        "y": 676
+      }
+    },
+    {
+      "siteId": "sector-citynorth",
+      "catalogName": "Северная городская инфраструктура",
+      "catalogNumber": null,
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Условный сектор музейной схемы не имеет подтверждённого собственного имени или номера в OSM. Совпадение по положению и ближайшие объекты не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 664,
+        "y": 898
+      }
+    },
+    {
+      "siteId": "pad-90",
+      "catalogName": "Площадка № 90",
+      "catalogNumber": "90",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172967751,
+          "url": "https://www.openstreetmap.org/way/172967751",
+          "name": "Site 90",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 90"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 90: «Site 90». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9320772,
+        46.080522
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172967751,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 108,
+        "y": 55
+      }
+    },
+    {
+      "siteId": "pad-91",
+      "catalogName": "Площадка № 91",
+      "catalogNumber": "91",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Точного имени Site 91 / Площадка 91 в выгрузке нет. Site 91A имеет буквенный суффикс и не приравнен к площадке 91.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 92,
+        "y": 87
+      }
+    },
+    {
+      "siteId": "pad-92",
+      "catalogName": "Площадка № 92",
+      "catalogNumber": "92",
+      "status": "multiple-candidates",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454627670,
+          "url": "https://www.openstreetmap.org/way/454627670",
+          "name": "Site 92",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 92"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454633553,
+          "url": "https://www.openstreetmap.org/way/454633553",
+          "name": "Site 92 (Missile processing)",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 92 (Missile processing)"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Точный номер 92 встречается у 2 разных контуров OSM. По номеру нельзя однозначно выбрать контур. Близость к текущему положению на музейной схеме не использована.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 115,
+        "y": 117
+      }
+    },
+    {
+      "siteId": "pad-92а",
+      "catalogName": "Площадка № 92А",
+      "catalogNumber": "92А",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454632919,
+          "url": "https://www.openstreetmap.org/way/454632919",
+          "name": "Site 92A",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 92A"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 92А: «Site 92A». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.924039,
+        46.0611603
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454632919,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 130,
+        "y": 119
+      }
+    },
+    {
+      "siteId": "pad-93",
+      "catalogName": "Площадка № 93",
+      "catalogNumber": "93",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172710404,
+          "url": "https://www.openstreetmap.org/way/172710404",
+          "name": "Site 93",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 93"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 93: «Site 93». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.8916999,
+        46.0564619
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172710404,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 68,
+        "y": 109
+      }
+    },
+    {
+      "siteId": "pad-94",
+      "catalogName": "Площадка № 94",
+      "catalogNumber": "94",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172710403,
+          "url": "https://www.openstreetmap.org/way/172710403",
+          "name": "Site 94",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 94"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 94: «Site 94». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.8609924,
+        46.0698491
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172710403,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 24,
+        "y": 84
+      }
+    },
+    {
+      "siteId": "pad-94а",
+      "catalogName": "Площадка № 94А",
+      "catalogNumber": "94А",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172710399,
+          "url": "https://www.openstreetmap.org/way/172710399",
+          "name": "Site 94A",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 94A"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 94А: «Site 94A». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.8596474,
+        46.0594117
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172710399,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 24,
+        "y": 104
+      }
+    },
+    {
+      "siteId": "pad-95",
+      "catalogName": "Площадка № 95",
+      "catalogNumber": "95",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454637000,
+          "url": "https://www.openstreetmap.org/way/454637000",
+          "name": "Site 95",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 95"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 95: «Site 95». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9446093,
+        46.0536962
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454637000,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 145,
+        "y": 114
+      }
+    },
+    {
+      "siteId": "pad-96",
+      "catalogName": "Площадка № 96",
+      "catalogNumber": "96",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454627669,
+          "url": "https://www.openstreetmap.org/way/454627669",
+          "name": "Site 96",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 96"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 96: «Site 96». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9379564,
+        46.0692373
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454627669,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 138,
+        "y": 88
+      }
+    },
+    {
+      "siteId": "pad-97",
+      "catalogName": "Площадка № 97",
+      "catalogNumber": "97",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454626308,
+          "url": "https://www.openstreetmap.org/way/454626308",
+          "name": "Site 97",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 97"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 97: «Site 97». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9351586,
+        46.0630249
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454626308,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 113,
+        "y": 96
+      }
+    },
+    {
+      "siteId": "pad-98",
+      "catalogName": "Площадка № 98",
+      "catalogNumber": "98",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454627672,
+          "url": "https://www.openstreetmap.org/way/454627672",
+          "name": "Site 98",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 98"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 98: «Site 98». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9276289,
+        46.067008
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454627672,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 126,
+        "y": 66
+      }
+    },
+    {
+      "siteId": "pad-89",
+      "catalogName": "Площадка № 89",
+      "catalogNumber": "89",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454643144,
+          "url": "https://www.openstreetmap.org/way/454643144",
+          "name": "Site 89",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 89"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 89: «Site 89». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9413122,
+        46.0397512
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454643144,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 146,
+        "y": 144
+      }
+    },
+    {
+      "siteId": "pad-130",
+      "catalogName": "Площадка № 130",
+      "catalogNumber": "130",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454627671,
+          "url": "https://www.openstreetmap.org/way/454627671",
+          "name": "Site 130",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 130"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 130: «Site 130». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9149715,
+        46.0852667
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454627671,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 92,
+        "y": 63
+      }
+    },
+    {
+      "siteId": "pad-174",
+      "catalogName": "Площадка № 174",
+      "catalogNumber": "174",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454627673,
+          "url": "https://www.openstreetmap.org/way/454627673",
+          "name": "Site 174",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 174"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 174: «Site 174». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9180451,
+        46.0817857
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454627673,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 93,
+        "y": 65
+      }
+    },
+    {
+      "siteId": "pad-160",
+      "catalogName": "Площадка № 160",
+      "catalogNumber": "160",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454627668,
+          "url": "https://www.openstreetmap.org/way/454627668",
+          "name": "Site 160",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 160"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 160: «Site 160». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9431901,
+        46.0773246
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454627668,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 138,
+        "y": 69
+      }
+    },
+    {
+      "siteId": "pad-131",
+      "catalogName": "Площадка № 131",
+      "catalogNumber": "131",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 169401457,
+          "url": "https://www.openstreetmap.org/way/169401457",
+          "name": "Site 131",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 131"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 131: «Site 131». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9563712,
+        46.0710398
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 169401457,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 161,
+        "y": 78
+      }
+    },
+    {
+      "siteId": "pad-81",
+      "catalogName": "Площадка № 81",
+      "catalogNumber": "81",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 169401250,
+          "url": "https://www.openstreetmap.org/way/169401250",
+          "name": "Launchpads 81/23 and 81/24 (Proton)",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Launchpads 81/23 and 81/24 (Proton)"
+          },
+          "featureTags": {
+            "aeroway": "launchpad",
+            "landuse": "military",
+            "wikidata": "Q4843263"
+          }
+        },
+        {
+          "type": "node",
+          "id": 12191888876,
+          "url": "https://www.openstreetmap.org/node/12191888876",
+          "name": "СК 81/24 (Протон)",
+          "role": "named-subfacility",
+          "nameTags": {
+            "name": "СК 81/24 (Протон)"
+          },
+          "featureTags": {
+            "aeroway": "launchpad",
+            "building": "yes"
+          }
+        }
+      ],
+      "reasonRussian": "Общий контур прямо называет обе установки «Launchpads 81/23 and 81/24 (Proton)». Отдельный узел «СК 81/24 (Протон)» подтверждает номер одной установки, но не определяет опору модели всей площадки.",
+      "representativeLonLat": [
+        62.9809506,
+        46.071388
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 169401250,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 189,
+        "y": 74
+      }
+    },
+    {
+      "siteId": "pad-82",
+      "catalogName": "Площадка № 82",
+      "catalogNumber": "82",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172964297,
+          "url": "https://www.openstreetmap.org/way/172964297",
+          "name": "Site 82",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 82"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 82: «Site 82». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9679769,
+        46.0583017
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172964297,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 181,
+        "y": 121
+      }
+    },
+    {
+      "siteId": "pad-83",
+      "catalogName": "Площадка № 83",
+      "catalogNumber": "83",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В этой выгрузке не найден объект с явно указанным номером 83 или точным собственным именем из каталога. Это отсутствие подтверждённого совпадения в выбранных данных, а не доказательство отсутствия объекта на местности или в полной базе OSM.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 179,
+        "y": 126
+      }
+    },
+    {
+      "siteId": "pad-84",
+      "catalogName": "Площадка № 84",
+      "catalogNumber": "84",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454646340,
+          "url": "https://www.openstreetmap.org/way/454646340",
+          "name": "Site 84",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 84"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 84: «Site 84». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9708555,
+        46.0691214
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454646340,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 157,
+        "y": 85
+      }
+    },
+    {
+      "siteId": "pad-175",
+      "catalogName": "Площадка № 175",
+      "catalogNumber": "175",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 169401733,
+          "url": "https://www.openstreetmap.org/way/169401733",
+          "name": "Site 175",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 175"
+          },
+          "featureTags": {
+            "aeroway": "launchpad",
+            "area": "yes",
+            "landuse": "military",
+            "wikidata": "Q14623187"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 175: «Site 175». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9848691,
+        46.0518502
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 169401733,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 196,
+        "y": 121
+      }
+    },
+    {
+      "siteId": "pad-200",
+      "catalogName": "Площадка № 200",
+      "catalogNumber": "200",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172571678,
+          "url": "https://www.openstreetmap.org/way/172571678",
+          "name": "Site 200 (Proton)",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 200 (Proton)"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military",
+            "wikidata": "Q4365460"
+          }
+        },
+        {
+          "type": "way",
+          "id": 169401766,
+          "url": "https://www.openstreetmap.org/way/169401766",
+          "name": "Launchpad 200/39 (Proton)",
+          "role": "named-subfacility",
+          "nameTags": {
+            "name": "Launchpad 200/39 (Proton)",
+            "name:ru": "Площадка 200 (Протон)"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 169401767,
+          "url": "https://www.openstreetmap.org/way/169401767",
+          "name": "Launchpad 200/40",
+          "role": "named-subfacility",
+          "nameTags": {
+            "name": "Launchpad 200/40"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "node",
+          "id": 687062703,
+          "url": "https://www.openstreetmap.org/node/687062703",
+          "name": "Pad 200/39 (Proton)",
+          "role": "named-subfacility",
+          "nameTags": {
+            "name": "Pad 200/39 (Proton)",
+            "name:ru": "СК 200/39 (Протон)"
+          },
+          "featureTags": {
+            "aeroway": "launchpad",
+            "building": "yes",
+            "wikidata": "Q6595132"
+          }
+        }
+      ],
+      "reasonRussian": "Однозначно подписан общий контур «Site 200 (Proton)». Отдельно подписаны территории 200/39 и 200/40 и узел СК 200/39. Представительная точка относится к общему комплексу, а не к одной из установок.",
+      "representativeLonLat": [
+        63.0342851,
+        46.0387186
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172571678,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 269,
+        "y": 135
+      }
+    },
+    {
+      "siteId": "pad-132",
+      "catalogName": "Площадка № 132",
+      "catalogNumber": "132",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454659928,
+          "url": "https://www.openstreetmap.org/way/454659928",
+          "name": "Site 132",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 132"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 132: «Site 132». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.0491867,
+        46.0351122
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454659928,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 270,
+        "y": 145
+      }
+    },
+    {
+      "siteId": "pad-161",
+      "catalogName": "Площадка № 161",
+      "catalogNumber": "161",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454772047,
+          "url": "https://www.openstreetmap.org/way/454772047",
+          "name": "Site 161",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 161"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 161: «Site 161». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.0639991,
+        46.0327526
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454772047,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 309,
+        "y": 156
+      }
+    },
+    {
+      "siteId": "pad-201",
+      "catalogName": "Площадка № 201",
+      "catalogNumber": "201",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В этой выгрузке не найден объект с явно указанным номером 201 или точным собственным именем из каталога. Это отсутствие подтверждённого совпадения в выбранных данных, а не доказательство отсутствия объекта на местности или в полной базе OSM.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 250,
+        "y": 154
+      }
+    },
+    {
+      "siteId": "pad-176",
+      "catalogName": "Площадка № 176",
+      "catalogNumber": "176",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454771945,
+          "url": "https://www.openstreetmap.org/way/454771945",
+          "name": "Site 176",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 176"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 176: «Site 176». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.045269,
+        46.0219895
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454771945,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 282,
+        "y": 176
+      }
+    },
+    {
+      "siteId": "pad-178",
+      "catalogName": "Площадка № 178",
+      "catalogNumber": "178",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172710401,
+          "url": "https://www.openstreetmap.org/way/172710401",
+          "name": "Site 178",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 178"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 178: «Site 178». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.8907196,
+        46.0248251
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172710401,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 68,
+        "y": 175
+      }
+    },
+    {
+      "siteId": "pad-182",
+      "catalogName": "Площадка № 182",
+      "catalogNumber": "182",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172967750,
+          "url": "https://www.openstreetmap.org/way/172967750",
+          "name": "Site 182",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 182"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 182: «Site 182». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.0187911,
+        46.0107872
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172967750,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 248,
+        "y": 195
+      }
+    },
+    {
+      "siteId": "pad-165",
+      "catalogName": "Площадка № 165",
+      "catalogNumber": "165",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454773463,
+          "url": "https://www.openstreetmap.org/way/454773463",
+          "name": "Site 165",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 165"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 165: «Site 165». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9182333,
+        45.9909103
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454773463,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 102,
+        "y": 239
+      }
+    },
+    {
+      "siteId": "pad-179",
+      "catalogName": "Площадка № 179",
+      "catalogNumber": "179",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454772921,
+          "url": "https://www.openstreetmap.org/way/454772921",
+          "name": "Site 179",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 179"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 179: «Site 179». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9637815,
+        45.98909
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454772921,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 169,
+        "y": 241
+      }
+    },
+    {
+      "siteId": "pad-71",
+      "catalogName": "Площадка № 71",
+      "catalogNumber": "71",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454770876,
+          "url": "https://www.openstreetmap.org/way/454770876",
+          "name": "Site 71",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 71"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 71: «Site 71». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.1371798,
+        45.9856877
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454770876,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 398,
+        "y": 241
+      }
+    },
+    {
+      "siteId": "pad-70",
+      "catalogName": "Площадка № 70",
+      "catalogNumber": "70",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454767903,
+          "url": "https://www.openstreetmap.org/way/454767903",
+          "name": "Site 70",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 70"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 70: «Site 70». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.0976077,
+        46.0316465
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454767903,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 373,
+        "y": 168
+      }
+    },
+    {
+      "siteId": "pad-163",
+      "catalogName": "Площадка № 163",
+      "catalogNumber": "163",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454770877,
+          "url": "https://www.openstreetmap.org/way/454770877",
+          "name": "Site 163",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 163"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 163: «Site 163». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.1692081,
+        46.0131434
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454770877,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 456,
+        "y": 194
+      }
+    },
+    {
+      "siteId": "pad-173",
+      "catalogName": "Площадка № 173",
+      "catalogNumber": "173",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454767901,
+          "url": "https://www.openstreetmap.org/way/454767901",
+          "name": "Site 173",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 173"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 173: «Site 173». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.1305005,
+        46.0292005
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454767901,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 404,
+        "y": 160
+      }
+    },
+    {
+      "siteId": "pad-172",
+      "catalogName": "Площадка № 172",
+      "catalogNumber": "172",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454767900,
+          "url": "https://www.openstreetmap.org/way/454767900",
+          "name": "Site 172",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 172"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 172: «Site 172». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.0861951,
+        46.0721758
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454767900,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 340,
+        "y": 80
+      }
+    },
+    {
+      "siteId": "pad-180",
+      "catalogName": "Площадка № 180",
+      "catalogNumber": "180",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454767899,
+          "url": "https://www.openstreetmap.org/way/454767899",
+          "name": "Site 180",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 180"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 180: «Site 180». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.1050447,
+        46.0451413
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454767899,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 368,
+        "y": 129
+      }
+    },
+    {
+      "siteId": "pad-203",
+      "catalogName": "Площадка № 203",
+      "catalogNumber": "203",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454773140,
+          "url": "https://www.openstreetmap.org/way/454773140",
+          "name": "Site 203",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 203"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 203: «Site 203». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        62.9794928,
+        45.9551702
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454773140,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 240,
+        "y": 275
+      }
+    },
+    {
+      "siteId": "pad-202",
+      "catalogName": "Площадка № 202",
+      "catalogNumber": "202",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454663438,
+          "url": "https://www.openstreetmap.org/way/454663438",
+          "name": "Site 202",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 202"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 202: «Site 202». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.0171618,
+        46.0262262
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454663438,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 260,
+        "y": 311
+      }
+    },
+    {
+      "siteId": "pad-204",
+      "catalogName": "Площадка № 204",
+      "catalogNumber": "204",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В этой выгрузке не найден объект с явно указанным номером 204 или точным собственным именем из каталога. Это отсутствие подтверждённого совпадения в выбранных данных, а не доказательство отсутствия объекта на местности или в полной базе OSM.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 285,
+        "y": 210
+      }
+    },
+    {
+      "siteId": "pad-170",
+      "catalogName": "Площадка № 170",
+      "catalogNumber": "170",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454772920,
+          "url": "https://www.openstreetmap.org/way/454772920",
+          "name": "Site 170",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 170"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 170: «Site 170». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.025845,
+        45.9476184
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454772920,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 375,
+        "y": 317
+      }
+    },
+    {
+      "siteId": "pad-164",
+      "catalogName": "Площадка № 164",
+      "catalogNumber": "164",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454772950,
+          "url": "https://www.openstreetmap.org/way/454772950",
+          "name": "Site 164",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 164"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 164: «Site 164». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.0640846,
+        45.9447706
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454772950,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 369,
+        "y": 322
+      }
+    },
+    {
+      "siteId": "pad-251",
+      "catalogName": "Площадка № 251",
+      "catalogNumber": "251",
+      "status": "exact-facility",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 241008130,
+          "url": "https://www.openstreetmap.org/way/241008130",
+          "name": "Юбилейный әуежайы",
+          "role": "facility-footprint",
+          "nameTags": {
+            "int_name": "Yubïleynıy äwejayı",
+            "name": "Юбилейный әуежайы",
+            "name:en": "Yubïleynıy Airfield",
+            "name:ru": "Аэродром Юбилейный"
+          },
+          "featureTags": {
+            "aeroway": "aerodrome",
+            "barrier": "fence",
+            "wikidata": "Q4533548"
+          }
+        }
+      ],
+      "reasonRussian": "Точное именованное соответствие по аэродрому «Юбилейный»: titleShort каталога и name:ru=Аэродром Юбилейный. Номер 251 в тегах этого объекта OSM не указан; сопоставление основано на названии аэродрома.",
+      "representativeLonLat": [
+        63.2458649,
+        46.0545106
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 241008130,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 565,
+        "y": 100
+      }
+    },
+    {
+      "siteId": "pad-250",
+      "catalogName": "Площадка № 250",
+      "catalogNumber": "250",
+      "status": "exact-facility",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172580438,
+          "url": "https://www.openstreetmap.org/way/172580438",
+          "name": "Pad 250",
+          "role": "facility-footprint",
+          "nameTags": {
+            "name": "Pad 250"
+          },
+          "featureTags": {
+            "building": "industrial",
+            "industrial": "rocket_engine_test"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571675,
+          "url": "https://www.openstreetmap.org/way/172571675",
+          "name": "Site 250",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 250"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military",
+            "wikidata": "Q4843264"
+          }
+        }
+      ],
+      "reasonRussian": "Прямо подписаны сооружение «Pad 250» с industrial=rocket_engine_test и общий комплекс «Site 250». Представительная точка относится к контуру сооружения; это не обмер стартового стола.",
+      "representativeLonLat": [
+        63.3049373,
+        46.0083779
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172580438,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 635,
+        "y": 220
+      }
+    },
+    {
+      "siteId": "pad-250а",
+      "catalogName": "Площадка № 250А",
+      "catalogNumber": "250А",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454774300,
+          "url": "https://www.openstreetmap.org/way/454774300",
+          "name": "Site 250A",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 250A"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 250А: «Site 250A». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.2738043,
+        45.9878373
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454774300,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 605,
+        "y": 240
+      }
+    },
+    {
+      "siteId": "pad-192",
+      "catalogName": "Площадка № 192",
+      "catalogNumber": "192",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172707647,
+          "url": "https://www.openstreetmap.org/way/172707647",
+          "name": "Site 192",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 192"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 192: «Site 192». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.2990101,
+        46.0243931
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172707647,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 640,
+        "y": 169
+      }
+    },
+    {
+      "siteId": "pad-110",
+      "catalogName": "Площадка № 110",
+      "catalogNumber": "110",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172571676,
+          "url": "https://www.openstreetmap.org/way/172571676",
+          "name": "Site 110 (N1/Energia)",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 110 (N1/Energia)"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military",
+            "wikidata": "Q4843259"
+          }
+        },
+        {
+          "type": "way",
+          "id": 169401566,
+          "url": "https://www.openstreetmap.org/way/169401566",
+          "name": "Launchpad 110L",
+          "role": "named-subfacility",
+          "nameTags": {
+            "name": "Launchpad 110L"
+          },
+          "featureTags": {
+            "disused:aeroway": "launchpad",
+            "wikidata": "Q4843259"
+          }
+        },
+        {
+          "type": "way",
+          "id": 169401625,
+          "url": "https://www.openstreetmap.org/way/169401625",
+          "name": "Launchpad 110R",
+          "role": "named-subfacility",
+          "nameTags": {
+            "name": "Launchpad 110R"
+          },
+          "featureTags": {
+            "disused:aeroway": "launchpad",
+            "wikidata": "Q4843259"
+          }
+        }
+      ],
+      "reasonRussian": "Однозначный контур «Site 110 (N1/Energia)». Две отдельно подписанные установки 110L и 110R перечислены как части комплекса; номер площадки не выбирает начало координат модели между ними.",
+      "representativeLonLat": [
+        63.3086165,
+        45.9658555
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172571676,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "В комплексе отдельно подписаны 110L и 110R. Центроид всей площадки не является столом или проверенным началом координат музейной модели."
+      },
+      "originalSchematic": {
+        "x": 670,
+        "y": 281
+      }
+    },
+    {
+      "siteId": "pad-112",
+      "catalogName": "Площадка № 112 — МИК и «Кузнечики»",
+      "catalogNumber": "112",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454775309,
+          "url": "https://www.openstreetmap.org/way/454775309",
+          "name": "Site 112",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 112"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571670,
+          "url": "https://www.openstreetmap.org/way/172571670",
+          "name": "MIK 112",
+          "role": "named-building",
+          "nameTags": {
+            "name": "MIK 112"
+          },
+          "featureTags": {
+            "building": "industrial"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571416,
+          "url": "https://www.openstreetmap.org/way/172571416",
+          "name": "МИК-112",
+          "role": "named-building",
+          "nameTags": {
+            "name": "МИК-112"
+          },
+          "featureTags": {
+            "building": "yes"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный общий контур «Site 112». В выгрузке также есть два разных здания «MIK 112» и «МИК-112»; название каталога не позволяет автоматически выбрать одно здание в качестве опоры реконструкции.",
+      "representativeLonLat": [
+        63.2987425,
+        45.9266622
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454775309,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Контур площадки найден, но два здания MIK 112 / МИК-112 и положение транспортёров требуют отдельной проверки. Начало координат и ориентация реконструкции не установлены."
+      },
+      "originalSchematic": {
+        "x": 640,
+        "y": 361
+      }
+    },
+    {
+      "siteId": "pad-104",
+      "catalogName": "Площадка № 104",
+      "catalogNumber": "104",
+      "status": "multiple-candidates",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172514540,
+          "url": "https://www.openstreetmap.org/way/172514540",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104",
+            "name:ru": "Площадка 104"
+          },
+          "featureTags": {
+            "barrier": "wall"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571637,
+          "url": "https://www.openstreetmap.org/way/172571637",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571639,
+          "url": "https://www.openstreetmap.org/way/172571639",
+          "name": "сюжет 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "int_name": "syujet 104",
+            "name": "сюжет 104",
+            "name:en": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571643,
+          "url": "https://www.openstreetmap.org/way/172571643",
+          "name": "сюжет 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "int_name": "syujet 104",
+            "name": "сюжет 104",
+            "name:en": "Site 104",
+            "name:ru": "Площадка 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571648,
+          "url": "https://www.openstreetmap.org/way/172571648",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571652,
+          "url": "https://www.openstreetmap.org/way/172571652",
+          "name": "сюжет 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "int_name": "syujet 104",
+            "name": "сюжет 104",
+            "name:en": "Site 104",
+            "name:ru": "Площадка 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571653,
+          "url": "https://www.openstreetmap.org/way/172571653",
+          "name": "сюжет 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "int_name": "syujet 104",
+            "name": "сюжет 104",
+            "name:en": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 172571659,
+          "url": "https://www.openstreetmap.org/way/172571659",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454778345,
+          "url": "https://www.openstreetmap.org/way/454778345",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "area": "yes",
+            "landuse": "brownfield"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454778519,
+          "url": "https://www.openstreetmap.org/way/454778519",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454779121,
+          "url": "https://www.openstreetmap.org/way/454779121",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454785920,
+          "url": "https://www.openstreetmap.org/way/454785920",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454785921,
+          "url": "https://www.openstreetmap.org/way/454785921",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454785922,
+          "url": "https://www.openstreetmap.org/way/454785922",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454786467,
+          "url": "https://www.openstreetmap.org/way/454786467",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "brownfield"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454786501,
+          "url": "https://www.openstreetmap.org/way/454786501",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "brownfield"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454786753,
+          "url": "https://www.openstreetmap.org/way/454786753",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454786820,
+          "url": "https://www.openstreetmap.org/way/454786820",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 454788459,
+          "url": "https://www.openstreetmap.org/way/454788459",
+          "name": "сюжет 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "int_name": "syujet 104",
+            "name": "сюжет 104",
+            "name:en": "Site 104"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "way",
+          "id": 1135823663,
+          "url": "https://www.openstreetmap.org/way/1135823663",
+          "name": "Site 104",
+          "role": "candidate-compound",
+          "nameTags": {
+            "name": "Site 104"
+          },
+          "featureTags": {
+            "landuse": "industrial"
+          }
+        }
+      ],
+      "reasonRussian": "Точный номер 104 встречается у 20 разных контуров OSM. По номеру нельзя однозначно выбрать контур. Близость к текущему положению на музейной схеме не использована.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 811,
+        "y": 241
+      }
+    },
+    {
+      "siteId": "pad-101",
+      "catalogName": "Площадка № 101",
+      "catalogNumber": "101",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454778627,
+          "url": "https://www.openstreetmap.org/way/454778627",
+          "name": "Site 101",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 101"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 101: «Site 101». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.4271296,
+        45.9509489
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454778627,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 819,
+        "y": 310
+      }
+    },
+    {
+      "siteId": "pad-102",
+      "catalogName": "Площадка № 102",
+      "catalogNumber": "102",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454780459,
+          "url": "https://www.openstreetmap.org/way/454780459",
+          "name": "Site 102",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 102"
+          },
+          "featureTags": {
+            "landuse": "brownfield"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 102: «Site 102». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.43553,
+        45.9325463
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454780459,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 835,
+        "y": 352
+      }
+    },
+    {
+      "siteId": "pad-103",
+      "catalogName": "Площадка № 103",
+      "catalogNumber": "103",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454779120,
+          "url": "https://www.openstreetmap.org/way/454779120",
+          "name": "Site 103",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 103"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 103: «Site 103». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.4440679,
+        45.951005
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454779120,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 844,
+        "y": 319
+      }
+    },
+    {
+      "siteId": "pad-111",
+      "catalogName": "Площадка № 111",
+      "catalogNumber": "111",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454785923,
+          "url": "https://www.openstreetmap.org/way/454785923",
+          "name": "Site 111",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 111"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 111: «Site 111». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.4340648,
+        45.9080898
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454785923,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 823,
+        "y": 390
+      }
+    },
+    {
+      "siteId": "pad-57",
+      "catalogName": "Площадка № 57",
+      "catalogNumber": "57",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В этой выгрузке не найден объект с явно указанным номером 57 или точным собственным именем из каталога. Это отсутствие подтверждённого совпадения в выбранных данных, а не доказательство отсутствия объекта на местности или в полной базе OSM.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 552,
+        "y": 395
+      }
+    },
+    {
+      "siteId": "pad-5",
+      "catalogName": "Площадка № 5",
+      "catalogNumber": "5",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172571650,
+          "url": "https://www.openstreetmap.org/way/172571650",
+          "name": "Site 5",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 5"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 5: «Site 5». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.3366632,
+        45.8353042
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172571650,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 704,
+        "y": 550
+      }
+    },
+    {
+      "siteId": "pad-31",
+      "catalogName": "Площадка № 31",
+      "catalogNumber": "31",
+      "status": "exact-facility",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 392622243,
+          "url": "https://www.openstreetmap.org/way/392622243",
+          "name": "Pad 31/6 (Soyuz)",
+          "role": "facility-footprint",
+          "nameTags": {
+            "name": "Pad 31/6 (Soyuz)",
+            "name:ru": "ПУ 31/6 (Союз)"
+          },
+          "featureTags": {
+            "aeroway": "launchpad",
+            "wikidata": "Q258129"
+          }
+        },
+        {
+          "type": "way",
+          "id": 169400899,
+          "url": "https://www.openstreetmap.org/way/169400899",
+          "name": "Launchpad 31/6 (Soyuz)",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Launchpad 31/6 (Soyuz)",
+            "name:ru": "Площадка 31/6 (Союз)"
+          },
+          "featureTags": {
+            "aeroway": "launchpad",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Контур «ПУ 31/6 (Союз)» прямо идентифицирует пусковую установку. «Площадка 31/6 (Союз)» — отдельный значительно более крупный контур территории, хотя оба объекта имеют aeroway=launchpad. Представительная точка рассчитана только по контуру ПУ.",
+      "representativeLonLat": [
+        63.5641925,
+        45.9960669
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 392622243,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 1017,
+        "y": 228
+      }
+    },
+    {
+      "siteId": "pad-105",
+      "catalogName": "Площадка № 105",
+      "catalogNumber": "105",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454780698,
+          "url": "https://www.openstreetmap.org/way/454780698",
+          "name": "Site 105",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 105"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 105: «Site 105». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.5243046,
+        46.0024236
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454780698,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 912,
+        "y": 212
+      }
+    },
+    {
+      "siteId": "pad-106",
+      "catalogName": "Площадка № 106",
+      "catalogNumber": "106",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 169401533,
+          "url": "https://www.openstreetmap.org/way/169401533",
+          "name": "Site 106 & 109",
+          "role": "shared-compound-boundary",
+          "nameTags": {
+            "name": "Site 106 & 109"
+          },
+          "featureTags": {
+            "landuse": "military",
+            "wikidata": "Q4843261"
+          }
+        }
+      ],
+      "reasonRussian": "Номер явно перечислен в имени общего контура «Site 106 & 109». Внутренняя граница между площадками 106 и 109 не задана этим объектом; представительная точка относится к их общей территории.",
+      "representativeLonLat": [
+        63.4966708,
+        45.950436
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 169401533,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Один контур объединяет площадки 106 и 109. Центроид общей территории не задаёт отдельные точки привязки двух музейных моделей."
+      },
+      "originalSchematic": {
+        "x": 898,
+        "y": 321
+      },
+      "sharedCompoundWith": [
+        "pad-109"
+      ]
+    },
+    {
+      "siteId": "pad-109",
+      "catalogName": "Площадка № 109",
+      "catalogNumber": "109",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 169401533,
+          "url": "https://www.openstreetmap.org/way/169401533",
+          "name": "Site 106 & 109",
+          "role": "shared-compound-boundary",
+          "nameTags": {
+            "name": "Site 106 & 109"
+          },
+          "featureTags": {
+            "landuse": "military",
+            "wikidata": "Q4843261"
+          }
+        }
+      ],
+      "reasonRussian": "Номер явно перечислен в имени общего контура «Site 106 & 109». Внутренняя граница между площадками 106 и 109 не задана этим объектом; представительная точка относится к их общей территории.",
+      "representativeLonLat": [
+        63.4966708,
+        45.950436
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 169401533,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Один контур объединяет площадки 106 и 109. Центроид общей территории не задаёт отдельные точки привязки двух музейных моделей."
+      },
+      "originalSchematic": {
+        "x": 921,
+        "y": 321
+      },
+      "sharedCompoundWith": [
+        "pad-106"
+      ]
+    },
+    {
+      "siteId": "pad-42",
+      "catalogName": "Площадка № 42",
+      "catalogNumber": "42",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454782178,
+          "url": "https://www.openstreetmap.org/way/454782178",
+          "name": "Site 42",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 42"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 42: «Site 42». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.6532799,
+        45.9665855
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454782178,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 1132,
+        "y": 295
+      }
+    },
+    {
+      "siteId": "pad-43",
+      "catalogName": "Площадка № 43 — Восточный комплекс",
+      "catalogNumber": "43",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454782596,
+          "url": "https://www.openstreetmap.org/way/454782596",
+          "name": "Site 43",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 43"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 43: «Site 43». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.6452887,
+        45.9693105
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454782596,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 1145,
+        "y": 278
+      }
+    },
+    {
+      "siteId": "pad-44",
+      "catalogName": "Площадка № 44",
+      "catalogNumber": "44",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454782595,
+          "url": "https://www.openstreetmap.org/way/454782595",
+          "name": "Site 44",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 44"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 44: «Site 44». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.646371,
+        45.9732312
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 454782595,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 1090,
+        "y": 247
+      }
+    },
+    {
+      "siteId": "pad-45",
+      "catalogName": "Площадка № 45",
+      "catalogNumber": "45",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 221132591,
+          "url": "https://www.openstreetmap.org/way/221132591",
+          "name": "Launchpads 45/1 and 45/2 (Zenit/Baytarek)",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Launchpads 45/1 and 45/2 (Zenit/Baytarek)"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military",
+            "place": "locality",
+            "wikidata": "Q4843262"
+          }
+        }
+      ],
+      "reasonRussian": "Контур прямо подписан «Launchpads 45/1 and 45/2 (Zenit/Baytarek)». Это весь комплекс двух установок. Безконтекстные здания Pad 1 и Ruins of pad 2 не отождествлены с 45/1 и 45/2 только по близости.",
+      "representativeLonLat": [
+        63.6525995,
+        45.9414709
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 221132591,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 1134,
+        "y": 332
+      }
+    },
+    {
+      "siteId": "pad-241",
+      "catalogName": "Площадка № 241",
+      "catalogNumber": "241",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В этой выгрузке не найден объект с явно указанным номером 241 или точным собственным именем из каталога. Это отсутствие подтверждённого совпадения в выбранных данных, а не доказательство отсутствия объекта на местности или в полной базе OSM.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 833,
+        "y": 487
+      }
+    },
+    {
+      "siteId": "pad-196",
+      "catalogName": "Площадка № 196",
+      "catalogNumber": "196",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172571665,
+          "url": "https://www.openstreetmap.org/way/172571665",
+          "name": "Site 196",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 196"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 196: «Site 196». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.1473218,
+        45.8280748
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172571665,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 427,
+        "y": 558
+      }
+    },
+    {
+      "siteId": "pad-195",
+      "catalogName": "Площадка № 195",
+      "catalogNumber": "195",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172682493,
+          "url": "https://www.openstreetmap.org/way/172682493",
+          "name": "Site 195: R-36-O Missile Silo (historic)",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 195: R-36-O Missile Silo (historic)"
+          },
+          "featureTags": {
+            "aeroway": "launch_complex",
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 195: «Site 195: R-36-O Missile Silo (historic)». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.274515,
+        45.7932424
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172682493,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 594,
+        "y": 638
+      }
+    },
+    {
+      "siteId": "pad-246",
+      "catalogName": "Площадка № 246",
+      "catalogNumber": "246",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172571655,
+          "url": "https://www.openstreetmap.org/way/172571655",
+          "name": "Site 246",
+          "role": "compound-boundary",
+          "nameTags": {
+            "name": "Site 246"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 246: «Site 246». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.4227498,
+        45.7656036
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172571655,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 777,
+        "y": 650
+      }
+    },
+    {
+      "siteId": "pad-75",
+      "catalogName": "Площадка № 75 — гостиница «7 ветров»",
+      "catalogNumber": "75",
+      "status": "multiple-candidates",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 454774301,
+          "url": "https://www.openstreetmap.org/way/454774301",
+          "name": "Site 75",
+          "role": "candidate-number-match",
+          "nameTags": {
+            "name": "Site 75"
+          },
+          "featureTags": {
+            "landuse": "military"
+          }
+        },
+        {
+          "type": "node",
+          "id": 4395821037,
+          "url": "https://www.openstreetmap.org/node/4395821037",
+          "name": "Семь ветров",
+          "role": "candidate-hotel-name-match",
+          "nameTags": {
+            "name": "Семь ветров"
+          },
+          "featureTags": {
+            "tourism": "hotel"
+          }
+        }
+      ],
+      "reasonRussian": "Каталог объединяет номер 75 и гостиницу «7 ветров». В OSM контур «Site 75» совпадает по номеру, а узел гостиницы «Семь ветров» — по собственному имени (7/семь). Они находятся в разных местах. Их тождество не подтверждено; ни один кандидат не выбран.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 639,
+        "y": 551
+      }
+    },
+    {
+      "siteId": "pad-3",
+      "catalogName": "Площадка № 3 — КАЗ",
+      "catalogNumber": "3",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "В выгрузке не найдено точного имени площадки 3, КАЗ или кислородно-азотного завода. Site 3K и Site 3G не являются точными совпадениями площадки без суффикса; привязка по соседству не применялась.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 708,
+        "y": 651
+      }
+    },
+    {
+      "siteId": "pad-3а",
+      "catalogName": "Площадка № 3А",
+      "catalogNumber": "3А",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Точного номера 3А или явно соответствующего имени в выгрузке нет. Площадки с другими буквенными суффиксами не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 620,
+        "y": 756
+      }
+    },
+    {
+      "siteId": "pad-3б",
+      "catalogName": "Площадка № 3Б",
+      "catalogNumber": "3Б",
+      "status": "unmatched",
+      "active": true,
+      "osmRefs": [],
+      "reasonRussian": "Точного номера 3Б или явно соответствующего имени в выгрузке нет. Площадки с другими буквенными суффиксами не использованы.",
+      "representativeLonLat": null,
+      "representativeSource": null,
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Однозначная географическая опора музейной модели не выбрана."
+      },
+      "originalSchematic": {
+        "x": 638,
+        "y": 703
+      }
+    },
+    {
+      "siteId": "pad-21",
+      "catalogName": "Площадка № 21",
+      "catalogNumber": "21",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172571641,
+          "url": "https://www.openstreetmap.org/way/172571641",
+          "name": "21 учаске IP-4 жерүсті станциясы",
+          "role": "compound-boundary",
+          "nameTags": {
+            "int_name": "Zona 21 Nazemnaya stantsiya IP-4",
+            "name": "21 учаске IP-4 жерүсті станциясы",
+            "name:en": "Site 21 IP-4 Ground Station"
+          },
+          "featureTags": {
+            "was:landuse": "industial"
+          }
+        }
+      ],
+      "reasonRussian": "Единственный контур с явно указанным номером 21: «21 учаске IP-4 жерүсті станциясы». Совпадение номера подтверждает связь с именованной территорией OSM; назначение, ведомственная принадлежность и история каталога отдельно не проверялись.",
+      "representativeLonLat": [
+        63.3006222,
+        45.707045
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172571641,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 653,
+        "y": 778
+      }
+    },
+    {
+      "siteId": "pad-23",
+      "catalogName": "Площадка № 23 — ИП-5 «Сатурн»",
+      "catalogNumber": "23",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 172514544,
+          "url": "https://www.openstreetmap.org/way/172514544",
+          "name": "23 учаске NIP-5 орбиталық бақылау станциясы",
+          "role": "compound-boundary",
+          "nameTags": {
+            "int_name": "23 wçaske NIP-5 orbïtalıq baqılaw stancïyası",
+            "name": "23 учаске NIP-5 орбиталық бақылау станциясы",
+            "name:en": "Site 23 NIP-5 Orbital Tracking Station"
+          },
+          "featureTags": {
+            "landuse": "industrial"
+          }
+        }
+      ],
+      "reasonRussian": "Прямое совпадение номера и измерительной станции по name:en=Site 23 NIP-5 Orbital Tracking Station. Имя «Сатурн» и положение отдельных антенн этими тегами не подтверждаются; одноимённое городское здание не использовано.",
+      "representativeLonLat": [
+        63.3399925,
+        45.7043058
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 172514544,
+        "method": "polygon-area-centroid-in-source-lonlat-plane",
+        "meaningRussian": "Вычисленный центроид однозначно выбранного контура; это не геодезический обмер и не опора музейной 3D-модели."
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "По OSM не установлены начало координат, ориентация, масштаб и высота музейной 3D-модели. Вычисленный центроид контура не является проверенной точкой установки модели."
+      },
+      "originalSchematic": {
+        "x": 741,
+        "y": 716
+      }
+    }
+  ]
+}

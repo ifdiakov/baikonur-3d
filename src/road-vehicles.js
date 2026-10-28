@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js';
-import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261028-museum4-v1';
+import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261028-museum4-osm-live-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -32,6 +32,7 @@ function compose(id,label,sections){
 /** All traffic follows the same sampled pavement used by transport-network.
  * The southern interchange remains the museum's schematic reconstruction. */
 export function buildRoadVehicleRoutes(roads){
+ if(roads.osmVehiclePlan)return roads.osmVehiclePlan;
  const baseHighway=buildHighwayPath(roads),first=baseHighway.sample(0),last=baseHighway.sample(baseHighway.length);
  const start=first.position.clone().addScaledVector(first.tangent,-EXTENSION),end=last.position.clone().addScaledVector(last.tangent,EXTENSION);
  const highway=compose('highway','Трасса Аральск — Кызылорда',[
@@ -139,7 +140,7 @@ function extendRoad(parent,extensions){
 }
 
 export function createRoadVehicles({parent,roads,camera,controls}){
- const plan=buildRoadVehicleRoutes(roads),extension=extendRoad(parent,plan.extensions),configs=[];
+ const plan=buildRoadVehicleRoutes(roads),extension=plan.source==='OpenStreetMap'?{setEvening(){},length:0,poles:0}:extendRoad(parent,plan.extensions),configs=[];
  plan.routes.forEach((route,routeIndex)=>{
   const perDirection=routeIndex<2?4:1;
   for(const direction of [1,-1])for(let i=0;i<perDirection;i++){
