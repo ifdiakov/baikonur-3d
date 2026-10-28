@@ -9,12 +9,12 @@ const errors=[],shaderErrors=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION|compile shader/i.test(m.text()))shaderErrors.push(m.text());});
 try{
- const url=new URL(origin);url.searchParams.set('site','112');url.searchParams.set('v','mik112-photo-v1');
+ const url=new URL(origin);url.searchParams.set('site','112');url.searchParams.set('v','mik112-photo-v1.1');
  await page.goto(url.toString(),{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.mik112?.transporterCount===2,{timeout:90000});
  await page.waitForTimeout(1500);
  const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
- assert.equal(s.mik112.version,'1.0-photo-112');assert.equal(s.mik112.transporterCount,2);
+ assert.equal(s.mik112.version,'1.1-clean-feeder');assert.equal(s.mik112.transporterCount,2);
  assert.deepEqual(s.mik112Placement,[680,331]);
  assert.ok(s.mik112.features['perforated-lifting-cheek']>=16);
  assert.ok(s.mik112.features['ochre-perforated-fork']>=16);
@@ -24,6 +24,8 @@ try{
  assert.ok(s.mik112.features['fallen-roof-frame']>=1);
  assert.ok(s.mik112.instancedBatches<80,'GPU draw-call count must remain controlled');
  assert.ok(s.mik112Rail.connected);assert.equal(s.mik112Rail.tracks.length,4);
+ assert.equal(s.mik112Rail.sourceRoute,'t-central-north','western trunk, not phantom feeder');
+ assert.deepEqual(s.mik112.suppressedFallbackGeometry,['pad-2b']);
  for(const track of s.mik112Rail.tracks){assert.ok([...track.start,...track.end].every(Number.isFinite));}
  assert.ok(s.shadersValid,'Custom surface materials compile');
  assert.equal(await page.locator('#error').isVisible(),false);
@@ -31,8 +33,11 @@ try{
  await page.screenshot({path:`qa-mik112/${prefix}-overview.png`});
  await page.locator('#mik112Tua').click();await page.waitForTimeout(700);
  await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers.png`});
+ await page.locator('#showLabels').uncheck();
+ await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers-clear.png`});
  await page.locator('#mik112Top').click();await page.waitForTimeout(700);
  await page.screenshot({path:`qa-mik112/${prefix}-plan.png`});
+ await page.locator('#showLabels').check();
  await page.locator('#year').evaluate(el=>{el.value='1988';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().mik112.roofState),'historical-intact');
  await page.locator('#mik112All').click();await page.waitForTimeout(500);

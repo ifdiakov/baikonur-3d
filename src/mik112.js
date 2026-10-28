@@ -5,7 +5,7 @@ import {createSurfacePalette} from './surface-materials.js';
 // Sources: RocketTrip Drive 1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk (MIK),
 // 1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3 (two Energia transporter/erectors).
 // Recognisable proportions and photo layout, not a measured engineering model.
-export const MIK112={version:'1.0-photo-112',scale:.28,yaw:-Math.PI/4,roofCollapseYear:2002};
+export const MIK112={version:'1.1-clean-feeder',scale:.28,yaw:-Math.PI/4,roofCollapseYear:2002};
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
 export function buildMik112(root,{year=2026}={}){
  root.name='Пл. №112 · МИК и два ТУА «Кузнечики»';
@@ -212,35 +212,5 @@ export function buildMik112(root,{year=2026}={}){
  return {stats:()=>info,setYear,railEntries,focusTarget:V(-8,22,55),focusOffset:V(330,250,400)};
 }
 
-// Add a modest feeder to the actual museum railway, never a floating line.
-export function connectMik112Rails(root,{data,point,parent}){
- root.updateWorldMatrix(true,true);
- const tracks=[-82.4,-59.6,-30.4,-7.6],gauge=.76*MIK112.scale;
- const end=root.localToWorld(V(-45,4.25,258));
- const route=data.routes.rail.find(r=>r.id==='t-r7-feeder')||data.routes.rail.find(r=>r.id==='t-central-north');
- if(!route)return {connected:false};
- const base=new THREE.CatmullRomCurve3(route.points.map(([x,z])=>point(x,z,1.29)),false,'centripetal',.3);
- let near=0,best=Infinity;for(let i=0;i<=1200;i++){const t=i/1200,d=base.getPoint(t).distanceToSquared(end);if(d<best){best=d;near=t;}}
- const join=base.getPoint(near);join.y=1.29;
- const group=new THREE.Group();group.name='МИК112 · примыкание железнодорожных путей';parent.add(group);
- const material=new THREE.MeshStandardMaterial({color:0x626a66,metalness:.55,roughness:.7});
- const sleeperMat=new THREE.MeshStandardMaterial({color:0x827c6d,roughness:1});
- const ties=[],unit=new THREE.BoxGeometry(1,1,1),railReports=[];
- for(const x of tracks){
-  const start=root.localToWorld(V(x,4.25,258));
-  const forward=V(0,0,1).applyQuaternion(root.quaternion);
-  const mid=start.clone().addScaledVector(forward,22);
-  const curve=new THREE.CatmullRomCurve3([start,mid,mid.clone().lerp(join,.6),join],false,'centripetal');
-  for(const side of [-1,1]){
-   const pts=[];for(let i=0;i<=72;i++){const t=i/72,p=curve.getPoint(t),d=curve.getTangent(t),n=V(-d.z,0,d.x).normalize();
-    const localGauge=THREE.MathUtils.lerp(gauge,1.05,THREE.MathUtils.smoothstep(t,.7,1));pts.push(p.addScaledVector(n,side*localGauge));}
-   const rail=new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),72,.07,5,false),material);group.add(rail);
-  }
-  const length=curve.getLength();for(let d=0;d<length;d+=2.8){const t=d/length,p=curve.getPointAt(t),dir=curve.getTangentAt(t);
-   p.y-=.15;const q=new THREE.Quaternion().setFromAxisAngle(V(0,1,0),Math.atan2(dir.x,dir.z));
-   ties.push(new THREE.Matrix4().compose(p,q,V(THREE.MathUtils.lerp(.8,3.45,t),.09,.22)));}
-  railReports.push({start:start.toArray(),end:join.toArray()});
- }
- const sleepers=new THREE.InstancedMesh(unit,sleeperMat,ties.length);ties.forEach((m,i)=>sleepers.setMatrixAt(i,m));sleepers.instanceMatrix.needsUpdate=true;group.add(sleepers);
- return {connected:true,sourceRoute:route.id,tracks:railReports,group};
-}
+// Verified clean western rail connection.
+export {connectMik112Rails} from './mik112-rail.js?v=clean-west-v2';

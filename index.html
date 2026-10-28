@@ -312,7 +312,7 @@ import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261028-seamless-steppe';
 import {SATURN_ACCESS} from './src/saturn-access.js?v=20261028-road-editor';
 import {createLightingEditor} from './src/lighting-editor.js';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=20261028-catalog';
-import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=112-photo-v1';
+import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=112-photo-v1.1';
 try{
 // Common display scale for structures on the schematic; geometry stays fully detailed.
 const MODEL_SCALE=0.28;
@@ -581,6 +581,16 @@ if(mik112Index>=0){
  mik112Exhibit=buildMik112(group,{year:2026});entry.type='mik112-photo';
  group.traverse(o=>{if(o.isMesh){o.userData.idx=mik112Index;clickable.push(o);}});
  mik112Rail=connectMik112Rails(group,{data:transportData,point,parent:layers.rails});
+ // MIK112_PLACEHOLDER_OCCLUSION: hide only the overlapping generic 2B cubes.
+ // Its record, coordinates and information card remain in the museum.
+ const placeholder=objects.find(o=>o.record.id==='pad-2b');
+ if(placeholder){
+  const fallback=placeholder.g.children.slice();fallback.forEach(o=>o.visible=false);
+  const originalYear=mik112Exhibit.setYear;
+  mik112Exhibit.setYear=y=>{originalYear(y);fallback.forEach(o=>o.visible=y<1967);};
+  group.userData.mik112Model.suppressedFallbackGeometry=['pad-2b'];
+ }
+
 }
 function focusMik112(view='all'){
  if(!mik112Exhibit)return;
