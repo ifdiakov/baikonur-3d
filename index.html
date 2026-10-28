@@ -905,9 +905,38 @@ function projectToScreen(world){
  return {x,y};
 }
 function updateStationScreenLabels(){
+ const zoom=camera.position.y/SCENE_SCALE;
+ const show=document.getElementById("showLabels").checked;
+ // Share the exact zoom band used by site labels / detail cards.
+ const siteAlpha=THREE.MathUtils.smoothstep(zoom,225,365)*
+   (1-THREE.MathUtils.smoothstep(zoom,500,690));
+ const detailAlpha=1-THREE.MathUtils.smoothstep(zoom,225,370);
+ const opacity=Math.max(siteAlpha,detailAlpha);
+ if(!show||opacity<.08){
+  for(const st of stationScreenLabels)st.el.style.display="none";
+  return;
+ }
+ // Site cards and ordinary site name tags have priority. Collect their
+ // actual displayed rectangles after updateLabels() has arranged them.
+ const occupied=[...labelLayer.querySelectorAll('.detail-card,.site-label')]
+  .filter(el=>el.style.display!=='none'&&el.getClientRects().length)
+  .map(el=>el.getBoundingClientRect());
  for(const st of stationScreenLabels){
-  const p=projectToScreen(st.world);if(!p){st.el.style.display="none";continue;}
-  st.el.style.display="block";st.el.style.left=p.x+"px";st.el.style.top=p.y+"px";
+  const p=projectToScreen(st.world);
+  if(!p){st.el.style.display="none";continue;}
+  const el=st.el;el.style.display="block";
+  el.style.opacity=opacity.toFixed(3);
+  // Try nearby vertical offsets, then hide rather than cover a site card
+  // or another station; station names remain legible as you zoom in.
+  let placed=false;
+  for(const dy of [0,-24,-48,24,48,-72,72]){
+   el.style.left=p.x+"px";el.style.top=(p.y+dy)+"px";
+   const r=el.getBoundingClientRect(),pad=5;
+   const overlap=occupied.some(o=>!(r.right+pad<o.left||r.left-pad>o.right||
+     r.bottom+pad<o.top||r.top-pad>o.bottom));
+   if(!overlap){occupied.push(r);placed=true;break;}
+  }
+  if(!placed)el.style.display="none";
  }
 }
 function updateLabels(){
