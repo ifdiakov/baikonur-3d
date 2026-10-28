@@ -1,8 +1,14 @@
 {
-  "targetCommit": "7a76bcacc8e9c48c930a53abda06d8dc581008c0",
-  "runId": "40655883816",
+  "targetCommit": "c2f54c09f8adf35d71ab5b985fc67aa124f5d6ca",
+  "runId": "40664583665",
   "local": "success",
   "publicBrowser": "success",
-  "version": "1.1-clean-feeder",
-  "checkedAt": "2026-10-28T08:25:25.456Z"
+  "version": "1.2-plan-aligned-ne",
+  "mapPlacement": [
+    640,
+    361
+  ],
+  "scale": 0.14,
+  "transporterSide": "north-east",
+  "checkedAt": "2026-10-28T09:35:57.649Z"
 }
