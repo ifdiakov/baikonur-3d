@@ -6,8 +6,15 @@ const marker='// Add a modest feeder to the actual museum railway';
 const idx=model.indexOf(marker);
 if(idx>=0)model=model.slice(0,idx)+"// Verified clean western rail connection.\nexport {connectMik112Rails} from './mik112-rail.js?v=clean-west-v2';\n";
 model=model.replace("version:'1.0-photo-112'","version:'1.1-clean-feeder'");
+if(!model.includes('mik-floor-finish')){
+ const a="box(188,.6,240,0,floor-.3,0,'concrete','hall-floor');";
+ assert.ok(model.includes(a));
+ model=model.replace(a,a+"\n // The finished slab occludes schematic map paint beneath the real hall.\n box(188,.9,240,0,floor+.45,0,'concrete','mik-floor-finish');");
+}
 assert.ok(model.includes('mik112-rail.js'));write('src/mik112.js',model);
-let h=read('index.html');h=h.replace('mik112.js?v=112-photo-v1\'','mik112.js?v=112-photo-v1.1\'');
+let h=read('index.html');
+h=h.replace('mik112.js?v=112-photo-v1\'','mik112.js?v=112-photo-v1.1-floor2\'');
+h=h.replace('mik112.js?v=112-photo-v1.1\'','mik112.js?v=112-photo-v1.1-floor2\'');
 if(!h.includes('MIK112_PLACEHOLDER_OCCLUSION')){
  const a=' mik112Rail=connectMik112Rails(group,{data:transportData,point,parent:layers.rails});';
  assert.ok(h.includes(a));
@@ -32,6 +39,9 @@ if(!test.includes('western trunk, not phantom')){
  test=test.replace("await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers.png`});","await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers.png`});\n await page.locator('#showLabels').uncheck();\n await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers-clear.png`});");
  test=test.replace("await page.screenshot({path:`qa-mik112/${prefix}-plan.png`});","await page.screenshot({path:`qa-mik112/${prefix}-plan.png`});\n await page.locator('#showLabels').check();");
 }
+if(!test.includes("features['mik-floor-finish']")){
+ test=test.replace("assert.ok(s.mik112.features['retained-light-roof']>=1);","assert.ok(s.mik112.features['retained-light-roof']>=1);\n assert.equal(s.mik112.features['mik-floor-finish'],1);");
+}
 write('tests/mik112-browser.mjs',test);
 write('/tmp/mik112-check/main.mjs',h.match(/<script type="module">([\s\S]*?)<\/script>/)[1]);
-console.log('MIK112 v1.1: clean western feeder, preserved 2B catalogue, no duplicate generic cube inside the hall');
+console.log('MIK112 v1.1: clean western feeder, preserved 2B catalogue, finished unobstructed assembly-hall floor');
