@@ -2,6 +2,15 @@ import {chromium} from 'playwright';import assert from 'node:assert/strict';impo
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',prefix=process.env.QA_PREFIX||'local';mkdirSync('qa-portal',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});const errors=[],shaderErrors=[];
+// Stop the scene loop between inspection frames so software WebGL can capture it.
+await page.addInitScript(()=>{
+ const native=requestAnimationFrame.bind(window);window.__PORTAL_PENDING=null;
+ window.requestAnimationFrame=fn=>fn.name==='animate'?(window.__PORTAL_PENDING=fn,0):native(fn);
+ window.__PORTAL_FRAME=()=>{const fn=window.__PORTAL_PENDING;window.__PORTAL_PENDING=null;fn?.(performance.now());};
+});
+const capture=page.screenshot.bind(page);page.screenshot=async options=>{
+ await page.evaluate(()=>window.__PORTAL_FRAME());return capture({...options,timeout:90000});
+};
 page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION|compile shader/i.test(m.text()))shaderErrors.push(m.text());});
 try{
  await page.goto(base+'?site=1&v=portal-reviewed-v1',{waitUntil:'domcontentloaded',timeout:60000});

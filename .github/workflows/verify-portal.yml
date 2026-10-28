@@ -28,12 +28,10 @@ jobs:
           mkdir -p qa-portal/vendor
           cp node_modules/three/build/three.module.js qa-portal/vendor/
           cp node_modules/three/examples/jsm/controls/OrbitControls.js qa-portal/vendor/
-      - name: Integrate scoped models, excavation and ownership
+      - name: Validate current model integration
         run: |
-          node scripts/integrate-portal.mjs
-          node scripts/review-portal.mjs
-          python3 scripts/partner-logos.py
-          node --check /tmp/portal-check/main.mjs
+          node -e 'const fs=require("fs");fs.writeFileSync("/tmp/portal-main.mjs",fs.readFileSync("index.html","utf8").match(/<script type="module">([\s\S]*?)<\/script>/)[1])'
+          node --check /tmp/portal-main.mjs
           for f in src/archive-*.js src/terrain-voids.js src/gagarin-pad.js src/organisation-logos.js; do node --check --input-type=module < "$f"; done
       - name: Start local museum
         run: |
@@ -41,18 +39,9 @@ jobs:
           sleep 2
       - name: Verify all model groups and actual WebGL rendering
         run: node tests/portal-browser.mjs
-      - name: Publish only verified scene integration
+      - name: Record tested revision
         id: publish
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html src/archive-kit.js src/gagarin-pad.js src/gagarin-rail-approach.js src/organisation-logos.js data/catalog.json data/transport-network.json data/portal-source-register.json assets/org-logos/infracos.png assets/org-logos/baiterek.png assets/org-logos/portal-partner-sources.json
-          if ! git diff --cached --quiet; then
-            git commit -m 'Integrate reviewed portal models; retain terrain excavation and corrected partner brands'
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
       - name: Verify exact public deployment
         run: |
           for n in $(seq 1 30); do

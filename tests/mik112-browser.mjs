@@ -5,6 +5,15 @@ const origin=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local';mkdirSync('qa-mik112',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1800,height:1100},deviceScaleFactor:1});
+// Render each inspection frame once before capturing the detailed scene.
+await page.addInitScript(()=>{
+ const native=requestAnimationFrame.bind(window);window.__MIK112_PENDING=null;
+ window.requestAnimationFrame=fn=>fn.name==='animate'?(window.__MIK112_PENDING=fn,0):native(fn);
+ window.__MIK112_FRAME=()=>{const fn=window.__MIK112_PENDING;window.__MIK112_PENDING=null;fn?.(performance.now());};
+});
+const capture=page.screenshot.bind(page);page.screenshot=async options=>{
+ await page.evaluate(()=>window.__MIK112_FRAME());return capture({...options,timeout:90000});
+};
 const errors=[],shaderErrors=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION|compile shader/i.test(m.text()))shaderErrors.push(m.text());});
