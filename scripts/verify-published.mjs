@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 // A stale CDN module must not be mistaken for a tested publication.
 const base=process.env.BAIKONUR_PUBLIC_URL||'https://ifdiakov.github.io/baikonur-3d/';
 const files=['index.html','data/catalog.json','data/transport-network.json',
- 'assets/models/mriya-buran/near-v1.glb','assets/models/mriya-buran/far-v1.glb','src/vendor/meshopt_decoder-v1.mjs',
+ 'assets/models/mriya-buran/near-v2.glb','assets/models/mriya-buran/far-v2.glb','src/vendor/meshopt_decoder-v1.mjs',
  ...(await readdir('src')).filter(file=>/\.(?:js|css)$/.test(file)).map(file=>'src/'+file),
  ...(await readdir('data/osm',{recursive:true})).filter(file=>/\.(?:json|geojson)$/.test(file)).map(file=>'data/osm/'+file)];
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');

@@ -64,9 +64,9 @@ try{
  await step();
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(await page.locator('#error').isVisible(),false);
- assert.equal(initial.sites,97);assert.equal(initial.catalogEntries,98);
+ assert.equal(initial.sites,98);assert.equal(initial.catalogEntries,99);
  evidence.hierarchy=[await hierarchy('overview')];
- assert.equal(initial.geography.version,'osm-geography-v1');assert.equal(initial.geography.anchored,71);assert.equal(initial.geography.inferred,26);
+ assert.equal(initial.geography.version,'osm-geography-v1');assert.equal(initial.geography.anchored,72);assert.equal(initial.geography.inferred,26);
  assert.equal(initial.transport.version,'osm-transport-v1');assert.equal(initial.transport.source,'OpenStreetMap');
  assert.equal(initial.transport.roadFeatureCount,3185);assert.equal(initial.transport.railFeatureCount,543);
  assert.ok(initial.transport.roadRoutes>2500&&initial.transport.railRoutes>400);
@@ -96,7 +96,7 @@ try{
  assert.ok(initial.transport.facilityPorts.some(p=>p.id==='pad-42'&&p.roadGap<1e-5));
  assert.ok(initial.transport.gagarinRail.joinGap<1e-5);
  assert.ok(initial.transport.saturnAccess?.gateError<1e-5);
- assert.equal(initial.evening.version,'evening-north-bank-v2');assert.equal(initial.evening.bankFilter.rule,'north-of-syr-darya-v1');
+ assert.equal(initial.evening.version,'evening-east-cutoff-v3');assert.equal(initial.evening.bankFilter.rule,'north-of-syr-darya-v1');
  assert.equal(initial.evening.bankFilter.outsideBankCount,0);assert.ok(initial.evening.bankFilter.remaining>0);assert.ok(initial.evening.bankFilter.excludedByBank.road>0);
  const lightPositions=await page.evaluate(()=>({scene:window.__BAIKONUR_QA.evening.lightPositions(),editor:window.__BAIKONUR_QA.lighting.visibleLightPositions()}));
  assert.equal(lightPositions.scene.length,initial.evening.bankFilter.remaining);

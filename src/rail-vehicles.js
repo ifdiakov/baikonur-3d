@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js';
+import {createLightField} from './light-field.js?v=20261028-site41-v1';
 
 // An illustrative service train, sized to the museum's shared rail gauge.
 // These details do not attribute the model to a particular real locomotive.

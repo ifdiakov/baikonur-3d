@@ -16,10 +16,10 @@ try{
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().airports.find(a=>a.key==='yubileiny')?.mriya?.status==='ready',null,{timeout:180000});
  const state=await page.evaluate(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny'));
- assert.equal(state.mriya.version,'mriya-buran-glb-v1');assert.deepEqual(state.mriya.errors,[]);
+ assert.equal(state.mriya.version,'mriya-buran-reference-v2');assert.deepEqual(state.mriya.errors,[]);
  assert.deepEqual(state.mriya.loaded,['far','near']);assert.equal(state.mriya.wheels,32);
  assert.ok(Math.abs(state.mriya.dimensions[0]-82.15)<.1);assert.ok(Math.abs(state.mriya.dimensions[2]-88.31)<.1);
- assert.equal(state.mriya.drawCallsPerLevel,5);assert.equal(state.length,2250);
+ assert.ok(state.mriya.drawCallsPerLevel<=40);assert.equal(state.mriya.paint,'reference-white-red-mriya-thermal-buran');assert.equal(state.length,2250);
  assert.equal(assets.length,2);assert.ok(assets.every(a=>a.status===200));
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.evening.setEvening(false);q.focusSite('pad-251');window.__MRIYA_FRAME();});
  await page.getByRole('button',{name:'Мрия и Буран',exact:true}).click();
@@ -30,10 +30,19 @@ try{
  assert.ok(pick,'Yubileiny remains selectable after asynchronous model replacement');
  await page.evaluate(()=>{window.__BAIKONUR_QA.evening.setEvening(true);window.__MRIYA_FRAME();});
  await page.screenshot({path:`${out}/${prefix}-evening.png`,timeout:90000});
+ const updates=await page.evaluate(()=>{const q=window.__BAIKONUR_QA,s=q.stats();return{organisation:q.siteState('pad-251').organisation,site41:q.siteState('pad-41'),power:s.evening.powerFilter,boundary:s.eastLightingZone.worldBoundary,powered:q.evening.lightPositions({poweredOnly:true})};});
+ assert.equal(updates.organisation,'РГП «Инфракос»');assert.equal(updates.site41.geoSource.refs[0].id,169401013);
+ assert.ok(updates.power.disabledRoads>0);assert.ok(!updates.power.litSiteIds.includes('pad-41'));assert.ok(updates.power.litSiteIds.includes('pad-42'));
+ assert.ok(updates.powered.every(([x,y,z])=>!(x>=updates.boundary.x&&z<updates.boundary.z)));
+ await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-41');window.__MRIYA_FRAME();});
+ assert.ok((await page.locator('#title').textContent()).includes('41'));
+ await page.screenshot({path:`${out}/${prefix}-site41.png`,timeout:90000});
+ await page.evaluate(()=>{window.__BAIKONUR_QA.setAltitude(150,'pad-42');window.__MRIYA_FRAME();});
+ await page.screenshot({path:`${out}/${prefix}-east-lighting.png`,timeout:90000});
  await page.setViewportSize({width:390,height:844});
  await page.evaluate(()=>{window.__MRIYA_FRAME();});
  assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  assert.deepEqual(errors,[]);
- await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,state,assets,pick,errors},null,2));
+ await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,state,assets,pick,updates:{...updates,powered:updates.powered.length},errors},null,2));
  console.log('MRIYA_BROWSER_PASS',JSON.stringify({prefix,loaded:state.mriya.loaded,dimensions:state.mriya.dimensions}));
 }finally{await browser.close();}

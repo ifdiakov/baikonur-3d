@@ -67,13 +67,14 @@ export function createLightField(parent, records, {poles=false,pools=false,name=
   priorVisibility='';sync();
  }
  function ownerVisible(r){for(let n=r.owner;n;n=n.parent)if(!n.visible)return false;return r.visible!==false;}
- function sync(){const key=records.map(r=>ownerVisible(r)?'1':'0').join('');if(key===priorVisibility)return;priorVisibility=key;
+ function sync(){const key=records.map(r=>!ownerVisible(r)?'0':r.powered===false?'2':'1').join('');if(key===priorVisibility)return;priorVisibility=key;
   records.forEach((r,i)=>{visibility[i]=key[i]==='1'?1:0;});g.attributes.enabled.needsUpdate=true;
   // Hidden historical sites may not leave luminous pools or poles behind.
   for(const mesh of [poleMesh,headMesh,poolMesh])if(mesh)records.forEach((r,i)=>{
    mesh.getMatrixAt(i,dummy.matrix);const e=dummy.matrix.elements;
-   if(key[i]==='0'&&e[13]>-50000)e[13]-=100000;
-   else if(key[i]==='1'&&e[13]<-50000)e[13]+=100000;
+   const hidden=key[i]==='0'||mesh===poolMesh&&key[i]==='2';
+   if(hidden&&e[13]>-50000)e[13]-=100000;
+   else if(!hidden&&e[13]<-50000)e[13]+=100000;
    mesh.setMatrixAt(i,dummy.matrix);mesh.instanceMatrix.needsUpdate=true;
   });
  }

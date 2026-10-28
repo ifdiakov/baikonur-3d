@@ -193,6 +193,8 @@ export function createMuseumGeography({catalog,matches,sourceElements}={}){
   }
   const anchors=[];
   for(const record of catalog.sites){
+    // Newly georeferenced additions must not warp the established historical layers.
+    if(record.legacySchematicAnchor===false)continue;
     const r=resolved.get(record.id);if(!r||shared.has(record.id))continue;
     const from=originalPosition(record);if(!finitePair(from))continue;
     anchors.push({id:record.id,from,to:projectOsm(r.lonLat)});

@@ -11,9 +11,9 @@ const [catalog,matches,airports,facilities]=await Promise.all([
 ]);
 const original=JSON.stringify(catalog),geo=createMuseumGeography({catalog,matches}),report=geo.stats();
 const active=geo.sites.filter(s=>!s.aliasOf&&s.render!==false);
-assert.equal(report.activeSites,97);
+assert.equal(report.activeSites,98);
 assert.equal(report.anchored+report.inferred,report.activeSites);
-assert.equal(report.anchored,71);
+assert.equal(report.anchored,72);
 assert.equal(report.resolvedByName,3);
 assert.equal(report.sharedCompoundSites,2);
 assert.equal(report.inferred,26);

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "descriptionRussian": "Независимое сопоставление 98 записей музейного каталога с явно именованными объектами OpenStreetMap. Это таблица доказательств для последующей геопривязки; размещение сцены не изменено.",
+  "descriptionRussian": "Независимое сопоставление 99 записей музейного каталога с явно именованными объектами OpenStreetMap. Это таблица доказательств для последующей геопривязки; размещение сцены не изменено.",
   "source": {
     "sourceUrl": "https://www.openstreetmap.org/#map=11/45.9256/63.4598",
     "endpoint": "https://overpass-api.de/api/interpreter",
@@ -21,8 +21,8 @@
   },
   "catalog": {
     "file": "../catalog.json",
-    "sha256": "5b8a6465bca5cb7d85ddd9a025ad82bdf54fd913b66aff53a7b385490cc6a3e3",
-    "recordCount": 98,
+    "sha256": "d661af8a2209567f104ea24a838cfab3e1579dc985745a64c0c6f20a7faf7668",
+    "recordCount": 99,
     "schematicMapSize": [
       1300,
       1045
@@ -53,16 +53,16 @@
     "Высоты, ориентация и точные опоры всех активных музейных моделей остаются unresolved."
   ],
   "summary": {
-    "records": 98,
+    "records": 99,
     "statusCounts": {
       "exact-facility": 5,
       "unmatched": 26,
-      "exact-compound": 63,
+      "exact-compound": 64,
       "inactive-alias": 1,
       "multiple-candidates": 3
     },
-    "withRepresentativeCoordinates": 68,
-    "unresolvedActiveModelAnchors": 97,
+    "withRepresentativeCoordinates": 69,
+    "unresolvedActiveModelAnchors": 98,
     "multipleCandidatesSiteIds": [
       "pad-92",
       "pad-104",
@@ -4049,6 +4049,40 @@
       "originalSchematic": {
         "x": 741,
         "y": 716
+      }
+    },
+    {
+      "siteId": "pad-41",
+      "catalogName": "Площадка № 41",
+      "catalogNumber": "41",
+      "status": "exact-compound",
+      "active": true,
+      "osmRefs": [
+        {
+          "type": "way",
+          "id": 169401013,
+          "url": "https://www.openstreetmap.org/way/169401013",
+          "name": "Launchpad 41/15",
+          "role": "compound-boundary"
+        }
+      ],
+      "reasonRussian": "Явно подписанный исторический старт 41/15. Добавлен на макет по запросу владельца; внутреннее положение фотоэтюда условное.",
+      "representativeLonLat": [
+        63.66350096168274,
+        45.97360392898343
+      ],
+      "representativeSource": {
+        "type": "way",
+        "id": 169401013,
+        "method": "polygon-area-centroid-in-source-lonlat-plane"
+      },
+      "modelAnchor": {
+        "status": "unresolved",
+        "reasonRussian": "Модель руин по наземной фотографии; точный азимут и локальная опора не установлены."
+      },
+      "originalSchematic": {
+        "x": 1023.048748783872,
+        "y": 311.05155691550476
       }
     }
   ]

@@ -36,6 +36,17 @@
       "kind": "user-edited-workbook-with-public-references",
       "fileName": "Baikonur-sites-completed.xlsx",
       "note": "Тексты перенесены из заполненной таблицы по ID. Источники и оговорки находятся в каждой записи. Геометрия, координаты и годы появления объектов не изменялись."
+    },
+    "osm-site41-20261028": {
+      "title": "OpenStreetMap · Launchpad 41/15",
+      "kind": "named-osm-compound",
+      "url": "https://www.openstreetmap.org/way/169401013",
+      "snapshot": "2026-10-28T17:10:51Z"
+    },
+    "owner-portal-photos": {
+      "title": "Фотографии владельца · площадка 41",
+      "kind": "user-provided-photo-folder",
+      "url": "https://drive.google.com/drive/folders/1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId"
     }
   },
   "statusLegend": {
@@ -1889,7 +1900,12 @@
         "satellite": "19t1sFdi7uFk5tAe7gQ5AAYEUjvyTnHIE",
         "folder": "15WuQR5kx9kWrsKp-DORaRxWapXQolNPl"
       },
-      "modelOrientationVerified": true
+      "modelOrientationVerified": true,
+      "organisation": {
+        "org": "РГП «Инфракос»",
+        "role": "Аэродром Юбилейный",
+        "attributionSource": "owner-correction-2026-10-28"
+      }
     },
     {
       "id": "pad-250",
@@ -2514,6 +2530,46 @@
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
       "contentSource": "reviewed-sites-workbook-20261028"
+    },
+    {
+      "id": "pad-41",
+      "name": "Площадка № 41",
+      "number": "41",
+      "titleShort": "Исторический старт Р-16",
+      "titleFull": "пл. №41 · Исторический старт Р-16",
+      "x": 1023.048748783872,
+      "y": 311.05155691550476,
+      "model": "tech",
+      "firstYear": 1960,
+      "status": "source-confirmed",
+      "legacySchematicAnchor": false,
+      "positionBasis": "geographic-catalog-addition",
+      "positionVerified": false,
+      "purpose": "Испытательный старт Р-16 · исторический комплекс",
+      "purposeShort": "Исторический старт Р-16",
+      "purposeLong": "Стартовый комплекс лётных испытаний межконтинентальной ракеты Р-16. В музейной сцене показаны сохранившиеся руины по фотографиям.",
+      "note": "24 октября 1960 года здесь произошла катастрофа при подготовке первого испытательного пуска Р-16. Площадка связана с памятью о погибших испытателях. Модель руин схематическая; её ориентация и внутренние размеры не являются обмером.",
+      "organisation": {
+        "org": "Минобороны СССР",
+        "role": "Историческая эксплуатация · программа ОКБ-586 М. К. Янгеля",
+        "attributionSource": "historical-public-source"
+      },
+      "sources": [
+        "osm-site41-20261028",
+        "owner-portal-photos"
+      ],
+      "publicReferences": [
+        "https://www.openstreetmap.org/way/169401013",
+        "https://vks.spb.ru/pamyatnye-daty/31-katastrofy-na-kosmodrome-baykonur.html"
+      ],
+      "archiveModel": {
+        "kind": "nedelin",
+        "version": "1.0-portal-photo-pass",
+        "folder": "1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId",
+        "orientation": "not-verified-ground-photo-only"
+      },
+      "modelOrientationVerified": false,
+      "modelStatus": "Модель руин по фотографиям; размещение в пределах явно подписанного контура OSM, локальная опора условная."
     },
     {
       "id": "pad-42",

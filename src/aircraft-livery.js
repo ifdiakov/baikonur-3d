@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js';
+import {createLightField} from './light-field.js?v=20261028-site41-v1';
 
 export const AIRCRAFT_APPEARANCE_VERSION='alrosa-realistic-v1';
 export const AIRCRAFT_SCALE=.28;

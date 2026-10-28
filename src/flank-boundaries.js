@@ -3,7 +3,7 @@
 // Internal dividers are thematic lines from the owner's image, not surveyed
 // enterprise ownership limits. Shared vertices are identical by construction.
 // © OpenStreetMap contributors — https://www.openstreetmap.org/copyright
-import {projectOsm} from './osm-geography.js?v=20261028-museum4-osm-live-v2';
+import {projectOsm} from './osm-geography.js?v=20261028-site41-v1';
 export const FLANK_BOUNDARY_VERSION='contours-three-level-v5';
 export const FLANK_COORDINATE_SYSTEM='osm-map';
 const freezePoints=points=>Object.freeze(points.map(p=>Object.freeze(p)));

@@ -11,6 +11,7 @@ export const ARCHIVE_MAP=[
  {id:'pad-251',kind:'yubileiny',title:'Аэродром Юбилейный',scale:.28,yaw:1.948,satellite:'19t1sFdi7uFk5tAe7gQ5AAYEUjvyTnHIE',folder:'15WuQR5kx9kWrsKp-DORaRxWapXQolNPl',orientation:'image-traced',axis:'WSW-ENE'},
  {id:'pad-31',kind:'soyuz',title:'Стартовый комплекс «Союз» · пл.31/6',scale:.28,yaw:SITE31_YAW,folder:'17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII',orientation:'satellite-traced-local-plan',satelliteReference:SITE31_REFERENCE,photo:'1zSC1DyLBfQotgBUz5G8gKS1yrfcly4LO',modelVersion:'site31-satellite-trench-v3'},
  {id:'pad-45',kind:'zenit',title:'СК «Зенит» / «Байтерек» · пл.45',scale:.28,yaw:0,folder:'1UD2cFm-qIJjWK6CcjF7V7zGnjVpS5H3i',orientation:'not-verified-no-overhead',photo:'1H4sLmBqg1EbUZ0jWRNFC72T0FtQ0X7lp'},
+ {id:'pad-41',kind:'nedelin',title:'Площадка №41 · исторический старт Р-16',scale:.28,yaw:0,folder:'1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId',photo:'1nE_A8ap4TGei3fnXVSzWDCjb2mf9_fiP',orientation:'not-verified-ground-photo-only'},
  {id:'pad-42',kind:'mik42',title:'Технический комплекс · пл.42',scale:.28,yaw:0,folder:'1nhy66WCjZaGYK8VsVlEQHRre4IjkzzDZ',orientation:'not-verified-no-overhead',photo:'1r6uD1fJtqkjFbk6eoR4rrJ981SVr8whK'},
  {id:'pad-112a',kind:'mzk',title:'МЗК и СДИ · пл.112А',scale:.14,yaw:-Math.PI/4,folder:'1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09',orientation:'not-verified-ground-photo-only',photo:'1NqzXME6wQ-LEpyckXaQ1TOV_qVdxZCgk'},
  {id:'city',kind:'city',title:'Город Байконур · спутниковый план',scale:.20,yaw:0,satellite:'1URocxjo-ZAYAWIIrBhBGMfwx1BKhKkGT',orientation:'image-traced',completeness:'first-pass'}
@@ -18,7 +19,7 @@ export const ARCHIVE_MAP=[
 export const ARCHIVE_GALLERY=[
  {id:'np-rockettrip',kind:'observation',title:'НП RocketTrip',folder:'1WO0cKko5TsAK26X1xpR9-sOo5auDDtGR',photo:'1X6ZPCmt5y2xr0dQnyc2rFHyljd8r9eF_',note:'Модель двух укрытий. Точная точка и азимут на карте не подтверждены.'},
  {id:'kpp-7',kind:'checkpoint',title:'КПП №7',folder:'1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl',photo:'1WS2Ofp7NbMl4CV65HqNEWpfST-bfzivk',note:'Видимый фасад по фотографии. Привязка к карте ожидает опорных точек.'},
- {id:'pad-41-study',kind:'nedelin',title:'Площадка №41 · руины',folder:'1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId',photo:'1nE_A8ap4TGei3fnXVSzWDCjb2mf9_fiP',note:'Видимые руины по фото. Не выдумана точка в каталоге площадок.'},
+ {id:'pad-41-study',kind:'nedelin',title:'Площадка №41 · руины',folder:'1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId',photo:'1nE_A8ap4TGei3fnXVSzWDCjb2mf9_fiP',note:'Фотоэтюд руин. Площадка также размещена на макете по подписанному контуру OpenStreetMap.'},
  {id:'pad-2-study',kind:'buran',title:'Площадка №2 · музейный «Буран»',folder:'1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO',photo:'1Qtezy9yYrK5Fvv4ZBtlRCB8FvomKeYlO',note:'Отдельный экспонат. Не смешивается с обозначениями площадок 2А и 2Б.'},
  {id:'interior-study',kind:'cleanroom',title:'Интерьеры · сборочный зал',folder:'1zyWfNQ5x8PKWMVAsWbUQWiZkx2GYy036',photo:'1iIiV9eThfoMOy36tcHijib0awmCsTBcK',note:'Один интерьерный фотоэтюд. Принадлежность помещения конкретному зданию не установлена.'}
 ];

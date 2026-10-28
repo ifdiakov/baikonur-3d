@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {buildMzkSdi} from './mzk-sdi.js?v=20261028-museum4-osm-live-v2';
-import {buildAirport} from './airport-models.js?v=20261028-mriya-v1';
+import {buildAirport} from './airport-models.js?v=20261028-mriya-paint-v2';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
 export function protonHalls(root){

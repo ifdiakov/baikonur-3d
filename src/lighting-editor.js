@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createLightField} from './light-field.js';
+import {createLightField} from './light-field.js?v=20261028-site41-v1';
 
 const STORAGE_KEY='rockettrip-baikonur-lighting-v1',LIMIT=1500;
 export function createLightingEditor({scene,camera,canvas,roads,groundMeshes,button,onActiveChange,isLightAllowed=()=>true}){

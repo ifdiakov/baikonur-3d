@@ -1,0 +1,23 @@
+{
+  "version": "mriya-buran-reference-v2",
+  "source": "user-provided MriyaBuran.7z",
+  "referencesFolder": "https://drive.google.com/drive/folders/1vZsG2t23ZUFBzKwFbrTfRp5jn1Nm9mSu",
+  "references": [
+    "https://drive.google.com/file/d/1GBfrDtxnk5ClI5PJIIYAMUtMjubNUln8/view",
+    "https://drive.google.com/file/d/1w4R2miuxgYz9hveGn5F-DPbkN4oFIx4P/view",
+    "https://drive.google.com/file/d/17IcBWP-vCUDJfqWxW62ibRY_OHLXKamW/view"
+  ],
+  "appearance": "Historic white An-225 with red cheatline, USSR tail markings and 387/CCCP-82060 source texture set; Buran white upper surfaces, dark thermal areas, Cyrillic title and USSR flag. Some small thermal areas are interpreted from photographs.",
+  "levels": {
+    "near": {
+      "bytes": 2176700,
+      "triangles": 294643,
+      "draws": 36
+    },
+    "far": {
+      "bytes": 1188432,
+      "triangles": 109952,
+      "draws": 36
+    }
+  }
+}

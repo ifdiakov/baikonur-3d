@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {installMriyaExhibit} from './mriya-exhibit.js?v=20261028-mriya-v1';
+import {installMriyaExhibit} from './mriya-exhibit.js?v=20261028-mriya-paint-v2';
 import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
