@@ -21,10 +21,12 @@ assert(stats.markingSegments>100);assert(stats.railTies>1000);assert(stats.inter
 assert.equal(stats.roadStyle.asphaltColor,'#adb2b3');assert.equal(stats.roadStyle.widths.trunk,3.6);assert.equal(stats.roadStyle.widths.service,1.6);
 assert.equal(stats.cityRoadSimplification.sourceBoundary,'way/39209179');assert(stats.cityRoadSimplification.hiddenWays>100);
 assert(stats.renderedRoadWays>1000&&stats.renderedRoadWays<stats.roadRoutes);
-assert.equal(stats.branchSimplification.version,'terminal-branches-v1');
-assert(stats.branchSimplification.road.removedSegments>800);
-assert(stats.branchSimplification.rail.removedSegments>200);
-assert(stats.renderedRoadWays<1400&&stats.renderedRailWays<530);
+assert.equal(stats.branchSimplification.version,'terminal-branches-v2');
+assert.equal(stats.branchSimplification.road.maxLength,80);
+assert.equal(stats.branchSimplification.rail.maxLength,55);
+assert(stats.branchSimplification.road.removedSegments>1000);
+assert(stats.branchSimplification.rail.removedSegments>340);
+assert(stats.renderedRoadWays<1320&&stats.renderedRailWays<510);
 for(const kind of ['road','rail']){
  const pruning=stats.branchSimplification[kind];
  assert(pruning.branches.every(b=>b.length>0&&b.length<=pruning.maxLength));

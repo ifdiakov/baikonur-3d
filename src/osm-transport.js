@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v1';
+import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261029-all-silos-v2';
@@ -258,9 +258,9 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const protectedNode=n=>n.id.startsWith('clip:')||destinations.some(d=>Math.hypot(n.position.x-d.position.x,n.position.z-d.position.z)<d.radius);
  const inCosmodrome=e=>[e.a,e.b].every(n=>n.coord[1]>=45.70&&!settlements.some(region=>region.contains(n.position)));
  const infrastructure=e=>e.tags.name||e.tags.ref||e.tags.destination||e.tags.bridge&&e.tags.bridge!=='no'||e.tags.tunnel&&e.tags.tunnel!=='no';
- roadPruning=pruneTerminalBranches(roadGraph,{maxLength:40,protectedEdges:roadProtected,protectedNode,
+ roadPruning=pruneTerminalBranches(roadGraph,{maxLength:80,protectedEdges:roadProtected,protectedNode,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&!MAIN.has(e.tags.highway?.replace('_link',''))&&!['driveway','parking_aisle'].includes(e.tags.service)});
- railPruning=pruneTerminalBranches(railGraph,{maxLength:30,protectedEdges:railProtected,protectedNode,
+ railPruning=pruneTerminalBranches(railGraph,{maxLength:55,protectedEdges:railProtected,protectedNode,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&e.tags.usage!=='main'&&!['yard','siding','crossover'].includes(e.tags.service)});
  // Junction paint gaps and discs must follow the retained edges as well.
  for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){const k=Math.floor(n.position.x/20)+':'+Math.floor(n.position.z/20);if(!junctionCells.has(k))junctionCells.set(k,[]);junctionCells.get(k).push(n.position);}
@@ -381,7 +381,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   stats:()=>({version:'osm-transport-v1',source:'OpenStreetMap',sourceTimestamp:data.roads.osmBaseTimestamp,confidence:'osm-source-node-topology',roadFeatureCount:data.roads.features.length,railFeatureCount:data.railways.features.length,
    roadRoutes:roadGraph.ways.length,railRoutes:railGraph.ways.length,roadNodes:roadGraph.nodes.size,railNodes:railGraph.nodes.size,roadComponents:roadGraph.components.length,railComponents:railGraph.components.length,
    roadSurface:{version:'osm-batched-upward-terrain-surfaces-v2',junctionCount,markingSegments,roads:renderedRoadWays.size,paintLift:.052,sampleStep:1.4,normalDirection:'upward',terrainClearance:.38},junctionCount,markingSegments,railTies,railGauge:RAIL_PROFILE.gauge,
-   branchSimplification:{version:'terminal-branches-v1',road:roadPruning.stats,rail:railPruning.stats},renderedRailWays:renderedRailWays.size,
+   branchSimplification:{version:'terminal-branches-v2',road:roadPruning.stats,rail:railPruning.stats},renderedRailWays:renderedRailWays.size,
    renderedRoadWays:renderedRoadWays.size,roadStyle:ROAD_STYLE,cityRoadSimplification:{sourceBoundary:cityFeature?.id||null,hiddenWays:hiddenCityWays.size,hiddenWayIds:[...hiddenCityWays],preservedTrafficWays:roadGraph.ways.filter(w=>cityMinor(w.tags)&&protectedTrafficWays.has(w.osmId)&&w.segments.some(e=>inCity(e.a.position)||inCity(e.b.position))).length},
    settlementRoadSimplification:settlements.map(region=>({id:region.id,name:region.name,sourceBoundary:region.feature?.id||null,minimalProfile:region.profile,sourceWayCount:region.sourceWays.size,renderedWayCount:region.keptWays.size,hiddenWays:region.hiddenWays.size,keptWayIds:[...region.keptWays],preservedTrafficWayIds:[...region.trafficWays]})),
    stationCount:stationLabels.length,stationNames:stationLabels.map(s=>s.name),railSwitches:(data.railPoints?.features||[]).filter(f=>tagsFor(f).railway==='switch').length,

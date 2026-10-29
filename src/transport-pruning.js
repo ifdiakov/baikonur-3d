@@ -14,9 +14,14 @@ export function pruneTerminalBranches(graph,{maxLength,eligible=()=>true,protect
   const start=queue[index];if(adjacency.get(start).size!==1)continue;
   const chain=[],nodes=[start];let node=start,previous=null,length=0,budget=0,safe=true;
   while(true){
-   if(protectedNode(node)){safe=false;break;}
    const next=[...adjacency.get(node)].filter(edge=>edge!==previous);
-   if((node!==start&&(adjacency.get(node).size!==2||junctions.has(node)))||!next.length)break;
+   const degree=adjacency.get(node).size,join=node!==start&&(degree!==2||junctions.has(node));
+   // The attachment junction stays in the network. A destination at that
+   // junction does not give an otherwise empty spur its own destination.
+   // A protected leaf or an intermediate destination must still be retained.
+   if(join&&degree>1)break;
+   if(protectedNode(node)){safe=false;break;}
+   if(join||!next.length)break;
    budget+=absorbed.get(node)||0;
    const edge=next[0];if(protectedEdges.has(edge)||!eligible(edge)){safe=chain.length>0;break;}
    chain.push(edge);length+=edge.length;budget+=edge.length;

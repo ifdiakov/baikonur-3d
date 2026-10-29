@@ -20,6 +20,8 @@ assert.deepEqual(run([...trunk,['a','join','bend',8,'shared-way'],['b','bend','t
 // The limit is for the complete branch, regardless of source-way boundaries.
 assert.equal(run([...trunk,['a','join','bend',25],['b','bend','tip',25]]).size,0);
 assert.equal(run([...trunk,['a','join','bend',8],['b','bend','facility',12]],{protectedNode:n=>n.id==='facility'}).size,0);
+assert.equal(run([...trunk,['a','join','facility',8],['b','facility','tip',12]],{protectedNode:n=>n.id==='facility'}).size,0);
+assert.deepEqual(run([...trunk,['a','join','empty-tip',12]],{protectedNode:n=>n.id==='join'}),new Set(['a']),'A protected attachment junction survives removal of its empty spur');
 assert.equal(run([...trunk,['a','join','station',15]],{eligible:e=>e.id!=='a'}).size,0);
 // Loops and links between two junctions are never terminal branches.
 assert.equal(run([...trunk,['a','join','x',5],['b','x','y',5],['c','y','join',5]]).size,0);

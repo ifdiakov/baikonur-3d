@@ -23,7 +23,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum4-transport-cleanup-20261029-v1
+  RELEASE_TAG: museum4-transport-cleanup-20261029-v2
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -132,12 +132,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/transport-cleanup-20261029-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/transport-cleanup-20261029-v2.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 4 — Чистая транспортная схема',
+                name: 'Интерактивный музей 4 — Повторная очистка транспортной схемы',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }
