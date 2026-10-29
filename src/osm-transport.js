@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261029-all-silos-v2';
@@ -179,7 +180,9 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const shoulder=geometryBatch(roadRoot,'OSM · единые обочины',mat.shoulder),asphalt=geometryBatch(roadRoot,'OSM · единое дорожное полотно',mat.asphalt),unpaved=geometryBatch(roadRoot,'OSM · грунтовые проезды',mat.track),paint=geometryBatch(roadRoot,'OSM · разметка',mat.paint);
  const ballast=geometryBatch(railRoot,'OSM · балласт',mat.ballast),ties=geometryBatch(railRoot,'OSM · шпалы',mat.ties),steel=geometryBatch(railRoot,'OSM · рельсы',mat.steel),abandoned=geometryBatch(railRoot,'OSM · бывшие пути',mat.abandoned);
  const batches=[shoulder,asphalt,unpaved,paint,ballast,ties,steel,abandoned],roadPaths=[],railPaths=[],stationLabels=[];
- let markingSegments=0,railTies=0,connections=0;const accessReports=[],railPortReports=[],renderedRoadWays=new Set(),hiddenCityWays=new Set();
+ let markingSegments=0,railTies=0,connections=0;const accessReports=[],railPortReports=[],renderedRoadWays=new Set(),renderedRailWays=new Set(),hiddenCityWays=new Set();
+ let roadPruning=null,railPruning=null;
+ const edgeKept=(graph,e)=>!(graph===roadGraph?roadPruning:railPruning)?.removed.has(e);
  const settlementSpecs=[{id:'baikonur',name:'Байконур',osmId:39209179,profile:'main-streets-only'},
   {id:'akai',name:'Акай',osmId:16783113,profile:'minimum-through-routes'},
   {id:'tyuratam',name:'Тюратам',osmId:15005695,profile:'minimum-through-routes'}];
@@ -198,7 +201,6 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const cityMinor=tags=>!streetAllowed(cityRegion,tags);
  function settlementHidden(p,tags,wayId){return !protectedTrafficWays.has(wayId)&&settlements.some(region=>region.contains(p)&&!streetAllowed(region,tags));}
  const junctionCells=new Map();
- for(const n of roadGraph.nodes.values())if(n.edges.length>2){const k=Math.floor(n.position.x/20)+':'+Math.floor(n.position.z/20);if(!junctionCells.has(k))junctionCells.set(k,[]);junctionCells.get(k).push(n.position);}
  function nearJunction(p,width){const x=Math.floor(p.x/20),z=Math.floor(p.z/20);for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(const q of junctionCells.get((x+dx)+':'+(z+dz))||[])if(Math.hypot(p.x-q.x,p.z-q.z)<width+2)return true;return false;}
  const masks=new Map();
  for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-1':16})){
@@ -236,6 +238,32 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  for(const r of [westCity,eastCity]){r.rampStart=r.length*.7;r.rampEnd=r.length*.75;}
  const roadPlan={routes:[highway,cityRoute,westCity,eastCity],highway,joins:[],extensions:[],source:'OpenStreetMap'};
  const protectedTrafficWays=new Set(roadPlan.routes.flatMap(r=>r.osmWayIds));
+ const gagarin=siteRecords.find(s=>s.id==='pad-1'),padCenter=point(gagarin.x,gagarin.y,0),gate=padCenter.clone().add(V(-171*RAIL_PROFILE.scale,-2.755,0));
+ const railStart=railGraph.nearest(gate.clone().add(V(-60,0,0))),stationFeature=data.railPoints?.features.find(f=>f.properties.osmId===4031286685),stationCoord=stationFeature?.geometry.coordinates||[63.3161095,45.651523],stationMap=geography.project(...stationCoord),railEnd=railGraph.nearest(point(...stationMap,.75));
+ const graphTrain=railGraph.route(railStart,railEnd),railTangent=graphTrain.nodes[1].position.clone().sub(railStart.position).normalize(),straight=gate.clone().add(V(-18,0,0));
+ // Keep physical destinations and the exact attachment edges of model ports.
+ // Named roads, bridges, parking/driveways and operational station sidings
+ // have a purpose even when their endpoint is not a catalogue marker.
+ const roadProtected=new Set(roadGraph.edges.filter(e=>protectedTrafficWays.has(e.wayId)));
+ const railProtected=new Set(graphTrain.edges);
+ for(const [id,spec] of Object.entries(FACILITY_PORTS)){
+  const site=siteRecords.find(s=>s.id===id);if(!site)continue;
+  const effective={...spec,yaw:site.runtimeYaw??spec.yaw},gate=portWorld(effective,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).applyAxisAngle(V(0,1,0),effective.yaw);
+  const near=nearestSegment(roadGraph,gate.clone().addScaledVector(out,30),e=>e.tags.highway!=='track'&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
+  if(near&&near.distance<=300**2)roadProtected.add(near.edge);
+  for(const local of spec.rail||[]){const end=portWorld(effective,local,site,point).add(V(0,-RAIL_PROFILE.headY,0)),rr=nearestSegment(railGraph,end.addScaledVector(out,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(rr&&rr.distance<=250**2)railProtected.add(rr.edge);}
+ }
+ const destinations=siteRecords.map(s=>({position:point(s.x,s.y,0),radius:Math.max(25,(masks.get(s.id)?.radius||0)+12)}));
+ for(const f of data.railPoints?.features||[])if(['station','halt'].includes(tagsFor(f).railway)&&f.geometry.type==='Point')destinations.push({position:point(...geography.project(...f.geometry.coordinates),0),radius:45});
+ const protectedNode=n=>n.id.startsWith('clip:')||destinations.some(d=>Math.hypot(n.position.x-d.position.x,n.position.z-d.position.z)<d.radius);
+ const inCosmodrome=e=>[e.a,e.b].every(n=>n.coord[1]>=45.70&&!settlements.some(region=>region.contains(n.position)));
+ const infrastructure=e=>e.tags.name||e.tags.ref||e.tags.destination||e.tags.bridge&&e.tags.bridge!=='no'||e.tags.tunnel&&e.tags.tunnel!=='no';
+ roadPruning=pruneTerminalBranches(roadGraph,{maxLength:40,protectedEdges:roadProtected,protectedNode,
+  eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&!MAIN.has(e.tags.highway?.replace('_link',''))&&!['driveway','parking_aisle'].includes(e.tags.service)});
+ railPruning=pruneTerminalBranches(railGraph,{maxLength:30,protectedEdges:railProtected,protectedNode,
+  eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&e.tags.usage!=='main'&&!['yard','siding','crossover'].includes(e.tags.service)});
+ // Junction paint gaps and discs must follow the retained edges as well.
+ for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){const k=Math.floor(n.position.x/20)+':'+Math.floor(n.position.z/20);if(!junctionCells.has(k))junctionCells.set(k,[]);junctionCells.get(k).push(n.position);}
  const junctionWidths=new Map();
  for(const way of roadGraph.ways){
   const major=MAIN.has(way.tags.highway?.replace('_link',''))||way.tags.highway==='unclassified',points=[];
@@ -247,6 +275,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   }
   const render=()=>{if(drawRoad(points,way.width,way.tags,major,false,way.osmId,visibleRuns))renderedRoadWays.add(way.osmId);};
   for(const e of way.segments){
+   if(!edgeKept(roadGraph,e)){render();points.length=0;continue;}
    if(points.length&&points.at(-1).distanceTo(e.a.position)>1e-5){render();points.length=0;}
    if(!points.length)points.push(e.a.position);points.push(e.b.position);
    for(const n of [e.a,e.b])junctionWidths.set(n.id,Math.max(junctionWidths.get(n.id)||0,way.width));
@@ -255,7 +284,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(major)visibleRuns.forEach((run,i)=>roadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap'}));
  }
  let junctionCount=0;
- for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>renderedRoadWays.has(e.wayId)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){const width=junctionWidths.get(n.id)||1.6;if(masked(n.position,{},width/2+.3))continue;shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);junctionCount++;}
+ for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&renderedRoadWays.has(e.wayId)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){const width=junctionWidths.get(n.id)||1.6;if(masked(n.position,{},width/2+.3))continue;shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);junctionCount++;}
  function drawRail(points,isAbandoned=false,force=false){
   if(points.length<2)return;const samples=conformPath(points,RAIL_PROFILE.ballastWidth),path=distancePath(samples);if(path.length<.01)return;
   const runs=[];let run=[];for(const p of samples){if(!force&&masked(p,{})){if(run.length>1)runs.push(run);run=[];}else run.push(p);}if(run.length>1)runs.push(run);
@@ -268,12 +297,18 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   for(let d=.4;d<path.length;d+=1.45){const at=path.sample(d,.3);if(!force&&masked(at.position,{}))continue;const normal=V(-at.tangent.z,0,at.tangent.x).normalize(),a=at.position.clone().addScaledVector(normal,-RAIL_PROFILE.sleeperLength/2),b=at.position.clone().addScaledVector(normal,RAIL_PROFILE.sleeperLength/2);ties.ribbon([a,b],RAIL_PROFILE.sleeperWidth,RAIL_PROFILE.sleeperY);railTies++;}
  }
  for(const way of railGraph.ways){
-  const points=[];for(const e of way.segments){if(points.length&&points.at(-1).distanceTo(e.a.position)>1e-5){drawRail(points,way.abandoned);points.length=0;}if(!points.length)points.push(e.a.position);points.push(e.b.position);}drawRail(points,way.abandoned);railPaths.push({id:'osm-rail-'+way.osmId,points,width:RAIL_PROFILE.ballastWidth});
+  const points=[];let run=0;
+  const render=()=>{if(points.length<2)return;drawRail(points,way.abandoned);renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...points],width:RAIL_PROFILE.ballastWidth});run++;};
+  for(const e of way.segments){
+   if(!edgeKept(railGraph,e)){render();points.length=0;continue;}
+   if(points.length&&points.at(-1).distanceTo(e.a.position)>1e-5){render();points.length=0;}
+   if(!points.length)points.push(e.a.position);points.push(e.b.position);
+  }render();
  }
  // Nearest physical segment, used only for the short museum-scale apron
  // transition. Every long-distance route remains a path of shared OSM nodes.
  function nearestSegment(graph,target,filter=()=>true){
-  let best=null;for(const e of graph.edges){if(e.abandoned||!filter(e))continue;const line=new THREE.Line3(e.a.position,e.b.position),p=line.closestPointToPoint(target,true,V());if(masked(p,{},e.width/2+.3))continue;p.y=terrainDatum(p,e.width);const distance=p.distanceToSquared(target);if(!best||distance<best.distance)best={edge:e,point:p,distance};}return best;
+  let best=null;for(const e of graph.edges){if(e.abandoned||!edgeKept(graph,e)||!filter(e))continue;const line=new THREE.Line3(e.a.position,e.b.position),p=line.closestPointToPoint(target,true,V());if(masked(p,{},e.width/2+.3))continue;p.y=terrainDatum(p,e.width);const distance=p.distanceToSquared(target);if(!best||distance<best.distance)best={edge:e,point:p,distance};}return best;
  }
  for(const [id,baseSpec] of Object.entries(FACILITY_PORTS)){
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).applyAxisAngle(V(0,1,0),spec.yaw),target=gate.clone().addScaledVector(out,30);
@@ -312,9 +347,6 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  roadPaths.push({id:'r-south-west',points:mainRoadPoints.slice(0,split+1).reverse(),width:highway.width,source:'OpenStreetMap'},
   {id:'r-south-east',points:mainRoadPoints.slice(split),width:highway.width,source:'OpenStreetMap'});
  // Build the train's long route on the real connected railway network.
- const gagarin=siteRecords.find(s=>s.id==='pad-1'),padCenter=point(gagarin.x,gagarin.y,0),gate=padCenter.clone().add(V(-171*RAIL_PROFILE.scale,-2.755,0));
- const railStart=railGraph.nearest(gate.clone().add(V(-60,0,0))),stationFeature=data.railPoints?.features.find(f=>f.properties.osmId===4031286685),stationCoord=stationFeature?.geometry.coordinates||[63.3161095,45.651523],stationMap=geography.project(...stationCoord),railEnd=railGraph.nearest(point(...stationMap,.75));
- const graphTrain=railGraph.route(railStart,railEnd),railTangent=graphTrain.nodes[1].position.clone().sub(railStart.position).normalize(),straight=gate.clone().add(V(-18,0,0));
  const connection=new THREE.CubicBezierCurve3(straight,straight.clone().add(V(-25,0,0)),railStart.position.clone().addScaledVector(railTangent,-25),railStart.position);
  const connectionPoints=[gate,...sampleCurve(connection)];drawRail(connectionPoints,false,true);connections++;
  const gagarinJoinGap=connectionPoints.at(-1).distanceTo(graphTrain.nodes[0].position);
@@ -349,6 +381,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   stats:()=>({version:'osm-transport-v1',source:'OpenStreetMap',sourceTimestamp:data.roads.osmBaseTimestamp,confidence:'osm-source-node-topology',roadFeatureCount:data.roads.features.length,railFeatureCount:data.railways.features.length,
    roadRoutes:roadGraph.ways.length,railRoutes:railGraph.ways.length,roadNodes:roadGraph.nodes.size,railNodes:railGraph.nodes.size,roadComponents:roadGraph.components.length,railComponents:railGraph.components.length,
    roadSurface:{version:'osm-batched-upward-terrain-surfaces-v2',junctionCount,markingSegments,roads:renderedRoadWays.size,paintLift:.052,sampleStep:1.4,normalDirection:'upward',terrainClearance:.38},junctionCount,markingSegments,railTies,railGauge:RAIL_PROFILE.gauge,
+   branchSimplification:{version:'terminal-branches-v1',road:roadPruning.stats,rail:railPruning.stats},renderedRailWays:renderedRailWays.size,
    renderedRoadWays:renderedRoadWays.size,roadStyle:ROAD_STYLE,cityRoadSimplification:{sourceBoundary:cityFeature?.id||null,hiddenWays:hiddenCityWays.size,hiddenWayIds:[...hiddenCityWays],preservedTrafficWays:roadGraph.ways.filter(w=>cityMinor(w.tags)&&protectedTrafficWays.has(w.osmId)&&w.segments.some(e=>inCity(e.a.position)||inCity(e.b.position))).length},
    settlementRoadSimplification:settlements.map(region=>({id:region.id,name:region.name,sourceBoundary:region.feature?.id||null,minimalProfile:region.profile,sourceWayCount:region.sourceWays.size,renderedWayCount:region.keptWays.size,hiddenWays:region.hiddenWays.size,keptWayIds:[...region.keptWays],preservedTrafficWayIds:[...region.trafficWays]})),
    stationCount:stationLabels.length,stationNames:stationLabels.map(s=>s.name),railSwitches:(data.railPoints?.features||[]).filter(f=>tagsFor(f).railway==='switch').length,

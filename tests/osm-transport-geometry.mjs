@@ -21,6 +21,15 @@ assert(stats.markingSegments>100);assert(stats.railTies>1000);assert(stats.inter
 assert.equal(stats.roadStyle.asphaltColor,'#adb2b3');assert.equal(stats.roadStyle.widths.trunk,3.6);assert.equal(stats.roadStyle.widths.service,1.6);
 assert.equal(stats.cityRoadSimplification.sourceBoundary,'way/39209179');assert(stats.cityRoadSimplification.hiddenWays>100);
 assert(stats.renderedRoadWays>1000&&stats.renderedRoadWays<stats.roadRoutes);
+assert.equal(stats.branchSimplification.version,'terminal-branches-v1');
+assert(stats.branchSimplification.road.removedSegments>800);
+assert(stats.branchSimplification.rail.removedSegments>200);
+assert(stats.renderedRoadWays<1400&&stats.renderedRailWays<530);
+for(const kind of ['road','rail']){
+ const pruning=stats.branchSimplification[kind];
+ assert(pruning.branches.every(b=>b.length>0&&b.length<=pruning.maxLength));
+ assert.equal(pruning.removedSegments,pruning.branches.reduce((sum,b)=>sum+b.segments,0));
+}
 const settlements=Object.fromEntries(stats.settlementRoadSimplification.map(s=>[s.id,s]));
 assert.equal(settlements.akai.sourceBoundary,'relation/16783113');assert.equal(settlements.tyuratam.sourceBoundary,'relation/15005695');
 assert(settlements.baikonur.renderedWayCount<settlements.baikonur.sourceWayCount*.12);
@@ -94,8 +103,12 @@ for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route
  assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }
 const train=transport.trainPath();assert.equal(train.source,'OpenStreetMap');assert(train.path.length>500);assert(train.osmWayIds.length>5);
+assert(Math.abs(train.path.length-1714.470569356343)<1e-6,'Pruning changed the working train route');
+for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}
 assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);assert(stats.saturnAccess?.gateError<1e-7);
+assert.equal(stats.facilityPorts.length,40,'A facility lost its road connection');
+assert.equal(stats.facilityRailPorts.length,6,'A facility lost its rail connection');
 assert(stats.facilityRailPorts.length>=5);for(const p of stats.facilityRailPorts){assert(p.headCenterGap<1e-7);assert(p.networkDatumGap<1e-7);assert(new THREE.Vector3(...p.headCenter).distanceTo(new THREE.Vector3(...p.renderedHeadCenter))<1e-7);}
 // A drawn crossing without a common source node must never form a junction.
 const fixture=(id,ids,coordinates)=>({id:'way/'+id,properties:{osmId:id,sourceNodeIds:ids,tags:{highway:'secondary'}},geometry:{type:'LineString',coordinates}});

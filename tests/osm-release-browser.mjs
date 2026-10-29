@@ -71,6 +71,11 @@ try{
  assert.equal(initial.transport.roadFeatureCount,3185);assert.equal(initial.transport.railFeatureCount,543);
  assert.ok(initial.transport.roadRoutes>2500&&initial.transport.railRoutes>400);
  assert.ok(initial.transport.renderedRoadWays>0&&initial.transport.renderedRoadWays<initial.transport.roadRoutes,'Settlement filtering changes the display while retaining the full source graph');
+ assert.equal(initial.transport.branchSimplification.version,'terminal-branches-v1');
+ assert.ok(initial.transport.branchSimplification.road.branchCount>200);
+ assert.ok(initial.transport.branchSimplification.rail.branchCount>40);
+ assert.equal(initial.transport.facilityPorts.length,40);
+ assert.equal(initial.transport.facilityRailPorts.length,6);
  assert.equal(initial.transport.cityRoadSimplification.sourceBoundary,'way/39209179');
  assert.ok(initial.transport.cityRoadSimplification.hiddenWays>500);
  const settlementFilters=new Map(initial.transport.settlementRoadSimplification.map(s=>[s.id,s]));
