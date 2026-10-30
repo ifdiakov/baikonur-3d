@@ -5,7 +5,7 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork,buildOsmGraph} from '../src/osm-transport.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
-import {SATURN_ACCESS,saturnTerrainHeight} from '../src/saturn-access.js';
+import {SATURN_ACCESS,saturnTerrainHeight,saturnTerrainSample,addSaturnNorthwestGate} from '../src/saturn-access.js';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
 const catalog=read('data/catalog.json'),matches=read('data/osm/catalog-matches.json');
@@ -89,6 +89,74 @@ function pavementHeights(x,z){
   if(u>=-1e-5&&v>=-1e-5&&u+v<=1+1e-5)out.push(u*a.y+v*b.y+(1-u-v)*c.y);
  }return out;
 }
+// A lifted road can clear an oversized hill and still violate the requested
+// layout. Check the full source-road corridor separately from vertical
+// clearance, then compare the real rendered roads with the unmodified OSM
+// elevations (including bridges). Keep the hill off both main roads and ramps.
+const baselineRoads=buildOsmGraph(data.roads.features,{geography,point});
+const arterialWays=new Map(baselineRoads.ways.filter(w=>['trunk','primary'].includes(w.tags.highway?.replace('_link',''))).map(w=>[w.osmId,w]));
+const corridorRadius=320,corridorKinds=new Set(),checkedWays=new Set();
+const steppe=SATURN_ACCESS.elevation+SATURN_ACCESS.scale*saturnTerrainHeight(1e6,1e6);
+let corridorSamples=0,renderedArterialSamples=0,maxCorridorRelief=0,maxCorridorOpacity=0,maxArterialHeightError=0;
+for(const way of arterialWays.values())for(const edge of way.segments){
+ const start=edge.a.position,end=edge.b.position,dx=end.x-start.x,dz=end.z-start.z,length=Math.hypot(dx,dz);
+ const half=(way.width+stats.roadStyle.shoulderExtra)/2,sections=Math.max(1,Math.ceil(length));
+ const across=Math.max(2,Math.ceil(half*2));
+ for(let i=0;i<=sections;i++){
+  const t=i/sections,x=start.x+dx*t,z=start.z+dz*t;
+  if(Math.hypot(x-saturnCenter.x,z-saturnCenter.z)>corridorRadius)continue;
+  checkedWays.add(way.osmId);corridorKinds.add(way.tags.highway);
+  for(let j=0;j<=across;j++){
+   const offset=-half+2*half*j/across,px=x-dz/length*offset,pz=z+dx/length*offset;
+   const sample=saturnTerrainSample((px-saturnCenter.x)/SATURN_ACCESS.scale,(pz-saturnCenter.z)/SATURN_ACCESS.scale);
+   const relief=SATURN_ACCESS.elevation+SATURN_ACCESS.scale*sample.height-steppe;
+   maxCorridorRelief=Math.max(maxCorridorRelief,relief);maxCorridorOpacity=Math.max(maxCorridorOpacity,sample.opacity);corridorSamples++;
+   assert(relief<.01&&sample.opacity<1e-6,`Saturn hill reaches ${way.tags.highway} way/${way.osmId}, including its shoulders`);
+  }
+ }
+}
+assert(corridorSamples>1000,'The road corridor check did not sample the vicinity of Saturn');
+for(const kind of ['trunk','primary','trunk_link','primary_link'])assert(corridorKinds.has(kind),`Missing Saturn corridor coverage for ${kind}`);
+function sourceRoadHeight(way,p){
+ let distance=Infinity,height;
+ for(const edge of way.segments){
+  const a=edge.a.position,b=edge.b.position,dx=b.x-a.x,dz=b.z-a.z;
+  const t=THREE.MathUtils.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz),0,1);
+  const d=(p.x-a.x-dx*t)**2+(p.z-a.z-dz*t)**2;
+  if(d<distance){distance=d;height=a.y+(b.y-a.y)*t;}
+ }
+ assert(distance<1e-8,'Rendered arterial left its OSM source centerline');
+ return height;
+}
+for(const road of transport.roadPaths()){
+ if(!road.id.startsWith('osm-road-'))continue;
+ const way=arterialWays.get(road.osmWayIds?.[0]);if(!way||!checkedWays.has(way.osmId))continue;
+ for(let i=1;i<road.points.length;i++){
+  const start=road.points[i-1],end=road.points[i],sections=Math.max(1,Math.ceil(Math.hypot(end.x-start.x,end.z-start.z)));
+  for(let j=0;j<=sections;j++){
+   const p=start.clone().lerp(end,j/sections);if(Math.hypot(p.x-saturnCenter.x,p.z-saturnCenter.z)>corridorRadius)continue;
+   const expected=sourceRoadHeight(way,p),error=Math.abs(p.y-expected);
+   maxArterialHeightError=Math.max(maxArterialHeightError,error);renderedArterialSamples++;
+   assert(error<1e-6,`Saturn hill raised ${way.tags.highway} way/${way.osmId}`);
+   // The triangular ribbon may differ slightly from its centreline on graded
+   // bridge bends; use the same deck tolerance as the moving-car check below.
+   const pavement=pavementHeights(p.x,p.z);
+   assert(pavement.some(y=>Math.abs(y-expected)<.08),`The rendered pavement of way/${way.osmId} differs from the original road height: ${JSON.stringify({position:p.toArray(),expected,pavement})}`);
+  }
+ }
+}
+assert(renderedArterialSamples>1000,'No rendered main-road surfaces were checked near Saturn');
+// Check the actual endpoint and gate buffer, not only the access report's
+// cached gateError, so moving the station cannot detach its working approach.
+const approaches=transport.roadPaths().filter(r=>r.id===SATURN_ACCESS.routeId);
+assert.equal(approaches.length,1,'Saturn must retain one connected northwest approach');
+const gateRoot=new THREE.Group();gateRoot.position.copy(point(saturn.x,saturn.y,SATURN_ACCESS.elevation));
+gateRoot.scale.setScalar(SATURN_ACCESS.scale);addSaturnNorthwestGate(gateRoot);gateRoot.updateMatrixWorld(true);
+const gateVertices=gateRoot.getObjectByName('northwest-gate-pavement').geometry.attributes.position;
+const gateCenter=new THREE.Vector3().fromBufferAttribute(gateVertices,0).add(new THREE.Vector3().fromBufferAttribute(gateVertices,1)).multiplyScalar(.5);
+const gateGap=approaches[0].points.at(-1).distanceTo(gateRoot.localToWorld(gateCenter));
+assert(gateGap<1e-5,'The moved Saturn northwest gate has detached from its approach');
+assert(stats.saturnAccess.minTerrainClearance>.10,'The northwest approach cuts into the smaller hill');
 let paintVertices=0;
 layers.roads.traverse(m=>{if(m.name!=='OSM · разметка')return;const p=m.geometry.attributes.position;for(let i=0;i<p.count;i++){
  const heights=pavementHeights(p.getX(i),p.getZ(i)),y=p.getY(i);
@@ -105,7 +173,13 @@ for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route
  assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }
 const train=transport.trainPath();assert.equal(train.source,'OpenStreetMap');assert(train.path.length>500);assert(train.osmWayIds.length>5);
-assert(Math.abs(train.path.length-1714.470569356343)<1e-6,'Pruning changed the working train route');
+// Keep the established plan route while allowing the corrected hill to stop
+// lifting its southern tracks. Both references were measured from commit
+// 1b18f6c before the Saturn change, not from the new terrain profile.
+let trainHorizontalLength=0;
+for(let i=1;i<train.path.points.length;i++)trainHorizontalLength+=Math.hypot(train.path.points[i].x-train.path.points[i-1].x,train.path.points[i].z-train.path.points[i-1].z);
+assert(Math.abs(trainHorizontalLength-1710.9621827247777)<1e-6,'The working train route changed in plan');
+assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','1468604922','173086738','256360833'],'The train must retain its established OSM route');
 for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}
 assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);assert(stats.saturnAccess?.gateError<1e-7);
@@ -115,4 +189,6 @@ assert(stats.facilityRailPorts.length>=5);for(const p of stats.facilityRailPorts
 // A drawn crossing without a common source node must never form a junction.
 const fixture=(id,ids,coordinates)=>({id:'way/'+id,properties:{osmId:id,sourceNodeIds:ids,tags:{highway:'secondary'}},geometry:{type:'LineString',coordinates}});
 const graph=buildOsmGraph([fixture(1,[1,2],[[63.3,45.9],[63.5,45.9]]),fixture(2,[3,4],[[63.4,45.8],[63.4,46]])],{geography,point});assert.equal(graph.components.length,2);
-console.log('OSM_TRANSPORT_GEOMETRY_PASS',JSON.stringify({stats,meshCount,vertices,upwardTriangles,terrainSamples,minTerrainClearance,paintVertices,trainLength:train.path.length,routeLengths:plan.routes.map(r=>r.length)}));
+console.log('OSM_TRANSPORT_GEOMETRY_PASS',JSON.stringify({stats,meshCount,vertices,upwardTriangles,terrainSamples,minTerrainClearance,
+ saturnRoadClearance:{corridorSamples,renderedArterialSamples,checkedWays:[...checkedWays],kinds:[...corridorKinds],maxCorridorRelief,maxCorridorOpacity,maxArterialHeightError,gateGap},
+ paintVertices,trainLength:train.path.length,trainHorizontalLength,routeLengths:plan.routes.map(r=>r.length)}));

@@ -4,7 +4,7 @@ import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261029-all-silos-v2';
 import {distancePath} from './traffic-paths.js?v=20261028-museum4-osm-live-v2';
-import {buildSaturnNorthwestAccess,SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261028-museum4-osm-live-v2';
+import {buildSaturnNorthwestAccess,SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-saturn-clearance-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;

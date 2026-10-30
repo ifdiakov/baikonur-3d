@@ -10,6 +10,11 @@ const ORIGIN_X = 650, ORIGIN_Y = 522.5;
 const REFERENCE_LAT = 45.9256;
 export const METRES_PER_MAP_UNIT = 65;
 export const WORLD_UNITS_PER_MAP_UNIT = 3.4;
+// Owner-approved exhibit adjustments are applied after geographic placement.
+// Keep the OSM source point and the registration of every other site intact.
+export const MUSEUM_DISPLAY_OFFSETS = Object.freeze({
+  'pad-23': Object.freeze([20,0])
+});
 const X_METRES_PER_DEGREE = EARTH_RADIUS * DEG * Math.cos(REFERENCE_LAT * DEG);
 const Y_METRES_PER_DEGREE = EARTH_RADIUS * DEG;
 
@@ -229,6 +234,15 @@ export function createMuseumGeography({catalog,matches,sourceElements}={}){
       result.positionBasis='Приблизительная регистрация исторической схемы относительно объектов OpenStreetMap';
       result.positionConfidence='approximate-registration';
     }
+    const displayAdjustment=MUSEUM_DISPLAY_OFFSETS[record.id];
+    if(displayAdjustment){
+      p=[p[0]+displayAdjustment[0],p[1]+displayAdjustment[1]];
+      result.geoSource.displayLonLat=inverseProjectOsm(p);
+      result.geoSource.displayOffset=[...displayAdjustment];
+      result.geoSource.displayOffsetBasis='owner-request-20261030';
+      result.positionConfidence='owner-adjusted-display';
+      result.positionBasis+='; музейное смещение по указанию владельца: +20 вправо';
+    }
     result.x=p[0];result.y=p[1];
     return result;
   });
@@ -247,7 +261,8 @@ export function createMuseumGeography({catalog,matches,sourceElements}={}){
     anchored:resolved.size,exact:[...resolved.values()].filter(s=>s.status.startsWith('exact-')).length,
     resolvedByName:[...resolved.values()].filter(s=>s.status==='owner-name-resolution').length,
     inferred:active.length-resolved.size,aliases:sites.length-active.length,sharedCompoundSites:shared.size,
-    sourcePointPositions:resolved.size-shared.size,sharedCompoundPositions:shared.size,
+    sourcePointPositions:resolved.size-shared.size-active.filter(s=>s.geoSource.displayOffsetBasis).length,
+    sharedCompoundPositions:shared.size,displayAdjusted:active.filter(s=>s.geoSource.displayOffsetBasis).length,
     projection,bounds:{...bounds},warp:warp.report,
     anchoredIds:[...resolved.keys()],inferredIds:active.filter(s=>!resolved.has(s.id)).map(s=>s.id),
     attribution:'© OpenStreetMap contributors',attributionUrl:'https://www.openstreetmap.org/copyright'};

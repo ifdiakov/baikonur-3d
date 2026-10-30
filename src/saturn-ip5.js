@@ -1,5 +1,5 @@
-import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261028-museum4-osm-live-v2';
-import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261028-museum4-osm-live-v2';
+import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261030-saturn-clearance-v1';
+import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261030-saturn-clearance-v1';
 
 // Antennas, buildings and their instancedFrameBatches remain in the unchanged
 // structure module. Access and terrain share one northwest-entry definition.

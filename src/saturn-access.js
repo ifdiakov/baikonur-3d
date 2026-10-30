@@ -4,7 +4,7 @@ import {buildRoadSurfaces} from './road-surface.js?v=20261028-museum4-osm-live-v
 // Museum coordinates: east = +X, north = -Z. Dimensions are illustrative.
 // The entry corner was identified by RocketTrip, not inferred from a map.
 export const SATURN_ACCESS = Object.freeze({
-  revision: 'northwest-hill20-v2', routeId: 'r-site23-saturn-access',
+  revision: 'northwest-compact-hill20-v3', routeId: 'r-site23-saturn-access',
   mainRoadId: 'r-nw-center', scale: .525, elevation: 17.45, verticalRaise: 20,
   gate: Object.freeze({x: -96, y: 7.59, z: -79}),
   internalJoin: Object.freeze({x: -92, y: 7.59, z: -29})
@@ -15,13 +15,13 @@ const smooth = (a,b,v) => {
 };
 
 export function saturnTerrainSample(x,z) {
-  // Broad, slightly asymmetric foothills; no circular cone or raised slab.
+  // Compact, slightly asymmetric foothills stay inside the primary/trunk roads.
   // The zero-slope outer edge fades into the existing steppe at its old height.
   const angle=Math.atan2(z,x);
   const outline=1+.045*Math.sin(3*angle+.45)+.025*Math.cos(5*angle-.8);
   const cos=Math.cos(angle),sin=Math.sin(angle);
   const inner=1/Math.hypot(cos/155,sin/125);
-  const outer=1.16*outline/Math.hypot(cos/330,sin/385);
+  const outer=outline/Math.hypot(cos/235,sin/190);
   const t=THREE.MathUtils.clamp((Math.hypot(x,z)-inner)/(outer-inner),0,1);
   const fade=1-smooth(0,1,t);
   const base=-SATURN_ACCESS.verticalRaise/SATURN_ACCESS.scale-.22;

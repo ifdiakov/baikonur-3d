@@ -329,18 +329,18 @@ import {buildUkssPad,maskUkssTerrain} from './src/ukss-pad.js';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261028-museum4-osm-live-v2';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261028-museum4-osm-live-v2';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261028-museum4-osm-live-v2';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261029-transport-cleanup-v2';
-import {createMuseumGeography} from './src/osm-geography.js?v=20261028-site41-v1';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261030-saturn-clearance-v1';
+import {createMuseumGeography} from './src/osm-geography.js?v=20261030-saturn-clearance-v1';
 import {createNorthBankMask} from './src/river-bank.js?v=20261028-museum4-osm-live-v2';
 import {fitOverviewCamera} from './src/overview-camera.js?v=20261028-museum4-osm-live-v2';
 import {buildExtendedTerrain, sampleSteppe} from './src/terrain-extent.js';
 import {buildHighwaySigns} from './src/road-signs.js';
-import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261028-museum4-osm-live-v2';
-import {SATURN_ACCESS} from './src/saturn-access.js?v=20261028-museum4-osm-live-v2';
+import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261030-saturn-clearance-v1';
+import {SATURN_ACCESS} from './src/saturn-access.js?v=20261030-saturn-clearance-v1';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261028-mriya-paint-v2';
-import {buildEveningScene} from './src/evening-scene.js?v=20261028-site41-v1';
+import {buildEveningScene} from './src/evening-scene.js?v=20261030-saturn-clearance-v1';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261028-museum4-osm-live-v2';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261028-motovoz-photo-v3';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
@@ -351,7 +351,7 @@ const attribution=document.createElement('a');attribution.id='osmAttribution';at
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть слои и объекты');document.querySelector('#ui>.buttons').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть слои и объекты':'Открыть слои и объекты');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261028-museum4-osm-live-v2';
+const MUSEUM_REVISION='20261030-saturn-clearance-v1';
 async function loadMuseumData(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error('Не удалось загрузить данные карты: '+path+' ('+r.status+')');return r.json();}
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmPlaces,transportData]=await Promise.all([
  './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson','./data/osm/railways.geojson',

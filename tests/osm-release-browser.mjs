@@ -6,7 +6,7 @@ import {createNorthBankMask} from '../src/river-bank.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261028-museum4-osm-live-v2';
+const revision='20261030-saturn-clearance-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const matches=JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'));
@@ -146,6 +146,28 @@ try{
  assert.ok((await page.locator('#title').textContent()).includes('Крайний'));
  assert.ok(!(await page.locator('#description').textContent()).includes('Временный сектор'));
  evidence.sites=sites;
+
+ // The whole Saturn exhibit, its graded access and lamp bases must follow the
+ // requested display adjustment while the geographic source remains intact.
+ const shiftedSaturn=await page.evaluate(()=>window.__BAIKONUR_QA.siteState('pad-23'));
+ const saturnSource=geography.project(matches.matches.find(m=>m.siteId==='pad-23').representativeLonLat);
+ assert.ok(near(shiftedSaturn.map,[saturnSource[0]+20,saturnSource[1]]));
+ assert.ok(near(shiftedSaturn.position,[(shiftedSaturn.map[0]-650)*3.4,17.45,(shiftedSaturn.map[1]-522.5)*3.4]));
+ assert.deepEqual(shiftedSaturn.geoSource.displayOffset,[20,0]);
+ assert.deepEqual(shiftedSaturn.scale,[.525,.525,.525]);
+ assert.equal(initial.evening.saturnLights.length,4);
+ assert.ok(initial.evening.saturnRoadLights.length>0);
+ for(const lamp of [...initial.evening.saturnLights,...initial.evening.saturnRoadLights])
+  assert.ok(lamp.y-lamp.terrainY>0&&lamp.y-lamp.terrainY<.06,'Saturn lamp base follows the compact hillside');
+ assert.equal(initial.saturn.access.preservedVerticalRaise,20);
+ assert.ok(near(initial.transport.saturnAccess.gateWorld,[shiftedSaturn.position[0]-96*.525,17.45+7.59*.525,shiftedSaturn.position[2]-79*.525]));
+ await page.locator('#close').click();
+ await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectSaturnHill();q.evening.setEvening(false);});
+ await shot('saturn-hill-day');
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await shot('saturn-hill-evening');
+ await page.locator('#showLabels').check();
+ evidence.saturn={placement:shiftedSaturn,access:initial.transport.saturnAccess,lights:initial.evening.saturnLights};
 
  assert.deepEqual(initial.airports.map(a=>[a.key,a.length]).sort(),[['krayniy',1550],['yubileiny',2250]]);
  assert.equal(initial.arrival.version,'krayniy-osm-circuit-v6');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);

@@ -40,7 +40,14 @@ for(const point of [[62.83,45.58],[63.35,45.85],[64.08,46.12]]){
 for(const match of matches.matches.filter(m=>m.status.startsWith('exact-'))){
   const site=byId.get(match.siteId),expected=geo.project(match.representativeLonLat);
   assert.deepEqual(site.geoSource.sourceLonLat,match.representativeLonLat);
-  if(site.geoSource.status!=='shared-compound-relative')
+  if(site.id==='pad-23'){
+    assert(Math.abs(site.x-expected[0]-20)<1e-9,'Saturn must move exactly 20 map units east');
+    assert(Math.abs(site.y-expected[1])<1e-9,'Moving Saturn east must not change its north/south placement');
+    assert.deepEqual(site.geoSource.displayOffset,[20,0]);
+    assert.equal(site.geoSource.displayOffsetBasis,'owner-request-20261030');
+    assert.equal(site.positionConfidence,'owner-adjusted-display');
+    assert.deepEqual(site.geoSource.displayLonLat,geo.inverseProject(site.x,site.y));
+  }else if(site.geoSource.status!=='shared-compound-relative')
     assert(Math.hypot(site.x-expected[0],site.y-expected[1])<1e-9,`${site.id}: not at its source point`);
 }
 

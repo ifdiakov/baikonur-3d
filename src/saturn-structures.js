@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261028-museum4-osm-live-v2';
+import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261030-saturn-clearance-v1';
 
 /**
  * Baikonur Site 23: IP-5 Saturn-MS measuring station — museum reconstruction.
@@ -80,7 +80,7 @@ export function buildSaturnIP5(root,terrain={}) {
   }
   function groundPatch(){
     // A low, broad hill uses the same height field as its graded access road.
-    const N=100,extent=1000,vertices=[],colors=[],uv=[],indices=[];
+    const N=100,extent=600,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
       const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent;
       const {height,opacity}=saturnTerrainSample(xx,zz);
