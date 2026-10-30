@@ -16,7 +16,7 @@ try{
  await page.goto(base+'?site=1&v=portal-reviewed-v1',{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.portalArchive?.count===11,null,{timeout:90000});
  await page.waitForTimeout(800);
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.screenshot({path:`qa-portal/${prefix}-gagarin-evening.png`});
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));await page.waitForTimeout(350);
  const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
@@ -38,7 +38,7 @@ try{
   if(['pad-81','pad-92','pad-95','pad-110','pad-251','city'].includes(model.id))await page.screenshot({path:`qa-portal/${prefix}-${model.id}.png`});
   evidence.push({id:model.id,orientation:model.orientation,primitiveCount:model.features.primitiveCount,batches:model.features.batches,bounds:model.bounds});
  }
- await page.locator('#all').click();await page.mouse.move(980,450);await page.mouse.down();await page.mouse.move(1050,480,{steps:8});await page.mouse.up();await page.waitForTimeout(250);
+ await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());await page.mouse.move(980,450);await page.mouse.down();await page.mouse.move(1050,480,{steps:8});await page.mouse.up();await page.waitForTimeout(250);
  assert.ok(!(await page.locator('#title').textContent()).includes('Сатурн'),'No navigation jump');
  await page.goto(base+'archive.html?model=np-rockettrip&v=portal-photo-v1',{waitUntil:'domcontentloaded',timeout:60000});await page.waitForFunction(()=>window.__ARCHIVE_QA?.stats()?.length===5,null,{timeout:60000});
  for(const id of ['np-rockettrip','kpp-7','pad-41-study','pad-2-study','interior-study']){await page.selectOption('#study',id);const models=await page.evaluate(()=>window.__ARCHIVE_QA.stats());assert.equal(models.filter(m=>m.visible).length,1);assert.ok(models.find(m=>m.id===id).features.primitiveCount>10);if(['np-rockettrip','interior-study'].includes(id))await page.screenshot({path:`qa-portal/${prefix}-${id}.png`});}

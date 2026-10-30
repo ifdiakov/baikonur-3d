@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION} from './aircraft-livery.js?v=20261028-museum4-osm-live-v2';
 
 import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261028-museum4-osm-live-v2';
+import {arrivalStatus,createArrivalStatusTimeline,ARRIVAL_STATUS_VERSION} from './arrival-status.js?v=moscow-krayniy-status-v1';
 export {FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION};
 // Airport transforms and the complex centre define the complete two-sortie circuit.
 const V=(x,y,z)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
@@ -61,9 +62,11 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
  const path=createArrivalPath(airfield,{firstAirfield,complexCenter}),root=new THREE.Group();root.name='Крайний · непрерывный цикл полётов';root.userData.pickable=false;scene.add(root);
  const craft=buildAircraft(root),trail=buildContrails(scene,path);
  let elapsed=0,following=false,paused=false,lastNow=null,uiSecond=-1,lastTrail=-1,state=path.sample(0),forced=null;
- container.innerHTML='<div class="arrival-title"><span class="arrival-dot"></span><span>КРАЙНИЙ · ПОЛЁТ ПО КРУГУ</span><time id="arrivalClock" title="До следующего этапа">02:00</time></div><div class="arrival-bottom"><span id="arrivalPhase">Над космодромом</span><button id="arrivalFollow" type="button" aria-pressed="false">Следить</button><button id="arrivalReplay" type="button" aria-label="Начать цикл полёта заново" title="Начать цикл заново">↺</button></div><div class="arrival-hint">Мышь или палец — вращение · колесо — приближение</div>';
- const follow=container.querySelector('#arrivalFollow'),replay=container.querySelector('#arrivalReplay'),clock=container.querySelector('#arrivalClock'),label=container.querySelector('#arrivalPhase');
- const labels={overflight:'Над космодромом',approach:'Заход на посадку',flare:'Над полосой',rollout:'Пробег до 4/5 ВПП',hold:'Стоянка · 20 секунд','turn-back':'Разворот для руления','taxi-back':'Возвращение к началу ВПП','turn-takeoff':'Разворот перед взлётом',takeoff:'Разгон и взлёт',departure:'Пролёт через комплекс',away:'Возвращение через минуту'};
+ const statusTimeline=createArrivalStatusTimeline(path.phases);let status=arrivalStatus(statusTimeline,state.cycleTime);
+ container.innerHTML='<div class="arrival-title"><span class="arrival-dot" aria-hidden="true"></span><span id="arrivalRoute" role="status" aria-live="polite" aria-atomic="true">МОСКВА-КРАЙНИЙ</span><time id="arrivalClock" role="timer" aria-live="off" title="До стоянки"></time></div><div class="arrival-bottom"><span id="arrivalPhase">Над космодромом</span><button id="arrivalFollow" type="button" aria-pressed="false">Следить</button><button id="arrivalReplay" type="button" aria-label="Начать цикл полёта заново" title="Начать цикл заново">↺</button></div><div class="arrival-hint">Мышь или палец — вращение · колесо — приближение</div>';
+ const follow=container.querySelector('#arrivalFollow'),replay=container.querySelector('#arrivalReplay'),clock=container.querySelector('#arrivalClock'),route=container.querySelector('#arrivalRoute'),label=container.querySelector('#arrivalPhase');
+ const labels={overflight:'Над космодромом',approach:'Заход на посадку',flare:'Над полосой',rollout:'Пробег до 4/5 ВПП',hold:'Самолёт на стоянке','turn-back':'Разворот для руления','taxi-back':'Возвращение к началу ВПП','turn-takeoff':'Разворот перед взлётом',takeoff:'Разгон и взлёт',departure:'Пролёт через комплекс',away:'За пределами макета'};
+ const countdownTitles={inbound:'До стоянки',parking:'До вылета',outbound:'До следующего прилёта'};
  const followTarget=new THREE.Vector3(),savedControls={};
  function stopFollowing(){if(following)Object.assign(controls,savedControls);following=false;document.body.classList.remove('following-arrival');follow.textContent='Следить';follow.title='Следить за самолётом';follow.setAttribute('aria-pressed','false');}
  function setFollowing(value){if(!value){stopFollowing();return;}if(following)return;
@@ -90,7 +93,18 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
   craft.landing.root.visible=state.visible&&state.gear>.85&&(state.segment!=='approach'||state.phaseTime>=72);
   if(following&&state.visible){const target=state.bodyPosition;camera.position.add(target.clone().sub(followTarget));controls.target.copy(target);followTarget.copy(target);controls.update();}
   if(Math.abs(t-lastTrail)>.1||lastTrail<0||lastTrailCamera.distanceToSquared(camera.position)>.01){trail.update(t,camera);lastTrail=t;lastTrailCamera.copy(camera.position);}
-  const sec=Math.ceil(state.phaseRemaining),uiKey=state.leg+':'+state.segment+':'+sec;if(uiKey!==uiSecond){uiSecond=uiKey;clock.textContent=String(Math.floor(sec/60)).padStart(2,'0')+':'+String(sec%60).padStart(2,'0');label.textContent=labels[state.phase]+(state.segment==='departure'?(state.direction==='northeast'?' · на северо-восток':' · на север'):'');container.dataset.leg=String(state.leg);container.dataset.phase=state.segment;}
+  status=arrivalStatus(statusTimeline,state.cycleTime);
+  const uiKey=state.leg+':'+state.segment+':'+status.seconds;
+  if(uiKey!==uiSecond){
+   uiSecond=uiKey;
+   // Only the three major status changes are announced. Reading each second
+   // aloud would drown out the map's controls for screen-reader users.
+   if(route.textContent!==status.label)route.textContent=status.label;
+   clock.textContent=status.seconds+' сек';clock.dateTime='PT'+status.seconds+'S';clock.title=countdownTitles[status.id];
+   label.textContent=labels[state.phase]+(state.segment==='departure'?(state.direction==='northeast'?' · на северо-восток':' · на север'):'');
+   container.dataset.leg=String(state.leg);container.dataset.phase=state.segment;
+   container.dataset.flightStatus=status.id;container.dataset.flightSeconds=String(status.seconds);
+  }
  }
  function inspect(view='port'){
   stopFollowing();onFollow?.();
@@ -102,7 +116,7 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
  render(0);
  return {path,stopFollowing,setFollowing,restart,inspect,setEvening(value){craft.setEvening(value);},seek(seconds){elapsed=Math.max(0,Number.isFinite(seconds)?seconds:0);forced=elapsed;render(elapsed);},resume(){forced=null;lastNow=null;},
   update(now){if(lastNow===null)lastNow=now;if(!paused&&forced===null)elapsed+=Math.max(0,(now-lastNow)/1000);lastNow=now;render(elapsed);},
-  stats:()=>({appearanceVersion:AIRCRAFT_APPEARANCE_VERSION,appearance:craft.stats(),aircraft:craft.stats(),cameraOffset:camera.position.clone().sub(controls.target).toArray(),version:FLIGHT_CIRCUIT_VERSION,duration:FLIGHT_CYCLE_DURATION,arrivalDuration:FLIGHT_DURATION,cycleDuration:FLIGHT_CYCLE_DURATION,legDuration:FLIGHT_LEG_DURATION,elapsed:state.cycleTime,totalElapsed:elapsed,phase:state.phase,segment:state.segment,phaseTime:state.phaseTime,phaseRemaining:state.phaseRemaining,leg:state.leg,direction:state.direction,visible:state.visible,following,position:state.position.toArray(),velocity:state.velocity.toArray(),
+  stats:()=>({appearanceVersion:AIRCRAFT_APPEARANCE_VERSION,appearance:craft.stats(),aircraft:craft.stats(),cameraOffset:camera.position.clone().sub(controls.target).toArray(),version:FLIGHT_CIRCUIT_VERSION,statusVersion:ARRIVAL_STATUS_VERSION,status:{...status},statusTimeline,duration:FLIGHT_CYCLE_DURATION,arrivalDuration:FLIGHT_DURATION,cycleDuration:FLIGHT_CYCLE_DURATION,legDuration:FLIGHT_LEG_DURATION,elapsed:state.cycleTime,totalElapsed:elapsed,phase:state.phase,segment:state.segment,phaseTime:state.phaseTime,phaseRemaining:state.phaseRemaining,leg:state.leg,direction:state.direction,visible:state.visible,following,position:state.position.toArray(),velocity:state.velocity.toArray(),
    attitudeVersion:'positive-approach-v2',pitchDeg:state.pitchDeg,bodyPosition:craft.model.position.toArray(),
    renderedPitchDeg:Math.asin(V(0,0,1).applyQuaternion(craft.model.quaternion).y)*180/Math.PI,
    mainWheelBottom:craft.model.localToWorld(V(3,-2.72,-3)).y-.46*AIRCRAFT_SCALE,

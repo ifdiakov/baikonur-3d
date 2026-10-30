@@ -17,7 +17,7 @@ const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console'
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',r=>r.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(r.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 try{
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:90000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic&&window.__TRAIN_PENDING,null,{polling:100});
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train);
  assert.equal(initial.coachCount,4);assert.equal(initial.version,'motovoz-photo-shunter-v3');
  assert.equal(initial.coaches.filter(c=>c.tailLights).length,1);assert.equal(initial.coaches[3].tailLights,true);

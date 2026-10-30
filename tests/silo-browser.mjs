@@ -17,7 +17,7 @@ try{
  assert((await page.locator('#title').textContent()).includes('109'));
  assert(await page.getByRole('button',{name:'К шахте',exact:true}).isVisible());
  assert.equal((await advance()).state,'closed');await screenshot('closed');
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.getByRole('button',{name:'К шахте',exact:true}).click();
  await page.locator('#close').click();
  const moving=await advance(1);assert.equal(moving.state,'opening');assert(moving.lidAngleDeg>0&&moving.lidAngleDeg<108);
@@ -28,10 +28,10 @@ try{
  const closest=await advance(1);assert.equal(closest.state,'open');assert(closest.cameraDistance<opened.cameraDistance);
  assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));await screenshot('maximum-zoom');
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.silo.inspect('close');q.evening.setEvening(true);window.__SILO_FRAME();});await advance(1);await screenshot('open-evening');
- await page.locator('#all').click();const retreat=await advance(1);assert.equal(retreat.state,'closing');const closed=await advance(4);assert.equal(closed.state,'closed');assert.equal(closed.steamVisible,false);
+ await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());const retreat=await advance(1);assert.equal(retreat.state,'closing');const closed=await advance(4);assert.equal(closed.state,'closed');assert.equal(closed.steamVisible,false);
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-109');q.silo.inspect('close');window.__SILO_FRAME();});await advance();
- await page.locator('[data-layer="sites"]').uncheck();const hidden=await advance(.2);assert.equal(hidden.visible,false);assert.equal(hidden.steamVisible,false);assert.equal(hidden.progress,0);
- await page.locator('[data-layer="sites"]').check();await advance();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',false));const hidden=await advance(.2);assert.equal(hidden.visible,false);assert.equal(hidden.steamVisible,false);assert.equal(hidden.progress,0);
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',true));await advance();
  // Every card must focus its own shaft, not the first registered instance.
  const checked=[];
  for(const id of SILO_SITE_IDS){

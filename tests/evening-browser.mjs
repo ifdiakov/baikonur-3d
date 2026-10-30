@@ -32,7 +32,7 @@ try{
  assert.equal(night.cabinWindows,60);assert.equal(night.cockpitPanels,6);
  assert.ok(night.cabinLightIntensity>night.cockpitLightIntensity&&night.cockpitLightIntensity>0);
  assert.equal(night.pointLights,0,'Window lighting stays batched');
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(26));
  await snapshot('overview');
  await page.evaluate(()=>window.__BAIKONUR_QA.arrival.inspect('port'));await snapshot('alrosa-port-evening');
@@ -53,7 +53,7 @@ try{
  s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(s.arrival.onGround,true);assert.equal(s.arrival.gear,1);
  await snapshot('touchdown');
  await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(148));await page.waitForTimeout(200);
- assert.equal(await page.locator('#arrivalPhase').textContent(),'Стоянка · 20 секунд');
+ assert.equal(await page.locator('#arrivalPhase').textContent(),'Самолёт на стоянке');
  assert.ok(Math.abs((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).runwayProgress-.8)<1e-9);await snapshot('runway-stop-80-percent');
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats())).trail.visibleSamples,0);
  const stopped=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().position);await page.waitForTimeout(200);

@@ -13,7 +13,7 @@ try{
  console.log('HOTEL_SCENE_READY');
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-75');q.evening.setEvening(false);window.__HOTEL_FRAME();});
  assert((await page.locator('#title').textContent()).includes('7 ветров'));
- await page.locator('#showLabels').uncheck();await page.locator('#close').click();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await page.locator('#close').click();
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.hotel.stats());assert.equal(stats.floors,4);assert.equal(stats.gazebos,2);
  async function shot(view){console.log('HOTEL_VIEW',view);await page.evaluate(view=>{window.__BAIKONUR_QA.hotel.inspect(view);window.__HOTEL_FRAME();},view);await page.screenshot({path:`${out}/${prefix}-${view}.png`,timeout:120000});}
  await shot('all');await shot('front');await shot('garden');

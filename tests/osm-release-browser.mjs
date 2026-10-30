@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261030-krayniy-terminal-v1';
+const revision='20261031-museum-menu-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v1.json','utf8'));
@@ -143,7 +143,8 @@ try{
  for(const p of [...lightPositions.scene,...lightPositions.editor])assert.ok(p.every(Number.isFinite)&&northBank.contains(p[0],p[2]),'Every rendered stationary light stays on the cosmodrome side of the river');
  evidence.lighting={bankFilter:initial.evening.bankFilter,editor:initial.lighting,checkedPositions:lightPositions.scene.length+lightPositions.editor.length};
  assert.equal(await page.locator('#flanksView,#eveningToggle,#lightingToggle,#trainFollow,#carsFocus,#ui a[href*="archive.html"]').count(),0);
- for(const id of ['all','top','fly','arrivalPanel','showLabels'])assert.equal(await page.locator('#'+id).count(),1);
+ assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0,'Removed sidebar controls must not remain hidden in the DOM');
+ for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'])assert.equal(await page.locator('#'+id).count(),1);
  assert.ok(await page.locator('a[href="https://www.openstreetmap.org/copyright"]').count()>0,'Visible OSM attribution is part of the live map');
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));
  const overview=await shot('overview-day');
@@ -194,7 +195,7 @@ try{
   assert.ok(lamp.y-lamp.terrainY>0&&lamp.y-lamp.terrainY<.06,'Saturn lamp base follows the compact hillside');
  assert.equal(initial.saturn.access.preservedVerticalRaise,20);
  await page.locator('#close').click();
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectSaturnHill();q.evening.setEvening(false);});
  await shot('saturn-hill-day');
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await shot('saturn-hill-evening');
@@ -224,7 +225,7 @@ try{
   riverViews.push(state);await shot('river-'+view+'-day');
  }
  evidence.river={geometry:riverState,views:riverViews};
- await page.locator('#showLabels').check();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));
  evidence.saturn={placement:shiftedSaturn,access:initial.transport.saturnAccess,lights:initial.evening.saturnLights};
 
  // Exercise the public MZK/SDI card and its real view buttons. Geometry tests
@@ -253,7 +254,7 @@ try{
  assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),'infracos');
  assert.equal(await page.locator('#mzkViews').isVisible(),true);
  assert.deepEqual(await page.locator('#mzkViews button').allTextContents(),['Весь комплекс','МЗК','СДИ']);
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  const mzkCameras={};
  for(const [label,view,name]of [['Весь комплекс','all','mzk-sdi-all'],['МЗК','mzk','mzk-facade'],['СДИ','sdi','sdi-front']]){
   await page.locator('#mzkViews').getByRole('button',{name:label,exact:true}).click();
@@ -265,7 +266,7 @@ try{
   mzkCameras[view]=camera;
  }
  evidence.mzkSdi={model:mzkSdi,placement:mzkPlacement,cameras:mzkCameras};
- await page.locator('#close').click();await page.locator('#showLabels').check();
+ await page.locator('#close').click();await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
 
  // The uploaded native model must be loaded, not silently replaced by the
@@ -317,9 +318,9 @@ try{
  await mockupToggle.click();await step();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukss.mockup.visible),false);
  assert.match(await mockupToggle.textContent(),/ПОКАЗАТЬ/);
- await page.locator('input[data-layer="sites"]').uncheck();await step();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',false));await step();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled),0,'The ground hole closes when the exhibit layer is hidden');
- await page.locator('input[data-layer="sites"]').check();await step();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',true));await step();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled),1);
  await page.locator('#ukssViews').getByRole('button',{name:'Весь комплекс',exact:true}).click();
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await shot('ukss-overview-evening');
@@ -407,15 +408,18 @@ try{
   minimumShoreClearance=Math.min(minimumShoreClearance,clearance);
   assert.ok(clearance>=5&&northBank.contains(x,z),'Every displayed Krayniy light stays on dry airport-side land');
  }
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectLocalRoads('airfield',480);q.evening.setEvening(true);});
  await shot('krayniy-shore-lights');
- await page.locator('#showLabels').check();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));
  evidence.krayniyShore={length:1380,lights:krayniyLights.length,minimumShoreClearance};
  assert.equal(initial.arrival.version,'krayniy-osm-circuit-v6');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);
  assert.deepEqual(initial.arrival.airports.map(a=>a.key),['krayniy','krayniy']);
- assert.ok((await page.locator('#arrivalPanel .arrival-title').textContent()).includes('КРАЙНИЙ'));
- assert.ok(!(await page.locator('#arrivalPanel .arrival-title').textContent()).includes('ЮБИЛЕЙНЫЙ'));
+ const arrivalStatus=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().status);
+ assert.ok(['inbound','parking','outbound'].includes(arrivalStatus.id));
+ assert.equal(await page.locator('#arrivalRoute').textContent(),arrivalStatus.label);
+ assert.equal(await page.locator('#arrivalClock').textContent(),arrivalStatus.seconds+' сек');
+ assert.ok(!(await page.locator('#arrivalPanel .arrival-title').textContent()).includes('ПОЛЁТ ПО КРУГУ'));
  for(const a of initial.arrival.airports){
   const f=airportFeatures.find(f=>f.properties.osmId===(a.key==='yubileiny'?24949215:37591623));
   const first=f.geometry.coordinates[0],last=f.geometry.coordinates.at(-1),mid=geography.project((first[0]+last[0])/2,(first[1]+last[1])/2);
@@ -440,7 +444,7 @@ try{
  }
  evidence.flight=flight;
 
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.traffic.stopFollowing();q.evening.setEvening(false);q.inspectSite31('duct');});
  const pad31=initial.portalArchive.models.find(m=>m.id==='pad-31');
  assert.equal(pad31.features.site31.version,'site31-satellite-trench-v3');
@@ -483,14 +487,18 @@ try{
  await hideCards.evaluate(e=>e.remove());evidence.flanks=flank;
 
  await page.setViewportSize({width:390,height:844});
- await page.locator('#all').click();await step();evidence.hierarchy.push({mobile:true,...await hierarchy('overview')});
+ await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());await step();evidence.hierarchy.push({mobile:true,...await hierarchy('overview')});
  const mobileMenu=page.locator('#mobileMenuToggle');
  assert.equal(await mobileMenu.isVisible(),true);assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
- assert.equal(await page.locator('#showLabels').isVisible(),false);
- await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');assert.equal(await page.locator('#showLabels').isVisible(),true);
- await page.locator('#showLabels').uncheck();await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),0);
- await page.locator('#showLabels').check();await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),1);
- await mobileMenu.click();await step();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');assert.equal(await page.locator('#showLabels').isVisible(),false);
+ const menuSections=['sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'];
+ for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),false);
+ await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');
+ for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),true);
+ assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),0);
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),1);
+ await mobileMenu.click();await step();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
+ for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),false);
  assert.equal(await page.locator('#hero').isVisible(),false);
  const mobileMap=await page.evaluate(()=>{
   const q=window.__BAIKONUR_QA,ui=document.getElementById('ui').getBoundingClientRect(),dock=document.getElementById('timeDock').getBoundingClientRect(),top=ui.bottom+12,bottom=dock.top-12;
@@ -529,7 +537,7 @@ try{
  assert.ok(tuaMobile.card.height<260&&tuaMobile.card.bottom<=tuaMobile.timelineTop-4,'The compact TUA card leaves the model and timeline usable');
  assert.ok(near(tuaMobile.camera.target,tuaCameraTarget,.001));
  await shot('mobile-tua');evidence.tua.mobile=tuaMobile;await page.locator('#close').click();
- await page.locator('#all').click();await shot('mobile-map');
+ await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());await shot('mobile-map');
  assert.equal(await page.locator('#trainFollow,#carsFocus,#flanksView,#eveningToggle,#lightingToggle,#ui a[href*="archive.html"]').count(),0);
 
  // Exercise the actual public deep link on a fresh phone page, including the

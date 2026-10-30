@@ -6,7 +6,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 // Only frame scheduling is controlled; every deliberate frame is real WebGL.
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
-const revision='20261030-krayniy-terminal-v1';
+const revision='20261031-museum-menu-v1';
 const evidence={base,prefix,revision,cases:{}};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -126,7 +126,6 @@ async function waitError(page){
 }
 const step=page=>page.evaluate(()=>window.__STARTUP_FRAME());
 const camera=page=>page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
-const elevation=({position:p,target:t})=>Math.atan2(p[1]-t[1],Math.hypot(p[0]-t[0],p[2]-t[2]))*180/Math.PI;
 function assertNoRuntimeErrors(record){assert.deepEqual(record.pageErrors,[]);assert.deepEqual(record.shaderErrors,[]);}
 
 try{
@@ -145,15 +144,21 @@ try{
   assert.ok(run.record.fontStylesheetsPending.length>0,'A genuinely pending font stylesheet does not block startup');
   assert.deepEqual(run.record.externalBlocked.filter(item=>item.type==='script'),[],'All executable engine modules come from the museum origin');
   const overview=await camera(run.page);
-  await run.page.locator('#top').click();await step(run.page);const top=await camera(run.page);
-  assert.ok(elevation(top)>80,'The top button changes the live camera to a top view');
-  assert.notDeepEqual(top.position,overview.position);
-  await run.page.locator('#all').click();await step(run.page);const all=await camera(run.page);
-  assert.ok(elevation(all)<80,'The whole-museum button restores the oblique overview');
-  assert.notDeepEqual(all.position,top.position);
+  // Use the current visitor-facing menu to prove that startup has enabled
+  // real navigation. The removed overview/layer controls must stay absent.
+  assert.equal(await run.page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
+  await run.page.locator('#equipmentAccordion > summary').click();
+  await run.page.locator('[data-museum-action="r7"]').click();await step(run.page);const r7=await camera(run.page);
+  assert.equal(await run.page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),true,'The R-7 menu action shows its actual exhibit');
+  assert.notDeepEqual(r7.position,overview.position,'The equipment menu changes the live camera');
+  if(!await run.page.locator('#equipmentAccordion').evaluate(e=>e.open))await run.page.locator('#equipmentAccordion > summary').click();
+  await run.page.locator('[data-museum-action="tua"]').click();await step(run.page);const tua=await camera(run.page);
+  assert.match(await run.page.locator('#title').textContent(),/112/);
+  assert.equal(await run.page.locator('#mik112Tua').getAttribute('aria-pressed'),'true','The TUA action selects the native transporter view');
+  assert.notDeepEqual(tua.position,r7.position);
   await run.page.screenshot({path:`${out}/${prefix}-ready.png`,timeout:90000});
   run.record.ready=ready.state.test.ready[0];run.record.feedback=ready.state.test.feedback;
-  run.record.models={ukss:ready.stats.ukss.status,tua:ready.stats.mik112.tua.status};run.record.cameras={overview,top,all};
+  run.record.models={ukss:ready.stats.ukss.status,tua:ready.stats.mik112.tua.status};run.record.cameras={overview,r7,tua};
   assertNoRuntimeErrors(run.record);await run.close();
  }
  {

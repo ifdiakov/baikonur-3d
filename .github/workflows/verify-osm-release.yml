@@ -1,4 +1,4 @@
-name: Museum 5 — Krayniy terminal and release
+name: Museum 5 — navigation menu and release
 on:
   push:
     branches: [main]
@@ -34,7 +34,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum5-krayniy-terminal-20261030-v1
+  RELEASE_TAG: museum5-menu-20261031-v1
 jobs:
   verify_local:
     name: Local geometry and browser checks
@@ -78,6 +78,7 @@ jobs:
           node tests/site31-geometry.mjs
           node tests/road-surfaces-geometry.mjs
           node tests/arrival-geometry.mjs
+          node tests/arrival-status.mjs
           node tests/flanks-geometry.mjs
           node tests/train-consist.mjs
       - name: Serve this exact checkout
@@ -86,21 +87,27 @@ jobs:
           curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
       - name: Verify local startup and failure recovery
         run: node tests/startup-browser.mjs
+      - name: Verify the local menu and flight status
+        run: node tests/left-menu-browser.mjs
       - name: Verify the local Krayniy terminal
         run: node tests/krayniy-terminal-browser.mjs
-      - name: Verify the complete local product in Chromium
-        run: |
-          node tests/osm-release-browser.mjs
-          node tests/flanks-browser.mjs
-          node tests/mriya-browser.mjs
-          node tests/train-browser.mjs
-          node tests/silo-browser.mjs
+      - name: Verify the complete local museum in Chromium
+        run: node tests/osm-release-browser.mjs
+      - name: Verify local flank navigation
+        run: node tests/flanks-browser.mjs
+      - name: Verify the local Mriya exhibit
+        run: node tests/mriya-browser.mjs
+      - name: Verify the local train
+        run: node tests/train-browser.mjs
+      - name: Verify local silos and hotel
+        run: node tests/silo-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-krayniy-terminal-qa-local
+          name: museum5-menu-qa-local
           path: |
             qa-startup/
+            qa-menu/
             qa-krayniy/
             qa-osm-release/
             qa-flanks/
@@ -130,21 +137,27 @@ jobs:
         run: node scripts/verify-published.mjs
       - name: Verify live startup and failure recovery
         run: node tests/startup-browser.mjs
+      - name: Verify the live menu and flight status
+        run: node tests/left-menu-browser.mjs
       - name: Verify the live Krayniy terminal
         run: node tests/krayniy-terminal-browser.mjs
-      - name: Verify the live museum and capture review images
-        run: |
-          node tests/osm-release-browser.mjs
-          node tests/flanks-browser.mjs
-          node tests/mriya-browser.mjs
-          node tests/train-browser.mjs
-          node tests/silo-browser.mjs
+      - name: Verify the complete live museum in Chromium
+        run: node tests/osm-release-browser.mjs
+      - name: Verify live flank navigation
+        run: node tests/flanks-browser.mjs
+      - name: Verify the live Mriya exhibit
+        run: node tests/mriya-browser.mjs
+      - name: Verify the live train
+        run: node tests/train-browser.mjs
+      - name: Verify live silos and hotel
+        run: node tests/silo-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-krayniy-terminal-qa-public
+          name: museum5-menu-qa-public
           path: |
             qa-startup/
+            qa-menu/
             qa-krayniy/
             qa-osm-release/
             qa-flanks/
@@ -194,12 +207,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/krayniy-terminal-20261030-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/museum-menu-20261031-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 5 — аэровокзал Крайнего',
+                name: 'Интерактивный музей 5 — меню и статусы рейса',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

@@ -57,9 +57,9 @@ try{
  assert.equal(await detail.getAttribute('data-collapsed'),'false');
  assert.equal(await label.getAttribute('data-collapsed'),'false');
  assert.equal(await label.locator('.site-eye-toggle').isVisible(),true);
- await page.locator('[data-layer="rails"]').uncheck();await step();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('rails',false));await step();
  await label.waitFor({state:'hidden'});
- await page.locator('[data-layer="rails"]').check();await step();await label.waitFor({state:'visible'});
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('rails',true));await step();await label.waitFor({state:'visible'});
  await page.locator('#sitesAccordion > summary').click();
  await page.locator('#search').fill('Нагорная');
  assert.equal(await page.locator('#list .entry-station').count(),1);
@@ -89,7 +89,7 @@ try{
  assert.equal(terrain.sameMap,true);assert.equal(terrain.type,'MeshBasicMaterial');assert.equal(terrain.color,0xffffff);
  console.log('SATURN TEXTURE PASS',JSON.stringify(terrain));
 
- await page.locator('#close').click();await page.locator('#showLabels').uncheck();await step();
+ await page.locator('#close').click();await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await step();
  await page.evaluate(()=>window.__BAIKONUR_QA.lighting.setActive(true));assert.equal(await page.locator('#lightingPanel').isVisible(),true);
  await page.mouse.click(1030,730);await step();
  let lamps=await page.evaluate(()=>window.__BAIKONUR_QA.lighting.snapshot().lamps);
@@ -125,7 +125,7 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.lighting,null,{timeout:90000});
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.lighting.stats())).count,rowCount);
  assert.equal(await page.locator('#lightingPanel').isVisible(),false);
- await page.locator('#showLabels').uncheck();await step();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await step();
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite(0));await page.locator('#close').click();
  await page.screenshot({path:'qa-gagarin-track-join.png'});
  await page.evaluate(()=>window.__BAIKONUR_QA.focusInterchange());

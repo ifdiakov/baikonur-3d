@@ -10,7 +10,7 @@ try{
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:60000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic,null,{timeout:90000});
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(stats.traffic.cars,20);assert.equal(stats.traffic.version,'ground-traffic-v2');assert.equal(stats.sites,97);
  assert.equal(stats.arrival.attitudeVersion,'positive-approach-v2');assert.equal(stats.mik112.version,'1.3-photo-frames');assert.ok(stats.shadersValid);
- await page.locator('#showLabels').uncheck();await page.locator('#arrivalFollow').click();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await page.locator('#arrivalFollow').click();
  for(const t of [84,100,120,124,127]){
   await page.evaluate(t=>window.__BAIKONUR_QA.arrival.seek(t),t);await page.waitForTimeout(120);
   const a=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
@@ -30,7 +30,7 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.traffic.seek(420));await page.waitForTimeout(200);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.phase),'arrived');
  await page.screenshot({path:`qa-traffic/${prefix}-motovoz-city.png`,timeout:60000});
- await page.locator('[data-layer="rails"]').uncheck();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),false);await page.locator('[data-layer="rails"]').check();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('rails',false));assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),false);await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('rails',true));
  await page.evaluate(()=>{window.__BAIKONUR_QA.traffic.seek(0);window.__BAIKONUR_QA.traffic.focusHighway();});
  const cars=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().carStates.map(c=>c.position));
  await page.evaluate(()=>window.__BAIKONUR_QA.traffic.seek(20));

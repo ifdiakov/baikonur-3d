@@ -17,7 +17,7 @@ try{
  const u=new URL(origin);u.searchParams.set('v','selection-no-jump-v1');u.searchParams.set('site','1');
  await page.goto(u.toString(),{waitUntil:'domcontentloaded',timeout:60000});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.saturn?.largeAntennaCount===2,null,{timeout:90000});
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await reset();
  const points=await page.evaluate(()=>{
   const q=window.__BAIKONUR_QA,s=q.stats(),[x,z]=s.saturnPlacement,k=s.saturnScale;

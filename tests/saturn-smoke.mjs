@@ -57,7 +57,7 @@ try {
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.deepEqual(errors,[]);
  await snapshot('qa-saturn-ip5.png');
- await page.locator('#close').click();await page.locator('#showLabels').uncheck();
+ await page.locator('#close').click();await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>window.__BAIKONUR_QA.inspectSaturnHill());
  await snapshot('qa-saturn-hill-evening.png');
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));

@@ -68,14 +68,14 @@ try{
  await page.screenshot({path:`qa-mik112/${prefix}-overview.png`});
  await page.locator('#mik112Tua').click();await page.waitForTimeout(700);
  await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers.png`});
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.screenshot({path:`qa-mik112/${prefix}-grasshoppers-clear.png`});
  await page.locator('#mik112Top').click();await page.waitForTimeout(700);
  await page.screenshot({path:`qa-mik112/${prefix}-plan.png`});
  await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(95,'pad-112'));
  await page.waitForTimeout(400);
  await page.screenshot({path:`qa-mik112/${prefix}-map-placement.png`});
- await page.locator('#showLabels').check();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));
  await page.locator('#year').evaluate(el=>{el.value='1988';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().mik112.roofState),'historical-intact');
  await page.locator('#mik112All').click();await page.waitForTimeout(500);

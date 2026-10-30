@@ -12,9 +12,9 @@ try{
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.arrival||document.getElementById('error')?.style.display==='block',null,{timeout:150000});
  assert.ok(await page.evaluate(()=>!!window.__BAIKONUR_QA),await page.locator('#error').textContent());
- const labelsBefore=await page.evaluate(()=>({checked:document.getElementById('showLabels').checked,display:getComputedStyle(document.getElementById('labelLayer')).display}));
+ const labelsBefore=await page.evaluate(()=>({checked:window.__BAIKONUR_QA.stats().labelsVisible,display:getComputedStyle(document.getElementById('labelLayer')).display}));
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.seek(70);q.arrival.setFollowing(true);});
- const followSurface=await page.evaluate(()=>{const hit=document.elementFromPoint(760,370);return{canvas:hit===document.querySelector('#view canvas'),hit:hit?.tagName,checked:document.getElementById('showLabels').checked,display:getComputedStyle(document.getElementById('labelLayer')).display};});
+ const followSurface=await page.evaluate(()=>{const hit=document.elementFromPoint(760,370);return{canvas:hit===document.querySelector('#view canvas'),hit:hit?.tagName,checked:window.__BAIKONUR_QA.stats().labelsVisible,display:getComputedStyle(document.getElementById('labelLayer')).display};});
  assert.equal(followSurface.checked,labelsBefore.checked,'Following must preserve the label preference');
  assert.equal(followSurface.display,'none','Ground cards must not obscure the aircraft during follow');
  assert.ok(followSurface.canvas,`The orbit drag must start on the scene canvas, hit ${followSurface.hit}`);
@@ -26,9 +26,9 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(84));const mid=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());assert.ok(mid.gear>0&&mid.gear<1);assert.equal(mid.aircraft.livery,'АЛРОСА');assert.equal(mid.aircraft.litWindows,60);assert.ok(mid.aircraft.cockpitLit);assert.ok(mid.aircraft.gearDoorAngles.some(a=>Math.abs(a)>1));await shot('alrosa-gear');
  await page.evaluate(()=>window.__BAIKONUR_QA.arrival.seek(120));const down=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());assert.equal(down.gear,1);assert.ok(down.aircraft.gearLegRotations.flat().every(n=>Math.abs(n)<1e-7));assert.ok(down.aircraft.gearDoorAngles.every(n=>Math.abs(n)<1e-7));assert.ok(Math.abs(down.mainWheelBottom-down.runwayY)<1e-5);assert.ok(down.noseWheelBottom>down.mainWheelBottom+.4);assert.ok(down.following);await shot('alrosa-touchdown');
  await page.evaluate(()=>window.__freezeRefinement());
- const labelsRestored=await page.evaluate(()=>{window.__BAIKONUR_QA.arrival.stopFollowing();return{checked:document.getElementById('showLabels').checked,display:getComputedStyle(document.getElementById('labelLayer')).display};});
+ const labelsRestored=await page.evaluate(()=>{window.__BAIKONUR_QA.arrival.stopFollowing();return{checked:window.__BAIKONUR_QA.stats().labelsVisible,display:getComputedStyle(document.getElementById('labelLayer')).display};});
  assert.deepEqual(labelsRestored,labelsBefore,'Leaving follow must restore the original ground-label state');
- await page.evaluate(()=>{window.__BAIKONUR_QA.evening.setEvening(false);document.getElementById('showLabels').click();});
+ await page.evaluate(()=>{window.__BAIKONUR_QA.evening.setEvening(false);window.__BAIKONUR_QA.setLabelsVisible(false);});
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(stats.ukss.trench.branches,1);assert.equal(stats.mik112.features['ochre-perforated-fork'],8);assert.ok(stats.sphericalVessels.length>=3);assert.ok(stats.sphericalVessels.every(([x,y,z])=>Math.abs(x-y)<1e-6&&Math.abs(y-z)<1e-6));
  const k=stats.airports.find(a=>a.key==='krayniy'),y=stats.airports.find(a=>a.key==='yubileiny');assert.ok(Math.abs(y.worldLength/k.worldLength-4500/3100)<1e-8);assert.equal(y.features['mriya-engine'],6);assert.equal(y.features['buran-fuselage'],1);
  assert.equal(stats.traffic.cityRoutes.length,2);assert.equal(stats.transport.interchange.ramps,4);assert.ok(stats.evening.saturnLights.length===4);assert.ok(stats.evening.saturnLights.every(l=>l.y>20));
@@ -43,7 +43,7 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite(q.stats().portalArchive.models.find(m=>m.id==='pad-251').index);});
  await page.getByRole('button',{name:'Мрия и Буран',exact:true}).click();await page.locator('#close').click();await shot('mriya-buran');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusInterchange();});await shot('interchange');
- await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(true);document.getElementById('showLabels').click();q.showFlanks();});
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(true);q.setLabelsVisible(true);q.showFlanks();});
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.stats())).flankCardLayout,'horizontal');await shot('flanks');
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.seek(85);q.arrival.setFollowing(true);});assert.ok(await page.locator('#arrivalFollow').isVisible());await shot('mobile-follow');
  assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,stats,orbit,zoom,errors},null,2));console.log('REFINEMENT_BROWSER_PASS');

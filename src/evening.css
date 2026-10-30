@@ -20,17 +20,18 @@
  body.following-train #museumLeftStack #ui{width:100%!important;max-height:100px!important;padding:9px!important;overflow:visible!important}
  body.following-train #ui>:not(.buttons){display:none!important}
  body.following-train #ui>.buttons{display:flex;align-items:center;gap:6px}
- body.following-train #ui>.buttons>:not(#all):not(#eveningToggle):not(#trainFollow){display:none!important}
- body.following-train #trainFollow::after{content:' · 4 вагона'}
+ body.following-train #ui>.buttons>:not(#mobileMenuToggle){display:none!important}
+ body.following-train #ui>.buttons>#mobileMenuToggle{display:inline-flex!important;justify-content:center;align-items:center}
 }
 
-/* Keep the aircraft visible on phones while retaining flight and light controls. */
+/* Keep the aircraft visible while retaining the flight status and menu exit. */
 @media(max-width:750px){
  body.following-arrival #museumLeftStack{left:10px!important;right:10px!important;top:10px!important;width:calc(100vw - 20px)!important}
  body.following-arrival #museumLeftStack #ui{width:100%!important;max-height:145px!important;padding:9px!important;overflow:visible!important}
  body.following-arrival #ui>:not(.buttons):not(#arrivalPanel){display:none!important}
  body.following-arrival #ui>.buttons{display:flex;align-items:center;gap:6px}
- body.following-arrival #ui>.buttons>:not(#all):not(#eveningToggle){display:none!important}
- body.following-arrival #arrivalPanel{margin-top:6px}
+ body.following-arrival #ui>.buttons>:not(#mobileMenuToggle){display:none!important}
+ body.following-arrival #ui>.buttons>#mobileMenuToggle{display:inline-flex!important;justify-content:center;align-items:center}
+ body.following-arrival #arrivalPanel{display:block!important;margin-top:6px}
  body.following-arrival .navigation-guide,body.following-arrival #timeDock{display:none!important}
 }

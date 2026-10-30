@@ -24,7 +24,8 @@ try{
  assert.equal(s.sites,97);assert.equal(s.catalogEntries,98);assert.deepEqual(s.catalogAliases,[{id:'sector-east',aliasOf:'pad-43'}]);
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.equal(await page.locator('#flanksView,#eveningToggle,#lightingToggle,#trainFollow,#carsFocus,#ui a[href*="archive.html"]').count(),0,'Removed menu shortcuts must not remain in the DOM');
- for(const id of ['all','top','fly','arrivalPanel','showLabels'])assert.equal(await page.locator('#'+id).count(),1);
+ assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
+ for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'])assert.equal(await page.locator('#'+id).count(),1);
  await shot('overview-menu');
  const runways=s.airports.map(a=>({key:a.key,length:a.length,width:a.width,worldLength:a.worldLength}));
  assert.equal(runways.find(a=>a.key==='krayniy').length,1550);assert.equal(runways.find(a=>a.key==='yubileiny').length,2250);
@@ -43,7 +44,7 @@ try{
   evidence.sites.push(site);
  }
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.siteState('sector-east')),null);
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>{window.__BAIKONUR_QA.evening.setEvening(false);window.__BAIKONUR_QA.focusSite('pad-31');});await step();
  const pad31=await page.evaluate(()=>window.__BAIKONUR_QA.stats().portalArchive.models.find(m=>m.id==='pad-31'));
  assert.equal(pad31.features.site31.version,'site31-satellite-trench-v3');assert.equal(pad31.features.site31.serviceMasts,2);assert.equal(pad31.features.site31.supportingArms,4);
@@ -99,8 +100,8 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(true);q.showFlanks();});await step();
  const flanks=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
  assert.equal(flanks.reliefCount,1);assert.equal(flanks.visibleReliefSurfaces,1);assert.deepEqual(flanks.reliefFlanks,['center']);await shot('saturn-flank-relief');
- await page.locator('#showLabels').uncheck();await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleReliefSurfaces),0);
- await page.locator('#showLabels').check();await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(180));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleReliefSurfaces),0);evidence.flanks=flanks;
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleReliefSurfaces),0);
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(180));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleReliefSurfaces),0);evidence.flanks=flanks;
 
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
  assert.equal(initial.version,'krayniy-circuit-v4');assert.equal(initial.arrivalDuration,120);assert.equal(initial.cycleDuration,812);

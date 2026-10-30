@@ -10,7 +10,7 @@ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',r=>r.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(r.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 try{
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:90000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic,null,{timeout:90000});
- await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.traffic.seek(0);q.traffic.focusCars();});
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats());assert.equal(initial.cars,20);assert.equal(initial.roadVehicles.routeCount,4);assert.equal(initial.roadVehicles.extensionLength,2900);assert.equal(initial.roadVehicles.extensionLamps,52);
  assert.ok(initial.carStates[0].position[1]>6,'Car is visibly on the highway bridge');

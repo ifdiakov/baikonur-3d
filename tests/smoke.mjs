@@ -47,12 +47,12 @@ for(const [id,logo] of [['pad-2a','tsenki'],['pad-112','progress'],['pad-254','e
  for(const reference of site.publicReferences)assert.ok((await page.locator('#infoExtra a').evaluateAll(links=>links.map(link=>link.href))).includes(reference));
  await page.locator('#close').click();
 }
-await page.locator('#all').click();
+await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());
 console.log('REVIEWED CATALOG: descriptions, notes, sources and organisation roles are visible; pad 75 and relocated KAZ preserved');
 // Sidebar cleanup must preserve navigation while removing temporary implementation notes.
 const sidebarCleanup=await page.evaluate(()=>{
  const sidebar=document.querySelector('#ui');const text=sidebar?.innerText||'';
- return {noPrototypeNote:!text.includes('Трёхмерная модель планировки'),noPlanToggle:!sidebar.querySelector('[data-layer="plan"]'),noRoadDiagnostics:!text.includes('цветных пикселей'),noSatelliteDisclaimer:!text.includes('Спутниковая съёмка доступна'),roadsToggle:!!sidebar.querySelector('[data-layer="roads"]'),railsToggle:!!sidebar.querySelector('[data-layer="rails"]'),labelsToggle:!!sidebar.querySelector('#showLabels'),noYandexButton:!sidebar.querySelector('#satellite'),statusHidden:getComputedStyle(document.getElementById('roadStatus')).display==='none'};
+ return {noPrototypeNote:!text.includes('Трёхмерная модель планировки'),noLayerToggles:!sidebar.querySelector('[data-layer]'),noRoadDiagnostics:!text.includes('цветных пикселей'),noSatelliteDisclaimer:!text.includes('Спутниковая съёмка доступна'),noOverviewButtons:!sidebar.querySelector('#all,#top,#fly'),noLabelsToggle:!sidebar.querySelector('#showLabels'),themedSections:['equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'].every(id=>sidebar.querySelector('#'+id)),noYandexButton:!sidebar.querySelector('#satellite'),statusHidden:!document.getElementById('roadStatus')||getComputedStyle(document.getElementById('roadStatus')).display==='none'};
 });
 console.log('SIDEBAR',JSON.stringify(sidebarCleanup));
 assert.ok(Object.values(sidebarCleanup).every(Boolean),'Sidebar must hide implementation diagnostics without losing working navigation');
@@ -491,15 +491,15 @@ assert.ok(ukssGeometry.firstY<0,'Launch bay must open below grade to the flame d
 await page.locator('#detailMore').click();
 assert.equal(await page.locator('#infoExtra a[href*="drive.google.com/file/"]').count(),16,'All UKSS reference images must be available in its details');
 await page.locator('#close').click();
-await page.locator('#all').click();
+await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukssScale),ukssOverview.ukssScale,'Return to overview must preserve UKSS scale');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='1955';slider.dispatchEvent(new Event('input',{bubbles:true}))});
 await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===0);
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='2026';slider.dispatchEvent(new Event('input',{bubbles:true}))});
 await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===1);
-await page.locator('[data-layer="sites"]').uncheck();
+await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',false));
 await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===0);
-await page.locator('[data-layer="sites"]').check();
+await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',true));
 await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled===1);
 console.log('UKSS: 6 piers, 11 open service decks, 4 light screens, below-grade trench, stable scale');
 // A subpixel camera movement must not make broad terrain patches flash.
