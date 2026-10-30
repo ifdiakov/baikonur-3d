@@ -6,7 +6,7 @@ import {createNorthBankMask} from '../src/river-bank.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261030-saturn-clearance-v1';
+const revision='20261030-mzk-sdi-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const matches=JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'));
@@ -168,6 +168,47 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await shot('saturn-hill-evening');
  await page.locator('#showLabels').check();
  evidence.saturn={placement:shiftedSaturn,access:initial.transport.saturnAccess,lights:initial.evening.saturnLights};
+
+ // Exercise the public MZK/SDI card and its real view buttons. Geometry tests
+ // inspect the source contours; this checks that the live exhibit exposes
+ // the same model, source anchors and three distinct camera views.
+ const mzkModel=initial.portalArchive.models.find(m=>m.id==='pad-112a');
+ assert.ok(mzkModel?.features.mzkSdi,'The rebuilt MZK/SDI exhibit is present in the live archive');
+ const mzkSdi=mzkModel.features.mzkSdi;
+ assert.equal(mzkSdi.version,'mzk-sdi-photo-v3');
+ assert.equal(mzkSdi.layoutBasis,'OSM-component-centres-and-axes');
+ assert.deepEqual(mzkSdi.sources,['way/172704643','way/172704656']);
+ assert.equal(mzkSdi.mzk.sourceWay,'way/172704643');
+ assert.equal(mzkModel.features.features['mzk-main-volume'],1);
+ assert.equal(mzkModel.features.features['sdi-closed-side-wall'],2);
+ assert.equal(mzkModel.features.features['sdi-closed-rear-wall'],1);
+ assert.equal(mzkSdi.sdi.closedWallCount,3);
+ assert.equal(mzkSdi.mzk.roof,'flat');assert.equal(mzkSdi.sdi.state,'closed-sliding-gate');
+ assert.deepEqual(await page.evaluate(()=>window.__BAIKONUR_QA.mzkSdi.stats()),mzkSdi);
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-112a');q.evening.setEvening(false);});
+ await step();
+ const mzkPlacement=await page.evaluate(()=>window.__BAIKONUR_QA.siteState('pad-112a')),expectedMzk=expectedSites.get('pad-112a');
+ assert.ok(near(mzkPlacement.map,[expectedMzk.x,expectedMzk.y]));
+ assert.deepEqual(mzkPlacement.geoSource.sourceLonLat,expectedMzk.geoSource.sourceLonLat);
+ assert.deepEqual(mzkPlacement.geoSource.refs.map(r=>r.id).sort((a,b)=>a-b),[172704643,172704656]);
+ assert.match(await page.locator('#title').textContent(),/112А.*МЗК.*СДИ/);
+ assert.equal(await page.locator('#infoOrg').getAttribute('data-org-logo'),'infracos');
+ assert.equal(await page.locator('#mzkViews').isVisible(),true);
+ assert.deepEqual(await page.locator('#mzkViews button').allTextContents(),['Весь комплекс','МЗК','СДИ']);
+ await page.locator('#showLabels').uncheck();
+ const mzkCameras={};
+ for(const [label,view,name]of [['Весь комплекс','all','mzk-sdi-all'],['МЗК','mzk','mzk-facade'],['СДИ','sdi','sdi-front']]){
+  await page.locator('#mzkViews').getByRole('button',{name:label,exact:true}).click();
+  await shot(name);
+  const camera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+  assert.ok([...camera.position,...camera.target].every(Number.isFinite),'MZK/SDI camera coordinates remain finite');
+  for(const previous of Object.values(mzkCameras))
+   assert.ok(Math.hypot(...camera.position.map((v,i)=>v-previous.position[i]))>1&&Math.hypot(...camera.target.map((v,i)=>v-previous.target[i]))>1,'Each MZK/SDI button selects a distinct building view');
+  mzkCameras[view]=camera;
+ }
+ evidence.mzkSdi={model:mzkSdi,placement:mzkPlacement,cameras:mzkCameras};
+ await page.locator('#close').click();await page.locator('#showLabels').check();
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
 
  assert.deepEqual(initial.airports.map(a=>[a.key,a.length]).sort(),[['krayniy',1550],['yubileiny',2250]]);
  assert.equal(initial.arrival.version,'krayniy-osm-circuit-v6');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);

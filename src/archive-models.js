@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261029-all-silos-v2';
-import * as buildings from './archive-buildings.js?v=20261028-mriya-paint-v2';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261030-mzk-sdi-v1';
+import * as buildings from './archive-buildings.js?v=20261030-mzk-sdi-v1';
 import * as launches from './archive-launches.js?v=20261028-museum4-osm-live-v2';
 import {photoCity} from './archive-city.js?v=20261028-museum4-osm-live-v2';
 import {buildSite31Pad} from './site31-pad.js?v=20261028-museum4-osm-live-v2';
@@ -38,7 +38,7 @@ export function installArchiveModels({objects,clickable,voids}){
   if(o.archive.kind==='seven-winds')return inspectHotel('all',camera,controls);
   if(o.record.id==='pad-31')return inspectSite31('duct',camera,controls);
   if(o.archive.kind==='silo'){siloController(o.g).inspect('all',camera,controls);return true;}
-  if(o.archive.kind==='mzk'){controls.target.copy(o.g.localToWorld(new THREE.Vector3(25,35,40)));camera.position.copy(o.g.localToWorld(new THREE.Vector3(255,215,300)));return true;}
+  if(o.archive.kind==='mzk')return inspectMzkSdi('all',camera,controls);
   const b=new THREE.Box3().setFromObject(o.g),size=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3()),r=Math.max(size.x,size.z,size.y*2);
   controls.target.copy(c);camera.position.copy(c).add(new THREE.Vector3(.75,.92,1.0).multiplyScalar(r));return true;
  }
@@ -46,6 +46,13 @@ export function installArchiveModels({objects,clickable,voids}){
   const root=objects.find(o=>o.record.id==='pad-75')?.g;if(!root)return false;root.updateWorldMatrix(true,false);
   const [target,eye]=view==='garden'?[[22,1.5,33],[44,23,60]]:view==='front'?[[0,6,4],[-40,48,62]]:[[0,3,13],[-64,61,92]];
   controls.target.copy(root.localToWorld(new THREE.Vector3(...target)));camera.position.copy(root.localToWorld(new THREE.Vector3(...eye)));controls.update();return true;
+ }
+ function inspectMzkSdi(view,camera,controls){
+  const root=objects.find(o=>o.record.id==='pad-112a')?.g,views=root?.userData.mzkSdi?.views;
+  if(!views)return false;const {target,eye}=views[view]||views.all;
+  root.updateWorldMatrix(true,false);
+  controls.target.copy(root.localToWorld(new THREE.Vector3(...target)));
+  camera.position.copy(root.localToWorld(new THREE.Vector3(...eye)));controls.update();return true;
  }
  function inspectSite31(view,camera,controls){
   const o=objects.find(o=>o.record.id==='pad-31');if(!o?.archive)return false;
@@ -60,5 +67,5 @@ export function installArchiveModels({objects,clickable,voids}){
   }
   return true;
  }
- return {focus,inspectHotel,inspectSite31,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>silos.forEach(s=>s.update(now,camera,target)),silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
+ return {focus,inspectHotel,inspectMzkSdi,inspectSite31,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>silos.forEach(s=>s.update(now,camera,target)),silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
 }

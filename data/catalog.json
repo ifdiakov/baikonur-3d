@@ -338,13 +338,15 @@
         "role": "",
         "attributionSource": "owner-correction-2026-10-28"
       },
-      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "modelStatus": "МЗК и СДИ заново построены по фотографиям, обновлённым 30.10.2026. Положение корпусов и их оси — по контурам OSM; детали фасадов и высота СДИ приблизительные.",
       "archiveModel": {
-        "version": "1.0-portal-photo-pass",
+        "version": "mzk-sdi-photo-v3",
         "kind": "mzk",
-        "orientation": "not-verified-ground-photo-only",
+        "orientation": "osm-component-centres-and-axes-photo-facades",
         "satellite": null,
-        "folder": "1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09"
+        "folder": "1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09",
+        "photoSetDate": "2026-10-30",
+        "photoCount": 14
       },
       "modelOrientationVerified": false
     },

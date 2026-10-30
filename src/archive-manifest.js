@@ -16,7 +16,7 @@ export const ARCHIVE_MAP=[
  {id:'pad-45',kind:'zenit',title:'СК «Зенит» / «Байтерек» · пл.45',scale:.28,yaw:0,folder:'1UD2cFm-qIJjWK6CcjF7V7zGnjVpS5H3i',orientation:'not-verified-no-overhead',photo:'1H4sLmBqg1EbUZ0jWRNFC72T0FtQ0X7lp'},
  {id:'pad-41',kind:'nedelin',title:'Площадка №41 · исторический старт Р-16',scale:.28,yaw:0,folder:'1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId',photo:'1nE_A8ap4TGei3fnXVSzWDCjb2mf9_fiP',orientation:'not-verified-ground-photo-only'},
  {id:'pad-42',kind:'mik42',title:'Технический комплекс · пл.42',scale:.28,yaw:0,folder:'1nhy66WCjZaGYK8VsVlEQHRre4IjkzzDZ',orientation:'not-verified-no-overhead',photo:'1r6uD1fJtqkjFbk6eoR4rrJ981SVr8whK'},
- {id:'pad-112a',kind:'mzk',title:'МЗК и СДИ · пл.112А',scale:.14,yaw:-Math.PI/4,folder:'1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09',orientation:'not-verified-ground-photo-only',photo:'1NqzXME6wQ-LEpyckXaQ1TOV_qVdxZCgk'},
+ {id:'pad-112a',kind:'mzk',title:'МЗК и СДИ · пл.112А',scale:.14,yaw:-Math.PI/4,folder:'1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09',orientation:'osm-component-centres-and-axes-photo-facades',photo:'1VhiQ85kYW0ZEfYMEZnxHgEurrrA0HesJ',modelVersion:'mzk-sdi-photo-v3',photoSetDate:'2026-10-30'},
  {id:'city',kind:'city',title:'Город Байконур · спутниковый план',scale:.20,yaw:0,satellite:'1URocxjo-ZAYAWIIrBhBGMfwx1BKhKkGT',orientation:'image-traced',completeness:'first-pass'}
 ];
 export const ARCHIVE_GALLERY=[
