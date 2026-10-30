@@ -735,7 +735,7 @@
       "sources": [
         "original-plan-3993x3208"
       ],
-      "note": "Аэродром «Крайний» у города Байконур. Принадлежность: ЦЭНКИ. Геометрия и положение на музейной схеме приблизительны.",
+      "note": "Аэродром «Крайний» у города Байконур. Аэровокзал с диспетчерской башней воссоздан по фотографиям RocketTrip и расположен с противоположной стороны ВПП вместе с перроном. Размеры сооружений в музейном макете приблизительны.",
       "purpose": "Аэродром города Байконур",
       "purposeLong": "Аэродром «Крайний» — воздушные ворота города Байконур.",
       "purposeShort": "Аэродром города Байконур",
@@ -752,7 +752,53 @@
       "titleShort": "Аэродром «Крайний»",
       "titleFull": "Аэродром «Крайний»",
       "evidenceLevel": "owner-confirmed-identity-and-organisation",
-      "attributionSource": "owner-correction-museum4-2026-10-28"
+      "attributionSource": "owner-correction-museum4-2026-10-28",
+      "modelRevision": "20261030-krayniy-terminal-v1",
+      "modelSource": {
+        "kind": "owner-photo-reconstruction",
+        "folderUrl": "https://drive.google.com/drive/folders/1Liw88KWINElSf9WRBRF9RhV1hHBM5Pws",
+        "photoCount": 5,
+        "version": "krayniy-drive-terminal-v1",
+        "satelliteReferences": {
+          "kind": "owner-provided-satellite-screenshots",
+          "count": 2,
+          "providerAttribution": "Яндекс",
+          "terminalOsmWay": 173450632
+        }
+      },
+      "architectureReferences": [
+        {
+          "label": "Аэровокзал Крайнего — источники и реконструкция",
+          "url": "https://github.com/ifdiakov/baikonur-3d/blob/main/docs/krayniy-terminal.md"
+        }
+      ],
+      "photoArchive": [
+        {
+          "driveId": "1jH4yVxvzLhtdCBS3jb-fzV-5isF4a6-M",
+          "fileName": "TMA-13M_Soyuz_Raising_&_Launch_(14319764894).jpg",
+          "subject": "Входной фасад и диспетчерская башня"
+        },
+        {
+          "driveId": "1sShK4Sk4WgPQrt4l4eh9fnBmq4dj-NHb",
+          "fileName": "1337003.jpg",
+          "subject": "Остекление кабины диспетчеров и балкон"
+        },
+        {
+          "driveId": "1Qtp5R4m1N6K9RvXa_5mHHdRoSAhtcRtG",
+          "fileName": "5.-Baikonur.jpg",
+          "subject": "Стеклянный зал и синий козырёк"
+        },
+        {
+          "driveId": "1AP4Ty5T6kSJWITxPfo4eZ3Msu-8zhRju",
+          "fileName": "2579952_original.jpg",
+          "subject": "Вид с перрона и композиция аэровокзала"
+        },
+        {
+          "driveId": "1G-mn6KWov4VihctCMOd4bfmUi__Y5fS2",
+          "fileName": "1549603790_71f55sfq7wsewb9qq5k551citrlael2.jpg",
+          "subject": "Общий вид аэровокзала со стороны перрона"
+        }
+      ]
     },
     {
       "id": "sector-east-center",

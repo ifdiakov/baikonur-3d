@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
-import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,rectangleSegmentInterval,clipRoadOutsideRectangle,airportPerimeterBypass} from './exhibit-road-filter.js?v=20261030-river-roads-signs-v1';
+import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectangleSegmentInterval,clipRoadOutsideRectangle,airportPerimeterBypass} from './exhibit-road-filter.js?v=20261030-river-roads-signs-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261029-all-silos-v2';
 import {distancePath} from './traffic-paths.js?v=20261028-museum4-osm-live-v2';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
+import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=krayniy-drive-terminal-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -203,6 +204,31 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const inAirportClearance=p=>{if(!airportClearance)return false;const [x,,z]=airportLocal(p),r=airportClearance.rectangle;return x>r.minX+1e-6&&x<r.maxX-1e-6&&z>r.minZ+1e-6&&z<r.maxZ-1e-6;};
  const airportPortSourceAllowed=(id,e)=>id!=='pad-251'||!airportClearance||
   [e.a,e.b].every(n=>airportLocal(n.position)[0]<airportClearance.rectangle.minX-1);
+ // The photo-based Krayniy terminal occupies the opposite side of the runway.
+ // Only displayed roads are clipped to the enlarged campus. Its one landside
+ // driveway is built with the terminal and meets the retained source junction.
+ const krayniySite=siteRecords.find(s=>s.id==='airfield'),krayniyLayout=krayniyTerminalLayout(KRAYNIY_AIRPORT_DISPLAY.apronZ);
+ const krayniyClearance=krayniySite?{
+  origin:point(krayniySite.x,krayniySite.y,0),yaw:krayniySite.runtimeYaw??2.06,scale:.28,
+  margin:(Math.max(...Object.values(ROAD_STYLE.widths))+ROAD_STYLE.shoulderExtra)/(.28*2)+.5,
+  footprints:[
+   {id:'runway',minX:-40,maxX:40,minZ:-855,maxZ:855},
+   {id:'apron',minX:KRAYNIY_AIRPORT_DISPLAY.apronX-KRAYNIY_AIRPORT_DISPLAY.apronWidth/2,maxX:KRAYNIY_AIRPORT_DISPLAY.apronX+KRAYNIY_AIRPORT_DISPLAY.apronWidth/2,
+    minZ:KRAYNIY_AIRPORT_DISPLAY.apronZ-KRAYNIY_AIRPORT_DISPLAY.apronLength/2,maxZ:KRAYNIY_AIRPORT_DISPLAY.apronZ+KRAYNIY_AIRPORT_DISPLAY.apronLength/2},
+   {id:'parallel-taxiway',minX:KRAYNIY_AIRPORT_DISPLAY.taxiX-9,maxX:KRAYNIY_AIRPORT_DISPLAY.taxiX+9,minZ:-630,maxZ:630},
+   ...[-610,610,KRAYNIY_AIRPORT_DISPLAY.apronZ-130,KRAYNIY_AIRPORT_DISPLAY.apronZ+130].map((z,i)=>({id:'connecting-taxiway-'+i,
+    minX:KRAYNIY_AIRPORT_DISPLAY.taxiX-9,maxX:9,minZ:Math.min(z,z+Math.sign(z)*22)-9,maxZ:Math.max(z,z+Math.sign(z)*22)+9})),
+   {id:'terminal',minX:krayniyLayout.center[0]-41,maxX:krayniyLayout.center[0]+41,minZ:krayniyLayout.center[2]-55,maxZ:krayniyLayout.center[2]+55},
+   {id:'garden',...krayniyLayout.grounds.garden},{id:'parking',...krayniyLayout.grounds.parking},
+   {id:'hangar',minX:KRAYNIY_AIRPORT_DISPLAY.apronX-177.5,maxX:KRAYNIY_AIRPORT_DISPLAY.apronX-112.5,
+    minZ:KRAYNIY_AIRPORT_DISPLAY.apronZ+115,maxZ:KRAYNIY_AIRPORT_DISPLAY.apronZ+185}
+  ],sourceWays:new Set(),protectedConflicts:new Set(),cuts:[]
+ }:null;
+ if(krayniyClearance)krayniyClearance.rectangles=krayniyClearance.footprints.map(r=>({id:r.id,
+  minX:r.minX-krayniyClearance.margin,maxX:r.maxX+krayniyClearance.margin,minZ:r.minZ-krayniyClearance.margin,maxZ:r.maxZ+krayniyClearance.margin}));
+ const krayniyLocal=p=>p.clone().sub(krayniyClearance.origin).applyAxisAngle(V(0,1,0),-krayniyClearance.yaw).divideScalar(krayniyClearance.scale).toArray();
+ const krayniyWorld=p=>V(...p).multiplyScalar(krayniyClearance.scale).applyAxisAngle(V(0,1,0),krayniyClearance.yaw).add(krayniyClearance.origin);
+ const inKrayniyClearance=p=>{if(!krayniyClearance)return false;const [x,,z]=krayniyLocal(p);return krayniyClearance.rectangles.some(r=>x>r.minX+1e-6&&x<r.maxX-1e-6&&z>r.minZ+1e-6&&z<r.maxZ-1e-6);};
  const settlementSpecs=[{id:'baikonur',name:'Байконур',osmId:39209179,profile:'main-streets-only'},
   {id:'akai',name:'Акай',osmId:16783113,profile:'minimum-through-routes'},
   {id:'tyuratam',name:'Тюратам',osmId:15005695,profile:'minimum-through-routes'}];
@@ -278,7 +304,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const protectedNode=n=>n.id.startsWith('clip:')||destinations.some(d=>Math.hypot(n.position.x-d.position.x,n.position.z-d.position.z)<d.radius);
  const inCosmodrome=e=>[e.a,e.b].every(n=>n.coord[1]>=45.70&&!settlements.some(region=>region.contains(n.position)));
  const infrastructure=e=>e.tags.name||e.tags.ref||e.tags.destination||e.tags.bridge&&e.tags.bridge!=='no'||e.tags.tunnel&&e.tags.tunnel!=='no';
- roadPruning=pruneTerminalBranches(roadGraph,{maxLength:80,protectedEdges:roadProtected,protectedNode:n=>protectedNode(n)||EXHIBIT_ACCESS_NODE_IDS.includes(n.id),
+ roadPruning=pruneTerminalBranches(roadGraph,{maxLength:80,protectedEdges:roadProtected,protectedNode:n=>protectedNode(n)||EXHIBIT_ACCESS_NODE_IDS.includes(n.id)||krayniyClearance&&n.id===krayniyLayout.access.sourceNodeId,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&!MAIN.has(e.tags.highway?.replace('_link',''))&&!['driveway','parking_aisle'].includes(e.tags.service)});
  railPruning=pruneTerminalBranches(railGraph,{maxLength:55,protectedEdges:railProtected,protectedNode,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&e.tags.usage!=='main'&&!['yard','siding','crossover'].includes(e.tags.service)});
@@ -286,7 +312,6 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // continues to define vehicle routes; rail masks and rail routing are untouched.
  const excludedAirportEdges=new Set();
  let krayniyClearanceReport=null;
- const krayniySite=siteRecords.find(s=>s.id==='airfield');
  if(krayniySite){
   const origin=point(krayniySite.x,krayniySite.y,0),yaw=krayniySite.runtimeYaw??2.06,
    local=p=>p.clone().sub(origin).applyAxisAngle(V(0,1,0),-yaw).divideScalar(.28).toArray(),
@@ -308,7 +333,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    }
   }
  }
- exhibitRoadFilter=buildExhibitRoadFilter(roadGraph,{protectedEdges:roadProtected,protectedTrafficWays,
+ // The geographic terminal node lies inside the enlarged display apron.
+ // Retain access to the actual exterior junction used by the new driveway,
+ // without changing either the archived source node or the shared area spec.
+ const exhibitAreas=EXHIBIT_ROAD_AREAS.map(area=>area.id==='krayniy'&&krayniyClearance?{...area,
+  destinationNode:krayniyLayout.access.sourceNodeId,destinationSource:'way/'+krayniyLayout.access.sourceWayId}:area);
+ exhibitRoadFilter=buildExhibitRoadFilter(roadGraph,{protectedEdges:roadProtected,protectedTrafficWays,areas:exhibitAreas,
   available:e=>!roadPruning.removed.has(e),excludedEdges:excludedAirportEdges,geography,point});
  // The enlarged runway can extend beyond the source airport cleanup box.
  for(const edge of excludedAirportEdges)exhibitRoadFilter.removed.add(edge);
@@ -316,6 +346,26 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // Junction paint gaps and discs must follow the retained edges as well.
  for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){const k=Math.floor(n.position.x/20)+':'+Math.floor(n.position.z/20);if(!junctionCells.has(k))junctionCells.set(k,[]);junctionCells.get(k).push(n.position);}
  const junctionWidths=new Map();
+ const protectedRoadWays=new Set([...roadProtected].map(e=>e.wayId));
+ function clipKrayniyCampus(points,wayId){
+  if(!krayniyClearance)return [points];
+  const local=points.map(krayniyLocal),touches=(run,r)=>run.some((p,i)=>i&&rectangleSegmentInterval(run[i-1],p,r));
+  if(!krayniyClearance.rectangles.some(r=>touches(local,r)))return [points];
+  // A future traffic/port change must remain visible and be reported, rather
+  // than silently erasing the physical surface underneath a protected route.
+  if(protectedTrafficWays.has(wayId)||protectedRoadWays.has(wayId)){krayniyClearance.protectedConflicts.add(wayId);return [points];}
+  let runs=[local];krayniyClearance.sourceWays.add(wayId);
+  for(const rectangle of krayniyClearance.rectangles){
+   const next=[];
+   for(const run of runs){
+    if(!touches(run,rectangle)){next.push(run);continue;}
+    const clipped=clipRoadOutsideRectangle(run,rectangle);next.push(...clipped.runs);
+    krayniyClearance.cuts.push(...clipped.cuts.map(point=>({point,wayId,footprint:rectangle.id})));
+   }
+   runs=next;if(!runs.length)break;
+  }
+  return runs.map(run=>run.map(krayniyWorld));
+ }
  for(const way of roadGraph.ways){
   const major=MAIN.has(way.tags.highway?.replace('_link',''))||way.tags.highway==='unclassified',points=[];
   const visibleRuns=[];
@@ -332,6 +382,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     runs=clipped.runs.map(run=>run.map(airportWorld));
     if(clipped.cuts.length){airportClearance.sourceWays.add(way.osmId);airportClearance.cuts.push(...clipped.cuts.map(p=>({point:p,wayId:way.osmId,width:way.width})));}
    }
+   runs=runs.flatMap(run=>clipKrayniyCampus(run,way.osmId));
    for(const run of runs)if(drawRoad(run,way.width,way.tags,major,false,way.osmId,visibleRuns))renderedRoadWays.add(way.osmId);
   };
   for(const e of way.segments){
@@ -344,7 +395,21 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(major)visibleRuns.forEach((run,i)=>roadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap'}));
  }
  let junctionCount=0;
- for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&renderedRoadWays.has(e.wayId)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){const width=junctionWidths.get(n.id)||1.6;if(masked(n.position,{},width/2+.3)||inAirportClearance(n.position)&&!n.edges.some(e=>protectedTrafficWays.has(e.wayId)))continue;shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);junctionCount++;}
+ for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&renderedRoadWays.has(e.wayId)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){const width=junctionWidths.get(n.id)||1.6;if(masked(n.position,{},width/2+.3)||inAirportClearance(n.position)&&!n.edges.some(e=>protectedTrafficWays.has(e.wayId))||inKrayniyClearance(n.position)&&!n.edges.some(e=>protectedTrafficWays.has(e.wayId)||roadProtected.has(e)))continue;shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);junctionCount++;}
+ if(krayniyClearanceReport){
+  const access=krayniyLayout.access,source=roadGraph.nodes.get(access.sourceNodeId),sourcePoint=source?.position,
+   sourceRendered=!!sourcePoint&&roadPaths.some(r=>r.source==='OpenStreetMap'&&r.osmWayIds?.includes(access.sourceWayId)&&r.points.some(p=>p.distanceTo(sourcePoint)<1e-5)),
+   sourceGap=sourcePoint?krayniyWorld(access.anchors[0]).distanceTo(sourcePoint):null;
+  krayniyClearanceReport.campus={source:'synthetic-museum-display-clearance',profile:'clip-displayed-roads-to-terminal-campus',
+   footprints:krayniyClearance.footprints,rectangles:krayniyClearance.rectangles,shoulderMargin:krayniyClearance.margin,
+   clippedWayIds:[...krayniyClearance.sourceWays],hiddenWayIds:[...krayniyClearance.sourceWays].filter(id=>!renderedRoadWays.has(id)),
+   protectedConflicts:[...krayniyClearance.protectedConflicts],cuts:krayniyClearance.cuts,bypassCount:0,
+   gateAccess:{profile:'landside-terminal-access',sourceWayId:access.sourceWayId,sourceNodeId:access.sourceNodeId,
+    sourcePoint:sourcePoint?.toArray()??null,sourceGap,sourceRendered,gatePoint:krayniyWorld(access.anchors.at(-1)).toArray(),modelConnector:'krayniy-terminal'}};
+  const region=exhibitRoadFilter.stats.regions.find(r=>r.id==='krayniy');
+  if(region?.access)Object.assign(region.access,{sourceGraphConnected:region.access.connected,displayConnected:sourceRendered&&sourceGap<1e-5,
+   connected:region.access.connected&&sourceRendered&&sourceGap<1e-5,displayDestination:'landside-parking-via-terminal-connector'});
+ }
  let airportClearanceReport=null;
  if(airportClearance){
   const raw=airportPerimeterBypass(airportClearance.cuts.map(c=>c.point),airportClearance.rectangle),rounded=[];

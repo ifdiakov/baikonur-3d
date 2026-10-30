@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261030-mzk-sdi-v1';
-import * as buildings from './archive-buildings.js?v=20261030-river-roads-signs-v1';
+import * as buildings from './archive-buildings.js?v=20261030-krayniy-terminal-v1';
 import * as launches from './archive-launches.js?v=20261028-museum4-osm-live-v2';
 import {photoCity} from './archive-city.js?v=20261028-museum4-osm-live-v2';
 import {buildSite31Pad} from './site31-pad.js?v=20261028-museum4-osm-live-v2';

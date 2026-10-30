@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {installMriyaExhibit} from './mriya-exhibit.js?v=20261028-mriya-paint-v2';
 import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
+import {buildKrayniyTerminal,KRAYNIY_AIRPORT_DISPLAY} from './krayniy-terminal.js?v=krayniy-drive-terminal-v1';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
  // The longest ten-unit display length that keeps the full approach-light
@@ -15,11 +16,11 @@ export function airportDisplaySpec(key,overrides={}){
  const base={...AIRPORT_DIMENSIONS[key],...overrides},zScale=base.length/base.referenceLength,H=base.length/2,isY=key==='yubileiny';
  return {...base,key,scale:AIRPORT_SCALE,longitudinalScale:zScale,runwayY:1.75,
   threshold:H-15,touchdown:H-380*zScale,papiSetback:300*zScale,
-  approachLength:960*zScale,approachStations:8,apron:isY?[-250,170*zScale]:[170,-680*zScale]};
+  approachLength:960*zScale,approachStations:8,apron:isY?[-250,170*zScale]:[KRAYNIY_AIRPORT_DISPLAY.apronX,KRAYNIY_AIRPORT_DISPLAY.apronZ],taxiX:isY?-150:KRAYNIY_AIRPORT_DISPLAY.taxiX,apronWidth:isY?230:KRAYNIY_AIRPORT_DISPLAY.apronWidth,apronLength:400,apronLightRadius:23};
 }
 export function buildAirport(root,key){
  const spec=airportDisplaySpec(key),k=archiveKit(root),L=spec.length,W=spec.width,H=L/2,isY=key==='yubileiny';
- const zScale=spec.longitudinalScale,apronZ=(isY?170:-680)*zScale;
+ const zScale=spec.longitudinalScale,apronZ=spec.apron[1];
  root.userData.airport={...spec};
  k.box(W+18,.6,L+120,0,1.1,0,'concrete','runway-shoulder');k.box(W,.4,L,0,1.55,0,'asphalt','runway');
  for(const side of [-1,1]){
@@ -30,19 +31,25 @@ export function buildAirport(root,key){
  for(let z=-H+85;z<H-80;z+=60)k.box(.9,.04,30,0,1.8,z,'white','runway-centre-mark');
  // Painted runway designators lie on the surface, not on billboards.
  for(const side of [-1,1]){const c=document.createElement('canvas');c.width=256;c.height=512;const ctx=c.getContext('2d');ctx.fillStyle='#eeeeea';ctx.font='bold 190px Arial';ctx.textAlign='center';ctx.fillText(isY?(side>0?'24':'06'):(side>0?'23':'05'),128,330);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;const m=new THREE.Mesh(new THREE.PlaneGeometry(13,30),new THREE.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));m.rotation.x=-Math.PI/2;m.rotation.z=side>0?Math.PI:0;m.position.set(0,1.83,side*(H-75));root.add(m);}
- const taxiX=isY?-150:100,apronX=isY?-250:170;
+ const taxiX=spec.taxiX,apronX=spec.apron[0];
  k.path([[taxiX,-H+60],[taxiX,H-60]],isY?24:18,1.76,'asphalt','parallel-taxiway');
  for(const z of [-H+80,H-80,apronZ-130,apronZ+130]){const pts=[[0,z],[taxiX*.28,z],[taxiX*.7,z+Math.sign(z)*22],[taxiX,z+Math.sign(z)*22]];const curve=new THREE.CatmullRomCurve3(pts.map(([x,z])=>new THREE.Vector3(x,0,z)));const p=curve.getPoints(30).map(v=>[v.x,v.z]);k.path(p,isY?21:18,1.78,'asphalt','connecting-taxiway');k.path(p,.4,1.81,'yellow','taxi-centre-line');}
  k.path([[taxiX,-H+60],[taxiX,H-60]],.4,1.80,'yellow','taxi-centre-line');
- k.box(230,.4,400,apronX,1.55,apronZ,'concrete','aircraft-apron');
+ k.box(spec.apronWidth,.4,spec.apronLength,apronX,1.55,apronZ,'concrete','aircraft-apron');
  for(let z=apronZ-160;z<=apronZ+160;z+=80){k.path([[taxiX,z],[apronX,z]],.4,1.81,'yellow','apron-guideline');k.path([[apronX-10,z],[apronX+10,z]],.4,1.82,'yellow','parking-tee');}
- k.hall({x:apronX+(isY?-155:155),z:apronZ,w:46,d:105,h:13,floors:2,gates:0,tag:'airport-terminal'});
- k.hall({x:apronX+(isY?-145:145),z:apronZ+150,w:65,d:70,h:20,gates:2,tag:'maintenance-hangar'});
- const tx=apronX+(isY?-164:164);k.box(12,30,12,tx,15,apronZ-90,'concrete','control-tower');k.box(18,5,18,tx,32,apronZ-90,'glass','control-room');k.box(20,.8,20,tx,35,apronZ-90,'light','control-room-roof');
+ if(isY){
+  k.hall({x:apronX-155,z:apronZ,w:46,d:105,h:13,floors:2,gates:0,tag:'airport-terminal'});
+  k.hall({x:apronX-145,z:apronZ+150,w:65,d:70,h:20,gates:2,tag:'maintenance-hangar'});
+  const tx=apronX-164;k.box(12,30,12,tx,15,apronZ-90,'concrete','control-tower');k.box(18,5,18,tx,32,apronZ-90,'glass','control-room');k.box(20,.8,20,tx,35,apronZ-90,'light','control-room-roof');
+ }else{
+  buildKrayniyTerminal(root,apronZ);
+  // Keep the service hangar on the terminal side, clear of the glazed hall.
+  k.hall({x:apronX-145,z:apronZ+150,w:65,d:70,h:20,gates:2,tag:'maintenance-hangar'});
+ }
  // Four PAPI housings and localizer aerials mark the approach without a floating UI cone.
  for(const s of [-1,1]){for(let i=0;i<4;i++){k.box(1.4,1.1,.9,-W/2-18-i*3,2.2,s*(H-300*zScale),'white','papi-housing');k.box(1,.45,.06,-W/2-18-i*3,2.4,s*(H-300*zScale)+s*.5,i<2?'red':'white','papi-lens');}for(let x=-15;x<=15;x+=3){k.rod([x,0,s*(H+90)],[x,3,s*(H+90)],.12,'yellow','localizer-antenna');k.rod([x-1.1,3,s*(H+90)],[x+1.1,3,s*(H+90)],.08,'steel','localizer-dipole');}}
  if(isY)buildMriyaRamp(k,apronX,apronZ);
- const result=k.finish();Object.assign(result.features,root.userData.airport.fallbackFeatures||{});root.userData.airport.features=result.features;delete root.userData.airport.fallbackFeatures;return result;
+ const result=k.finish();Object.assign(result.features,root.userData.airport.fallbackFeatures||{});Object.assign(result.features,root.userData.airport.terminal?.features||{});root.userData.airport.features=result.features;delete root.userData.airport.fallbackFeatures;return result;
 }
 function buildMriyaRamp(k,cx,cz){
  const plane=new THREE.Group();plane.position.set(cx,1.8,cz);plane.name='Ан-225 «Мрия» с «Бураном»';k.root.add(plane);

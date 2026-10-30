@@ -1,4 +1,4 @@
-name: Museum 5 — reliable startup and release
+name: Museum 5 — Krayniy terminal and release
 on:
   push:
     branches: [main]
@@ -17,6 +17,7 @@ on:
       - 'scripts/source-models/tua/**'
       - 'docs/tua-source-model.md'
       - 'docs/model-adaptation.md'
+      - 'docs/krayniy-terminal.md'
       - 'scripts/source-models/ukss/**'
       - 'docs/ukss-source-model.md'
       - 'docs/releases/**'
@@ -33,9 +34,10 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum5-startup-recovery-20261030-v1
+  RELEASE_TAG: museum5-krayniy-terminal-20261030-v1
 jobs:
-  verify:
+  verify_local:
+    name: Local geometry and browser checks
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -59,6 +61,8 @@ jobs:
           node tests/road-signs-geometry.mjs
           node tests/river-surface.mjs
           node tests/airport-shore-clearance.mjs
+          node tests/krayniy-terminal-geometry.mjs
+          node tests/krayniy-campus-roads.mjs
           node tests/osm-release-geometry.mjs
           node tests/river-bank.mjs
           node tests/overview-camera.mjs
@@ -80,22 +84,12 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-preview.log 2>&1 &
           curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Verify local startup and failure recovery
+        run: node tests/startup-browser.mjs
+      - name: Verify the local Krayniy terminal
+        run: node tests/krayniy-terminal-browser.mjs
       - name: Verify the complete local product in Chromium
         run: |
-          node tests/startup-browser.mjs
-          node tests/osm-release-browser.mjs
-          node tests/flanks-browser.mjs
-          node tests/mriya-browser.mjs
-          node tests/train-browser.mjs
-          node tests/silo-browser.mjs
-      - name: Verify every published runtime source against this commit
-        run: node scripts/verify-published.mjs
-      - name: Verify the live museum and capture review images
-        env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?release=${{ github.sha }}
-          QA_PREFIX: public
-        run: |
-          node tests/startup-browser.mjs
           node tests/osm-release-browser.mjs
           node tests/flanks-browser.mjs
           node tests/mriya-browser.mjs
@@ -104,9 +98,54 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-startup-recovery-qa
+          name: museum5-krayniy-terminal-qa-local
           path: |
             qa-startup/
+            qa-krayniy/
+            qa-osm-release/
+            qa-flanks/
+            qa-mriya/
+            qa-train/
+            qa-silo/
+            qa-hotel/
+          retention-days: 14
+
+  verify_public:
+    name: Published bytes and live browser checks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?release=${{ github.sha }}
+      QA_PREFIX: public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Verify every published runtime source against this commit
+        run: node scripts/verify-published.mjs
+      - name: Verify live startup and failure recovery
+        run: node tests/startup-browser.mjs
+      - name: Verify the live Krayniy terminal
+        run: node tests/krayniy-terminal-browser.mjs
+      - name: Verify the live museum and capture review images
+        run: |
+          node tests/osm-release-browser.mjs
+          node tests/flanks-browser.mjs
+          node tests/mriya-browser.mjs
+          node tests/train-browser.mjs
+          node tests/silo-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: museum5-krayniy-terminal-qa-public
+          path: |
+            qa-startup/
+            qa-krayniy/
             qa-osm-release/
             qa-flanks/
             qa-mriya/
@@ -116,7 +155,7 @@ jobs:
           retention-days: 14
 
   release:
-    needs: verify
+    needs: [verify_local, verify_public]
     if: github.event_name == 'push' || inputs.publish_release == true
     runs-on: ubuntu-24.04
     timeout-minutes: 5
@@ -155,12 +194,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/startup-recovery-20261030-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/krayniy-terminal-20261030-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 5 — стабильная загрузка',
+                name: 'Интерактивный музей 5 — аэровокзал Крайнего',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }
