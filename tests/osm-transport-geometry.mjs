@@ -5,7 +5,7 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork,buildOsmGraph} from '../src/osm-transport.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
-import {SATURN_ACCESS,saturnTerrainHeight,saturnTerrainSample,addSaturnNorthwestGate} from '../src/saturn-access.js';
+import {SATURN_ACCESS,saturnTerrainHeight,saturnTerrainSample} from '../src/saturn-access.js';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
 const catalog=read('data/catalog.json'),matches=read('data/osm/catalog-matches.json');
@@ -146,17 +146,11 @@ for(const road of transport.roadPaths()){
  }
 }
 assert(renderedArterialSamples>1000,'No rendered main-road surfaces were checked near Saturn');
-// Check the actual endpoint and gate buffer, not only the access report's
-// cached gateError, so moving the station cannot detach its working approach.
+// The owner removed the broad, authored black approach. It must not survive
+// as a rendered road or as a path used to generate evening roadside lamps.
 const approaches=transport.roadPaths().filter(r=>r.id===SATURN_ACCESS.routeId);
-assert.equal(approaches.length,1,'Saturn must retain one connected northwest approach');
-const gateRoot=new THREE.Group();gateRoot.position.copy(point(saturn.x,saturn.y,SATURN_ACCESS.elevation));
-gateRoot.scale.setScalar(SATURN_ACCESS.scale);addSaturnNorthwestGate(gateRoot);gateRoot.updateMatrixWorld(true);
-const gateVertices=gateRoot.getObjectByName('northwest-gate-pavement').geometry.attributes.position;
-const gateCenter=new THREE.Vector3().fromBufferAttribute(gateVertices,0).add(new THREE.Vector3().fromBufferAttribute(gateVertices,1)).multiplyScalar(.5);
-const gateGap=approaches[0].points.at(-1).distanceTo(gateRoot.localToWorld(gateCenter));
-assert(gateGap<1e-5,'The moved Saturn northwest gate has detached from its approach');
-assert(stats.saturnAccess.minTerrainClearance>.10,'The northwest approach cuts into the smaller hill');
+assert.equal(approaches.length,0,'The removed black Saturn approach returned');
+assert.equal(stats.saturnAccess,null);
 let paintVertices=0;
 layers.roads.traverse(m=>{if(m.name!=='OSM · разметка')return;const p=m.geometry.attributes.position;for(let i=0;i<p.count;i++){
  const heights=pavementHeights(p.getX(i),p.getZ(i)),y=p.getY(i);
@@ -182,7 +176,7 @@ assert(Math.abs(trainHorizontalLength-1710.9621827247777)<1e-6,'The working trai
 assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','1468604922','173086738','256360833'],'The train must retain its established OSM route');
 for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}
-assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);assert(stats.saturnAccess?.gateError<1e-7);
+assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);
 assert.equal(stats.facilityPorts.length,40,'A facility lost its road connection');
 assert.equal(stats.facilityRailPorts.length,6,'A facility lost its rail connection');
 assert(stats.facilityRailPorts.length>=5);for(const p of stats.facilityRailPorts){assert(p.headCenterGap<1e-7);assert(p.networkDatumGap<1e-7);assert(new THREE.Vector3(...p.headCenter).distanceTo(new THREE.Vector3(...p.renderedHeadCenter))<1e-7);}
@@ -190,5 +184,5 @@ assert(stats.facilityRailPorts.length>=5);for(const p of stats.facilityRailPorts
 const fixture=(id,ids,coordinates)=>({id:'way/'+id,properties:{osmId:id,sourceNodeIds:ids,tags:{highway:'secondary'}},geometry:{type:'LineString',coordinates}});
 const graph=buildOsmGraph([fixture(1,[1,2],[[63.3,45.9],[63.5,45.9]]),fixture(2,[3,4],[[63.4,45.8],[63.4,46]])],{geography,point});assert.equal(graph.components.length,2);
 console.log('OSM_TRANSPORT_GEOMETRY_PASS',JSON.stringify({stats,meshCount,vertices,upwardTriangles,terrainSamples,minTerrainClearance,
- saturnRoadClearance:{corridorSamples,renderedArterialSamples,checkedWays:[...checkedWays],kinds:[...corridorKinds],maxCorridorRelief,maxCorridorOpacity,maxArterialHeightError,gateGap},
+ saturnRoadClearance:{corridorSamples,renderedArterialSamples,checkedWays:[...checkedWays],kinds:[...corridorKinds],maxCorridorRelief,maxCorridorOpacity,maxArterialHeightError,externalApproaches:approaches.length},
  paintVertices,trainLength:train.path.length,trainHorizontalLength,routeLengths:plan.routes.map(r=>r.length)}));

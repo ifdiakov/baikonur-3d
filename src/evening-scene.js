@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js?v=20261028-site41-v1';
-import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-landscape-roads-v1';
+import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
+import {buildAirportLightRecords,AIRPORT_LIGHT_LAYOUT_VERSION} from './airport-light-layout.js?v=20261030-river-roads-signs-v1';
 
-export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange,isLightAllowed=()=>true,isLightPowered=()=>true}){
+export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange,isLightAllowed=()=>true,isLightPowered=()=>true,bankRule='north-of-syr-darya-v1'}){
  const hemisphere=scene.children.find(o=>o.isHemisphereLight),fields=[],originals=new Map();
  let evening=true,lastSync=-1;
  const excludedByBank={road:0,site:0,city:0,runway:0,apron:0,flood:0};
@@ -73,19 +74,10 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  filterBank(siteLights,'site');filterBank(cityLights,'city');
  fields.push(createLightField(layers.sites,siteLights,{poles:true,pools:true,name:'Вечер · свет площадок'}));
  fields.push(createLightField(layers.city,cityLights,{poles:true,pools:true,name:'Вечер · город'}));
- // Both airfields use their measured runway dimensions and existing transforms.
+ // Airport lights use the same displayed length and transform as the runway.
  const runway=[],apron=[];
  for(const airport of objects.filter(o=>o.g.userData.airport)){
-  const field=airport.g,spec=field.userData.airport,H=spec.length/2,W=spec.width;field.updateWorldMatrix(true,false);
-  function light(x,z,color,size=3){const p=field.localToWorld(new THREE.Vector3(x,2.1,z));runway.push({x:p.x,y:p.y,z:p.z,height:0,color,size,owner:field});}
-  for(let z=-H+15;z<=H-15;z+=60)for(const x of [-W/2-1,W/2+1])light(x,z,0xffefc5,2.2);
-  for(let x=-W/2;x<=W/2;x+=W/8){light(x,H-10,0x64ffbc,3);light(x,-H+10,0xff4c42,3);}
-  for(let z=-H+20;z<H;z+=45)light(0,z,z< -H+600?0xffb76b:0xf4f3dd,1.8);
-  const taxiX=spec.key==='yubileiny'?-150:100;
-  for(let z=-H+60;z<H-60;z+=70)light(taxiX,z,0x68aaff,2);
-  for(const side of [-1,1])for(let d=60;d<=480;d+=60){light(0,side*(H+d),0xffeac0,2.5);if(d===300)for(const x of [-16,-8,8,16])light(x,side*(H+d),0xffeac0,2.5);}
-  for(const side of [-1,1])for(let i=0;i<4;i++)light(-W/2-18-i*3,side*(H-(spec.papiSetback??300)),i<2?0xff3930:0xfff6e0,2.6);
-  for(const dx of [-110,110])for(const dz of [-185,185]){const p=field.localToWorld(new THREE.Vector3(spec.apron[0]+dx,1.8,spec.apron[1]+dz));apron.push({x:p.x,y:p.y,z:p.z,height:6,radius:23,color:0xffdba4,owner:field});}
+  const layout=buildAirportLightRecords(airport.g);runway.push(...layout.runway);apron.push(...layout.apron);
  }
  filterBank(runway,'runway');filterBank(apron,'apron');
  fields.push(createLightField(layers.city,runway,{name:'Аэродромы · ВПП, глиссада и рулёжные огни',minPixels:1.8}));
@@ -110,10 +102,14 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  button?.addEventListener('click',()=>setEvening(!evening));setEvening(true);
  const stationaryLights=[...roadLights,...siteLights,...cityLights,...runway,...apron];
  const outsideBankCount=stationaryLights.filter(l=>!permitted(l)).length;
- return {setEvening,lightPositions:({poweredOnly=false}={})=>stationaryLights.filter(l=>!poweredOnly||l.powered!==false).map(l=>[l.x,l.y,l.z]),get evening(){return evening;},update(now){sky.position.copy(camera.position);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
+ return {setEvening,lightPositions:({poweredOnly=false}={})=>stationaryLights.filter(l=>!poweredOnly||l.powered!==false).map(l=>[l.x,l.y,l.z]),
+  airportLightPositions:key=>[...runway,...apron].filter(l=>!key||l.airport===key).map(l=>({airport:l.airport,kind:l.kind,position:[l.x,l.y,l.z],radius:l.radius||0,local:l.local})),
+  get evening(){return evening;},update(now){sky.position.copy(camera.position);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
   stats:()=>({version:'evening-east-cutoff-v3',evening,roadLights:roadLights.length,siteLights:siteLights.length,runwayLights:runway.length,
    powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered===false).length,litSiteIds:[...new Set(siteLights.filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
-   bankFilter:{rule:'north-of-syr-darya-v1',excludedByBank:{...excludedByBank},remaining:stationaryLights.length,outsideBankCount},
+   airportLighting:{version:AIRPORT_LIGHT_LAYOUT_VERSION,airports:objects.filter(o=>o.g.userData.airport).map(o=>({key:o.g.userData.airport.key,length:o.g.userData.airport.length,approachLength:o.g.userData.airport.approachLength??480,
+    runwayLights:runway.filter(l=>l.owner===o.g).length,apronLights:apron.filter(l=>l.owner===o.g).length}))},
+   bankFilter:{rule:bankRule,excludedByBank:{...excludedByBank},remaining:stationaryLights.length,outsideBankCount},
    saturnLights:siteLights.filter(l=>l.owner===saturn?.g).map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
    saturnRoadLights:roadLights.filter(l=>l.terrain==='saturn').map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
    lightBatches:fields.reduce((n,f)=>n+f.stats().drawCalls,0),dynamicLights:floods.length,terrainMaterials:originals.size})};

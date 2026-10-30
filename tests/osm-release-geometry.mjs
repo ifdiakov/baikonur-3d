@@ -44,7 +44,8 @@ const circuit=createFlightCircuit(krayniy,{complexCenter:hub,aircraftScale:.28})
 assert.equal(FLIGHT_CIRCUIT_VERSION,'krayniy-osm-circuit-v6');
 assert.equal(FLIGHT_CYCLE_DURATION,812);assert.equal(FLIGHT_LEG_DURATION,406);
 assert.deepEqual(circuit.runways.map(r=>r.key),['krayniy','krayniy']);
-assert.deepEqual(circuit.runways.map(r=>r.length),[1550,1550]);
+assert.deepEqual(circuit.runways.map(r=>r.length),[AIRPORT_DIMENSIONS.krayniy.length,AIRPORT_DIMENSIONS.krayniy.length]);
+assert(AIRPORT_DIMENSIONS.krayniy.length<1550,'Krayniy remains shortened to keep its approach lights on land');
 assert.equal(circuit.phases.length,18);
 let probes=0,maxWheelError=0,maxLateral=0,minFlightHeight=Infinity;
 for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){

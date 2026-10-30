@@ -23,7 +23,7 @@ const data=JSON.parse(fs.readFileSync('data/transport-network.json')),siteRecord
 const layers={roads:new THREE.Group(),rails:new THREE.Group()},point=(x,y,z=0)=>new THREE.Vector3((x-650)*3.4,z,(y-522.5)*3.4);
 const network=buildTransportNetwork({data,siteRecords,point,layers}),plan=network.trainPath(),highway=buildHighwayPath(network.roadPaths());
 assert.equal(plan.extraRails.length,2);assert.ok(plan.joins.every(j=>j.gap<1e-4&&j.tangentDot>.999));
-assert.ok(highway.joinGap<1e-4);assert.equal(network.stats().railRoutes,14);assert.equal(network.stats().roadRoutes,24);
+assert.ok(highway.joinGap<1e-4);assert.equal(network.stats().railRoutes,14);assert.equal(network.stats().roadRoutes,23);
 let maxDeviation=0;
 for(const section of plan.sections){
  const pair=layers.rails.children.filter(m=>m.userData.railRoute===section.id&&m.geometry?.type==='TubeGeometry');assert.equal(pair.length,2);

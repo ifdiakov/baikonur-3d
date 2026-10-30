@@ -44,7 +44,11 @@ assert.equal(triangleCoverage(bridge,.71,.93,.72),1);assert.equal(triangleCovera
 const data=JSON.parse(fs.readFileSync('data/transport-network.json')),siteRecords=JSON.parse(fs.readFileSync('data/catalog.json')).sites;
 const original=JSON.stringify(data),point=(x,y,h=0)=>new THREE.Vector3((x-650)*3.4,h,(y-522.5)*3.4),layers={roads:new THREE.Group(),rails:new THREE.Group()};
 const network=buildTransportNetwork({data,siteRecords,point,layers});
-assert.equal(JSON.stringify(data),original);assert.equal(network.stats().roadRoutes,24);
+assert.equal(JSON.stringify(data),original);assert.equal(network.stats().roadRoutes,23);
+assert.equal(network.stats().saturnAccess,null);
+assert(!network.roadPaths().some(r=>r.id==='r-site23-saturn-access'),'The retired Saturn road must not create pavement or road lamps');
+assert(!network.routes.road.some(r=>r.id==='r-site23-saturn-access'));
+assert(!network.stats().siteAccess.includes('23'));
 for(const [id,routeId]of [['pad-110','r-complex-110'],['pad-42','r-site42-access']]){
  const site=siteRecords.find(s=>s.id===id),gate=portWorld(FACILITY_PORTS[id],FACILITY_PORTS[id].road,site,point),path=network.roadPaths().find(r=>r.id===routeId);
  assert.ok(path.points.at(-1).distanceTo(gate)<1e-6,routeId+' must meet the relocated model entrance');
@@ -53,7 +57,7 @@ for(const [id,routeId]of [['pad-110','r-complex-110'],['pad-42','r-site42-access
 }
 const n=network.stats().roadSurface;
 assert.ok(n.clippedPavementSections>100&&n.clippedShoulderSections>100);assert.ok(n.markingSegments>100);
-assert.ok(n.junctions.some(j=>j.roadIds.includes('r-site23-saturn-access')),'Saturn joins the same pavement/marking layout');
+assert.ok(n.junctions.every(j=>!j.roadIds.includes('r-site23-saturn-access')),'The retired Saturn road must not leave junction geometry');
 assert.ok(n.junctions.some(j=>j.roadIds.includes('r-site42-access')),'The Site 42 entrance leaves an open marking gap');
 assert.ok(n.pavementTriangles<50000&&n.shoulderTriangles<100000,'The network remains practical for the interactive scene');
 for(const mesh of [layers.roads.getObjectByName('road-pavement-union'),layers.roads.getObjectByName('road-shoulder-union')])for(const number of mesh.geometry.attributes.position.array)assert.ok(Number.isFinite(number));

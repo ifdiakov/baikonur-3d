@@ -3,15 +3,24 @@ import {installMriyaExhibit} from './mriya-exhibit.js?v=20261028-mriya-paint-v2'
 import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
- krayniy:{length:1550,referenceLength:3100,longitudinalScale:.5,width:45,heading:2.06},
+ // The longest ten-unit display length that keeps the full approach-light
+ // axis at least five world units from the exact OSM river-water polygons.
+ // The geographic runway centre, direction and source length are unchanged.
+ krayniy:{length:1380,referenceLength:3100,longitudinalScale:1380/3100,width:45,heading:2.06},
  yubileiny:{length:2250,referenceLength:4500,longitudinalScale:.5,width:84,heading:1.948}
 };
-// User-requested half-length presentation. Historical lengths stay explicit;
-// runway width, aircraft scale and building dimensions are unchanged.
+// The source runway length remains explicit; presentation length can be
+// reduced for shoreline clearance without moving its geographic centre/axis.
+export function airportDisplaySpec(key,overrides={}){
+ const base={...AIRPORT_DIMENSIONS[key],...overrides},zScale=base.length/base.referenceLength,H=base.length/2,isY=key==='yubileiny';
+ return {...base,key,scale:AIRPORT_SCALE,longitudinalScale:zScale,runwayY:1.75,
+  threshold:H-15,touchdown:H-380*zScale,papiSetback:300*zScale,
+  approachLength:960*zScale,approachStations:8,apron:isY?[-250,170*zScale]:[170,-680*zScale]};
+}
 export function buildAirport(root,key){
- const spec=AIRPORT_DIMENSIONS[key],k=archiveKit(root),L=spec.length,W=spec.width,H=L/2,isY=key==='yubileiny';
+ const spec=airportDisplaySpec(key),k=archiveKit(root),L=spec.length,W=spec.width,H=L/2,isY=key==='yubileiny';
  const zScale=spec.longitudinalScale,apronZ=(isY?170:-680)*zScale;
- root.userData.airport={...spec,key,scale:AIRPORT_SCALE,runwayY:1.75,threshold:H-15,touchdown:H-380*zScale,papiSetback:300*zScale,apron:isY?[-250,apronZ]:[170,apronZ]};
+ root.userData.airport={...spec};
  k.box(W+18,.6,L+120,0,1.1,0,'concrete','runway-shoulder');k.box(W,.4,L,0,1.55,0,'asphalt','runway');
  for(const side of [-1,1]){
   k.box(.9,.04,L-12,side*(W/2-1.5),1.78,0,'white','runway-edge');

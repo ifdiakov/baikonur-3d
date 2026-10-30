@@ -1,5 +1,5 @@
-import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261030-landscape-roads-v1';
-import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261030-landscape-roads-v1';
+import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261030-river-roads-signs-v1';
+import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261030-river-roads-signs-v1';
 
 // Antennas, buildings and their instancedFrameBatches remain in the unchanged
 // structure module. Access and terrain share one northwest-entry definition.

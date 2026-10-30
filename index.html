@@ -324,23 +324,24 @@ body.following-arrival #labelLayer{display:none!important}
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=below-grade-portal-v1';
 import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261029-all-silos-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261030-mzk-sdi-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261030-river-roads-signs-v1';
 import {buildUkssPad,maskUkssTerrain} from './src/ukss-pad.js';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261028-museum4-osm-live-v2';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261028-museum4-osm-live-v2';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261028-museum4-osm-live-v2';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261030-landscape-roads-v1';
-import {createMuseumGeography} from './src/osm-geography.js?v=20261030-landscape-roads-v1';
-import {createNorthBankMask} from './src/river-bank.js?v=20261028-museum4-osm-live-v2';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261030-river-roads-signs-v1';
+import {createMuseumGeography} from './src/osm-geography.js?v=20261030-river-roads-signs-v1';
+import {createNorthBankMask} from './src/river-bank.js?v=20261030-river-roads-signs-v1';
+import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261030-river-roads-signs-v1';
 import {fitOverviewCamera} from './src/overview-camera.js?v=20261028-museum4-osm-live-v2';
 import {buildExtendedTerrain, sampleSteppe} from './src/terrain-extent.js';
-import {buildHighwaySigns} from './src/road-signs.js';
-import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261030-landscape-roads-v1';
-import {SATURN_ACCESS} from './src/saturn-access.js?v=20261030-landscape-roads-v1';
+import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-signs-v1';
+import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261030-river-roads-signs-v1';
+import {SATURN_ACCESS} from './src/saturn-access.js?v=20261030-river-roads-signs-v1';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
-import {buildAirport} from './src/airport-models.js?v=20261028-mriya-paint-v2';
-import {buildEveningScene} from './src/evening-scene.js?v=20261030-landscape-roads-v1';
+import {buildAirport} from './src/airport-models.js?v=20261030-river-roads-signs-v1';
+import {buildEveningScene} from './src/evening-scene.js?v=20261030-river-roads-signs-v1';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261028-museum4-osm-live-v2';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261028-motovoz-photo-v3';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
@@ -351,11 +352,11 @@ const attribution=document.createElement('a');attribution.id='osmAttribution';at
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть слои и объекты');document.querySelector('#ui>.buttons').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть слои и объекты':'Открыть слои и объекты');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261030-landscape-roads-v1';
+const MUSEUM_REVISION='20261030-river-roads-signs-v1';
 async function loadMuseumData(path){const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw new Error('Не удалось загрузить данные карты: '+path+' ('+r.status+')');return r.json();}
-const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmPlaces,transportData]=await Promise.all([
+const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData]=await Promise.all([
  './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson','./data/osm/railways.geojson',
- './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/places.geojson','./data/transport-network.json'
+ './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson','./data/osm/places.geojson','./data/transport-network.json'
 ].map(loadMuseumData));
 const geography=createMuseumGeography({catalog,matches:osmMatches});
 const siteRecords=geography.sites.filter(record=>!record.aliasOf&&record.render!==false);
@@ -489,26 +490,14 @@ const rails=[
 const riverSource=osmRiver.features.find(f=>f.geometry.type==='LineString');
 if(!riverSource)throw new Error('Геометрия Сырдарьи не загружена');
 const riverPts=riverSource.geometry.coordinates.map(c=>geography.project(c));
-const lightBank=createNorthBankMask(riverPts.map(([x,y])=>[(x-W/2)*S,(y-H/2)*S]));
+const riverWater=createRiverWaterModel({data:osmRiverWater,project:ll=>{const p=geography.project(ll);return [(p[0]-W/2)*S,(p[1]-H/2)*S];}});
+const riverSurface=buildRiverSurface({model:riverWater,parent:scene});
+const lightBank=createNorthBankMask(riverPts.map(([x,y])=>[(x-W/2)*S,(y-H/2)*S]),{water:riverWater});
 const eastLightingZone=createEastLightingZone({facilities:osmFacilities,project:(lon,lat)=>{const [x,y]=geography.project(lon,lat);return [(x-W/2)*S,(y-H/2)*S];}});
 const riverCorePts=riverPts.filter(p=>p[0]>=-160&&p[0]<=W+160&&p[1]>=-300&&p[1]<=H+400);
 const riverStats={source:'OpenStreetMap © contributors · ODbL',cartographicAccuracy:'OSM WGS84 local metric projection',
  corePointCount:riverCorePts.length,totalPointCount:riverPts.length,westmostX:Math.min(...riverPts.map(p=>p[0])),eastmostX:Math.max(...riverPts.map(p=>p[0])),
- planBoundaryLeft:0,planBoundaryRight:W,geoDataset:osmRiver.osmBaseTimestamp,osmRelation:1206456};
-const riverGroup=new THREE.Group();scene.add(riverGroup);
-function riverRibbon(width,elevation,color,opacity){
- const curve=new THREE.CatmullRomCurve3(riverPts.map(([x,y])=>point(x,y,elevation)),false,'centripetal');
- const vertices=[],uv=[],indices=[],steps=Math.min(2400,Math.max(420,riverPts.length*4));
- for(let i=0;i<=steps;i++){const t=i/steps,center=curve.getPoint(t),dir=curve.getTangent(t),length=Math.hypot(dir.x,dir.z)||1;const sideX=-dir.z/length,sideZ=dir.x/length,half=(width/2)*(1+.14*Math.sin(t*49)+.07*Math.cos(t*87));for(const sign of [-1,1]){vertices.push(center.x+sideX*half*sign,elevation,center.z+sideZ*half*sign);uv.push(t,sign>0?1:0)}if(i<steps){const k=i*2;indices.push(k,k+1,k+2,k+1,k+3,k+2)}}
- const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));geo.setIndex(indices);geo.computeVertexNormals();
- const mesh=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color,roughness:.32,metalness:.13,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false}));mesh.renderOrder=3;riverGroup.add(mesh);return mesh;
-}
-// Floodplain and water are layered continuously well beyond both map edges.
-riverRibbon(188,-2.18,0x78836f,.16);
-riverRibbon(104,-2.05,0x727f69,.21);
-riverRibbon(51,-1.88,0x546d65,.78);
-riverRibbon(34,-1.69,0x377783,.94);
-riverRibbon(9,-1.60,0x8dc4c5,.21);
+ planBoundaryLeft:0,planBoundaryRight:W,geoDataset:osmRiver.osmBaseTimestamp,osmRelation:1206456,...riverSurface.stats()};
 
 const riparianShrubs=outerTerrain.addRiparian({riverCorePts,point,siteRecords});
 const transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords});
@@ -798,10 +787,8 @@ for(let sy=0;sy<satH;sy++)for(let sx=0;sx<satW;sx++){
  r+=oldLevee*16;g+=oldLevee*14;b+=oldLevee*11;
  const smallBrush=Math.max(0,small-.81)*Math.max(0,1-river/155)*45;
  r-=smallBrush*1.5;g-=smallBrush*.6;b-=smallBrush*1.3;
- if(river<24+bankNoise*.5){
-  const waterMix=Math.max(0,1-river/24)*.86;
-  r+=(68-r)*waterMix;g+=(112-g)*waterMix;b+=(115-b)*waterMix;
- }
+ // Water is drawn only inside the measured river polygons. The former broad
+ // blue centreline wash would create a second, false channel under the shore.
  // Feather the central historical map over a generous region. Because all
  // three texture LODs use sampleSteppe, even partial alpha matches below.
  const edge=Math.min(nx,ny,1-nx,1-ny);
@@ -1451,8 +1438,8 @@ lightingEditor=createLightingEditor({scene,camera,canvas:renderer.domElement,
 });
 const airportObject=objects.find(o=>o.record.id==='airfield');
 const eveningScene=buildEveningScene({scene,camera,renderer,sun,layers,objects,roads:transport.roadPaths(),airfield:airportObject.g,groundMeshes:lightingGroundMeshes,
- isLightAllowed:lightBank.contains,isLightPowered:eastLightingZone.isPowered,
- button:null,onModeChange:value=>{objects.find(o=>o.record.id==='pad-75')?.g.userData.setHotelEvening?.(value);lightingEditor.setEvening(value);groundTraffic?.setEvening(value);arrivalFlight?.setEvening(value);}});
+ isLightAllowed:lightBank.contains,isLightPowered:eastLightingZone.isPowered,bankRule:lightBank.version,
+ button:null,onModeChange:value=>{highwaySigns.setEvening(value);objects.find(o=>o.record.id==='pad-75')?.g.userData.setHotelEvening?.(value);lightingEditor.setEvening(value);groundTraffic?.setEvening(value);arrivalFlight?.setEvening(value);}});
 arrivalFlight=createArrivalFlight({scene,camera,controls:ctl,canvas:renderer.domElement,airfield:airportObject.g,complexCenter:point(...geography.project(63.33,45.94)),container:document.getElementById('arrivalPanel'),
  onFollow(){groundTraffic?.stopFollowing();fly=false;document.getElementById('fly').textContent='Облёт';document.getElementById('info').style.display='none';}});
 arrivalFlight.setEvening(eveningScene.evening);
@@ -1517,6 +1504,36 @@ window.__BAIKONUR_QA={inspectFlankBoundaries(){
  const damping=ctl.enableDamping;arrivalFlight.stopFollowing();groundTraffic.stopFollowing();
  ctl.enableDamping=false;ctl.update();portalArchive.inspectSite31(view,camera,ctl);ctl.update();
  ctl.enableDamping=damping;camera.updateMatrixWorld(true);updateLabels();
+},river:{stats:riverSurface.stats,sample:(x,z)=>({water:riverWater.isWater(x,z),landClearance:riverWater.landClearance(x,z)})},inspectRiver(view='islands'){
+ arrivalFlight.stopFollowing();groundTraffic.stopFollowing();
+ const city=objects.find(o=>o.record.id==='city').g.getWorldPosition(new THREE.Vector3());
+ const anchor=view==='west'?highwaySigns.signs.find(s=>s.userData.direction==='west').position:city;
+ let target=null,range=220,sourceIsland=null;
+ if(view==='islands'){
+  const candidates=riverWater.islands.map(island=>{const b=island.bounds,p=new THREE.Vector3((b.minX+b.maxX)/2,0,(b.minZ+b.maxZ)/2);return {island,p,score:island.area/(1+p.distanceToSquared(city)/90000)};})
+   .filter(c=>c.p.x>museumCameraBounds.minX&&c.p.x<museumCameraBounds.maxX&&c.p.z>museumCameraBounds.minZ&&c.p.z<museumCameraBounds.maxZ).sort((a,b)=>b.score-a.score);
+  if(candidates.length){const c=candidates[0],b=c.island.bounds;target=c.p;range=Math.max(150,Math.max(b.maxX-b.minX,b.maxZ-b.minZ)*2.6);sourceIsland=c.island.sourceWayId;}
+ }
+ if(!target){let distance=Infinity;
+  for(let i=1;i<riverPts.length;i++){const a=point(...riverPts[i-1]),b=point(...riverPts[i]),p=new THREE.Line3(a,b).closestPointToPoint(anchor,true,new THREE.Vector3()),d=p.distanceToSquared(anchor);if(d<distance){distance=d;target=p;}}
+ }
+ const damping=ctl.enableDamping;ctl.enableDamping=false;ctl.update();ctl.target.copy(target).setY(0);
+ camera.position.copy(ctl.target).add(new THREE.Vector3(range*.12,range,range*.45));
+ ctl.update();ctl.enableDamping=damping;camera.updateMatrixWorld(true);updateLabels();return {view,sourceIsland,target:ctl.target.toArray(),range};
+},inspectIndustrialRoad(){
+ const sites=objects.filter(o=>['pad-112','pad-112a','pad-110'].includes(o.record.id));if(sites.length!==3)return false;
+ arrivalFlight.stopFollowing();groundTraffic.stopFollowing();
+ const bounds=new THREE.Box3().setFromPoints(sites.map(o=>o.g.getWorldPosition(new THREE.Vector3()))).expandByScalar(50),size=bounds.getSize(new THREE.Vector3());
+ const range=Math.max(210,Math.max(size.x,size.z)*1.3),damping=ctl.enableDamping;ctl.enableDamping=false;ctl.update();
+ bounds.getCenter(ctl.target);ctl.target.y=0;camera.position.copy(ctl.target).add(new THREE.Vector3(range*.16,range,range*.6));
+ ctl.update();ctl.enableDamping=damping;camera.updateMatrixWorld(true);updateLabels();return true;
+},inspectRoadSign(id,face='front'){
+ const sign=highwaySigns.signs.find(s=>s.userData.id===id||s.userData.direction===id);if(!sign)return false;
+ arrivalFlight.stopFollowing();groundTraffic.stopFollowing();
+ const damping=ctl.enableDamping;ctl.enableDamping=false;ctl.update();sign.updateWorldMatrix(true,false);
+ ctl.target.copy(sign.localToWorld(new THREE.Vector3(0,29,0)));
+ camera.position.copy(sign.localToWorld(new THREE.Vector3(70,145,face==='back'?-150:150)));
+ ctl.update();ctl.enableDamping=damping;camera.updateMatrixWorld(true);updateLabels();return true;
 },inspectLocalRoads(id,range=160){
  const o=cardObjects.find(o=>o.record.id===id);if(!o)return false;
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();

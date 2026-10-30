@@ -1,22 +1,30 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import * as THREE from 'three';
 import {createArrivalPath,arrivalPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION} from '../src/arrival-flight.js';
 import {AIRPORT_DIMENSIONS,AIRPORT_SCALE,buildAirport} from '../src/airport-models.js';
+import {createMuseumGeography} from '../src/osm-geography.js';
 
 const canvasContext=new Proxy({measureText:t=>({width:t.length*15})},{get:(o,k)=>o[k]||(()=>{})});
 globalThis.document={createElement:()=>({width:1,height:1,getContext:()=>canvasContext})};
-for(const [key,length,width,referenceLength] of [['krayniy',1550,45,3100],['yubileiny',2250,84,4500]]){
+const renderedAirports={};
+for(const [key,length,width,referenceLength] of [['krayniy',AIRPORT_DIMENSIONS.krayniy.length,45,3100],['yubileiny',2250,84,4500]]){
  const spec=AIRPORT_DIMENSIONS[key];assert.equal(spec.length,length);assert.equal(spec.width,width);
- assert.equal(spec.referenceLength,referenceLength);assert.equal(spec.length/spec.referenceLength,.5);
- const root=new THREE.Group();buildAirport(root,key);
+ assert.equal(spec.referenceLength,referenceLength);assert.equal(spec.length/spec.referenceLength,spec.longitudinalScale);
+ const root=new THREE.Group();buildAirport(root,key);renderedAirports[key]=root;
  const runway=root.children.find(m=>m.isInstancedMesh&&m.name==='Архив · asphalt'),matrix=new THREE.Matrix4(),scale=new THREE.Vector3();
  assert.ok(runway);runway.getMatrixAt(0,matrix);matrix.decompose(new THREE.Vector3(),new THREE.Quaternion(),scale);
- assert.equal(scale.z,length,'The rendered asphalt length is halved');assert.equal(scale.x,width,'The runway width is preserved');
+ assert.equal(scale.z,length,'The rendered asphalt follows the display length');assert.equal(scale.x,width,'The runway width is preserved');
+ assert.equal(root.userData.airport.approachLength,960*spec.longitudinalScale);
 }
 delete globalThis.document;
-const airport=new THREE.Group();airport.scale.setScalar(AIRPORT_SCALE);airport.rotation.y=2.06;
-airport.position.set((539-650)*3.4,0,(962-522.5)*3.4);
-airport.userData.airport={...AIRPORT_DIMENSIONS.krayniy,threshold:760,touchdown:585};
+const read=file=>JSON.parse(fs.readFileSync(new URL('../'+file,import.meta.url),'utf8'));
+const geography=createMuseumGeography({catalog:read('data/catalog.json'),matches:read('data/osm/catalog-matches.json')}),
+ runwaySource=read('data/osm/airports.geojson').features.find(f=>f.properties.osmId===37591623&&f.geometry.type==='LineString'),
+ a=geography.project(runwaySource.geometry.coordinates[0]),b=geography.project(runwaySource.geometry.coordinates.at(-1)),sign=b[0]>=a[0]?1:-1;
+const airport=renderedAirports.krayniy;airport.scale.setScalar(AIRPORT_SCALE);airport.rotation.y=Math.atan2((b[0]-a[0])*sign,(b[1]-a[1])*sign);
+airport.position.set(((a[0]+b[0])/2-650)*3.4,-2.72,((a[1]+b[1])/2-522.5)*3.4);
+const halfLength=airport.userData.airport.length/2,halfWidth=airport.userData.airport.width/2;
 const path=createArrivalPath(airport);
 assert.equal(FLIGHT_DURATION,120);assert.equal(TOUCHDOWN_TIME,120);
 assert.equal(FLIGHT_LEG_DURATION,406);assert.equal(FLIGHT_CYCLE_DURATION,812);
@@ -33,12 +41,12 @@ for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){
  }
  if(s.onGround){
   const local=airport.worldToLocal(s.position.clone());
-  assert.ok(Math.abs(local.x)<22.5&&Math.abs(local.z)<775,'Ground manoeuvres stay inside the shortened runway');
+  assert.ok(Math.abs(local.x)<halfWidth&&Math.abs(local.z)<halfLength,'Ground manoeuvres stay inside the shortened runway');
   const bottom=new THREE.Vector3(3,-2.72,-3).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition).y-.46*.28;
   maxContactError=Math.max(maxContactError,Math.abs(bottom-path.runwayY));
   for(const [x,z] of [[0,12],[-3,-3],[3,-3]])for(const side of [-1,1])for(const dx of [-.135,.135])for(const dz of [-.46,.46]){
    const tyre=new THREE.Vector3(x+side*.26+dx,-2.72,z+dz).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition);
-   const wheel=airport.worldToLocal(tyre);assert.ok(Math.abs(wheel.x)<22.5&&Math.abs(wheel.z)<775,'All six tyres stay on asphalt during both turns');
+   const wheel=airport.worldToLocal(tyre);assert.ok(Math.abs(wheel.x)<halfWidth&&Math.abs(wheel.z)<halfLength,'All six tyres stay on asphalt during both turns');
   }
  }
 }
@@ -81,4 +89,5 @@ for(const offset of [0,FLIGHT_LEG_DURATION])for(const t of [38,42,82,105]){
  assert.ok(before.position.distanceTo(after.position)<.03);
  assert.ok(before.velocity.distanceTo(after.velocity)<.02,'Smooth approach joins');
 }
-console.log('ARRIVAL_GEOMETRY_PASS',JSON.stringify({approach:120,cycle:FLIGHT_CYCLE_DURATION,stopFraction:.8,stops:[20,20],returns:[60,60],maxLateral,minHeight,maxContactError}));
+console.log('ARRIVAL_GEOMETRY_PASS',JSON.stringify({displayRunwayLength:airport.userData.airport.length,sourceRunwayLength:airport.userData.airport.referenceLength,runtimeYaw:airport.rotation.y,
+ approach:120,cycle:FLIGHT_CYCLE_DURATION,stopFraction:.8,stops:[20,20],returns:[60,60],maxLateral,minHeight,maxContactError}));

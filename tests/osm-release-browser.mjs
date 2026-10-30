@@ -3,17 +3,20 @@ import {chromium} from 'playwright';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {createNorthBankMask} from '../src/river-bank.js';
+import {createRiverWaterModel} from '../src/river-surface.js';
+import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261030-landscape-roads-v1';
+const revision='20261030-river-roads-signs-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const matches=JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'));
 const geography=createMuseumGeography({catalog,matches});
 const airportFeatures=JSON.parse(await readFile('data/osm/airports.geojson','utf8')).features;
 const river=JSON.parse(await readFile('data/osm/river.geojson','utf8')).features.find(f=>f.geometry.type==='LineString');
-const northBank=createNorthBankMask(river.geometry.coordinates.map(c=>{const [x,y]=geography.project(c);return [(x-650)*3.4,(y-522.5)*3.4];}));
+const riverWater=createRiverWaterModel({data:JSON.parse(await readFile('data/osm/river-water.geojson','utf8')),project:c=>{const [x,y]=geography.project(c);return [(x-650)*3.4,(y-522.5)*3.4];}});
+const northBank=createNorthBankMask(river.geometry.coordinates.map(c=>{const [x,y]=geography.project(c);return [(x-650)*3.4,(y-522.5)*3.4];}),{water:riverWater});
 const expectedSites=new Map(geography.sites.map(s=>[s.id,s]));
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
@@ -119,8 +122,14 @@ try{
  assert.ok(initial.transport.facilityPorts.some(p=>p.id==='pad-31'&&p.roadGap<1e-5));
  assert.ok(initial.transport.facilityPorts.some(p=>p.id==='pad-42'&&p.roadGap<1e-5));
  assert.ok(initial.transport.gagarinRail.joinGap<1e-5);
- assert.ok(initial.transport.saturnAccess?.gateError<1e-5);
- assert.equal(initial.evening.version,'evening-east-cutoff-v3');assert.equal(initial.evening.bankFilter.rule,'north-of-syr-darya-v1');
+ assert.equal(initial.transport.saturnAccess,null,'The removed black Saturn approach stays absent');
+ const industrialRoad=initial.transport.roadSurface.continuousThroughRoads.find(r=>r.sourceWayId==='183464610');
+ assert.ok(industrialRoad);assert.equal(industrialRoad.renderedRuns,1);
+ assert.deepEqual([...industrialRoad.siteIds].sort(),['pad-110','pad-112','pad-112a']);
+ assert.equal(initial.highwaySigns.version,'two-readable-faces-four-aimed-floodlights-v1');
+ assert.equal(initial.highwaySigns.signCount,2);assert.equal(initial.highwaySigns.faceCount,4);
+ assert.equal(initial.highwaySigns.floodlightCount,8);assert.equal(initial.highwaySigns.floodlightsPerFace,2);
+ assert.equal(initial.evening.version,'evening-east-cutoff-v3');assert.equal(initial.evening.bankFilter.rule,'north-of-syr-darya-water-v2');
  assert.equal(initial.evening.bankFilter.outsideBankCount,0);assert.ok(initial.evening.bankFilter.remaining>0);assert.ok(initial.evening.bankFilter.excludedByBank.road>0);
  const lightPositions=await page.evaluate(()=>({scene:window.__BAIKONUR_QA.evening.lightPositions(),editor:window.__BAIKONUR_QA.lighting.visibleLightPositions()}));
  assert.equal(lightPositions.scene.length,initial.evening.bankFilter.remaining);
@@ -166,8 +175,8 @@ try{
  assert.ok(!(await page.locator('#description').textContent()).includes('Временный сектор'));
  evidence.sites=sites;
 
- // The whole Saturn exhibit, its graded access and lamp bases must follow the
- // requested display adjustment while the geographic source remains intact.
+ // Saturn retains its natural hill and requested display adjustment after
+ // removal of the separate, broad black approach and its roadside lights.
  const shiftedSaturn=await page.evaluate(()=>window.__BAIKONUR_QA.siteState('pad-23'));
  const saturnSource=geography.project(matches.matches.find(m=>m.siteId==='pad-23').representativeLonLat);
  assert.ok(near(shiftedSaturn.map,[saturnSource[0]+20,saturnSource[1]]));
@@ -175,12 +184,10 @@ try{
  assert.deepEqual(shiftedSaturn.geoSource.displayOffset,[20,0]);
  assert.deepEqual(shiftedSaturn.scale,[.525,.525,.525]);
  assert.equal(initial.evening.saturnLights.length,4);
- assert.ok(initial.evening.saturnRoadLights.length>0);
+ assert.equal(initial.evening.saturnRoadLights.length,0);
  for(const lamp of [...initial.evening.saturnLights,...initial.evening.saturnRoadLights])
   assert.ok(lamp.y-lamp.terrainY>0&&lamp.y-lamp.terrainY<.06,'Saturn lamp base follows the compact hillside');
  assert.equal(initial.saturn.access.preservedVerticalRaise,20);
- assert.equal(initial.transport.saturnAccess.revision,'northwest-natural-hill20-v4');
- assert.ok(near(initial.transport.saturnAccess.gateWorld,[shiftedSaturn.position[0]-96*.525,17.45+7.59*.525,shiftedSaturn.position[2]-79*.525]));
  await page.locator('#close').click();
  await page.locator('#showLabels').uncheck();
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectSaturnHill();q.evening.setEvening(false);});
@@ -192,6 +199,26 @@ try{
   await shot(name);
  }
  evidence.localRoads=localRoads;
+ for(const [id,face,evening]of [['west','front',false],['west','back',true],['east','front',false],['east','back',true]]){
+  assert.equal(await page.evaluate(({id,face,evening})=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(evening);return q.inspectRoadSign(id,face);},{id,face,evening}),true);
+  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().highwaySigns.evening),evening);
+  await shot('sign-'+id+'-'+face+'-'+(evening?'evening':'day'));
+ }
+ evidence.highwaySigns=initial.highwaySigns;
+ assert.equal(await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);return q.inspectIndustrialRoad();}),true);
+ await shot('industrial-road-112-112a-110');
+ const riverState=initial.riverCoverage;
+ assert.equal(riverState.version,'syrdarya-water-polygons-v1');
+ assert.equal(riverState.geometryBasis,'OSM-multipolygon-outer-and-inner-rings');
+ assert.equal(riverState.transparentWaterLayers,0);assert.equal(riverState.drawCalls,2);
+ assert.equal(riverState.islandCount,riverWater.islands.length);assert.ok(riverState.islandCount>0);
+ const riverViews=[];
+ for(const view of ['city','islands','west']){
+  const state=await page.evaluate(view=>window.__BAIKONUR_QA.inspectRiver(view),view);
+  assert.ok(state.target.every(Number.isFinite));if(view==='islands')assert.ok(state.sourceIsland);
+  riverViews.push(state);await shot('river-'+view+'-day');
+ }
+ evidence.river={geometry:riverState,views:riverViews};
  await page.locator('#showLabels').check();
  evidence.saturn={placement:shiftedSaturn,access:initial.transport.saturnAccess,lights:initial.evening.saturnLights};
 
@@ -236,7 +263,21 @@ try{
  await page.locator('#close').click();await page.locator('#showLabels').check();
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
 
- assert.deepEqual(initial.airports.map(a=>[a.key,a.length]).sort(),[['krayniy',1550],['yubileiny',2250]]);
+ assert.deepEqual(initial.airports.map(a=>[a.key,a.length]).sort(),[['krayniy',AIRPORT_DIMENSIONS.krayniy.length],['yubileiny',2250]]);
+ assert.equal(AIRPORT_DIMENSIONS.krayniy.length,1380);
+ const krayniyLights=await page.evaluate(()=>window.__BAIKONUR_QA.evening.airportLightPositions('krayniy'));
+ assert.equal(krayniyLights.length,149,'The shortened airport retains its complete light layout');
+ let minimumShoreClearance=Infinity;
+ for(const light of krayniyLights){
+  const [x,,z]=light.position,clearance=riverWater.landClearance(x,z);
+  minimumShoreClearance=Math.min(minimumShoreClearance,clearance);
+  assert.ok(clearance>=5&&northBank.contains(x,z),'Every displayed Krayniy light stays on dry airport-side land');
+ }
+ await page.locator('#showLabels').uncheck();
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectLocalRoads('airfield',480);q.evening.setEvening(true);});
+ await shot('krayniy-shore-lights');
+ await page.locator('#showLabels').check();
+ evidence.krayniyShore={length:1380,lights:krayniyLights.length,minimumShoreClearance};
  assert.equal(initial.arrival.version,'krayniy-osm-circuit-v6');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);
  assert.deepEqual(initial.arrival.airports.map(a=>a.key),['krayniy','krayniy']);
  assert.ok((await page.locator('#arrivalPanel .arrival-title').textContent()).includes('КРАЙНИЙ'));
