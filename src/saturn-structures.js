@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261030-saturn-clearance-v1';
+import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261030-landscape-roads-v1';
 
 /**
  * Baikonur Site 23: IP-5 Saturn-MS measuring station — museum reconstruction.
@@ -80,18 +80,20 @@ export function buildSaturnIP5(root,terrain={}) {
   }
   function groundPatch(){
     // A low, broad hill uses the same height field as its graded access road.
-    const N=100,extent=600,vertices=[],colors=[],uv=[],indices=[];
+    const N=128,extent=600,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
       const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent;
       const {height,opacity}=saturnTerrainSample(xx,zz);
       vertices.push(xx,height,zz);
       const world=root.localToWorld(new THREE.Vector3(xx,0,zz));
       uv.push(.5+world.x/(terrain.terrainWidth||4420),.5-world.z/(terrain.terrainHeight||3553));
-      // Keep the shared map colour at the edge and summit, but shade the actual
-      // slopes. An unlit, uniformly coloured mesh made this relief look flat.
+      // The same earth texture continues across the hill. Keep relief shading
+      // subtle: a strong fixed gradient painted a dark oval band on the old
+      // slope and made the whole mound look like a separate raised pedestal.
       const dx=(saturnTerrainSample(xx+2,zz).height-saturnTerrainSample(xx-2,zz).height)/4;
       const dz=(saturnTerrainSample(xx,zz+2).height-saturnTerrainSample(xx,zz-2).height)/4;
-      const shade=1+THREE.MathUtils.clamp((-dx*.8+dz*.5)*1.8,-.29,.15)*opacity;
+      const diffuse=(-dx*.7+dz*.5)/Math.sqrt(1+dx*dx+dz*dz);
+      const shade=1+THREE.MathUtils.clamp(diffuse*.10,-.055,.035)*opacity;
       colors.push(shade,shade,shade,opacity);
       if(x<N&&z<N){
         const a=z*(N+1)+x,b=a+1,c=a+N+1,d=c+1;
@@ -109,7 +111,7 @@ export function buildSaturnIP5(root,terrain={}) {
       map:terrain.terrainTexture||null,color:terrain.terrainTexture?0xffffff:0x9d8e76,
       side:THREE.DoubleSide
     });
-    Object.assign(groundMaterial,{vertexColors:true,transparent:true,depthWrite:true,alphaTest:.01,
+    Object.assign(groundMaterial,{vertexColors:true,transparent:true,depthWrite:true,alphaTest:.001,
       polygonOffset:true,polygonOffsetFactor:-2});
     const hill=add(new THREE.Mesh(geo,groundMaterial),'murguduk-hill');
     // The shared satellite overlay uses renderOrder=2. Render the relief AFTER
@@ -117,7 +119,7 @@ export function buildSaturnIP5(root,terrain={}) {
     hill.renderOrder=3;
     hill.userData.terrainElevationWorld=SATURN_ACCESS.verticalRaise;
     hill.userData.surfaceStyle='shared-steppe-world-uv';
-    hill.userData.reliefStyle='normal-shaded-depth-v1';
+    hill.userData.reliefStyle='soft-irregular-steppe-v2';
   }
   groundPatch();
 

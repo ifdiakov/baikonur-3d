@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js?v=20261028-site41-v1';
-import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-saturn-clearance-v1';
+import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-landscape-roads-v1';
 
 export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange,isLightAllowed=()=>true,isLightPowered=()=>true}){
  const hemisphere=scene.children.find(o=>o.isHemisphereLight),fields=[],originals=new Map();

@@ -6,7 +6,7 @@ import {createNorthBankMask} from '../src/river-bank.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261030-mzk-sdi-v1';
+const revision='20261030-landscape-roads-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const matches=JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'));
@@ -64,7 +64,7 @@ try{
  await step();
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(await page.locator('#error').isVisible(),false);
- assert.equal(initial.sites,98);assert.equal(initial.catalogEntries,99);
+ assert.equal(initial.sites,98);assert.equal(initial.catalogEntries,99);assert.equal(initial.stations,32);
  evidence.hierarchy=[await hierarchy('overview')];
  assert.equal(initial.geography.version,'osm-geography-v1');assert.equal(initial.geography.anchored,72);assert.equal(initial.geography.inferred,26);
  assert.equal(initial.transport.version,'osm-transport-v1');assert.equal(initial.transport.source,'OpenStreetMap');
@@ -88,6 +88,25 @@ try{
   assert.ok(filter.renderedWayCount>0&&filter.hiddenWays>filter.renderedWayCount,id+' keeps a sparse main-road network');
   for(const wayId of filter.preservedTrafficWayIds)assert.ok(filter.keptWayIds.includes(wayId),id+' retains every moving-traffic road');
  }
+ const localRoads=initial.transport.exhibitRoadSimplification;
+ assert.equal(localRoads.version,'exhibit-access-only-v1');
+ assert.equal(localRoads.sourceGraphUnchanged,true);
+ assert.equal(localRoads.lightingSource,'retained-rendered-road-runs');
+ assert.deepEqual(localRoads.regions.map(r=>r.id).sort(),['krayniy','napornaya','pad-75','yubileiny']);
+ for(const region of localRoads.regions){
+  assert.ok(region.hiddenEdgeCount>0&&region.keptEdgeCount>0,region.id+' retains access while removing secondary road clutter');
+  assert.ok(region.keptWayIds.length<region.sourceWayCount,region.id+' has a visibly simpler local road network');
+  for(const wayId of region.preservedTrafficWayIds)assert.ok(region.keptWayIds.includes(wayId),region.id+' retains every moving-traffic road');
+  for(const wayId of region.preservedPortWayIds)assert.ok(region.keptWayIds.includes(wayId),region.id+' retains its facility connection');
+  if(region.access)assert.equal(region.access.connected,true,region.id+' has a connected destination');
+ }
+ const airportClearance=localRoads.displayClearance;
+ assert.equal(airportClearance.source,'synthetic-museum-display-clearance');
+ assert.equal(airportClearance.bypassCount,1,'Yubileiny uses one connected perimeter road');
+ assert.ok(airportClearance.joinGaps.length>1&&airportClearance.joinGaps.every(join=>join.gap<1e-5),'The source approaches meet the perimeter road');
+ assert.equal(airportClearance.gateAccess.profile,'landside-terminal-access');
+ assert.equal(airportClearance.gateAccess.airsideHits,0);
+ assert.ok(airportClearance.gateAccess.sourceGap<1e-5&&airportClearance.gateAccess.gateGap<1e-5,'The terminal approach joins at both ends');
  const roadStyle=initial.transport.roadStyle,roadColor=roadStyle.asphaltColor.match(/^#([\da-f]{2})([\da-f]{2})([\da-f]{2})$/i)?.slice(1).map(s=>parseInt(s,16));
  assert.ok(roadColor?.every(c=>c>=160)&&Math.max(...roadColor)-Math.min(...roadColor)<=12,'Roads use a light, neutral gray');
  assert.ok(roadStyle.widths.primary<=3.6&&roadStyle.widths.residential<=2&&roadStyle.widths.service<=1.6,'Roads are visibly narrower at every scale');
@@ -160,12 +179,19 @@ try{
  for(const lamp of [...initial.evening.saturnLights,...initial.evening.saturnRoadLights])
   assert.ok(lamp.y-lamp.terrainY>0&&lamp.y-lamp.terrainY<.06,'Saturn lamp base follows the compact hillside');
  assert.equal(initial.saturn.access.preservedVerticalRaise,20);
+ assert.equal(initial.transport.saturnAccess.revision,'northwest-natural-hill20-v4');
  assert.ok(near(initial.transport.saturnAccess.gateWorld,[shiftedSaturn.position[0]-96*.525,17.45+7.59*.525,shiftedSaturn.position[2]-79*.525]));
  await page.locator('#close').click();
  await page.locator('#showLabels').uncheck();
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectSaturnHill();q.evening.setEvening(false);});
  await shot('saturn-hill-day');
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await shot('saturn-hill-evening');
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));
+ for(const [id,range,name]of [['pad-75',110,'roads-pad75'],['osm-station-2620204214',160,'roads-napornaya'],['airfield',400,'roads-krayniy'],['pad-251',470,'roads-yubileiny']]){
+  assert.equal(await page.evaluate(({id,range})=>window.__BAIKONUR_QA.inspectLocalRoads(id,range),{id,range}),true);
+  await shot(name);
+ }
+ evidence.localRoads=localRoads;
  await page.locator('#showLabels').check();
  evidence.saturn={placement:shiftedSaturn,access:initial.transport.saturnAccess,lights:initial.evening.saturnLights};
 

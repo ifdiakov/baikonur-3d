@@ -1,5 +1,5 @@
 import { buildTransportNetwork as buildBaseNetwork } from './transport-base.js?v=20261028-museum4-osm-live-v2';
-import { SATURN_ACCESS, buildSaturnNorthwestAccess } from './saturn-access.js?v=20261030-saturn-clearance-v1';
+import { SATURN_ACCESS, buildSaturnNorthwestAccess } from './saturn-access.js?v=20261030-landscape-roads-v1';
 import { connectedRoadData } from './road-layout.js?v=20261028-museum4-osm-live-v2';
 import { buildSouthInterchange } from './south-interchange.js?v=20261028-museum4-osm-live-v2';
 import { buildGagarinRailApproach } from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
