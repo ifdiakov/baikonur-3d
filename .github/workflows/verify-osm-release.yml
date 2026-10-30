@@ -1,4 +1,4 @@
-name: Museum 5 — native source models and release
+name: Museum 5 — reliable startup and release
 on:
   push:
     branches: [main]
@@ -33,7 +33,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum5-native-models-20261030-v1
+  RELEASE_TAG: museum5-startup-recovery-20261030-v1
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -82,6 +82,7 @@ jobs:
           curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
       - name: Verify the complete local product in Chromium
         run: |
+          node tests/startup-browser.mjs
           node tests/osm-release-browser.mjs
           node tests/flanks-browser.mjs
           node tests/mriya-browser.mjs
@@ -94,6 +95,7 @@ jobs:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?release=${{ github.sha }}
           QA_PREFIX: public
         run: |
+          node tests/startup-browser.mjs
           node tests/osm-release-browser.mjs
           node tests/flanks-browser.mjs
           node tests/mriya-browser.mjs
@@ -102,8 +104,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-native-models-qa
+          name: museum5-startup-recovery-qa
           path: |
+            qa-startup/
             qa-osm-release/
             qa-flanks/
             qa-mriya/
@@ -152,12 +155,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/native-models-20261030-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/startup-recovery-20261030-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 5 — УКСС и Кузнечики',
+                name: 'Интерактивный музей 5 — стабильная загрузка',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

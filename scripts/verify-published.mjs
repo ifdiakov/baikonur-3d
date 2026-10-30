@@ -8,6 +8,7 @@ const files=['index.html','data/catalog.json','data/transport-network.json',
  'assets/models/ukss/model-v1.glb','assets/models/ukss/manifest-v1.json',
  'assets/models/tua/model-v1.glb','assets/models/tua/manifest-v1.json',
  'assets/models/mriya-buran/near-v2.glb','assets/models/mriya-buran/far-v2.glb','src/vendor/meshopt_decoder-v1.mjs',
+ ...(await readdir('src/vendor/three-r160',{recursive:true})).filter(file=>file.endsWith('.js')).map(file=>'src/vendor/three-r160/'+file),
  ...(await readdir('src')).filter(file=>/\.(?:js|css)$/.test(file)).map(file=>'src/'+file),
  ...(await readdir('data/osm',{recursive:true})).filter(file=>/\.(?:json|geojson)$/.test(file)).map(file=>'data/osm/'+file)];
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
