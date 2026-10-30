@@ -19,14 +19,37 @@ export const UKSS_TRENCH = [
  [70,79,35,-28],[110,65,30,-21],[160,45,22,-11],[215,23,12,-4],[280,1,.7,0]
 ];
 
+// The imported asset supplies the actual opening at grade, in the same local X/Z
+// frame as the model. A null contour retains the procedural fallback's stations.
+export function normalizeUkssContour(contour) {
+  if(!Array.isArray(contour))throw new TypeError('UKSS terrain contour must be an array');
+  const ring=[];
+  for(const p of contour){
+    if(!Array.isArray(p)||p.length!==2||!p.every(Number.isFinite))throw new TypeError('UKSS terrain contour contains an invalid point');
+    if(!ring.length||Math.hypot(p[0]-ring.at(-1)[0],p[1]-ring.at(-1)[1])>1e-7)ring.push([...p]);
+  }
+  if(ring.length>1&&Math.hypot(ring[0][0]-ring.at(-1)[0],ring[0][1]-ring.at(-1)[1])<1e-7)ring.pop();
+  const area=ring.reduce((sum,a,i)=>{const b=ring[(i+1)%ring.length];return sum+a[0]*b[1]-b[0]*a[1];},0);
+  if(ring.length<3||ring.length>512||Math.abs(area)<1e-6)throw new TypeError('UKSS terrain contour must have 3–512 vertices and non-zero area');
+  return ring;
+}
+
 // Cut only the terrain and schematic overlays, leaving the real 3D trench visible.
-// World-space clipping follows the same cross sections as the constructed banks.
-export function maskUkssTerrain(material, origin, scale, enabled={value:1}) {
+// Keep preceding terrain shader hooks and include the contour in the program key.
+export function maskUkssTerrain(material, origin, scale, enabled={value:1}, contour=null) {
   if(material.userData.ukssGroundCutout)return;
+  const polygon=contour==null?null:normalizeUkssContour(contour);
+  const previousKey=material.customProgramCacheKey();
+  const number=n=>Number(n).toFixed(7);
+  const polygonBounds=polygon?{minX:Math.min(...polygon.map(p=>p[0])),maxX:Math.max(...polygon.map(p=>p[0])),minZ:Math.min(...polygon.map(p=>p[1])),maxZ:Math.max(...polygon.map(p=>p[1]))}:null;
+  const polygonCode=polygon?.map((a,i)=>{
+    const b=polygon[(i+1)%polygon.length];if(number(a[1])===number(b[1]))return '';
+    return `if(((up.y>${number(a[1])})!=(up.y>${number(b[1])}))&&up.x<(${number((b[0]-a[0])/(b[1]-a[1]))})*(up.y-(${number(a[1])}))+(${number(a[0])}))ukssInside=!ukssInside;`;
+  }).join('\n');
   material.userData.ukssGroundCutout=true;
   const prior=material.onBeforeCompile;
-  material.onBeforeCompile=shader=>{
-    prior.call(material,shader);
+  material.onBeforeCompile=(shader,renderer)=>{
+    prior.call(material,shader,renderer);
     shader.uniforms.ukssCutout={value:new THREE.Vector3(origin.x,origin.z,scale)};
     shader.uniforms.ukssCutoutEnabled=enabled;
     shader.vertexShader=shader.vertexShader.replace('#include <common>',
@@ -36,11 +59,13 @@ export function maskUkssTerrain(material, origin, scale, enabled={value:1}) {
       const a=UKSS_TRENCH[i];
       return `${i?'else ':''}if(ax<=${s[0].toFixed(1)})hw=mix(${a[1].toFixed(1)},${s[1].toFixed(1)},clamp((ax-(${a[0].toFixed(1)}))/${(s[0]-a[0]).toFixed(1)},0.0,1.0));`;
     }).join('\n');
+    const test=polygon?`if(ukssCutoutEnabled>0.5&&up.x>=${number(polygonBounds.minX)}&&up.x<=${number(polygonBounds.maxX)}&&up.y>=${number(polygonBounds.minZ)}&&up.y<=${number(polygonBounds.maxZ)}){bool ukssInside=false;\n${polygonCode}\nif(ukssInside)discard;}`:
+      `float ax=up.x;float hw=0.0;\n${widthCode}\nif(ukssCutoutEnabled>0.5&&ax>-63.98&&ax<279.98&&abs(up.y)<hw-0.02)discard;`;
     shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
       '#include <common>\nvarying vec3 vUkssWorld;\nuniform vec3 ukssCutout;\nuniform float ukssCutoutEnabled;').replace('#include <clipping_planes_fragment>',
-      `#include <clipping_planes_fragment>\nvec2 up=(vUkssWorld.xz-ukssCutout.xy)/ukssCutout.z;\nup=mat2(0.84725511,-0.53118620,0.53118620,0.84725511)*up;float ax=up.x;float hw=0.0;\n${widthCode}\nif(ukssCutoutEnabled>0.5&&ax>-63.98&&ax<279.98&&abs(up.y)<hw-0.02)discard;`);
+      `#include <clipping_planes_fragment>\nvec2 up=(vUkssWorld.xz-ukssCutout.xy)/ukssCutout.z;\nup=mat2(0.84725511,-0.53118620,0.53118620,0.84725511)*up;\n${test}`);
   };
-  material.customProgramCacheKey=()=> 'ukss-single-petal-v2';
+  material.customProgramCacheKey=()=>previousKey+'|'+(polygon?'ukss-polygon-v1:'+JSON.stringify(polygon):'ukss-single-petal-v2');
   material.needsUpdate=true;
 }
 

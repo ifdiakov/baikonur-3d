@@ -1914,7 +1914,7 @@
       "name": "Площадка № 250",
       "x": 635,
       "y": 220,
-      "model": "ukss-architectural-v1",
+      "model": "ukss-drive-model-v1",
       "firstYear": 1983,
       "status": "label-read",
       "positionBasis": "visual-reference-plan",
@@ -2033,6 +2033,14 @@
         "org": "ЦЭНКИ",
         "role": "",
         "attributionSource": "owner-correction-museum4-2026-10-28"
+      },
+      "source3D": {
+        "fileName": "ukss_scaled.max",
+        "driveId": "1z16hlw1grFyH_MqVk9f4B8Nm48FjX4f7",
+        "url": "https://drive.google.com/file/d/1z16hlw1grFyH_MqVk9f4B8Nm48FjX4f7/view?usp=drivesdk",
+        "sha256": "2e51706e5267564fba9fd6d90262a2fb67f3d84ccfd7c3a002b23895fc704ebb",
+        "asset": "assets/models/ukss/model-v1.glb",
+        "manifest": "assets/models/ukss/manifest-v1.json"
       }
     },
     {
@@ -2139,7 +2147,7 @@
       "name": "Площадка № 112 — МИК и «Кузнечики»",
       "x": 640,
       "y": 361,
-      "model": "mik112-photo-v1",
+      "model": "mik112-tua-drive-model-v1",
       "firstYear": 1967,
       "status": "label-read",
       "positionBasis": "digitised-original-plan-MIK112-footprint",
@@ -2153,7 +2161,7 @@
       "titleShort": "МИК и «Кузнечики»",
       "titleFull": "пл. №112 · МИК и транспортно-установочные агрегаты",
       "purposeShort": "Монтажно-испытательный корпус и два ТУА «Энергии»",
-      "purposeLong": "МИК площадки №112 и два транспортно-установочных агрегата «Кузнечики». Модель по фотографиям RocketTrip: высокий корпус с тремя раскрытыми пролётами, сохранившийся низкий корпус, ворота, пристройки, подъездные рельсы и детализированные транспортёры. Состояние кровли меняется на временной шкале: до 2002 года — реконструкция целой кровли; с 2002 года — разрушенные пролёты.",
+      "purposeLong": "МИК площадки №112 и два транспортно-установочных агрегата «Кузнечики». Корпус реконструирован по фотографиям RocketTrip; ТУА адаптированы из исходной 3D-модели с сохранением основных механизмов и ходовой части. Состояние кровли меняется на временной шкале: до 2002 года — целая кровля; с 2002 года — разрушенные пролёты.",
       "category": "технический",
       "publicReferences": [
         "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38",
@@ -2169,7 +2177,7 @@
         "role": ""
       },
       "contentSource": "reviewed-sites-workbook-20261028",
-      "modelStatus": "Фотографическая реконструкция видимой архитектуры и механизмов. Пропорции, расстановка и присоединение к схематической железнодорожной сети ориентировочные; не обмерная модель.",
+      "modelStatus": "Корпус по фотографиям RocketTrip, два ТУА по исходной 3D-модели. Мелкие детали транспортёров убраны; крупные агрегаты, формы, колёса и оси сохранены. Расстановка и соединение с существующими путями выполнены для музейного макета.",
       "photoFolder": {
         "id": "1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk",
         "name": "пл. №112 МИК",
@@ -2224,6 +2232,15 @@
         "confidence": "schematic alignment, not surveyed geolocation",
         "transporterSide": "north-east",
         "displayScale": 0.14
+      },
+      "source3D": {
+        "fileName": "Transporter_railroad_assambly.MAX",
+        "driveId": "1wL_XlKyqexMrNoVIp90y0CNcVMkVC5In",
+        "url": "https://drive.google.com/file/d/1wL_XlKyqexMrNoVIp90y0CNcVMkVC5In/view?usp=drivesdk",
+        "sha256": "304c2317d335a4787d3748fb4e52ae8f537e48e04cf63057e4374f975b6a650e",
+        "bytes": 7610880,
+        "asset": "assets/models/tua/model-v1.glb",
+        "manifest": "assets/models/tua/manifest-v1.json"
       }
     },
     {

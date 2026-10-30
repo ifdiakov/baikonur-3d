@@ -19,9 +19,11 @@ export function buildMik112(root,{year=2026}={}){
  const mat=palette;
  const boxGeo=new THREE.BoxGeometry(1,1,1),rodGeo=new THREE.CylinderGeometry(1,1,1,7);
  const batches=new Map(),counts={},all=[];
- const intact=new THREE.Group(),ruins=new THREE.Group(),machines=new THREE.Group();
+ const intact=new THREE.Group(),ruins=new THREE.Group(),machines=new THREE.Group(),transporterRails=new THREE.Group();
  intact.name='МИК · историческая кровля';ruins.name='МИК · раскрытые разрушенные пролёты';
- machines.name='Два транспортно-установочных агрегата';root.add(intact,ruins,machines);
+ machines.name='Два транспортно-установочных агрегата';
+ transporterRails.name='МИК · пути транспортных агрегатов';transporterRails.userData.museumComponent='tua-running-rails';
+ root.add(intact,ruins,machines,transporterRails);
  function count(tag){counts[tag]=(counts[tag]||0)+1;}
  function instance(geo,m,p,q,scale,tag,parent=root){
   const key=parent.uuid+':'+m+':'+geo.uuid;let batch=batches.get(key);
@@ -184,13 +186,15 @@ export function buildMik112(root,{year=2026}={}){
   box(3.4,3.8,4,-13.8,12,-18,'steel','operator-cabin',p);
   box(.12,1.5,2.8,-15.55,12.8,-18,'glass','cab-window',p);
  }
+ const beforeTransporterCounts={...counts};
  grasshopper(-71,-183,1);grasshopper(-19,-183,2);
+ const transporterFeatureCounts=Object.fromEntries(Object.entries(counts).map(([key,value])=>[key,value-(beforeTransporterCounts[key]||0)]).filter(([,value])=>value));
  // Double railway track under each transporter, aligned with the high doors.
  const railEntries=[];
  for(const cx of [-71,-19])for(const track of [-11.4,11.4]){
   const x=cx+track;railEntries.push([x,4.17,-258.5]);
-  for(const side of [-1,1])box(.18,.27,253,x+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,-132,'rail','transporter-running-rail');
-  for(let z=-257;z<-8;z+=2.4)box(RAIL_PROFILE.sleeperLength/MIK112.scale,.16,.32,x,3.97,z,'seam','rail-sleeper');
+  for(const side of [-1,1])box(.18,.27,253,x+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,-132,'rail','transporter-running-rail',transporterRails);
+  for(let z=-257;z<-8;z+=2.4)box(RAIL_PROFILE.sleeperLength/MIK112.scale,.16,.32,x,3.97,z,'seam','rail-sleeper',transporterRails);
  }
  // Smaller normal-gauge track into the retained assembly hall.
  for(const side of [-1,1])box(.18,.27,220,34+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,132,'rail','low-hall-track');
@@ -211,8 +215,9 @@ export function buildMik112(root,{year=2026}={}){
   photoFolders:['1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk','1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3'],
   evidence:'Eleven visually inspected user photos: MIK satellite, facade and doors; TUA front, side, overhead and perforated-fork closeups.',
   accuracy:'Photo-interpreted museum reconstruction; no surveyed footprint, hidden structure or operating machinery claimed.',
-  instancedBatches:batches.size,meshCount:all.length,railEntries,year};
- function setYear(y){info.year=y;intact.visible=y<2002;ruins.visible=y>=2002;machines.visible=y>=1986;info.roofState=y<2002?'historical-intact':'photo-ruined';}
+  instancedBatches:batches.size,meshCount:all.length,railEntries,year,
+  tua:{version:'mik112-photo-transporter-v1',status:'procedural',instanceCount:2,source:'RocketTrip photo interpretation',error:null}};
+ function setYear(y){info.year=y;intact.visible=y<2002;ruins.visible=y>=2002;machines.visible=y>=1986;info.roofState=y<2002?'historical-intact':'photo-ruined';if(info.tua)info.tua.visible=machines.visible;}
  // Expose measured transforms for browser geometry tests, not just labels.
  root.updateWorldMatrix(true,true);
  info.layout={scale:root.scale.toArray(),yaw:root.rotation.y,
@@ -224,7 +229,48 @@ export function buildMik112(root,{year=2026}={}){
    source:'original-plan-3993x3208; hall centre approximately (640,361) in 1300x1045 map space'};
  info.suppressedFallbackGeometry=[];
  setYear(year);root.userData.mik112Model=info;
- return {stats:()=>info,setYear,railEntries,focusTarget:V(-8,22,-40),focusOffset:V(330,250,-400)};
+ const transporterRoots=[...machines.children];let importedTransporters=false;
+ function refreshStats(){
+  let meshCount=0,instancedBatches=0;root.traverse(object=>{if(object.isMesh){meshCount++;if(object.isInstancedMesh)instancedBatches++;}});
+  info.meshCount=meshCount;info.instancedBatches=instancedBatches;root.updateWorldMatrix(true,true);
+  info.layout.transporterLocal=transporterRoots.map(object=>object.position.toArray());
+  info.layout.transporterWorld=transporterRoots.map(object=>object.getWorldPosition(V(0,0,0)).toArray());
+  info.layout.transporterYaw=transporterRoots.map(object=>object.rotation.y);
+  return info;
+ }
+ function setTuaMetadata(metadata){info.tua={...metadata,visible:machines.visible};return info.tua;}
+ // Preserve the two placement containers and their timeline parent. The
+ // building, historical roof, aprons and rail connections are their siblings.
+ function replaceTransporters(models,placements,metadata){
+  if(!Array.isArray(models)||models.length!==2||models.some(model=>!model?.isObject3D||model.parent))throw new Error('Two unattached TUA models are required');
+  if(!Array.isArray(placements)||placements.length!==2||placements.some(p=>!Array.isArray(p.position)||p.position.length!==3||!p.position.every(Number.isFinite)||!Number.isFinite(p.rotationY)))throw new Error('Invalid TUA placements');
+  if(typeof metadata?.version!=='string')throw new Error('TUA source metadata is required');
+  const detached=transporterRoots.flatMap(slot=>[...slot.children]);
+  transporterRoots.forEach((slot,i)=>{
+   slot.clear();slot.position.fromArray(placements[i].position);slot.rotation.set(0,placements[i].rotationY,0);slot.scale.setScalar(1);slot.add(models[i]);
+   slot.userData.museumComponent='energia-transporter';slot.userData.transporterSourceVersion=metadata.version;
+  });
+  if(!importedTransporters){
+   for(const [tag,count]of Object.entries(transporterFeatureCounts)){counts[tag]-=count;if(!counts[tag])delete counts[tag];}
+   importedTransporters=true;
+  }
+  counts['energia-transporter']=2;counts['imported-transporter']=2;
+  setTuaMetadata(metadata);info.layout.transporterPlacementBasis='tua-source-manifest';refreshStats();setYear(info.year);
+  // Procedural boxes, rods and materials are shared with the hall. Dispose
+  // only detached geometries that no remaining mesh references.
+  const retained=new Set(),released=new Set();root.traverse(object=>{if(object.isMesh)retained.add(object.geometry);});
+  for(const object of detached)object.traverse(mesh=>{if(mesh.isMesh&&!retained.has(mesh.geometry)&&!released.has(mesh.geometry)){released.add(mesh.geometry);mesh.geometry.dispose();}});
+  return info.tua;
+ }
+ function setRailAdaptation(metadata){
+  const {group,...report}=metadata||{};info.railAdaptation=report;
+  for(const [tag,key]of [['transporter-running-rail','railCount'],['rail-sleeper','sleeperCount']]){
+   if(Number.isInteger(report[key])&&report[key]>=0)counts[tag]=report[key];else delete counts[tag];
+  }
+  refreshStats();return report;
+ }
+ return {stats:()=>info,setYear,railEntries,transporterRoots,transportersGroup:machines,transporterRails,replaceTransporters,setTuaMetadata,setRailAdaptation,refreshStats,
+  focusTarget:V(-8,22,-40),focusOffset:V(330,250,-400)};
 }
 
 // Verified clean western rail connection.

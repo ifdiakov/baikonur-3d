@@ -1,0 +1,178 @@
+{
+  "source": {
+    "filename": "Transporter_railroad_assambly.MAX",
+    "bytes": 7610880,
+    "sha256": "304c2317d335a4787d3748fb4e52ae8f537e48e04cf63057e4374f975b6a650e",
+    "sourceUnchanged": true
+  },
+  "tools": {
+    "blenderVersion": "4.2.23",
+    "blenderBuild": "d0cbe84903e8",
+    "importerVersion": "1.9.2",
+    "importerCommit": "37db107126f956f7219152671443080360565691",
+    "sharedImporter": "../ukss/io_scene_max",
+    "runtime": "Python 3.11+ and NumPy bundled with pinned Blender"
+  },
+  "fullRaw": {
+    "file": "tua_recovered_raw.glb",
+    "bytes": 8071444,
+    "sha256": "1105ff79202b2b42e86cc3150e41e2d4d01667d0b6ae25a72283aabea43c065a",
+    "sourceNodes": 2786,
+    "duplicateDisplayNameCount": 606,
+    "scaleBasisHelpers": 184,
+    "gltfNodes": 2970,
+    "blenderMeshDatablocks": 2768,
+    "nonemptyGltfMeshNodes": 2767,
+    "gltfPrimitives": 6211,
+    "verticesInBlender": 85572,
+    "triangles": 137269,
+    "namedMaterials": 20,
+    "images": 0,
+    "remainingDeferredNodes": 0
+  },
+  "recoveries": {
+    "Box": 78,
+    "Cylinder": 305,
+    "Sphere": 4,
+    "Tube": 1,
+    "renderableSplines": 966,
+    "splineTriangles": 48008,
+    "Mirror": 56,
+    "Extrude": 10,
+    "Smooth": 13,
+    "BooleanOperandA": 2
+  },
+  "coordinates": {
+    "source": "Unchanged source units; physical Y-up, longitudinal +Z",
+    "exporterMap": "(X,Y,Z) -> (X,Z,-Y)",
+    "physicalPreviewCorrection": "Rotate raw glTF root +pi/2 around X",
+    "rawGltfBoundsSize": [
+      25.300000190734863,
+      100.0,
+      35.18829369544983
+    ]
+  },
+  "validation": {
+    "status": "PASS",
+    "allSourceIdsUniqueAndPresent": true,
+    "maximumSourceWorldMatrixError": 4.76837158203125e-07,
+    "maximumGltfWorldMatrixError": 3.872757048384301e-06,
+    "finiteAttributes": true,
+    "validTriangleIndices": true,
+    "externalImageDependencies": 0,
+    "sourceCheckedBeforeAndAfter": true,
+    "fullPortableCliWithRenamedInputAndSpacedPaths": "PASS; exact raw GLB SHA256 reproduced"
+  },
+  "qualifications": [
+    "Saved spline paths, handles, diameters and radial sides recovered; cross-section ring frames use parallel transport, not the native MAX evaluator.",
+    "Saved interpolation steps used; exact MAX optimizer tessellation is not claimed.",
+    "Smooth angles and flags decoded; Blender sharp-edge normals approximate native smoothing-group and preventIndirect behavior.",
+    "Old Standard/Blinn material values map to glTF-compatible PBR properties; pixel-identical old MAX rendering is not claimed.",
+    "Object-level source hidden/renderable flags are not reliably decoded; all source identities retained.",
+    "VIFS1031 source ID35591 has two vertices and face [0,1,0]; source node preserved with no exported mesh.",
+    "Eight source mesh nodes have no material assignment; raw retains unassigned slots."
+  ],
+  "unassignedMaterialSourceIds": [
+    11686,
+    10461,
+    11234,
+    12111,
+    12563,
+    13336,
+    21383,
+    23463
+  ],
+  "museumSelection": {
+    "excludedSourceRootIds": [
+      10355,
+      11898,
+      35293
+    ],
+    "excludedRoles": [
+      "first locomotive/rail branch",
+      "second locomotive/rail branch",
+      "payload assembly"
+    ],
+    "selectedMeshDatablocksBeforeSimplification": 2351,
+    "selectedTrianglesBeforeSimplification": 93800,
+    "preparationScript": "scripts/prepare-tua-asset.mjs",
+    "policy": "Current macro removes only 920 reviewed thin source splines; all major frames, mechanisms, pierced members and all 320 running-gear parts retain source geometry before quantization."
+  },
+  "license": {
+    "converter": "GPL-2.0-or-later",
+    "upstreamNoticesRetained": true,
+    "sourceModelLicenseUnchanged": true
+  },
+  "museumAsset": {
+    "version": "tua-drive-model-v1",
+    "file": "assets/models/tua/model-v1.glb",
+    "sha256": "06640ac72f8ec6225093033d98a026deaea73497a81ba2b5330247aaab39b5c8",
+    "bytes": 272580,
+    "triangles": 47944,
+    "primitives": 16,
+    "materials": 16,
+    "vertices": 37408,
+    "textures": 0,
+    "removedFineObjects": 920,
+    "removedFineTriangles": 45856,
+    "decimatedTriangles": 0,
+    "protectedRunningGearParts": 320,
+    "protectedRunningGearTriangles": 10432,
+    "uniformScale": 1.1400000000000001,
+    "physicalOrigin": [
+      -0.0014610663056373596,
+      -14.5,
+      25.500000713507283
+    ],
+    "placements": [
+      {
+        "position": [
+          -71,
+          4.305,
+          -183
+        ],
+        "rotationY": 3.141592653589793
+      },
+      {
+        "position": [
+          -19,
+          4.305,
+          -183
+        ],
+        "rotationY": 3.141592653589793
+      }
+    ],
+    "compression": "EXT_meshopt_compression",
+    "positionBits": 16,
+    "normalBits": 12,
+    "transformOrder": "Bake normalization multiplied by complete affine source world matrix before hierarchy removal and material joining. Do not decompose away shear.",
+    "unassignedMaterialMapping": {
+      "21383": "Tube",
+      "23463": "Tube"
+    },
+    "railAdaptation": {
+      "version": "tua-running-rails-v1",
+      "railCount": 8,
+      "sleeperCount": 420,
+      "networkGauge": 4.185333333333333,
+      "runningGauge": 1.8580424880240016,
+      "railHeadY": 4.305,
+      "trackCenters": [
+        -82.4,
+        -59.6,
+        -30.4,
+        -7.6
+      ],
+      "stationZ": [
+        -258.5,
+        -238,
+        -218,
+        -148,
+        -128,
+        -5.5
+      ],
+      "curve": "smoothstep transitions",
+      "externalPortCoordinatesUnchanged": true
+    }
+  }
+}

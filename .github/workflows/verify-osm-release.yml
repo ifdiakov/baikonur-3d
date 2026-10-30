@@ -1,4 +1,4 @@
-name: Museum 4 — OSM live product and release
+name: Museum 5 — native source models and release
 on:
   push:
     branches: [main]
@@ -10,6 +10,15 @@ on:
       - 'tests/**'
       - 'scripts/verify-published.mjs'
       - 'scripts/build_river_water.py'
+      - 'scripts/prepare-ukss-asset.mjs'
+      - 'scripts/ukss-detail-policy.json'
+      - 'scripts/prepare-tua-asset.mjs'
+      - 'scripts/tua-detail-policy.json'
+      - 'scripts/source-models/tua/**'
+      - 'docs/tua-source-model.md'
+      - 'docs/model-adaptation.md'
+      - 'scripts/source-models/ukss/**'
+      - 'docs/ukss-source-model.md'
       - 'docs/releases/**'
       - '.github/workflows/verify-osm-release.yml'
   workflow_dispatch:
@@ -24,7 +33,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum5-river-roads-signs-20261030-v1
+  RELEASE_TAG: museum5-native-models-20261030-v1
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -58,6 +67,8 @@ jobs:
           node tests/all-silos-geometry.mjs
           node tests/seven-winds-geometry.mjs
           node tests/mzk-sdi-geometry.mjs
+          node tests/ukss-source-model.mjs
+          node tests/tua-source-model.mjs
       - name: Preserve the detailed Site 31, road, rail and flank invariants
         run: |
           node tests/site31-geometry.mjs
@@ -91,7 +102,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum4-osm-live-qa
+          name: museum5-native-models-qa
           path: |
             qa-osm-release/
             qa-flanks/
@@ -141,12 +152,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/river-roads-signs-20261030-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/native-models-20261030-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 5 — река, аэродром, дороги и указатели',
+                name: 'Интерактивный музей 5 — УКСС и Кузнечики',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

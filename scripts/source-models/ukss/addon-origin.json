@@ -1,0 +1,11 @@
+{
+  "repository": "https://github.com/nrgsille76/io_scene_max",
+  "commit": "37db107126f956f7219152671443080360565691",
+  "version": "1.9.2",
+  "license": "GPL-2.0-or-later",
+  "filesSha256": {
+    "import_max.py": "1b786ebe82d2a1c0df273514af449e8b91430672abafde3de4ee634f2432320d",
+    "__init__.py": "9c677eabeac264e2cbaa84f3ab5d415822b2ba0210310b12830a1229bc6012fc",
+    "blender_manifest.toml": "74fc748701f0126c4da877108b09ae3747f120d10b7986209b7d5eada1651993"
+  }
+}
