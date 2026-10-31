@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1520"><title>Зенит-3SL — 3D-мастерская RocketTrip</title><link rel="stylesheet" href="../src/zenit-viewer.css?v=20261101-zenit-v1"><script type="importmap">{"imports":{"three":"../src/vendor/three-r160/build/three.module.js","three/addons/":"../src/vendor/three-r160/examples/jsm/"}}</script></head>
+<body>
+<header><a class="brand" href="../index.html" aria-label="Вернуться в музей"><img src="../assets/rockettrip-logo.svg" width="194" height="74" alt="RocketTrip"></a><a class="back" href="../index.html">← В МУЗЕЙ</a></header>
+<main>
+ <aside class="intro">
+  <p class="eyebrow">3D-МАСТЕРСКАЯ / РАКЕТЫ</p><h1>ЗЕНИТ<span>-3SL</span></h1><p class="subtitle">Морской старт</p>
+  <p class="lead">Три ступени. Четыре камеры двигателя. Старт с океанской платформы.</p>
+  <div class="numbers"><div><strong>59,6<span> м</span></strong><small>ВЫСОТА</small></div><div><strong>3,9<span> м</span></strong><small>ДИАМЕТР КОРПУСА</small></div><div><strong>3</strong><small>СТУПЕНИ</small></div></div>
+  <section class="detail-info" aria-live="polite"><span class="detail-index" id="detailIndex">01 / 04</span><h2 id="detailTitle">Ракета целиком</h2><p id="detailText">Белая окраска Sea Launch, красные пояса и наружные коммуникации — по восьми предоставленным ракурсам.</p></section>
+  <details class="sources"><summary>О модели и источниках</summary><p>Музейная реконструкция «Зенита-3SL» по визуальным референсам. Общие размеры сверены с данными производителя; мелкие детали восстановлены по изображениям.</p><p>Это морская версия семейства «Зенит». На Байконуре использовались другие модификации.</p><a href="https://yuzhmash.com/en/products/launch-vehicles/zenit-3sl-launch-vehicle/" target="_blank" rel="noopener">Размеры · Южмаш ↗</a><a href="https://www.faa.gov/sites/faa.gov/files/space/additional_information/FAA_Annual_Compendium_2014.pdf" target="_blank" rel="noopener">Компоновка · справочник FAA ↗</a></details>
+ </aside>
+ <section class="viewport" aria-label="Интерактивная трёхмерная модель Зенита-3SL"><div id="modelView"></div><p class="load" id="modelStatus" role="status">Собираем модель…</p><p class="gesture">ВРАЩАЙТЕ МЫШЬЮ ИЛИ ПАЛЬЦЕМ · КОЛЕСО / ЖЕСТ — ПРИБЛИЖЕНИЕ</p></section>
+ <nav class="view-controls" aria-label="Ракурсы ракеты"><button data-view="full" class="active" aria-pressed="true"><span>01</span>Вся ракета</button><button data-view="engine" aria-pressed="false"><span>02</span>Двигатель</button><button data-view="interstage" aria-pressed="false"><span>03</span>Межступенчатая ферма</button><button data-view="fairing" aria-pressed="false"><span>04</span>Обтекатель</button></nav>
+ <div class="tools"><button id="explode" aria-pressed="false">Разнести ступени</button><button id="rotate" aria-pressed="false">Автовращение</button><button id="light" aria-pressed="false">Тёмный фон</button></div>
+</main><footer><span>ROCKETTRIP · КОЛЛЕКЦИЯ ТЕХНИКИ</span><span>БЕЗ НАС НЕ УЛЕТИТ</span></footer>
+<script type="module" src="../src/zenit-viewer.js?v=20261101-zenit-v1"></script>
+</body></html>

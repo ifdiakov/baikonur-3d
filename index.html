@@ -413,7 +413,7 @@ import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261031-
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
 import {adaptTuaRails} from './src/tua-rails.js?v=20261031-facilities-rails-lighting-v1';
 import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-exhibits-v1';
-import {installMuseumMenu} from './src/museum-menu.js?v=20261031-rocket-exhibits-v1';
+import {installMuseumMenu} from './src/museum-menu.js?v=20261101-zenit-v1';
 import {MUSEUM_METRE} from './src/museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=20261031-rocket-exhibits-v1';
 import {createTuaRocketControls} from './src/rocket-controls.js?v=20261031-rocket-exhibits-v1';
@@ -1787,6 +1787,7 @@ function openMuseumAction(action){
   return siteId?showRocketKnowledge(id,siteId):false;
  }
  switch(action){
+  case 'zenit-3sl':location.assign('./workshop/zenit.html');return true;
   case 'r7':rocketExhibits.setVisible('gagarin',true);showRocketKnowledge('soyuz','pad-1');break;
   case 'energia-polyus':showRocketKnowledge('energia-polyus','pad-250');setUkssMockupVisible(true);inspectUkss('overview');break;
   case 'energia-buran':showRocketKnowledge('energia-buran','pad-110');portalArchive.inspectSite110('left',camera,ctl);break;

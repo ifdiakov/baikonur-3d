@@ -4,6 +4,7 @@ export const MUSEUM_MENU_VERSION='museum-sections-knowledge-v2';
 // The separate knowledge base can add stories later without inventing them here.
 export const MUSEUM_SECTIONS=Object.freeze([
  {id:'equipmentAccordion',items:[
+  {action:'zenit-3sl',title:'«Зенит-3SL»',description:'Морской старт · подробная 3D-модель'},
   {action:'r7',title:'«Союз»',description:'Гагаринский старт и площадка №31'},
   {action:'energia-polyus',title:'«Энергия — Полюс»',description:'Ракета-экспонат на УКСС'},
   {action:'energia-buran',title:'«Энергия — Буран»',description:'Площадка №110, МИК и транспортёры'},

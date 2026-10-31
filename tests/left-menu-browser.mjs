@@ -65,7 +65,7 @@ try{
  assert.equal(await page.locator('#mythsAccordion .museum-menu-empty').count(),0);
  await openSection('equipmentAccordion');
  assert.equal(await page.locator('#mythsAccordion').evaluate(element=>element.open),false);
- assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').count(),10);
+ assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').count(),11);
  await shot('desktop-equipment');
  await action('r7');await selectedSite('pad-1');
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),true);

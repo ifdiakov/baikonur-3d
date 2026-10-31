@@ -1,0 +1,24 @@
+{
+  "id": "zenit-3sl",
+  "version": "zenit-3sl-v1",
+  "units": "metres",
+  "upAxis": "+Y",
+  "ground": 0,
+  "dimensions": {
+    "height": 59.6,
+    "bodyDiameter": 3.9,
+    "fairingDiameter": 4.15,
+    "firstStageEnd": 32.9,
+    "secondStageEnd": 43.3,
+    "fairingBase": 48.2
+  },
+  "triangles": 100160,
+  "drawCalls": 19,
+  "components": 675,
+  "bytes": 1198928,
+  "sha256": "09438fc3a1569cc2d32fd853144916504bc757a32bb64d2f86efbac167121b73",
+  "compression": "EXT_meshopt_compression",
+  "source": "Original procedural reconstruction from eight owner-supplied Zenit-3SL reference images; see docs/zenit-reference-model.md",
+  "generator": "src/zenit-rocket.js",
+  "viewer": "workshop/zenit.html"
+}
