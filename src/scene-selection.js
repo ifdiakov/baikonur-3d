@@ -62,7 +62,7 @@ export function installSceneSelection({element,camera,controls,getObjects,onSele
   if(!p||e.button!==0||blocked()||performance.now()-p.at>600||Math.hypot(e.clientX-p.x,e.clientY-p.y)>3)return;
   const hit=hitsAt(e.clientX,e.clientY)[0];
   if(!hit){state.ignoredBackdrop++;return;}
-  state.selections++;state.lastSelected=hit.object.userData.idx;onSelect(state.lastSelected);
+  state.selections++;state.lastSelected=hit.object.userData.idx;onSelect(state.lastSelected,hit.object);
  });
  function pointForSite(index){
   const r=element.getBoundingClientRect();

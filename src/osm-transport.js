@@ -2,9 +2,10 @@ import * as THREE from 'three';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
 import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectangleSegmentInterval,clipRoadOutsideRectangle,airportPerimeterBypass} from './exhibit-road-filter.js?v=20261030-river-roads-signs-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261029-all-silos-v2';
-import {distancePath} from './traffic-paths.js?v=20261028-museum4-osm-live-v2';
+import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
+import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261031-rocket-exhibits-v1';
+import {distancePath} from './traffic-paths.js?v=20261031-rocket-exhibits-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=krayniy-drive-terminal-v1';
 
@@ -125,7 +126,8 @@ function geometryBatch(parent,name,material){
   if(points.length<2)return;const rims=[];
   for(let i=0;i<points.length;i++){
    const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)],d=next.clone().sub(prev).setY(0).normalize(),normal=V(-d.z,0,d.x);
-   rims.push([-1,1].map(side=>points[i].clone().addScaledVector(normal,offset+side*width/2).add(V(0,lift,0))));
+   const w=typeof width==='function'?width(points[i]):width,o=typeof offset==='function'?offset(points[i]):offset;
+   rims.push([-1,1].map(side=>points[i].clone().addScaledVector(normal,o+side*w/2).add(V(0,lift,0))));
   }
   for(let i=1;i<rims.length;i++)quad(rims[i-1][0],rims[i-1][1],rims[i][0],rims[i][1]);
  }
@@ -191,19 +193,20 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  let roadPruning=null,railPruning=null,exhibitRoadFilter=null;
  const edgeKept=(graph,e)=>!(graph===roadGraph?roadPruning:railPruning)?.removed.has(e)&&!(graph===roadGraph&&exhibitRoadFilter?.removed.has(e));
  // The enlarged Yubileiny exhibit occupies more land than the source runway.
- // Clear its displayed runway, taxiway, apron and terminal as one road-only
- // envelope. A single synthetic perimeter route reconnects through roads.
+ // Clear its displayed runway, taxiway, apron and terminal. A single
+ // synthetic perimeter route reconnects through roads; intersecting railway
+ // fragments are omitted only from the display, leaving source routing intact.
  const yubileinySite=siteRecords.find(s=>s.id==='pad-251');
  const airportClearance=yubileinySite?{
   id:'yubileiny',siteId:'pad-251',origin:point(yubileinySite.x,yubileinySite.y,0),
   yaw:yubileinySite.runtimeYaw??1.948,scale:.28,
-  rectangle:{minX:-475,maxX:95,minZ:-1265,maxZ:1265},cuts:[],sourceWays:new Set(),hiddenServiceWays:new Set(),
+  rectangle:{minX:-65,maxX:555,minZ:-1265,maxZ:1265},cuts:[],sourceWays:new Set(),hiddenServiceWays:new Set(),
  }:null;
  const airportLocal=p=>p.clone().sub(airportClearance.origin).applyAxisAngle(V(0,1,0),-airportClearance.yaw).divideScalar(airportClearance.scale).toArray();
  const airportWorld=p=>V(...p).multiplyScalar(airportClearance.scale).applyAxisAngle(V(0,1,0),airportClearance.yaw).add(airportClearance.origin);
  const inAirportClearance=p=>{if(!airportClearance)return false;const [x,,z]=airportLocal(p),r=airportClearance.rectangle;return x>r.minX+1e-6&&x<r.maxX-1e-6&&z>r.minZ+1e-6&&z<r.maxZ-1e-6;};
  const airportPortSourceAllowed=(id,e)=>id!=='pad-251'||!airportClearance||
-  [e.a,e.b].every(n=>airportLocal(n.position)[0]<airportClearance.rectangle.minX-1);
+  [e.a,e.b].every(n=>airportLocal(n.position)[0]>airportClearance.rectangle.maxX+1);
  // The photo-based Krayniy terminal occupies the opposite side of the runway.
  // Only displayed roads are clipped to the enlarged campus. Its one landside
  // driveway is built with the terminal and meets the retained source junction.
@@ -284,7 +287,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  for(const r of [westCity,eastCity]){r.rampStart=r.length*.7;r.rampEnd=r.length*.75;}
  const roadPlan={routes:[highway,cityRoute,westCity,eastCity],highway,joins:[],extensions:[],source:'OpenStreetMap'};
  const protectedTrafficWays=new Set(roadPlan.routes.flatMap(r=>r.osmWayIds));
- const gagarin=siteRecords.find(s=>s.id==='pad-1'),padCenter=point(gagarin.x,gagarin.y,0),gate=padCenter.clone().add(V(-171*RAIL_PROFILE.scale,-2.755,0));
+ const gagarin=siteRecords.find(s=>s.id==='pad-1'),padCenter=point(gagarin.x,gagarin.y,0),gate=padCenter.clone().add(V(-GAGARIN_RAIL_PORT[2]*MUSEUM_METRE,-2.755,0));
  const railStart=railGraph.nearest(gate.clone().add(V(-60,0,0))),stationFeature=data.railPoints?.features.find(f=>f.properties.osmId===4031286685),stationCoord=stationFeature?.geometry.coordinates||[63.3161095,45.651523],stationMap=geography.project(...stationCoord),railEnd=railGraph.nearest(point(...stationMap,.75));
  const graphTrain=railGraph.route(railStart,railEnd),railTangent=graphTrain.nodes[1].position.clone().sub(railStart.position).normalize(),straight=gate.clone().add(V(-18,0,0));
  // Keep physical destinations and the exact attachment edges of model ports.
@@ -297,7 +300,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const effective={...spec,yaw:site.runtimeYaw??spec.yaw},gate=portWorld(effective,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).applyAxisAngle(V(0,1,0),effective.yaw);
   const near=nearestSegment(roadGraph,gate.clone().addScaledVector(out,30),e=>e.tags.highway!=='track'&&airportPortSourceAllowed(id,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
   if(near&&near.distance<=300**2)roadProtected.add(near.edge);
-  for(const local of spec.rail||[]){const end=portWorld(effective,local,site,point).add(V(0,-RAIL_PROFILE.headY,0)),rr=nearestSegment(railGraph,end.addScaledVector(out,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(rr&&rr.distance<=250**2)railProtected.add(rr.edge);}
+  const railOut=V(...(spec.railOutward||spec.roadOutward||[0,0,1])).applyAxisAngle(V(0,1,0),effective.yaw);
+  for(const local of spec.rail||[]){const end=portWorld(effective,local,site,point).add(V(0,-RAIL_PROFILE.headY,0)),rr=nearestSegment(railGraph,end.addScaledVector(railOut,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(rr&&rr.distance<=250**2)railProtected.add(rr.edge);}
  }
  const destinations=siteRecords.map(s=>({position:point(s.x,s.y,0),radius:Math.max(25,(masks.get(s.id)?.radius||0)+12)}));
  for(const f of data.railPoints?.features||[])if(['station','halt'].includes(tagsFor(f).railway)&&f.geometry.type==='Point')destinations.push({position:point(...geography.project(...f.geometry.coordinates),0),radius:45});
@@ -308,8 +312,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&!MAIN.has(e.tags.highway?.replace('_link',''))&&!['driveway','parking_aisle'].includes(e.tags.service)});
  railPruning=pruneTerminalBranches(railGraph,{maxLength:55,protectedEdges:railProtected,protectedNode,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&e.tags.usage!=='main'&&!['yard','siding','crossover'].includes(e.tags.service)});
- // Simplify the displayed road webs only. The immutable source-node graph
- // continues to define vehicle routes; rail masks and rail routing are untouched.
+ // Simplify the displayed road webs only. Source-node graphs continue to
+ // define vehicle routes; the later airport rail clearance is display-only.
  const excludedAirportEdges=new Set();
  let krayniyClearanceReport=null;
  if(krayniySite){
@@ -439,20 +443,51 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    additionalAirports:krayniyClearanceReport?[krayniyClearanceReport]:[],
    preservedTrafficWayIds:[...airportClearance.sourceWays].filter(id=>protectedTrafficWays.has(id))};
  }
- function drawRail(points,isAbandoned=false,force=false){
-  if(points.length<2)return;const samples=conformPath(points,RAIL_PROFILE.ballastWidth),path=distancePath(samples);if(path.length<.01)return;
-  const runs=[];let run=[];for(const p of samples){if(!force&&masked(p,{})){if(run.length>1)runs.push(run);run=[];}else run.push(p);}if(run.length>1)runs.push(run);
-  for(const ps of runs){
-   if(isAbandoned){abandoned.ribbon(ps,.8,.01);continue;}
-   ballast.ribbon(ps,RAIL_PROFILE.ballastWidth,.01);
-   for(const side of [-1,1])steel.ribbon(ps,RAIL_PROFILE.bodyWidth,RAIL_PROFILE.headY+RAIL_PROFILE.headRadius,side*RAIL_PROFILE.gauge/2);
+ // The source airport railway lies beyond the real runway end, but crosses
+ // the enlarged museum runway. Clip all displayed railway components to the
+ // same campus envelope, with room for the complete ballast / sleeper width.
+ const railHalfWidth=Math.max(RAIL_PROFILE.ballastWidth/2,Math.hypot(RAIL_PROFILE.sleeperLength,RAIL_PROFILE.sleeperWidth)/2,
+  (RAIL_PROFILE.gauge+RAIL_PROFILE.bodyWidth)/2);
+ const railClearanceReport=airportClearance?{version:'airport-rail-display-clearance-v1',sourceGraphUnchanged:true,
+  envelope:{...airportClearance.rectangle},marginWorld:railHalfWidth+.02,clippedWayIds:[],clippedSourceRuns:0,displayedFragments:0,cuts:[]}:null;
+ if(airportClearanceReport)airportClearanceReport.rail=railClearanceReport;
+ function clipAirportRails(points,wayId,endGauge){
+  if(!airportClearance)return [points];
+  const margin=(railHalfWidth*Math.max(1,endGauge/RAIL_PROFILE.gauge)+.02)/airportClearance.scale,r=airportClearance.rectangle,
+   rectangle={minX:r.minX-margin,maxX:r.maxX+margin,minZ:r.minZ-margin,maxZ:r.maxZ+margin},local=points.map(airportLocal);
+  if(!local.some((p,i)=>i&&rectangleSegmentInterval(local[i-1],p,rectangle)))return [points];
+  const clipped=clipRoadOutsideRectangle(local,rectangle),runs=clipped.runs.map(run=>run.map(airportWorld));
+  if(wayId&&!railClearanceReport.clippedWayIds.includes(wayId))railClearanceReport.clippedWayIds.push(wayId);
+  railClearanceReport.clippedSourceRuns++;railClearanceReport.displayedFragments+=runs.length;
+  railClearanceReport.cuts.push(...clipped.cuts.map(p=>({sourceWayId:wayId,position:airportWorld(p).toArray()})));
+  return runs;
+ }
+ function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null){
+  if(points.length<2)return [];
+  const displayed=clipAirportRails(points,wayId,endGauge),end=points.at(-1),transitionLength=Math.min(8,distancePath(points).length*.4);
+  // Short display adapters connect the wider animated-train network to the
+  // physical 1.52 m tracks. The metric structures themselves are not stretched.
+  const transition=p=>{const t=clamp(1-Math.hypot(p.x-end.x,p.z-end.z)/(transitionLength||1),0,1);return t*t*(3-2*t);};
+  const gauge=p=>THREE.MathUtils.lerp(RAIL_PROFILE.gauge,endGauge,transition(p));
+  const factor=p=>gauge(p)/RAIL_PROFILE.gauge;
+  for(const visible of displayed){
+   const samples=conformPath(visible,RAIL_PROFILE.ballastWidth),path=distancePath(samples);if(path.length<.01)continue;
+   const runs=[];let run=[];for(const p of samples){if(!force&&masked(p,{})){if(run.length>1)runs.push(run);run=[];}else run.push(p);}if(run.length>1)runs.push(run);
+   for(const ps of runs){
+    if(isAbandoned){abandoned.ribbon(ps,.8,.01);continue;}
+    ballast.ribbon(ps,p=>RAIL_PROFILE.ballastWidth*factor(p),.01);
+    for(const side of [-1,1])steel.ribbon(ps,p=>RAIL_PROFILE.bodyWidth*factor(p),RAIL_PROFILE.headY+RAIL_PROFILE.headRadius,p=>side*gauge(p)/2);
+   }
+   if(isAbandoned)continue;
+   for(let d=.4;d<path.length;d+=1.45){const at=path.sample(d,.3);if(!force&&masked(at.position,{}))continue;const normal=V(-at.tangent.z,0,at.tangent.x).normalize(),half=RAIL_PROFILE.sleeperLength*factor(at.position)/2,a=at.position.clone().addScaledVector(normal,-half),b=at.position.clone().addScaledVector(normal,half);ties.ribbon([a,b],RAIL_PROFILE.sleeperWidth,RAIL_PROFILE.sleeperY);railTies++;}
   }
-  if(isAbandoned)return;
-  for(let d=.4;d<path.length;d+=1.45){const at=path.sample(d,.3);if(!force&&masked(at.position,{}))continue;const normal=V(-at.tangent.z,0,at.tangent.x).normalize(),a=at.position.clone().addScaledVector(normal,-RAIL_PROFILE.sleeperLength/2),b=at.position.clone().addScaledVector(normal,RAIL_PROFILE.sleeperLength/2);ties.ribbon([a,b],RAIL_PROFILE.sleeperWidth,RAIL_PROFILE.sleeperY);railTies++;}
+  return displayed;
  }
  for(const way of railGraph.ways){
   const points=[];let run=0;
-  const render=()=>{if(points.length<2)return;drawRail(points,way.abandoned);renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...points],width:RAIL_PROFILE.ballastWidth});run++;};
+  const render=()=>{if(points.length<2)return;for(const visible of drawRail(points,way.abandoned,false,RAIL_PROFILE.gauge,way.osmId)){
+   renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...visible],width:RAIL_PROFILE.ballastWidth,source:'OpenStreetMap',osmWayIds:[way.osmId]});run++;
+  }};
   for(const e of way.segments){
    if(!edgeKept(railGraph,e)){render();points.length=0;continue;}
    if(points.length&&points.at(-1).distanceTo(e.a.position)>1e-5){render();points.length=0;}
@@ -470,8 +505,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const tangent=near.edge.b.position.clone().sub(near.edge.a.position).normalize();if(tangent.dot(gate.clone().sub(near.point))<0)tangent.negate();const reach=Math.min(30,near.point.distanceTo(gate)*.35);
   const curve=new THREE.CubicBezierCurve3(near.point,near.point.clone().addScaledVector(tangent,reach),gate.clone().addScaledVector(out,Math.min(20,reach)),gate);let points=sampleCurve(curve);
   if(id==='pad-251'&&airportClearance){
-   const start=airportLocal(near.point),end=airportLocal(gate),laneX=airportClearance.rectangle.minX;
-   const local=[start,[Math.min(start[0],laneX),start[1],end[2]],[laneX,end[1],end[2]],end];
+   const start=airportLocal(near.point),end=airportLocal(gate),laneX=airportClearance.rectangle.maxX;
+   const local=[start,[Math.max(start[0],laneX),start[1],end[2]],[laneX,end[1],end[2]],end];
    const anchors=simplifyPath(local.map(airportWorld)),smooth=[anchors[0]];
    for(let i=1;i<anchors.length-1;i++){
     const a=anchors[i-1],b=anchors[i],c=anchors[i+1],incoming=b.clone().sub(a).normalize(),outgoing=c.clone().sub(b).normalize();
@@ -484,7 +519,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    points.forEach((p,j)=>{if(j)at+=p.clone().setY(0).distanceTo(points[j-1].clone().setY(0));const t=clamp(at/horizontal.length,0,1);p.y=THREE.MathUtils.lerp(near.point.y,gate.y,t*t*(3-2*t));});points.at(-1).copy(gate);
    airportClearanceReport.gateAccess={sourceWayId:near.edge.wayId,sourcePoint:near.point.toArray(),gatePoint:gate.toArray(),
     profile:'landside-terminal-access',sampleCount:points.length,sourceGap:points[0].distanceTo(near.point),gateGap:points.at(-1).distanceTo(gate),
-    airsideHits:points.filter(p=>{const [x,,z]=airportLocal(p);return x>-380&&x<65&&Math.abs(z)<1185;}).length};
+    airsideHits:points.filter(p=>{const [x,,z]=airportLocal(p);return x>-36&&x<36&&Math.abs(z)<1250;}).length};
   }
   if(spec.silo){
    // Keep the entry outside the fence, then descend smoothly to its front gate.
@@ -495,10 +530,11 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const path=distancePath(points);let length=0;points.forEach((p,j)=>{if(j)length+=p.clone().setY(0).distanceTo(points[j-1].clone().setY(0));const t=THREE.MathUtils.clamp(length/path.length,0,1);p.y=THREE.MathUtils.lerp(near.point.y,gate.y,t*t*(3-2*t));});points.at(-1).copy(gate);
   }
   drawRoad(points,1.8,{},false,true);roadPaths.push({id:'osm-access-'+id,label:site.titleShort||site.name,points,width:1.8,source:'museum-model-port',osmWayIds:[near.edge.wayId]});accessReports.push({id,sourceWayId:near.edge.wayId,roadGap:points.at(-1).distanceTo(gate),gate:gate.toArray()});connections++;
+  const railOut=V(...(spec.railOutward||spec.roadOutward||[0,0,1])).applyAxisAngle(V(0,1,0),spec.yaw);
   for(const local of spec.rail||[]){
-   const headCenter=portWorld(spec,local,site,point),end=headCenter.clone().add(V(0,-RAIL_PROFILE.headY,0)),rr=nearestSegment(railGraph,end.clone().addScaledVector(out,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(!rr||rr.distance>250**2)continue;
-   const tangent=rr.edge.b.position.clone().sub(rr.edge.a.position).normalize();if(tangent.dot(end.clone().sub(rr.point))<0)tangent.negate();const reach=Math.min(25,rr.point.distanceTo(end)*.35),c=new THREE.CubicBezierCurve3(rr.point,rr.point.clone().addScaledVector(tangent,reach),end.clone().addScaledVector(out,Math.min(18,reach)),end),points=sampleCurve(c);drawRail(points,false,true);connections++;
-   const renderedHeadCenter=points.at(-1).clone().add(V(0,RAIL_PROFILE.headY,0));railPortReports.push({id,sourceWayId:rr.edge.wayId,headCenter:headCenter.toArray(),renderedHeadCenter:renderedHeadCenter.toArray(),headCenterGap:renderedHeadCenter.distanceTo(headCenter),networkDatumGap:points[0].distanceTo(rr.point)});
+   const headCenter=portWorld(spec,local,site,point),end=headCenter.clone().add(V(0,-RAIL_PROFILE.headY,0)),rr=nearestSegment(railGraph,end.clone().addScaledVector(railOut,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(!rr||rr.distance>250**2)continue;
+   const tangent=rr.edge.b.position.clone().sub(rr.edge.a.position).normalize();if(tangent.dot(end.clone().sub(rr.point))<0)tangent.negate();const reach=Math.min(25,rr.point.distanceTo(end)*.35),c=new THREE.CubicBezierCurve3(rr.point,rr.point.clone().addScaledVector(tangent,reach),end.clone().addScaledVector(railOut,Math.min(18,reach)),end),points=sampleCurve(c),endGauge=spec.physicalRailGauge?spec.physicalRailGauge*spec.scale:RAIL_PROFILE.gauge;drawRail(points,false,true,endGauge);connections++;
+   const renderedHeadCenter=points.at(-1).clone().add(V(0,RAIL_PROFILE.headY,0));railPortReports.push({id,sourceWayId:rr.edge.wayId,headCenter:headCenter.toArray(),renderedHeadCenter:renderedHeadCenter.toArray(),headCenterGap:renderedHeadCenter.distanceTo(headCenter),networkDatumGap:points[0].distanceTo(rr.point),networkGauge:RAIL_PROFILE.gauge,portGauge:endGauge,physicalGaugeMetres:spec.physicalRailGauge??null});
   }
  }
  // The owner removed the reconstructed external Saturn approach. Its road,

@@ -1,11 +1,14 @@
-export const MUSEUM_MENU_VERSION='museum-sections-v1';
+export const MUSEUM_MENU_VERSION='museum-sections-knowledge-v2';
 
 // These entries open exhibits and animations already present in the museum.
 // The separate knowledge base can add stories later without inventing them here.
 export const MUSEUM_SECTIONS=Object.freeze([
  {id:'equipmentAccordion',items:[
-  {action:'r7',title:'Р-7',description:'Гагаринский старт'},
-  {action:'energia',title:'«Энергия» · макет',description:'Габаритный макет на УКСС'},
+  {action:'r7',title:'«Союз»',description:'Гагаринский старт и площадка №31'},
+  {action:'energia-polyus',title:'«Энергия — Полюс»',description:'Ракета-экспонат на УКСС'},
+  {action:'energia-buran',title:'«Энергия — Буран»',description:'Площадка №110, МИК и транспортёры'},
+  {action:'energia',title:'«Энергия»',description:'Четырёхблочная ракета-носитель'},
+  {action:'energia-m',title:'«Энергия-М»',description:'Двухблочная компоновка проекта'},
   {action:'tua',title:'«Кузнечики»',description:'Транспортно-установочные агрегаты'},
   {action:'mriya',title:'«Мрия» с «Бураном»',description:'Экспонат на Юбилейном'},
   {action:'aircraft',title:'Самолёт',description:'Сопровождение текущего рейса'},
@@ -24,7 +27,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
  ]}
 ]);
 
-export function installMuseumMenu({container,onAction}){
+export function installMuseumMenu({container,onAction,stories=[]}){
  let lastAction=null;
  const sections=[...container.querySelectorAll('.museum-section')];
  for(const section of sections){
@@ -32,7 +35,8 @@ export function installMuseumMenu({container,onAction}){
    if(section.open)for(const other of sections)if(other!==section)other.open=false;
   });
  }
- for(const section of MUSEUM_SECTIONS){
+ for(const baseSection of MUSEUM_SECTIONS){
+  const section=baseSection.id==='mythsAccordion'?{...baseSection,items:stories}:baseSection;
   const details=container.querySelector('#'+section.id);
   if(!details)throw new Error('Museum section is missing: '+section.id);
   const body=details.querySelector('.sites-accordion-body'),counter=details.querySelector('.sites-accordion-count');

@@ -43,5 +43,5 @@ vMuseumTerrainWorld=(modelMatrix*museumTerrainPoint).xyz;`);
 export function gagarinVoid(){
  const north=[[620,487],[619,355],[665,328],[715,310],[750,267],[780,271],[825,278],[880,290],[950,313],[1030,346],[1110,379],[1190,410],[1260,435],[1340,466],[1405,487],[1435,505],[1450,508]];
  const south=[[1450,581],[1435,593],[1405,608],[1340,623],[1260,650],[1190,677],[1110,714],[1030,750],[950,783],[880,806],[825,814],[780,813],[750,810],[686,796],[632,765],[613,711],[612,616]];
- return {polygon:[...north,...south].map(([x,z])=>[(z-546)*.5,-(x-674)*.5]),source:'gagarin-pad.js ductPlan and shoulders',rimY:18.1};
+  return {polygon:[...north,...south].map(([x,z])=>[(z-546)*.25,-(x-674)*.25]),source:'gagarin-pad.js ductPlan and shoulders, uniform half-metre normalization',rimY:0};
 }

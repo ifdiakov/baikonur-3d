@@ -1,15 +1,16 @@
 import * as THREE from 'three';
 
 // The source vehicle's wheel centres set the running gauge. The established
-// museum-network gauge and all four MIK entry axes remain fixed. Dimensions
-// are MIK-local units, before the exhibit's uniform scale and rotation.
+// museum-network gauge and all four MIK entry axes remain fixed. The running
+// axes use the source vehicle's 20 m inter-track distance. Dimensions are metres.
 const NETWORK_GAUGE=4.185333333333333;
-const RUNNING_GAUGE=1.8580424880240016;
+const RUNNING_GAUGE=1.6298618316000013;
 const STATION_Z=Object.freeze([-258.5,-238,-218,-148,-128,-5.5]);
 export const TUA_RAIL_PROFILE=Object.freeze({
- version:'tua-running-rails-v1',networkGauge:NETWORK_GAUGE,runningGauge:RUNNING_GAUGE,
+ version:'tua-running-rails-v2',networkGauge:NETWORK_GAUGE,runningGauge:RUNNING_GAUGE,
  railHeadY:4.305,railHeight:.27,railHeadWidth:.18,
- trackCenters:Object.freeze([-82.4,-59.6,-30.4,-7.6]),
+ trackCenters:Object.freeze([-81,-61,-29,-9]),
+ entryTrackCenters:Object.freeze([-82.4,-59.6,-30.4,-7.6]),
  stations:Object.freeze(STATION_Z.map((z,i)=>Object.freeze([z,i===2||i===3?RUNNING_GAUGE:NETWORK_GAUGE]))),
  transitionStep:1,sleeperSpacing:2.4,sleeperHeight:.16,sleeperWidth:.32,
  sleeperEndMargin:1.5,sleeperCenterY:3.97,sleeperLengthRatio:11.4/7.3
@@ -34,6 +35,15 @@ export function gaugeAt(z,profile=TUA_RAIL_PROFILE){
  return stations[stations.length-1][1];
 }
 
+/** Blend the museum-network ports into the physically spaced vehicle tracks. */
+export function trackAxisAt(trackCenterX,z,profile=TUA_RAIL_PROFILE){
+ const index=profile.trackCenters.findIndex(x=>near(x,trackCenterX));
+ if(index<0)throw new Error('Unknown TUA running-track axis');
+ const entry=profile.entryTrackCenters[index];
+ const blend=(gaugeAt(z,profile)-profile.networkGauge)/(profile.runningGauge-profile.networkGauge);
+ return entry+(trackCenterX-entry)*blend;
+}
+
 /** Accept the published manifest or the original calibration's field names. */
 export function resolveTuaRailProfile(manifest={}){
  const source=manifest.railAdaptation??manifest.railAdaptationRecommendation??{};
@@ -41,6 +51,7 @@ export function resolveTuaRailProfile(manifest={}){
  const runningGauge=finite(source.runningGauge??RUNNING_GAUGE,'running gauge');
  const railHeadY=finite(source.railHeadY??source.railHeadYMikLocal??TUA_RAIL_PROFILE.railHeadY,'head height');
  const trackCenters=[...(source.trackCenters??source.trackCentreAxesMikLocalX??TUA_RAIL_PROFILE.trackCenters)];
+ const entryTrackCenters=[...(source.entryTrackCenters??source.entryTrackCentreAxesMikLocalX??TUA_RAIL_PROFILE.entryTrackCenters)];
  const supplied=source.stations??source.gaugeStationsMikLocal;
  const stations=(supplied??STATION_Z.map((z,i)=>[z,i===2||i===3?runningGauge:networkGauge])).map(row=>[...row]);
  if(!near(networkGauge,NETWORK_GAUGE)||!near(railHeadY,TUA_RAIL_PROFILE.railHeadY))
@@ -48,11 +59,13 @@ export function resolveTuaRailProfile(manifest={}){
  if(!(runningGauge>TUA_RAIL_PROFILE.railHeadWidth&&runningGauge<networkGauge))
   throw new Error('TUA running gauge must fit inside the established network gauge');
  if(trackCenters.length!==4||trackCenters.some((x,i)=>!Number.isFinite(x)||!near(x,TUA_RAIL_PROFILE.trackCenters[i])))
-  throw new Error('TUA rail adaptation must preserve all four existing track axes');
+  throw new Error('TUA running tracks must match the source double-track axes');
+ if(entryTrackCenters.length!==4||entryTrackCenters.some((x,i)=>!Number.isFinite(x)||!near(x,TUA_RAIL_PROFILE.entryTrackCenters[i])))
+  throw new Error('TUA rail adaptation must preserve all four external entry axes');
  if(stations.length!==6||stations.some((row,i)=>row.length!==2||!row.every(Number.isFinite)||
    !near(row[0],STATION_Z[i])||!near(row[1],i===2||i===3?runningGauge:networkGauge)))
   throw new Error('Invalid TUA rail transition stations');
- return {...TUA_RAIL_PROFILE,networkGauge,runningGauge,railHeadY,trackCenters,stations};
+ return {...TUA_RAIL_PROFILE,networkGauge,runningGauge,railHeadY,trackCenters,entryTrackCenters,stations};
 }
 
 function sampleStations(profile){
@@ -71,7 +84,7 @@ export function createTuaRailGeometry(trackCenterX,side,profile=TUA_RAIL_PROFILE
  if(side!==-1&&side!==1)throw new Error('TUA rail side must be -1 or +1');
  const samples=sampleStations(profile),positions=[],indices=[];
  const top=profile.railHeadY,bottom=top-profile.railHeight,halfWidth=profile.railHeadWidth/2;
- const centers=samples.map(z=>[trackCenterX+side*gaugeAt(z,profile)/2,z]);
+ const centers=samples.map(z=>[trackAxisAt(trackCenterX,z,profile)+side*gaugeAt(z,profile)/2,z]);
  // Separate face strips keep sharp rectangular edges while the side normals
  // vary smoothly along the two eased bends. There are no stepped rail pieces.
  const strips=[
@@ -144,8 +157,8 @@ export function adaptTuaRails(mikExhibit,manifest={}){
   rail.userData={museumComponent:'transporter-running-rail',trackIndex,trackCenterX,railSide:side};
   rail.receiveShadow=true;children.push(rail);
   endpoints.push({trackIndex,trackCenterX,side,
-   start:[trackCenterX+side*profile.networkGauge/2,profile.railHeadY,startZ],
-   end:[trackCenterX+side*profile.networkGauge/2,profile.railHeadY,endZ]});
+   start:[trackAxisAt(trackCenterX,startZ,profile)+side*profile.networkGauge/2,profile.railHeadY,startZ],
+   end:[trackAxisAt(trackCenterX,endZ,profile)+side*profile.networkGauge/2,profile.railHeadY,endZ]});
  }
  const rows=Math.floor((endZ-startZ-2*profile.sleeperEndMargin)/profile.sleeperSpacing)+1;
  const sleeperCount=rows*profile.trackCenters.length;
@@ -154,7 +167,7 @@ export function adaptTuaRails(mikExhibit,manifest={}){
  let instance=0;
  for(const trackCenterX of profile.trackCenters)for(let row=0;row<rows;row++){
   const z=startZ+profile.sleeperEndMargin+row*profile.sleeperSpacing;
-  position.set(trackCenterX,profile.sleeperCenterY,z);
+  position.set(trackAxisAt(trackCenterX,z,profile),profile.sleeperCenterY,z);
   scale.set(gaugeAt(z,profile)*profile.sleeperLengthRatio,profile.sleeperHeight,profile.sleeperWidth);
   matrix.compose(position,rotation,scale);sleepers.setMatrixAt(instance++,matrix);
  }
@@ -164,6 +177,7 @@ export function adaptTuaRails(mikExhibit,manifest={}){
  const metadata={version:profile.version,status:'ready',group,railCount:8,sleeperCount,
   networkGauge:profile.networkGauge,runningGauge:profile.runningGauge,railHeadY:profile.railHeadY,
   railHeight:profile.railHeight,railHeadWidth:profile.railHeadWidth,trackCenters:[...profile.trackCenters],
+  entryTrackCenters:[...profile.entryTrackCenters],physicalUnits:'metres',
   stations:profile.stations.map(row=>[...row]),segments,endpoints,
   sleeperLengthRatio:profile.sleeperLengthRatio,sleeperSpacing:profile.sleeperSpacing,
   preservedRailEntries:(mikExhibit.railEntries??[]).map(point=>Array.isArray(point)?[...point]:point.toArray()),

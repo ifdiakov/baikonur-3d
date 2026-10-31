@@ -349,8 +349,15 @@ body.following-arrival #labelLayer{display:none!important}
 #airportViews.terminal-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
 #airportViews.terminal-views button{min-width:0;padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}
 #airportViews.terminal-views button[aria-pressed="true"]{background:#3b5969;border-color:#b4cad7}#airportViews.terminal-views button:hover{filter:brightness(1.16)}
+#energiaViews:not([hidden]){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#energiaViews .detail-button{min-width:0;padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}
+#energiaViews .detail-button:last-child{grid-column:1/-1}
+#energiaViews .detail-button:hover{background:#3b5969}
+#energiaViews .detail-button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
 #mik112Controls button[aria-pressed="true"]{background:#3b5969;border-color:#b4cad7}
 @media(max-width:850px){
+ #museumLeftStack{z-index:13}
+ #info{top:136px;bottom:164px;max-height:calc(100dvh - 300px)}
  #info.ukss-active{top:auto;bottom:var(--ukss-dock-bottom,160px);height:auto;max-height:min(38dvh,330px);left:8px;right:8px;max-width:none;padding:12px;overflow-y:auto}
  #info.ukss-active #title{display:block;padding-right:26px;line-height:1.4}
  #info.ukss-active .close{position:absolute;right:9px;top:7px}
@@ -373,18 +380,19 @@ body.following-arrival #labelLayer{display:none!important}
  #info.terminal-active>p:last-child{margin:8px 0 0;font-size:8px!important}
  #info.terminal-active.terminal-details-open .orgrow{margin:10px 0}#info.terminal-active.terminal-details-open #infoExtra{margin-top:10px}
 }
-</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><style>#mik112Controls[hidden]{display:none!important}</style></head><body><div id="view"></div><section id="museumLoading" class="museum-loading" role="status" aria-live="polite" aria-atomic="true"><div class="museum-loading-card"><span class="museum-loading-brand">ROCKETTRIP · БАЙКОНУР</span><span class="museum-loading-spinner" aria-hidden="true"></span><p id="museumLoadingMessage">Загружаем музей…</p><button id="museumRetry" type="button" hidden>Повторить загрузку</button></div></section><section id="hero" inert aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ROCKETTRIP / ИНТЕРАКТИВНЫЙ МУЗЕЙ</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" inert aria-label="Подписи площадок"></div><div id="error"></div><div id="museumLeftStack" inert><aside id="ui" aria-label="Меню музея"><div id="museumIdentity"><img class="rockettrip-logo" src="./assets/rockettrip-logo.svg" alt="RocketTrip" width="278" height="105" decoding="async"><div class="identity-rule"></div><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-version">3D</span></div></div><div class="buttons" id="menuControls"></div><section id="arrivalPanel" class="arrival-panel" aria-label="Полёты аэродрома Крайний"></section><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><details id="sitesAccordion" class="sites-accordion museum-section"><summary aria-label="Раскрыть или свернуть площадки и объекты"><span class="sites-accordion-title">ПЛОЩАДКИ И ОБЪЕКТЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество объектов"></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body"><input class="search" id="search" type="search" aria-label="Поиск площадок и объектов" placeholder="Поиск по номеру и названию…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><details id="equipmentAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">РАКЕТЫ И ТЕХНИКА</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="cyclogramsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">ЦИКЛОГРАММЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="mythsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">МИФЫ И ЛЕГЕНДЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="graveyardAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">КОСМИЧЕСКОЕ КЛАДБИЩЕ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details></aside><details id="navigationGuide" class="navigation-guide" aria-label="Как управлять виртуальным музеем"><summary><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4.5" y="2" width="15" height="20" rx="7"/><path d="M12 2v7m-7.5 0h15"/></svg><span>КАК УПРАВЛЯТЬ КАРТОЙ</span><span class="guide-chevron" aria-hidden="true">⌄</span></summary><div class="navigation-guide-content"><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M17 10h7v7h-7z" fill="#e56f65" stroke="none"/><path d="M4 30l6-6m0 6l-6-6M44 30l-6-6m0 6l6-6" stroke="#efa99b"/></svg><span><b>Левая кнопка мыши</b><small>Перемещение над картой</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M25 10h8v7h-8z" fill="#e56f65" stroke="none"/><path d="M39 29a16 16 0 0 1-21 15l-1-6m1 6l6-3" stroke="#efa99b"/></svg><span><b>Правая кнопка мыши</b><small>Вращение камеры · не ниже 30°</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="15" y="5" width="18" height="34" rx="9"/><path d="M24 5v9m-9 0h18"/><rect x="21" y="10" width="6" height="11" rx="3" fill="#e56f65" stroke="none"/><path d="m7 17 5-5 5 5M7 32l5 5 5-5M12 12v25" stroke="#efa99b"/></svg><span><b>Колёсико</b><small>Приближение и отдаление</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="#dce8ee" stroke-width="1.4" aria-hidden="true"><rect x="18" y="2" width="12" height="12" rx="2" fill="#e56f65"/><rect x="3" y="18" width="12" height="12" rx="2"/><rect x="18" y="18" width="12" height="12" rx="2"/><rect x="33" y="18" width="12" height="12" rx="2"/><path d="m24 6 0 5M9 21l0 6M24 21l0 6M39 21l0 6" stroke="#fff" stroke-width="2"/></svg><span><b>WASD или стрелки</b><small>Полёт по территории · Shift быстрее</small></span></div><div class="guide-note">Нажмите на площадку или выберите её в списке слева, чтобы открыть карточку.</div></div></details></div><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ РАКЕТУ Р-7 · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div><div class="timeline-events-heading"><span>СОБЫТИЯ</span><span id="timelineYearHint">Нажмите на событие, чтобы узнать больше</span></div><div id="timelineEvents" class="timeline-events" role="group" aria-label="Ключевые события истории Байконура"></div><section id="timelineEventPanel" class="timeline-event-panel" hidden aria-label="Историческое событие"><button type="button" id="timelineEventClose" class="timeline-event-close" aria-label="Закрыть историческую справку">×</button><div id="timelineEventDate" class="timeline-event-date"></div><h3 id="timelineEventTitle"></h3><p id="timelineEventDescription"></p><div class="timeline-event-actions"><a id="timelineEventSource" href="#" target="_blank" rel="noopener noreferrer">ИСТОЧНИК ↗</a><button type="button" id="timelineGoToSite">К ПЛОЩАДКЕ ↗</button></div></section></footer><script src="./src/museum-startup.js?v=20261030-startup-recovery-v1"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
+</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><style>#mik112Controls[hidden]{display:none!important}</style></head><body><div id="view"></div><section id="museumLoading" class="museum-loading" role="status" aria-live="polite" aria-atomic="true"><div class="museum-loading-card"><span class="museum-loading-brand">ROCKETTRIP · БАЙКОНУР</span><span class="museum-loading-spinner" aria-hidden="true"></span><p id="museumLoadingMessage">Загружаем музей…</p><button id="museumRetry" type="button" hidden>Повторить загрузку</button></div></section><section id="hero" inert aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ROCKETTRIP / ИНТЕРАКТИВНЫЙ МУЗЕЙ</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" inert aria-label="Подписи площадок"></div><div id="error"></div><div id="museumLeftStack" inert><aside id="ui" aria-label="Меню музея"><div id="museumIdentity"><img class="rockettrip-logo" src="./assets/rockettrip-logo.svg" alt="RocketTrip" width="278" height="105" decoding="async"><div class="identity-rule"></div><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-version">3D</span></div></div><div class="buttons" id="menuControls"></div><section id="arrivalPanel" class="arrival-panel" aria-label="Полёты аэродрома Крайний"></section><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><details id="sitesAccordion" class="sites-accordion museum-section"><summary aria-label="Раскрыть или свернуть площадки и объекты"><span class="sites-accordion-title">ПЛОЩАДКИ И ОБЪЕКТЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество объектов"></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body"><input class="search" id="search" type="search" aria-label="Поиск площадок и объектов" placeholder="Поиск по номеру и названию…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><details id="equipmentAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">РАКЕТЫ И ТЕХНИКА</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="cyclogramsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">ЦИКЛОГРАММЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="mythsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">МИФЫ И ЛЕГЕНДЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="graveyardAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">КОСМИЧЕСКОЕ КЛАДБИЩЕ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details></aside><details id="navigationGuide" class="navigation-guide" aria-label="Как управлять виртуальным музеем"><summary><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4.5" y="2" width="15" height="20" rx="7"/><path d="M12 2v7m-7.5 0h15"/></svg><span>КАК УПРАВЛЯТЬ КАРТОЙ</span><span class="guide-chevron" aria-hidden="true">⌄</span></summary><div class="navigation-guide-content"><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M17 10h7v7h-7z" fill="#e56f65" stroke="none"/><path d="M4 30l6-6m0 6l-6-6M44 30l-6-6m0 6l6-6" stroke="#efa99b"/></svg><span><b>Левая кнопка мыши</b><small>Перемещение над картой</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M25 10h8v7h-8z" fill="#e56f65" stroke="none"/><path d="M39 29a16 16 0 0 1-21 15l-1-6m1 6l6-3" stroke="#efa99b"/></svg><span><b>Правая кнопка мыши</b><small>Вращение камеры · не ниже 30°</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="15" y="5" width="18" height="34" rx="9"/><path d="M24 5v9m-9 0h18"/><rect x="21" y="10" width="6" height="11" rx="3" fill="#e56f65" stroke="none"/><path d="m7 17 5-5 5 5M7 32l5 5 5-5M12 12v25" stroke="#efa99b"/></svg><span><b>Колёсико</b><small>Приближение и отдаление</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="#dce8ee" stroke-width="1.4" aria-hidden="true"><rect x="18" y="2" width="12" height="12" rx="2" fill="#e56f65"/><rect x="3" y="18" width="12" height="12" rx="2"/><rect x="18" y="18" width="12" height="12" rx="2"/><rect x="33" y="18" width="12" height="12" rx="2"/><path d="m24 6 0 5M9 21l0 6M24 21l0 6M39 21l0 6" stroke="#fff" stroke-width="2"/></svg><span><b>WASD или стрелки</b><small>Полёт по территории · Shift быстрее</small></span></div><div class="guide-note">Нажмите на площадку или выберите её в списке слева, чтобы открыть карточку.</div></div></details></div><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div><div class="timeline-events-heading"><span>СОБЫТИЯ</span><span id="timelineYearHint">Нажмите на событие, чтобы узнать больше</span></div><div id="timelineEvents" class="timeline-events" role="group" aria-label="Ключевые события истории Байконура"></div><section id="timelineEventPanel" class="timeline-event-panel" hidden aria-label="Историческое событие"><button type="button" id="timelineEventClose" class="timeline-event-close" aria-label="Закрыть историческую справку">×</button><div id="timelineEventDate" class="timeline-event-date"></div><h3 id="timelineEventTitle"></h3><p id="timelineEventDescription"></p><div class="timeline-event-actions"><a id="timelineEventSource" href="#" target="_blank" rel="noopener noreferrer">ИСТОЧНИК ↗</a><button type="button" id="timelineGoToSite">К ПЛОЩАДКЕ ↗</button></div></section></footer><script src="./src/museum-startup.js?v=20261030-startup-recovery-v1"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
-import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=below-grade-portal-v1';
-import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261029-all-silos-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261030-krayniy-terminal-v1';
+import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261031-rocket-exhibits-v1';
+import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
+import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261031-rocket-exhibits-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261031-rocket-exhibits-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=ukss-drive-model-v1';
-import {loadUkssExhibit} from './src/ukss-exhibit.js?v=ukss-drive-model-v1';
-import {buildUkssConnections} from './src/ukss-connections.js?v=ukss-drive-model-v1';
+import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-rocket-exhibits-v1';
+import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-rocket-exhibits-v1';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261028-museum4-osm-live-v2';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261028-museum4-osm-live-v2';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261028-museum4-osm-live-v2';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261030-krayniy-terminal-v1';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261031-rocket-exhibits-v1';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261030-river-roads-signs-v1';
 import {createNorthBankMask} from './src/river-bank.js?v=20261030-river-roads-signs-v1';
 import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261030-river-roads-signs-v1';
@@ -395,35 +403,47 @@ import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261030-river-roads-signs-v
 import {SATURN_ACCESS} from './src/saturn-access.js?v=20261030-river-roads-signs-v1';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
-import {buildAirport} from './src/airport-models.js?v=20261030-krayniy-terminal-v1';
+import {buildAirport} from './src/airport-models.js?v=20261031-rocket-exhibits-v1';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261030-krayniy-terminal-v1';
-import {buildEveningScene} from './src/evening-scene.js?v=20261030-krayniy-terminal-v1';
+import {buildEveningScene} from './src/evening-scene.js?v=20261031-rocket-exhibits-v1';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261031-museum-menu-v1';
-import {createGroundTraffic} from './src/ground-traffic.js?v=20261028-motovoz-photo-v3';
+import {createGroundTraffic} from './src/ground-traffic.js?v=20261031-rocket-exhibits-v1';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
-import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261030-native-models-v1';
-import {loadTuaExhibit} from './src/tua-exhibit.js?v=tua-drive-model-v1';
-import {adaptTuaRails} from './src/tua-rails.js?v=tua-drive-model-v1';
-import {installSceneSelection} from './src/scene-selection.js?v=no-terrain-jump-v1';
-import {installMuseumMenu} from './src/museum-menu.js?v=20261031-museum-menu-v1';
+import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261031-rocket-exhibits-v1';
+import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
+import {adaptTuaRails} from './src/tua-rails.js?v=20261031-rocket-exhibits-v1';
+import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-exhibits-v1';
+import {installMuseumMenu} from './src/museum-menu.js?v=20261031-rocket-exhibits-v1';
+import {MUSEUM_METRE} from './src/museum-scale.js?v=20261031-rocket-exhibits-v1';
+import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=20261031-rocket-exhibits-v1';
+import {createTuaRocketControls} from './src/rocket-controls.js?v=20261031-rocket-exhibits-v1';
+import {createMuseumKnowledge} from './src/museum-knowledge.js?v=20261031-rocket-exhibits-v1';
+import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261031-rocket-exhibits-v1';
+import {createExhibitClearance} from './src/exhibit-clearance.js?v=20261031-rocket-exhibits-v1';
 try{
 const attribution=document.createElement('a');attribution.id='osmAttribution';attribution.href='https://www.openstreetmap.org/copyright';attribution.target='_blank';attribution.rel='noopener';attribution.textContent='© OpenStreetMap contributors';document.body.append(attribution);
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261031-museum-menu-v1';
+const MUSEUM_REVISION='20261031-rocket-exhibits-v1';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 startup.stage('Загружаем карту космодрома…');
 const loadMuseumData=path=>startup.fetchJSON(path);
-const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData]=await Promise.all([
+const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,knowledgeData]=await Promise.all([
  './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson','./data/osm/railways.geojson',
- './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson','./data/osm/places.geojson','./data/transport-network.json'
+ './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson','./data/osm/places.geojson','./data/transport-network.json','./data/buran-knowledge.json'
 ].map(loadMuseumData));
+const museumKnowledge=createMuseumKnowledge(knowledgeData,{onNavigate:action=>openMuseumAction(action)});
 startup.stage('Создаём ландшафт и дороги…');
 await new Promise(resolve=>setTimeout(resolve,0));
 const geography=createMuseumGeography({catalog,matches:osmMatches});
 const siteRecords=geography.sites.filter(record=>!record.aliasOf&&record.render!==false);
+const site110Record=siteRecords.find(record=>record.id==='pad-110');
+if(site110Record){
+ [site110Record.x,site110Record.y]=geography.project(...SITE110_REFERENCE.originLonLat);
+ site110Record.geoSource={...site110Record.geoSource,sourceLonLat:[...SITE110_REFERENCE.originLonLat],displayLonLat:[...SITE110_REFERENCE.originLonLat]};
+}
 // A runway's centreline fixes the airport model origin and direction.
 for(const [id,wayId] of [['airfield',37591623],['pad-251',24949215]]){
  const site=siteRecords.find(s=>s.id===id),runway=osmAirports.features.find(f=>f.properties.osmId===wayId&&f.geometry.type==='LineString');
@@ -439,9 +459,11 @@ for(const [id,wayId] of [['airfield',37591623],['pad-251',24949215]]){
 // Common display scale for structures on the schematic; geometry stays fully detailed.
 const MODEL_SCALE=0.28;
 const SCENE_SCALE=3.40/1.45;
-const GAGARIN_SCALE=.43*MODEL_SCALE/1.5;
+const GAGARIN_SCALE=MUSEUM_METRE;
 const SATURN_SCALE=0.525;
-const UKSS_SCALE=.5*MODEL_SCALE*1.5;
+const UKSS_SCALE=MUSEUM_METRE;
+// Navigation clearances use the same physical scale as the metric exhibits.
+const CAMERA_MIN_Y=-2.72+7*MUSEUM_METRE;
 const groundMaterials=new Set();let ukssCutout=null;const portalVoids=createTerrainVoids();let portalVoidsReady=false;
 function registerGroundSurface(mesh){
  groundMaterials.add(mesh.material);
@@ -450,7 +472,7 @@ function registerGroundSurface(mesh){
  return mesh;
 }
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xb7b5a4);scene.fog=new THREE.FogExp2(0xb7b5a4,.000085);const camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,80000);camera.position.set(0,1450*SCENE_SCALE,1450*SCENE_SCALE);camera.lookAt(0,0,0);const renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);document.getElementById('view').appendChild(renderer.domElement);const ctl=new OrbitControls(camera,renderer.domElement);ctl.enableDamping=true;ctl.screenSpacePanning=false;ctl.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};ctl.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};// Camera cannot descend lower than 30° above the ground (polar <=60°).
-ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MODEL_SCALE;ctl.maxDistance=3300*SCENE_SCALE;scene.add(new THREE.HemisphereLight(0xbdd7f2,0x62533d,2));const sun=new THREE.DirectionalLight(0xffdfb4,2.2);sun.position.set(-700,1200,500);scene.add(sun);const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const sand=material(0x807965),pave=material(0x666b6a),steel=material(0x85949b),roof=material(0x427084),white=material(0xcbd0ce),dark=material(0x303b43),orange=material(0xb95c3c),railMat=material(0x4b4944);const layers={sites:new THREE.Group(),roads:new THREE.Group(),rails:new THREE.Group(),city:new THREE.Group(),plan:new THREE.Group()};Object.values(layers).forEach(g=>scene.add(g));const W=1300,H=1045,S=3.40;const point=(x,y,z=0)=>new THREE.Vector3((x-W/2)*S,z,(y-H/2)*S);const ground=new THREE.Mesh(new THREE.PlaneGeometry(320000,320000),sand);ground.rotation.x=-Math.PI/2;ground.position.y=-5.6;scene.add(ground);
+ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MUSEUM_METRE;ctl.maxDistance=3300*SCENE_SCALE;scene.add(new THREE.HemisphereLight(0xbdd7f2,0x62533d,2));const sun=new THREE.DirectionalLight(0xffdfb4,2.2);sun.position.set(-700,1200,500);scene.add(sun);const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const sand=material(0x807965),pave=material(0x666b6a),steel=material(0x85949b),roof=material(0x427084),white=material(0xcbd0ce),dark=material(0x303b43),orange=material(0xb95c3c),railMat=material(0x4b4944);const layers={sites:new THREE.Group(),roads:new THREE.Group(),rails:new THREE.Group(),city:new THREE.Group(),plan:new THREE.Group()};Object.values(layers).forEach(g=>scene.add(g));const W=1300,H=1045,S=3.40;const point=(x,y,z=0)=>new THREE.Vector3((x-W/2)*S,z,(y-H/2)*S);const ground=new THREE.Mesh(new THREE.PlaneGeometry(320000,320000),sand);ground.rotation.x=-Math.PI/2;ground.position.y=-5.6;scene.add(ground);
 let overviewAltitudeLimit=1650,overviewTopDown=false;
 function applyOverviewFrame(topDown=false){
  const ui=document.getElementById('ui').getBoundingClientRect(),hero=document.getElementById('hero'),dock=document.getElementById('timeDock').getBoundingClientRect();
@@ -959,7 +981,7 @@ const stationObjects=transport.stationLabels().map((st,n)=>{
   publicReferences:[st.osmUrl]};
  const index=objects.length+n;
  st.group.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=index;clickable.push(mesh)}});
- return {name:st.name,record,g:st.anchor,isStation:true};
+ return {name:st.name,record,g:st.anchor,geometryRoot:st.group,isStation:true};
 });
 const cardObjects=[...objects,...stationObjects];
 function positionDescription(record){
@@ -1308,6 +1330,7 @@ for(const o of objects.filter(o=>o.g.userData.airport)){
  o.g.rotation.y=o.record.runtimeYaw;o.g.userData.airport.heading=o.record.runtimeYaw;
  o.g.userData.airport.osmRunwayId=o.record.runwaySource?.osmId;o.g.updateWorldMatrix(true,true);
 }
+const exhibitClearance=createExhibitClearance(cardObjects);
 
 portalVoidsReady=true;
 for(const mat of groundMaterials)portalVoids.mask(mat);
@@ -1316,6 +1339,38 @@ portalVoids.update();
 
 const tex=new THREE.TextureLoader().load('./baykonur-plan.png');tex.colorSpace=THREE.SRGBColorSpace;const plan=new THREE.Mesh(new THREE.PlaneGeometry(W*S,H*S),new THREE.MeshBasicMaterial({map:tex,transparent:true,opacity:.75,side:THREE.DoubleSide,depthWrite:false}));plan.rotation.x=-Math.PI/2;plan.position.y=-.2;plan.renderOrder=4;layers.plan.add(plan);registerGroundSurface(plan);layers.plan.visible=false;
 let currentObject=0;let currentResearch=null;let lightingEditor=null;let arrivalFlight=null;let groundTraffic=null;
+let activeKnowledge=null,tuaRocketControls=null;
+const rocketExhibits=createRocketExhibits({onChange({key,entry,added,removed}){
+ const index=objects.findIndex(o=>o.record.id===entry.siteId),obsolete=new Set(removed);
+ for(let i=clickable.length-1;i>=0;i--)if(obsolete.has(clickable[i]))clickable.splice(i,1);
+ for(const mesh of added){mesh.userData.idx=index;clickable.push(mesh);}
+ tuaRocketControls?.sync();syncRocketLoadStatus();
+}});
+rocketExhibits.add('gagarin',{parent:padGroup,holder:gagarinExhibit.rocket,...gagarinExhibit.rocketMount,modelId:'soyuz',siteId:'pad-1'});
+const site31Root=objects.find(o=>o.record.id==='pad-31')?.g;
+if(site31Root)rocketExhibits.add('site31',{parent:site31Root,...site31Root.userData.site31Model.rocketMount,modelId:'soyuz',siteId:'pad-31'});
+rocketExhibits.add('ukss',{parent:ukssGroup,...(ukssExhibit.metadata.rocketMount||{position:[0,6.055,0],rotation:[0,Math.PI,0]}),modelId:'energia-polyus',siteId:'pad-250'});
+const site110Root=objects.find(o=>o.record.id==='pad-110')?.g;
+if(site110Root)rocketExhibits.add('site110',{parent:site110Root,...SITE110_ROCKET_MOUNT,rotation:[0,SITE110_ROCKET_MOUNT.rotation[1]+Math.PI,0],modelId:'energia-buran',siteId:'pad-110'});
+if(mik112Exhibit){
+ const mounts=mik112Exhibit.rocketMounts(),parent=objects[mik112Index].g;
+ rocketExhibits.add('mik112-hall',{parent,...mounts.hall,modelId:'energia-buran',siteId:'pad-112'});
+ mounts.tua.forEach((mount,index)=>rocketExhibits.add('tua-'+index,{parent:mik112Exhibit.transportersGroup,...mount,modelId:'energia-buran',siteId:'pad-112'}));
+}
+tuaRocketControls=createTuaRocketControls({container:document.getElementById('description').parentElement,exhibits:rocketExhibits,keys:['tua-0','tua-1'],onSelect:id=>{
+ if(activeKnowledge?.kind==='rocket'&&activeKnowledge.id!=='tua')showRocketKnowledge(id,'pad-112',false);
+}});
+document.getElementById('mik112Controls').after(tuaRocketControls.panel);
+function syncRocketLoadStatus(){
+ let status=document.getElementById('rocketLoadStatus');
+ if(!status){status=document.createElement('p');status.id='rocketLoadStatus';status.setAttribute('role','status');status.style.cssText='font-size:11px;line-height:1.5;color:#bed0ce;margin:10px 0';document.getElementById('description').after(status);}
+ const siteId=cardObjects[currentObject]?.record.id,entries=rocketExhibits.stats().placements.filter(e=>e.siteId===siteId);
+ status.replaceChildren();status.hidden=Boolean(currentResearch)||!entries.length||activeKnowledge?.kind==='story';
+ const failed=entries.filter(e=>e.status==='error');
+ if(failed.length){status.append(document.createTextNode('Не удалось загрузить ракету-экспонат. '));const retry=document.createElement('button');retry.type='button';retry.textContent='Повторить';retry.onclick=()=>failed.forEach(e=>rocketExhibits.setModel(e.key,e.modelId));status.append(retry);}
+ else if(entries.some(e=>e.status==='loading'))status.textContent='Загружаем ракету-экспонат…';
+ else status.textContent='Ракеты-экспонаты показаны в едином масштабе со стартовыми комплексами.';
+}
 const krayniyIndex=objects.findIndex(o=>o.g.userData.airport?.key==='krayniy');
 let krayniyTerminalView='airside';
 let gagarinDetailView=false;
@@ -1330,10 +1385,11 @@ function syncUkssMobileDock(){
 }
 window.addEventListener('resize',syncUkssMobileDock);
 function syncTuaControls(){
- const active=!currentResearch&&currentObject===mik112Index&&tuaExhibit?.metadata.status==='ready';
+ const active=!currentResearch&&activeKnowledge?.kind!=='story'&&currentObject===mik112Index&&tuaExhibit?.metadata.status==='ready';
  const info=document.getElementById('info');info.classList.toggle('tua-active',active);
  if(!active)info.classList.remove('tua-details-open');syncUkssMobileDock();
  for(const [id,view] of [['mik112All','all'],['mik112Tua','tua'],['mik112Top','top']])document.getElementById(id).setAttribute('aria-pressed',String(view===mik112DetailView));
+ tuaRocketControls?.setActive(active);
 }
 function syncUkssControls(){
  let views=document.getElementById('ukssViews');
@@ -1348,19 +1404,19 @@ function syncUkssControls(){
  let toggle=document.getElementById('ukssMockupToggle');
  if(!toggle){
   toggle=document.createElement('button');toggle.id='ukssMockupToggle';toggle.type='button';toggle.className='info-more';
-  toggle.onclick=()=>setUkssMockupVisible(!ukssExhibit.metadata.mockup.visible);views.after(toggle);
+   toggle.onclick=()=>setUkssMockupVisible(!rocketExhibits.get('ukss')?.holder.visible);views.after(toggle);
  }
- const active=!currentResearch&&currentObject===ukssIndex&&ukssExhibit.metadata.status==='ready';
+ const active=!currentResearch&&activeKnowledge?.kind!=='story'&&currentObject===ukssIndex&&ukssExhibit.metadata.status==='ready';
  const info=document.getElementById('info');info.classList.toggle('ukss-active',active);
  if(!active)info.classList.remove('ukss-details-open');syncUkssMobileDock();
- const mockup=ukssExhibit.metadata.mockup;
- views.hidden=!active;toggle.hidden=!active||!mockup.available;
- toggle.textContent=mockup.visible?'УБРАТЬ ГАБАРИТНЫЙ МАКЕТ':'ПОКАЗАТЬ ГАБАРИТНЫЙ МАКЕТ';
- toggle.setAttribute('aria-pressed',String(mockup.visible));
+ const visible=rocketExhibits.get('ukss')?.holder.visible;
+ views.hidden=!active;toggle.hidden=!active;
+ toggle.textContent=visible?'УБРАТЬ «ЭНЕРГИЮ — ПОЛЮС»':'ПОКАЗАТЬ «ЭНЕРГИЮ — ПОЛЮС»';
+ toggle.setAttribute('aria-pressed',String(visible));
  for(const button of views.children)button.setAttribute('aria-pressed',String(button.dataset.ukssView===ukssDetailView));
 }
 function setUkssMockupVisible(visible){
- const actual=ukssExhibit.setMockupVisible(visible);syncUkssControls();return actual;
+ const actual=rocketExhibits.setVisible('ukss',visible);syncUkssControls();return actual;
 }
 function inspectUkss(view='overview'){
  arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();
@@ -1404,13 +1460,15 @@ function focus(i){
  if(lightingEditor?.active)lightingEditor.setActive(false);
  arrivalFlight?.stopFollowing();
  groundTraffic?.stopFollowing();
- currentResearch=null;
+ currentResearch=null;activeKnowledge=null;
  setGagarinDetailView(i===0);
  const o=cardObjects[i],r=o.record;currentObject=i;o.g.getWorldPosition(ctl.target);
  if(i===0){
-  // Frame the unchanged detailed mesh at its map scale, including the whole trench.
-  ctl.target.add(new THREE.Vector3(165,12,0).multiplyScalar(GAGARIN_SCALE));
-  camera.position.copy(ctl.target).add(new THREE.Vector3(360,220,420).multiplyScalar(GAGARIN_SCALE));
+  // Local metre cameras keep the rocket, service structures and open trench
+  // together after the former drawing units are normalized.
+  padGroup.updateWorldMatrix(true,false);
+  ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,7,-60)));
+  camera.position.copy(padGroup.localToWorld(new THREE.Vector3(150,130,170)));
  }else if(i===ukssIndex){
   inspectUkss('overview');
  }else if(i===mik112Index){
@@ -1424,6 +1482,7 @@ function focus(i){
  }else if(o.archive){portalArchive.focus(i,camera,ctl);}else camera.position.copy(ctl.target).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  let airportViews=document.getElementById('airportViews');if(!airportViews){airportViews=document.createElement('div');airportViews.id='airportViews';document.getElementById('description').after(airportViews);}
  airportViews.replaceChildren();airportViews.hidden=!o.g.userData.airport;
+ airportViews.style.display=airportViews.hidden?'none':'flex';
  const terminalViews=i===krayniyIndex&&Boolean(o.g.userData.airport?.terminal?.camera);
  airportViews.classList.toggle('terminal-views',terminalViews);airportViews.setAttribute('role','group');airportViews.setAttribute('aria-label',terminalViews?'Ракурсы аэропорта Крайний':'Ракурсы аэродрома');
  if(terminalViews){
@@ -1438,6 +1497,9 @@ function focus(i){
  let mzkViews=document.getElementById('mzkViews');if(!mzkViews){mzkViews=document.createElement('div');mzkViews.id='mzkViews';mzkViews.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';document.getElementById('description').after(mzkViews);}
  mzkViews.replaceChildren();mzkViews.hidden=o.archive?.kind!=='mzk';mzkViews.style.display=mzkViews.hidden?'none':'flex';
  if(o.archive?.kind==='mzk')for(const [label,view] of [['Весь комплекс','all'],['МЗК','mzk'],['СДИ','sdi']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectMzkSdi(view,camera,ctl);mzkViews.append(b);}
+ let energiaViews=document.getElementById('energiaViews');if(!energiaViews){energiaViews=document.createElement('div');energiaViews.id='energiaViews';energiaViews.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';document.getElementById('description').after(energiaViews);}
+ energiaViews.replaceChildren();energiaViews.hidden=r.id!=='pad-110';energiaViews.style.display=energiaViews.hidden?'none':'flex';
+ if(r.id==='pad-110')for(const [label,view]of [['Весь комплекс','all'],['Старт с ракетой','left'],['Второй старт','right'],['Газоотвод','trench'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectSite110(view,camera,ctl);energiaViews.append(b);}
  syncUkssControls();syncTuaControls();syncTerminalControls();
  document.getElementById("mik112Controls").hidden=i!==mik112Index;
  document.getElementById("title").textContent=displaySiteName(o);
@@ -1445,12 +1507,15 @@ function focus(i){
  document.getElementById("infoOrgRole").textContent=r.organisation?.role||(organisationLogo(r.organisation?.org)?r.organisation.org:"");
  document.getElementById("infoPurpose").textContent=r.purposeLong||r.purpose||"Назначение объекта уточняется";
  const rocketToggle=document.getElementById("rocketExhibitToggle");
- rocketToggle.hidden=i!==0;
- if(i===0)rocketToggle.textContent=gagarinExhibit.rocket.visible?"УБРАТЬ РАКЕТУ · ЭКСПОНАТ":"ПОКАЗАТЬ РАКЕТУ Р-7 · ЭКСПОНАТ";
- document.getElementById("description").textContent=(i===0?"Первый пилотируемый орбитальный полёт человека — 12 апреля 1961 года. ":"")+positionDescription(r)+' '+museumNote(r);
+ rocketToggle.hidden=!['pad-1','pad-31'].includes(r.id);
+ const soyuz=rocketExhibits.get(r.id==='pad-31'?'site31':'gagarin');
+ if(!rocketToggle.hidden)rocketToggle.textContent=soyuz?.holder.visible?"УБРАТЬ «СОЮЗ» · ЭКСПОНАТ":"ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ";
+ const knowledge= museumKnowledge.getSite(r.id);
+ document.getElementById("description").textContent=knowledge?knowledge.summary:(i===0?"Первый пилотируемый орбитальный полёт человека — 12 апреля 1961 года. ":"")+positionDescription(r)+' '+museumNote(r);
  document.getElementById("infoExtra").style.display="none";
  document.getElementById("detailMore").textContent="ПОДРОБНЕЕ ↗";
  document.getElementById("info").style.display="block";
+ syncRocketLoadStatus();
  // Force camera and DOM callouts to sync immediately, even under a slow WebGL renderer.
  ctl.update();camera.updateMatrixWorld(true);updateLabels();
 }
@@ -1459,7 +1524,7 @@ function showResearch(item){
  arrivalFlight?.stopFollowing();
  groundTraffic?.stopFollowing();
  setGagarinDetailView(false);
- currentResearch=item;
+ currentResearch=item;activeKnowledge=null;syncRocketLoadStatus();
  syncUkssControls();syncTuaControls();syncTerminalControls();
  document.getElementById('mik112Controls').hidden=true;
  document.getElementById("title").textContent=item.id+' · '+item.title;
@@ -1475,12 +1540,19 @@ function showResearch(item){
  document.getElementById("info").style.display="block";
 }
 document.getElementById("rocketExhibitToggle").onclick=()=>{
- gagarinExhibit.rocket.visible=!gagarinExhibit.rocket.visible;
- document.getElementById("rocketExhibitToggle").textContent=gagarinExhibit.rocket.visible
- ?"УБРАТЬ РАКЕТУ · ЭКСПОНАТ":"ПОКАЗАТЬ РАКЕТУ Р-7 · ЭКСПОНАТ";
+ const key=cardObjects[currentObject]?.record.id==='pad-31'?'site31':'gagarin',entry=rocketExhibits.get(key);
+ const visible=rocketExhibits.setVisible(key,!entry.holder.visible);
+ document.getElementById("rocketExhibitToggle").textContent=visible?"УБРАТЬ «СОЮЗ» · ЭКСПОНАТ":"ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ";
 };
 document.getElementById("detailMore").onclick=()=>{
  const el=document.getElementById("infoExtra");
+ if(activeKnowledge){
+  const visible=el.style.display!=='block';el.replaceChildren();
+  if(visible)(activeKnowledge.kind==='story'?museumKnowledge.renderStory:museumKnowledge.renderRocket)(activeKnowledge.id,el,{includeTitle:false});
+  document.getElementById('info').classList.toggle('tua-details-open',visible&&currentObject===mik112Index);
+  document.getElementById('info').classList.toggle('ukss-details-open',visible&&currentObject===ukssIndex);
+  el.style.display=visible?'block':'none';document.getElementById('detailMore').textContent=visible?'СВЕРНУТЬ':'ПОДРОБНЕЕ ↗';return;
+ }
  if(currentResearch){
   const isHidden=el.style.display!=="block";el.replaceChildren();
   if(isHidden){
@@ -1504,7 +1576,9 @@ document.getElementById("detailMore").onclick=()=>{
  if(r.id==='pad-112')document.getElementById('info').classList.toggle('tua-details-open',isHidden);
  if(currentObject===krayniyIndex)document.getElementById('info').classList.toggle('terminal-details-open',isHidden);
  if(isHidden){
-  const lines=["Номер и название: "+displaySiteName(o),"Источник позиции: "+(r.positionBasis||"не указан"),"Привязка: "+positionDescription(r),"Назначение: "+(r.purposeLong||r.purpose||"не установлено"),"Предприятие: "+(r.organisation?.org||"не подтверждено"),"3D-модель: условная, размеры не подтверждены"];
+  museumKnowledge.renderSite(r.id,el);
+  const metric=['pad-1','pad-31','pad-45','pad-81','pad-200','pad-110','pad-250','pad-112','pad-251'].includes(r.id);
+  const lines=["Номер и название: "+displaySiteName(o),"Источник позиции: "+(r.positionBasis||"не указан"),"Привязка: "+positionDescription(r),"Назначение: "+(r.purposeLong||r.purpose||"не установлено"),"Предприятие: "+(r.organisation?.org||"не подтверждено"),metric?"3D-модель: общий масштаб по физическим размерам; неподтверждённые детали реконструкции остаются приблизительными.":"3D-модель: музейная реконструкция; обмерные размеры не подтверждены."];
   for(const text of lines){const p=document.createElement("div");p.textContent=text;el.appendChild(p)}
   const refs=[...new Set([...(r.geoSource?.refs||[]).map(ref=>ref.url),...(r.publicReferences||[]),...(r.organisation?.source?[r.organisation.source]:[])].filter(Boolean))];
   if(refs.length){const heading=document.createElement("div");heading.style.marginTop="9px";heading.textContent="Публичные источники:";el.appendChild(heading);}
@@ -1606,12 +1680,12 @@ if(kazIndex>=0)objects[kazIndex].g.traverse(mesh=>{
 });
 lightingEditor=createLightingEditor({scene,camera,canvas:renderer.domElement,
  roads:transport.roadPaths(),groundMeshes:lightingGroundMeshes,button:null,
- isLightAllowed:(x,z)=>lightBank.contains(x,z)&&eastLightingZone.isPowered(x,z),
+ isLightAllowed:(x,z)=>lightBank.contains(x,z)&&eastLightingZone.isPowered(x,z)&&exhibitClearance.isPoleAllowed(x,z),
  onActiveChange(active){if(active){document.getElementById('info').style.display='none';selectSiteCard(null);}}
 });
 const airportObject=objects.find(o=>o.record.id==='airfield');
 const eveningScene=buildEveningScene({scene,camera,renderer,sun,layers,objects,roads:transport.roadPaths(),airfield:airportObject.g,groundMeshes:lightingGroundMeshes,
- isLightAllowed:lightBank.contains,isLightPowered:eastLightingZone.isPowered,bankRule:lightBank.version,
+ isLightAllowed:lightBank.contains,isPoleAllowed:exhibitClearance.isPoleAllowed,isLightPowered:eastLightingZone.isPowered,bankRule:lightBank.version,
  button:null,onModeChange:value=>{highwaySigns.setEvening(value);objects.find(o=>o.record.id==='pad-75')?.g.userData.setHotelEvening?.(value);lightingEditor.setEvening(value);groundTraffic?.setEvening(value);arrivalFlight?.setEvening(value);}});
 arrivalFlight=createArrivalFlight({scene,camera,controls:ctl,canvas:renderer.domElement,airfield:airportObject.g,complexCenter:point(...geography.project(63.33,45.94)),container:document.getElementById('arrivalPanel'),
  onFollow(){groundTraffic?.stopFollowing();fly=false;document.getElementById('info').style.display='none';}});
@@ -1639,14 +1713,47 @@ function openMenuSite(id){
  if(!objects[index].g.visible)setMuseumYear(2026,false);
  focus(index);return true;
 }
+function showRocketKnowledge(id,siteId,move=true){
+ const record=museumKnowledge.getRocket(id);if(!record)return false;
+ if(move&&!openMenuSite(siteId))return false;
+ activeKnowledge={kind:'rocket',id};currentResearch=null;
+ document.getElementById('title').textContent=record.title;
+ document.getElementById('infoPurpose').textContent=record.subtitle||'Ракеты и техника';
+ document.getElementById('description').textContent=id==='tua'?'Два транспортно-установочных агрегата для горизонтальной перевозки и установки комплекса на старт.':'Ракета-экспонат · единый масштаб с сооружениями музея';
+ const extra=document.getElementById('infoExtra');extra.replaceChildren();museumKnowledge.renderRocket(id,extra,{includeTitle:false});extra.style.display='block';
+ document.getElementById('detailMore').textContent='СВЕРНУТЬ';document.getElementById('info').style.display='block';
+ syncTuaControls();syncRocketLoadStatus();return true;
+}
+function showArchiveStory(id){
+ const record=museumKnowledge.getStory(id);if(!record)return false;
+ if(record.siteId)openMenuSite(record.siteId);
+ activeKnowledge={kind:'story',id};currentResearch=null;
+ document.getElementById('title').textContent=record.title;
+ document.getElementById('infoPurpose').textContent=record.subtitle||'Истории космодрома';
+ document.getElementById('description').textContent='Материал из архива buran.ru';
+ const extra=document.getElementById('infoExtra');extra.replaceChildren();museumKnowledge.renderStory(id,extra,{includeTitle:false});extra.style.display='block';
+ document.getElementById('detailMore').textContent='СВЕРНУТЬ';document.getElementById('info').style.display='block';
+ for(const selector of ['#airportViews','#siloViews','#hotelViews','#mzkViews','#energiaViews']){const el=document.querySelector(selector);if(el){el.hidden=true;el.style.display='none';}}
+ document.getElementById('mik112Controls').hidden=true;document.getElementById('rocketExhibitToggle').hidden=true;
+ syncUkssControls();syncTuaControls();syncRocketLoadStatus();return true;
+}
 function openMuseumAction(action){
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
  setMobileMenu(false);setGagarinDetailView(false);
  document.getElementById('info').style.display='none';
+ if(action.startsWith('story:'))return showArchiveStory(action.slice(6));
+ if(action.startsWith('rocket:')){
+  const id=action.slice(7),direct={soyuz:'r7',energia:'energia','energia-polyus':'energia-polyus','energia-buran':'energia-buran','energia-m':'energia-m',tua:'tua'};
+  if(direct[id])return openMuseumAction(direct[id]);
+  const siteId={buran:'pad-110',proton:'pad-81',zenit:'pad-45'}[id];
+  return siteId?showRocketKnowledge(id,siteId):false;
+ }
  switch(action){
-  case 'r7':gagarinExhibit.rocket.visible=true;openMenuSite('pad-1');break;
-  case 'energia':openMenuSite('pad-250');setUkssMockupVisible(true);inspectUkss('overview');break;
-  case 'tua':openMenuSite('pad-112');focusMik112('tua');break;
+  case 'r7':rocketExhibits.setVisible('gagarin',true);showRocketKnowledge('soyuz','pad-1');break;
+  case 'energia-polyus':showRocketKnowledge('energia-polyus','pad-250');setUkssMockupVisible(true);inspectUkss('overview');break;
+  case 'energia-buran':showRocketKnowledge('energia-buran','pad-110');portalArchive.inspectSite110('left',camera,ctl);break;
+  case 'energia':case 'energia-m':showRocketKnowledge(action,'pad-112');focusMik112('tua');tuaRocketControls.choose(action);break;
+  case 'tua':openMenuSite('pad-112');focusMik112('tua');showRocketKnowledge('tua','pad-112',false);break;
   case 'mriya':openMenuSite('pad-251');document.querySelector('#airportViews button:last-child')?.click();break;
   case 'aircraft':arrivalFlight.resume();if(!arrivalFlight.stats().visible)arrivalFlight.restart();arrivalFlight.setFollowing(true);break;
   case 'train':groundTraffic.resume();groundTraffic.setFollowing(true);break;
@@ -1659,7 +1766,7 @@ function openMuseumAction(action){
  }
  ctl.update();camera.updateMatrixWorld(true);updateLabels();return true;
 }
-const museumMenu=installMuseumMenu({container:document.getElementById('ui'),onAction:openMuseumAction});
+const museumMenu=installMuseumMenu({container:document.getElementById('ui'),onAction:openMuseumAction,stories:museumKnowledge.storiesMenu()});
 function focusInterchange(){
  const bridges=transport.stats().interchange?.bridges||[];
  if(bridges.length){const c=bridges[0].center;ctl.target.set(c[0],4,c[2]);}else ctl.target.copy(point(...geography.project(63.322,45.679),4));
@@ -1680,7 +1787,7 @@ if(requestedPad){
 document.getElementById('mik112All').onclick=()=>focusMik112('all');
 document.getElementById('mik112Tua').onclick=()=>focusMik112('tua');
 document.getElementById('mik112Top').onclick=()=>focusMik112('top');
-document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLInputElement)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}// SCENE_SELECTION_NO_TERRAIN_JUMP_V1: do not interpret navigation as a click.
+document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(e.target instanceof HTMLElement&&(e.target.matches('input,select,textarea,button')||e.target.isContentEditable))return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=Math.max(28,Math.min(900,distance*.6))*(keys.has('shift')?3:1)*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}// SCENE_SELECTION_NO_TERRAIN_JUMP_V1: do not interpret navigation as a click.
 const museumCameraBounds={minX:(Math.min(geography.bounds.minX,...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,maxX:(Math.max(geography.bounds.maxX,...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,minZ:(Math.min(geography.bounds.minY,...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S,maxZ:(Math.max(geography.bounds.maxY,...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S};
 function constrainMuseumCamera(){
  // Extend the scenery beyond the museum, while keeping free navigation inside
@@ -1691,12 +1798,16 @@ function constrainMuseumCamera(){
  ctl.target.x+=dx;ctl.target.z+=dz;camera.position.x+=dx;camera.position.z+=dz;
 }
 const sceneSelection=installSceneSelection({element:renderer.domElement,camera,controls:ctl,
- getObjects:()=>clickable,onSelect:focus,blocked:()=>Boolean(lightingEditor?.active),
+  getObjects:()=>clickable,onSelect:(index,mesh)=>{
+   focus(index);
+   if(mesh?.userData.museumComponent==='tua-imported-model'||mesh?.userData.rocketExhibitKey?.startsWith('tua-')){focusMik112('tua');showRocketKnowledge('tua','pad-112',false);}
+  },blocked:()=>Boolean(lightingEditor?.active),
  onNavigate:()=>{if(fly){fly=false;}}
 });
 startup.stage('Открываем 3D-карту…');
 await new Promise(resolve=>setTimeout(resolve,0));
-window.__BAIKONUR_QA={showOverview,setLabelsVisible,setLayerVisible,menu:museumMenu,inspectUkss,setUkssMockupVisible,inspectKrayniyTerminal,inspectFlankBoundaries(){
+window.__MUSEUM_ROCKETS_READY=rocketExhibits.whenReady();
+window.__BAIKONUR_QA={rockets:{stats:rocketExhibits.stats,whenReady:rocketExhibits.whenReady,chooseTua:tuaRocketControls.choose,setVisible:rocketExhibits.setVisible},knowledge:museumKnowledge.stats,clearance:exhibitClearance.stats,inspectSite110:view=>portalArchive.inspectSite110(view,camera,ctl),site110:()=>site110Root?.userData.site110Model,showOverview,setLabelsVisible,setLayerVisible,menu:museumMenu,inspectUkss,setUkssMockupVisible,inspectKrayniyTerminal,inspectFlankBoundaries(){
  showFlanks();const damping=ctl.enableDamping;ctl.enableDamping=false;ctl.update();
  ctl.target.copy(point(...flankViewCenter));camera.position.copy(ctl.target).add(new THREE.Vector3(0,800*SCENE_SCALE,1380*SCENE_SCALE));
  ctl.update();ctl.enableDamping=damping;camera.updateMatrixWorld(true);updateLabels();
@@ -1711,8 +1822,8 @@ window.__BAIKONUR_QA={showOverview,setLabelsVisible,setLayerVisible,menu:museumM
 },focusSite(id){const index=typeof id==='string'?objects.findIndex(o=>o.record.id===id):id;if(index>=0)focus(index);},siteState(id){const o=objects.find(o=>o.record.id===id);if(!o)return null;return {id,index:objects.indexOf(o),map:[o.record.x,o.record.y],position:o.g.position.toArray(),scale:o.g.scale.toArray(),rotationY:o.g.rotation.y,organisation:o.record.organisation?.org,geoSource:o.record.geoSource,runwaySource:o.record.runwaySource,title:displaySiteName(o),bounds:new THREE.Box3().setFromObject(o.g).getSize(new THREE.Vector3()).toArray()};},focusStation(id){
  const index=cardObjects.findIndex(o=>o.isStation&&o.record.id===id);
  if(index>=0){selectSiteCard(index);focus(index);}
-},focusInterchange,projectWorld(x,y,z){return projectToScreen(new THREE.Vector3(x,y,z))},lighting:lightingEditor,inspectSurface(site,part){if(site==='ukss'){inspectUkss(part==='concrete'?'trench':'tower');return;}const root=padGroup;const target=new THREE.Vector3(0,65,0);const offset=part==='concrete'?new THREE.Vector3(90,65,95):new THREE.Vector3(85,35,-115);root.updateWorldMatrix(true,false);ctl.target.copy(root.localToWorld(target.clone()));camera.position.copy(root.localToWorld(target.add(offset)));ctl.update();camera.updateMatrixWorld(true)},inspectGagarinExcavation(){
- const t=new THREE.Vector3(0,10,-135),p=t.clone().add(new THREE.Vector3(260,170,-180));
+},focusInterchange,projectWorld(x,y,z){return projectToScreen(new THREE.Vector3(x,y,z))},lighting:lightingEditor,inspectSurface(site,part){if(site==='ukss'){inspectUkss(part==='concrete'?'trench':'tower');return;}const root=padGroup;const target=part==='concrete'?new THREE.Vector3(0,18,-12):new THREE.Vector3(0,23,0);const eye=part==='concrete'?new THREE.Vector3(85,52,-120):new THREE.Vector3(70,52,110);root.updateWorldMatrix(true,false);ctl.target.copy(root.localToWorld(target));camera.position.copy(root.localToWorld(eye));ctl.update();camera.updateMatrixWorld(true)},inspectGagarinExcavation(){
+ const t=new THREE.Vector3(0,18,-12),p=new THREE.Vector3(85,52,-120);
  padGroup.updateWorldMatrix(true,false);ctl.target.copy(padGroup.localToWorld(t));camera.position.copy(padGroup.localToWorld(p));ctl.update();camera.updateMatrixWorld(true);updateLabels();
 },inspectSite31(view='duct'){
  const damping=ctl.enableDamping;arrivalFlight.stopFollowing();groundTraffic.stopFollowing();
@@ -1760,7 +1871,9 @@ window.__BAIKONUR_QA={showOverview,setLabelsVisible,setLayerVisible,menu:museumM
  saturnGroup.updateWorldMatrix(true,false);ctl.enableDamping=false;
  ctl.target.copy(saturnGroup.localToWorld(target.clone()));camera.position.copy(saturnGroup.localToWorld(target.add(offset)));
  ctl.update();ctl.enableDamping=true;camera.updateMatrixWorld(true);updateLabels();
-},inspectSaturnRelief(){ctl.target.copy(saturnGroup.localToWorld(new THREE.Vector3(0,-12,0)));camera.position.copy(saturnGroup.localToWorld(new THREE.Vector3(420,390,480)));ctl.update();camera.updateMatrixWorld(true);},inspectMik112:focusMik112,stats(){return{museumRevision:MUSEUM_REVISION,krayniyTerminalView,mapHierarchy:{...mapHierarchy},geography:geography.stats(),eastLightingZone:eastLightingZone.stats(),render:{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles},catalogEntries:catalog.sites.length,catalogAliases:catalog.sites.filter(r=>r.aliasOf).map(r=>({id:r.id,aliasOf:r.aliasOf})),portalArchive:portalArchive.stats(),silos:portalArchive.silos(),terrainVoids:portalVoids.stats(),gagarinGround:{rootY:padGroup.position.y,rimY:padGroup.position.y+GAGARIN_RIM_Y*GAGARIN_SCALE,floorY:padGroup.position.y+.32*GAGARIN_SCALE,groundY:-2.755,railHeadY:padGroup.position.y+(GAGARIN_RIM_Y+1.3)*GAGARIN_SCALE},traffic:groundTraffic.stats(),evening:eveningScene.stats(),arrival:arrivalFlight.stats(),sphericalVessels:objects.flatMap(o=>{const a=[];o.g.traverse(m=>{if(m.userData.sphericalVessel){const v=m.getWorldScale(new THREE.Vector3());a.push(v.toArray());}});return a;}),airports:objects.filter(o=>o.g.userData.airport).map(o=>({id:o.record.id,...o.g.userData.airport,worldLength:o.g.userData.airport.length*o.g.scale.x})),mik112:mik112Exhibit?.stats(),mik112Index,mik112Placement:objects[mik112Index]?[objects[mik112Index].record.x,objects[mik112Index].record.y]:null,mik112Rail:mik112Rail?{connected:mik112Rail.connected,sourceRoute:mik112Rail.sourceRoute,tracks:mik112Rail.tracks,stemSamples:mik112Rail.stemSamples,joinGap:mik112Rail.joinGap,version:mik112Rail.version}:null,uiRevision:'20261031-museum-menu-v1',menu:museumMenu.stats(),labelsVisible,lighting:lightingEditor.stats(),sites:objects.length,stations:stationObjects.length,saturn:saturnGroup.userData.saturnModel,saturnIndex,saturnScale:saturnGroup.scale.x,saturnPlacement:[saturnSite.record.x,saturnSite.record.y],highwaySigns:highwaySigns.stats(),flankCardLayout:flankCards.stats().layout,flankCards:flankCards.stats(),flankCardRects:flanks.filter(f=>f.el.style.display==='flex').map(f=>{const b=f.el.getBoundingClientRect();return {id:f.key,x:b.x,y:b.y,w:b.width,h:b.height}}),cameraMinElevationDeg:30,outerTerrain:outerTerrain.stats(),riverCoverage:riverStats,sceneScale:SCENE_SCALE,modelScale:MODEL_SCALE,transport:transport.stats(),visibleSites:objects.filter(o=>o.g.visible).length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,surfaceMaterials:{gagarin:padGroup.userData.surfaceMaterials,ukss:ukssGroup.userData.surfaceMaterials},gagarin:padGroup.userData.gagarinModel,ukss:ukssGroup.userData.ukssModel,ukssConnections:ukssGroup.userData.ukssConnections,ukssIndex,ukssScale:ukssGroup.scale.x,ukssPlacement:[ukssSite.record.x,ukssSite.record.y],ukssTerrainCutout:groundMaterials.size,ukssCutoutEnabled:ukssCutout.enabled.value,shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(document.getElementById('info').classList.contains('terminal-active')&&document.getElementById('info').style.display==='block')setKrayniyTerminalView(krayniyTerminalView,{collapseDetails:false});else if(mapHierarchy.level==='overview'&&!document.body.classList.contains('following-arrival'))applyOverviewFrame(overviewTopDown);updateLabels()});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100*SCENE_SCALE,780*SCENE_SCALE,Math.sin(angle)*1100*SCENE_SCALE);ctl.target.set(0,0,0)}if(camera.position.y>overviewAltitudeLimit*SCENE_SCALE)camera.position.y=overviewAltitudeLimit*SCENE_SCALE;if(camera.position.y<7*MODEL_SCALE)camera.position.y=7*MODEL_SCALE;arrivalFlight.update(now);groundTraffic.update(now);eveningScene.update(now);ctl.update();constrainMuseumCamera();portalArchive.update(now,camera,ctl.target);updateLabels();portalVoids.update();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;renderer.render(scene,camera)}if(new URLSearchParams(location.search).get('view')==='motovoz')groundTraffic.setFollowing(true);if(new URLSearchParams(location.search).get('view')==='cars')groundTraffic.focusCars();if(new URLSearchParams(location.search).get('view')==='flanks')showFlanks();if(new URLSearchParams(location.search).get('view')==='silo'){const requested=new URLSearchParams(location.search).get('site')||'pad-109';const id=objects.some(o=>o.record.id===requested&&o.archive?.kind==='silo')?requested:'pad-109';focus(objects.findIndex(o=>o.record.id===id));if(new URLSearchParams(location.search).get('detail')==='1')portalArchive.inspectSilo('close',camera,ctl,id);}if(new URLSearchParams(location.search).get('view')==='ukss'){focus(ukssIndex);inspectUkss(new URLSearchParams(location.search).get('detail')||'overview');}if(new URLSearchParams(location.search).get('view')==='krayniy')inspectKrayniyTerminal(new URLSearchParams(location.search).get('detail')||'airside');if(new URLSearchParams(location.search).get('view')==='mzk'){focus(objects.findIndex(o=>o.record.id==='pad-112a'));const detail=new URLSearchParams(location.search).get('detail');if(['mzk','sdi'].includes(detail))portalArchive.inspectMzkSdi(detail,camera,ctl);}if(new URLSearchParams(location.search).get('view')==='hotel')focus(objects.findIndex(o=>o.record.id==='pad-75'));if(new URLSearchParams(location.search).get('view')==='site41')focus(objects.findIndex(o=>o.record.id==='pad-41'));if(new URLSearchParams(location.search).get('view')==='mriya'){const i=objects.findIndex(o=>o.record.id==='pad-251');if(i>=0){focus(i);document.querySelector('#airportViews button:last-child')?.click();document.getElementById('info').style.display='none';}}animate();startup.ready();
+},inspectSaturnRelief(){ctl.target.copy(saturnGroup.localToWorld(new THREE.Vector3(0,-12,0)));camera.position.copy(saturnGroup.localToWorld(new THREE.Vector3(420,390,480)));ctl.update();camera.updateMatrixWorld(true);},inspectMik112:focusMik112,stats(){return{museumRevision:MUSEUM_REVISION,rockets:rocketExhibits.stats(),knowledge:museumKnowledge.stats(),clearance:exhibitClearance.stats(),commonMetre:MUSEUM_METRE,krayniyTerminalView,mapHierarchy:{...mapHierarchy},geography:geography.stats(),eastLightingZone:eastLightingZone.stats(),render:{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles},catalogEntries:catalog.sites.length,catalogAliases:catalog.sites.filter(r=>r.aliasOf).map(r=>({id:r.id,aliasOf:r.aliasOf})),portalArchive:portalArchive.stats(),silos:portalArchive.silos(),terrainVoids:portalVoids.stats(),gagarinGround:{rootY:padGroup.position.y,rimY:padGroup.position.y+GAGARIN_RIM_Y*GAGARIN_SCALE,floorY:padGroup.position.y+padGroup.userData.gagarinModel.terrainDatum.channelFloorY*GAGARIN_SCALE,groundY:-2.755,railHeadY:padGroup.position.y+GAGARIN_RAIL_PORT[1]*GAGARIN_SCALE},traffic:groundTraffic.stats(),evening:eveningScene.stats(),arrival:arrivalFlight.stats(),sphericalVessels:objects.flatMap(o=>{const a=[];o.g.traverse(m=>{if(m.userData.sphericalVessel){const v=m.getWorldScale(new THREE.Vector3());a.push(v.toArray());}});return a;}),airports:objects.filter(o=>o.g.userData.airport).map(o=>({id:o.record.id,...o.g.userData.airport,worldLength:o.g.userData.airport.length*o.g.scale.x})),mik112:mik112Exhibit?.stats(),mik112Index,mik112Placement:objects[mik112Index]?[objects[mik112Index].record.x,objects[mik112Index].record.y]:null,mik112Rail:mik112Rail?{connected:mik112Rail.connected,sourceRoute:mik112Rail.sourceRoute,tracks:mik112Rail.tracks,stemSamples:mik112Rail.stemSamples,joinGap:mik112Rail.joinGap,version:mik112Rail.version}:null,uiRevision:MUSEUM_REVISION,menu:museumMenu.stats(),labelsVisible,lighting:lightingEditor.stats(),sites:objects.length,stations:stationObjects.length,saturn:saturnGroup.userData.saturnModel,saturnIndex,saturnScale:saturnGroup.scale.x,saturnPlacement:[saturnSite.record.x,saturnSite.record.y],highwaySigns:highwaySigns.stats(),flankCardLayout:flankCards.stats().layout,flankCards:flankCards.stats(),flankCardRects:flanks.filter(f=>f.el.style.display==='flex').map(f=>{const b=f.el.getBoundingClientRect();return {id:f.key,x:b.x,y:b.y,w:b.width,h:b.height}}),cameraMinElevationDeg:30,outerTerrain:outerTerrain.stats(),riverCoverage:riverStats,sceneScale:SCENE_SCALE,modelScale:MODEL_SCALE,transport:transport.stats(),visibleSites:objects.filter(o=>o.g.visible).length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,surfaceMaterials:{gagarin:padGroup.userData.surfaceMaterials,ukss:ukssGroup.userData.surfaceMaterials},gagarin:padGroup.userData.gagarinModel,ukss:ukssGroup.userData.ukssModel,ukssConnections:ukssGroup.userData.ukssConnections,ukssIndex,ukssScale:ukssGroup.scale.x,ukssPlacement:[ukssSite.record.x,ukssSite.record.y],ukssTerrainCutout:groundMaterials.size,ukssCutoutEnabled:ukssCutout.enabled.value,shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:scene.userData.terrainStyle,terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(document.getElementById('info').classList.contains('terminal-active')&&document.getElementById('info').style.display==='block')setKrayniyTerminalView(krayniyTerminalView,{collapseDetails:false});else if(mapHierarchy.level==='overview'&&!document.body.classList.contains('following-arrival'))applyOverviewFrame(overviewTopDown);updateLabels()});function animate(){requestAnimationFrame(animate);const now=performance.now();moveCamera((now-lastFrame)/1000);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100*SCENE_SCALE,780*SCENE_SCALE,Math.sin(angle)*1100*SCENE_SCALE);ctl.target.set(0,0,0)}if(camera.position.y>overviewAltitudeLimit*SCENE_SCALE)camera.position.y=overviewAltitudeLimit*SCENE_SCALE;if(camera.position.y<CAMERA_MIN_Y)camera.position.y=CAMERA_MIN_Y;arrivalFlight.update(now);groundTraffic.update(now);eveningScene.update(now);ctl.update();constrainMuseumCamera();portalArchive.update(now,camera,ctl.target);updateLabels();portalVoids.update();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;renderer.render(scene,camera)}if(new URLSearchParams(location.search).get('view')==='motovoz')groundTraffic.setFollowing(true);if(new URLSearchParams(location.search).get('view')==='cars')groundTraffic.focusCars();if(new URLSearchParams(location.search).get('view')==='flanks')showFlanks();if(new URLSearchParams(location.search).get('view')==='silo'){const requested=new URLSearchParams(location.search).get('site')||'pad-109';const id=objects.some(o=>o.record.id===requested&&o.archive?.kind==='silo')?requested:'pad-109';focus(objects.findIndex(o=>o.record.id===id));if(new URLSearchParams(location.search).get('detail')==='1')portalArchive.inspectSilo('close',camera,ctl,id);}if(new URLSearchParams(location.search).get('view')==='ukss'){focus(ukssIndex);inspectUkss(new URLSearchParams(location.search).get('detail')||'overview');}if(new URLSearchParams(location.search).get('view')==='krayniy')inspectKrayniyTerminal(new URLSearchParams(location.search).get('detail')||'airside');if(new URLSearchParams(location.search).get('view')==='mzk'){focus(objects.findIndex(o=>o.record.id==='pad-112a'));const detail=new URLSearchParams(location.search).get('detail');if(['mzk','sdi'].includes(detail))portalArchive.inspectMzkSdi(detail,camera,ctl);}if(new URLSearchParams(location.search).get('view')==='hotel')focus(objects.findIndex(o=>o.record.id==='pad-75'));if(new URLSearchParams(location.search).get('view')==='site41')focus(objects.findIndex(o=>o.record.id==='pad-41'));if(new URLSearchParams(location.search).get('view')==='mriya'){const i=objects.findIndex(o=>o.record.id==='pad-251');if(i>=0){focus(i);document.querySelector('#airportViews button:last-child')?.click();document.getElementById('info').style.display='none';}}if(new URLSearchParams(location.search).get('view')==='site110'){openMenuSite('pad-110');portalArchive.inspectSite110(new URLSearchParams(location.search).get('detail')||'left',camera,ctl);}
+if(new URLSearchParams(location.search).get('view')==='tua'){openMenuSite('pad-112');focusMik112('tua');showRocketKnowledge('tua','pad-112',false);}
+animate();startup.ready();
 }catch(err){window.__MUSEUM_STARTUP?.fail(err);document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}
 </script></body></html>
 

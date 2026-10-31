@@ -1,5 +1,5 @@
 {
-  "version": "tua-macro-v1",
+  "version": "tua-detailed-metric-v2",
   "sourceSha256": "304c2317d335a4787d3748fb4e52ae8f537e48e04cf63057e4374f975b6a650e",
   "recoverySha256": "1105ff79202b2b42e86cc3150e41e2d4d01667d0b6ae25a72283aabea43c065a",
   "selection": {
@@ -5729,7 +5729,7 @@
     35001
   ],
   "normalization": {
-    "uniformScale": 1.1400000000000001,
+    "uniformScale": 1,
     "physicalOrigin": [
       -0.0014610663056373596,
       -14.5,
@@ -5742,45 +5742,45 @@
     },
     "rawGlbToPhysicalRotationX": 1.5707963267948966,
     "rawGlbToLocalMatrixColumnMajor": [
-      1.1400000000000001,
+      1.0,
       0.0,
       0.0,
       0.0,
       0.0,
       0.0,
-      1.1400000000000001,
+      1.0,
       0.0,
       0.0,
-      -1.1400000000000001,
+      -1.0,
       0.0,
       0.0,
-      0.00166561558842659,
-      16.53,
-      -29.070000813398305,
+      0.0014610663056373596,
+      14.5,
+      -25.500000713507283,
       1.0
     ],
-    "formula": "local = 1.14 * ([rawGlb.x, -rawGlb.z, rawGlb.y] - physicalOrigin)",
+    "formula": "local metres = [rawGlb.x, -rawGlb.z, rawGlb.y] - physicalOrigin; one uniform metre scale",
     "localRailHeadY": 0,
     "actualLocalBounds": {
       "min": [
-        -14.419333949536087,
-        -0.14021474018096902,
-        -35.400420452922354
+        -12.648538552224636,
+        -0.12299538612365703,
+        -31.05300039730031
       ],
       "max": [
-        14.422666267901661,
-        22.025534069134498,
-        34.38482689023313
+        12.651461638510227,
+        19.320643920293417,
+        30.16212885108169
       ],
       "size": [
-        28.84200021743775,
-        22.165748809315467,
-        69.78524734315548
+        25.300000190734867,
+        19.443639306417076,
+        61.21512924838199
       ],
       "center": [
-        0.0016661591827871192,
-        10.942659664476764,
-        -0.5077967813446129
+        0.0014615431427957184,
+        9.59882426708488,
+        -0.44543577310930954
       ]
     },
     "placements": [
@@ -5803,24 +5803,24 @@
     ],
     "actualPairBoundsMikLocal": {
       "min": [
-        -85.42266626790166,
-        4.1647852598190305,
-        -217.38482689023311
+        -83.65146163851023,
+        4.182004613876343,
+        -213.1621288510817
       ],
       "max": [
-        -4.580666050463913,
-        26.330534069134497,
-        -147.59957954707764
+        -6.351461447775364,
+        23.625643920293417,
+        -151.9469996026997
       ],
       "size": [
-        80.84200021743774,
-        22.165748809315467,
-        69.78524734315548
+        77.30000019073486,
+        19.443639306417076,
+        61.215129248382
       ],
       "center": [
-        -45.00166615918279,
-        15.247659664476764,
-        -182.4922032186554
+        -45.001461543142796,
+        13.903824267084879,
+        -182.5545642268907
       ]
     },
     "cameraMikLocal": {
@@ -5834,6 +5834,31 @@
         91,
         -300
       ]
+    },
+    "physicalUnits": "metres",
+    "sourceReferenceDimensionsM": {
+      "length": 56.3,
+      "width": 29.5,
+      "height": 21.2,
+      "doubleTrackCentreDistance": 20,
+      "railGaugeNominal": 1.524,
+      "source": "https://www.buran.ru/htm/transp.htm",
+      "configurationNote": "Published reference envelope and authored articulated pose differ. The native pose is preserved without independently changing X/Y/Z."
+    },
+    "rocketMount": {
+      "position": [
+        0,
+        15.360346674919128,
+        -26.070907000532472
+      ],
+      "rotationX": 1.5707963267948966,
+      "rocketLongitudinalAxis": "+Y",
+      "transporterLongitudinalAxis": "+Z",
+      "units": "metres",
+      "source": "Recovered payload MaketC centre axis and complete source payload aft bound",
+      "sourceCoreAxisY": 15.360346674919128,
+      "sourcePayloadLength": 58.78759253581177,
+      "museumDisplayOnly": true
     }
   },
   "runningGear": {
@@ -5849,10 +5874,10 @@
       10.8134698495
     ],
     "sourceWheelCentreGauge": 1.6298618316000013,
-    "localWheelCentreGauge": 1.8580424880240016,
+    "localWheelCentreGauge": 1.6298618316000013,
     "localTrackCentreAxesX": [
-      -11.4,
-      11.4
+      -10,
+      10
     ],
     "sourceWheelRadius": 0.5,
     "sourceWheelThickness": 0.08,
@@ -5888,35 +5913,35 @@
     },
     "localWheelBounds": {
       "min": [
-        -12.374621335850295,
-        -0.14021474018096902,
-        -30.743921912107414
+        -10.854930996359906,
+        -0.12299538612365703,
+        -26.968352554480184
       ],
       "max": [
-        12.374621335850295,
-        0.9997863578796388,
-        30.743921926965772
+        10.854930996359906,
+        0.8770055770874023,
+        26.968352567513833
       ],
       "size": [
-        24.74924267170059,
-        1.140001098060608,
-        61.487843839073186
+        21.709861992719812,
+        1.0000009632110594,
+        53.93670512199402
       ],
       "center": [
         0.0,
-        0.42978580884933487,
-        7.429179049722734e-09
+        0.37700509548187267,
+        6.516823727826959e-09
       ]
     },
     "wheelCentreZRangeMikLocal": [
-      -213.17392191410065,
-      -152.82607808589935
+      -209.46835255622864,
+      -156.53164744377136
     ],
     "wheelSurfaceZRangeMikLocal": [
-      -213.74392192696578,
-      -152.25607808789258
+      -209.96835256751385,
+      -156.0316474455198
     ],
-    "wheelBottomYMikLocal": 4.1647852598190305,
+    "wheelBottomYMikLocal": 4.182004613876343,
     "sourceRailHeadY": -14.5,
     "sourceRailGaugeApprox": 1.5999996662139893,
     "roles": {
@@ -6590,20 +6615,20 @@
         "LightBlackMetal": 6144
       }
     },
-    "visibility": "The original long side casings overhang wheels by roughly1.6source units. Elevated views hide the running gear; lower side views reveal all repeated bogies. No wheels are in excluded locomotive subtrees.",
-    "contact": "Retain the source rail-head relation: flange vertices extend .122995source below the head. Place local headY0 at MIK Y4.305; do not lift by the minimum wheel bound."
+    "visibility": "The original long side casings overhang wheels by roughly 1.6 source metres. Elevated views hide the running gear; lower side views reveal all repeated bogies. No wheels are in excluded locomotive subtrees.",
+    "contact": "The source rail-head datum remains Y=0 at MIK Y=4.305 m. Wheel flanges extend 0.122995 m below the head as authored. Source wheel-centre gauge is retained; no nonuniform squeeze to nominal railway gauge."
   },
   "railAdaptation": {
     "oldGauge": 4.1853333333333325,
-    "runningGauge": 1.8580424880240016,
+    "runningGauge": 1.6298618316000013,
     "railHeadYMikLocal": 4.305,
     "portZ": -258.5,
     "existingFarEndZ": -5.5,
     "trackCentreAxesMikLocalX": [
-      -82.4,
-      -59.6,
-      -30.4,
-      -7.6
+      -81,
+      -61,
+      -29,
+      -9
     ],
     "gaugeStationsMikLocal": [
       [
@@ -6616,11 +6641,11 @@
       ],
       [
         -218,
-        1.8580424880240016
+        1.6298618316000013
       ],
       [
         -148,
-        1.8580424880240016
+        1.6298618316000013
       ],
       [
         -128,
@@ -6631,11 +6656,18 @@
         4.1853333333333325
       ]
     ],
-    "curve": "Smooth monotone easing of half-gauge over each20unit transition; track centre axes and both external ports unchanged.",
-    "minimumWheelEdgeToTransitionClearance": 4.256078073034217,
+    "curve": "Smooth gauge and track-centre transitions over two 20 m approaches. Running-track axes are 20 m apart per source; all four external network endpoints remain fixed.",
+    "minimumWheelEdgeToTransitionClearance": 8.031647432486153,
     "conservativeBuildingFaceZ": -123,
-    "conservativeVehicleToBuildingClearance": 24.59957954707764,
-    "interVehicleGap": 23.157999782562253
+    "conservativeVehicleToBuildingClearance": 28.94699960269969,
+    "interVehicleGap": 26.699999809265133,
+    "entryTrackCentreAxesMikLocalX": [
+      -82.4,
+      -59.6,
+      -30.4,
+      -7.6
+    ]
   },
-  "rule": "Remove only the 920 reviewed thin .03-source-unit splines. Keep all major frames, articulated forks, hydraulic mechanisms, holes, and all 320 running-gear parts. Preserve authored transport configuration under a single uniform scale."
+  "rule": "Retain all 2351 selected vehicle meshes, including the 920 reviewed narrow handrails, ladders and walkway outlines, for the requested detailed view. Keep complete perforated frames, articulated forks, hydraulic mechanisms and all 320 running-gear parts. Exclude the source payload, locomotives and their rails by reviewed hierarchy. Join by material and compress geometry; use source metres without nonuniform resizing.",
+  "defaultDetailProfile": "full"
 }

@@ -1,12 +1,13 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
+import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 
 // The imported tracks keep their authored spacing. These short museum adapters
 // meet the existing network sockets without stretching the source structures.
 export function buildUkssConnections(root,source){
  if(!source?.railSourceEndpoints?.length)return {connected:false};
  const group=new THREE.Group();group.name='УКСС · стыки с дорогами музея';root.add(group);
- const scale=.21,networkGauge=RAIL_PROFILE.gauge/scale;
+ const scale=MUSEUM_METRE,networkGauge=RAIL_PROFILE.gauge/scale;
  const railMaterial=new THREE.MeshStandardMaterial({color:0x5d625f,metalness:.62,roughness:.61,side:THREE.DoubleSide});
  const ballastMaterial=new THREE.MeshStandardMaterial({color:0x948a77,roughness:1,side:THREE.DoubleSide});
  const sleeperMaterial=new THREE.MeshStandardMaterial({color:0x716d60,roughness:1});
@@ -36,7 +37,7 @@ export function buildUkssConnections(root,source){
   const transition=t=>t*t*(3-2*t),gauge=t=>mix(sourceGauge,networkGauge,transition(t));
   const depth=t=>mix(Math.max(.01,start.y-.01),(RAIL_PROFILE.headY+RAIL_PROFILE.headRadius-.01)/scale,transition(t));
   ribbon(samples,t=>mix(sourceGauge+1.4,RAIL_PROFILE.ballastWidth/scale,transition(t)),t=>-depth(t),()=>0,ballastMaterial,'УКСС · балласт перехода');
-  for(const side of [-1,1])ribbon(samples,t=>mix(.107832*0.687885342706393,RAIL_PROFILE.bodyWidth/scale,transition(t)),()=>0,t=>side*gauge(t)/2,railMaterial,'УКСС · непрерывный рельс');
+  for(const side of [-1,1])ribbon(samples,t=>mix(.107832,RAIL_PROFILE.bodyWidth/scale,transition(t)),()=>0,t=>side*gauge(t)/2,railMaterial,'УКСС · непрерывный рельс');
   const length=curve.getLength();
   for(let d=2;d<length-1;d+=3.3){
    const t=curve.getUtoTmapping(d/length),p=curve.getPoint(t),dir=curve.getTangent(t),height=mix(.018,RAIL_PROFILE.sleeperHeight/scale,transition(t));
@@ -49,9 +50,10 @@ export function buildUkssConnections(root,source){
  // The service approach stays west of the transport tracks and joins the
  // western toe of the actual concrete platform (source ChamferBox09 #25196).
  // Its chamfer is near grade here, so the approach does not float above it.
- const roadStart=V(...source.museumRoadSocket),roadEnd=V(-29.7,.0539054715,78);
- const roadCurve=new THREE.CubicBezierCurve3(roadStart,V(-40,.2,111),V(-40,.0539054715,78),roadEnd),roadSamples=sample(roadCurve,64);
+ const legacyToMetres=1/.687885342706393;
+ const roadStart=V(...source.museumRoadSocket),roadEnd=V(-29.7,.0539054715,78).multiplyScalar(legacyToMetres);
+ const roadCurve=new THREE.CubicBezierCurve3(roadStart,V(-40,.2,111).multiplyScalar(legacyToMetres),V(-40,.0539054715,78).multiplyScalar(legacyToMetres),roadEnd),roadSamples=sample(roadCurve,64);
  ribbon(roadSamples,()=>2.2/scale,()=>-.045,()=>0,shoulderMaterial,'УКСС · обочина подъезда');
  ribbon(roadSamples,()=>1.8/scale,()=>0,()=>0,roadMaterial,'УКСС · подъезд к площадке');
- return {version:'ukss-source-connections-v1',connected:true,railTracks:reports,road:{socket:source.museumRoadSocket,endpoint:roadEnd.toArray(),sourcePlatformId:25196,gap:0,width:1.8/scale},sourceGeometryStretched:false};
+ return {version:'ukss-source-connections-v2',connected:true,railTracks:reports,road:{socket:source.museumRoadSocket,endpoint:roadEnd.toArray(),sourcePlatformId:25196,gap:0,width:1.8/scale},sourceGeometryStretched:false};
 }

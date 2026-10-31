@@ -1,0 +1,117 @@
+{
+  "version": "rocket-exhibits-v1",
+  "id": "energia-m",
+  "source": {
+    "sourceFile": "Energia_M.bdf",
+    "sourceSha256": "300dfd64ef1e36826fa38c7a17e7a54b1fa9a9b317f8b2c2db29f9c2560cfba7",
+    "sourceBytes": 2268169,
+    "sourceMeshCount": 641,
+    "selectedMeshCount": 641,
+    "sourceTriangles": 118278,
+    "selectedTriangles": 116474,
+    "discardedInvalidTriangles": 0,
+    "discardedDegenerateTriangles": 1804,
+    "selectedLayers": [
+      "1_Ступень",
+      "2_Ступень",
+      "default",
+      "Разъемы"
+    ],
+    "omittedLayers": [],
+    "sourceUnitMetres": 0.001,
+    "sourceUp": "+Y",
+    "layers": {
+      "1_Ступень": 39300,
+      "2_Ступень": 70686,
+      "Разъемы": 6488
+    },
+    "bounds": {
+      "min": [
+        -8.17348337173462,
+        0,
+        -4.059507846832275
+      ],
+      "max": [
+        8.17348337173462,
+        50.25673866271973,
+        4.059507846832275
+      ],
+      "size": [
+        16.34696674346924,
+        50.25673866271973,
+        8.11901569366455
+      ]
+    },
+    "originMetres": [
+      -0.012926578521728516,
+      -24.521318435668945,
+      -0.15304040908813477
+    ],
+    "rawBytes": 10928068,
+    "materials": 26,
+    "textures": 10
+  },
+  "assetSha256": "6fae84550565e25f732b3507d6e421933469daee10577e3daeff6b9efc57d9a4",
+  "recoverySha256": "ca12ebf0061ce984d8d2b8dea013692c7bbc1462b3d9cc4fa1b86bce3e2f175b",
+  "assetStats": {
+    "bytes": 411652,
+    "triangles": 19840,
+    "vertices": 26344,
+    "primitives": 11,
+    "materials": 11,
+    "textures": 10
+  },
+  "optimization": {
+    "maximumSurfaceErrorMetres": 0.02,
+    "tinyComponentMaximumDimensionMetres": 0.08,
+    "targetRatio": 0.08,
+    "normalCreaseAngleDegrees": 45,
+    "removedTinyComponents": 316,
+    "removedTinyTriangles": 5376,
+    "simplifiedPrimitives": 342,
+    "trianglesRemovedBySimplification": 91258
+  },
+  "layerStats": {
+    "1_Ступень": 6536,
+    "2_Ступень": 12030,
+    "Разъемы": 1274
+  },
+  "bounds": {
+    "min": [
+      -8.163193678046058,
+      0.004996476605751421,
+      -4.059360536631257
+    ],
+    "max": [
+      8.163193678046058,
+      50.256736755371094,
+      4.059360536631257
+    ],
+    "size": [
+      16.326387356092116,
+      50.25174027876534,
+      8.118721073262513
+    ]
+  },
+  "normalization": {
+    "unit": "metre",
+    "up": "+Y",
+    "baseY": 0,
+    "uniformSourceUnitMetres": 0.001,
+    "originMetres": [
+      -0.012926578521728516,
+      -24.521318435668945,
+      -0.15304040908813477
+    ]
+  },
+  "attribution": {
+    "archive": "http://www.buran.ru/htm/3d-model.htm",
+    "providedBy": "Project owner / Google Drive",
+    "authors": [
+      "Михаил Павлов"
+    ],
+    "sourceUrl": "http://buran.ru/htm/3d-model.htm",
+    "driveUrl": "https://drive.google.com/file/d/1zsiqcOST0YZOPX5cmNPq6E6ILWccBwAx/view",
+    "licenseNote": "Авторская модель из архива buran.ru; файл предоставлен владельцем проекта. Открытая лицензия не заявляется."
+  }
+}

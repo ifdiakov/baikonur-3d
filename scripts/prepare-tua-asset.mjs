@@ -16,7 +16,7 @@ const {ALL_EXTENSIONS}=await dependency('@gltf-transform/extensions','dist/index
 const {join,weld,prune,meshopt,transformMesh}=await dependency('@gltf-transform/functions','dist/index.js');
 const {MeshoptEncoder,MeshoptDecoder}=await dependency('meshoptimizer','index.module.js');
 await Promise.all([MeshoptEncoder.ready,MeshoptDecoder.ready]);
-const detail=args.detail||'macro';assert.ok(['full','macro'].includes(detail));
+const detail=args.detail||'full';assert.ok(['full','macro'].includes(detail));
 const policy=JSON.parse(await readFile(new URL('./tua-detail-policy.json',import.meta.url),'utf8'));
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 const bytes=await readFile(args.source);
@@ -101,7 +101,7 @@ await doc.transform(meshopt({encoder:MeshoptEncoder,level:'high',quantizePositio
 for(const node of root.listNodes())node.setExtras({});
 for(const mesh of root.listMeshes())mesh.setName('ТУА · конструкции по исходной модели').setExtras({});
 const scene=root.getDefaultScene()||root.listScenes()[0];scene.setName('ТУА «Кузнечик»');
-scene.setExtras({museumAsset:'tua-drive-model-v1',sourceFile:'Transporter_railroad_assambly.MAX'});
+scene.setExtras({museumAsset:'tua-drive-model-v2',sourceFile:'Transporter_railroad_assambly.MAX'});
 const binary=await io.writeBinary(doc),decoded=await io.readBinary(binary);
 const bounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};
 let triangles=0,primitives=0,vertices=0;const materialTriangles={};
@@ -123,17 +123,20 @@ for(const edge of ['min','max'])for(let i=0;i<3;i++)assert.ok(Math.abs(bounds[ed
 const normalization={uniformScale:policy.normalization.uniformScale,physicalOrigin:policy.normalization.physicalOrigin,
  sourcePhysicalAxes:policy.normalization.sourcePhysicalAxes,rawGlbToPhysicalRotationX:Math.PI/2,
  rawGlbToLocalMatrixColumnMajor:policy.normalization.rawGlbToLocalMatrixColumnMajor,localRailHeadY:0,outerMuseumScale:.14,outerMuseumYaw:-Math.PI/4,
- configuration:'Authored transport pose, no articulation or nonuniform resizing'};
+ physicalUnits:policy.normalization.physicalUnits,sourceReferenceDimensionsM:policy.normalization.sourceReferenceDimensionsM,
+ rocketMount:policy.normalization.rocketMount,
+ configuration:'Authored transport pose in metres, no articulation or nonuniform resizing'};
 const runningGear={...policy.runningGear,retainedSourceIDs:retainedProtectedIds.sort((a,b)=>a-b),retainedPartCount:retainedProtectedIds.length,retainedTriangleCount:protectedTriangles};
 const manifest={
- version:'tua-drive-model-v1',sourceFile:'Transporter_railroad_assambly.MAX',
+ version:'tua-drive-model-v2',sourceFile:'Transporter_railroad_assambly.MAX',
  sourceUrl:'https://drive.google.com/file/d/1wL_XlKyqexMrNoVIp90y0CNcVMkVC5In/view',
  sourceSha256:policy.sourceSha256,recoverySha256:RAW_SHA,assetSha256:hash(binary),bounds,
  sourceStats:{originalNodeCount:2786,recoveredNodeCount:2786,sourceTriangles:137269,sourceMaterials:20,
   selectedNodeCount:2364,selectedMeshCount:selectedMeshes,selectedTriangles,excludedAssemblyTriangles:137269-selectedTriangles,
   retainedSourceMeshCount:retainedIds.length,retainedTriangles:triangles,textures:0},
  assetStats:{bytes:binary.byteLength,triangles,primitives,vertices,materials:decoded.getRoot().listMaterials().length,textures:0,materialTriangles},
- optimization:{profile:detail,removedFineObjects,removedFineTriangles,fineSplineSourceDiameter:.03,fineSplineLocalDiameter:.0342,
+ optimization:{profile:detail,removedFineObjects,removedFineTriangles,retainedFineObjects:fine.size-removedFineObjects,
+  retainedFineTriangles:45856-removedFineTriangles,fineSplineSourceDiameter:.03,fineSplineLocalDiameter:.03*policy.normalization.uniformScale,
   protectedRunningGearCount:320,protectedRunningGearTriangles:10432,retainedLargerSplines:46,retainedSourceMeshCount:retainedIds.length,
   decimatedTriangles:0,maximumSurfaceErrorLocal:0,fullReference:{triangles:93800,bytes:542380},
   excludedAssemblies:policy.selection.excludedSubtrees,
@@ -144,10 +147,11 @@ const manifest={
   compression:'EXT_meshopt_compression',positionBits:16,normalBits:12,decimation:false,externalResources:false},
  materialAdaptation:{unassignedSourceParts:assigned,palette:'Muted grey-green steel and weathered yellow forks, based on current Drive photographs; original material roles preserved'},
  notes:['One shared asset supplies the two independent museum placements.','Source payload, locomotives and source rails are excluded by reviewed source hierarchy; the complete recovery is preserved separately.',
-  'All 320 running-gear parts and all major assemblies retain their source geometry.','Only 920 reviewed thin renderable splines are removed in the macro profile.',
+  'All 320 running-gear parts and all major assemblies retain their source geometry.',
+  detail==='full'?'All 920 reviewed thin spline objects are retained: the railings, ladders and walkway edges remain visible in the detailed model.':'Only 920 reviewed thin renderable splines are removed in the optional macro profile.',
   'Source rail-head height establishes grade; wheel flanges remain below the head as authored.','No textures or external resource dependencies.']
 };
 await mkdir(args.output,{recursive:true});
-await writeFile(resolve(args.output,'model-v1.glb'),binary);
-await writeFile(resolve(args.output,'manifest-v1.json'),JSON.stringify(manifest,null,2)+'\n');
+await writeFile(resolve(args.output,'model-v2.glb'),binary);
+await writeFile(resolve(args.output,'manifest-v2.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log(JSON.stringify({assetStats:manifest.assetStats,bounds,assetSha256:manifest.assetSha256,removedFineObjects,removedFineTriangles},null,2));

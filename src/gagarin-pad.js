@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 import {createSurfacePalette} from './surface-materials.js';
+import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
+import {GAGARIN_LEGACY_METRE,GAGARIN_LEGACY_RIM_Y,GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_PHYSICAL_RAIL_GAUGE,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
+export {GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
 
 /**
  * GAGARIN'S START — SITE 1, launch position 5
@@ -16,15 +20,22 @@ import {createSurfacePalette} from './surface-materials.js';
  * Local coordinate frame:
  *  +Z = incoming rail / west
  *  -Z = widening flame duct / east
- *  Y = elevation, with launch deck around y=18
+ *  Y = physical elevation in metres, terrain at y=0.
+ * The retained construction below uses old drawing coordinates (rim18.1)
+ * inside one uniformly converted subgroup; the public root uses metres.
  * Parent rotation -PI/2 maps local -Z to global +X (east).
  * Schematized positions/sizes; do not treat as a surveyed facility.
  */
 
 // GAGARIN_GROUND_DATUM: the rim is terrain level; the channel stays below it.
-export const GAGARIN_RIM_Y=18.1;
 export function buildGagarinPad(root) {
-  root.name='Пл. 1 — Гагаринский старт / Фотографическая реконструкция 3.2';
+  const metricRoot=root,legacyRoot=new THREE.Group();
+  legacyRoot.name='Гагаринский старт · фотографическая архитектура в метрах';
+  legacyRoot.userData.metricArchitecture='gagarin';
+  legacyRoot.scale.setScalar(GAGARIN_LEGACY_METRE);
+  legacyRoot.position.y=-GAGARIN_LEGACY_RIM_Y*GAGARIN_LEGACY_METRE;
+  metricRoot.add(legacyRoot);root=legacyRoot;
+  root.name='Пл. 1 — Гагаринский старт / Метрическая фотографическая реконструкция';
   const colors={
     concrete:0x9d9c94, oldConcrete:0x817f76, paleConcrete:0xc0b9ac,
     cutFace:0x756e64, soot:0x44403a, duct:0x4e473e,
@@ -59,13 +70,13 @@ export function buildGagarinPad(root) {
   function mark(name){if(name)features[name]=(features[name]||0)+1;primitiveCount++}
   const atGrade=new Set(['western-forecourt','ballast-bed','rail-approach','rail-sleepers','service-road','duct-perimeter-road','lighting-tower','lighting-tower-bracing','lighting-array-head','floodlight-array','lightning-mast','lightning-mast-tip','utility-building','utility-roof','utility-door','utility-window']);
   function block(x,y,z,w,h,d,material,name,rotate=0) {
-    if(atGrade.has(name))y+=GAGARIN_RIM_Y;
+    if(atGrade.has(name))y+=GAGARIN_LEGACY_RIM_Y;
     tmpQuat.setFromAxisAngle(up,rotate);tmpS.set(w,h,d);
     tmpM.compose(tmpP.set(x,y,z),tmpQuat,tmpS);
     bucket(material,'box').matrices.push(tmpM.clone());mark(name);
   }
   function bar(a,b,r,material,name){
-    if(atGrade.has(name)){a=[a[0],a[1]+GAGARIN_RIM_Y,a[2]];b=[b[0],b[1]+GAGARIN_RIM_Y,b[2]];}
+    if(atGrade.has(name)){a=[a[0],a[1]+GAGARIN_LEGACY_RIM_Y,a[2]];b=[b[0],b[1]+GAGARIN_LEGACY_RIM_Y,b[2]];}
     tmpP.set(a[0],a[1],a[2]);tmpQ.set(b[0],b[1],b[2]);
     const dir=tmpQ.clone().sub(tmpP),dist=dir.length();
     if(dist<.001)return;
@@ -76,7 +87,7 @@ export function buildGagarinPad(root) {
   }
   function direct(mesh,material,key,parent=root) {
     mesh.material=mats[material];mesh.userData.museumComponent=key;
-    if(atGrade.has(key))mesh.position.y+=GAGARIN_RIM_Y;
+    if(atGrade.has(key))mesh.position.y+=GAGARIN_LEGACY_RIM_Y;
     mesh.receiveShadow=true;parent.add(mesh);mark(key);renderMeshCount++;return mesh;
   }
   function surface(points,y,material,key){
@@ -134,12 +145,22 @@ export function buildGagarinPad(root) {
   // 01 / WEST RAIL AXIS — separate bridge approach, track ballast,
   // two low side utility yards with blue-roofed service buildings.
   surface([[-43,140],[43,140],[56,85],[45,15],[-45,15],[-57,86]],.12,'oldConcrete','western-forecourt');
-  surface([[-10,17],[10,17],[10,171],[-10,171]],.24,'soil','ballast-bed');
-  for(const x of [-3.65,3.65]){
-    block(x,1.0,90,.77,.42,159,'rail','rail-approach');
-    bar([x,1.3,11],[x,1.3,172],.33,'rail','rail-approach');
+  // Physical 1.52m running gauge near the start. A short museum adapter
+  // widens towards the unchanged network gauge at the external rail socket.
+  const railAt=z=>{const t=THREE.MathUtils.smoothstep(z,65,GAGARIN_RAIL_PORT[2]);return{
+    gauge:THREE.MathUtils.lerp(GAGARIN_PHYSICAL_RAIL_GAUGE,RAIL_PROFILE.gauge/MUSEUM_METRE,t),
+    y:THREE.MathUtils.lerp(.30,GAGARIN_RAIL_PORT[1],t),
+    radius:THREE.MathUtils.lerp(.045,RAIL_PROFILE.headRadius/MUSEUM_METRE,t),
+    sleeper:THREE.MathUtils.lerp(2.6,RAIL_PROFILE.sleeperLength/MUSEUM_METRE,t)
+  };};
+  const railSamples=Array.from({length:81},(_,i)=>5.5+(GAGARIN_RAIL_PORT[2]-5.5)*i/80);
+  const ballast=[...railSamples.map(z=>[-(railAt(z).gauge+1.5)/2/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE]),...railSamples.slice().reverse().map(z=>[(railAt(z).gauge+1.5)/2/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE])];
+  surface(ballast,.08/GAGARIN_LEGACY_METRE,'soil','ballast-bed');
+  for(let i=1;i<railSamples.length;i++)for(const side of [-1,1]){
+    const a=railSamples[i-1],b=railSamples[i],pa=railAt(a),pb=railAt(b);
+    bar([side*pa.gauge/2/GAGARIN_LEGACY_METRE,pa.y/GAGARIN_LEGACY_METRE,a/GAGARIN_LEGACY_METRE],[side*pb.gauge/2/GAGARIN_LEGACY_METRE,pb.y/GAGARIN_LEGACY_METRE,b/GAGARIN_LEGACY_METRE],(pa.radius+pb.radius)/2/GAGARIN_LEGACY_METRE,'rail','rail-approach');
   }
-  for(let z=16;z<174;z+=3.6)block(0,.62,z,11.4,.34,1.05,'timber','rail-sleepers');
+  for(let z=6;z<GAGARIN_RAIL_PORT[2];z+=.75){const p=railAt(z);block(0,(p.y-.16)/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE,p.sleeper/GAGARIN_LEGACY_METRE,.15/GAGARIN_LEGACY_METRE,.25/GAGARIN_LEGACY_METRE,'timber','rail-sleepers');}
   railLine([[-25,40],[-25,94],[-30,138]],.3,'asphalt',1.2,'service-road');
   railLine([[26,39],[28,104],[34,138]],.3,'asphalt',1.2,'service-road');
 
@@ -305,7 +326,7 @@ export function buildGagarinPad(root) {
   for(let i=0;i<4;i++){
     const a=Math.PI/4+i*Math.PI/2,s=Math.sin(a),c=Math.cos(a);
     const tang=[-s,c];
-    const rootP=[c*31,22,s*31],tip=[c*9.0,43,s*9.0];
+    const rootP=[c*31,22,s*31],tip=[c*6.4,43,s*6.4];
     for(const side of [-1,1]){
       bar([rootP[0]+tang[0]*2*side,rootP[1],rootP[2]+tang[1]*2*side],
           [tip[0]+tang[0]*1.1*side,tip[1],tip[2]+tang[1]*1.1*side],
@@ -322,7 +343,7 @@ export function buildGagarinPad(root) {
     cyl.position.set(c*38,27.5,s*38);
     cyl.quaternion.setFromUnitVectors(up,new THREE.Vector3(-s,0,c));
     direct(cyl,'yellow','yellow-counterweight');
-    block(c*8.3,43.2,s*8.3,4.0,2.7,3.7,'brightGreen','tulip-gripper',-a);
+    block(c*6.4,43.2,s*6.4,1.6,1.1,1.5,'brightGreen','tulip-gripper',-a);
     // Small guide jaws at the central nose.
     bar([c*10,26.5,s*10],[c*6.2,31,s*6.2],.48,'steel','launcher-guide');
   }
@@ -477,24 +498,11 @@ export function buildGagarinPad(root) {
     bar([x,23.1,35],[x,23.1,50],.07,'cutFace','concrete-deck-seam');
   }
 
-  // 07 / optional rocket exhibit (kept empty for the 2026 state).
+  // 07 / Metric holder for the owner's optimized Soyuz. It is deliberately
+  // outside the legacy architecture conversion so the GLB stays full metres.
   const rocket=new THREE.Group();
-  rocket.name='Историческая ракета Р-7 / Союз (экспонат, не реальное состояние)';
-  root.add(rocket);
-  const cylinder=(rTop,rBottom,h,x,y,z,material)=>{
-    const m=new THREE.Mesh(new THREE.CylinderGeometry(rTop,rBottom,h,16),mats[material]);
-    m.position.set(x,y,z);rocket.add(m);
-  };
-  cylinder(3.1,3.1,46,0,60,0,'white');
-  cylinder(3.1,3.1,7,0,87,0,'warning');
-  const tip=new THREE.Mesh(new THREE.ConeGeometry(3.2,10,16),mats.white);
-  tip.position.y=96;rocket.add(tip);
-  for(let k=0;k<4;k++){
-    const a=Math.PI/4+k*Math.PI/2,x=Math.cos(a)*6.4,z=Math.sin(a)*6.4;
-    cylinder(1.6,2.7,26,x,50,z,'white');
-    cylinder(1.2,1.7,7,x,66,z,'warning');
-  }
-  rocket.visible=false;
+  rocket.name='Союз · ракета-экспонат';rocket.position.fromArray(GAGARIN_ROCKET_MOUNT.position);
+  rocket.rotation.set(...GAGARIN_ROCKET_MOUNT.rotation);rocket.visible=true;metricRoot.add(rocket);
 
   // Flush instanced beams/slabs into a few dozen GPU draw calls.
   for(const batch of buckets.values()){
@@ -507,9 +515,12 @@ export function buildGagarinPad(root) {
     root.add(mesh);renderMeshCount++;
   }
   const metadata={
-    version:'3.3-below-grade',
-    terrainDatum:{rimY:GAGARIN_RIM_Y,baseSurfaceY:-2.755,channelFloorY:.32,voidFollowsRotation:true},
-    rocketPassage:{axis:[0,0],crownRadius:5.2,serviceDecks:6,throughHole:true},
+    version:'4.0-metric-soyuz',units:'metres',legacyMetresPerUnit:GAGARIN_LEGACY_METRE,
+    terrainDatum:{rimY:0,baseSurfaceY:-2.755,channelFloorY:(.32-GAGARIN_LEGACY_RIM_Y)*GAGARIN_LEGACY_METRE,voidFollowsRotation:true},
+    rocketPassage:{axis:[0,0],crownRadius:5.2*GAGARIN_LEGACY_METRE,serviceDecks:6,throughHole:true},
+    rocketMount:GAGARIN_ROCKET_MOUNT,railPort:GAGARIN_RAIL_PORT,physicalRailGauge:GAGARIN_PHYSICAL_RAIL_GAUGE,
+    railTransition:{fromZ:65,toZ:GAGARIN_RAIL_PORT[2],networkGaugeWorld:RAIL_PROFILE.gauge},
+    serviceHeightMetres:(106-27)*GAGARIN_LEGACY_METRE,serviceHeightVerified:false,
     flameDuctReview:'Plan visually traced from owner overhead screenshot 2026-10-27 20:41:25; elevations unverified',
     ductPlan:{reference:'2026-10-27 20:41:25',imageSize:[1920,1297],origin:planOrigin,scale:planScale,stations:ductPlan,outletWidth:(end[4]-end[3])*planScale,roadReturnsAroundOutlet:true},
     name:"Gagarin's Start photo-grounded reconstruction",
@@ -520,10 +531,11 @@ export function buildGagarinPad(root) {
     featureCounts:features,
     meshCount:primitiveCount,
     renderMeshCount,
-    rocketExhibitDefault:false,
-    status:'interpretative model: plan-layout and structural shapes photo-referenced; dimensions unverified'
+    rocketExhibitDefault:true,
+    status:'Metre-normalized photographic reconstruction; uniform architecture conversion, estimated structural heights. Rocket source geometry is full scale.'
   };
-  root.userData.gagarinModel=metadata;
-  return {rocket,features,meshCount:primitiveCount};
+  metricRoot.name=root.name;metricRoot.userData.gagarinModel=metadata;
+  metricRoot.userData.surfaceMaterials=root.userData.surfaceMaterials;
+  return {rocket,rocketMount:GAGARIN_ROCKET_MOUNT,features,meshCount:primitiveCount};
 }
 

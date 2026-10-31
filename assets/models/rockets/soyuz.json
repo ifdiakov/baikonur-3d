@@ -1,0 +1,110 @@
+{
+  "version": "rocket-exhibits-v1",
+  "id": "soyuz",
+  "source": {
+    "sourceFile": "Soyuz_TMA_b.bdf",
+    "sourceSha256": "9928bc1c5bbd21e3be6309c9b3c865010658dd43dde2f92e8e7d595e3ba5c042",
+    "sourceBytes": 69671947,
+    "sourceMeshCount": 2198,
+    "selectedMeshCount": 2198,
+    "sourceTriangles": 3395578,
+    "selectedTriangles": 3380979,
+    "discardedInvalidTriangles": 0,
+    "discardedDegenerateTriangles": 14599,
+    "selectedLayers": [
+      "default"
+    ],
+    "omittedLayers": [],
+    "sourceUnitMetres": 1,
+    "sourceUp": "+Y",
+    "layers": {
+      "default": 3380979
+    },
+    "bounds": {
+      "min": [
+        -5.067513704299927,
+        0,
+        -5.0893309116363525
+      ],
+      "max": [
+        5.067513704299927,
+        49.51161217689514,
+        5.0893309116363525
+      ],
+      "size": [
+        10.135027408599854,
+        49.51161217689514,
+        10.178661823272705
+      ]
+    },
+    "originMetres": [
+      0.02122664451599121,
+      -0.03529763221740723,
+      -0.0001747608184814453
+    ],
+    "rawBytes": 93082844,
+    "materials": 23,
+    "textures": 6
+  },
+  "assetSha256": "7e4b39506c027bf8156edd1ef3524e9e93d6e46c5e15774b5ad2da5e50c3ef66",
+  "recoverySha256": "748eea3237a2d12f157623c9de30b02f0182edbe3ba170f4c8200d2f070df6d4",
+  "assetStats": {
+    "bytes": 1557312,
+    "triangles": 253329,
+    "vertices": 218914,
+    "primitives": 7,
+    "materials": 7,
+    "textures": 7
+  },
+  "optimization": {
+    "maximumSurfaceErrorMetres": 0.02,
+    "tinyComponentMaximumDimensionMetres": 0.08,
+    "targetRatio": 0.08,
+    "normalCreaseAngleDegrees": null,
+    "removedTinyComponents": 372,
+    "removedTinyTriangles": 533769,
+    "simplifiedPrimitives": 1352,
+    "trianglesRemovedBySimplification": 2593881
+  },
+  "layerStats": {
+    "default": 253329
+  },
+  "bounds": {
+    "min": [
+      -5.067179897037169,
+      0.00027044862508773804,
+      -5.089089576031366
+    ],
+    "max": [
+      5.067179897037169,
+      49.51161193847656,
+      5.089089576031366
+    ],
+    "size": [
+      10.134359794074339,
+      49.511341489851475,
+      10.178179152062732
+    ]
+  },
+  "normalization": {
+    "unit": "metre",
+    "up": "+Y",
+    "baseY": 0,
+    "uniformSourceUnitMetres": 1,
+    "originMetres": [
+      0.02122664451599121,
+      -0.03529763221740723,
+      -0.0001747608184814453
+    ]
+  },
+  "attribution": {
+    "archive": "http://www.buran.ru/htm/3d-model.htm",
+    "providedBy": "Project owner / Google Drive",
+    "authors": [
+      "Владимир Некрасов"
+    ],
+    "sourceUrl": "http://buran.ru/htm/3d-model.htm",
+    "driveUrl": "https://drive.google.com/file/d/187i3huuRDscAv_EV_qPPju1lCV76IPsB/view",
+    "licenseNote": "Авторская модель из архива buran.ru; файл предоставлен владельцем проекта. Открытая лицензия не заявляется."
+  }
+}

@@ -25,7 +25,8 @@ assert.equal(hash(sourceBytes),RAW_SHA,'Input must be the validated complete UKS
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.encoder':MeshoptEncoder,'meshopt.decoder':MeshoptDecoder});
 const doc=await io.readBinary(sourceBytes),root=doc.getRoot();
 const origin=[-0.00013896613381803036,-0.000024069480787147768,-0.0004993951451268686];
-const scale=0.687885342706393;
+const scale=1; // Recovered MAX coordinates are metres: twin track axes are 20 m apart.
+const priorDisplayNormalization=0.687885342706393;
 const transformed=(v,m)=>[m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12],m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13],m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14]];
 const normalize=v=>v.map((x,i)=>(x-origin[i])*scale);
 const rawPolygon=[[-42.53425,90.03967],[-42.53428,-61.64229],[-111.45249,-70.5381],[-111.43124,-75.50345],[-27.60283,-93.79462],[19.08118,-93.79444],[30.96891,-93.56306],[85.22744,-72.46252],[172.61719,-40.22198],[192.6486,-31.19257],[331.4539,-9.58538],[331.4539,11.44739],[192.6486,30.29797],[172.61719,41.50147],[86.59748,67.84168],[30.95284,88.38869],[18.59987,90.03835]];
@@ -154,7 +155,7 @@ await doc.transform(meshopt({encoder:MeshoptEncoder,level:'high',quantizePositio
 for(const node of root.listNodes())node.setExtras({});
 for(const mesh of root.listMeshes())mesh.setName('УКСС · конструкции по исходной модели').setExtras({});
 const scene=root.getDefaultScene()||root.listScenes()[0];scene.setName('Площадка 250 · УКСС');
-scene.setExtras({museumAsset:'ukss-drive-model-v1',sourceFile:'ukss_scaled.max'});
+scene.setExtras({museumAsset:'ukss-drive-model-v2',sourceFile:'ukss_scaled.max'});
 const binary=await io.writeBinary(doc),decoded=await io.readBinary(binary);
 const bounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};
 let triangles=0,primitives=0,vertices=0,mockupTriangles=0;
@@ -174,16 +175,16 @@ for(const node of decoded.getRoot().listNodes()){
 assert.equal(triangles,265429-37-optimization.removedFineTriangles-optimization.lightTrianglesRemoved-optimization.trianglesRemovedBySimplification,'All removals must be accounted for');
 assert.ok(mockupTriangles>10000&&mockupTriangles<=30753);assert.ok(primitives<=32,'Material merging must reduce draw calls');
 const manifest={
- version:'ukss-drive-model-v1',sourceFile:'ukss_scaled.max',
+ version:'ukss-drive-model-v2',sourceFile:'ukss_scaled.max',
  sourceUrl:'https://drive.google.com/file/d/1z16hlw1grFyH_MqVk9f4B8Nm48FjX4f7/view',
  sourceSha256:'2e51706e5267564fba9fd6d90262a2fb67f3d84ccfd7c3a002b23895fc704ebb',
  recoverySha256:RAW_SHA,assetSha256:hash(binary),bounds,
  sourceStats:{originalNodeCount:7119,recoveredNodeCount:7119,sourceTriangles:265429,sourceMaterials:28,removedFlatGroundTriangles:37,retainedTriangles:triangles,mockupTriangles:30753,textures:0},
  assetStats:{bytes:binary.byteLength,triangles,primitives,vertices,materials:decoded.getRoot().listMaterials().length,textures:0,mockupTriangles},optimization,
- normalization:{origin,scale,rotationY:0,basis:'Launch center from BlastPad / source 13815; grade from Lotok; lightning mast top normalized to previous museum height 148',outerMuseumScale:.21,outerMuseumYaw:-.56},
+ normalization:{origin,scale,rotationY:0,unit:'metre',basis:'Source metric coordinates; 19.997 m between twin rail axes; launch center from BlastPad and grade from Lotok; no independent height fitting',outerMuseumScale:.14,outerMuseumYaw:-.56},
  terrainCutout:{polygon:rawPolygon.map(([x,z])=>[(x-origin[0])*scale,(z-origin[2])*scale]),floorY:normalize([0,-35.30587525355713,0])[1],sourceSceneIndex:522,basis:'17-vertex inner boundary of the removed connected flat Lotok background; not its outer footprint'},
  components:{dimensionalMockup:{sourceGroup:28436,material:'Bordo',triangleCount:mockupTriangles,defaultVisible:false},tower:{configuration:'at-launch-position',bounds:{min:normalize([-19.3568453,.0095183,-31.1792496]),max:normalize([19.356747,76.1051678,10.5861497])}}},
- connections:{railSourceEndpoints:[normalize([-10.002198033582918,.07107536324432928,274.4870634270286]),normalize([9.99507731889511,.07107536324432928,274.4870634270286])],railSourceGauge:1.650303*scale,museumRailSockets:[[-18,1.55,227],[18,1.55,227]],museumRoadSocket:[-40,.2,225]},
+ connections:{railSourceEndpoints:[normalize([-10.002198033582918,.07107536324432928,274.4870634270286]),normalize([9.99507731889511,.07107536324432928,274.4870634270286])],railSourceGauge:1.650303*scale,museumRailSockets:[[-18,1.55,227],[18,1.55,227]].map(p=>p.map(v=>v/priorDisplayNormalization)),museumRoadSocket:[-40,.2,225].map(v=>v/priorDisplayNormalization)},
  camera:{
    overview:{target:[25,35,-8],eye:[310,245,345]},
    tower:{target:[0,28,-5],eye:[-62,70,100]},
@@ -194,7 +195,9 @@ const manifest={
  materialAdaptation:{unassignedSourceBoxes:unassignedMaterials,palette:'Muted material-role palette matched to supplied site photographs; no external textures'},
  notes:['Museum detail profile preserves the composition, silhouettes and major assemblies while removing reviewed tiny objects and unnecessary curved-surface subdivisions.','37 flat background triangles replaced by museum terrain; all 90 real Lotok triangles retained.','Source dimensional mockup is a separate optional display component, hidden initially.','Source static hidden/renderable flags remain undecoded; they are not used to remove geometry.','Original source axes and all component proportions preserved under one uniform normalization.']
 };
+for(const view of Object.values(manifest.camera)){view.target=view.target.map(v=>v/priorDisplayNormalization);view.eye=view.eye.map(v=>v/priorDisplayNormalization);}
+manifest.rocketMount={position:[0,6.055,0],rotation:[0,Math.PI,0],units:'metres',basis:'Source BlastPad upper support plane; payload faces away from service tower'};
 await mkdir(args.output,{recursive:true});
-await writeFile(resolve(args.output,'model-v1.glb'),binary);
-await writeFile(resolve(args.output,'manifest-v1.json'),JSON.stringify(manifest,null,2)+'\n');
+await writeFile(resolve(args.output,'model-v2.glb'),binary);
+await writeFile(resolve(args.output,'manifest-v2.json'),JSON.stringify(manifest,null,2)+'\n');
 console.log(JSON.stringify({assetStats:manifest.assetStats,bounds,assetSha256:manifest.assetSha256,removedFlatGroundTriangles:removed},null,2));

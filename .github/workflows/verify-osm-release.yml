@@ -1,4 +1,4 @@
-name: Museum 5 — navigation menu and release
+name: Museum 5 — source models, metric sites and release
 on:
   push:
     branches: [main]
@@ -12,6 +12,8 @@ on:
       - 'scripts/build_river_water.py'
       - 'scripts/prepare-ukss-asset.mjs'
       - 'scripts/ukss-detail-policy.json'
+      - 'scripts/prepare-rocket-assets.mjs'
+      - 'scripts/source-models/rockets/**'
       - 'scripts/prepare-tua-asset.mjs'
       - 'scripts/tua-detail-policy.json'
       - 'scripts/source-models/tua/**'
@@ -34,12 +36,12 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum5-menu-20261031-v1
+  RELEASE_TAG: museum5-rockets-20261031-v1
 jobs:
   verify_local:
     name: Local geometry and browser checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,7 +49,7 @@ jobs:
           node-version: '22'
       - name: Install verification dependencies
         run: |
-          npm install --no-save playwright@1.57.0 three@0.160.1
+          npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
           npx playwright install --with-deps chromium
       - name: Verify geography, source topology and complete Krayniy flight circuit
         run: |
@@ -73,6 +75,11 @@ jobs:
           node tests/mzk-sdi-geometry.mjs
           node tests/ukss-source-model.mjs
           node tests/tua-source-model.mjs
+          node tests/mik112-metric-geometry.mjs
+          node tests/rocket-assets.mjs
+          node tests/site110-geometry.mjs
+          node tests/soyuz-launch-scale.mjs
+          node tests/yubileiny-source-geometry.mjs
       - name: Preserve the detailed Site 31, road, rail and flank invariants
         run: |
           node tests/site31-geometry.mjs
@@ -89,6 +96,8 @@ jobs:
         run: node tests/startup-browser.mjs
       - name: Verify the local menu and flight status
         run: node tests/left-menu-browser.mjs
+      - name: Verify the local source rockets, TUA choices and encyclopedia
+        run: node tests/rocket-exhibits-browser.mjs
       - name: Verify the local Krayniy terminal
         run: node tests/krayniy-terminal-browser.mjs
       - name: Verify the complete local museum in Chromium
@@ -104,10 +113,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-menu-qa-local
+          name: museum5-rockets-qa-local
           path: |
             qa-startup/
             qa-menu/
+            qa-rocket-exhibits/
             qa-krayniy/
             qa-osm-release/
             qa-flanks/
@@ -120,7 +130,7 @@ jobs:
   verify_public:
     name: Published bytes and live browser checks
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 45
     env:
       BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?release=${{ github.sha }}
       QA_PREFIX: public
@@ -131,7 +141,7 @@ jobs:
           node-version: '22'
       - name: Install verification dependencies
         run: |
-          npm install --no-save playwright@1.57.0 three@0.160.1
+          npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
           npx playwright install --with-deps chromium
       - name: Verify every published runtime source against this commit
         run: node scripts/verify-published.mjs
@@ -139,6 +149,8 @@ jobs:
         run: node tests/startup-browser.mjs
       - name: Verify the live menu and flight status
         run: node tests/left-menu-browser.mjs
+      - name: Verify the live source rockets, TUA choices and encyclopedia
+        run: node tests/rocket-exhibits-browser.mjs
       - name: Verify the live Krayniy terminal
         run: node tests/krayniy-terminal-browser.mjs
       - name: Verify the complete live museum in Chromium
@@ -154,10 +166,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-menu-qa-public
+          name: museum5-rockets-qa-public
           path: |
             qa-startup/
             qa-menu/
+            qa-rocket-exhibits/
             qa-krayniy/
             qa-osm-release/
             qa-flanks/
@@ -207,12 +220,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/museum-menu-20261031-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/museum-rockets-20261031-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 5 — меню и статусы рейса',
+                name: 'Интерактивный музей 5 — ракеты, площадки и энциклопедия',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

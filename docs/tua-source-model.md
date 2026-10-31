@@ -3,7 +3,7 @@
 The transporter model originates from the user's
 `Transporter_railroad_assambly.MAX`. The offline converter preserves the full
 assembly and creates a separate, auditable raw GLB. A later preparation stage
-selects the transporter, removes small details and compresses the museum asset.
+selects the transporter and compresses a shared museum asset. The current detailed profile restores the source railings, ladders and walkway outlines requested by the owner.
 The original MAX is unchanged.
 
 ## Source and pinned tools
@@ -233,13 +233,14 @@ node scripts/prepare-tua-asset.mjs \
   --source "../private-output/tua/tua_recovered_raw.glb" \
   --output "assets/models/tua" \
   --deps "../tools/tua-assets/node_modules" \
-  --detail macro
+  --detail full
 ```
 
-`macro` is the default. `--detail full` retains all selected transporter
-geometry for comparison; it still excludes the payload, locomotives and source
-rails. The complete original assembly remains in the recovered raw GLB.
-The preparation script writes `model-v1.glb` and `manifest-v1.json` in its
+`full` is the default and the current production profile. It retains all selected transporter
+geometry while excluding the payload, locomotives and source rails. The optional
+`--detail macro` is still available for comparison in a separate output directory.
+The complete original assembly remains in the recovered raw GLB.
+The preparation script writes `model-v2.glb` and `manifest-v2.json` in its
 explicit output directory. This separate stage is part of the repository and
 is not included in the source-recovery archive.
 
@@ -255,14 +256,15 @@ subtree identity:
 | 11898 | Second locomotive/rail branch |
 | 35293 | Red payload assembly |
 
-Selection alone leaves **2,351 meshes and 93,800 triangles**. The current macro
-profile removes exactly **920 reviewed thin spline objects** with a source
-diameter of 0.03, removing **45,856 triangles**. The other 46, thicker spline
-objects remain. Retained surfaces receive no triangle decimation; their source
-segmentation, openings and circular mechanisms are preserved before web
-quantization.
+Selection leaves **2,351 meshes and 93,800 triangles**. The detailed production
+profile now retains all **920 reviewed narrow spline objects**, contributing
+**45,856 triangles**, as well as the 46 thicker splines. These source objects
+supply the handrails, ladder runs, walkway edges and other repeated structure
+visible in the owner's close-up photographs. No independent bolts are added.
+The earlier macro profile and its 47,944-triangle result remain part of the
+release history; they are no longer the displayed asset.
 
-All **320 running-gear parts**, totaling **10,432 triangles**, are protected:
+All **320 running-gear parts**, totaling **10,432 triangles**, are preserved:
 128 wheels, 64 axles and 128 other bogie components. Main frames, pierced
 members, forks and hydraulic mechanisms retain their source geometry. The
 source IDs and before/after counts are recorded in the policy and manifest.
@@ -271,22 +273,22 @@ source IDs and before/after counts are recorded in the policy and manifest.
 |---|---:|
 | Complete recovered assembly | 137,269 |
 | Excluded payload, locomotives and source rails | −43,469 |
-| Selected transporter before detail filtering | 93,800 |
-| Removed 920 thin spline objects | −45,856 |
-| Museum transporter | **47,944** |
+| Detailed museum transporter | **93,800** |
+| Removed narrow spline triangles in this profile | **0** |
+| Retained narrow spline triangles | **45,856** |
 
-The retained 1,431 source meshes are joined by material. The final binary has
-**16 draw primitives, 16 materials and 37,408 vertices**, with no textures or
+The retained 2,351 source meshes are joined by material. The final binary has
+**16 draw primitives, 16 materials and 94,984 vertices**, with no textures or
 external resource dependencies. Material roles are retained, including `Loco`
-names that are also used on transporter parts. The two retained unassigned
-objects, IDs **21383** and **23463**, receive the existing `Tube` material.
-The palette uses muted grey-green steel and weathered yellow forks from the
-provided photographs.
+names also used on transporter parts. Unassigned objects **21383** and **23463**
+receive the existing `Tube` material. The palette uses muted grey-green steel
+and weathered yellow forks interpreted from the supplied photographs.
 
-Compression uses `EXT_meshopt_compression`, with **16-bit positions** and
-**12-bit normals**. The final asset is **272,580 bytes**, SHA256
-`06640ac72f8ec6225093033d98a026deaea73497a81ba2b5330247aaab39b5c8`.
-One shared binary supplies the two independent museum placements.
+Compression uses `EXT_meshopt_compression`, **16-bit positions** and **12-bit
+normals**. The production asset is **542,308 bytes**, SHA256
+`d9d5f8a28900d0bc84d0abc24bd86bd259c1e288a4daf9e1bd5f1b292df5d988`.
+One binary and one set of decoded geometry/material resources supply both
+museum placements: **187,600 triangles and 32 draw primitives for the pair**.
 
 ### Exact transforms before hierarchy removal
 
@@ -299,22 +301,45 @@ and move their lower surfaces, even when the nominal object transforms appear
 reasonable.
 
 The accepted asset's actual bounds agree with the calibrated full transporter
-to within 0.001 local unit. Its lower bound is approximately **−0.14045**,
-matching the source flange position of **−0.14021** before quantization.
+to within 0.001 local unit. Its lower bound is approximately **−0.123205 m**,
+matching the source flange position of **−0.122995 m** before quantization.
 The preparation stage does not move the model up to make its lowest vertex
 touch zero.
 
-Normalization uses the single uniform scale **1.14**, with physical source
+Normalization uses the single uniform scale **1.0** (one local unit is one metre), with physical source
 origin `[-0.0014610663056373596, -14.5, 25.500000713507283]`:
 
 ```text
-local = 1.14 × ([rawGlb.x, −rawGlb.z, rawGlb.y] − physicalOrigin)
+local metres = [rawGlb.x, −rawGlb.z, rawGlb.y] − physicalOrigin
 ```
 
 Local Y=0 is the original rail-head datum. The two MIK-local placements are
 `[-71, 4.305, -183]` and `[-19, 4.305, -183]`, each rotated by π around Y.
 The enclosing MIK keeps its scale 0.14 and yaw −π/4. The source's authored
-transport pose remains unchanged.
+transport pose remains unchanged. Its actual envelope is approximately
+**61.215 m long × 25.300 m wide × 19.444 m high**. The [published TUA
+reference table](https://www.buran.ru/htm/transp.htm) gives 56.3 × 29.5 × 21.2 m
+and a 20 m distance between the two railway axes. The native authored pose
+and the published envelope are recorded separately; individual axes are not
+stretched to force a match. The source wheel-centre gauge, approximately
+1.629862 m, is likewise retained without a nonuniform squeeze to the nominal
+1.524 m railway gauge.
+
+### Horizontal rocket anchors
+
+The excluded source payload establishes the mounting axis independently of
+the new rocket GLB. Its central body `MaketC` is centred at transporter-local
+Y **15.360346675 m**; the complete source payload starts at Z
+**−26.070907001 m**. The exposed mount is therefore
+`position=[0,15.360346675,-26.070907001]`, `rotation.x=+π/2`. A rocket whose
+longitudinal axis is +Y and whose aft datum is Y=0 points along transporter
++Z. The normalized Buran side lies at rocket −Z, which rotates upwards.
+
+`buildMik112(...).rocketMounts()` returns hall and pair mounting poses in the
+MIK root's metre coordinates. The TUA poses include their existing yaw and
+rail-head placement. The hall mount is `[-35,15.360346675,-35]` with the same
+X rotation, inside the middle 40 m high bay. Two simple museum cradles support
+the exhibit; their shape is not presented as a surveyed historical fixture.
 
 ### Continuous museum rails
 
@@ -325,7 +350,9 @@ the old children. Shared scene geometry and materials are not disposed.
 Building geometry, the low-hall track, placement transforms and external rail
 entries stay unchanged.
 
-The four track centre axes remain at X **−82.4, −59.6, −30.4, −7.6**. Each rail
+The four external track centre axes remain at X **−82.4, −59.6, −30.4, −7.6**.
+The running axes beneath the vehicles now lie at **−81, −61, −29, −9**,
+matching each source vehicle's **20 m** double-track spacing. Each rail
 runs from Z **−258.5** to **−5.5**, with head Y **4.305**, body height **0.27** and
 head width **0.18**. The gauge varies along the following stations:
 
@@ -333,22 +360,22 @@ head width **0.18**. The gauge varies along the following stations:
 |---:|---:|
 | −258.5 | 4.185333333333333 |
 | −238 | 4.185333333333333 |
-| −218 | 1.8580424880240016 |
-| −148 | 1.8580424880240016 |
+| −218 | 1.6298618316000013 |
+| −148 | 1.6298618316000013 |
 | −128 | 4.185333333333333 |
 | −5.5 | 4.185333333333333 |
 
-The two 20-unit transitions use monotone smoothstep easing; the vehicle section
-and external end sections have constant gauge. The entire wheel-surface range
-Z **−213.743921927 to −152.256078088** lies inside the constant running gauge.
+The two 20 m transitions use monotone smoothstep easing for both gauge and
+track-centre position; the vehicle section and external end sections are straight. The entire wheel-surface range
+Z **−209.968352568 to −156.031647445** lies inside the constant running gauge.
 The 420 instanced sleepers scale their length with the current gauge. Rail
 geometry totals 2,784 triangles, with continuous faces across the bends.
 
-The helper exports `gaugeAt`, `createTuaRailGeometry` and
+The helper exports `gaugeAt`, `trackAxisAt`, `createTuaRailGeometry` and
 `resolveTuaRailProfile` for independent geometry checks. Returned metadata
 records counts, stations, segments, head endpoints and the preserved entry
 vectors. Local verification checked actual rail buffers, sleeper matrices,
-2,040 head raycasts, unchanged external world coordinates and the absence of
+768 head raycasts through the actual decoded wheel widths, unchanged external world coordinates and the absence of
 the old wide rails beneath the vehicles.
 
 The final asset manifest records this calibration, selection, protected

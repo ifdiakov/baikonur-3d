@@ -11,14 +11,14 @@ import {buildUkssConnections} from '../src/ukss-connections.js';
 const sourceSha='2e51706e5267564fba9fd6d90262a2fb67f3d84ccfd7c3a002b23895fc704ebb';
 const assetRoot=new URL('../assets/models/ukss/',import.meta.url);
 const [manifest,bytes,catalog,detailPolicy]=await Promise.all([
- readFile(new URL('manifest-v1.json',assetRoot),'utf8').then(JSON.parse),
- readFile(new URL('model-v1.glb',assetRoot)),
+ readFile(new URL('manifest-v2.json',assetRoot),'utf8').then(JSON.parse),
+ readFile(new URL('model-v2.glb',assetRoot)),
  readFile(new URL('../data/catalog.json',import.meta.url),'utf8').then(JSON.parse),
  readFile(new URL('../scripts/ukss-detail-policy.json',import.meta.url),'utf8').then(JSON.parse)
 ]);
 const near=(a,b,tolerance,message)=>assert.ok(Math.abs(a-b)<=tolerance,`${message}: ${a} != ${b}`);
 const pointNear=(a,b,tolerance,message)=>{assert.equal(a.length,b.length);a.forEach((v,i)=>near(v,b[i],tolerance,message+'['+i+']'));};
-assert.equal(manifest.version,'ukss-drive-model-v1');
+assert.equal(manifest.version,'ukss-drive-model-v2');
 assert.equal(manifest.sourceFile,'ukss_scaled.max');
 assert.equal(manifest.sourceSha256,sourceSha);
 assert.equal(manifest.assetSha256,createHash('sha256').update(bytes).digest('hex'),'Manifest identifies the exact compressed binary');
@@ -44,7 +44,10 @@ assert.equal(manifest.sourceStats.sourceTriangles-manifest.sourceStats.removedFl
 assert.equal(optimization.fullReference.triangles,manifest.sourceStats.sourceTriangles-37);
 assert.ok(manifest.sourceStats.retainedTriangles<optimization.fullReference.triangles,'The museum profile reduces real geometry, independently of compression');
 assert.ok(bytes.length<optimization.fullReference.bytes,'The adapted binary also improves download size');
-near(manifest.normalization.scale,.687885342706393,1e-12,'Uniform source-to-museum scale');
+near(manifest.normalization.scale,1,1e-12,'Recovered source coordinates remain physical metres');
+assert.equal(manifest.normalization.unit,'metre');
+near(manifest.normalization.outerMuseumScale,.14,1e-12,'One consistent world scale for metre-valued facilities and rockets');
+near(manifest.normalization.outerMuseumYaw,-.56,1e-12,'Established site azimuth');
 pointNear(manifest.normalization.origin,[-.00013896613381803036,-.000024069480787147768,-.0004993951451268686],1e-8,'Launch origin');
 assert.equal(manifest.normalization.rotationY,0,'Y-up source already agrees with the local launch/trench axes');
 const entry=catalog.sites.find(site=>site.id==='pad-250');
@@ -53,9 +56,12 @@ assert.equal(entry.organisation.org,'ЦЭНКИ');assert.equal(entry.photoArchiv
 assert.equal(entry.source3D.sha256,sourceSha);
 assert.equal(entry.source3D.driveId,'1z16hlw1grFyH_MqVk9f4B8Nm48FjX4f7');
 const port=FACILITY_PORTS['pad-250'];
-near(port.scale,.21,1e-12,'Existing display scale');near(port.yaw,-.56,1e-12,'Existing site orientation');
-pointNear(port.road,[-40,.2,225],1e-12,'Road network socket');
-assert.deepEqual(port.rail,[[-18,1.55,227],[18,1.55,227]],'Both established external rail sockets remain fixed');
+near(port.scale,.14,1e-12,'Physical display scale');near(port.yaw,-.56,1e-12,'Existing site orientation');
+pointNear(port.road,[-58.14922562912206,.2907461281456103,327.08939416381156],1e-10,'Road network socket expressed in metres');
+pointNear(port.rail[0],[-26.167151533104928,2.25328249312848,329.99685544526767],1e-10,'Left network socket expressed in metres');
+pointNear(port.rail[1],[26.167151533104928,2.25328249312848,329.99685544526767],1e-10,'Right network socket expressed in metres');
+assert.deepEqual(manifest.connections.museumRailSockets,port.rail);
+pointNear(manifest.connections.museumRoadSocket,port.road,1e-10,'Asset and shared road socket agree');
 
 // Inspect actual GLB contents before parsing: all runtime geometry lives in one
 // binary and compressed buffers use the decoder already shipped by the museum.
@@ -114,22 +120,22 @@ assert.ok(draws<=40&&materials.size<=28,'Thousands of source pieces must be batc
 for(const mesh of gltf.meshes)for(const primitive of mesh.primitives)assert.ok(Number.isInteger(primitive.material),'Every source surface has an intentional museum material');
 pointNear(bounds.min.toArray(),manifest.bounds.min,.03,'Decoded minimum bounds');
 pointNear(bounds.max.toArray(),manifest.bounds.max,.03,'Decoded maximum bounds');
-near(bounds.max.y,148,.03,'The lightning mast preserves the established museum height');
-assert.ok(bounds.min.x<-360&&bounds.max.x>227&&bounds.min.z<-305&&bounds.max.z>188,'Real extended pipes and transport tracks must not be cropped to the old schematic footprint');
+near(bounds.max.y,215.151,.03,'The source mast is measured in metres without fitting it to an arbitrary scene height');
+assert.ok(bounds.min.x<-526&&bounds.max.x>331&&bounds.min.z<-444&&bounds.max.z>274,'Real extended pipes and transport tracks must not be cropped to the old schematic footprint');
 
 // Independently measured vertices from the complete raw recovery (SHA256
 // c07c0b6fc00691f4d1555296ba7f0389b0139306e56599df46e58c38c402776f),
-// transformed by each ORIGINAL complete world matrix and the uniform museum
-// normalization. These 6/16-triangle parts are below the simplification gate.
+// transformed by each ORIGINAL complete world matrix and translated to the
+// launch origin, in physical metres (without the previous display shrink). These 6/16-triangle parts are below the simplification gate.
 // Decomposing their affine scale-helper chains before baking used to displace
 // vertices by up to 2.19 local units; matching overall bounds missed that bug.
 const sourceTransformAnchors=[
- {id:6888,material:'Ferm_grey',point:[-12.884938347501215,18.975434828511652,5.830710992399108]},
- {id:6754,material:'Ferm_grey',point:[-12.884938347501215,16.872467137851128,5.830710992399108]},
- {id:7052,material:'Ferm_grey',point:[-19.76202467533682,18.874494773040038,12.258005926484994]},
- {id:6714,material:'Ferm_grey',point:[-19.76202467533682,16.771527082379514,12.258005926484994]},
- {id:18641,material:'Ferm_lightgrey',point:[-192.80408396024905,.6166384258425619,-106.79136906897666]},
- {id:23479,material:'Ferm_lightgrey',point:[-330.528178793586,.6166430646724219,-106.79092146096967]}
+ {id:6888,material:'Ferm_grey',point:[-18.73122967965438,27.58517103134563,8.476283226880447]},
+ {id:6754,material:'Ferm_grey',point:[-18.73122967965438,24.52802246297131,8.476283226880447]},
+ {id:7052,material:'Ferm_grey',point:[-28.72866079336096,27.43843137982975,17.81983880955728]},
+ {id:6714,material:'Ferm_grey',point:[-28.72866079336096,24.38128281145544,17.81983880955728]},
+ {id:18641,material:'Ferm_lightgrey',point:[-280.2852045105179,0.8964261738976446,-155.2458853808693]},
+ {id:23479,material:'Ferm_lightgrey',point:[-480.4989411362757,0.8964329175067492,-155.2452346793945]}
 ];
 const sourceTransformErrors=sourceTransformAnchors.map(anchor=>{
  const expected=new THREE.Vector3(...anchor.point);let distance=Infinity;
@@ -140,7 +146,7 @@ const sourceTransformErrors=sourceTransformAnchors.map(anchor=>{
    point.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);distance=Math.min(distance,point.distanceTo(expected));
   }
  }
- assert.ok(distance<.012,`Source ${anchor.id} retains its exact affine placement within quantization tolerance: ${distance}`);
+ assert.ok(distance<.018,`Source ${anchor.id} retains its exact affine placement within quantization tolerance: ${distance}`);
  return {sourceId:anchor.id,distance};
 });
 
@@ -148,7 +154,7 @@ const sourceTransformErrors=sourceTransformAnchors.map(anchor=>{
 // of its flat background. Independently check the decoded subgrade surfaces.
 const ring=manifest.terrainCutout.polygon;
 assert.equal(ring.length,17);assert.ok(ring.every(p=>p.length===2&&p.every(Number.isFinite)));
-assert.ok(manifest.terrainCutout.floorY<-24&&manifest.terrainCutout.floorY>-25);
+assert.ok(manifest.terrainCutout.floorY<-35.25&&manifest.terrainCutout.floorY>-35.4);
 near(manifest.terrainCutout.floorY,bounds.min.y,.04,'Cutout reaches the deepest source trench geometry');
 function inside(x,z){let yes=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){
  const a=ring[j],b=ring[i];if((a[1]>z)!==(b[1]>z)&&x<(b[0]-a[0])*(z-a[1])/(b[1]-a[1])+a[0])yes=!yes;
@@ -160,7 +166,7 @@ function boundaryDistance(x,z){let d=Infinity;for(let i=0;i<ring.length;i++){
 }return d;}
 assert.ok(trenchPoints.length>100,'The real below-grade surfaces were decoded');
 for(const p of trenchPoints)assert.ok(inside(p.x,p.z)||boundaryDistance(p.x,p.z)<.05,'The terrain mask must not cover actual trench surfaces');
-assert.ok(inside(0,0)&&inside(100,0)&&!inside(-100,0)&&!inside(0,100),'The cutout covers the launch pit and gas outlet, not the surrounding site');
+assert.ok(inside(0,0)&&inside(150,0)&&!inside(-150,0)&&!inside(0,150),'The cutout covers the launch pit and gas outlet, not the surrounding site');
 for(const name of ['overview','tower','trench','top']){
  const camera=manifest.camera[name];assert.ok(camera,'Missing public view '+name);
  assert.ok([...camera.eye,...camera.target].every(Number.isFinite));
@@ -168,8 +174,8 @@ for(const name of ['overview','tower','trench','top']){
 }
 
 // Recover the four source rail ends from decoded vertices, independently of the
-// manifest and adapter metadata. Their gauge is deliberately narrower than the
-// existing museum network, so merely checking matching metadata is insufficient.
+// manifest and adapter metadata. The imported gauge remains authored, while the
+// network uses the shared rail profile; matching metadata alone is insufficient.
 const sourceEndZ=Math.max(...sourceRailPoints.map(p=>p.z));
 const endVertices=sourceRailPoints.filter(p=>Math.abs(p.z-sourceEndZ)<.02).sort((a,b)=>a.x-b.x);
 const clusters=[];
@@ -181,6 +187,9 @@ for(let i=0;i<2;i++){
  pointNear(centre.toArray(),manifest.connections.railSourceEndpoints[i],.02,'Manifest endpoint matches actual source rail heads');
  near(sourceHeads[i*2+1].x-sourceHeads[i*2].x,manifest.connections.railSourceGauge,.02,'Actual source gauge');
 }
+const decodedTrackCentres=[0,1].map(i=>sourceHeads[i*2].clone().add(sourceHeads[i*2+1]).multiplyScalar(.5));
+near(decodedTrackCentres[1].x-decodedTrackCentres[0].x,19.997275352478028,.025,'Twenty-metre twin-track spacing independently confirms the metric source scale');
+near(sourceHeads[1].x-sourceHeads[0].x,1.650303,.02,'The source gauge is preserved without stretching imported geometry');
 const connectionsRoot=new THREE.Group(),connection=buildUkssConnections(connectionsRoot,manifest.connections);
 connectionsRoot.updateWorldMatrix(true,true);
 assert.equal(connection.connected,true);assert.equal(connection.sourceGeometryStretched,false);

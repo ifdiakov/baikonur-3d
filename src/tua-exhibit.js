@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
-export const TUA_MODEL_VERSION='tua-drive-model-v1';
+export const TUA_MODEL_VERSION='tua-drive-model-v2';
 const SOURCE_SHA='304c2317d335a4787d3748fb4e52ae8f537e48e04cf63057e4374f975b6a650e';
-const ASSET_URL=new URL('../assets/models/tua/model-v1.glb',import.meta.url);
-const MANIFEST_URL=new URL('../assets/models/tua/manifest-v1.json',import.meta.url);
+const ASSET_URL=new URL('../assets/models/tua/model-v2.glb',import.meta.url);
+const MANIFEST_URL=new URL('../assets/models/tua/manifest-v2.json',import.meta.url);
 const MAX_WAIT_MS=20000;
 const vector=value=>Array.isArray(value)&&value.length===3&&value.every(Number.isFinite);
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit,imageFrame} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
+import {archiveKit,imageFrame} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
 
 // A small set of representative blocks keeps the photo-derived city legible at
 // museum scale. Its real road network is rendered by the OSM transport layer.

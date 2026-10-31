@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
 import {buildRoadSurfaces,sampleRoadCurve} from './road-surface.js?v=20261028-museum4-osm-live-v2';
 
 /**
@@ -60,8 +60,8 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     if(samples.length<2)return null;
     const xyz=[],uv=[],ids=[];
     samples.forEach((s,i)=>{
-      const half=width/2;for(const side of [-1,1]){
-        xyz.push(s.pos.x+s.nx*(side*half+edgeOffset),elevationAt?elevationAt(s):y,s.pos.z+s.nz*(side*half+edgeOffset));
+      const half=width/2,offset=typeof edgeOffset==='function'?edgeOffset(s):edgeOffset;for(const side of [-1,1]){
+        xyz.push(s.pos.x+s.nx*(side*half+offset),elevationAt?elevationAt(s):y,s.pos.z+s.nz*(side*half+offset));
         uv.push(i/8,side>0?1:0);
       }
       if(i<samples.length-1){const k=i*2;ids.push(k,k+1,k+2,k+1,k+3,k+2)}
@@ -75,9 +75,9 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
   }
   function tube(group,samples,offset,radius,material,y,segments=6,elevationAt=null) {
     if(samples.length<3)return null;
-    const pts=samples.map(s=>new THREE.Vector3(
-      s.pos.x+s.nx*offset,elevationAt?elevationAt(s):y,s.pos.z+s.nz*offset
-    ));
+    const pts=samples.map(s=>{const lateral=typeof offset==='function'?offset(s):offset;return new THREE.Vector3(
+      s.pos.x+s.nx*lateral,elevationAt?elevationAt(s):y,s.pos.z+s.nz*lateral
+    );});
     const path=new THREE.CatmullRomCurve3(pts,false,'centripetal',.3);
     const obj=new THREE.Mesh(new THREE.TubeGeometry(path,Math.max(24,pts.length),radius,segments,false),material);
     group.add(obj);return obj;
@@ -113,13 +113,17 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     const isGagarin=id===gagarinRail?.id;
     const custom=facilityRails?.replacements.get(id)||extraRails.find(r=>r.id===id&&r.datum);
     const samples=baseSamples(curve,Math.max(32,Math.ceil(curve.getLength()/(isGagarin?2.5:8))),!!custom);
-    const length=curve.getLength(),offset=RAIL_PROFILE.gauge/2;
+    const length=curve.getLength();
+    // The museum train keeps its original network gauge. At an explicitly
+    // metric facility socket only the final feeder section adapts smoothly
+    // to that start's actual running rails, with zero gauge slope at the join.
+    const gauge=s=>THREE.MathUtils.lerp(RAIL_PROFILE.gauge,custom?.endGauge??RAIL_PROFILE.gauge,THREE.MathUtils.smoothstep(s.t,.65,1));
     const datum=s=>isGagarin?gagarinRail.datum(s.t):custom?.datum?custom.datum(s.t):.75+railElevation(id,s.pos);
     ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth*1.12,0,materials.gravel,0,s=>datum(s)+.01);
     ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth,0,materials.crushed,0,s=>datum(s)+RAIL_PROFILE.ballastY);
     for(const side of [-1,1]){
-      ribbon(layers.rails,samples,RAIL_PROFILE.bodyWidth,0,materials.rail,side*offset,s=>datum(s)+RAIL_PROFILE.bodyY);
-      tube(layers.rails,samples,side*offset,RAIL_PROFILE.headRadius,materials.rail,0,6,s=>datum(s)+RAIL_PROFILE.headY);
+      ribbon(layers.rails,samples,RAIL_PROFILE.bodyWidth,0,materials.rail,s=>side*gauge(s)/2,s=>datum(s)+RAIL_PROFILE.bodyY);
+      tube(layers.rails,samples,s=>side*gauge(s)/2,RAIL_PROFILE.headRadius,materials.rail,0,6,s=>datum(s)+RAIL_PROFILE.headY);
     }
     // Near the pad, sleeper spacing also matches its detailed track exactly.
     // Distant network ties are sampled more sparsely to keep the large map fast.

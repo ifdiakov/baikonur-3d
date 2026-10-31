@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js';
+import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
 export const SEVEN_WINDS_VERSION='seven-winds-photo-v1';
 export const SEVEN_WINDS_REFERENCE=Object.freeze({
  folder:'1P7P9qFCcGwdm4-FG0s_WsdAcrHIfByRf',

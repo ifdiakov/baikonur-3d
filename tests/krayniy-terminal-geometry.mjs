@@ -88,6 +88,6 @@ for(const [id,wayId]of [['airfield',37591623],['pad-251',24949215]]){
 const layers={roads:new THREE.Group(),rails:new THREE.Group()};
 const transport=buildOsmTransportNetwork({data:{roads,railways,railPoints,places,airports},legacyData,geography,point,layers,siteRecords});
 assert(transport.roadPaths().some(path=>path.source==='OpenStreetMap'&&path.points.some(p=>p.distanceTo(source)<1e-5)),'Terminal road anchor was filtered out');
-// The shared builder's other airfield keeps the old geometry parameters.
-const y=airportDisplaySpec('yubileiny');assert.equal(y.length,2250);assert.equal(y.width,84);assert.deepEqual(y.apron,[-250,85]);assert.equal(y.taxiX,-150);assert.equal(y.apronLightRadius,23);
+// Yubileiny uses a separate source-grounded metric layout; Krayniy is unchanged.
+const y=airportDisplaySpec('yubileiny');assert.equal(y.length,2250);assert.equal(y.width,42);assert.deepEqual(y.apron,[312.5,-557.5]);assert.equal(y.taxiX,226.8);assert.equal(y.apronLightRadius,5);assert.equal(y.physicalToLocal,.5);
 console.log('KRAYNIY_TERMINAL_GEOMETRY_PASS',JSON.stringify({version:metadata.version,sourcePhotos:5,meshCount,triangles:actualTriangles,vertexCount,footprintProbes:footprint.size,minimumLandClearance,sourceRoadGap:roadStart.distanceTo(source),center:metadata.center,cameras:Object.keys(metadata.camera)}));

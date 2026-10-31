@@ -36,11 +36,13 @@ function parkedGear(){
  group.userData.wheelBottom=0;return group;
 }
 
-export function installMriyaExhibit(root,fallback,cx,cz){
+export function installMriyaExhibit(root,fallback,cx,cz,{eventTarget=root}={}){
  const holder=new THREE.Group();holder.name='Ан-225 «Мрия» с «Бураном» · импортированная модель';holder.position.set(cx,APRON_Y,cz);root.add(holder);
  const lod=new THREE.LOD();holder.add(lod);
  const gear=parkedGear();gear.visible=false;holder.add(gear);
- const state=root.userData.airport.mriya={version:MRIYA_VERSION,status:'loading',loaded:[],errors:[],wheels:32,apronY:APRON_Y,modelScale:1,nearBytes:2176700,farBytes:1188432};
+ const state=root.userData.airport.mriya={version:MRIYA_VERSION,status:'loading',loaded:[],errors:[],wheels:32,apronY:APRON_Y,modelScale:1,
+  physicalUnits:'metres',physicalToAirportLocal:root.userData.airport.physicalToLocal??1,
+  nearBytes:2176700,farBytes:1188432};
  let replaced=false;
  function attach(gltf,detail){
   const model=prepareModel(gltf.scene);model.name='Мрия · '+detail;
@@ -50,7 +52,7 @@ export function installMriyaExhibit(root,fallback,cx,cz){
   const removed=[];
   if(!replaced){fallback.traverse(m=>{if(m.isMesh)removed.push(m);});fallback.removeFromParent();gear.visible=true;replaced=true;}
   const added=[];model.traverse(m=>{if(m.isMesh)added.push(m);});
-  root.dispatchEvent({type:'museum-exhibit-loaded',added,removed});
+  eventTarget.dispatchEvent({type:'museum-exhibit-loaded',added,removed});
   state.loaded.push(detail);state.status=state.loaded.includes('near')&&state.loaded.includes('far')?'ready':'partial';
   state.dimensions=model.userData.dimensions;let draws=0,triangles=0;model.traverse(m=>{if(m.isMesh){draws+=m.geometry.groups.length||1;triangles+=(m.geometry.index?.count||m.geometry.attributes.position.count)/3;}});state.drawCallsPerLevel=draws;state.triangles=triangles;state.paint='reference-white-red-mriya-thermal-buran';
   holder.updateWorldMatrix(true,true);

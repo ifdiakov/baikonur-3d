@@ -5,6 +5,8 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {buildExhibitRoadFilter,clipRoadOutsideRectangle,rectangleSegmentInterval,airportPerimeterBypass} from '../src/exhibit-road-filter.js';
 import {AIRPORT_DIMENSIONS,AIRPORT_SCALE} from '../src/airport-models.js';
+import {YUBILEINY_SOURCE_LAYOUT} from '../src/yubileiny-layout.js';
+import {RAIL_PROFILE} from '../src/gagarin-rail-approach.js';
 
 // An entry/exit exactly at an existing source vertex must remain a join.
 const rectangle={minX:-1,maxX:1,minZ:-1,maxZ:1};
@@ -76,13 +78,13 @@ for(const region of simplification.regions){
 }
 const hotel=simplification.regions.find(r=>r.id==='pad-75');
 assert.deepEqual([...hotel.keptWayIds].sort(),['172971509','173082916']);
-assert.equal(stats.facilityPorts.length,40);assert.equal(stats.facilityRailPorts.length,6);assert.equal(stats.stationCount,32);
+assert.equal(stats.facilityPorts.length,40);assert.equal(stats.facilityRailPorts.length,8);assert.equal(stats.stationCount,32);
 for(const port of stats.facilityPorts)assert(port.roadGap<1e-7);
 for(const port of stats.facilityRailPorts)assert(port.headCenterGap<1e-7&&port.networkDatumGap<1e-7);
 const train=transport.trainPath();
 assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','1468604922','173086738','256360833']);
 let trainPlanLength=0;for(let i=1;i<train.path.points.length;i++)trainPlanLength+=Math.hypot(train.path.points[i].x-train.path.points[i-1].x,train.path.points[i].z-train.path.points[i-1].z);
-assert(Math.abs(trainPlanLength-1710.9621827247777)<1e-6,'Airport road cleanup changed the train route');
+assert(Math.abs(trainPlanLength-1712.7127365959147)<1e-6,'Airport road cleanup changed the train route');
 assert.equal(roads.osmVehiclePlan.routes.length,4);
 for(const route of roads.osmVehiclePlan.routes)for(const region of simplification.regions)
  for(const id of route.osmWayIds)assert(!region.hiddenWayIds.includes(id),'A working vehicle road was hidden');
@@ -128,10 +130,14 @@ let airportTriangleChecks=0;
 for(const airport of airportPoses){
  const {origin,yaw,spec}=airport,c=Math.cos(yaw),s=Math.sin(yaw),local=v=>[(c*(v[0]-origin.x)-s*(v[2]-origin.z))/AIRPORT_SCALE,v[1]/AIRPORT_SCALE,(s*(v[0]-origin.x)+c*(v[2]-origin.z))/AIRPORT_SCALE];
  const protectedAreas=[{label:'runway and shoulders',minX:-(spec.width+18)/2,maxX:(spec.width+18)/2,minZ:-spec.length/2-60,maxZ:spec.length/2+60}];
- if(airport.key==='yubileiny')protectedAreas.push(
-  {label:'parallel taxiway',minX:-162,maxX:-138,minZ:-spec.length/2+60,maxZ:spec.length/2-60},
-  {label:'aircraft apron',minX:-365,maxX:-135,minZ:-115,maxZ:285}
- );
+ // The new north-western taxiways and two aprons follow the source polygons,
+ // all uniformly reduced by .5 inside the airport's .28 display root.
+ if(airport.key==='yubileiny')for(const feature of YUBILEINY_SOURCE_LAYOUT.features){
+  const polygons=feature.type==='Polygon'?[feature.coordinates]:feature.type==='MultiPolygon'?feature.coordinates:[];
+  for(const [ring] of polygons)protectedAreas.push({label:feature.kind+' source '+feature.id,
+   minX:Math.min(...ring.map(p=>p[0]))*.5,maxX:Math.max(...ring.map(p=>p[0]))*.5,
+   minZ:Math.min(...ring.map(p=>p[1]))*.5,maxZ:Math.max(...ring.map(p=>p[1]))*.5});
+ }
  for(const tri of triangles){
   if(!tri.vertices.some(v=>Math.hypot(v[0]-origin.x,v[2]-origin.z)<spec.length*AIRPORT_SCALE*.7))continue;
   const points=tri.vertices.map(local);
@@ -139,6 +145,44 @@ for(const airport of airportPoses){
  }
 }
 assert(airportTriangleChecks>1000);
+
+// The airport's enlarged display footprint also covered a source railway
+// beyond the real runway end. Test every railway sheet and the exported paths,
+// not only road buffers or railway centre nodes, so ballast and sleepers cannot
+// survive across the runway after the centreline has been clipped.
+const railClearance=simplification.displayClearance.rail,railAirport=airportPoses.find(p=>p.key==='yubileiny');
+assert.equal(railClearance.version,'airport-rail-display-clearance-v1');
+assert.equal(railClearance.sourceGraphUnchanged,true);
+assert(railClearance.marginWorld>RAIL_PROFILE.ballastWidth/2);
+assert(railClearance.clippedWayIds.includes('172571069'),'The railway crossing the displayed runway was not clipped');
+assert(railClearance.clippedWayIds.every(id=>!train.osmWayIds.includes(id)),'Airport clearance changed an active train way');
+assert(railClearance.cuts.length>=1);
+const railLocal=p=>p.clone().sub(railAirport.origin).applyAxisAngle(new THREE.Vector3(0,1,0),-railAirport.yaw).divideScalar(AIRPORT_SCALE).toArray();
+const railSurfaceNames=new Set(['OSM · балласт','OSM · шпалы','OSM · рельсы','OSM · бывшие пути']),railSurfaceChecks={};
+let airportRailTriangleChecks=0,airportRailPathChecks=0;
+layers.rails.traverse(mesh=>{
+ if(!mesh.isMesh||!railSurfaceNames.has(mesh.name))return;
+ const p=mesh.geometry.attributes.position,ix=mesh.geometry.index;
+ railSurfaceChecks[mesh.name]=0;
+ for(let i=0;i<ix.count;i+=3){
+  const vertices=[0,1,2].map(j=>new THREE.Vector3().fromBufferAttribute(p,ix.getX(i+j)));
+  if(!vertices.some(v=>Math.hypot(v.x-railAirport.origin.x,v.z-railAirport.origin.z)<450))continue;
+  const points=vertices.map(railLocal);airportRailTriangleChecks++;railSurfaceChecks[mesh.name]++;
+  assert(!triangleIntersectsRect(points,railClearance.envelope),`${mesh.name} remains inside the displayed airport: ${JSON.stringify(points)}`);
+ }
+});
+assert(airportRailTriangleChecks>1000);
+for(const name of ['OSM · балласт','OSM · шпалы','OSM · рельсы'])assert(railSurfaceChecks[name]>100,'No meaningful airport coverage for '+name);
+assert.equal(new Set(transport.routes.rail.map(r=>r.id)).size,transport.routes.rail.length,'Clipped railway fragments need distinct IDs');
+assert(transport.routes.rail.some(r=>r.osmWayIds.includes('172571069')),'The exterior portion of the airport railway must remain visible');
+for(const route of transport.routes.rail){
+ const points=route.points.map(railLocal);
+ for(let i=1;i<points.length;i++){
+  airportRailPathChecks++;
+  assert.equal(rectangleSegmentInterval(points[i-1],points[i],railClearance.envelope),null,'A returned rail path still crosses the airport: '+route.id);
+ }
+}
+assert(airportRailPathChecks>1000);
 
 // Hidden local road midpoints and former junctions must not retain small
 // pavement/shoulder discs. Avoid locations shared with a legitimate road.
@@ -181,5 +225,5 @@ for(const road of roads)if(road.id.startsWith('osm-road-'))for(const p of road.p
  assert(!(Math.abs(local.x)<51&&Math.abs(local.z)<1185),'A road-light path remains over the runway');
 }
 console.log('EXHIBIT_ROAD_FILTER_PASS',JSON.stringify({regions:simplification.regions.map(r=>({id:r.id,sourceWays:r.sourceWayCount,keptWays:r.keptWayIds.length,hiddenWays:r.hiddenWayIds.length,hiddenEdges:r.hiddenEdgeCount})),
- airportTriangleChecks,hiddenSurfaceProbes:probes.length,ports:stats.facilityPorts.length,railPorts:stats.facilityRailPorts.length,stations:stats.stationCount,
+ airportTriangleChecks,airportRailTriangleChecks,airportRailPathChecks,railSurfaceChecks,clippedRailWays:railClearance.clippedWayIds,hiddenSurfaceProbes:probes.length,ports:stats.facilityPorts.length,railPorts:stats.facilityRailPorts.length,stations:stats.stationCount,
  bypassLength:clearance.bypassLength,airportSourceWay:clearance.gateAccess.sourceWayId,trainPlanLength}));

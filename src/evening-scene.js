@@ -1,14 +1,18 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js?v=20261028-site41-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
-import {buildAirportLightRecords,AIRPORT_LIGHT_LAYOUT_VERSION} from './airport-light-layout.js?v=20261030-krayniy-terminal-v1';
+import {buildAirportLightRecords,AIRPORT_LIGHT_LAYOUT_VERSION} from './airport-light-layout.js?v=20261031-rocket-exhibits-v1';
 
-export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange,isLightAllowed=()=>true,isLightPowered=()=>true,bankRule='north-of-syr-darya-v1'}){
+export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange,isLightAllowed=()=>true,isPoleAllowed=()=>true,isLightPowered=()=>true,bankRule='north-of-syr-darya-v1'}){
  const hemisphere=scene.children.find(o=>o.isHemisphereLight),fields=[],originals=new Map();
  let evening=true,lastSync=-1;
  const excludedByBank={road:0,site:0,city:0,runway:0,apron:0,flood:0};
  const permitted=light=>isLightAllowed(light.x,light.z)&&isLightAllowed(light.poolX??light.x,light.poolZ??light.z);
- function filterBank(records,kind){const kept=records.filter(permitted);excludedByBank[kind]+=records.length-kept.length;for(const light of kept)light.powered=isLightPowered(light.x,light.z)&&isLightPowered(light.poolX??light.x,light.poolZ??light.z);records.splice(0,records.length,...kept);}
+ const excludedByClearance={road:0,site:0,city:0,apron:0};
+ function filterBank(records,kind){const permittedByBank=records.filter(permitted);excludedByBank[kind]+=records.length-permittedByBank.length;
+  const kept=kind==='runway'?permittedByBank:permittedByBank.filter(light=>isPoleAllowed(light.x,light.z));
+  if(kind in excludedByClearance)excludedByClearance[kind]+=permittedByBank.length-kept.length;
+  for(const light of kept)light.powered=isLightPowered(light.x,light.z)&&isLightPowered(light.poolX??light.x,light.poolZ??light.z);records.splice(0,records.length,...kept);}
  const saturn=objects.find(o=>o.record.id==='pad-23');
  scene.updateMatrixWorld(true);
  function saturnGround(x,z){
@@ -109,7 +113,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
    powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered===false).length,litSiteIds:[...new Set(siteLights.filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
    airportLighting:{version:AIRPORT_LIGHT_LAYOUT_VERSION,airports:objects.filter(o=>o.g.userData.airport).map(o=>({key:o.g.userData.airport.key,length:o.g.userData.airport.length,approachLength:o.g.userData.airport.approachLength??480,
     runwayLights:runway.filter(l=>l.owner===o.g).length,apronLights:apron.filter(l=>l.owner===o.g).length}))},
-   bankFilter:{rule:bankRule,excludedByBank:{...excludedByBank},remaining:stationaryLights.length,outsideBankCount},
+   bankFilter:{rule:bankRule,excludedByBank:{...excludedByBank},remaining:stationaryLights.length,outsideBankCount},clearanceFilter:{...excludedByClearance},
    saturnLights:siteLights.filter(l=>l.owner===saturn?.g).map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
    saturnRoadLights:roadLights.filter(l=>l.terrain==='saturn').map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
    lightBatches:fields.reduce((n,f)=>n+f.stats().drawCalls,0),dynamicLights:floods.length,terrainMaterials:originals.size})};

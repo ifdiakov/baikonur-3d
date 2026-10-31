@@ -1,0 +1,354 @@
+{
+  "version": "ukss-drive-model-v2",
+  "sourceFile": "ukss_scaled.max",
+  "sourceUrl": "https://drive.google.com/file/d/1z16hlw1grFyH_MqVk9f4B8Nm48FjX4f7/view",
+  "sourceSha256": "2e51706e5267564fba9fd6d90262a2fb67f3d84ccfd7c3a002b23895fc704ebb",
+  "recoverySha256": "c07c0b6fc00691f4d1555296ba7f0389b0139306e56599df46e58c38c402776f",
+  "assetSha256": "bb0e54acaac21e371ed1df4995ba08f57d46ae86fe6d1a1d710d30bb0b8582d4",
+  "bounds": {
+    "min": [
+      -526.588134765625,
+      -35.306051790308615,
+      -444.1392517089844
+    ],
+    "max": [
+      331.45404052734375,
+      215.15027751806088,
+      274.487548828125
+    ]
+  },
+  "sourceStats": {
+    "originalNodeCount": 7119,
+    "recoveredNodeCount": 7119,
+    "sourceTriangles": 265429,
+    "sourceMaterials": 28,
+    "removedFlatGroundTriangles": 37,
+    "retainedTriangles": 219652,
+    "mockupTriangles": 30753,
+    "textures": 0
+  },
+  "assetStats": {
+    "bytes": 1224772,
+    "triangles": 219652,
+    "primitives": 28,
+    "vertices": 181579,
+    "materials": 28,
+    "textures": 0,
+    "mockupTriangles": 30753
+  },
+  "optimization": {
+    "profile": "macro",
+    "removedFineObjects": 360,
+    "removedFineTriangles": 6276,
+    "lightCylinders": 727,
+    "lightTrianglesRemoved": 17448,
+    "simplifiedPrimitives": 279,
+    "trianglesRemovedBySimplification": 22016,
+    "maximumSurfaceErrorLocal": 0.04,
+    "protectedStructureSourceIds": [
+      33096,
+      36826,
+      37141,
+      47791,
+      47897,
+      47989,
+      48017,
+      48109,
+      48201,
+      48622,
+      55473,
+      57280,
+      57386,
+      57478,
+      57506,
+      57598,
+      63832,
+      64722,
+      64750,
+      66589,
+      66885,
+      66926,
+      67144,
+      67371,
+      67412,
+      67630,
+      67857,
+      67885,
+      68549,
+      68590,
+      75704,
+      76000,
+      76041,
+      76259,
+      76486,
+      76527,
+      76745,
+      76972,
+      77000,
+      77150,
+      77852,
+      81141,
+      81182,
+      81400,
+      81601,
+      81789,
+      81830,
+      82048,
+      82275,
+      82303,
+      82466,
+      83181,
+      87817,
+      88101,
+      88186,
+      88280,
+      88551,
+      88675,
+      88786,
+      88880,
+      89151,
+      89590,
+      89710,
+      45197,
+      44885
+    ],
+    "protectedLatticeCount": 63,
+    "protectedFrameCount": 2,
+    "fullReference": {
+      "triangles": 265392,
+      "bytes": 1441156
+    }
+  },
+  "normalization": {
+    "origin": [
+      -0.00013896613381803036,
+      -0.000024069480787147768,
+      -0.0004993951451268686
+    ],
+    "scale": 1,
+    "rotationY": 0,
+    "unit": "metre",
+    "basis": "Source metric coordinates; 19.997 m between twin rail axes; launch center from BlastPad and grade from Lotok; no independent height fitting",
+    "outerMuseumScale": 0.14,
+    "outerMuseumYaw": -0.56
+  },
+  "terrainCutout": {
+    "polygon": [
+      [
+        -42.53411103386618,
+        90.04016939514513
+      ],
+      [
+        -42.534141033866185,
+        -61.641790604854876
+      ],
+      [
+        -111.45235103386618,
+        -70.53760060485487
+      ],
+      [
+        -111.43110103386618,
+        -75.50295060485487
+      ],
+      [
+        -27.602691033866183,
+        -93.79412060485487
+      ],
+      [
+        19.081318966133818,
+        -93.79394060485487
+      ],
+      [
+        30.96904896613382,
+        -93.56256060485487
+      ],
+      [
+        85.22757896613382,
+        -72.46202060485487
+      ],
+      [
+        172.6173289661338,
+        -40.221480604854875
+      ],
+      [
+        192.6487389661338,
+        -31.192070604854873
+      ],
+      [
+        331.4540389661338,
+        -9.584880604854874
+      ],
+      [
+        331.4540389661338,
+        11.447889395145127
+      ],
+      [
+        192.6487389661338,
+        30.298469395145126
+      ],
+      [
+        172.6173289661338,
+        41.501969395145125
+      ],
+      [
+        86.59761896613382,
+        67.84217939514512
+      ],
+      [
+        30.952978966133816,
+        88.38918939514512
+      ],
+      [
+        18.600008966133817,
+        90.03884939514512
+      ]
+    ],
+    "floorY": -35.305851184076346,
+    "sourceSceneIndex": 522,
+    "basis": "17-vertex inner boundary of the removed connected flat Lotok background; not its outer footprint"
+  },
+  "components": {
+    "dimensionalMockup": {
+      "sourceGroup": 28436,
+      "material": "Bordo",
+      "triangleCount": 30753,
+      "defaultVisible": false
+    },
+    "tower": {
+      "configuration": "at-launch-position",
+      "bounds": {
+        "min": [
+          -19.356706333866182,
+          0.009542369480787148,
+          -31.17875020485487
+        ],
+        "max": [
+          19.356885966133817,
+          76.10519186948079,
+          10.586649095145127
+        ]
+      }
+    }
+  },
+  "connections": {
+    "railSourceEndpoints": [
+      [
+        -10.0020590674491,
+        0.07109943272511643,
+        274.48756282217374
+      ],
+      [
+        9.995216285028928,
+        0.07109943272511643,
+        274.48756282217374
+      ]
+    ],
+    "railSourceGauge": 1.650303,
+    "museumRailSockets": [
+      [
+        -26.167151533104928,
+        2.25328249312848,
+        329.99685544526767
+      ],
+      [
+        26.167151533104928,
+        2.25328249312848,
+        329.99685544526767
+      ]
+    ],
+    "museumRoadSocket": [
+      -58.14922562912206,
+      0.2907461281456103,
+      327.08939416381156
+    ]
+  },
+  "camera": {
+    "overview": {
+      "target": [
+        36.34326601820129,
+        50.8805724254818,
+        -11.629845125824412
+      ],
+      "eye": [
+        450.656498625696,
+        356.16400697837264,
+        501.53707105117775
+      ]
+    },
+    "tower": {
+      "target": [
+        0,
+        40.70445794038544,
+        -7.268653203640257
+      ],
+      "eye": [
+        -90.13129972513919,
+        101.7611448509636,
+        145.37306407280516
+      ]
+    },
+    "trench": {
+      "target": [
+        94.49249164732335,
+        -7.268653203640257,
+        0
+      ],
+      "eye": [
+        377.9699665892934,
+        232.59690251648823,
+        254.402862127409
+      ]
+    },
+    "top": {
+      "target": [
+        -97.39995292877946,
+        0,
+        -84.31637716222698
+      ],
+      "eye": [
+        -97.39995292877946,
+        988.5368356950751,
+        -84.24369063019059
+      ]
+    }
+  },
+  "conversion": {
+    "blender": "4.2.23 LTS",
+    "importer": "nrgsille76/io_scene_max@37db107126f956f7219152671443080360565691",
+    "gltfTransform": "4.5.1",
+    "meshoptimizer": "0.25.0",
+    "compression": "EXT_meshopt_compression",
+    "positionBits": 16,
+    "normalBits": 12,
+    "decimation": true,
+    "externalResources": false
+  },
+  "materialAdaptation": {
+    "unassignedSourceBoxes": {
+      "1969": "Ferm_grey",
+      "25209": "Concrete_white"
+    },
+    "palette": "Muted material-role palette matched to supplied site photographs; no external textures"
+  },
+  "notes": [
+    "Museum detail profile preserves the composition, silhouettes and major assemblies while removing reviewed tiny objects and unnecessary curved-surface subdivisions.",
+    "37 flat background triangles replaced by museum terrain; all 90 real Lotok triangles retained.",
+    "Source dimensional mockup is a separate optional display component, hidden initially.",
+    "Source static hidden/renderable flags remain undecoded; they are not used to remove geometry.",
+    "Original source axes and all component proportions preserved under one uniform normalization."
+  ],
+  "rocketMount": {
+    "position": [
+      0,
+      6.055,
+      0
+    ],
+    "rotation": [
+      0,
+      3.141592653589793,
+      0
+    ],
+    "units": "metres",
+    "basis": "Source BlastPad upper support plane; payload faces away from service tower"
+  }
+}

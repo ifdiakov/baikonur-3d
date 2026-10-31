@@ -3,7 +3,7 @@ import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-museum-menu-v1';
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-rocket-exhibits-v1';
 const sections=['sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'];
 const titles=['ПЛОЩАДКИ И ОБЪЕКТЫ','РАКЕТЫ И ТЕХНИКА','ЦИКЛОГРАММЫ','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};
@@ -61,16 +61,16 @@ try{
  // Native details controls must work from the keyboard as well as the mouse.
  await page.locator('#mythsAccordion > summary').focus();await page.keyboard.press('Enter');
  await page.waitForFunction(()=>document.getElementById('mythsAccordion').open);
- assert.equal(await page.locator('#mythsAccordion [data-museum-action]').count(),0);
- assert.match(await page.locator('#mythsAccordion .museum-menu-empty').textContent(),/пока не добавлены/);
+ assert.equal(await page.locator('#mythsAccordion [data-museum-action]').count(),12);
+ assert.equal(await page.locator('#mythsAccordion .museum-menu-empty').count(),0);
  await openSection('equipmentAccordion');
  assert.equal(await page.locator('#mythsAccordion').evaluate(element=>element.open),false);
- assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').count(),7);
+ assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').count(),10);
  await shot('desktop-equipment');
  await action('r7');await selectedSite('pad-1');
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),true);
- await action('energia');await selectedSite('pad-250');
- assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukss.mockup.visible),true);
+ await action('energia-polyus');await selectedSite('pad-250');
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='ukss').visible),true);
  await page.evaluate(()=>window.__BAIKONUR_QA.setUkssMockupVisible(false));
  await action('tua');await selectedSite('pad-112');
  assert.equal(await page.locator('#mik112Tua').getAttribute('aria-pressed'),'true');

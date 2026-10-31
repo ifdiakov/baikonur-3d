@@ -4,9 +4,10 @@ import {createHash} from 'node:crypto';
 // Verify the deployed bytes, including modules loaded through relative imports.
 // A stale CDN module must not be mistaken for a tested publication.
 const base=process.env.BAIKONUR_PUBLIC_URL||'https://ifdiakov.github.io/baikonur-3d/';
-const files=['index.html','data/catalog.json','data/transport-network.json',
- 'assets/models/ukss/model-v1.glb','assets/models/ukss/manifest-v1.json',
- 'assets/models/tua/model-v1.glb','assets/models/tua/manifest-v1.json',
+const files=['index.html','data/catalog.json','data/transport-network.json','data/buran-knowledge.json','data/buran-source-index.json',
+ 'assets/models/ukss/model-v2.glb','assets/models/ukss/manifest-v2.json',
+ 'assets/models/tua/model-v2.glb','assets/models/tua/manifest-v2.json',
+ ...['soyuz','energia-polyus','energia-buran','energia','energia-m'].flatMap(id=>['assets/models/rockets/'+id+'.glb','assets/models/rockets/'+id+'.json']),
  'assets/models/mriya-buran/near-v2.glb','assets/models/mriya-buran/far-v2.glb','src/vendor/meshopt_decoder-v1.mjs',
  ...(await readdir('src/vendor/three-r160',{recursive:true})).filter(file=>file.endsWith('.js')).map(file=>'src/vendor/three-r160/'+file),
  ...(await readdir('src')).filter(file=>/\.(?:js|css)$/.test(file)).map(file=>'src/'+file),

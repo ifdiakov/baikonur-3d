@@ -1,24 +1,27 @@
 import * as THREE from 'three';
-import {installMriyaExhibit} from './mriya-exhibit.js?v=20261028-mriya-paint-v2';
-import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
+import {installMriyaExhibit} from './mriya-exhibit.js?v=20261031-rocket-exhibits-v1';
+import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
 import {buildKrayniyTerminal,KRAYNIY_AIRPORT_DISPLAY} from './krayniy-terminal.js?v=krayniy-drive-terminal-v1';
+import {buildYubileinyAirport,yubileinyDisplaySpec} from './yubileiny-airport.js?v=20261031-rocket-exhibits-v1';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
  // The longest ten-unit display length that keeps the full approach-light
  // axis at least five world units from the exact OSM river-water polygons.
  // The geographic runway centre, direction and source length are unchanged.
  krayniy:{length:1380,referenceLength:3100,longitudinalScale:1380/3100,width:45,heading:2.06},
- yubileiny:{length:2250,referenceLength:4500,longitudinalScale:.5,width:84,heading:1.948}
+ yubileiny:{length:2250,referenceLength:4500,longitudinalScale:.5,width:42,referenceWidth:84,heading:1.948}
 };
 // The source runway length remains explicit; presentation length can be
 // reduced for shoreline clearance without moving its geographic centre/axis.
 export function airportDisplaySpec(key,overrides={}){
+ if(key==='yubileiny')return {...yubileinyDisplaySpec(),...overrides};
  const base={...AIRPORT_DIMENSIONS[key],...overrides},zScale=base.length/base.referenceLength,H=base.length/2,isY=key==='yubileiny';
  return {...base,key,scale:AIRPORT_SCALE,longitudinalScale:zScale,runwayY:1.75,
   threshold:H-15,touchdown:H-380*zScale,papiSetback:300*zScale,
   approachLength:960*zScale,approachStations:8,apron:isY?[-250,170*zScale]:[KRAYNIY_AIRPORT_DISPLAY.apronX,KRAYNIY_AIRPORT_DISPLAY.apronZ],taxiX:isY?-150:KRAYNIY_AIRPORT_DISPLAY.taxiX,apronWidth:isY?230:KRAYNIY_AIRPORT_DISPLAY.apronWidth,apronLength:400,apronLightRadius:23};
 }
 export function buildAirport(root,key){
+ if(key==='yubileiny')return buildYubileinyAirport(root,buildMriyaRamp);
  const spec=airportDisplaySpec(key),k=archiveKit(root),L=spec.length,W=spec.width,H=L/2,isY=key==='yubileiny';
  const zScale=spec.longitudinalScale,apronZ=spec.apron[1];
  root.userData.airport={...spec};
@@ -51,7 +54,7 @@ export function buildAirport(root,key){
  if(isY)buildMriyaRamp(k,apronX,apronZ);
  const result=k.finish();Object.assign(result.features,root.userData.airport.fallbackFeatures||{});Object.assign(result.features,root.userData.airport.terminal?.features||{});root.userData.airport.features=result.features;delete root.userData.airport.fallbackFeatures;return result;
 }
-function buildMriyaRamp(k,cx,cz){
+function buildMriyaRamp(k,cx,cz,options={}){
  const plane=new THREE.Group();plane.position.set(cx,1.8,cz);plane.name='Ан-225 «Мрия» с «Бураном»';k.root.add(plane);
  const aircraftKit=archiveKit(plane);
  // Local +Z points toward the aircraft's nose; 84 m fuselage, 88.4 m span.
@@ -74,7 +77,7 @@ function buildMriyaRamp(k,cx,cz){
  aircraftKit.quad([0,17,-7],[0,25,-13],[0,25,-17],[0,17,-17],'white','buran-fin',plane);for(const x of [-1.6,0,1.6])aircraftKit.cyl(.7,2,x,16,-18,'dark','buran-engine',Math.PI/2,plane);
  const fallback=aircraftKit.finish();
  k.root.userData.airport.fallbackFeatures=fallback.features;
- installMriyaExhibit(k.root,plane,cx,cz);
+ installMriyaExhibit(k.root,plane,cx,cz,options);
  // Loading device: paired braced portal frames, overhead bridge and hoists.
  for(const z of [-18,18]){for(const side of [-1,1]){const x=side*24;for(const foot of [-11,11]){k.rod([cx+x+side*9,1.8,cz+z+foot],[cx+x,47,cz+z],.8,'steel','loading-ramp-raked-leg');k.rod([cx+x,1.8,cz+z+foot],[cx+x,47,cz+z],.65,'steel','loading-ramp-column');}for(let y=6;y<46;y+=6){k.rod([cx+x-2,y,cz+z],[cx+x+2,y,cz+z],.25,'steel','loading-ramp-level');k.rod([cx+x-2,y,cz+z],[cx+x+2,y+6,cz+z],.18,'steel','loading-ramp-brace');}}
   k.box(52,3,4,cx,47,cz+z,'steel','loading-ramp-crosshead');for(const x of [-4,4]){k.box(3,2,3,cx+x,45,cz+z,'yellow','loading-hoist');k.rod([cx+x,44,cz+z],[cx+x,29,cz+z],.07,'dark','loading-cable');}}

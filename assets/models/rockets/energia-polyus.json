@@ -1,0 +1,121 @@
+{
+  "version": "rocket-exhibits-v1",
+  "id": "energia-polyus",
+  "source": {
+    "sourceFile": "Pole_Energia.bdf",
+    "sourceSha256": "0b2145cefe253268a359da6c2ea69c37a6321db11d0506f7196a3da2d1505e7c",
+    "sourceBytes": 5735300,
+    "sourceMeshCount": 2141,
+    "selectedMeshCount": 1679,
+    "sourceTriangles": 292599,
+    "selectedTriangles": 241468,
+    "discardedInvalidTriangles": 0,
+    "discardedDegenerateTriangles": 5016,
+    "selectedLayers": [
+      "Полюс",
+      "Энергия (1 ступень)",
+      "Энергия (2 ступень)"
+    ],
+    "omittedLayers": [
+      "Camera",
+      "default",
+      "Блок Я",
+      "Блок Я старый"
+    ],
+    "sourceUnitMetres": 0.001,
+    "sourceUp": "+Z",
+    "layers": {
+      "Энергия (1 ступень)": 133190,
+      "Энергия (2 ступень)": 93647,
+      "Полюс": 14631
+    },
+    "bounds": {
+      "min": [
+        -8.846470355987549,
+        0,
+        -8.576190561056137
+      ],
+      "max": [
+        8.846470355987549,
+        58.77000617980957,
+        5.471697807312012
+      ],
+      "size": [
+        17.692940711975098,
+        58.77000617980957,
+        14.047888368368149
+      ]
+    },
+    "originMetres": [
+      0.04984903335571289,
+      -36.4898681640625,
+      8.142328262329102
+    ],
+    "rawBytes": 23461692,
+    "materials": 31,
+    "textures": 12
+  },
+  "assetSha256": "fa8ead0e4735f3fcc72322c498072ed572a29ed0937280b9bb51382c408355b0",
+  "recoverySha256": "fa9be2fc6bb3d047884ef25f6165bddf556faf9853186ab034d75251be4b8882",
+  "assetStats": {
+    "bytes": 615792,
+    "triangles": 48487,
+    "vertices": 62871,
+    "primitives": 12,
+    "materials": 12,
+    "textures": 11
+  },
+  "optimization": {
+    "maximumSurfaceErrorMetres": 0.02,
+    "tinyComponentMaximumDimensionMetres": 0.08,
+    "targetRatio": 0.08,
+    "normalCreaseAngleDegrees": 45,
+    "removedTinyComponents": 626,
+    "removedTinyTriangles": 9602,
+    "simplifiedPrimitives": 822,
+    "trianglesRemovedBySimplification": 183379
+  },
+  "layerStats": {
+    "Энергия (1 ступень)": 27542,
+    "Энергия (2 ступень)": 16978,
+    "Полюс": 3967
+  },
+  "bounds": {
+    "min": [
+      -8.846677681835628,
+      0.004954693224059947,
+      -8.576364640383083
+    ],
+    "max": [
+      8.846677681835628,
+      58.7563362121582,
+      5.47168444235244
+    ],
+    "size": [
+      17.693355363671255,
+      58.751381518934146,
+      14.048049082735524
+    ]
+  },
+  "normalization": {
+    "unit": "metre",
+    "up": "+Y",
+    "baseY": 0,
+    "uniformSourceUnitMetres": 0.001,
+    "originMetres": [
+      0.04984903335571289,
+      -36.4898681640625,
+      8.142328262329102
+    ]
+  },
+  "attribution": {
+    "archive": "http://www.buran.ru/htm/3d-model.htm",
+    "providedBy": "Project owner / Google Drive",
+    "authors": [
+      "Николай Назаренко"
+    ],
+    "sourceUrl": "http://buran.ru/htm/3d-model.htm",
+    "driveUrl": "https://drive.google.com/file/d/1L-N4yRUww2eLj1UF29TAQUMyRY_cqEC8/view",
+    "licenseNote": "Авторская модель из архива buran.ru; файл предоставлен владельцем проекта. Открытая лицензия не заявляется."
+  }
+}

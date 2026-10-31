@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import {buildMzkSdi} from './mzk-sdi.js?v=20261030-mzk-sdi-v1';
-import {buildAirport} from './airport-models.js?v=20261030-krayniy-terminal-v1';
-import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
+import {buildMzkSdi} from './mzk-sdi.js?v=20261031-rocket-exhibits-v1';
+import {buildAirport} from './airport-models.js?v=20261031-rocket-exhibits-v1';
+import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
 export function protonHalls(root){
  const k=archiveKit(root),P=imageFrame([680,450],.60);const hall=(p,w,d,h,opts={})=>{const[x,z]=P(p);return k.hall({x,z,w:w*.6,d:d*.6,h,yaw:imageAxisYaw([0,0],[260,198]),...opts});};
@@ -32,7 +32,7 @@ export function observationPoint(root){
  tent(-15,0,15,20);tent(13,0,20,25);for(const x of[-18,-12,8,15])for(const z of[-5,3]){k.box(3,.18,1,x,1.2,z,'light','buffet-table');for(const dx of[-1,1])k.rod([x+dx,0,z],[x+dx,1.2,z],.055,'steel','table-leg');}for(const x of[-34,34]){k.cyl(.1,8,x,4,-15,'steel','flagpole');k.box(3,1.8,.04,x+1.5,6.8,-15,'blue','flag');}return k.finish();
 }
 export function nedelinRuins(root){
- const k=archiveKit(root);k.box(66,.35,36,0,-.1,0,'concrete','ruin-floor');for(const x of[-32,32])k.box(1,5,35,x,2.5,0,'light','ruin-sidewall');for(const x of[-27,-12,3,18,31])k.box(2.8,5,1.1,x,2.5,18,'light','ruin-front-jamb');k.box(66,1.1,1.1,0,5.1,18,'light','ruin-front-lintel');k.box(65,5,1,0,2.5,-18,'concrete','ruin-backwall');for(const[x,z,w,d]of[[-24,-9,16,17],[21,-7,22,20]])k.box(w,.5,d,x,5.4,z,'concrete','broken-roof-slab');for(let i=0;i<48;i++)k.box(1+i%4,.3+i%3*.2,1+i%5,-35+i*23%73,.2,-24+i*41%49,'concrete','rubble');for(let i=0;i<14;i++)k.rod([-30+i*4,4.8,18],[-29+i*4,6.5,17],.08,'rust','exposed-rebar');return k.finish();
+ const k=archiveKit(root);k.box(66,.35,36,0,-.1,0,'concrete','ruin-floor');for(const x of[-32,32])k.box(1,5,35,x,2.5,0,'light','ruin-sidewall');for(const x of[-27,-12,3,18,31])k.box(2.8,5,1.1,x,2.5,18,'light','ruin-front-jamb');k.box(66,1.1,1.1,0,5.1,18,'light','ruin-front-lintel');k.box(65,5,1,0,2.5,-18,'concrete','ruin-backwall');for(const[x,z,w,d]of[[-24,-9,16,17],[21,-7,22,20]])k.box(w,.5,d,x,5.4,z,'concrete','broken-roof-slab');for(let i=0;i<48;i++)k.box(1+i%4,.3+i%3*.2,1+i%5,-35+i*23%73,.2,-24+i*41%49,'concrete','rubble');for(let i=0;i<14;i++)k.rod([-30+i*4,4.8,18],[-29+i*4,6.5,17],.08,'rust','exposed-rebar');const physical={units:'metres',localScale:1,modelFloorMetres:[66,36],wallHeightMetres:5,dimensionsSurveyed:false,interpretation:'Photo-guided ruin exhibit, not the complete Site 41 launch complex or a measured R-16 launcher.'};root.userData.physicalUnits=physical;return {...k.finish(),physical};
 }
 export function buranMuseum(root){
  const k=archiveKit(root),body=new THREE.Group();root.add(body);k.box(34,.35,38,0,-.2,0,'green','museum-lawn');k.sphere(1,0,4,0,'white','orbiter-fuselage',[2.9,2.7,12.8],body);k.sphere(1,0,2.65,-.2,'dark','orbiter-belly',[2.85,1.1,12.6],body);k.sphere(1,0,3.6,-11.4,'dark','orbiter-nose-cap',[2,1.65,2.5],body);k.sphere(1,0,5.6,-7.5,'white','cockpit-hump',[2.3,1.5,3.7],body);for(const x of[-1.5,1.5])k.box(1.7,.8,.2,x,6.7,-9.5,'glass','cockpit-glazing',x<0?-.38:.38,body);

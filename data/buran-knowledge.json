@@ -1,0 +1,2577 @@
+{
+  "schemaVersion": 1,
+  "edition": "museum-buran-20261030-v1",
+  "language": "ru",
+  "updatedAt": "2026-10-30",
+  "editorialPolicy": {
+    "method": "Краткие самостоятельные пересказы с источниками; исторические документы, технические сведения и воспоминания помечены отдельно.",
+    "historicalScope": "Состояние и события указанного периода; архивные фразы «в настоящее время» не перенесены в 2026 год.",
+    "media": "Фотографии и видео buran.ru не скопированы и не встроены. Ссылки ведут к оригинальным страницам.",
+    "modelViews": "Экспонаты в интерактивном макете могут демонстрировать варианты техники независимо от исторического года сцены; это не утверждение об одновременном присутствии всех вариантов."
+  },
+  "evidenceTypes": {
+    "documented": {
+      "label": "Документированный факт",
+      "description": "Техническое описание, документ либо сопоставимая историческая запись."
+    },
+    "recollection": {
+      "label": "Воспоминание участника",
+      "description": "Свидетельство конкретного автора; детали не объявляются независимо доказанными."
+    },
+    "disputed": {
+      "label": "Спорная история",
+      "description": "В архиве сохранены несовпадающие версии."
+    },
+    "hoax": {
+      "label": "Первоапрельский розыгрыш",
+      "description": "Намеренно вымышленная история; не включается в хронологию реальных событий."
+    }
+  },
+  "sources": {
+    "dimensions": {
+      "id": "dimensions",
+      "title": "Основные характеристики «Энергии — Бурана»",
+      "url": "http://www.buran.ru/htm/table48.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "core": {
+      "id": "core",
+      "title": "Центральный блок «Энергии»",
+      "url": "http://www.buran.ru/htm/2stage.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "firststage": {
+      "id": "firststage",
+      "title": "Блок А и ракета «Зенит»",
+      "url": "http://www.buran.ru/htm/firststg.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "rd170": {
+      "id": "rd170",
+      "title": "Двигатель РД-170 и его семейство",
+      "url": "http://www.buran.ru/htm/rd170.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "ground": {
+      "id": "ground",
+      "title": "Технический комплекс",
+      "url": "http://www.buran.ru/htm/ongetk.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "ground-prep": {
+      "id": "ground-prep",
+      "title": "Подготовка орбитального корабля на ТК",
+      "url": "http://www.buran.ru/htm/ongetk2.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "pad-prep": {
+      "id": "pad-prep",
+      "title": "Подготовка «Бурана» на стартовом комплексе",
+      "url": "http://www.buran.ru/htm/ongeck.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "launch-architecture": {
+      "id": "launch-architecture",
+      "title": "Управление подготовкой «Энергии»",
+      "url": "http://www.buran.ru/htm/25-3.htm",
+      "kind": "first-person",
+      "author": "Б. И. Губанов · «Триумф и трагедия “Энергии”»",
+      "accessed": "2026-10-30"
+    },
+    "transport": {
+      "id": "transport",
+      "title": "Средства наземной транспортировки",
+      "url": "http://www.buran.ru/htm/transp.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "coins": {
+      "id": "coins",
+      "title": "Вывоз «Энергии — Бурана» на старт",
+      "url": "http://www.buran.ru/htm/49-3.htm",
+      "kind": "first-person",
+      "author": "Б. И. Губанов · «Триумф и трагедия “Энергии”»",
+      "accessed": "2026-10-30"
+    },
+    "runway": {
+      "id": "runway",
+      "title": "Посадочный комплекс «Бурана»",
+      "url": "http://www.buran.ru/htm/pk.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "runway-test": {
+      "id": "runway-test",
+      "title": "Один полёт на Юбилейном",
+      "url": "http://www.buran.ru/htm/memory22.htm",
+      "kind": "first-person",
+      "author": "Сергей Грачёв",
+      "accessed": "2026-10-30",
+      "published": "2004-03-11"
+    },
+    "mik-collapse": {
+      "id": "mik-collapse",
+      "title": "МИК после обрушения: материалы комиссии",
+      "url": "http://www.buran.ru/htm/foto7.htm",
+      "kind": "document-reprint",
+      "author": "Комиссия по расследованию; перепечатка на buran.ru",
+      "accessed": "2026-10-30",
+      "published": "2002-06-07",
+      "note": "В заголовке страницы — 13 мая; текст акта датирует само обрушение 12 мая 2002 года."
+    },
+    "site-photos": {
+      "id": "site-photos",
+      "title": "Площадки 110 и 112: фотографии 20 октября 2002 года",
+      "url": "http://www.buran.ru/htm/sk.htm",
+      "kind": "dated-photographs",
+      "author": "Сергей Андреев / архив buran.ru",
+      "accessed": "2026-10-30",
+      "published": "2002-10-20"
+    },
+    "pad-photos": {
+      "id": "pad-photos",
+      "title": "Фотоархив макетов «Энергии» и строительства стартов",
+      "url": "http://www.buran.ru/htm/foto20.htm",
+      "kind": "dated-photographs",
+      "author": "Архив buran.ru; фотографии Анатолия Демцуна и других авторов",
+      "accessed": "2026-10-30",
+      "note": "Подписи к левой и правой пусковым установкам противоречат video9.htm. Номера 37/38 не приняты за установленный факт."
+    },
+    "video-log": {
+      "id": "video-log",
+      "title": "Описи архивной съёмки: вывозы и подготовка 1988 года",
+      "url": "http://www.buran.ru/htm/video9.htm",
+      "kind": "archive-catalogue",
+      "author": "Архив buran.ru; исходная съёмка группы Сергея Слипченко",
+      "accessed": "2026-10-30",
+      "note": "Использованы описания и даты. Видеофайлы не перенесены в музей."
+    },
+    "energia-m": {
+      "id": "energia-m",
+      "title": "«Энергия-М»: проект и примерочные испытания",
+      "url": "http://www.buran.ru/htm/enem.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "energia-m-design": {
+      "id": "energia-m-design",
+      "title": "Конструкция «Энергии-М»",
+      "url": "http://www.buran.ru/htm/11.htm",
+      "kind": "first-person",
+      "author": "Б. И. Губанов · «Триумф и трагедия “Энергии”»",
+      "accessed": "2026-10-30"
+    },
+    "hardware": {
+      "id": "hardware",
+      "title": "Собранные экземпляры ракеты «Энергия»",
+      "url": "http://www.buran.ru/htm/rocrt3.htm",
+      "kind": "archive-register",
+      "author": "Сергей Курочкин / архив buran.ru",
+      "accessed": "2026-10-30"
+    },
+    "energia-book": {
+      "id": "energia-book",
+      "title": "«Энергия»: создание, испытания и первый пуск",
+      "url": "http://www.buran.ru/htm/bigbook.htm",
+      "kind": "document-reprint",
+      "author": "Историческое издание НПО «Энергия», перепечатка на buran.ru",
+      "accessed": "2026-10-30"
+    },
+    "polyus": {
+      "id": "polyus",
+      "title": "Первый груз «Энергии»: «Полюс» / «Скиф-ДМ»",
+      "url": "http://www.buran.ru/htm/cargo.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "abort": {
+      "id": "abort",
+      "title": "Отмена запуска 29 октября 1988 года",
+      "url": "http://www.buran.ru/htm/fir2510.htm",
+      "kind": "document-and-recollections",
+      "author": "Архив buran.ru; сообщение ТАСС и воспоминания участников",
+      "accessed": "2026-10-30"
+    },
+    "flight": {
+      "id": "flight",
+      "title": "Первый космический полёт «Бурана»",
+      "url": "http://www.buran.ru/htm/flight.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "landing": {
+      "id": "landing",
+      "title": "Снижение и автоматическая посадка «Бурана»",
+      "url": "http://www.buran.ru/htm/landing.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "announcement": {
+      "id": "announcement",
+      "title": "Первое официальное сообщение о полёте",
+      "url": "http://www.buran.ru/htm/firstext.htm",
+      "kind": "document-reprint",
+      "author": "ТАСС, 15 ноября 1988 года",
+      "accessed": "2026-10-30",
+      "published": "1988-11-15"
+    },
+    "dmb-retelling": {
+      "id": "dmb-retelling",
+      "title": "Экспериментальный вывоз и история о надписи ДМБ",
+      "url": "http://www.buran.ru/htm/vyvoz.htm",
+      "kind": "retelling",
+      "author": "Архив buran.ru; пересказ рассказа С. В. Марчука 1998 года",
+      "accessed": "2026-10-30",
+      "note": "Сведения о месте надписи, виновнике и наказании расходятся с memory3.htm."
+    },
+    "dmb-witness": {
+      "id": "dmb-witness",
+      "title": "Надпись ДМБ: версия участника событий",
+      "url": "http://www.buran.ru/htm/memory3.htm",
+      "kind": "first-person",
+      "author": "Владимир Ермолаев",
+      "accessed": "2026-10-30"
+    },
+    "evacuation": {
+      "id": "evacuation",
+      "title": "Спасение экипажа на стартовом комплексе",
+      "url": "http://www.buran.ru/htm/safck.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "evacuation-story": {
+      "id": "evacuation-story",
+      "title": "«Склиз»: воспоминания о стартовом комплексе",
+      "url": "http://www.buran.ru/htm/memory16.htm",
+      "kind": "first-person",
+      "author": "Владимир Ермолаев",
+      "accessed": "2026-10-30"
+    },
+    "carrier": {
+      "id": "carrier",
+      "title": "Воздушный транспорт: ВМ-Т и Ан-225",
+      "url": "http://www.buran.ru/htm/3m.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "atmospheric": {
+      "id": "atmospheric",
+      "title": "БТС-002 ОК-ГЛИ: атмосферный аналог",
+      "url": "http://www.buran.ru/htm/anabst.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru · Вадим Лукашевич",
+      "accessed": "2026-10-30"
+    },
+    "baikal-hoax": {
+      "id": "baikal-hoax",
+      "title": "Мнимый второй полёт «Байкала»",
+      "url": "http://www.buran.ru/htm/baikal.htm",
+      "kind": "april-fools-hoax",
+      "author": "Вадим Лукашевич · первоапрельская публикация",
+      "accessed": "2026-10-30",
+      "published": "2000-04-01",
+      "note": "Материал о якобы секретном полёте 2 февраля 1992 года — розыгрыш. Не использовать как хронику космических полётов."
+    },
+    "model-authors": {
+      "id": "model-authors",
+      "title": "Каталог авторских 3D-моделей",
+      "url": "http://www.buran.ru/htm/3d-model.htm",
+      "kind": "archive-catalogue",
+      "author": "Архив buran.ru",
+      "accessed": "2026-10-30"
+    },
+    "esa-soyuz": {
+      "id": "esa-soyuz",
+      "title": "Facts about the Soyuz",
+      "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz",
+      "kind": "agency",
+      "author": "Европейское космическое агентство (ESA)",
+      "accessed": "2026-10-30"
+    },
+    "esa-baikonur": {
+      "id": "esa-baikonur",
+      "title": "Baikonur: Steppe into Space",
+      "url": "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Astronauts/Baikonur_Steppe_into_Space",
+      "kind": "agency",
+      "author": "Европейское космическое агентство (ESA)",
+      "accessed": "2026-10-30",
+      "published": "2002-05-01"
+    },
+    "esa-pad31": {
+      "id": "esa-pad31",
+      "title": "Вывоз и пуск «Союза ТМА-15М» с площадки 31",
+      "url": "https://www.esa.int/ESA_Multimedia/Videos/2014/12/Soyuz_TMA-15M_spacecraft_transfer_and_liftoff",
+      "kind": "agency",
+      "author": "Европейское космическое агентство (ESA)",
+      "accessed": "2026-10-30",
+      "published": "2014-12-08"
+    },
+    "proton-spec": {
+      "id": "proton-spec",
+      "title": "Proton Breeze M: технические характеристики",
+      "url": "https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/",
+      "kind": "operator",
+      "author": "International Launch Services (ILS)",
+      "accessed": "2026-10-30"
+    },
+    "proton-guide": {
+      "id": "proton-guide",
+      "title": "Proton Mission Planner’s Guide, revision 7",
+      "url": "https://www.ilslaunch.com/wp-content/uploads/pdf/Proton-Mission-Planners-Guide-Revision-7-LKEB-9812-1990.pdf",
+      "kind": "operator",
+      "author": "International Launch Services (ILS)",
+      "accessed": "2026-10-30",
+      "published": "2009",
+      "note": "Руководство оператора; сведения о пусковых установках относятся к периоду публикации."
+    },
+    "zenit-designers": {
+      "id": "zenit-designers",
+      "title": "«Зенит» — ракета-носитель XXI века",
+      "url": "https://rvsn.ruzhany.info/umz_2014_03.html",
+      "kind": "designer-publication",
+      "author": "В. П. Горбулин, А. В. Дегтярев · «Вісник НАН України», 2014, № 6",
+      "accessed": "2026-10-30",
+      "published": "2014",
+      "note": "Перепечатка статьи разработчиков; размеры относятся к базовому двухступенчатому «Зениту»."
+    }
+  },
+  "sites": {
+    "pad-110": {
+      "id": "pad-110",
+      "title": "Площадка 110 · старт «Энергии — Бурана»",
+      "subtitle": "Н1 → «Энергия — Буран»",
+      "summary": "Два старта лунной программы Н1 стали основой комплекса «Энергии — Бурана». Для полёта 15 ноября 1988 года использовали левую пусковую установку; соседний правый старт в съёмке 1988 года ещё строится.",
+      "summarySources": [
+        "video-log"
+      ],
+      "metrics": [
+        {
+          "text": "Каналы расходятся на 120°.",
+          "sources": [
+            "pad-prep"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/ongeck.htm"
+          ],
+          "value": "3",
+          "label": "газоотводных канала"
+        },
+        {
+          "text": "",
+          "sources": [
+            "pad-prep"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/ongeck.htm"
+          ],
+          "value": "≈23 м",
+          "label": "глубина газоотводов"
+        },
+        {
+          "text": "",
+          "sources": [
+            "announcement"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/firstext.htm"
+          ],
+          "value": "15.11.1988",
+          "label": "пуск «Бурана»"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Башня обслуживания давала доступ к разным уровням комплекса. Перед заправкой её отводили; заправочная мачта продолжала обслуживать ракету.",
+          "sources": [
+            "launch-architecture"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/25-3.htm"
+          ],
+          "title": "Подвижная башня"
+        },
+        {
+          "text": "Около двадцати метров в поперечнике занимает центральная шахта. Внизу поток разделяется на три направления; это важная черта плана площадки.",
+          "sources": [
+            "pad-prep"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/ongeck.htm"
+          ],
+          "title": "Бетон под ракетой"
+        },
+        {
+          "text": "Агрегат у люка корабля соединялся с бункером двумя трубами: для штатного лифта и для срочной эвакуации по лотку.",
+          "sources": [
+            "evacuation"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/safck.htm"
+          ],
+          "title": "Два наклонных рукава"
+        }
+      ],
+      "timeline": [
+        {
+          "text": "Вывоз собранной системы из МЗК и установка на старт.",
+          "sources": [
+            "video-log"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/video9.htm"
+          ],
+          "date": "10.10.1988"
+        },
+        {
+          "text": "Автоматика остановила подготовку за 51 секунду до пуска.",
+          "sources": [
+            "abort"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/fir2510.htm"
+          ],
+          "date": "29.10.1988"
+        },
+        {
+          "text": "Беспилотный орбитальный полёт и возвращение на Юбилейный.",
+          "sources": [
+            "announcement"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/firstext.htm"
+          ],
+          "date": "15.11.1988"
+        }
+      ],
+      "stories": [
+        "abort-51",
+        "evacuation-slide",
+        "dmb-inscription"
+      ],
+      "relatedRockets": [
+        "energia-buran"
+      ],
+      "caveat": {
+        "text": "Номера левого и правого стартов в подписях фотоархива и видеоархива переставлены местами. Здесь используется подтверждаемое обозначение «левый старт» без спорного номера.",
+        "sources": [
+          "pad-photos",
+          "video-log"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/foto20.htm",
+          "http://www.buran.ru/htm/video9.htm"
+        ]
+      }
+    },
+    "pad-250": {
+      "id": "pad-250",
+      "title": "Площадка 250 · УКСС",
+      "subtitle": "Универсальный комплекс стенд-старт",
+      "summary": "Здесь наземные испытания тяжёлой ракеты сочетались с возможностью пуска. 15 мая 1987 года с УКСС впервые стартовала «Энергия» с аппаратом «Полюс».",
+      "summarySources": [
+        "energia-book"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "energia-book"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/bigbook.htm"
+          ],
+          "value": "15.05.1987",
+          "label": "первый пуск «Энергии»"
+        },
+        {
+          "text": "Продолжительность успешного второго огневого запуска стендовой ракеты 5С.",
+          "sources": [
+            "energia-book"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/bigbook.htm"
+          ],
+          "value": "390 с",
+          "label": "огневое испытание блока Ц"
+        }
+      ],
+      "facts": [
+        {
+          "text": "До полёта комплекс служил для примерок, холодных заправочных и огневых испытаний. Это объясняет большой объём обслуживающих конструкций вокруг ракеты.",
+          "sources": [
+            "energia-book"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/bigbook.htm"
+          ],
+          "title": "Стенд и старт"
+        },
+        {
+          "text": "УКСС получил односкатный газоотвод, тогда как на площадке 110 струи уходят по трём каналам. Эта разница заметна даже сверху.",
+          "sources": [
+            "launch-architecture"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/25-3.htm"
+          ],
+          "title": "Один газоотвод"
+        },
+        {
+          "text": "4М проверял сопряжение и технологию, 5С предназначался для огневой отработки. Внешне похожие «Энергии» выполняли разные задачи.",
+          "sources": [
+            "hardware"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/rocrt3.htm"
+          ],
+          "title": "Макеты имели свою работу"
+        }
+      ],
+      "timeline": [
+        {
+          "text": "Примерочные работы макета 4М с наземным оборудованием.",
+          "sources": [
+            "energia-book"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/bigbook.htm"
+          ],
+          "date": "1983"
+        },
+        {
+          "text": "Первый полёт носителя с «Полюсом».",
+          "sources": [
+            "polyus"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/cargo.htm"
+          ],
+          "date": "1987"
+        },
+        {
+          "text": "Примерка полноразмерного макета «Энергии-М».",
+          "sources": [
+            "energia-m"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/enem.htm"
+          ],
+          "date": "25–26.12.1991"
+        }
+      ],
+      "stories": [
+        "polyus-turn",
+        "energia-m-winter"
+      ],
+      "relatedRockets": [
+        "energia-polyus",
+        "energia",
+        "energia-m"
+      ]
+    },
+    "pad-112": {
+      "id": "pad-112",
+      "title": "Площадка 112 · МИК и «Кузнечики»",
+      "subtitle": "Сборка · стыковка · вывоз",
+      "summary": "В корпусе, созданном для Н1 и переоборудованном под «Энергию», собирали ракету и соединяли её с «Бураном». На старт система отправлялась горизонтально на транспортно-установочном агрегате.",
+      "summarySources": [
+        "mik-collapse",
+        "ground"
+      ],
+      "metrics": [
+        {
+          "text": "Высота 56 м; пролёты 3, 4 и 5.",
+          "sources": [
+            "mik-collapse"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto7.htm"
+          ],
+          "value": "240 × 120 м",
+          "label": "высокие пролёты"
+        },
+        {
+          "text": "Высота 30 м; пролёты 1 и 2.",
+          "sources": [
+            "mik-collapse"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto7.htm"
+          ],
+          "value": "240 × 70 м",
+          "label": "низкие пролёты"
+        },
+        {
+          "text": "",
+          "sources": [
+            "transport"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/transp.htm"
+          ],
+          "value": "20 м",
+          "label": "между осями путей ТУА"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Большая высота нужна была для работы с крупными ракетными блоками, мостовыми кранами и собранной системой. Сборка и совместные проверки предшествовали заключительным операциям в МЗК.",
+          "sources": [
+            "ground"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/ongetk.htm"
+          ],
+          "title": "Сборочный зал"
+        },
+        {
+          "text": "«Кузнечики» связаны с наследием Н1. В программе «Энергии» ТУА перевозил комплекс по двум параллельным железнодорожным путям и обеспечивал установку на старте.",
+          "sources": [
+            "transport"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/transp.htm"
+          ],
+          "title": "Транспортно-установочный агрегат"
+        }
+      ],
+      "timeline": [
+        {
+          "text": "Завершено строительство корпуса для Н1.",
+          "sources": [
+            "mik-collapse"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto7.htm"
+          ],
+          "date": "1967"
+        },
+        {
+          "text": "Закончено переоборудование под «Энергию — Буран».",
+          "sources": [
+            "mik-collapse"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto7.htm"
+          ],
+          "date": "1985–1986"
+        },
+        {
+          "text": "Обрушение кровли высоких пролётов уничтожило находившийся внутри лётный «Буран» 1.01.",
+          "sources": [
+            "mik-collapse"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto7.htm"
+          ],
+          "date": "12.05.2002"
+        }
+      ],
+      "stories": [
+        "coins-under-tua",
+        "which-buran"
+      ],
+      "relatedRockets": [
+        "tua",
+        "energia-buran"
+      ]
+    },
+    "pad-112a": {
+      "id": "pad-112a",
+      "title": "Площадка 112А · МЗК и СДИ",
+      "subtitle": "Заключительная подготовка и испытания",
+      "summary": "Монтажно-заправочный комплекс завершал подготовку уже состыкованной системы. Соседний стенд динамических испытаний предназначался для исследования её колебаний.",
+      "summarySources": [
+        "ground",
+        "hardware"
+      ],
+      "facts": [
+        {
+          "text": "Здесь проводили заключительные операции с кораблём: заправку его собственных систем, установку полётного оборудования и подготовку к вывозу. Криогенные баки ракеты заправляли на старте.",
+          "sources": [
+            "ground",
+            "launch-architecture"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/ongetk.htm",
+            "http://www.buran.ru/htm/25-3.htm"
+          ],
+          "title": "Зачем отдельный МЗК"
+        },
+        {
+          "text": "Динамический макет 3Д предназначался для частотных испытаний на СДИ: инженерам требовалось знать поведение связки крупных упругих конструкций.",
+          "sources": [
+            "hardware"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/rocrt3.htm"
+          ],
+          "title": "Проверка колебаний"
+        },
+        {
+          "text": "После примерок на УКСС в декабре 1991 года в СДИ поместили полноразмерный макет «Энергии-М». Архивная страница подтверждает его нахождение там фотографиями 2006 года.",
+          "sources": [
+            "energia-m"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/enem.htm"
+          ],
+          "title": "Поздний экспонат"
+        }
+      ],
+      "timeline": [
+        {
+          "text": "Архивная съёмка работ с «Энергией — Бураном» в МЗК.",
+          "sources": [
+            "video-log"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/video9.htm"
+          ],
+          "date": "16.09–09.10.1988"
+        },
+        {
+          "text": "Вывоз системы на площадку 110.",
+          "sources": [
+            "video-log"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/video9.htm"
+          ],
+          "date": "10.10.1988"
+        },
+        {
+          "text": "Макет «Энергии-М» помещён в СДИ после примерочных испытаний.",
+          "sources": [
+            "energia-m"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/enem.htm"
+          ],
+          "date": "27.12.1991"
+        }
+      ],
+      "stories": [
+        "energia-m-winter"
+      ],
+      "relatedRockets": [
+        "energia-buran",
+        "energia-m"
+      ]
+    },
+    "pad-251": {
+      "id": "pad-251",
+      "title": "Площадка 251 · Юбилейный",
+      "subtitle": "Посадочный комплекс «Бурана»",
+      "summary": "15 ноября 1988 года здесь закончился единственный космический полёт «Бурана». Полоса, рулёжные дорожки и радиотехнические средства проектировались как единый посадочный комплекс.",
+      "summarySources": [
+        "announcement",
+        "runway"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "runway"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/pk.htm"
+          ],
+          "value": "4 500 × 84 м",
+          "label": "основная бетонная ВПП"
+        },
+        {
+          "text": "Асфальтовый участок у каждого торца.",
+          "sources": [
+            "runway"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/pk.htm"
+          ],
+          "value": "250 м",
+          "label": "концевая полоса безопасности"
+        },
+        {
+          "text": "Магистральная / соединительные РД-1 и РД-2.",
+          "sources": [
+            "runway"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/pk.htm"
+          ],
+          "value": "24 / 21 м",
+          "label": "ширина рулёжных дорожек"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Перрон с погрузочной установкой, места стоянок и радиотехнические сооружения расположены отдельно от основной ВПП. Они не перекрывают путь посадочного пробега.",
+          "sources": [
+            "runway"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/pk.htm"
+          ],
+          "title": "За пределами полосы"
+        },
+        {
+          "text": "Профиль будущей посадки и работу оборудования отрабатывали летающие лаборатории. Сергей Грачёв описал специальные пробежки Ту-154ЛЛ для оценки ровности бетона.",
+          "sources": [
+            "runway-test"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/memory22.htm"
+          ],
+          "title": "От самолёта к кораблю"
+        }
+      ],
+      "timeline": [
+        {
+          "text": "Описанный Грачёвым испытательный полёт с пробежками по ВПП.",
+          "sources": [
+            "runway-test"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/memory22.htm"
+          ],
+          "date": "30.10.1986"
+        },
+        {
+          "text": "Автоматическая посадка орбитального корабля после двух витков.",
+          "sources": [
+            "announcement"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/firstext.htm"
+          ],
+          "date": "15.11.1988"
+        }
+      ],
+      "stories": [
+        "runway-profilometer",
+        "landing-turn",
+        "mriya-after-flight"
+      ],
+      "relatedRockets": [
+        "buran"
+      ]
+    },
+    "pad-1": {
+      "id": "pad-1",
+      "title": "Площадка 1 · Гагаринский старт",
+      "subtitle": "Два начала космической эпохи",
+      "summary": "С этого старта отправились первый искусственный спутник Земли и первый человек, совершивший орбитальный полёт. Историю площадки продолжают разные поколения семейства Р-7.",
+      "summarySources": [
+        "esa-baikonur"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "esa-baikonur"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Astronauts/Baikonur_Steppe_into_Space"
+          ],
+          "value": "04.10.1957",
+          "label": "первый спутник"
+        },
+        {
+          "text": "",
+          "sources": [
+            "esa-baikonur"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Astronauts/Baikonur_Steppe_into_Space"
+          ],
+          "value": "12.04.1961",
+          "label": "полёт Юрия Гагарина"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Современная пилотируемая компоновка «Союза» показывает развитие семейства. Установленный в музее «Союз» не следует подписывать ракетой «Восток» из полёта Гагарина.",
+          "sources": [
+            "esa-soyuz",
+            "esa-baikonur"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz",
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/Astronauts/Baikonur_Steppe_into_Space"
+          ],
+          "title": "Ракета-экспонат"
+        }
+      ],
+      "relatedRockets": [
+        "soyuz"
+      ]
+    },
+    "pad-31": {
+      "id": "pad-31",
+      "title": "Площадка 31 · старт «Союза»",
+      "subtitle": "Ракетное семейство Р-7",
+      "summary": "Площадка использовалась для пилотируемых запусков «Союза». Архив ESA документирует здесь вывоз и пуск «Союза ТМА-15М» в ноябре 2014 года.",
+      "summarySources": [
+        "esa-pad31"
+      ],
+      "facts": [
+        {
+          "text": "Собранную ракету вывозили из МИК-40 горизонтально и поднимали в вертикальное положение уже на стартовой позиции.",
+          "sources": [
+            "esa-pad31"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/ESA_Multimedia/Videos/2014/12/Soyuz_TMA-15M_spacecraft_transfer_and_liftoff"
+          ],
+          "title": "На старт по рельсам"
+        },
+        {
+          "text": "В музее пилотируемая компоновка «Союза» служит общим размерным ориентиром для площадок 1 и 31: около 49,5 м высоты.",
+          "sources": [
+            "esa-soyuz"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz"
+          ],
+          "title": "Одинаковый масштаб"
+        }
+      ],
+      "relatedRockets": [
+        "soyuz"
+      ]
+    },
+    "pad-81": {
+      "id": "pad-81",
+      "title": "Площадка 81 · «Протон»",
+      "subtitle": "Тяжёлый носитель и его наземный комплекс",
+      "summary": "В руководстве ILS для коммерческих пусков «Протона» указана площадка 81, пусковая установка 24. Архивный документ описывает инфраструктуру периода своей публикации.",
+      "summarySources": [
+        "proton-guide"
+      ],
+      "facts": [
+        {
+          "text": "Компоновка «Протон-М» с «Бризом-М» и стандартным обтекателем диаметром 4,1 м имеет длину 58,2 м. Эту величину нельзя переносить на все варианты «Протона».",
+          "sources": [
+            "proton-spec"
+          ],
+          "sourceUrls": [
+            "https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/"
+          ],
+          "title": "Размер зависит от головной части"
+        }
+      ],
+      "relatedRockets": [
+        "proton"
+      ]
+    },
+    "pad-200": {
+      "id": "pad-200",
+      "title": "Площадка 200 · «Протон»",
+      "subtitle": "Тяжёлый носитель и его наземный комплекс",
+      "summary": "В руководстве ILS для коммерческих пусков «Протона» указана площадка 200, пусковая установка 39. Архивный документ описывает инфраструктуру периода своей публикации.",
+      "summarySources": [
+        "proton-guide"
+      ],
+      "facts": [
+        {
+          "text": "Компоновка «Протон-М» с «Бризом-М» и стандартным обтекателем диаметром 4,1 м имеет длину 58,2 м. Эту величину нельзя переносить на все варианты «Протона».",
+          "sources": [
+            "proton-spec"
+          ],
+          "sourceUrls": [
+            "https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/"
+          ],
+          "title": "Размер зависит от головной части"
+        }
+      ],
+      "relatedRockets": [
+        "proton"
+      ]
+    },
+    "pad-45": {
+      "id": "pad-45",
+      "title": "Площадка 45 · «Зенит»",
+      "subtitle": "Связь двух ракетных программ",
+      "summary": "На этой площадке запускали «Зенит». Его первая ступень и боковые блоки «Энергии» создавались с высокой степенью унификации: две программы разделяли большой объём инженерной отработки.",
+      "summarySources": [
+        "firststage",
+        "zenit-designers"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "zenit-designers"
+          ],
+          "sourceUrls": [
+            "https://rvsn.ruzhany.info/umz_2014_03.html"
+          ],
+          "value": "57 м",
+          "label": "базовый «Зенит-2»"
+        },
+        {
+          "text": "",
+          "sources": [
+            "zenit-designers"
+          ],
+          "sourceUrls": [
+            "https://rvsn.ruzhany.info/umz_2014_03.html"
+          ],
+          "value": "3,9 м",
+          "label": "диаметр корпуса"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Разработчики связывали выбор диаметра 3,9 м с возможностью перевозить ракету по железной дороге без остановки встречного движения.",
+          "sources": [
+            "zenit-designers"
+          ],
+          "sourceUrls": [
+            "https://rvsn.ruzhany.info/umz_2014_03.html"
+          ],
+          "title": "Железнодорожный габарит"
+        },
+        {
+          "text": "На «Зените» использовался РД-171 — вариант четырёхкамерного двигателя, родственного РД-170 боковых блоков «Энергии».",
+          "sources": [
+            "rd170"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/rd170.htm"
+          ],
+          "title": "Семейство двигателей"
+        }
+      ],
+      "relatedRockets": [
+        "zenit",
+        "energia"
+      ]
+    }
+  },
+  "rockets": {
+    "soyuz": {
+      "id": "soyuz",
+      "title": "«Союз» · пилотируемая компоновка",
+      "subtitle": "Ракета-экспонат на площадках 1 и 31",
+      "summary": "Четыре боковых блока вокруг центрального и головная часть с системой аварийного спасения создают узнаваемый силуэт пилотируемого «Союза». Экспонат показывает эту компоновку семейства Р-7.",
+      "summarySources": [
+        "esa-soyuz"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "esa-soyuz"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz"
+          ],
+          "value": "49,5 м",
+          "label": "высота компоновки"
+        },
+        {
+          "text": "",
+          "sources": [
+            "esa-soyuz"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz"
+          ],
+          "value": "10,3 м",
+          "label": "максимальная ширина"
+        }
+      ],
+      "facts": [
+        {
+          "text": "«Союз» — имя и ракеты-носителя, и пилотируемого корабля. ТМА обозначает корабль; варианты ракеты имеют собственные индексы.",
+          "sources": [
+            "esa-soyuz"
+          ],
+          "sourceUrls": [
+            "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz"
+          ],
+          "title": "Носитель и корабль"
+        }
+      ],
+      "caveat": {
+        "text": "Модификация носителя исходной модели не установлена однозначно. Приведённые размеры служат справочным ориентиром пилотируемой компоновки.",
+        "sources": [
+          "esa-soyuz",
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz",
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      },
+      "modelCredit": {
+        "text": "Исходная 3D-модель: Владимир Некрасов. Для музея подготовлена упрощённая версия файла, предоставленного владельцем макета.",
+        "authors": [
+          "Владимир Некрасов"
+        ],
+        "sources": [
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      }
+    },
+    "energia": {
+      "id": "energia",
+      "title": "«Энергия»",
+      "subtitle": "Тяжёлая ракета-носитель · 11К25",
+      "summary": "Ракета создавалась для разных крупных нагрузок: крылатого орбитального корабля или отдельного грузового аппарата сбоку центрального блока. В 1987 и 1988 годах состоялись два её пуска.",
+      "summarySources": [
+        "energia-book",
+        "hardware"
+      ],
+      "metrics": [
+        {
+          "text": "Четыре РД-170 на боковых блоках и четыре РД-0120 в центре.",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "value": "4 + 4",
+          "label": "маршевых двигателя"
+        },
+        {
+          "text": "",
+          "sources": [
+            "core"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/2stage.htm"
+          ],
+          "value": "7,7 м",
+          "label": "диаметр центрального блока"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Боковые блоки использовали керосин с кислородом, центральный — водород с кислородом. Водородные двигатели размещались на ракете, а не в хвосте орбитального «Бурана».",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "title": "Два горючих"
+        },
+        {
+          "text": "Длина отдельного бокового блока — 39,46 м. Четыре таких блока образуют первую ступень тяжёлой ракеты.",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "title": "Блок А"
+        }
+      ],
+      "relatedSites": [
+        "pad-250",
+        "pad-110"
+      ],
+      "modelCredit": {
+        "text": "Исходная 3D-модель: Николай Назаренко. Для музея подготовлена упрощённая версия файла, предоставленного владельцем макета.",
+        "authors": [
+          "Николай Назаренко"
+        ],
+        "sources": [
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      }
+    },
+    "energia-polyus": {
+      "id": "energia-polyus",
+      "title": "«Энергия — Полюс»",
+      "subtitle": "Первый пуск · 15 мая 1987 года",
+      "summary": "Первую «Энергию» вывели на испытательный полёт с крупным боковым аппаратом 17Ф19ДМ «Скиф-ДМ», известным как «Полюс». Ракета выполнила свою часть программы; аппарат не достиг орбиты после отделения.",
+      "summarySources": [
+        "polyus"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "polyus"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/cargo.htm"
+          ],
+          "value": "≈37 м",
+          "label": "длина «Полюса»"
+        },
+        {
+          "text": "",
+          "sources": [
+            "polyus"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/cargo.htm"
+          ],
+          "value": "4,1 м",
+          "label": "наибольший диаметр груза"
+        },
+        {
+          "text": "",
+          "sources": [
+            "polyus"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/cargo.htm"
+          ],
+          "value": "≈80 т",
+          "label": "масса аппарата"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Аппарат находился на носителе двигателями вперёд. После отделения требовался разворот перед самостоятельным довыведением. Ошибка управления ориентацией сорвала этот этап.",
+          "sources": [
+            "polyus"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/cargo.htm"
+          ],
+          "title": "Необычное положение"
+        }
+      ],
+      "stories": [
+        "polyus-turn"
+      ],
+      "relatedSites": [
+        "pad-250"
+      ],
+      "modelCredit": {
+        "text": "Исходная 3D-модель: Николай Назаренко. Для музея подготовлена упрощённая версия файла, предоставленного владельцем макета.",
+        "authors": [
+          "Николай Назаренко"
+        ],
+        "sources": [
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      }
+    },
+    "energia-buran": {
+      "id": "energia-buran",
+      "title": "«Энергия — Буран»",
+      "subtitle": "Ракетно-космическая система · 11Ф36",
+      "summary": "Связка тяжёлой ракеты и крылатого орбитального корабля стартовала 15 ноября 1988 года. Корабль выполнил два витка и автоматически приземлился на Байконуре.",
+      "summarySources": [
+        "announcement"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "value": "58,765 м",
+          "label": "длина полной системы"
+        },
+        {
+          "text": "",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "value": "23,92 м",
+          "label": "размах крыла «Бурана»"
+        },
+        {
+          "text": "",
+          "sources": [
+            "announcement"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/firstext.htm"
+          ],
+          "value": "205 мин",
+          "label": "продолжительность полёта"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Первый орбитальный полёт проходил без людей на борту. Посадочная автоматика опиралась на наземную и лётную отработку.",
+          "sources": [
+            "announcement",
+            "atmospheric"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/firstext.htm",
+            "http://www.buran.ru/htm/anabst.htm"
+          ],
+          "title": "Система без экипажа"
+        },
+        {
+          "text": "Поперечный размер пакета самой ракеты — 17,65 м. Крылья корабля шире, поэтому при масштабе и размещении на ТУА учитывается вся связка.",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "title": "Разные габариты"
+        }
+      ],
+      "stories": [
+        "abort-51",
+        "landing-turn"
+      ],
+      "relatedSites": [
+        "pad-110",
+        "pad-112",
+        "pad-112a"
+      ],
+      "modelCredit": {
+        "text": "Исходная 3D-модель: Николай Назаренко, Владимир Малюх. Для музея подготовлена упрощённая версия файла, предоставленного владельцем макета.",
+        "authors": [
+          "Николай Назаренко",
+          "Владимир Малюх"
+        ],
+        "sources": [
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      }
+    },
+    "energia-m": {
+      "id": "energia-m",
+      "title": "«Энергия-М»",
+      "subtitle": "Проект · полноразмерный макет проходил примерки",
+      "summary": "Уменьшенный вариант семейства должен был использовать производственный и наземный задел «Энергии». Он дошёл до полноразмерного технологического макета и примерочных испытаний, но не до космического полёта.",
+      "summarySources": [
+        "energia-m",
+        "energia-m-design"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "energia-m-design"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/11.htm"
+          ],
+          "value": "2",
+          "label": "боковых блока"
+        },
+        {
+          "text": "",
+          "sources": [
+            "energia-m-design"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/11.htm"
+          ],
+          "value": "1",
+          "label": "РД-0120 в центре"
+        },
+        {
+          "text": "Проектная характеристика, не результат полёта.",
+          "sources": [
+            "energia-m"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/enem.htm"
+          ],
+          "value": "до 34 т",
+          "label": "расчётная нагрузка на НОО"
+        }
+      ],
+      "facts": [
+        {
+          "text": "В описании Губанова центральный блок имеет высоту 25,5 м, с головным обтекателем — 50,5 м. Эта величина относится к описанной компоновке, без наземной опоры.",
+          "sources": [
+            "energia-m-design"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/11.htm"
+          ],
+          "title": "Высота с оговоркой"
+        },
+        {
+          "text": "25 декабря 1991 года макет привезли на УКСС и подняли вертикально. После испытаний 25–26 декабря его вернули в СДИ.",
+          "sources": [
+            "energia-m"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/enem.htm"
+          ],
+          "title": "Примерка зимой"
+        }
+      ],
+      "stories": [
+        "energia-m-winter"
+      ],
+      "relatedSites": [
+        "pad-250",
+        "pad-112a"
+      ],
+      "modelCredit": {
+        "text": "Исходная 3D-модель: Михаил Павлов. Для музея подготовлена упрощённая версия файла, предоставленного владельцем макета.",
+        "authors": [
+          "Михаил Павлов"
+        ],
+        "sources": [
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      }
+    },
+    "buran": {
+      "id": "buran",
+      "title": "«Буран» · орбитальный корабль",
+      "subtitle": "Крылатый корабль · 11Ф35",
+      "summary": "Корабль возвращался из космоса планированием и садился на аэродром. В техническом проекте большой грузовой отсек предназначался для доставки и возвращения полезных грузов.",
+      "summarySources": [
+        "landing",
+        "dimensions"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "value": "36,37 м",
+          "label": "длина корабля"
+        },
+        {
+          "text": "",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "value": "23,92 м",
+          "label": "размах крыла"
+        },
+        {
+          "text": "",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ],
+          "value": "18,5 м",
+          "label": "длина грузового отсека"
+        }
+      ],
+      "facts": [
+        {
+          "text": "В проекте предусматривалось до 100 полётов корабля. Реальная история лётного экземпляра 1.01 ограничилась одним космическим полётом.",
+          "sources": [
+            "dimensions",
+            "announcement"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm",
+            "http://www.buran.ru/htm/firstext.htm"
+          ],
+          "title": "Расчётный ресурс"
+        },
+        {
+          "text": "Атмосферный БТС-002, наземные макеты и орбитальные корабли строились для разных испытаний. Их внешний облик близок, но биографии различаются.",
+          "sources": [
+            "atmospheric",
+            "hardware"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/anabst.htm",
+            "http://www.buran.ru/htm/rocrt3.htm"
+          ],
+          "title": "Не каждый «Буран» летал в космос"
+        }
+      ],
+      "stories": [
+        "jet-buran",
+        "which-buran",
+        "baikal-secret-flight"
+      ],
+      "relatedSites": [
+        "pad-110",
+        "pad-251"
+      ],
+      "modelCredit": {
+        "text": "Исходная 3D-модель: Николай Назаренко, Владимир Малюх. Для музея подготовлена упрощённая версия файла, предоставленного владельцем макета.",
+        "authors": [
+          "Николай Назаренко",
+          "Владимир Малюх"
+        ],
+        "sources": [
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      }
+    },
+    "tua": {
+      "id": "tua",
+      "title": "«Кузнечики» · ТУА",
+      "subtitle": "Транспортно-установочные агрегаты",
+      "summary": "Эти тяжёлые машины перевозили ракетно-космическую систему горизонтально, а на стартовой позиции участвовали в её установке. ТУА программы «Энергия» происходили от транспортных средств Н1.",
+      "summarySources": [
+        "transport"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "transport"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/transp.htm"
+          ],
+          "value": "56,3 × 29,5 м",
+          "label": "габарит без локомотивов"
+        },
+        {
+          "text": "",
+          "sources": [
+            "transport"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/transp.htm"
+          ],
+          "value": "571 т",
+          "label": "грузоподъёмность"
+        },
+        {
+          "text": "",
+          "sources": [
+            "transport"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/transp.htm"
+          ],
+          "value": "до 5 км/ч",
+          "label": "скорость с грузом"
+        }
+      ],
+      "facts": [
+        {
+          "text": "Агрегат опирался на два железнодорожных пути с расстоянием 20 м между их осями. Поэтому его нельзя ставить на обычный одинарный путь.",
+          "sources": [
+            "transport"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/transp.htm"
+          ],
+          "title": "Две колеи рядом"
+        },
+        {
+          "text": "Борис Губанов вспоминал вывоз 10 октября 1988 года: примерно 3 500 тонн всей связки перемещали четыре согласованно работавших тепловоза.",
+          "sources": [
+            "coins"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/49-3.htm"
+          ],
+          "title": "Четыре локомотива"
+        }
+      ],
+      "caveat": {
+        "text": "В технической таблице высота ТУА без груза — 21,2 м. В мемуарах приводится округлённый габарит 60 × 25 × 16 м без объяснения границ измерения. Для модели используется явно описанная конфигурация, а не смесь этих чисел.",
+        "sources": [
+          "transport",
+          "coins"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/transp.htm",
+          "http://www.buran.ru/htm/49-3.htm"
+        ]
+      },
+      "stories": [
+        "coins-under-tua"
+      ],
+      "relatedSites": [
+        "pad-112"
+      ],
+      "modelCredit": {
+        "text": "Исходная 3D-модель: Юрий Кульчицкий. Для музея подготовлена упрощённая версия файла, предоставленного владельцем макета.",
+        "authors": [
+          "Юрий Кульчицкий"
+        ],
+        "sources": [
+          "model-authors"
+        ],
+        "sourceUrls": [
+          "http://www.buran.ru/htm/3d-model.htm"
+        ]
+      }
+    },
+    "proton": {
+      "id": "proton",
+      "title": "«Протон-М / Бриз-М»",
+      "subtitle": "Справочная компоновка для единого масштаба",
+      "summary": "Три ступени ракеты сочетаются с многократно включаемым разгонным блоком. Точная общая длина зависит от полезного груза и обтекателя.",
+      "summarySources": [
+        "proton-spec"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "proton-spec"
+          ],
+          "sourceUrls": [
+            "https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/"
+          ],
+          "value": "58,2 м",
+          "label": "длина с типовым обтекателем"
+        },
+        {
+          "text": "",
+          "sources": [
+            "proton-spec"
+          ],
+          "sourceUrls": [
+            "https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/"
+          ],
+          "value": "4,1 м",
+          "label": "диаметр обтекателя"
+        }
+      ],
+      "relatedSites": [
+        "pad-81",
+        "pad-200"
+      ]
+    },
+    "zenit": {
+      "id": "zenit",
+      "title": "«Зенит-2»",
+      "subtitle": "Базовая двухступенчатая компоновка",
+      "summary": "Двухступенчатая ракета на кислороде и керосине разрабатывалась одновременно с унифицированными боковыми блоками «Энергии».",
+      "summarySources": [
+        "zenit-designers"
+      ],
+      "metrics": [
+        {
+          "text": "",
+          "sources": [
+            "zenit-designers"
+          ],
+          "sourceUrls": [
+            "https://rvsn.ruzhany.info/umz_2014_03.html"
+          ],
+          "value": "57 м",
+          "label": "общая длина"
+        },
+        {
+          "text": "",
+          "sources": [
+            "zenit-designers"
+          ],
+          "sourceUrls": [
+            "https://rvsn.ruzhany.info/umz_2014_03.html"
+          ],
+          "value": "3,9 м",
+          "label": "диаметр"
+        }
+      ],
+      "relatedSites": [
+        "pad-45"
+      ]
+    }
+  },
+  "stories": {
+    "abort-51": {
+      "id": "abort-51",
+      "title": "51 секунда до старта",
+      "subtitle": "29 октября 1988 · площадка 110",
+      "summary": "Первый назначенный пуск «Бурана» остановился почти у самой точки старта.",
+      "summarySources": [
+        "abort"
+      ],
+      "evidenceType": "documented",
+      "siteId": "pad-110",
+      "paragraphs": [
+        {
+          "text": "Автоматика не получила вовремя подтверждение отвода оборудования азимутального прицеливания. В архивном разборе сравниваются расчётные три секунды и фактическая задержка почти в сорок секунд. Система заблокировала продолжение подготовки.",
+          "sources": [
+            "abort"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/fir2510.htm"
+          ]
+        },
+        {
+          "text": "После отмены пуска криогенные компоненты сливали несколько часов. Следующая попытка, 15 ноября, завершилась орбитальным полётом. История показывает цену одного неподтверждённого условия в сложной последовательности операций.",
+          "sources": [
+            "pad-prep"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/ongeck.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "energia-buran"
+      ]
+    },
+    "coins-under-tua": {
+      "id": "coins-under-tua",
+      "title": "Монетки под 3 500 тоннами",
+      "subtitle": "10 октября 1988 · вывоз на старт",
+      "summary": "Во время вывоза гигантской машины нашлось место маленькому сувениру.",
+      "summarySources": [
+        "coins"
+      ],
+      "evidenceType": "recollection",
+      "siteId": "pad-112",
+      "paragraphs": [
+        {
+          "text": "Борис Губанов писал, что участники клали на рельсы медные монеты. Колёса многотонного ТУА расплющивали их; затем на сувенирах делали памятные надписи с датой вывоза.",
+          "sources": [
+            "coins"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/49-3.htm"
+          ]
+        },
+        {
+          "text": "Тот же рассказ описывает четыре тепловоза, два параллельных пути и несколько часов осторожного движения. Монеты здесь — деталь личного воспоминания руководителя работ, а не доказательство обязательного ритуала каждого запуска.",
+          "sources": [
+            "coins"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/49-3.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "tua"
+      ]
+    },
+    "runway-profilometer": {
+      "id": "runway-profilometer",
+      "title": "Самолёт измерял бетон",
+      "subtitle": "30 октября 1986 · Юбилейный",
+      "summary": "Ровность посадочной полосы проверяли летающей лабораторией.",
+      "summarySources": [
+        "runway-test"
+      ],
+      "evidenceType": "recollection",
+      "siteId": "pad-251",
+      "paragraphs": [
+        {
+          "text": "Сергей Грачёв описал полёт Ту-154ЛЛ с Игорем Волком. Датчик на передней стойке шасси регистрировал состояние поверхности во время пробежки примерно на 200 км/ч по всей полосе. После неё самолёт снова поднимался в воздух.",
+          "sources": [
+            "runway-test"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/memory22.htm"
+          ]
+        },
+        {
+          "text": "Для будущего беспилотного корабля нужны были знания не только о траектории в небе, но и о поведении шасси на реальном бетоне. Дата, скорость и детали этого эпизода приводятся по воспоминанию участника.",
+          "sources": [
+            "runway-test"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/memory22.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "buran"
+      ]
+    },
+    "dmb-inscription": {
+      "id": "dmb-inscription",
+      "title": "Надпись ДМБ: две версии",
+      "subtitle": "1988 · история из воспоминаний",
+      "summary": "На buran.ru сохранены расходящиеся рассказы о повреждённой теплоизоляции и надписи «ДМБ».",
+      "summarySources": [
+        "dmb-retelling",
+        "dmb-witness"
+      ],
+      "evidenceType": "disputed",
+      "siteId": "pad-110",
+      "paragraphs": [
+        {
+          "text": "В пересказе выступления Сергея Марчука фигурируют солдат, надпись на плитках корабля и трибунал. Владимир Ермолаев, представляющийся участником разбора, описывает другого виновника, поясную пряжку и иное наказание.",
+          "sources": [
+            "dmb-retelling",
+            "dmb-witness"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/vyvoz.htm",
+            "http://www.buran.ru/htm/memory3.htm"
+          ]
+        },
+        {
+          "text": "Совпадение общего мотива не устраняет расхождения. Поэтому история показана как спорная: нельзя уверенно приписать ей конкретного автора, инструмент, место повреждения или объявить её единственной причиной возврата системы со старта.",
+          "sources": [
+            "dmb-retelling",
+            "dmb-witness"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/vyvoz.htm",
+            "http://www.buran.ru/htm/memory3.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "energia-buran"
+      ]
+    },
+    "mriya-after-flight": {
+      "id": "mriya-after-flight",
+      "title": "«Мрия» появилась после полёта",
+      "subtitle": "1988–1989 · воздушная перевозка",
+      "summary": "Знаменитая пара Ан-225 и «Буран» не должна заслонять работу более раннего самолёта.",
+      "summarySources": [
+        "carrier"
+      ],
+      "evidenceType": "documented",
+      "siteId": "pad-251",
+      "paragraphs": [
+        {
+          "text": "До космического полёта крупные части системы и корабль перевозил ВМ-Т — специально переделанный самолёт семейства 3М. Его характерное двухкилевое оперение помогало работать с большим внешним грузом.",
+          "sources": [
+            "carrier"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/3m.htm"
+          ]
+        },
+        {
+          "text": "Первый полёт Ан-225 состоялся в декабре 1988 года, уже после ноябрьского полёта «Бурана». В 1989 году «Мрия» с кораблём появилась на авиасалоне в Ле-Бурже. Образ «Бурана на самолёте» относится к нескольким разным этапам программы.",
+          "sources": [
+            "carrier"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/3m.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "buran"
+      ]
+    },
+    "polyus-turn": {
+      "id": "polyus-turn",
+      "title": "Поворот, после которого орбиты не было",
+      "subtitle": "15 мая 1987 · первый пуск «Энергии»",
+      "summary": "Успешная работа носителя и выход полезной нагрузки на орбиту — разные этапы полёта.",
+      "summarySources": [
+        "polyus"
+      ],
+      "evidenceType": "documented",
+      "siteId": "pad-250",
+      "paragraphs": [
+        {
+          "text": "«Полюс» закреплялся на «Энергии» двигателями вперёд. После отделения ему предстояло развернуться и включить собственную двигательную установку для довыведения.",
+          "sources": [
+            "polyus"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/cargo.htm"
+          ]
+        },
+        {
+          "text": "Управление не остановило вращение в нужном положении. Последующее включение не обеспечило требуемого разгона, и аппарат сошёл в океан. В музейной подписи важно разделять результат испытания ракеты и неудачу её первого груза.",
+          "sources": [
+            "polyus"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/cargo.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "energia-polyus"
+      ]
+    },
+    "energia-m-winter": {
+      "id": "energia-m-winter",
+      "title": "Ракета, вышедшая на старт зимой",
+      "subtitle": "25–26 декабря 1991 · УКСС",
+      "summary": "«Энергия-М» не летала, но её полноразмерный макет действительно побывал на старте.",
+      "summarySources": [
+        "energia-m"
+      ],
+      "evidenceType": "documented",
+      "siteId": "pad-250",
+      "paragraphs": [
+        {
+          "text": "Фотографии архива показывают вывоз и вертикализацию 25 декабря 1991 года. Следующий день входил в программу примерок: проверялась совместимость нового силуэта с существующим наземным комплексом.",
+          "sources": [
+            "energia-m"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/enem.htm"
+          ]
+        },
+        {
+          "text": "Затем макет вернули в стенд динамических испытаний на площадке 112А. Это материальный след проекта с двумя боковыми блоками и одним водородным двигателем в центре, а не ещё один летавший экземпляр «Энергии».",
+          "sources": [
+            "energia-m",
+            "energia-m-design"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/enem.htm",
+            "http://www.buran.ru/htm/11.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "energia-m"
+      ]
+    },
+    "jet-buran": {
+      "id": "jet-buran",
+      "title": "«Буран», который взлетал как самолёт",
+      "subtitle": "БТС-002 ОК-ГЛИ · атмосферные испытания",
+      "summary": "У атмосферного аналога были четыре турбореактивных двигателя.",
+      "summarySources": [
+        "atmospheric"
+      ],
+      "evidenceType": "documented",
+      "siteId": "pad-251",
+      "paragraphs": [
+        {
+          "text": "БТС-002 мог самостоятельно взлетать, чтобы многократно отрабатывать подход и посадку. Он внешне напоминал орбитальный корабль, но предназначался для полётов в атмосфере и в космос не запускался.",
+          "sources": [
+            "atmospheric"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/anabst.htm"
+          ]
+        },
+        {
+          "text": "В программе выполнены 24 испытательных полёта. В отчёте отдельно считаются полёты, заходы и автоматические посадки: один вылет мог включать несколько этапов проверки. Поэтому эти числа нельзя подменять друг другом.",
+          "sources": [
+            "atmospheric"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/anabst.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "buran"
+      ]
+    },
+    "evacuation-slide": {
+      "id": "evacuation-slide",
+      "title": "Запасной путь через «склиз»",
+      "subtitle": "Площадка 110 · безопасность экипажа",
+      "summary": "Две наклонные трубы у башни предназначались для людей.",
+      "summarySources": [
+        "evacuation"
+      ],
+      "evidenceType": "recollection",
+      "siteId": "pad-110",
+      "paragraphs": [
+        {
+          "text": "В техническом описании одна труба занята наклонным лифтом, другая — лотком экстренной эвакуации. Площадка у люка соединялась с защищённым наземным помещением.",
+          "sources": [
+            "evacuation"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/safck.htm"
+          ]
+        },
+        {
+          "text": "Владимир Ермолаев оставил живой рассказ о собственном спуске по этому лотку. Личный эпизод относится к мемуарам; назначение двух рукавов подтверждается отдельной технической страницей.",
+          "sources": [
+            "evacuation-story",
+            "evacuation"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/memory16.htm",
+            "http://www.buran.ru/htm/safck.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "energia-buran"
+      ]
+    },
+    "landing-turn": {
+      "id": "landing-turn",
+      "title": "Почему корабль повернул не туда, куда ждали",
+      "subtitle": "15 ноября 1988 · автоматическая посадка",
+      "summary": "Неожиданный для наблюдателей манёвр стал основой рассказов о «самостоятельном решении» корабля.",
+      "summarySources": [
+        "flight"
+      ],
+      "evidenceType": "documented",
+      "siteId": "pad-251",
+      "paragraphs": [
+        {
+          "text": "Техническое описание посадки объясняет выбор маршрута запасом энергии и ветром. Бортовые алгоритмы могли менять траекторию предпосадочного маневрирования, чтобы прийти к полосе с нужными условиями.",
+          "sources": [
+            "landing"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/landing.htm"
+          ]
+        },
+        {
+          "text": "Это была предусмотренная работа управления, а не доказательство человеческого сознания компьютера. Достоверная часть истории впечатляет сама по себе: беспилотный корабль после орбитального полёта выполнил подход и посадку.",
+          "sources": [
+            "landing",
+            "announcement"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/landing.htm",
+            "http://www.buran.ru/htm/firstext.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "buran"
+      ]
+    },
+    "baikal-secret-flight": {
+      "id": "baikal-secret-flight",
+      "title": "«Тайный второй полёт» оказался розыгрышем",
+      "subtitle": "1 апреля 2000 · легенда о «Байкале»",
+      "summary": "Текст о секретном полёте «Байкала» 2 февраля 1992 года — первоапрельская история.",
+      "summarySources": [
+        "baikal-hoax"
+      ],
+      "evidenceType": "hoax",
+      "siteId": "pad-110",
+      "paragraphs": [
+        {
+          "text": "В публикации использованы правдоподобные детали программы, фотографии и вымышленная хронология. Дата газетного выхода — 1 апреля — и обсуждение розыгрыша на самой странице помогают распознать жанр.",
+          "sources": [
+            "baikal-hoax"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/baikal.htm"
+          ]
+        },
+        {
+          "text": "Эту страницу можно показывать как пример космической легенды, но нельзя добавлять её «полёт» в историческую шкалу. Подтверждённый космический полёт «Бурана» состоялся 15 ноября 1988 года.",
+          "sources": [
+            "baikal-hoax",
+            "announcement"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/baikal.htm",
+            "http://www.buran.ru/htm/firstext.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "buran"
+      ]
+    },
+    "which-buran": {
+      "id": "which-buran",
+      "title": "Какой именно «Буран» перед нами?",
+      "subtitle": "Лётные корабли, аналоги и макеты",
+      "summary": "Похожий силуэт скрывает разные испытательные биографии.",
+      "summarySources": [
+        "hardware",
+        "atmospheric"
+      ],
+      "evidenceType": "documented",
+      "siteId": "pad-112",
+      "paragraphs": [
+        {
+          "text": "Лётный корабль 1.01 совершил орбитальный полёт в 1988 году. Он был перенесён в МИК площадки 112 и погиб при обрушении кровли 12 мая 2002 года. Фотография этого события не относится ко всем построенным аппаратам сразу.",
+          "sources": [
+            "mik-collapse"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto7.htm"
+          ]
+        },
+        {
+          "text": "ОК-ГЛИ с реактивными двигателями выполнял атмосферные полёты; другие макеты нужны были для примерок и наземной отработки. Поэтому музей указывает назначение конкретного экземпляра, а не называет любой крылатый корпус тем самым летавшим кораблём.",
+          "sources": [
+            "atmospheric",
+            "hardware"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/anabst.htm",
+            "http://www.buran.ru/htm/rocrt3.htm"
+          ]
+        }
+      ],
+      "relatedRockets": [
+        "buran"
+      ]
+    }
+  },
+  "scaleReferences": [
+    {
+      "id": "soyuz",
+      "configuration": "Пилотируемая компоновка «Союз-ФГ / ТМА-М» в справочнике ESA",
+      "dimensionsMetres": {
+        "height": 49.5,
+        "maximumDiameter": 10.3
+      },
+      "sources": [
+        "esa-soyuz"
+      ],
+      "sourceUrls": [
+        "https://www.esa.int/Science_Exploration/Human_and_Robotic_Exploration/PromISSe/Facts_about_the_Soyuz"
+      ],
+      "qualifier": "Не считать идентификацией модификации файла Soyuz_TMA_b.rar; это размерный ориентир семейства."
+    },
+    {
+      "id": "energia-buran",
+      "configuration": "Полная система «Энергия — Буран» по табл. 4.8",
+      "dimensionsMetres": {
+        "length": 58.765,
+        "wingSpan": 23.92,
+        "launcherTransverseSize": 17.65,
+        "transporterWidth": 24.5
+      },
+      "sources": [
+        "dimensions"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/table48.htm"
+      ],
+      "qualifier": "Габарит ракеты с кораблём; наземный стартовый блок и ТУА измеряются отдельно."
+    },
+    {
+      "id": "energia-core",
+      "configuration": "Центральный блок, описание второй ступени",
+      "dimensionsMetres": {
+        "length": 58.1,
+        "diameter": 7.7
+      },
+      "sources": [
+        "core"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/2stage.htm"
+      ],
+      "qualifier": "Округлённая величина отдельного блока; не заменяет 58,765 м полной системы."
+    },
+    {
+      "id": "energia-block-a",
+      "configuration": "Один боковой блок А",
+      "dimensionsMetres": {
+        "length": 39.46,
+        "tankDiameter": 3.92
+      },
+      "sources": [
+        "dimensions"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/table48.htm"
+      ]
+    },
+    {
+      "id": "buran",
+      "configuration": "Орбитальный корабль",
+      "dimensionsMetres": {
+        "length": 36.37,
+        "wingSpan": 23.92,
+        "groundHeight": 16.35,
+        "cargoBayLength": 18.5,
+        "cargoBayDiameter": 4.764
+      },
+      "sources": [
+        "dimensions"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/table48.htm"
+      ]
+    },
+    {
+      "id": "polyus-payload",
+      "configuration": "Аппарат «Полюс» / «Скиф-ДМ»",
+      "dimensionsMetres": {
+        "lengthApprox": 37,
+        "maximumDiameter": 4.1
+      },
+      "sources": [
+        "polyus"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/cargo.htm"
+      ],
+      "qualifier": "Размер бокового груза, не всей ракеты с ним."
+    },
+    {
+      "id": "energia-m",
+      "configuration": "Центральный блок «Энергии-М» в описании Б. И. Губанова",
+      "dimensionsMetres": {
+        "centralBlockHeight": 25.5,
+        "heightWithFairing": 50.5,
+        "centralBlockDiameter": 7.7
+      },
+      "sources": [
+        "energia-m-design"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/11.htm"
+      ],
+      "qualifier": "Проверять границы геометрии импортированной модели; число 50,5 м описывает блок с обтекателем, а не наземную опору."
+    },
+    {
+      "id": "proton",
+      "configuration": "«Протон-М / Бриз-М», стандартный коммерческий обтекатель",
+      "dimensionsMetres": {
+        "length": 58.2,
+        "fairingDiameter": 4.1
+      },
+      "sources": [
+        "proton-spec"
+      ],
+      "sourceUrls": [
+        "https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/"
+      ],
+      "qualifier": "Длина не универсальна для всех вариантов «Протона»."
+    },
+    {
+      "id": "zenit",
+      "configuration": "Базовый двухступенчатый «Зенит-2»",
+      "dimensionsMetres": {
+        "length": 57,
+        "diameter": 3.9
+      },
+      "sources": [
+        "zenit-designers"
+      ],
+      "sourceUrls": [
+        "https://rvsn.ruzhany.info/umz_2014_03.html"
+      ],
+      "qualifier": "Варианты с другой головной частью имеют иные габариты."
+    },
+    {
+      "id": "mik112-high",
+      "configuration": "Высокие пролёты 3, 4, 5 МИК-112",
+      "dimensionsMetres": {
+        "length": 240,
+        "width": 120,
+        "height": 56
+      },
+      "sources": [
+        "mik-collapse"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/foto7.htm"
+      ],
+      "qualifier": "Размеры по опубликованному акту комиссии; отдельная часть здания."
+    },
+    {
+      "id": "mik112-low",
+      "configuration": "Низкие пролёты 1, 2 МИК-112",
+      "dimensionsMetres": {
+        "length": 240,
+        "width": 70,
+        "height": 30
+      },
+      "sources": [
+        "mik-collapse"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/foto7.htm"
+      ]
+    },
+    {
+      "id": "tua",
+      "configuration": "ТУА без груза и без локомотивов",
+      "dimensionsMetres": {
+        "length": 56.3,
+        "width": 29.5,
+        "height": 21.2,
+        "lengthWithLocomotives": 90.3,
+        "parallelTrackCentres": 20,
+        "trackGauge": 1.524
+      },
+      "sources": [
+        "transport"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/transp.htm"
+      ],
+      "qualifier": "В мемуарах 49-3.htm указаны округлённые 60 × 25 × 16 м; различие конфигураций не раскрыто. Не растягивать модель независимо по осям до смешанного набора значений."
+    },
+    {
+      "id": "yubileiny",
+      "configuration": "Посадочный комплекс, основная ВПП",
+      "dimensionsMetres": {
+        "runwayLength": 4500,
+        "runwayWidth": 84,
+        "endSafetyZoneLengthEach": 250,
+        "mainTaxiwayWidth": 24,
+        "connectingTaxiwayWidth": 21
+      },
+      "sources": [
+        "runway"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/pk.htm"
+      ],
+      "qualifier": "84 м — бетонная ВПП. Концевые зоны и грунтовая резервная полоса считаются отдельно."
+    },
+    {
+      "id": "site110",
+      "configuration": "Старт «Энергии — Бурана»: газоотвод",
+      "dimensionsMetres": {
+        "centralShaftDiameterApprox": 20,
+        "channelDepthApprox": 23
+      },
+      "sources": [
+        "pad-prep"
+      ],
+      "sourceUrls": [
+        "http://www.buran.ru/htm/ongeck.htm"
+      ],
+      "qualifier": "Три газоотвода с углом 120°. Это справочная проверка композиции, не исполнительный чертёж."
+    }
+  ],
+  "sourceConflicts": [
+    {
+      "id": "pad-numbering",
+      "subject": "Номера левого и правого стартов 110",
+      "observations": [
+        {
+          "text": "Фотоархив называет левый старт №37, правый №38.",
+          "sources": [
+            "pad-photos"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto20.htm"
+          ]
+        },
+        {
+          "text": "Видеоархив называет левый старт №38, правый №37.",
+          "sources": [
+            "video-log"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/video9.htm"
+          ]
+        }
+      ],
+      "decision": "В пользовательских карточках и модели использовать «левый» и «правый», пока независимый план не разрешит расхождение."
+    },
+    {
+      "id": "trial-rollout",
+      "subject": "Даты экспериментального вывоза 1988 года",
+      "observations": [
+        {
+          "text": "Страница vyvoz.htm даёт период 19 мая — 19 июня.",
+          "sources": [
+            "dmb-retelling"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/vyvoz.htm"
+          ]
+        },
+        {
+          "text": "Опись видео даёт 23 мая — 10 июня.",
+          "sources": [
+            "video-log"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/video9.htm"
+          ]
+        }
+      ],
+      "decision": "В краткой карточке обозначать «май–июнь 1988». Дата окончательного вывоза 10 октября подтверждается обоими типами материалов."
+    },
+    {
+      "id": "tua-dimensions",
+      "subject": "Габариты ТУА",
+      "observations": [
+        {
+          "text": "Техническая таблица: 56,3 × 29,5 × 21,2 м без локомотивов.",
+          "sources": [
+            "transport"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/transp.htm"
+          ]
+        },
+        {
+          "text": "Мемуары: округлённые 60 × 25 × 16 м.",
+          "sources": [
+            "coins"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/49-3.htm"
+          ]
+        }
+      ],
+      "decision": "Основной ориентир — конфигурация таблицы; сохранить пропорции импортированной модели, не смешивать числа."
+    },
+    {
+      "id": "energiya-length",
+      "subject": "Длина центрального блока и полной системы",
+      "observations": [
+        {
+          "text": "Вторая ступень: 58,1 м; диаметр 7,7 м.",
+          "sources": [
+            "core"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/2stage.htm"
+          ]
+        },
+        {
+          "text": "Таблица полной системы: 58,765 м; ширина по крыльям 23,92 м.",
+          "sources": [
+            "dimensions"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/table48.htm"
+          ]
+        }
+      ],
+      "decision": "Именовать объект измерения. Не выдавать округлённое число блока за длину всей системы."
+    },
+    {
+      "id": "mik-date",
+      "subject": "Дата обрушения МИК",
+      "observations": [
+        {
+          "text": "Заголовок страницы содержит 13 мая 2002 года; перепечатанный акт — 12 мая.",
+          "sources": [
+            "mik-collapse"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/foto7.htm"
+          ]
+        }
+      ],
+      "decision": "Использовать дату события из акта — 12 мая 2002 года. Число жертв не публикуется без отдельного сопоставления источников."
+    },
+    {
+      "id": "mzk-dates",
+      "subject": "Период работ в МЗК",
+      "observations": [
+        {
+          "text": "Описание подготовки даёт решение 13 сентября и период 13 сентября — 10 октября.",
+          "sources": [
+            "ground-prep"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/ongetk2.htm"
+          ]
+        },
+        {
+          "text": "Опись съёмки даёт перевозку 16 сентября и работы до 9 октября.",
+          "sources": [
+            "video-log"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/video9.htm"
+          ]
+        }
+      ],
+      "decision": "Не смешивать дату решения, транспортирования и съёмки. В карточке 16 сентября — 9 октября явно подписано как период архивной съёмки."
+    }
+  ],
+  "coverage": {
+    "method": "Карта разделов и конечный обход доступных HTML-ссылок; углублённое чтение выбранных первичных материалов.",
+    "inventoryFile": "./data/buran-source-index.json",
+    "reportFile": "./docs/buran-research.md",
+    "completeArchiveClaim": false,
+    "deepReadSourceIds": [
+      "dimensions",
+      "core",
+      "firststage",
+      "rd170",
+      "ground",
+      "ground-prep",
+      "pad-prep",
+      "launch-architecture",
+      "transport",
+      "coins",
+      "runway",
+      "runway-test",
+      "mik-collapse",
+      "site-photos",
+      "pad-photos",
+      "video-log",
+      "energia-m",
+      "energia-m-design",
+      "hardware",
+      "energia-book",
+      "polyus",
+      "abort",
+      "flight",
+      "landing",
+      "announcement",
+      "dmb-retelling",
+      "dmb-witness",
+      "evacuation",
+      "evacuation-story",
+      "carrier",
+      "atmospheric",
+      "baikal-hoax",
+      "model-authors",
+      "esa-soyuz",
+      "esa-baikonur",
+      "esa-pad31",
+      "proton-spec",
+      "zenit-designers"
+    ],
+    "counts": {
+      "discoveredUrls": 1075,
+      "retrievedHtml": 1042,
+      "failedUrls": 21,
+      "focusedBuranPages": 33,
+      "cataloguedOnly": 1009,
+      "discoveredNotFetched": 12
+    },
+    "indexedExtractSourceIds": [
+      "proton-guide"
+    ]
+  }
+}

@@ -6,7 +6,8 @@ import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {SATURN_ACCESS} from '../src/saturn-access.js';
 import {buildMik112,MIK112} from '../src/mik112.js';
 import {buildMzkSdi,MZK_SDI_REFERENCE} from '../src/mzk-sdi.js';
-import {energia110} from '../src/archive-launches.js';
+import {buildSite110,SITE110_REFERENCE} from '../src/site110.js';
+import {MUSEUM_METRE} from '../src/museum-scale.js';
 
 const read=p=>JSON.parse(fs.readFileSync(new URL('../'+p,import.meta.url),'utf8'));
 const geography=createMuseumGeography({catalog:read('data/catalog.json'),matches:read('data/osm/catalog-matches.json')});
@@ -14,6 +15,8 @@ const point=(x,y,h=0)=>new THREE.Vector3((x-650)*3.4,h,(y-522.5)*3.4);
 const data={roads:read('data/osm/roads.geojson'),railways:read('data/osm/railways.geojson'),
  railPoints:read('data/osm/rail-points.geojson'),places:read('data/osm/places.geojson'),airports:read('data/osm/airports.geojson')};
 const original=JSON.stringify(data),siteRecords=geography.sites.filter(s=>!s.aliasOf&&s.render!==false);
+const site110=siteRecords.find(s=>s.id==='pad-110');
+[site110.x,site110.y]=geography.project(...SITE110_REFERENCE.originLonLat);
 // Use the same actual runway poses as the museum; the northern end of this
 // source way joins the existing display bypass at Yubileiny.
 for(const [id,wayId] of [['airfield',37591623],['pad-251',24949215]]){
@@ -101,7 +104,7 @@ const models=[];
 for(const [id,build,scale,yaw,elevation] of [
  ['pad-112',buildMik112,MIK112.scale,MIK112.yaw,0],
  ['pad-112a',buildMzkSdi,MZK_SDI_REFERENCE.scale,MZK_SDI_REFERENCE.yaw,-2.72],
- ['pad-110',energia110,.33,0,-2.72]
+ ['pad-110',buildSite110,MUSEUM_METRE,0,-2.72]
 ]){
  const site=siteRecords.find(s=>s.id===id),root=new THREE.Group();
  root.position.copy(point(site.x,site.y,elevation));root.scale.setScalar(scale);root.rotation.y=yaw;
@@ -115,6 +118,6 @@ for(const p of probes)for(const m of models){
  assert(!obstruction,'The road enters '+m.id+' geometry at '+p.toArray()+': '+obstruction?.object.name);
 }
 assert(modelProbes>0,'The actual nearby model geometry must be checked');
-assert.equal(stats.facilityPorts.length,40);assert.equal(stats.facilityRailPorts.length,6);assert.equal(stats.stationCount,32);
+assert.equal(stats.facilityPorts.length,40);assert.equal(stats.facilityRailPorts.length,8);assert.equal(stats.stationCount,32);
 console.log('INDUSTRIAL_ROAD_CONTINUITY_PASS',JSON.stringify({sourceWayId:way.osmId,renderedRuns:visible.length,
  centerSamples,pavementSamples,shoulderSamples,modelProbes,formerMaskSamples:oldMasks.map(m=>({id:m.id,samples:m.samples})),saturnExternalAccess:false}));

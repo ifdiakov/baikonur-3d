@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
+import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
 import {buildSite31Trench} from './site31-trench.js?v=20261028-museum4-osm-live-v2';
 import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
@@ -10,7 +10,7 @@ export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live
 // four supporting arms, open bridge, lined excavation and lightning towers.
 // The local plan and compass orientation now follow north-up WV03 imagery.
 // Heights and the museum diagram's global anchor remain approximate.
-export const SITE31_VERSION='site31-satellite-trench-v3';
+export const SITE31_VERSION='site31-metric-soyuz-v4';
 export const SITE31_SOURCES=Object.freeze([
  SITE31_REFERENCE.sourceUrl,
  SITE31_REFERENCE.metadataUrl,
@@ -19,10 +19,12 @@ export const SITE31_SOURCES=Object.freeze([
  'https://sufps70.organizations.mchs.gov.ru/deyatelnost/press-centr/novosti/4233814'
 ]);
 export const SITE31_PORTS=Object.freeze({road:[60,.1,133],rail:[0,.48,174]});
+export const SITE31_MACHINERY_METRE=2/3;
+export const SITE31_ROCKET_MOUNT=Object.freeze({position:[0,0,0],rotation:[0,Math.PI/4,0],axis:'y',baseY:0,vehicle:'soyuz',heightMetres:49.51161217689514});
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 
 export function buildSite31Pad(root){
- const k=archiveKit(root),apertures=[];
+ let k=archiveKit(root);const apertures=[];
  root.name='Пл. 31 · «Союз» · детализированная музейная реконструкция';
  k.mat.green.color.set(0x426851);k.mat.steel.color.set(0x69736b);
  // Components use the same textured concrete/paint/metal palette and static
@@ -103,6 +105,26 @@ export function buildSite31Pad(root){
   }
  }
 
+ // Bearing cheeks connect the metrically calibrated machinery to the wide
+ // existing geographic bridge plan. The annulus carries the four support-arm pivots and
+ // the service-mast feet, while a 13.2m central void stays open for exhaust.
+ for(const side of [-1,1])k.box(12,2.2,40,side*16,-.9,4,'concrete','metric-launch-bearing-cheek');
+ const bearingShape=new THREE.Shape();bearingShape.absarc(0,0,15.5,0,2*Math.PI,false);
+ const bearingHole=new THREE.Path();bearingHole.absarc(0,0,6.6,0,2*Math.PI,true);bearingShape.holes.push(bearingHole);
+ const bearing=k.direct(new THREE.ExtrudeGeometry(bearingShape,{depth:2.2,bevelEnabled:false,curveSegments:48}),'concrete','metric-launch-bearing-annulus');
+ bearing.rotation.x=-Math.PI/2;bearing.position.y=-2;
+ for(let i=0;i<4;i++){
+  const a=Math.PI/4+i*Math.PI/2;
+  k.box(.9,1.9,.9,6.7*Math.cos(a),1.15,6.7*Math.sin(a),'steel','metric-table-stanchion');
+  k.box(2,1.2,2,14*Math.cos(a),.6,14*Math.sin(a),'green','metric-support-pivot-bearing');
+ }
+ // The satellite-derived plan and excavation already use metres. Only the
+ // former oversized steel machinery is converted uniformly, including its
+ // pivots, widths, heights and access platforms. The rocket is not scaled.
+ const metricRoot=root,layoutKit=k,machineryRoot=new THREE.Group();
+ machineryRoot.name='Пл.31 · стартовые агрегаты в метрах';machineryRoot.scale.setScalar(SITE31_MACHINERY_METRE);
+ root.add(machineryRoot);root=machineryRoot;k=archiveKit(root);
+ for(const [name,mat]of Object.entries(k.mat)){mat.dispose();k.mat[name]=layoutKit.mat[name];}
  // Annular steel table with a genuine hole, plus four independent R-7
  // supporting arms. Nothing spans the exhaust axis at or below the ring.
  ring(8.8,.62,3.8,'green','open-soyuz-launch-ring');
@@ -110,16 +132,16 @@ export function buildSite31Pad(root){
  const passage=new THREE.Path();passage.absarc(0,0,6.8,0,Math.PI*2,true);deckShape.holes.push(passage);
  const collar=k.direct(new THREE.ExtrudeGeometry(deckShape,{depth:.35,bevelEnabled:false,curveSegments:64}),'steel','launch-table-annular-deck');
  collar.rotation.x=-Math.PI/2;collar.position.y=3.18;
- apertures.push({kind:'launch-table',center:[0,0],radius:6.8,y:3.18});
+ apertures.push({kind:'launch-table',center:[0,0],radius:6.8*SITE31_MACHINERY_METRE,y:3.18*SITE31_MACHINERY_METRE});
  for(let n=0;n<4;n++){
   const angle=Math.PI/4+n*Math.PI/2,c=Math.cos(angle),s=Math.sin(angle),t=V(-s,0,c);
-  const foot=V(c*21,1.5,s*21),head=V(c*5.2,19,s*5.2);
+  const foot=V(c*21,1.5,s*21),head=V(c*4.8,19,s*4.8);
   for(const offset of [-1.5,1.5]){
    const a=foot.clone().addScaledVector(t,offset),b=head.clone().addScaledVector(t,offset*.55);
    k.rod(a.toArray(),b.toArray(),.48,'green','tulip-support-main');
    for(let i=0;i<8;i++){const u=i/8,v=(i+1)/8,p=foot.clone().lerp(head,u).addScaledVector(t,offset*(1-.45*u)),q=foot.clone().lerp(head,v).addScaledVector(t,-offset*(1-.45*v));k.rod(p.toArray(),q.toArray(),.13,'green','tulip-cross-brace');}
   }
-  k.box(2.6,1.6,2.6,c*5.2,19,s*5.2,'green','support-arm-gripper',-angle);
+  k.box(1.2,.85,1.2,c*4.8,19,s*4.8,'green','support-arm-gripper',-angle);
   k.rod([c*25,1,s*25],[c*18,12,s*18],.32,'steel','support-arm-actuator');
   const drum=k.direct(new THREE.CylinderGeometry(1.7,1.7,3.4,20),'yellow','tulip-counterweight');
   drum.position.set(c*24,3.4,s*24);drum.quaternion.setFromUnitVectors(V(0,1,0),t);
@@ -168,27 +190,11 @@ export function buildSite31Pad(root){
   for(let z=14;z<72;z+=4){k.rod([side*2.8,1.4,z],[side*2.8,4,z+4],.12,'green','rail-erector-brace');k.rod([side*2.8,4,z],[side*2.8,1.4,z+4],.12,'green','rail-erector-brace');}
  }
 
- // Generic Soyuz-family exhibit. This depicts an explanatory prelaunch
- // arrangement, not a claim that a particular flight stands here today.
- const rocket=new THREE.Group();rocket.name='«Союз» · музейная предстаровая композиция';root.add(rocket);
- function rocketSection(r0,r1,h,y,material,tag,x=0,z=0){const mesh=k.direct(new THREE.CylinderGeometry(r1,r0,h,40),material,tag,rocket);mesh.position.set(x,y,z);return mesh;}
- rocketSection(1.65,1.65,33,21,'steel','soyuz-core-stage');
- rocketSection(1.68,1.68,2.2,37.4,'rust','soyuz-stage-band');
- rocketSection(1.70,1.70,1.5,39.25,'dark','soyuz-interstage');
- rocketSection(1.68,1.68,7.2,43.6,'white','soyuz-upper-stage');
- rocketSection(1.69,2.05,2.3,48.35,'white','soyuz-fairing-adapter');
- rocketSection(2.05,2.05,8.0,53.5,'white','soyuz-payload-fairing');
- rocketSection(2.05,.04,4.9,59.95,'green','soyuz-fairing-nose');
- for(let j=0;j<4;j++){
-  const a=j*Math.PI/2+Math.PI/4,x=Math.cos(a)*2.7,z=Math.sin(a)*2.7;
-  rocketSection(1.45,1.18,15.8,12.2,'steel','soyuz-booster-body',x,z);
-  rocketSection(1.19,.06,10.5,25.35,'green','soyuz-booster-cone',x,z);
-  rocketSection(1.47,1.47,1.1,4.85,'rust','soyuz-booster-lower-band',x,z);
-  rocketSection(.66,.45,1.4,3.5,'dark','soyuz-booster-engine',x,z);
-  for(const y of [7.8,14.7,19.8]){const band=ring(y<19?1.36:1.2,.034,y,'light','soyuz-booster-seam',rocket);band.position.x=x;band.position.z=z;}
- }
- for(const y of [8,17,26,33,45.5,51.5,55])ring(y>48?2.06:1.67,.028,y,'light','soyuz-core-seam',rocket);
- for(const sx of [-1,1])for(const sz of [-1,1])rocketSection(.48,.32,1.2,3.6,'dark','soyuz-core-engine',sx*.64,sz*.64);
+ const machineryResult=k.finish();root=metricRoot;k=layoutKit;
+ // Full-metre holder; the optimized source model is inserted by the shared
+ // loader. The old schematic cylinders must not double the new rocket.
+ const rocket=new THREE.Group();rocket.name='Союз · ракета-экспонат';
+ rocket.position.fromArray(SITE31_ROCKET_MOUNT.position);rocket.rotation.set(...SITE31_ROCKET_MOUNT.rotation);rocket.visible=true;root.add(rocket);
 
  // Red/white lightning masts and lower floodlight frames from the photos.
  for(const [x,z,h] of [[-70,-48,88],[70,-48,88]]){
@@ -225,21 +231,27 @@ export function buildSite31Pad(root){
  const roadCurve=new THREE.CatmullRomCurve3(accessControlPoints.map(([x,z])=>V(x,0,z)),false,'centripetal');
  const roadPoints=roadCurve.getSpacedPoints(240).map(p=>[p.x,p.z]);
  k.path(roadPoints,6,.10,'asphalt','continuous-site31-access-road');
- k.rail([[0,174],[0,42],[0,9]],{y:.30,tag:'site31-incoming-rail'});
+ k.rail([[0,174],[0,42],[0,9]],{gauge:1.52,y:.30,tag:'site31-incoming-rail'});
  // Keep the centreline over the deck clear. The high erector sides do not
  // substitute for the two running rails and regularly spaced sleepers.
- const result=k.finish();
+ const layoutResult=k.finish(),combinedFeatures={...layoutResult.features};
+ for(const [tag,count]of Object.entries(machineryResult.features))combinedFeatures[tag]=(combinedFeatures[tag]||0)+count;
+ const result={...layoutResult,features:combinedFeatures,primitiveCount:layoutResult.primitiveCount+machineryResult.primitiveCount,
+  meshCount:layoutResult.meshCount+machineryResult.meshCount,batches:layoutResult.batches+machineryResult.batches,
+  boundsSize:new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).toArray()};
  const metadata={version:SITE31_VERSION,siteId:'pad-31',name:'Стартовая позиция 31/6 · семейство «Союз»',
   status:'Контур газоотвода и разворот сверены по спутниковому снимку WorldView-3 от 09.08.2025. Высоты и скрытые под мостом участки реконструированы приблизительно.',
   referenceBasis:'Esri World Imagery / Vantor Vivid: плановая обводка; фотографии КЦ «Южный» / ЦЭНКИ: конструкции. Не инженерный обмер.',
   sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'local-plan-from-satellite',
+  units:'metres',machineryMetresPerUnit:SITE31_MACHINERY_METRE,
   heightsVerified:false,globalMapAnchorSurveyed:false,yaw:SITE31_YAW,satellite:SITE31_REFERENCE,
   groundDatum:0,pitFloorY:floorY,pit:SITE31_PIT,trench,
-  launchPassage:{radius:6.8,openBelowDeck:true},serviceMasts:2,serviceDecks:serviceDecks.length,mastAngles,
+  launchPassage:{radius:6.8*SITE31_MACHINERY_METRE,openBelowDeck:true},serviceMasts:2,serviceDecks:serviceDecks.length,mastAngles,
+  serviceMastLengths:[61,52].map(h=>h*SITE31_MACHINERY_METRE),rocketMount:SITE31_ROCKET_MOUNT,
   supportingArms:4,rocketExhibit:true,rocketState:'illustrative-prelaunch',
   roadPort:[...SITE31_PORTS.road],railPort:[...SITE31_PORTS.rail],roadLayout:'two-service-yards-connected-behind-launch-pad',
-  railGauge:RAIL_PROFILE.gauge,featureCounts:result.features,primitiveCount:result.primitiveCount,drawCalls:result.meshCount};
+  railGauge:1.52,networkGaugeWorld:RAIL_PROFILE.gauge,railTransition:'external-feeder',featureCounts:result.features,primitiveCount:result.primitiveCount,drawCalls:result.meshCount};
  root.userData.site31Model=metadata;root.userData.orientationNote=metadata.status;
  root.userData.site31Apertures=apertures;
- return {...result,site31:metadata};
+ return {...result,site31:metadata,rocket,rocketMount:SITE31_ROCKET_MOUNT};
 }

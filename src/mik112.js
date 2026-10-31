@@ -1,21 +1,28 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261028-museum4-osm-live-v2';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
 import {createSurfacePalette} from './surface-materials.js';
+import {applyMik112PhotoFinishes} from './mik112-materials.js?v=20261031-rocket-exhibits-v1';
 
 // Site 112, NOT the neighbouring MZK/SDI at 112A. Photo-interpreted exterior.
 // Sources: RocketTrip Drive 1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk (MIK),
 // 1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3 (two Energia transporter/erectors).
 // Recognisable proportions and photo layout, not a measured engineering model.
-export const MIK112={version:'1.3-photo-frames',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002};
+export const MIK112={version:'2.0-metric-photo-surfaces',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002,units:'metres',
+ dimensions:{length:240,width:190,high:{length:240,width:120,height:56,bays:3},low:{length:240,width:70,height:30,bays:2}},
+ dimensionsSource:'https://www.buran.ru/htm/foto7.htm'};
+export const TUA_ROCKET_MOUNT=Object.freeze({position:[0,15.3603466749,-26.0709070005],rotation:[Math.PI/2,0,0],units:'metres',source:'Recovered source payload centre axis and aft datum'});
+export const MIK112_HALL_ROCKET_MOUNT=Object.freeze({position:[-35,15.3603466749,-35],rotation:[Math.PI/2,0,0],units:'metres',bay:4,clearWidth:38,clearLength:230,description:'Museum exhibit in the middle high bay; rocket +Y follows hall +Z, orbiter stays above the core'});
 const V=(x,y,z)=>new THREE.Vector3(x,y,z);
 export function buildMik112(root,{year=2026}={}){
  root.name='Пл. №112 · МИК и два ТУА «Кузнечики»';
  const palette=createSurfacePalette(root,{
-  wall:0xd1d0c5,concrete:0xa09e90,seam:0x9c9e94,roof:0x8e9894,
+  wall:0xd6cfb9,concrete:0xa6a397,seam:0x989487,roof:0x75868a,
   whiteRoof:0xd5dad2,steel:0x7f8c88,dark:0x333e3b,rust:0x82573c,
-  yellow:0xbca36d,glass:0x536b64,rail:0x6e7774,asphalt:0x726e60
+  yellow:0xbca36d,glass:0x536b58,doorMetal:0xa3aaa0,rail:0x6e7774,asphalt:0x726e60
  },{wall:'concrete',concrete:'concrete',seam:'concrete',roof:'sheet',whiteRoof:'sheet',
-  steel:'paint',dark:'metal',rust:'rust',yellow:'paint',rail:'metal'});
+  steel:'paint',doorMetal:'sheet',dark:'metal',rust:'rust',yellow:'paint',rail:'metal'},
+ {glass:{roughness:.42,metalness:.12}});
+ applyMik112PhotoFinishes(palette,root);
  const mat=palette;
  const boxGeo=new THREE.BoxGeometry(1,1,1),rodGeo=new THREE.CylinderGeometry(1,1,1,7);
  const batches=new Map(),counts={},all=[];
@@ -56,81 +63,98 @@ export function buildMik112(root,{year=2026}={}){
  // Building: three high assembly bays + two lower retained bays, separate annexes.
  // The floor is a set of low aprons, never a town-sized raised pedestal.
  const floor=2.6;
- box(188,.6,240,0,floor-.3,0,'concrete','hall-floor');
+ box(190,.6,240,0,floor-.3,0,'concrete','hall-floor');
  // The finished slab occludes schematic map paint beneath the real hall.
- box(188,.9,240,0,floor+.45,0,'concrete','mik-floor-finish');
+ box(190,.9,240,0,floor+.45,0,'concrete','mik-floor-finish');
  // The Soyuz low-hall doors remain at the SW end. Energia/TUA gates face NE.
- box(88,.28,35,54,floor-.14,138,'concrete','front-apron');
- box(114,.28,35,-39,floor-.14,-138,'concrete','high-hall-apron');
- box(114,.28,102,-39,floor-.14,-202,'concrete','transporter-apron');
+ box(72,.28,35,60,floor-.14,138,'concrete','front-apron');
+ box(122,.28,35,-35,floor-.14,-138,'concrete','high-hall-apron');
+ box(122,.28,102,-35,floor-.14,-202,'concrete','transporter-apron');
  // Side and rear envelope. The northwestern high roof is missing in the recent photos.
- box(1.8,60,240,-94,floor+30,0,'wall','high-sidewall');
- box(1.6,60,240,14,floor+30,0,'wall','high-divider');
- box(108,60,1.8,-40,floor+30,120,'wall','high-rearwall');
- box(1.6,28,240,94,floor+14,0,'wall','low-sidewall');
- box(80,28,1.6,54,floor+14,-120,'wall','low-rearwall');
+ box(1.8,56,240,-94.1,floor+28,0,'wall','high-sidewall');
+ box(1.6,56,240,24.2,floor+28,0,'wall','high-divider');
+ box(120,56,1.8,-35,floor+28,119.1,'wall','high-rearwall');
+ box(1.6,30,240,94.2,floor+15,0,'wall','low-sidewall');
+ box(70,30,1.6,60,floor+15,-119.2,'wall','low-rearwall');
  // Five individually panelled front door assemblies.
- for(const [cx,w,h,opening] of [[-76,36,60,false],[-40,36,60,false],[-4,36,60,false],[34,40,28,true],[74,40,28,false]]){
-  const dw=w-7,dh=h-6,face=h===60?-1:1;
-  for(const side of [-1,1])box(3.5,h,2,cx+side*(w/2-1.75),floor+h/2,face*120,'wall','door-pier');
-  box(w,6,2,cx,floor+h-3,face*120,'wall','door-lintel');
+ for(const [cx,w,h,opening] of [[-75,40,56,false],[-35,40,56,false],[5,40,56,false],[42.5,35,30,true],[77.5,35,30,false]]){
+  const dw=w-7,dh=h-6,face=h===56?-1:1;
+  for(const side of [-1,1])box(3.5,h,2,cx+side*(w/2-1.75),floor+h/2,face*119,'wall','door-pier');
+  box(w,6,2,cx,floor+h-3,face*119,'wall','door-lintel');
   if(opening){
    // A recessed doorway with visible crane girders, not a rocket pasted on the facade.
    box(dw,dh,1,cx,floor+dh/2,106,'dark','open-door-interior');
-   box(dw*.46,dh,1,cx+dw*.27,floor+dh/2,121,'steel','sliding-door-leaf');
+   box(dw*.46,dh,1,cx+dw*.27,floor+dh/2,119.5,'doorMetal','sliding-door-leaf');
    box(dw-3,1,2,cx,floor+dh-3,111,'yellow','overhead-crane');
-  }else box(dw,dh,1,cx,floor+dh/2,face*121,'steel','closed-sliding-door');
-  for(let x=cx-dw/2;x<cx+dw/2+.1;x+=2.1)box(.16,dh,.23,x,floor+dh/2,face*121.65,'seam','door-rib');
-  for(let y=8;y<dh;y+=5.8)box(dw,.18,.22,cx,floor+y,face*121.7,'seam','door-horizontal-seam');
+  }else box(dw,dh,1,cx,floor+dh/2,face*119.3,'doorMetal','closed-sliding-door');
+  for(let x=cx-dw/2;x<cx+dw/2+.1;x+=2.1)box(.16,dh,.23,x,floor+dh/2,face*119.95,'seam','door-rib');
+  for(let y=8;y<dh;y+=5.8)box(dw,.18,.22,cx,floor+y,face*119.98,'seam','door-horizontal-seam');
  }
  // Precast panel rhythm and narrow green-grey glazing bands from the ground photos.
  for(let z=-114;z<=114;z+=12){
-  for(const [x,h] of [[-95,60],[95,28]]){
+  for(const [x,h] of [[-95.05,56],[95.05,30]]){
    box(.28,h,.2,x,floor+h/2,z,'seam','vertical-panel-joint');
    box(.34,4.1,9.8,x,floor+6,z,'glass','side-window');
   }
  }
- for(let y=5;y<60;y+=3.3)box(.25,.1,240,-95.1,floor+y,0,'seam','horizontal-panel-joint');
- for(let y=5;y<28;y+=3.3)box(.25,.1,240,95.1,floor+y,0,'seam','horizontal-panel-joint');
+ for(let y=5;y<56;y+=3.3)box(.25,.1,240,-95.1,floor+y,0,'seam','horizontal-panel-joint');
+ for(let y=5;y<30;y+=3.3)box(.25,.1,240,95.1,floor+y,0,'seam','horizontal-panel-joint');
  // Low roof: light strip next to the tall hall and weathered dark outer sheet roof.
- box(25,.8,242,27,floor+28.3,0,'whiteRoof','retained-light-roof');
- box(55,.8,242,67,floor+28.3,0,'roof','retained-dark-roof');
- for(let x=15;x<=94;x+=2.7)box(.12,.15,239,x,floor+28.8,0,'seam','roof-sheet-rib');
- for(let z=-110;z<=110;z+=22)box(78,.15,.18,54,floor+28.8,z,'seam','roof-seam');
+ box(25,.8,240,37.5,floor+29.6,0,'whiteRoof','retained-light-roof');
+ box(45,.8,240,72.5,floor+29.6,0,'roof','retained-dark-roof');
+ for(let x=26;x<=94;x+=2.7)box(.12,.10,239,x,floor+30.03,0,'seam','roof-sheet-rib');
+ for(let z=-110;z<=110;z+=22)box(68,.10,.18,60,floor+30.03,z,'seam','roof-seam');
  // Narrow glazed raised volume visible in the approach photograph.
- box(11,12,226,18,floor+35,-4,'wall','clerestory');
- for(let z=-108;z<108;z+=8)box(.2,7,6.8,23.6,floor+36,z,'glass','clerestory-window');
- box(12,.65,228,18,floor+41.3,-4,'whiteRoof','clerestory-cap');
+ box(11,12,226,29,floor+36,-4,'wall','clerestory');
+ for(let z=-108;z<108;z+=8)box(.2,7,6.8,34.6,floor+37,z,'glass','clerestory-window');
+ box(12,.65,228,29,floor+42.3,-4,'whiteRoof','clerestory-cap');
  // Taller striped stair tower and low service wings.
- box(9,46,10,22,floor+23,110,'wall','stair-tower');
- for(let y=8;y<44;y+=6)box(9.25,2.4,10.2,22,floor+y,110,'glass','tower-glass-belt');
+ box(9,46,10,33,floor+23,110,'wall','stair-tower');
+ for(let y=8;y<44;y+=6)box(9.25,2.4,10.2,33,floor+y,110,'glass','tower-glass-belt');
  for(const [x,z,w,d,h] of [[120,-95,52,27,12],[115,57,42,63,9],[65,144,62,18,10],[-113,-92,32,30,9]]){
   box(w,h,d,x,floor+h/2,z,'wall','service-wing');box(w+1,.6,d+1,x,floor+h+.3,z,'roof','service-roof');
   for(let xx=x-w/2+4;xx<x+w/2;xx+=5.5)box(3,2,.18,xx,floor+h*.6,z+d/2+.12,'glass','annex-window');
  }
  // High-bay structural skeleton, exposed from above in the current state.
  for(let z=-114;z<=114;z+=19){
-  for(const x of [-92,-58,-22,12])beam([x,floor,z],[x,floor+57,z],1,1,'steel','hall-column');
-  for(const cx of [-76,-40,-4]){
-   beam([cx-17,floor+56,z],[cx+17,floor+56,z],.48,.48,'steel','high-roof-truss',intact);
-   beam([cx-17,floor+60,z],[cx+17,floor+60,z],.48,.48,'steel','high-roof-truss',intact);
-   for(let k=0;k<6;k++)beam([cx-17+k*5.67,floor+56,z],[cx-17+(k+1)*5.67,floor+(k%2?56:60),z],.28,.28,'steel','truss-web',intact);
+  for(const x of [-93.7,24])beam([x,floor,z],[x,floor+52,z],1,1,'steel','wall-attached-column');
+  for(const x of [-55,-15])beam([x,floor,z],[x,floor+52,z],1,1,'steel','historical-internal-column',intact);
+  for(const cx of [-75,-35,5]){
+   beam([cx-19,floor+52,z],[cx+19,floor+52,z],.48,.48,'steel','high-roof-truss',intact);
+   beam([cx-19,floor+55.2,z],[cx+19,floor+55.2,z],.48,.48,'steel','high-roof-truss',intact);
+   for(let k=0;k<6;k++)beam([cx-19+k*38/6,floor+52,z],[cx-19+(k+1)*38/6,floor+(k%2?52:55.2),z],.28,.28,'steel','truss-web',intact);
    // Broken remnants follow a reproducible, deliberately irregular fracture pattern.
-   if(z<-74||z>83||Math.abs(z)<10){
-    beam([cx-17,floor+54,z],[cx+10,floor+39+(z%7),z+3],.52,.52,'rust','fallen-roof-frame',ruins);
-    beam([cx+10,floor+39+(z%7),z+3],[cx+17,floor+55,z],.45,.45,'steel','broken-frame-tip',ruins);
+   if((z<-74||z>83||Math.abs(z)<10)&&!(cx===-35&&Math.abs(z)<60)){
+    beam([cx-19,floor+1.8,z],[cx+10,floor+3.7+Math.abs(z%3),z+3],.52,.52,'rust','fallen-roof-frame',ruins);
+    beam([cx+10,floor+3.7+Math.abs(z%3),z+3],[cx+19,floor+2.1,z],.45,.45,'steel','broken-frame-tip',ruins);
    }
   }
  }
- for(const cx of [-76,-40,-4])box(35.4,.8,240,cx,floor+60.6,0,'roof','historical-roof-panel',intact);
+ for(const cx of [-75,-35,5])box(39.4,.8,240,cx,floor+55.6,0,'roof','historical-roof-panel',intact);
  for(let k=0;k<42;k++){
-  const x=-88+(k*37%99),z=-106+(k*53%214),h=.5+(k%4)*.22;
+  const x=-88+(k*37%107),z=-106+(k*53%214),h=.5+(k%4)*.22;
+  if(x>-50&&x<-20&&z>-44&&z<38)continue;
   const o=mesh(new THREE.BoxGeometry(5+k%7,h,3+k%9),'concrete',x,floor+1.2+k%3,z,'roof-debris',ruins);
   o.rotation.set(.12*(k%3),k*1.67,.16*(k%4));
  }
  // A steel ladder at the building edge.
- for(const x of [-96,-97.2])rod([x,3,115],[x,61,115],.12,'steel','external-ladder');
- for(let y=4;y<61;y+=.9)rod([-97.2,y,115],[-96,y,115],.08,'steel','ladder-rung');
+ for(const x of [-96,-97.2])rod([x,3,115],[x,58,115],.12,'steel','external-ladder');
+ for(let y=4;y<58;y+=.9)rod([-97.2,y,115],[-96,y,115],.08,'steel','ladder-rung');
+ // Two simple museum cradles support the horizontal exhibit. These are display
+ // furniture, not a reconstruction of a particular historic assembly fixture.
+ const cradleShape=new THREE.Shape(),axisY=MIK112_HALL_ROCKET_MOUNT.position[1];
+ const arcPoints=(radius,reverse)=>Array.from({length:17},(_,i)=>{
+  const angle=Math.PI*(1.25+(reverse?16-i:i)/32);
+  return [Math.cos(angle)*radius,axisY+Math.sin(angle)*radius];
+ });
+ const cradleOutline=[...arcPoints(4.02,false),...arcPoints(4.24,true)];
+ cradleShape.moveTo(...cradleOutline[0]);cradleOutline.slice(1).forEach(p=>cradleShape.lineTo(...p));cradleShape.closePath();
+ const cradleGeometry=new THREE.ExtrudeGeometry(cradleShape,{depth:2.4,bevelEnabled:false});
+ for(const z of [-24,5]){
+  box(15,1.1,5,-35,4.15,z,'dark','museum-assembly-cradle-base');
+  for(const x of [-36.8,-33.2])box(2.2,7.05,2.4,x,8.225,z,'steel','museum-assembly-cradle-support');
+  mesh(cradleGeometry,'yellow',-35,0,z-1.2,'museum-assembly-cradle');
+ }
  // Real open holes in the load-bearing cheek plates, rather than dark discs.
  const plateShape=new THREE.Shape();plateShape.moveTo(-1.25,0);plateShape.lineTo(1.25,0);
  plateShape.lineTo(1.1,12);plateShape.quadraticCurveTo(0,14,-1.1,12);plateShape.closePath();
@@ -142,7 +166,7 @@ export function buildMik112(root,{year=2026}={}){
   const p=new THREE.Group();p.position.set(cx,0,cz);p.rotation.y=Math.PI;p.name='Кузнечик '+index;p.userData.museumComponent='energia-transporter';machines.add(p);count('energia-transporter');
   // Two widely spaced railway chassis, cross members and a hollow centre.
   for(const side of [-1,1]){
-   const x=side*11.4;
+   const x=side*10;
    box(4.2,4.5,56.3,x,8.2,0,'steel','longitudinal-chassis',p);
    box(4.6,.45,57,x,10.7,0,'steel','maintenance-walkway',p);
    for(let z=-26;z<=26;z+=3.3)box(.15,4.5,.22,x+side*2.15,8.2,z,'seam','chassis-panel-rib',p);
@@ -197,7 +221,7 @@ export function buildMik112(root,{year=2026}={}){
   for(let z=-257;z<-8;z+=2.4)box(RAIL_PROFILE.sleeperLength/MIK112.scale,.16,.32,x,3.97,z,'seam','rail-sleeper',transporterRails);
  }
  // Smaller normal-gauge track into the retained assembly hall.
- for(const side of [-1,1])box(.18,.27,220,34+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,132,'rail','low-hall-track');
+ for(const side of [-1,1])box(.18,.27,220,42.5+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,132,'rail','low-hall-track');
  // Shallow ramp from the shared road (world y=.72) into the low-hall apron.
  const rampGeo=new THREE.BufferGeometry();
  rampGeo.setAttribute('position',new THREE.Float32BufferAttribute([
@@ -211,10 +235,19 @@ export function buildMik112(root,{year=2026}={}){
   im.computeBoundingBox();im.computeBoundingSphere();im.receiveShadow=true;
   im.name='МИК112 · '+b.m+' · '+b.transforms.length;im.userData.museumComponent='mik112-instanced-detail';b.parent.add(im);all.push(im);
  }
- const info={version:MIK112.version,siteNumber:112,transporterCount:2,features:counts,
+ const info={version:MIK112.version,siteNumber:112,transporterCount:2,features:counts,physicalUnits:'metres',
+  dimensions:MIK112.dimensions,dimensionsSource:MIK112.dimensionsSource,
+  noPolePolygons:[
+   [[-98,-123],[98,-123],[98,123],[-98,123]],
+   [[-98,-256],[28,-256],[28,-121],[-98,-121]],
+   [[92,-111],[148,-111],[148,-79],[92,-79]],
+   [[91,23],[138,23],[138,91],[91,91]],
+   [[32,132],[98,132],[98,156],[32,156]],
+   [[-132,-110],[-95,-110],[-95,-74],[-132,-74]]
+  ],
   photoFolders:['1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk','1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3'],
   evidence:'Eleven visually inspected user photos: MIK satellite, facade and doors; TUA front, side, overhead and perforated-fork closeups.',
-  accuracy:'Photo-interpreted museum reconstruction; no surveyed footprint, hidden structure or operating machinery claimed.',
+  accuracy:'Main hall dimensions from the post-collapse commission report; facade, roof condition and annexes interpreted from the inspected photos. Museum rocket mounting is a display, not an operational reconstruction.',
   instancedBatches:batches.size,meshCount:all.length,railEntries,year,
   tua:{version:'mik112-photo-transporter-v1',status:'procedural',instanceCount:2,source:'RocketTrip photo interpretation',error:null}};
  function setYear(y){info.year=y;intact.visible=y<2002;ruins.visible=y>=2002;machines.visible=y>=1986;info.roofState=y<2002?'historical-intact':'photo-ruined';if(info.tua)info.tua.visible=machines.visible;}
@@ -225,7 +258,7 @@ export function buildMik112(root,{year=2026}={}){
    transporterLocal:machines.children.map(o=>o.position.toArray()),
    transporterWorld:machines.children.map(o=>o.getWorldPosition(V(0,0,0)).toArray()),
    highDoorEndZ:-120,lowDoorEndZ:120,transporterSide:'north-east',
-   hallCorners:[[-94,-120],[94,-120],[94,120],[-94,120]].map(([x,z])=>root.localToWorld(V(x,0,z)).toArray()),
+   hallCorners:[[-95,-120],[95,-120],[95,120],[-95,120]].map(([x,z])=>root.localToWorld(V(x,0,z)).toArray()),
    source:'original-plan-3993x3208; hall centre approximately (640,361) in 1300x1045 map space'};
  info.suppressedFallbackGeometry=[];
  setYear(year);root.userData.mik112Model=info;
@@ -255,7 +288,7 @@ export function buildMik112(root,{year=2026}={}){
    importedTransporters=true;
   }
   counts['energia-transporter']=2;counts['imported-transporter']=2;
-  setTuaMetadata(metadata);info.layout.transporterPlacementBasis='tua-source-manifest';refreshStats();setYear(info.year);
+  setTuaMetadata(metadata);info.layout.transporterPlacementBasis='tua-source-manifest';refreshStats();setYear(info.year);info.rocketMounts=rocketMounts();
   // Procedural boxes, rods and materials are shared with the hall. Dispose
   // only detached geometries that no remaining mesh references.
   const retained=new Set(),released=new Set();root.traverse(object=>{if(object.isMesh)retained.add(object.geometry);});
@@ -269,7 +302,17 @@ export function buildMik112(root,{year=2026}={}){
   }
   refreshStats();return report;
  }
- return {stats:()=>info,setYear,railEntries,transporterRoots,transportersGroup:machines,transporterRails,replaceTransporters,setTuaMetadata,setRailAdaptation,refreshStats,
+ function rocketMounts(){
+  const mount=new THREE.Vector3(...TUA_ROCKET_MOUNT.position);
+  const tua=transporterRoots.map(slot=>{
+   slot.updateMatrix();const position=mount.clone().applyMatrix4(slot.matrix).toArray();
+   const q=slot.quaternion.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(...TUA_ROCKET_MOUNT.rotation)));
+   return {position,quaternion:q.toArray(),units:'metres',source:TUA_ROCKET_MOUNT.source};
+  });
+  return {hall:{...MIK112_HALL_ROCKET_MOUNT,position:[...MIK112_HALL_ROCKET_MOUNT.position],rotation:[...MIK112_HALL_ROCKET_MOUNT.rotation]},tua};
+ }
+ info.rocketMounts=rocketMounts();info.columnDisplay={modern:'wall-attached only',historicalInternalColumns:26,modernDetachedColumns:0};
+ return {stats:()=>info,setYear,rocketMounts,railEntries,transporterRoots,transportersGroup:machines,transporterRails,replaceTransporters,setTuaMetadata,setRailAdaptation,refreshStats,
   focusTarget:V(-8,22,-40),focusOffset:V(330,250,-400)};
 }
 

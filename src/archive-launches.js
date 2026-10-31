@@ -1,25 +1,44 @@
 import * as THREE from 'three';
 import {flamePetal} from './flame-petals.js';
-import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
+import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
 function ring(k,x,y,z,r,t=.35,m='steel',tag='ring'){const o=k.direct(new THREE.TorusGeometry(r,t,7,48),m,tag);o.rotation.x=Math.PI/2;o.position.set(x,y,z);return o;}
-function protonPosition(parent,x,z,yaw,scale=1){
- const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;g.scale.setScalar(scale);parent.add(g);const k=archiveKit(g);k.pit(0,0,13,13,24);
+// Image coordinates retain the owner's traced layout. The two explicitly named
+// parked service gantries in the stored OSM extract calibrate each image in metres.
+// Heights and below-grade structures remain photo-guided interpretations.
+export const PROTON_METRIC_REFERENCE=Object.freeze({
+ 'pad-81':{metresPerPixel:1.2749155586463312,gantrySeparationMetres:538.2695904360893,
+  imageAnchors:[[416,447],[754,700]],osmNodeIds:[12191888874,12191888875],
+  osmAnchorsLonLat:[[62.9771079,46.0716996],[62.9824176,46.0685674]]},
+ 'pad-200':{metresPerPixel:1.3288964611149723,gantrySeparationMetres:600.6215086208982,
+  imageAnchors:[[425,434],[779,715]],osmNodeIds:[12191898608,12191898607],
+  osmAnchorsLonLat:[[63.0293723,46.0376892],[63.0354975,46.034368]]}
+});
+function protonPosition(parent,x,z,yaw,serviceZ=92){
+ const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;parent.add(g);const k=archiveKit(g);k.pit(0,0,13,13,24);
  for(const s of [-1,1]){k.box(23,1,64,s*26,.5,0,'concrete','launch-apron-side');k.box(32,1,19,0,.5,s*24,'concrete','launch-apron-end');}
  ring(k,0,2,0,12,.6,'steel','proton-launch-ring');
  for(let i=0;i<6;i++){const a=i*Math.PI/3,x=Math.cos(a)*13,z=Math.sin(a)*13;k.rod([x,1,z],[x*.67,6,z*.67],.8,'steel','proton-launch-support');k.box(4,2,4,x,2,z,'yellow','support-base');}
  for(const s of [-1,1]){k.hall({x:s*32,z:56,w:19,d:69,h:7,gates:0,windows:false,roof:'concrete',tag:'proton-flanking-service-block'});k.path([[s*44,-32],[s*48,35],[s*46,99],[s*13,115]],5,.15);k.rod([s*20,2,4],[s*20,2,100],.8,'light','long-process-pipe');for(let zz=15;zz<96;zz+=10)k.box(2,2,2,s*20,1,zz,'concrete','pipe-support');}
- k.lattice(0,92,58,13,14,{levels:10,deck:true,tag:'proton-service-tower'});
- for(let y=12;y<56;y+=8){k.box(12,.6,9,0,y,84,'steel','service-tower-platform');for(const x of [-5,5])k.rod([x,y+1,80],[x,y+1.5,80],.09,'yellow','tower-guardrail');}
- k.box(12,11,1,0,46,99,'light','service-tower-cladding');for(const [mx,mz] of [[-50,-43],[50,-43],[-53,95],[53,95]])k.lattice(mx,mz,78,4,4,{levels:13,tag:'lightning-mast'});k.rail([[0,130],[0,91],[0,0]]);g.userData.archivePart=k.finish();
+ k.lattice(0,serviceZ,58,13,14,{levels:10,deck:true,tag:'proton-service-tower'});
+ for(let y=12;y<56;y+=8){k.box(12,.6,9,0,y,serviceZ-8,'steel','service-tower-platform');for(const x of [-5,5])k.rod([x,y+1,serviceZ-12],[x,y+1.5,serviceZ-12],.09,'yellow','tower-guardrail');}
+ k.box(12,11,1,0,46,serviceZ+7,'light','service-tower-cladding');for(const [mx,mz] of [[-50,-43],[50,-43],[-53,95],[53,95]])k.lattice(mx,mz,78,4,4,{levels:13,tag:'lightning-mast'});k.rail([[0,serviceZ+38],[0,serviceZ],[0,0]],{gauge:1.524});g.userData.archivePart=k.finish();
+ g.userData.physicalUnits={units:'metres',localScale:1,railGauge:1.524,serviceGantryHeight:58,serviceGantryParkDistance:serviceZ,heightsSurveyed:false};
+ return g;
 }
 export function protonComplex(root,id){
- const k=archiveKit(root),is81=id==='pad-81',origin=is81?[650,475]:[710,484],P=imageFrame(origin,.4);
+ const k=archiveKit(root),is81=id==='pad-81',reference=PROTON_METRIC_REFERENCE[id]||PROTON_METRIC_REFERENCE['pad-200'],origin=is81?[650,475]:[710,484],m=reference.metresPerPixel,P=imageFrame(origin,m);
  const pads=is81?[[508,238,416,447],[892,504,754,700]]:[[565,261,425,434],[913,556,779,715]];
- for(const [x,z,ex,ez] of pads){const [px,pz]=P([x,z]);protonPosition(root,px,pz,imageAxisYaw([x,z],[ex,ez]),.62);}
+ for(const [x,z,ex,ez] of pads){const [px,pz]=P([x,z]);protonPosition(root,px,pz,imageAxisYaw([x,z],[ex,ez]),Math.hypot(ex-x,ez-z)*m);}
  const buildings=is81?[[779,322,46,95,-.8],[708,429,31,87,-.6],[544,539,31,89,-.6],[223,697,49,96,.9],[223,783,67,113,.9],[351,490,25,65,-.4],[308,487,17,39,-.4],[326,548,20,46,-.4],[341,603,22,45,-.4],[638,588,23,48,-.6],[482,830,27,45,-.4]]:[[779,390,52,83,-.88],[675,470,31,60,-.6],[540,515,35,99,.86],[629,617,28,57,.84],[1000,649,27,52,-.6],[422,588,22,45,-.6],[197,256,24,48,-.6],[156,274,19,38,-.6],[214,223,18,38,-.6]];
- for(const [ix,iz,w,d,yaw] of buildings){const [x,z]=P([ix,iz]);k.hall({x,z,w:w*.4,d:d*.4,h:5,yaw,gates:1,windows:false,roof:'concrete',tag:'satellite-service-building'});}
+ for(const [ix,iz,w,d,yaw] of buildings){const [x,z]=P([ix,iz]);k.hall({x,z,w:w*m,d:d*m,h:5,yaw,gates:1,windows:false,roof:'concrete',tag:'satellite-service-building'});}
  const routes=is81?[[[150,902],[295,868],[423,715],[451,525],[416,447]],[[295,868],[469,735],[622,716],[754,700]],[[294,868],[511,766],[695,762],[807,731],[892,640]],[[140,927],[177,646],[221,416],[279,128],[721,31],[1110,293],[1190,552],[1005,790],[479,974]]]:[[[45,406],[188,464],[330,476],[425,434]],[[49,406],[234,570],[428,690],[593,751],[779,715]],[[49,406],[255,633],[430,774],[640,839],[795,800],[889,733]]];
- routes.forEach((p,i)=>i<3?k.rail(p.map(P)):k.path(p.map(P),4,.14));const tanks=is81?[[606,414],[621,448],[587,443],[614,384]]:[[634,539],[674,505],[610,572]];tanks.forEach(p=>{const[x,z]=P(p);k.tank(x,z,3.2,6.5);});root.userData.tracedPads=pads.map(p=>p.slice(0,2));return k.finish();
+ routes.forEach((p,i)=>i<3?k.rail(p.map(P),{gauge:1.524}):k.path(p.map(P),4,.14));const tanks=is81?[[606,414],[621,448],[587,443],[614,384]]:[[634,539],[674,505],[610,572]];tanks.forEach(p=>{const[x,z]=P(p);k.tank(x,z,3.2,6.5);});root.userData.tracedPads=pads.map(p=>p.slice(0,2));
+ const physical={units:'metres',localScale:1,planMetresPerPixel:m,planCalibration:'distance-between-two-named-parked-service-gantries',
+  planSource:'./data/osm/source-overpass.json.gz',osmNodeIds:reference.osmNodeIds,osmAnchorsLonLat:reference.osmAnchorsLonLat,imageAnchors:reference.imageAnchors,
+  gantrySeparationMetres:reference.gantrySeparationMetres,padSeparationMetres:Math.hypot(pads[1][0]-pads[0][0],pads[1][1]-pads[0][1])*m,
+  railGaugeMetres:1.524,heightsSurveyed:false,absoluteMapAnchorSurveyed:false,
+  referenceVehicle:{name:'Proton-M / Breeze-M, standard 4.1 m fairing',heightMetres:58.2,source:'https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/'}};
+ root.userData.physicalUnits=physical;return {...k.finish(),physical};
 }
 export function energia110(root){
  const k=archiveKit(root),P=imageFrame([589,484],.42),centres=[[442,492],[727,710]];
@@ -51,5 +70,9 @@ export function zenit45(root){
  const k=archiveKit(root);k.cutouts.push({x:0,z:0,rx:26,rz:51,yaw:0,shape:'rectangle'});k.poly([[-26,-51],[26,-51],[26,51],[-26,51]],-27,'dark','zenit-flame-well-floor');
  for(const s of[-1,1]){k.quad([s*26,0,-51],[s*26,0,51],[s*22,-27,46],[s*22,-27,-46],'green','green-flame-well-wall');k.box(11,3,108,s*31.5,1.5,0,'green','zenit-bridge-side');k.rod([s*27,4,-53],[s*27,4,53],.12,'red','red-flame-well-handrail');for(let z=-50;z<=50;z+=5)k.rod([s*27,3,z],[s*27,4,z],.1,'red','handrail-post');}
  for(const z of[-54,54])k.box(74,3,9,0,1.5,z,'concrete','zenit-cross-bridge');for(let i=0;i<18;i++){const a=i/18*Math.PI/2,b=(i+1)/18*Math.PI/2;k.quad([-21,-27+22*(1-Math.cos(a)),-42+28*Math.sin(a)],[21,-27+22*(1-Math.cos(a)),-42+28*Math.sin(a)],[21,-27+22*(1-Math.cos(b)),-42+28*Math.sin(b)],[-21,-27+22*(1-Math.cos(b)),-42+28*Math.sin(b)],'dark','curved-flame-deflector');}
- for(const[x,z]of[[-75,-70],[75,-70],[-75,70],[75,70]])k.lattice(x,z,73,4,4,{levels:12,tag:'zenit-lightning-tower'});k.lattice(44,-20,42,7,9,{levels:8,deck:true,tag:'zenit-fixed-service-mast'});k.box(7,18,8,44,36,-20,'green','zenit-mast-top');k.rail([[0,145],[0,60]]);k.hall({x:78,z:102,w:23,d:50,h:7,roof:'blue',gates:1,tag:'zenit-utility-building'});return k.finish();
+ for(const[x,z]of[[-75,-70],[75,-70],[-75,70],[75,70]])k.lattice(x,z,73,4,4,{levels:12,tag:'zenit-lightning-tower'});k.lattice(44,-20,42,7,9,{levels:8,deck:true,tag:'zenit-fixed-service-mast'});k.box(7,18,8,44,36,-20,'green','zenit-mast-top');k.rail([[0,145],[0,60]],{gauge:1.524});k.hall({x:78,z:102,w:23,d:50,h:7,roof:'blue',gates:1,tag:'zenit-utility-building'});
+ const physical={units:'metres',localScale:1,railGaugeMetres:1.524,heightsSurveyed:false,planSurveyed:false,
+  interpretation:'One schematic Zenit launch position; not a surveyed reconstruction of both Site 45 pads.',
+  referenceVehicle:{name:'Zenit-2, basic two-stage version',heightMetres:57,diameterMetres:3.9,source:'https://rvsn.ruzhany.info/umz_2014_03.html'}};
+ root.userData.physicalUnits=physical;return {...k.finish(),physical};
 }

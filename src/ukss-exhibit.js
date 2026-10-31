@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import {buildUkssPad,UKSS_YAW,UKSS_TRENCH,normalizeUkssContour} from './ukss-pad.js?v=ukss-drive-model-v1';
+import {createSurfacePalette} from './surface-materials.js';
 
-export const UKSS_MODEL_VERSION='ukss-drive-model-v1';
-const ASSET_URL=new URL('../assets/models/ukss/model-v1.glb',import.meta.url);
-const MANIFEST_URL=new URL('../assets/models/ukss/manifest-v1.json',import.meta.url);
+export const UKSS_MODEL_VERSION='ukss-drive-model-v2';
+const ASSET_URL=new URL('../assets/models/ukss/model-v2.glb',import.meta.url);
+const MANIFEST_URL=new URL('../assets/models/ukss/manifest-v2.json',import.meta.url);
 const MAX_WAIT_MS=20000;
 const VIEWS=['overview','tower','trench','top'];
 const vector=value=>Array.isArray(value)&&value.length===3&&value.every(Number.isFinite);
@@ -94,6 +95,21 @@ function disposeModel(root){
   for(const texture of textures)texture.dispose();for(const material of materials)material.dispose();for(const geometry of geometries)geometry?.dispose();
 }
 
+function restoreSourceSurfaces(root,model){
+  const roles={Lotok:'concrete',LPad:'concrete',BlastWalls:'concrete',Concrete_white:'concrete',Yellow_concrete:'concrete',
+    Building_1:'concrete',Building_2:'concrete',Ferm_green:'paint',Ferm_black:'paint',Ferm_grey:'metal',Ferm_lightgrey:'metal',
+    Ferm_white:'paint',Ferm_red:'paint',Shield:'rust',Rails:'metal',KrioTubes:'metal',BlastPad:'metal',Tower_2:'paint',Telega:'paint'};
+  const originals=new Map();model.traverse(mesh=>{if(mesh.isMesh)for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])if(roles[m.name])originals.set(m.name,m);});
+  const colors=Object.fromEntries([...originals].map(([name,m])=>[name,m.color.clone()]));
+  const usedRoles=Object.fromEntries([...originals.keys()].map(name=>[name,roles[name]]));
+  const materials=createSurfacePalette(root,colors,usedRoles);
+  for(const [name,original]of originals){materials[name].name=name;materials[name].userData={...original.userData,...materials[name].userData};}
+  model.traverse(mesh=>{if(!mesh.isMesh)return;mesh.material=Array.isArray(mesh.material)?mesh.material.map(m=>materials[m.name]||m):materials[mesh.material.name]||mesh.material;});
+  root.userData.surfaceMaterials.source='Source material roles, model-space concrete grain and weathered metal';
+  root.userData.surfaceMaterials.gasDuct={material:'Lotok',kind:'concrete',textured:true};
+  root.userData.surfaceMaterials.textureCount=2;
+}
+
 // The optional source mockup is identified by its material tag, which survives
 // merging by material. Structural meshes and the source geometry stay intact.
 function createMockupControl(root){
@@ -172,17 +188,18 @@ export async function loadUkssExhibit(root,{timeoutMs=MAX_WAIT_MS}={}){
     },limit);});
     const loaded=await Promise.race([pending,deadline]);model=loaded.holder;
     const measured=measureModel(model),manifest=loaded.manifest,mockup=createMockupControl(model);
+    restoreSourceSurfaces(root,model);
     model.traverse(mesh=>{if(mesh.isMesh){mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.museumComponent=mesh.userData.museumComponent||'ukss-imported-model';}});
     root.name='Пл. 250 — УКСС «Энергия» / исходная 3D-модель';root.add(model);
     const metadata={version:manifest.version,status:'ready',site:'250',name:'Универсальный комплекс стенд-старт «Энергия»',
       asset,sourceFile:manifest.sourceFile,sourceSha256:manifest.sourceSha256,sourceStats:manifest.sourceStats,
       bounds:measured.bounds,manifestBounds:manifest.bounds,assetStats:{...measured.stats,bytes:loaded.bytes},
-      terrainCutout:manifest.terrainCutout,camera:manifest.camera,connections:manifest.connections,optimization:manifest.optimization??null,
+      terrainCutout:manifest.terrainCutout,camera:manifest.camera,connections:manifest.connections,optimization:manifest.optimization??null,rocketMount:manifest.rocketMount,
       mockup:mockup.metadata,loadMs:Math.round(performance.now()-started),
-      positionBasis:'OSM facility anchor; imported launch origin; existing museum display scale',
+      positionBasis:'OSM facility anchor; source metric coordinates; common 0.14 world units per metre',
       localAxes:{up:'+Y',approach:'+Z',trench:'+X',gradeY:0},error:null};
     root.userData.ukssModel=metadata;
-    root.userData.surfaceMaterials={version:'ukss-glb-materials-v1',materialCount:measured.stats.materialCount,textureCount:measured.stats.textureCount};
+    root.userData.surfaceMaterials.materialCount=measured.stats.materialCount;
     return {metadata,terrainCutout:metadata.terrainCutout,setMockupVisible:mockup.setVisible,
       inspect:(view,camera,controls)=>frameUkssExhibit(root,camera,controls,view)};
   }catch(error){

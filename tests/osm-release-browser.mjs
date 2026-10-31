@@ -8,11 +8,11 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261031-museum-menu-v1';
+const revision='20261031-rocket-exhibits-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
-const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v1.json','utf8'));
-const tuaManifest=JSON.parse(await readFile('assets/models/tua/manifest-v1.json','utf8'));
+const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));
+const tuaManifest=JSON.parse(await readFile('assets/models/tua/manifest-v2.json','utf8'));
 const matches=JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'));
 const geography=createMuseumGeography({catalog,matches});
 const airportFeatures=JSON.parse(await readFile('data/osm/airports.geojson','utf8')).features;
@@ -20,13 +20,17 @@ const river=JSON.parse(await readFile('data/osm/river.geojson','utf8')).features
 const riverWater=createRiverWaterModel({data:JSON.parse(await readFile('data/osm/river-water.geojson','utf8')),project:c=>{const [x,y]=geography.project(c);return [(x-650)*3.4,(y-522.5)*3.4];}});
 const northBank=createNorthBankMask(river.geometry.coordinates.map(c=>{const [x,y]=geography.project(c);return [(x-650)*3.4,(y-522.5)*3.4];}),{water:riverWater});
 const expectedSites=new Map(geography.sites.map(s=>[s.id,s]));
+// The two OSM pad contours now share their reconstruction origin instead of
+// the catalogue's broad facility centroid (ways 169401566 and 169401625).
+const site110Map=geography.project(63.3077,45.9635);
+expectedSites.set('pad-110',{...expectedSites.get('pad-110'),x:site110Map[0],y:site110Map[1]});
 const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
 page.setDefaultTimeout(60000);
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',route=>route.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(route.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 const errors=[],shaderErrors=[],failedResources=[],evidence={base,prefix,revision};
 const tuaAssetRequests=[];
-page.on('request',request=>{if(new URL(request.url()).pathname.endsWith('/assets/models/tua/model-v1.glb'))tuaAssetRequests.push(request.url());});
+page.on('request',request=>{if(new URL(request.url()).pathname.endsWith('/assets/models/tua/model-v2.glb'))tuaAssetRequests.push(request.url());});
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/.test(m.text()))shaderErrors.push(m.text());});
 page.on('response',r=>{if(r.status()>=400&&/\.(?:js|geojson|json|glb)(?:\?|$)/.test(r.url())&&new URL(r.url()).origin===new URL(base).origin)failedResources.push({url:r.url(),status:r.status()});});
@@ -69,6 +73,7 @@ async function hierarchy(level,{details=false}={}){
 try{
  await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected,revision,{timeout:180000});
+ await page.evaluate(()=>window.__BAIKONUR_QA.rockets.whenReady());
  await step();
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(await page.locator('#error').isVisible(),false);
@@ -83,7 +88,7 @@ try{
  assert.ok(initial.transport.branchSimplification.road.branchCount>270);
  assert.ok(initial.transport.branchSimplification.rail.branchCount>75);
  assert.equal(initial.transport.facilityPorts.length,40);
- assert.equal(initial.transport.facilityRailPorts.length,6);
+ assert.equal(initial.transport.facilityRailPorts.length,8);
  assert.equal(initial.transport.cityRoadSimplification.sourceBoundary,'way/39209179');
  assert.ok(initial.transport.cityRoadSimplification.hiddenWays>500);
  const settlementFilters=new Map(initial.transport.settlementRoadSimplification.map(s=>[s.id,s]));
@@ -127,6 +132,14 @@ try{
  assert.ok(initial.transport.facilityPorts.some(p=>p.id==='pad-31'&&p.roadGap<1e-5));
  assert.ok(initial.transport.facilityPorts.some(p=>p.id==='pad-42'&&p.roadGap<1e-5));
  assert.ok(initial.transport.gagarinRail.joinGap<1e-5);
+ assert.equal(initial.commonMetre,.14);
+ assert.equal(initial.gagarinScale,.14);
+ assert.ok(near(initial.gagarin.railPort,[0,.7453333333333333,85.5]),'The Gagarin rail socket is expressed in physical metres');
+ assert.equal(initial.gagarin.physicalRailGauge,1.52);
+ assert.equal(initial.gagarin.terrainDatum.rimY,0);
+ assert.ok(Math.abs(initial.gagarinGround.rimY+2.755)<1e-8,'The physical rim remains at the terrain datum');
+ const gagarinExpected=expectedSites.get('pad-1');
+ assert.ok(near(initial.transport.gagarinRail.entryWorld,[(gagarinExpected.x-650)*3.4-85.5*.14,-2.755,(gagarinExpected.y-522.5)*3.4]),'The displayed approach meets the physical socket without moving the OSM site');
  assert.equal(initial.transport.saturnAccess,null,'The removed black Saturn approach stays absent');
  const industrialRoad=initial.transport.roadSurface.continuousThroughRoads.find(r=>r.sourceWayId==='183464610');
  assert.ok(industrialRoad);assert.equal(industrialRoad.renderedRuns,1);
@@ -272,7 +285,7 @@ try{
  // The uploaded native model must be loaded, not silently replaced by the
  // procedural fallback. Exercise its real card controls and terrain mask.
  const ukss=initial.ukss;
- assert.equal(ukss.version,'ukss-drive-model-v1');assert.equal(ukss.status,'ready');assert.equal(ukss.error,null);
+ assert.equal(ukss.version,'ukss-drive-model-v2');assert.equal(ukss.status,'ready');assert.equal(ukss.error,null);
  assert.equal(ukss.sourceFile,'ukss_scaled.max');
  assert.equal(ukss.sourceSha256,'2e51706e5267564fba9fd6d90262a2fb67f3d84ccfd7c3a002b23895fc704ebb');
  assert.equal(ukss.sourceStats.originalNodeCount,7119);assert.equal(ukss.sourceStats.recoveredNodeCount,7119);
@@ -284,14 +297,21 @@ try{
  assert.equal(ukss.sourceStats.sourceTriangles-ukss.sourceStats.removedFlatGroundTriangles-ukss.optimization.removedFineTriangles-ukss.optimization.lightTrianglesRemoved-ukss.optimization.trianglesRemovedBySimplification,ukss.assetStats.triangleCount);
  assert.ok(ukss.assetStats.bytes>500000&&ukss.assetStats.bytes<6*1024*1024);
  assert.equal(ukss.assetStats.textureCount,0);assert.equal(ukss.terrainCutout.polygon.length,17);
- assert.equal(initial.ukssConnections?.version,'ukss-source-connections-v1');
+ assert.equal(initial.ukssConnections?.version,'ukss-source-connections-v2');
  assert.equal(initial.ukssConnections.connected,true);assert.equal(initial.ukssConnections.railTracks.length,2);
  assert.equal(initial.ukssConnections.sourceGeometryStretched,false);
  assert.ok(initial.ukssConnections.railTracks.every(track=>track.sourceGap<1e-8&&track.socketGap<1e-8));
  assert.ok(near(ukss.bounds.min,ukss.manifestBounds.min,.03)&&near(ukss.bounds.max,ukss.manifestBounds.max,.03));
+ assert.ok(near(ukss.bounds.min,ukssManifest.bounds.min,.03)&&near(ukss.bounds.max,ukssManifest.bounds.max,.03));
+ assert.equal(ukssManifest.normalization.scale,1);assert.equal(ukssManifest.normalization.unit,'metre');
+ assert.equal(ukssManifest.normalization.outerMuseumScale,.14);
+ assert.ok(Math.abs(ukss.bounds.max[1]-215.151)<.03,'The native mast is measured in metres, with no separate height fitting');
  assert.equal(ukss.mockup.available,true);assert.equal(ukss.mockup.visible,false);assert.equal(ukss.mockup.triangleCount,30753);
+ const ukssRocket=initial.rockets.placements.find(p=>p.key==='ukss');
+ assert.ok(ukssRocket);assert.equal(ukssRocket.modelId,'energia-polyus');assert.equal(ukssRocket.status,'ready');assert.equal(ukssRocket.visible,true);
+ assert.ok(near(ukssRocket.metresToWorld,[.14,.14,.14]));
  const ukssPlacement=await page.evaluate(()=>window.__BAIKONUR_QA.siteState('pad-250'));
- assert.ok(near(ukssPlacement.scale,[.21,.21,.21]));assert.equal(ukssPlacement.rotationY,-.56);
+ assert.ok(near(ukssPlacement.scale,[.14,.14,.14]));assert.equal(ukssPlacement.rotationY,-.56);
  assert.ok(Math.abs(ukssPlacement.position[1]+2.755)<1e-8);
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-250');q.evening.setEvening(false);});
  await step();
@@ -300,8 +320,8 @@ try{
  assert.equal(await page.locator('#ukssViews').isVisible(),true);
  assert.deepEqual(await page.locator('#ukssViews button').allTextContents(),['Весь комплекс','Башня','Газоотвод','Сверху']);
  const mockupToggle=page.locator('#ukssMockupToggle');
- assert.equal(await mockupToggle.isVisible(),true);assert.equal(await mockupToggle.getAttribute('aria-pressed'),'false');
- assert.equal(await page.locator('#rocketExhibitToggle').isVisible(),false,'The Gagarin rocket control belongs to its own exhibit');
+ assert.equal(await mockupToggle.isVisible(),true);assert.equal(await mockupToggle.getAttribute('aria-pressed'),'true');
+ assert.equal(await page.locator('#rocketExhibitToggle').isVisible(),false,'The Soyuz control belongs to Sites 1 and 31');
  const ukssCameras={};
  for(const [label,view]of [['Весь комплекс','overview'],['Башня','tower'],['Газоотвод','trench'],['Сверху','top']]){
   await page.locator('#ukssViews').getByRole('button',{name:label,exact:true}).click();await shot('ukss-'+view+'-day');
@@ -312,12 +332,15 @@ try{
  }
  await page.locator('#ukssViews').getByRole('button',{name:'Башня',exact:true}).click();
  await mockupToggle.click();await step();
- assert.equal(await mockupToggle.getAttribute('aria-pressed'),'true');
- assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukss.mockup.visible),true);
- assert.match(await mockupToggle.textContent(),/УБРАТЬ/);await shot('ukss-mockup-visible');
- await mockupToggle.click();await step();
+ assert.equal(await mockupToggle.getAttribute('aria-pressed'),'false');
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().rockets.placements.find(p=>p.key==='ukss').visible),false);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukss.mockup.visible),false);
- assert.match(await mockupToggle.textContent(),/ПОКАЗАТЬ/);
+ assert.match(await mockupToggle.textContent(),/ПОКАЗАТЬ.*ЭНЕРГИЮ.*ПОЛЮС/);await shot('ukss-polyus-hidden');
+ await mockupToggle.click();await step();
+ assert.equal(await mockupToggle.getAttribute('aria-pressed'),'true');
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().rockets.placements.find(p=>p.key==='ukss').visible),true);
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukss.mockup.visible),false,'The old dimensional placeholder remains hidden while the source rocket is displayed');
+ assert.match(await mockupToggle.textContent(),/УБРАТЬ.*ЭНЕРГИЮ.*ПОЛЮС/);await shot('ukss-polyus-visible');
  await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',false));await step();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().ukssCutoutEnabled),0,'The ground hole closes when the exhibit layer is hidden');
  await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',true));await step();
@@ -333,8 +356,10 @@ try{
  // Building placement, historical roofs and external rail ports retain their
  // established contracts while local running rails match the real wheels.
  const mik=initial.mik112,tua=mik.tua;
- assert.equal(mik.version,'1.3-photo-frames');assert.equal(mik.transporterCount,2);
- assert.equal(tua.version,'tua-drive-model-v1');assert.equal(tua.status,'ready');assert.equal(tua.error,null);
+ assert.equal(mik.version,'2.0-metric-photo-surfaces');assert.equal(mik.transporterCount,2);
+ assert.equal(mik.physicalUnits,'metres');
+ assert.deepEqual(mik.dimensions,{length:240,width:190,high:{length:240,width:120,height:56,bays:3},low:{length:240,width:70,height:30,bays:2}});
+ assert.equal(tua.version,'tua-drive-model-v2');assert.equal(tua.status,'ready');assert.equal(tua.error,null);
  assert.equal(tua.sourceFile,'Transporter_railroad_assambly.MAX');
  assert.equal(tua.sourceSha256,'304c2317d335a4787d3748fb4e52ae8f537e48e04cf63057e4374f975b6a650e');
  assert.equal(tua.assetStats.bytes,tuaManifest.assetStats.bytes);assert.equal(tua.assetStats.triangleCount,tuaManifest.assetStats.triangles);
@@ -345,9 +370,16 @@ try{
   assert.ok(count>0);assert.equal(tua.sharing['unique'+kind+'Count'],count);assert.equal(tua.sharing['shared'+kind+'Count'],count,'Both TUA copies share the actual '+kind.toLowerCase()+' instances');
  }
  assert.equal(tuaAssetRequests.length,1,'The two parked machines require one GLB request');
- assert.deepEqual(tua.optimization,tuaManifest.optimization);assert.equal(tua.optimization.profile,'macro');
+ assert.deepEqual(tua.optimization,tuaManifest.optimization);assert.equal(tua.optimization.profile,'full');
+ assert.deepEqual(tua.normalization,tuaManifest.normalization);
+ assert.equal(tua.normalization.uniformScale,1);assert.equal(tua.normalization.physicalUnits,'metres');
+ assert.equal(tua.normalization.outerMuseumScale,.14);
+ assert.ok(near(tua.bounds.min,tuaManifest.bounds.min,.03)&&near(tua.bounds.max,tuaManifest.bounds.max,.03));
+ assert.ok(Math.abs(tua.bounds.max[2]-tua.bounds.min[2]-61.215128)<.03,'The source articulated pose retains its physical length');
  assert.equal(tua.sourceStats.selectedTriangles-tua.optimization.removedFineTriangles,tua.assetStats.triangleCount);
- assert.ok(tua.assetStats.triangleCount<tua.optimization.fullReference.triangles,'TUA fine detail is removed from geometry before compression');
+ assert.equal(tua.assetStats.triangleCount,93800);
+ assert.equal(tua.assetStats.triangleCount,tua.optimization.fullReference.triangles,'The detailed TUA profile retains the complete selected vehicle geometry');
+ assert.equal(tua.optimization.retainedFineObjects,920);assert.equal(tua.optimization.decimatedTriangles,0);
  assert.equal(tua.runningGear.sourceWheelCount,128);assert.equal(tua.runningGear.retainedPartCount,320);
  assert.deepEqual(tua.runningGear,tuaManifest.runningGear);assert.deepEqual(tua.railAdaptation,tuaManifest.railAdaptation);
  assert.deepEqual(tua.placements,tuaManifest.placements);assert.deepEqual(mik.layout.transporterLocal,tua.placements.map(p=>p.position));
@@ -447,7 +479,7 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.traffic.stopFollowing();q.evening.setEvening(false);q.inspectSite31('duct');});
  const pad31=initial.portalArchive.models.find(m=>m.id==='pad-31');
- assert.equal(pad31.features.site31.version,'site31-satellite-trench-v3');
+ assert.equal(pad31.features.site31.version,'site31-metric-soyuz-v4');
  assert.ok(pad31.features.primitiveCount>2000&&pad31.features.site31.pitFloorY<0);
  assert.equal(pad31.features.site31.supportingArms,4);assert.equal(pad31.features.site31.serviceMasts,2);assert.equal(pad31.features.site31.serviceDecks,16);
  assert.ok(pad31.features.site31.launchPassage.openBelowDeck);assert.ok(pad31.features.site31.trench.sections.length>40);
@@ -516,7 +548,17 @@ try{
  evidence.mobileMap=mobileMap;await shot('mobile-overview');
  await page.evaluate(()=>window.__BAIKONUR_QA.showFlanks());await step();evidence.hierarchy.push({mobile:true,...await hierarchy('flanks')});await shot('mobile-flanks');
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-43'));await step();
- assert.ok(await page.evaluate(()=>document.getElementById('info').contains(document.elementFromPoint(100,50))));
+ const mobileSiteCard=await page.evaluate(()=>{
+  const info=document.getElementById('info'),card=info.getBoundingClientRect(),menu=document.getElementById('mobileMenuToggle'),toggle=menu.getBoundingClientRect();
+  const cardHit=document.elementFromPoint(card.left+Math.min(40,card.width/2),card.top+Math.min(40,card.height/2));
+  const menuHit=document.elementFromPoint(toggle.left+toggle.width/2,toggle.top+toggle.height/2);
+  return {card:{top:card.top,bottom:card.bottom,width:card.width,height:card.height},cardAccessible:info.contains(cardHit),menuAccessible:menu.contains(menuHit)};
+ });
+ assert.ok(mobileSiteCard.card.width>0&&mobileSiteCard.card.height>0&&mobileSiteCard.cardAccessible,'The selected phone site card receives pointer input inside its actual bounds');
+ assert.ok(mobileSiteCard.menuAccessible,'The selected site card leaves the phone menu reachable');
+ await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');
+ await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
+ evidence.mobileSiteCard=mobileSiteCard;
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.stats().mapHierarchy)).level,'sites');
  await shot('mobile-site43');await page.locator('#close').click();
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-250');q.evening.setEvening(false);});await step();
@@ -529,13 +571,27 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-112');q.evening.setEvening(false);});await step();
  await page.locator('#mik112Tua').click();await step();
  const tuaMobile=await page.evaluate(()=>{
-  const info=document.getElementById('info').getBoundingClientRect(),dock=document.getElementById('timeDock').getBoundingClientRect();
+  const element=document.getElementById('info'),info=element.getBoundingClientRect(),style=getComputedStyle(element),dock=document.getElementById('timeDock').getBoundingClientRect();
+  const decoration=['paddingTop','paddingBottom','borderTopWidth','borderBottomWidth'].reduce((sum,key)=>sum+(parseFloat(style[key])||0),0);
+  const cssMaximum=/^\d+(?:\.\d+)?px$/.test(style.maxHeight)?parseFloat(style.maxHeight):Math.min(innerHeight*.38,330);
+  const heightLimit=Math.min(cssMaximum,innerHeight*.38,330)+(style.boxSizing==='border-box'?0:decoration);
   return {camera:window.__BAIKONUR_QA.cameraState(),card:{left:info.left,right:info.right,top:info.top,bottom:info.bottom,height:info.height},timelineTop:dock.top,
+   heightLimit,cssMaxHeight:style.maxHeight,boxSizing:style.boxSizing,mapAboveCard:info.top-document.getElementById('ui').getBoundingClientRect().bottom,
    controls:[...document.querySelectorAll('#mik112Controls button')].map(e=>{const b=e.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom,width:b.width};}),width:innerWidth};
  });
  assert.ok(tuaMobile.controls.every(b=>b.left>=0&&b.right<=tuaMobile.width&&b.width>0&&b.top>=tuaMobile.card.top&&b.bottom<=tuaMobile.card.bottom),'All three TUA view controls fit the phone card');
- assert.ok(tuaMobile.card.height<260&&tuaMobile.card.bottom<=tuaMobile.timelineTop-4,'The compact TUA card leaves the model and timeline usable');
+ assert.ok(tuaMobile.card.height<=tuaMobile.heightLimit+1&&tuaMobile.card.bottom<=tuaMobile.timelineTop-4,'The TUA selection card respects its 38vh/330px limit and leaves the timeline usable');
+ assert.ok(tuaMobile.mapAboveCard>=120,'A separate area of the model remains visible between the phone menu and the TUA card');
  assert.ok(near(tuaMobile.camera.target,tuaCameraTarget,.001));
+ for(const id of ['tuaRocketChoice','tuaPlaceRocket']){
+  const control=page.locator('#'+id);await control.scrollIntoViewIfNeeded();
+  const reachable=await control.evaluate(element=>{
+   const b=element.getBoundingClientRect(),card=document.getElementById('info').getBoundingClientRect();
+   return b.width>0&&b.height>0&&b.left>=card.left&&b.right<=card.right&&b.top>=card.top&&b.bottom<=card.bottom;
+  });
+  assert.ok(reachable,id+' remains reachable inside the scrolling phone card');
+ }
+ await page.locator('#mik112Tua').scrollIntoViewIfNeeded();
  await shot('mobile-tua');evidence.tua.mobile=tuaMobile;await page.locator('#close').click();
  await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());await shot('mobile-map');
  assert.equal(await page.locator('#trainFollow,#carsFocus,#flanksView,#eveningToggle,#lightingToggle,#ui a[href*="archive.html"]').count(),0);
@@ -544,8 +600,9 @@ try{
  // asynchronous native-model load before selection and camera setup.
  const tuaLink=new URL(base);tuaLink.searchParams.set('site','112');tuaLink.searchParams.set('view','tua');
  await page.goto(tuaLink.href,{waitUntil:'domcontentloaded',timeout:90000});
- await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected,revision,{timeout:180000});await step();
- assert.equal(await page.locator('#error').isVisible(),false);assert.match(await page.locator('#title').textContent(),/112/);
+ await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected,revision,{timeout:180000});
+ await page.evaluate(()=>window.__BAIKONUR_QA.rockets.whenReady());await step();
+ assert.equal(await page.locator('#error').isVisible(),false);assert.equal(await page.locator('#title').textContent(),'«Кузнечики» · ТУА');
  assert.equal(await page.locator('#mik112Controls').isVisible(),true);assert.equal(await page.locator('#mik112Tua').getAttribute('aria-pressed'),'true');
  const tuaDeepLink=await page.evaluate(()=>({camera:window.__BAIKONUR_QA.cameraState(),model:window.__BAIKONUR_QA.stats().mik112.tua}));
  assert.equal(tuaDeepLink.model.status,'ready');assert.equal(tuaDeepLink.model.instanceCount,2);

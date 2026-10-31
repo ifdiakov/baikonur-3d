@@ -1,8 +1,11 @@
 import * as THREE from 'three';
-import {nearestRoadPoint} from './road-layout.js?v=20261028-museum4-osm-live-v2';
+import {nearestRoadPoint} from './road-layout.js?v=20261031-rocket-exhibits-v1';
+import {GAGARIN_RAIL_PORT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
+import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
+export {GAGARIN_RAIL_PORT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
 
-// Exact dimensions of the existing Pad 1 track, transformed by its approved
-// model scale. Network railwork uses the same cross-section throughout.
+// Retained museum NETWORK profile: animated train wheels use this gauge.
+// Physical exhibit rails adapt to it at their sockets; it is not 1.52 metres.
 const scale=.43*.28/1.5;
 export const RAIL_PROFILE=Object.freeze({scale,gauge:7.3*scale,headRadius:.33*scale,
   headY:1.3*scale,bodyWidth:.77*scale,bodyY:1.21*scale,
@@ -16,7 +19,7 @@ export function buildGagarinRailApproach({data,point,siteRecords}){
   const trunk=new THREE.CatmullRomCurve3(main.points.map(([x,y])=>point(x,y,.75)),false,'centripetal',.3);
   const center=point(pad.x,pad.y,0);
   // Pad 1 rotates -90°: its +Z western approach is world -X.
-  const end=center.clone().add(new THREE.Vector3(-171*scale,0,0));
+  const end=center.clone().add(new THREE.Vector3(-GAGARIN_RAIL_PORT[2]*MUSEUM_METRE,0,0));
   const target=end.clone().add(new THREE.Vector3(-260,.75,-25));
   const entry=nearestRoadPoint(trunk,target),start=entry.position;
   const tangent=trunk.getTangent(entry.t).normalize();
@@ -29,6 +32,6 @@ export function buildGagarinRailApproach({data,point,siteRecords}){
   const grade=t=>{const v=THREE.MathUtils.clamp((t-.25)/.75,0,1);return .75*(1-v*v*(3-2*v))-2.755*(v*v*(3-2*v));};
   return {id:'t-r7-feeder',curve:approach,datum:grade,
     stats:()=>({version:'pad1-matched-track-v2-below-grade',gauge:RAIL_PROFILE.gauge,
-      entryLocalZ:171,entryWorld:end.toArray(),joinGap:0,straightLength:18,
+      entryLocalZ:GAGARIN_RAIL_PORT[2],entryWorld:end.toArray(),joinGap:0,straightLength:18,
       source:'RocketTrip screenshot 2026-10-28 07:24:40 and existing Gagarin model rail geometry'})};
 }

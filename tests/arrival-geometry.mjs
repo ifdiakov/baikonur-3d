@@ -8,13 +8,28 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 const canvasContext=new Proxy({measureText:t=>({width:t.length*15})},{get:(o,k)=>o[k]||(()=>{})});
 globalThis.document={createElement:()=>({width:1,height:1,getContext:()=>canvasContext})};
 const renderedAirports={};
-for(const [key,length,width,referenceLength] of [['krayniy',AIRPORT_DIMENSIONS.krayniy.length,45,3100],['yubileiny',2250,84,4500]]){
+for(const [key,length,width,referenceLength] of [['krayniy',AIRPORT_DIMENSIONS.krayniy.length,45,3100],['yubileiny',2250,42,4500]]){
  const spec=AIRPORT_DIMENSIONS[key];assert.equal(spec.length,length);assert.equal(spec.width,width);
  assert.equal(spec.referenceLength,referenceLength);assert.equal(spec.length/spec.referenceLength,spec.longitudinalScale);
  const root=new THREE.Group();buildAirport(root,key);renderedAirports[key]=root;
- const runway=root.children.find(m=>m.isInstancedMesh&&m.name==='Архив · asphalt'),matrix=new THREE.Matrix4(),scale=new THREE.Vector3();
- assert.ok(runway);runway.getMatrixAt(0,matrix);matrix.decompose(new THREE.Vector3(),new THREE.Quaternion(),scale);
- assert.equal(scale.z,length,'The rendered asphalt follows the display length');assert.equal(scale.x,width,'The runway width is preserved');
+ const matrix=new THREE.Matrix4(),scale=new THREE.Vector3();
+ if(key==='yubileiny'){
+  const physical=root.getObjectByName('Юбилейный · физическая геометрия в метрах');assert.ok(physical);
+  assert.deepEqual(physical.scale.toArray(),[.5,.5,.5]);
+  const concrete=physical.children.find(m=>m.isInstancedMesh&&m.name==='Архив · concrete');assert.ok(concrete);
+  let runwayCount=0;
+  for(let i=0;i<concrete.count;i++){
+   concrete.getMatrixAt(i,matrix);matrix.decompose(new THREE.Vector3(),new THREE.Quaternion(),scale);
+   if(Math.abs(scale.x-84)>1e-6||Math.abs(scale.z-4500)>1e-6)continue;
+   runwayCount++;assert.equal(scale.x*physical.scale.x,width);assert.equal(scale.z*physical.scale.z,length);
+   assert.equal(AIRPORT_SCALE*physical.scale.x,.14,'Airport metres match the common exhibit scale');
+  }
+  assert.equal(runwayCount,1,'One concrete 4500 × 84 m runway is present');
+ }else{
+  const runway=root.children.find(m=>m.isInstancedMesh&&m.name==='Архив · asphalt');
+  assert.ok(runway);runway.getMatrixAt(0,matrix);matrix.decompose(new THREE.Vector3(),new THREE.Quaternion(),scale);
+  assert.equal(scale.z,length,'The rendered asphalt follows the display length');assert.equal(scale.x,width,'The runway width is preserved');
+ }
  assert.equal(root.userData.airport.approachLength,960*spec.longitudinalScale);
 }
 delete globalThis.document;

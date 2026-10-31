@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261028-museum4-osm-live-v2';
+import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
 import {buildMzkHall} from './mzk-hall.js?v=20261030-mzk-sdi-v1';
 import {buildSdiStand} from './mzk-sdi-stand.js?v=20261030-mzk-sdi-v1';
 

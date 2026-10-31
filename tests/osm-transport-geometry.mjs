@@ -167,19 +167,21 @@ for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route
  assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }
 const train=transport.trainPath();assert.equal(train.source,'OpenStreetMap');assert(train.path.length>500);assert(train.osmWayIds.length>5);
-// Keep the established plan route while allowing the corrected hill to stop
-// lifting its southern tracks. Both references were measured from commit
-// 1b18f6c before the Saturn change, not from the new terrain profile.
+// The OSM route is unchanged. Its short museum connector now ends at the
+// metric Gagarin socket (85.5 m × .14) instead of the old drawing-unit socket.
+// This adds 1.75055 world units without changing any source railway way.
 let trainHorizontalLength=0;
 for(let i=1;i<train.path.points.length;i++)trainHorizontalLength+=Math.hypot(train.path.points[i].x-train.path.points[i-1].x,train.path.points[i].z-train.path.points[i-1].z);
-assert(Math.abs(trainHorizontalLength-1710.9621827247777)<1e-6,'The working train route changed in plan');
+assert(Math.abs(trainHorizontalLength-1712.7127365959147)<1e-6,'The working train route changed in plan');
 assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','1468604922','173086738','256360833'],'The train must retain its established OSM route');
 for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}
 assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);
 assert.equal(stats.facilityPorts.length,40,'A facility lost its road connection');
-assert.equal(stats.facilityRailPorts.length,6,'A facility lost its rail connection');
-assert(stats.facilityRailPorts.length>=5);for(const p of stats.facilityRailPorts){assert(p.headCenterGap<1e-7);assert(p.networkDatumGap<1e-7);assert(new THREE.Vector3(...p.headCenter).distanceTo(new THREE.Vector3(...p.renderedHeadCenter))<1e-7);}
+assert.equal(stats.facilityRailPorts.length,8,'A facility lost its rail connection');
+assert.deepEqual(Object.fromEntries(['pad-110','pad-250','pad-31','pad-45'].map(id=>[id,stats.facilityRailPorts.filter(p=>p.id===id).length])),{'pad-110':4,'pad-250':2,'pad-31':1,'pad-45':1});
+for(const port of stats.facilityRailPorts)if(port.physicalGaugeMetres)assert(Math.abs(port.portGauge-port.physicalGaugeMetres*.14)<1e-9);
+for(const p of stats.facilityRailPorts){assert(p.headCenterGap<1e-7);assert(p.networkDatumGap<1e-7);assert(new THREE.Vector3(...p.headCenter).distanceTo(new THREE.Vector3(...p.renderedHeadCenter))<1e-7);}
 // A drawn crossing without a common source node must never form a junction.
 const fixture=(id,ids,coordinates)=>({id:'way/'+id,properties:{osmId:id,sourceNodeIds:ids,tags:{highway:'secondary'}},geometry:{type:'LineString',coordinates}});
 const graph=buildOsmGraph([fixture(1,[1,2],[[63.3,45.9],[63.5,45.9]]),fixture(2,[3,4],[[63.4,45.8],[63.4,46]])],{geography,point});assert.equal(graph.components.length,2);

@@ -8,7 +8,9 @@ const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleF
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|compile shader|TypeError|ReferenceError|VALIDATE_STATUS/.test(m.text()))errors.push(m.text());});
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',r=>r.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(r.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__SILO_FRAME=()=>{const fn=pending;pending=null;fn?.(performance.now());};});
-async function advance(seconds=4){return page.evaluate(seconds=>{const q=window.__BAIKONUR_QA,start=performance.now();q.silo.update(start);for(let i=1;i<=seconds*60;i++)q.silo.update(start+i*1000/60);window.__SILO_FRAME();return q.silo.stats()[0];},seconds);}
+// Apply the real frame's camera constraints before advancing reveal animation.
+// Synthetic silo-only ticks must not hide navigation/scale regressions.
+async function advance(seconds=4){return page.evaluate(seconds=>{window.__SILO_FRAME();const q=window.__BAIKONUR_QA,start=performance.now();q.silo.update(start);for(let i=1;i<=seconds*60;i++)q.silo.update(start+i*1000/60);window.__SILO_FRAME();return q.silo.stats()[0];},seconds);}
 async function screenshot(name){await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:180000});}
 try{
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/?view=silo',{waitUntil:'domcontentloaded',timeout:90000});
@@ -37,7 +39,7 @@ try{
  for(const id of SILO_SITE_IDS){
   await page.evaluate(id=>window.__BAIKONUR_QA.focusSite(id),id);
   await page.getByRole('button',{name:'К шахте',exact:true}).click();
-  const result=await page.evaluate(()=>{const q=window.__BAIKONUR_QA,start=performance.now();q.silo.update(start);for(let i=1;i<=250;i++)q.silo.update(start+i*1000/60);return q.silo.stats().map(s=>({id:s.siteId,state:s.state,steam:s.steamVisible,detail:s.detailVisible,distance:s.cameraDistance}));});
+  const result=await page.evaluate(()=>{window.__SILO_FRAME();const q=window.__BAIKONUR_QA,start=performance.now();q.silo.update(start);for(let i=1;i<=250;i++)q.silo.update(start+i*1000/60);return q.silo.stats().map(s=>({id:s.siteId,state:s.state,steam:s.steamVisible,detail:s.detailVisible,distance:s.cameraDistance}));});
   assert.equal(result.length,31);assert.equal(result.find(s=>s.id===id).state,'open',id+' must open');
   assert.deepEqual(result.filter(s=>s.state==='open').map(s=>s.id),[id],'Each shaft opens independently');
   checked.push({id,distance:result.find(s=>s.id===id).distance});
@@ -45,7 +47,7 @@ try{
  }
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-109');q.silo.inspect('close');window.__SILO_FRAME();});await advance();
  await page.setViewportSize({width:390,height:844});await page.locator('#close').click();await page.evaluate(()=>{window.__BAIKONUR_QA.silo.inspect('close');window.__SILO_FRAME();});await advance();await screenshot('mobile');
- assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.silo.stats()[0].state),'open');
+ const mobile=await page.evaluate(()=>window.__BAIKONUR_QA.silo.stats()[0]);assert.equal(mobile.state,'open');
  // Reuse this fully loaded scene to verify the other model in the same release.
  await page.setViewportSize({width:1440,height:1000});
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-75');q.evening.setEvening(false);window.__SILO_FRAME();});
@@ -57,5 +59,5 @@ try{
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{window.__BAIKONUR_QA.hotel.inspect('all');window.__SILO_FRAME();});await screenshot('hotel-mobile');
  const state=await page.evaluate(()=>({silo:window.__BAIKONUR_QA.silo.stats()[0],site:window.__BAIKONUR_QA.siteState('pad-109'),shaders:window.__BAIKONUR_QA.stats().shadersValid,voids:window.__BAIKONUR_QA.stats().terrainVoids.count}));
  assert(state.shaders);assert.deepEqual(errors,[]);
- await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,opened,closest,checked,hotel,state,errors},null,2));console.log('SILO_BROWSER_PASS',JSON.stringify({prefix,sites:checked.length,hotelGazebos:hotel.gazebos,openAngle:opened.lidAngleDeg,closestDistance:closest.cameraDistance,errors}));
+ await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,opened,closest,mobile,checked,hotel,state,errors},null,2));console.log('SILO_BROWSER_PASS',JSON.stringify({prefix,sites:checked.length,hotelGazebos:hotel.gazebos,openAngle:opened.lidAngleDeg,closestDistance:closest.cameraDistance,errors}));
 }catch(e){await screenshot('failure').catch(()=>{});console.error(JSON.stringify({error:e.message,errors}));throw e;}finally{await browser.close();}

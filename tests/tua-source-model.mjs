@@ -6,15 +6,15 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from '../src/vendor/meshopt_decoder-v1.mjs';
 import {buildMik112,MIK112} from '../src/mik112.js';
 import {frameTuaExhibit} from '../src/tua-exhibit.js';
-import {adaptTuaRails,gaugeAt,resolveTuaRailProfile} from '../src/tua-rails.js';
+import {adaptTuaRails,gaugeAt,trackAxisAt,resolveTuaRailProfile} from '../src/tua-rails.js';
 import {RAIL_PROFILE} from '../src/gagarin-rail-approach.js';
 
 const SOURCE_SHA='304c2317d335a4787d3748fb4e52ae8f537e48e04cf63057e4374f975b6a650e';
 const RECOVERY_SHA='1105ff79202b2b42e86cc3150e41e2d4d01667d0b6ae25a72283aabea43c065a';
 const assetRoot=new URL('../assets/models/tua/',import.meta.url);
 const [manifest,bytes,policy]=await Promise.all([
- readFile(new URL('manifest-v1.json',assetRoot),'utf8').then(JSON.parse),
- readFile(new URL('model-v1.glb',assetRoot)),
+ readFile(new URL('manifest-v2.json',assetRoot),'utf8').then(JSON.parse),
+ readFile(new URL('model-v2.glb',assetRoot)),
  readFile(new URL('../scripts/tua-detail-policy.json',import.meta.url),'utf8').then(JSON.parse)
 ]);
 const near=(actual,expected,tolerance,message)=>assert.ok(Math.abs(actual-expected)<=tolerance,`${message}: ${actual} != ${expected}`);
@@ -24,7 +24,7 @@ const pointNear=(actual,expected,tolerance,message)=>{
 };
 const sorted=values=>[...values].sort((a,b)=>a-b);
 const unique=(values,name)=>{assert.ok(values.every(Number.isInteger),name+' integer IDs');assert.equal(new Set(values).size,values.length,name+' unique IDs');};
-assert.equal(manifest.version,'tua-drive-model-v1');
+assert.equal(manifest.version,'tua-drive-model-v2');
 assert.equal(manifest.sourceFile,'Transporter_railroad_assambly.MAX');
 assert.equal(manifest.sourceSha256,SOURCE_SHA);assert.equal(policy.sourceSha256,SOURCE_SHA);
 assert.equal(manifest.recoverySha256,RECOVERY_SHA);assert.equal(policy.recoverySha256,RECOVERY_SHA);
@@ -33,9 +33,9 @@ assert.equal(manifest.assetStats.bytes,bytes.length);
 assert.deepEqual(manifest.sourceStats,{
  originalNodeCount:2786,recoveredNodeCount:2786,sourceTriangles:137269,sourceMaterials:20,
  selectedNodeCount:2364,selectedMeshCount:2351,selectedTriangles:93800,excludedAssemblyTriangles:43469,
- retainedSourceMeshCount:1431,retainedTriangles:47944,textures:0
+ retainedSourceMeshCount:2351,retainedTriangles:93800,textures:0
 });
-assert.equal(policy.version,'tua-macro-v1');
+assert.equal(policy.version,'tua-detailed-metric-v2');
 const selected=new Set(policy.selection.vehicleSourceIDs),fine=new Set(policy.removeFineSplineSourceIDs);
 const protectedIds=policy.runningGear.protectedSourceIDs,protectedSet=new Set(protectedIds);
 for(const [name,values]of Object.entries({selected:policy.selection.vehicleSourceIDs,meshes:policy.selection.vehicleMeshSourceIDs,
@@ -53,8 +53,9 @@ assert.deepEqual(policy.selection.excludedSubtrees.map(row=>[row.sourceNodeCount
 assert.equal(policy.selection.excludedSubtrees.reduce((sum,row)=>sum+row.triangles,0),43469);
 
 const optimization=manifest.optimization,gear=manifest.runningGear;
-assert.equal(optimization.profile,'macro');assert.equal(optimization.removedFineObjects,920);
-assert.equal(optimization.removedFineTriangles,45856);assert.equal(optimization.decimatedTriangles,0);
+assert.equal(optimization.profile,'full');assert.equal(optimization.removedFineObjects,0);
+assert.equal(optimization.removedFineTriangles,0);assert.equal(optimization.decimatedTriangles,0);
+assert.equal(optimization.retainedFineObjects,920);assert.equal(optimization.retainedFineTriangles,45856);
 assert.equal(optimization.maximumSurfaceErrorLocal,0,'The first display asset retains all selected source surfaces');
 assert.equal(manifest.conversion.decimation,false);assert.equal(manifest.conversion.externalResources,false);
 assert.equal(optimization.fullReference.triangles,93800);
@@ -75,19 +76,19 @@ assert.deepEqual(gear.retentionAudit.wheelMaterialTrianglesAfter,{LightBlackMeta
 // The longitudinal origin is the midpoint of the actual wheel axes, not the
 // overall assembly bounds. The source grade is the top of its rail heads.
 const normalization=manifest.normalization;
-near(normalization.uniformScale,1.14,1e-12,'Single uniform source scale');
+near(normalization.uniformScale,1,1e-12,'Single uniform source scale');
 pointNear(normalization.physicalOrigin,[-.00146106630563736,-14.5,25.500000713507283],1e-10,'Physical source origin');
 near(normalization.rawGlbToPhysicalRotationX,Math.PI/2,1e-12,'Undo source export axis conversion');
 pointNear(normalization.rawGlbToLocalMatrixColumnMajor,[
- 1.14,0,0,0,0,0,1.14,0,0,-1.14,0,0,.00166561558842659,16.53,-29.070000813398305,1
+ 1,0,0,0,0,0,1,0,0,-1,0,0,.00146106630563736,14.5,-25.500000713507283,1
 ],1e-10,'Complete affine normalization');
 assert.deepEqual(normalization.sourcePhysicalAxes,{up:'+Y',length:'+Z',width:'+X'});
 near(normalization.outerMuseumScale,MIK112.scale,1e-12,'Existing MIK scale');
 near(normalization.outerMuseumYaw,MIK112.yaw,1e-12,'Existing MIK orientation');
 assert.deepEqual(manifest.placements.map(p=>p.position),[[-71,4.305,-183],[-19,4.305,-183]]);
 manifest.placements.forEach(p=>near(p.rotationY,Math.PI,1e-12,'Authored vehicle orientation within its existing slot'));
-near(gear.localWheelCentreGauge,1.8580424880240016,1e-12,'Measured wheel gauge');
-pointNear(gear.localTrackCentreAxesX,[-11.4,11.4],1e-12,'Two track axes');
+near(gear.localWheelCentreGauge,1.6298618316000013,1e-12,'Measured wheel gauge');
+pointNear(gear.localTrackCentreAxesX,[-10,10],1e-12,'Two track axes');
 near(gear.sourceRailHeadY,-14.5,1e-12,'Source rail head reference');
 
 // Check the file itself, including unreferenced glTF entries, before decoding.
@@ -135,7 +136,7 @@ scene.traverse(mesh=>{
  triangleCount+=index.count/3;vertexCount+=position.count;draws+=geometry.groups.length||1;
  materialTriangles[role]=(materialTriangles[role]||0)+index.count/3;
 });
-assert.equal(triangleCount,47944);assert.equal(triangleCount,manifest.assetStats.triangles);
+assert.equal(triangleCount,93800);assert.equal(triangleCount,manifest.assetStats.triangles);
 assert.equal(vertexCount,manifest.assetStats.vertices);assert.equal(draws,manifest.assetStats.primitives);
 assert.equal(materials.size,manifest.assetStats.materials);assert.ok(draws<=20&&materials.size<=16);
 assert.deepEqual(materialTriangles,manifest.assetStats.materialTriangles);
@@ -145,37 +146,37 @@ assert.equal(materialTriangles.LocoGrey,104,'Shared source material names do not
 assert.equal(materialTriangles.LocoRoof,672);
 pointNear(bounds.min.toArray(),manifest.bounds.min,.002,'Measured minimum bounds');
 pointNear(bounds.max.toArray(),manifest.bounds.max,.002,'Measured maximum bounds');
-pointNear(bounds.min.toArray(),[-14.4193339495,-.1402147402,-35.4004204529],.003,'Independent source minimum bounds');
-pointNear(bounds.max.toArray(),[14.4226662679,22.0255340691,34.3848268902],.003,'Independent source maximum bounds');
+pointNear(bounds.min.toArray(),[-12.6485385522,-.1229953861,-31.0529994965],.003,'Independent source minimum bounds');
+pointNear(bounds.max.toArray(),[12.6514616385,19.3206440150,30.1621288511],.003,'Independent source maximum bounds');
 
 // Independently recover wheels from actual decoded triangles. This detects
 // lost or incorrectly decomposed source shear even if a metadata audit claims
 // that all IDs survived material batching. Each source wheel is a12-sided
 // cylinder:24 wall triangles +24 cap triangles, with its axis along local X.
 const bogieSourceZ=[0,3,6,9,12,15,18,21,30,33,36,39,42,45,48,51];
-const axleZ=bogieSourceZ.flatMap(z=>[-1,1].map(side=>(z+side*.968352-25.500000713507283)*1.14));
-const wheelX=[-12.329021244012,-10.470978755988,10.470978755988,12.329021244012];
-const wheelY=(-14.12299537+14.5)*1.14,wheelRadius=.57,halfWheelThickness=.0456;
+const axleZ=bogieSourceZ.flatMap(z=>[-1,1].map(side=>(z+side*.968352-25.500000713507283)));
+const wheelX=[-10.8149309158,-9.1850690842,9.1850690842,10.8149309158];
+const wheelY=(-14.12299537+14.5),wheelRadius=.5,halfWheelThickness=.04;
 const wheelGroups=wheelX.flatMap(x=>axleZ.map(z=>({center:new THREE.Vector3(x,wheelY,z),triangles:[],bounds:new THREE.Box3()})));
-const axles=[-11.4,11.4].flatMap(x=>axleZ.map(z=>({x,z,triangles:[]})));
+const axles=[-10,10].flatMap(x=>axleZ.map(z=>({x,z,triangles:[]})));
 const closest=(values,value)=>values.reduce((best,n)=>Math.abs(n-value)<Math.abs(best-value)?n:best,values[0]);
 for(const triangle of trianglesData){
  const points=triangle.points,centre=points.reduce((sum,p)=>sum.add(p),new THREE.Vector3()).multiplyScalar(1/3);
- if(Math.abs(centre.y-wheelY)>.58)continue;
+ if(Math.abs(centre.y-wheelY)>.51)continue;
  const x=closest(wheelX,centre.x),z=closest(axleZ,centre.z);
  const wheel=wheelGroups.find(w=>w.center.x===x&&w.center.z===z);
  if(points.every(p=>Math.abs(p.x-x)<=halfWheelThickness+.006&&Math.hypot(p.y-wheelY,p.z-z)<=wheelRadius+.006)){
   wheel.triangles.push(triangle);points.forEach(p=>wheel.bounds.expandByPoint(p));continue;
  }
- const track=closest([-11.4,11.4],centre.x),span=Math.max(...points.map(p=>p.x))-Math.min(...points.map(p=>p.x));
- if(span>2.25&&span<2.3&&points.every(p=>Math.abs(p.x-track)<1.16&&Math.abs(p.y-wheelY)<.12&&Math.abs(p.z-z)<.105))
+ const track=closest([-10,10],centre.x),span=Math.max(...points.map(p=>p.x))-Math.min(...points.map(p=>p.x));
+ if(span>1.97&&span<2.02&&points.every(p=>Math.abs(p.x-track)<1.02&&Math.abs(p.y-wheelY)<.106&&Math.abs(p.z-z)<.093))
   axles.find(a=>a.x===track&&a.z===z).triangles.push(triangle);
 }
 for(const wheel of wheelGroups){
  assert.equal(wheel.triangles.length,48,'Complete source wheel at '+wheel.center.toArray());
  assert.ok(wheel.triangles.every(t=>t.material==='LightBlackMetal'));
  pointNear(wheel.bounds.getCenter(new THREE.Vector3()).toArray(),wheel.center.toArray(),.004,'Actual wheel centre');
- pointNear(wheel.bounds.getSize(new THREE.Vector3()).toArray(),[.0912,1.14,1.14],.006,'Actual wheel cylinder dimensions');
+ pointNear(wheel.bounds.getSize(new THREE.Vector3()).toArray(),[.08,1,1],.006,'Actual wheel cylinder dimensions');
 }
 for(const axle of axles){assert.equal(axle.triangles.length,12,'Complete original axle at '+[axle.x,axle.z]);assert.ok(axle.triangles.every(t=>t.material==='LightBlackMetal'));}
 assert.equal(wheelGroups.length,128);assert.equal(axles.length,64);
@@ -204,7 +205,7 @@ assert.ok(oldRailChildren.every(child=>child.parent===null),'All old wide runnin
 for(const {object,matrix}of siblingState)assert.ok(object.matrixWorld.equals(matrix),'MIK, aprons and unrelated tracks keep their transforms');
 assert.strictEqual(adaptTuaRails(exhibit,manifest),railReport,'Repeated adaptation is idempotent');
 near(railReport.networkGauge,RAIL_PROFILE.gauge/MIK112.scale,1e-12,'Unchanged network gauge');
-near(railReport.runningGauge,1.8580424880240016,1e-12,'Source running gauge');
+near(railReport.runningGauge,1.6298618316000013,1e-12,'Source running gauge');
 near(railReport.railHeadY,4.305,1e-12,'Fixed rail head elevation');
 const rails=[],sleepers=[];exhibit.transporterRails.traverse(object=>{
  if(object.userData.museumComponent==='transporter-running-rail')rails.push(object);
@@ -227,24 +228,24 @@ for(const rail of rails){
  for(const [key,points]of sections){
   const z=Number(key),min=Math.min(...points.map(p=>p.x)),max=Math.max(...points.map(p=>p.x));
   near(max-min,.18,2e-5,'Actual rail head width');
-  near((min+max)/2,track+side*gaugeAt(z,profile)/2,2e-5,'Rendered rail follows the declared smooth gauge');
+  near((min+max)/2,trackAxisAt(track,z,profile)+side*gaugeAt(z,profile)/2,2e-5,'Rendered rail follows the declared smooth gauge');
  }
  for(const z of [-258.5,-5.5]){
   const points=sections.get(z.toFixed(5));assert.ok(points);
-  near((Math.min(...points.map(p=>p.x))+Math.max(...points.map(p=>p.x)))/2,track+side*RAIL_PROFILE.gauge/MIK112.scale/2,2e-5,'Actual fixed external rail end');
+  near((Math.min(...points.map(p=>p.x))+Math.max(...points.map(p=>p.x)))/2,trackAxisAt(track,z,profile)+side*RAIL_PROFILE.gauge/MIK112.scale/2,2e-5,'Actual fixed external rail end');
  }
 }
 for(const z of [-258.5,-238,-128,-5.5])near(gaugeAt(z,profile),RAIL_PROFILE.gauge/MIK112.scale,1e-12,'Full network gauge beyond transitions');
-for(const z of [-218,-213.743921927,-183,-152.256078088,-148])near(gaugeAt(z,profile),1.8580424880240016,1e-12,'Straight narrow gauge covers every wheel');
+for(const z of [-218,-213.743921927,-183,-152.256078088,-148])near(gaugeAt(z,profile),1.6298618316000013,1e-12,'Straight narrow gauge covers every wheel');
 for(const [start,end,direction]of [[-238,-218,-1],[-148,-128,1]]){
  let previous=gaugeAt(start,profile);
- for(let z=start+.1;z<end+.001;z+=.1){const next=gaugeAt(z,profile);assert.ok((next-previous)*direction>=-1e-10);assert.ok(Math.abs(next-previous)<.018);previous=next;}
+ for(let z=start+.1;z<end+.001;z+=.1){const next=gaugeAt(z,profile);assert.ok((next-previous)*direction>=-1e-10);assert.ok(Math.abs(next-previous)<.020);previous=next;}
  for(const z of [start,end])near((gaugeAt(z+.0001,profile)-gaugeAt(z-.0001,profile))/.0002,0,1e-5,'Flat gauge tangent at transition endpoint');
 }
 const instance=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();
 for(let i=0;i<sleepers[0].count;i++){
  sleepers[0].getMatrixAt(i,instance);assert.ok(instance.elements.every(Number.isFinite));instance.decompose(p,q,s);
- assert.ok(profile.trackCenters.some(x=>Math.abs(x-p.x)<1e-5));
+ assert.ok(profile.trackCenters.some(x=>Math.abs(trackAxisAt(x,p.z,profile)-p.x)<1e-5));
  near(p.y+s.y/2,4.05,1e-5,'Sleeper supports the rail body');
  assert.ok(s.x>gaugeAt(p.z,profile)+.18&&s.x<6.6,'Sleepers cover the rail heads without a wide floating underlay');
 }
@@ -264,12 +265,12 @@ for(const slot of slots){
   }
  }
 }
-pointNear(pairBounds.min.toArray(),[-85.4226662679,4.1647852598,-217.3848268902],.004,'Actual placed pair minimum');
-pointNear(pairBounds.max.toArray(),[-4.5806660505,26.3305340691,-147.5995795471],.004,'Actual placed pair maximum');
+pointNear(pairBounds.min.toArray(),[-83.6514616385,4.1820046139,-213.1621288511],.004,'Actual placed pair minimum');
+pointNear(pairBounds.max.toArray(),[-6.3514614478,23.6256440150,-151.9470005035],.004,'Actual placed pair maximum');
 assert.ok(-123-pairBounds.max.z>24,'The longer source vehicles remain clear of the MIK facade');
 assert.ok(52-(bounds.max.x-bounds.min.x)>23,'The two assemblies retain a clear lateral gap');
-pointNear([wheelMikBounds.min.z,wheelMikBounds.max.z],[-213.743921927,-152.256078088],.004,'Actual wheel corridor');
-near(wheelMikBounds.min.y,4.1647852598,.004,'Preserve the source wheel flange depth below the rail head');
+pointNear([wheelMikBounds.min.z,wheelMikBounds.max.z],[-209.9683525682,-156.0316474455],.004,'Actual wheel corridor');
+near(wheelMikBounds.min.y,4.1820046139,.004,'Preserve the source wheel flange depth below the rail head');
 assert.ok(wheelMikBounds.min.z>-218+4.25&&wheelMikBounds.max.z<-148-4.25,'Gauge changes end safely outside all actual wheels');
 for(const track of profile.trackCenters)for(const z of [-213,-183,-153])for(const side of [-1,1]){
  const world=root.localToWorld(new THREE.Vector3(track+side*profile.networkGauge/2,4.305,z));

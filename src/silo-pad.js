@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {archiveKit} from './archive-kit.js';
+import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
 
 // Exterior museum interpretation of the owner's R-36M references, not a surveyed
 // reconstruction or a working launch mechanism. Only the visible upper cavity is modelled.
@@ -8,7 +8,10 @@ export const SILO_VERSION='museum-silos-v2';
 export const SILO_REFERENCE=Object.freeze({
  sources:['https://rvsn.ruzhany.info/kbu_002_03_2.html','https://habr.com/ru/articles/87341/'],
  interpretation:'Photo-guided exterior; layout, lid animation and white vapour are museum effects.',
- siteId:'pad-109',openingRadius:3.2,openDistance:32,closeDistance:43,openSeconds:3.2
+ siteId:'pad-109',openingRadius:3.2,openDistance:32,closeDistance:43,openSeconds:3.2,
+ physical:{units:'metres',localScale:1,apronMetres:[24,25],openingDiameterMetres:6.4,
+  visibleNoseDiameterMetres:2.84,lidMetres:[8.9,9.8,1.12],dimensionsSurveyed:false,
+  interpretation:'Dimensions of the shared museum exterior, not measured dimensions of each catalogued silo or a complete underground launcher.'}
 });
 const controllers=new WeakMap(),V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const smooth=x=>{x=THREE.MathUtils.clamp(x,0,1);return x*x*(3-2*x);};
@@ -147,8 +150,8 @@ export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пус
  };
  const detail=new THREE.Group();detail.name='ШПУ · подробная модель';for(const child of [...root.children])detail.add(child);root.add(detail);shareGeometry(detail);
  const proxy=createFarSilo();root.add(proxy);detail.visible=false;proxy.visible=true;
- pose();controllers.set(root,api);root.userData.siloExhibit={version:SILO_VERSION,siteId,reference:SILO_REFERENCE};
- return {...features,meshCount:features.meshCount+lidFeatures.meshCount+9,primitiveCount:features.primitiveCount+lidFeatures.primitiveCount,features:{...features.features,...lidFeatures.features},version:SILO_VERSION};
+ pose();controllers.set(root,api);root.userData.siloExhibit={version:SILO_VERSION,siteId,reference:SILO_REFERENCE};root.userData.physicalUnits=SILO_REFERENCE.physical;
+ return {...features,meshCount:features.meshCount+lidFeatures.meshCount+9,primitiveCount:features.primitiveCount+lidFeatures.primitiveCount,features:{...features.features,...lidFeatures.features},version:SILO_VERSION,physical:SILO_REFERENCE.physical};
 }
 export function siloController(root){return controllers.get(root);}
 

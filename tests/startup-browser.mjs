@@ -6,7 +6,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 // Only frame scheduling is controlled; every deliberate frame is real WebGL.
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
-const revision='20261031-museum-menu-v1';
+const revision='20261031-rocket-exhibits-v1';
 const evidence={base,prefix,revision,cases:{}};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -70,7 +70,7 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
   window.fetch=(input,init)=>{
    const url=new URL(typeof input==='string'||input instanceof URL?input:input.url,location.href);
    const isCatalog=stalledBody==='catalog'&&url.pathname.endsWith('/data/catalog.json');
-   const isModel=stalledBody==='models'&&/\/assets\/models\/(?:tua|ukss)\/model-v1\.glb$/.test(url.pathname);
+   const isModel=stalledBody==='models'&&/\/assets\/models\/(?:tua|ukss)\/model-v2\.glb$/.test(url.pathname);
    if(!isCatalog&&!isModel)return originalFetch(input,init);
    const item={path:url.pathname,startedAt:performance.now(),headersAt:null,abortedAt:null};state.stalled.push(item);
    const signal=init?.signal||(input instanceof Request?input.signal:null);
@@ -153,7 +153,7 @@ try{
   assert.notDeepEqual(r7.position,overview.position,'The equipment menu changes the live camera');
   if(!await run.page.locator('#equipmentAccordion').evaluate(e=>e.open))await run.page.locator('#equipmentAccordion > summary').click();
   await run.page.locator('[data-museum-action="tua"]').click();await step(run.page);const tua=await camera(run.page);
-  assert.match(await run.page.locator('#title').textContent(),/112/);
+  assert.match(await run.page.locator('#title').textContent(),/Кузнечики|Транспортно-установочный/);
   assert.equal(await run.page.locator('#mik112Tua').getAttribute('aria-pressed'),'true','The TUA action selects the native transporter view');
   assert.notDeepEqual(tua.position,r7.position);
   await run.page.screenshot({path:`${out}/${prefix}-ready.png`,timeout:90000});

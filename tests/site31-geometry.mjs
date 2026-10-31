@@ -9,6 +9,7 @@ import {buildArchiveModel} from '../src/archive-models.js';
 import {createTerrainVoids} from '../src/terrain-voids.js';
 import {buildTransportNetwork} from '../src/transport-network.js';
 import {RAIL_PROFILE} from '../src/gagarin-rail-approach.js';
+import {MUSEUM_METRE} from '../src/museum-scale.js';
 
 const siteRecords=JSON.parse(fs.readFileSync('data/catalog.json','utf8')).sites;
 const site=siteRecords.find(s=>s.id==='pad-31'),manifest=ARCHIVE_MAP.find(s=>s.id==='pad-31');
@@ -17,7 +18,7 @@ const root=new THREE.Group();root.scale.setScalar(manifest.scale);root.rotation.
 root.position.copy(point(site.x,site.y,-2.72));
 const result=buildSite31Pad(root);root.updateMatrixWorld(true);
 const model=result.site31;
-assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-satellite-trench-v3');
+assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-metric-soyuz-v4');
 assert.equal(model.siteId,'pad-31');assert.equal(model.orientationVerified,true);
 assert.equal(model.orientationScope,'local-plan-from-satellite');
 assert.equal(model.heightsVerified,false,'The satellite plan does not establish elevations');
@@ -27,14 +28,18 @@ assert.equal(model.satellite.heightsVerified,false);assert.equal(model.satellite
 assert.equal(result.cutouts.length,1);assert.deepEqual(result.cutouts[0],SITE31_PIT);
 assert.equal(model.supportingArms,4);assert.equal(result.features['support-arm-gripper'],4);
 assert.equal(model.serviceMasts,2);assert.equal(model.serviceDecks,16);
-assert.equal(result.features['soyuz-booster-body'],4);assert.equal(result.features['soyuz-core-stage'],1);
+assert.equal(result.rocket.parent,root,'The source rocket holder belongs to the physical-metre root');
+assert.equal(result.rocket.visible,true);assert.equal(result.rocketMount.vehicle,'soyuz');
+assert.equal(result.rocketMount.axis,'y');assert.equal(result.rocketMount.baseY,0);
+assert.deepEqual(model.rocketMount,result.rocketMount);
+assert.ok(result.rocketMount.heightMetres>49&&result.rocketMount.heightMetres<50,'The source Soyuz with SAS replaces the former schematic cylinders');
 assert.ok(result.features['service-mast-cross-lattice']>100);
 assert.ok(result.features['excavation-stair-tread']>50);
 assert.ok(result.primitiveCount>1800,'Site31 should retain detailed open structures');
 assert.ok(result.meshCount<100,'Fine lattice work must be instanced');
 assert.deepEqual(SITE31_PORTS.road,FACILITY_PORTS['pad-31'].road);
 assert.deepEqual(SITE31_PORTS.rail,FACILITY_PORTS['pad-31'].rail[0]);
-assert.equal(manifest.scale,.28);assert.equal(manifest.yaw,SITE31_YAW);
+assert.equal(manifest.scale,MUSEUM_METRE);assert.equal(manifest.yaw,SITE31_YAW);
 assert.equal(FACILITY_PORTS['pad-31'].yaw,manifest.yaw);
 assert.equal(FACILITY_PORTS['pad-31'].scale,manifest.scale);
 
@@ -93,7 +98,7 @@ for(const [x,z]of polygon){
 
 const meshes=[];root.traverse(o=>{
  if(!o.isMesh)return;
- let p=o,rocket=false;while(p&&p!==root){if(p.name==='«Союз» · музейная предстаровая композиция')rocket=true;p=p.parent;}
+ let p=o,rocket=false;while(p&&p!==root){if(p===result.rocket)rocket=true;p=p.parent;}
  if(!rocket)meshes.push(o);
  assert.ok([...o.geometry.attributes.position.array].every(Number.isFinite),o.name+' has finite vertices');
  if(o.isInstancedMesh)assert.ok([...o.instanceMatrix.array].every(Number.isFinite),o.name+' has finite transforms');
@@ -171,6 +176,7 @@ assert.ok(Math.abs(roadHit.local.y-.1)<1e-5);
 const data=JSON.parse(fs.readFileSync('data/transport-network.json','utf8')),original=JSON.stringify(data);
 const layers={roads:new THREE.Group(),rails:new THREE.Group()},network=buildTransportNetwork({data,siteRecords,point,layers});
 assert.equal(JSON.stringify(data),original,'Rendering must not mutate the source plan');
+assert.equal(network.stats().railGauge,RAIL_PROFILE.gauge,'Only the facility feeder adapts; the museum train keeps its network gauge');
 Object.values(layers).forEach(layer=>layer.updateMatrixWorld(true));
 const approach=network.roadPaths().find(r=>r.id==='r-31-service');assert.ok(approach);
 const gateWorld=root.localToWorld(gateLocal.clone()),roadJoinError=approach.points.at(-1).distanceTo(gateWorld);
@@ -193,7 +199,8 @@ for(let i=0;i<modelRails.count;i++){
  modelRails.getMatrixAt(i,matrix);
  for(const y of [-.5,.5])modelRailEnds.push(new THREE.Vector3(0,y,0).applyMatrix4(matrix).applyMatrix4(modelRails.matrixWorld));
 }
-const expectedRails=[-1,1].map(side=>root.localToWorld(new THREE.Vector3(side*RAIL_PROFILE.gauge/(2*root.scale.x),SITE31_PORTS.rail[1],SITE31_PORTS.rail[2])));
+assert.equal(model.railGauge,1.52,'The start uses the physical Russian track gauge');
+const expectedRails=[-1,1].map(side=>root.localToWorld(new THREE.Vector3(side*model.railGauge/2,SITE31_PORTS.rail[1],SITE31_PORTS.rail[2])));
 const internalEnds=expectedRails.map(p=>modelRailEnds.reduce((best,q)=>q.distanceTo(p)<best.distanceTo(p)?q:best));
 internalEnds.forEach((p,i)=>assert.ok(p.distanceTo(expectedRails[i])<1e-5,'Visible internal rails reach their ports'));
 const networkRails=layers.rails.children.filter(m=>m.userData.railRoute==='t-31-feeder'&&m.geometry?.type==='TubeGeometry');assert.equal(networkRails.length,2);
@@ -202,7 +209,8 @@ const railJoinErrors=internalEnds.map(p=>Math.min(...actualEnds.map(q=>p.distanc
 assert.ok(Math.max(...railJoinErrors)<.002,'Each physical network rail meets its matching internal rail');
 for(const rail of networkRails)assert.ok(rail.geometry.parameters.path.getTangent(1).dot(inward)>.999,'The final rail approach is aligned with the launch track');
 
-const bounds=new THREE.Box3().setFromObject(root);assert.ok(bounds.min.y<-9,'Excavation extends below the actual scene surface');
+const bounds=new THREE.Box3().setFromObject(root),physicalFloorWorld=root.localToWorld(new THREE.Vector3(0,model.pitFloorY,0)).y;
+assert.ok(bounds.min.y<=physicalFloorWorld+1e-6,'Excavation reaches its 24m-deep physical floor below the actual scene surface');
 assert.ok(JSON.stringify(root.userData).includes(SITE31_VERSION),'QA metadata contains no circular scene objects');
 const dispatchRoot=new THREE.Group();dispatchRoot.scale.setScalar(manifest.scale);dispatchRoot.rotation.y=manifest.yaw;
 const dispatched=buildArchiveModel(dispatchRoot,manifest);assert.equal(dispatched.site31.version,SITE31_VERSION);
