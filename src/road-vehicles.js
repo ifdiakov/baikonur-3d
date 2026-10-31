@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
-import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261031-rocket-exhibits-v1';
+import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;

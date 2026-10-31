@@ -31,7 +31,8 @@ assert.equal(entry.kind,'mzk');
 assert.equal(entry.scale,reference.scale);assert.equal(entry.yaw,reference.yaw);
 assert.equal(port.scale,entry.scale);assert.equal(port.yaw,entry.yaw);
 assert.deepEqual(port.road,reference.roadPort);assert.deepEqual(metadata.roadPort,port.road);
-assert.equal(port.rail,undefined,'On-site track stubs do not introduce an external rail port');
+assert.equal(port.railConnections.length,4,'Both MZK and SDI expose their two source-bound head ports');
+assert.deepEqual(port.railConnections.map(p=>p.sourceNodeId).sort(),['1834612260','2529010042','2529010043','6336523428']);
 
 // Recompute the placement from the archived contours, not from the model's
 // constants. Subtracting a local origin avoids cancellation in the centroid.

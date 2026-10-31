@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {installMriyaExhibit} from './mriya-exhibit.js?v=20261031-rocket-exhibits-v1';
-import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
-import {buildKrayniyTerminal,KRAYNIY_AIRPORT_DISPLAY} from './krayniy-terminal.js?v=krayniy-drive-terminal-v1';
-import {buildYubileinyAirport,yubileinyDisplaySpec} from './yubileiny-airport.js?v=20261031-rocket-exhibits-v1';
+import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {buildKrayniyTerminal,KRAYNIY_AIRPORT_DISPLAY} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
+import {buildYubileinyAirport,yubileinyDisplaySpec} from './yubileiny-airport.js?v=20261031-facilities-rails-lighting-v1';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
  // The longest ten-unit display length that keeps the full approach-light

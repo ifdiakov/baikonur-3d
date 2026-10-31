@@ -46,6 +46,16 @@ assert(start>=0&&end>start,'The established corridor endpoints must remain on th
 const corridor=sourceNodes.slice(start,end+1),bounds=new THREE.Box3().setFromPoints(corridor.map(n=>n.position)).expandByScalar(10);
 for(let i=1;i<corridor.length;i++)assert(corridor[i-1].edges.some(e=>e.wayId===way.osmId&&[e.a,e.b].includes(corridor[i])),'The corridor must retain shared-node source topology');
 const join=graph.nodes.get('309351101');assert(join.edges.some(e=>e.wayId==='173082916'),'The corridor must still meet the primary road');
+const displayed=visible[0].points;
+const first=displayed.findIndex(p=>p.distanceTo(corridor[0].position)<1e-7),last=displayed.findIndex(p=>p.distanceTo(corridor.at(-1).position)<1e-7);
+assert(first>=0&&last>first,'The shared rendered curve retains both exact corridor endpoints');
+const displayFrames=new Map(),key=p=>p.toArray().map(v=>v.toFixed(7)).join(':');
+for(const edge of way.segments)if(edge.surfaceTangents){displayFrames.set(key(edge.a.position),edge.surfaceTangents[0]);displayFrames.set(key(edge.b.position),edge.surfaceTangents[1]);}
+function displayNormal(i){
+ const fallback=displayed[Math.min(displayed.length-1,i+1)].clone().sub(displayed[Math.max(0,i-1)]).setY(0).normalize();
+ const d=(displayFrames.get(key(displayed[i]))??fallback).clone().setY(0).normalize();if(d.dot(fallback)<0)d.negate();
+ return new THREE.Vector3(-d.z,0,d.x);
+}
 
 // Query the rendered triangle buffers, not path endpoints or cached gap
 // metadata. A half-unit longitudinal grid crosses all three former mask gaps.
@@ -59,7 +69,7 @@ function surfaceQuery(name){
    const key=x+':'+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(t);
   }
  }
- return p=>{
+ const query=p=>{
   for(const [a,b,c] of cells.get(Math.floor(p.x/cell)+':'+Math.floor(p.z/cell))||[]){
    const d=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(Math.abs(d)<1e-10)continue;
    const u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/d;
@@ -68,21 +78,29 @@ function surfaceQuery(name){
   }
   return false;
  };
+ query.nearest=p=>{
+  let best=null;
+  for(let dx=-1;dx<=1;dx++)for(let dz=-1;dz<=1;dz++)for(const t of cells.get((Math.floor(p.x/cell)+dx)+':'+(Math.floor(p.z/cell)+dz))||[]){
+   const closest=new THREE.Triangle(...t).closestPointToPoint(p,new THREE.Vector3()),distance=closest.distanceTo(p);
+   if(!best||distance<best.distance)best={distance,point:closest.toArray(),triangle:t.map(v=>v.toArray())};
+  }return best;
+ };
+ return query;
 }
 const asphalt=surfaceQuery('OSM · единое дорожное полотно'),shoulder=surfaceQuery('OSM · единые обочины');
 const probes=[],oldMasks=[['pad-112',35],['pad-112a',40],['pad-110',72]].map(([id,radius])=>{
  const s=siteRecords.find(s=>s.id===id);return{id,radius,center:point(s.x,s.y),samples:0};
 });
 let centerSamples=0,pavementSamples=0,shoulderSamples=0;
-for(let i=1;i<corridor.length;i++){
- const a=corridor[i-1].position,b=corridor[i].position,d=b.clone().sub(a),length=Math.hypot(d.x,d.z),normal=new THREE.Vector3(-d.z/length,0,d.x/length);
+for(let i=first+1;i<=last;i++){
+ const a=displayed[i-1],b=displayed[i],length=Math.hypot(b.x-a.x,b.z-a.z),na=displayNormal(i-1),nb=displayNormal(i);
  const count=Math.max(1,Math.ceil(length/.5));
  for(let j=0;j<=count;j++){
-  const p=a.clone().lerp(b,j/count);centerSamples++;
+  const p=a.clone().lerp(b,j/count),normal=na.clone().lerp(nb,j/count);centerSamples++;
   for(const m of oldMasks)if(Math.hypot(p.x-m.center.x,p.z-m.center.z)<m.radius+way.width/2+.3)m.samples++;
   for(const offset of [-(way.width/2-.04),-.75,0,.75,way.width/2-.04]){
    const q=p.clone().addScaledVector(normal,offset);
-   assert(asphalt(q),'Missing pavement on the through-road at '+q.toArray());pavementSamples++;probes.push(q);
+   if(!asphalt(q))assert.fail('Missing pavement on the through-road: '+JSON.stringify({point:q.toArray(),center:p.toArray(),i,j,count,offset,normal:normal.toArray(),nearest:asphalt.nearest(q)}));pavementSamples++;probes.push(q);
   }
   for(const offset of [-1,1]){
    const q=p.clone().addScaledVector(normal,offset*(way.width/2+.3-.04));q.y-=.055;
@@ -118,6 +136,6 @@ for(const p of probes)for(const m of models){
  assert(!obstruction,'The road enters '+m.id+' geometry at '+p.toArray()+': '+obstruction?.object.name);
 }
 assert(modelProbes>0,'The actual nearby model geometry must be checked');
-assert.equal(stats.facilityPorts.length,40);assert.equal(stats.facilityRailPorts.length,8);assert.equal(stats.stationCount,32);
+assert.equal(stats.facilityPorts.length,41);assert.equal(stats.facilityRailPorts.length,12);assert.equal(stats.stationCount,32);
 console.log('INDUSTRIAL_ROAD_CONTINUITY_PASS',JSON.stringify({sourceWayId:way.osmId,renderedRuns:visible.length,
  centerSamples,pavementSamples,shoulderSamples,modelProbes,formerMaskSamples:oldMasks.map(m=>({id:m.id,samples:m.samples})),saturnExternalAccess:false}));

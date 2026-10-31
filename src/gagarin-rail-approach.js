@@ -1,16 +1,10 @@
 import * as THREE from 'three';
-import {nearestRoadPoint} from './road-layout.js?v=20261031-rocket-exhibits-v1';
-import {GAGARIN_RAIL_PORT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
+import {nearestRoadPoint} from './road-layout.js?v=20261031-facilities-rails-lighting-v1';
+import {GAGARIN_RAIL_PORT} from './gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-export {GAGARIN_RAIL_PORT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
-
-// Retained museum NETWORK profile: animated train wheels use this gauge.
-// Physical exhibit rails adapt to it at their sockets; it is not 1.52 metres.
-const scale=.43*.28/1.5;
-export const RAIL_PROFILE=Object.freeze({scale,gauge:7.3*scale,headRadius:.33*scale,
-  headY:1.3*scale,bodyWidth:.77*scale,bodyY:1.21*scale,
-  sleeperLength:11.4*scale,sleeperHeight:.34*scale,sleeperWidth:1.05*scale,
-  sleeperY:.62*scale,sleeperStep:3.6*scale,ballastWidth:20*scale,ballastY:.24*scale});
+import {RAIL_PROFILE} from './rail-profile.js?v=20261031-facilities-rails-lighting-v1';
+export {GAGARIN_RAIL_PORT} from './gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
+export {RAIL_PROFILE} from './rail-profile.js?v=20261031-facilities-rails-lighting-v1';
 
 export function buildGagarinRailApproach({data,point,siteRecords}){
   const pad=siteRecords.find(s=>s.id==='pad-1');

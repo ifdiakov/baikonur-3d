@@ -117,9 +117,9 @@ export function buildMzkHall(k,{x=0,z=0,yaw=0,width=140.6,depth=71.4,height=62}=
   box(6.0,4.8,D+4.0,end+sx*1.7,portalHeight+2.0,0,'light','mzk-projecting-portal-head');
   box(6.3,.25,D+4.5,end+sx*1.8,portalHeight+4.55,0,'concrete','mzk-portal-head-cap');
   for(let zz=-D/2+4;zz<D/2;zz+=7)box(4.4,.5,.65,end+sx*1.3,portalHeight-.6,zz,'rust','mzk-portal-head-soffit');
-  // Short on-site track stubs stay inside the exhibit; no invented map route.
+  // Parallel western tracks share the two verified source-route sockets.
   k.path([[sx*(half+1),0],[sx*(half+27),0]],portalWidth,.08,'concrete','mzk-end-apron',frame);
-  k.rail([[sx*(half+1),0],[sx*(half+28),0]],{gauge:4,bed:false,y:.22,tag:'mzk-portal-rail',parent:frame});
+  for(const trackZ of [-10,10])k.rail([[sx*(half+1),trackZ],[sx*(half+28),trackZ]],{bed:false,y:.22,tag:'mzk-portal-rail',parent:frame});
  }
  // The small cantilevered control gallery is visible at one rear corner.
  box(7.5,4.8,13,-half-2.6,19,-side+4,'light','mzk-projecting-control-gallery');

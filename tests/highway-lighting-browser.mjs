@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-highway-lighting';
-const revision='20261031-road-markings-v1';
+const revision='20261031-facilities-rails-lighting-v1';
 const requested={
  highway:{brightness:1.5,density:1.5,poolScale:1.5,spacing:58/1.5},
  cosmodrome:{brightness:2,density:4/3,poolScale:2,spacing:43.5}

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createRoadVehicles} from './road-vehicles.js?v=20261031-road-markings-v1';
-import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH} from './rail-vehicles.js?v=20261028-motovoz-photo-v3';
+import {createRoadVehicles} from './road-vehicles.js?v=20261031-facilities-rails-lighting-v1';
+import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH,TRAIN_METRIC_SCALE} from './rail-vehicles.js?v=20261031-facilities-rails-lighting-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,t)=>{const u=clamp((t-a)/(b-a),0,1);return u*u*(3-2*u);};
@@ -50,8 +50,8 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
   const phase=t>=TRAIN_DURATION?'arrived':'moving';if(lastPhase!==phase){lastPhase=phase;if(button)button.title=phase==='arrived'?'Мотовоз прибыл в станционный район Тюратам':'Мотовоз и 4 вагона: пл. №1 → Тюратам → город';}
  }
  function frameTrain(distanceScale=1){
-  const centerDistance=engineDistance-COACH_OFFSETS.at(-1)/2,at=rail.sample(centerDistance,4);
-  followTarget.copy(at.position).add(V(0,.8,0));followDirection.copy(at.tangent).setY(0).normalize();followSide.set(followDirection.z,0,-followDirection.x);
+  const centerDistance=engineDistance-COACH_OFFSETS.at(-1)/2,at=rail.sample(centerDistance,4*TRAIN_METRIC_SCALE);
+  followTarget.copy(at.position).add(V(0,.8*TRAIN_METRIC_SCALE,0));followDirection.copy(at.tangent).setY(0).normalize();followSide.set(followDirection.z,0,-followDirection.x);
   const halfV=THREE.MathUtils.degToRad(camera.fov*.5),halfH=Math.atan(Math.tan(halfV)*camera.aspect);
   const distance=TRAIN_CONSIST_LENGTH*.54/Math.sin(Math.min(halfV,halfH))*distanceScale;
   controls.target.copy(followTarget);camera.position.copy(followTarget).addScaledVector(followSide,distance*.79).addScaledVector(followDirection,-distance*.17);camera.position.y+=distance*.59;controls.update();

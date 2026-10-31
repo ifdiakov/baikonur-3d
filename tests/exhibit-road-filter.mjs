@@ -78,7 +78,7 @@ for(const region of simplification.regions){
 }
 const hotel=simplification.regions.find(r=>r.id==='pad-75');
 assert.deepEqual([...hotel.keptWayIds].sort(),['172971509','173082916']);
-assert.equal(stats.facilityPorts.length,40);assert.equal(stats.facilityRailPorts.length,8);assert.equal(stats.stationCount,32);
+assert.equal(stats.facilityPorts.length,41);assert.equal(stats.facilityRailPorts.length,12);assert.equal(stats.stationCount,32);
 for(const port of stats.facilityPorts)assert(port.roadGap<1e-7);
 for(const port of stats.facilityRailPorts)assert(port.headCenterGap<1e-7&&port.networkDatumGap<1e-7);
 const train=transport.trainPath();
@@ -215,7 +215,15 @@ for(const join of clearance.joinGaps){
 const stub=clearance.additionalAirports.find(a=>a.id==='krayniy');
 assert(stub.hiddenWayIds.includes('854975695'),'The Krayniy terminal road stub still crosses its enlarged runway');
 const access=roads.find(r=>r.id==='osm-access-pad-251');
-for(const p of [access.points[0],access.points.at(-1)])assert(heights(p.x,p.z,{asphaltOnly:true}).some(y=>Math.abs(y-p.y)<.08),'Airport access endpoint has no pavement');
+for(const p of [access.points[0],access.points.at(-1)]){
+ const support=heights(p.x,p.z,{asphaltOnly:true});
+ const nearest=()=>Math.min(...(cells.get(Math.floor(p.x/cellSize)+':'+Math.floor(p.z/cellSize))||[]).filter(tri=>asphaltNames.has(tri.name)).map(tri=>new THREE.Triangle(...tri.vertices.map(v=>new THREE.Vector3(...v))).closestPointToPoint(p,new THREE.Vector3()).distanceTo(p)));
+ // The gate is an exact terminal edge. Far-map Float32 vertices move that
+ // edge by 0.000026 world units; require actual triangle proximity rather
+ // than enlarging the general pavement/clearance sampling tolerance.
+ const edgeGap=nearest();
+ assert(support.some(y=>Math.abs(y-p.y)<.08)||edgeGap<.00015,'Airport access endpoint has no pavement: '+JSON.stringify({position:p.toArray(),heights:support,nearest:edgeGap}));
+}
 for(const route of roads.osmVehiclePlan.routes)for(let at=4;at<route.length-4;at+=17){
  const p=route.position(at);assert(heights(p.x,p.z,{asphaltOnly:true}).some(y=>Math.abs(y-p.y)<.08),'A working vehicle route lost its pavement');
 }

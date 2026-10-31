@@ -1,13 +1,15 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
 import {createSurfacePalette} from './surface-materials.js';
 import {applyMik112PhotoFinishes} from './mik112-materials.js?v=20261031-rocket-exhibits-v1';
+import {MIK112_RAIL_LAYOUT} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v1';
+import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 
 // Site 112, NOT the neighbouring MZK/SDI at 112A. Photo-interpreted exterior.
 // Sources: RocketTrip Drive 1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk (MIK),
 // 1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3 (two Energia transporter/erectors).
 // Recognisable proportions and photo layout, not a measured engineering model.
-export const MIK112={version:'2.0-metric-photo-surfaces',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002,units:'metres',
+export const MIK112={version:'2.1-two-energia-gates',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002,units:'metres',
  dimensions:{length:240,width:190,high:{length:240,width:120,height:56,bays:3},low:{length:240,width:70,height:30,bays:2}},
  dimensionsSource:'https://www.buran.ru/htm/foto7.htm'};
 export const TUA_ROCKET_MOUNT=Object.freeze({position:[0,15.3603466749,-26.0709070005],rotation:[Math.PI/2,0,0],units:'metres',source:'Recovered source payload centre axis and aft datum'});
@@ -76,8 +78,20 @@ export function buildMik112(root,{year=2026}={}){
  box(120,56,1.8,-35,floor+28,119.1,'wall','high-rearwall');
  box(1.6,30,240,94.2,floor+15,0,'wall','low-sidewall');
  box(70,30,1.6,60,floor+15,-119.2,'wall','low-rearwall');
- // Five individually panelled front door assemblies.
- for(const [cx,w,h,opening] of [[-75,40,56,false],[-35,40,56,false],[5,40,56,false],[42.5,35,30,true],[77.5,35,30,false]]){
+ // The three structural high bays do not imply three exterior gates. The
+ // Energia end has two broad doors behind the two calibrated transporters;
+ // the retained low hall keeps its two separate doors at the opposite end.
+ const highGateOuterWidth=MIK112_RAIL_LAYOUT.clearWidth+7;
+ let highWallStart=-95;
+ for(const gate of MIK112_RAIL_LAYOUT.gates){
+  const left=gate.centerX-highGateOuterWidth/2;
+  if(left>highWallStart)box(left-highWallStart,56,2,(left+highWallStart)/2,floor+28,-119,'wall','high-gate-wall-panel');
+  highWallStart=gate.centerX+highGateOuterWidth/2;
+ }
+ if(highWallStart<25)box(25-highWallStart,56,2,(25+highWallStart)/2,floor+28,-119,'wall','high-gate-wall-panel');
+ const doorAssemblies=[...MIK112_RAIL_LAYOUT.gates.map(gate=>[gate.centerX,highGateOuterWidth,56,false]),[42.5,35,30,true],[77.5,35,30,false]];
+ for(const [cx,w,h,opening] of doorAssemblies){
+  count(h===56?'energia-gate':'low-hall-gate');
   const dw=w-7,dh=h-6,face=h===56?-1:1;
   for(const side of [-1,1])box(3.5,h,2,cx+side*(w/2-1.75),floor+h/2,face*119,'wall','door-pier');
   box(w,6,2,cx,floor+h-3,face*119,'wall','door-lintel');
@@ -110,6 +124,7 @@ export function buildMik112(root,{year=2026}={}){
  box(12,.65,228,29,floor+42.3,-4,'whiteRoof','clerestory-cap');
  // Taller striped stair tower and low service wings.
  box(9,46,10,33,floor+23,110,'wall','stair-tower');
+ registerFacilityBeacon(root,{id:'mik112-stair-tower',position:[33,floor+46,110],kind:'tower'});
  for(let y=8;y<44;y+=6)box(9.25,2.4,10.2,33,floor+y,110,'glass','tower-glass-belt');
  for(const [x,z,w,d,h] of [[120,-95,52,27,12],[115,57,42,63,9],[65,144,62,18,10],[-113,-92,32,30,9]]){
   box(w,h,d,x,floor+h/2,z,'wall','service-wing');box(w+1,.6,d+1,x,floor+h+.3,z,'roof','service-roof');
@@ -214,14 +229,16 @@ export function buildMik112(root,{year=2026}={}){
  grasshopper(-71,-183,1);grasshopper(-19,-183,2);
  const transporterFeatureCounts=Object.fromEntries(Object.entries(counts).map(([key,value])=>[key,value-(beforeTransporterCounts[key]||0)]).filter(([,value])=>value));
  // Double railway track under each transporter, aligned with the high doors.
- const railEntries=[];
- for(const cx of [-71,-19])for(const track of [-11.4,11.4]){
-  const x=cx+track;railEntries.push([x,4.17,-258.5]);
-  for(const side of [-1,1])box(.18,.27,253,x+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,-132,'rail','transporter-running-rail',transporterRails);
-  for(let z=-257;z<-8;z+=2.4)box(RAIL_PROFILE.sleeperLength/MIK112.scale,.16,.32,x,3.97,z,'seam','rail-sleeper',transporterRails);
+ const railEntries=[],railHeadEntries=[],railGates=MIK112_RAIL_LAYOUT.gates.map(gate=>({...gate,
+  center:[gate.centerX,floor+MIK112_RAIL_LAYOUT.clearHeight/2,MIK112_RAIL_LAYOUT.faceZ],clearWidth:MIK112_RAIL_LAYOUT.clearWidth,
+  clearHeight:MIK112_RAIL_LAYOUT.clearHeight,trackIndices:[...gate.trackIndices],entryTrackXs:[...gate.entryTrackXs],tracks:2}));
+ for(const gate of MIK112_RAIL_LAYOUT.gates)for(const x of gate.entryTrackXs){
+  railEntries.push([x,4.17,MIK112_RAIL_LAYOUT.entryZ]);railHeadEntries.push([x,MIK112_RAIL_LAYOUT.railHeadY,MIK112_RAIL_LAYOUT.entryZ]);
+  for(const side of [-1,1])box(RAIL_PROFILE.headWidth/MIK112.scale,RAIL_PROFILE.railHeight/MIK112.scale,253,x+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,-132,'rail','transporter-running-rail',transporterRails);
+  for(let z=-257;z<-8;z+=2.4)box(RAIL_PROFILE.sleeperLength/MIK112.scale,RAIL_PROFILE.sleeperHeight/MIK112.scale,RAIL_PROFILE.sleeperWidth/MIK112.scale,x,3.955,z,'seam','rail-sleeper',transporterRails);
  }
  // Smaller normal-gauge track into the retained assembly hall.
- for(const side of [-1,1])box(.18,.27,220,42.5+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,132,'rail','low-hall-track');
+ for(const side of [-1,1])box(RAIL_PROFILE.headWidth/MIK112.scale,RAIL_PROFILE.railHeight/MIK112.scale,220,42.5+side*RAIL_PROFILE.gauge/(2*MIK112.scale),4.17,132,'rail','low-hall-track');
  // Shallow ramp from the shared road (world y=.72) into the low-hall apron.
  const rampGeo=new THREE.BufferGeometry();
  rampGeo.setAttribute('position',new THREE.Float32BufferAttribute([
@@ -248,7 +265,9 @@ export function buildMik112(root,{year=2026}={}){
   photoFolders:['1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk','1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3'],
   evidence:'Eleven visually inspected user photos: MIK satellite, facade and doors; TUA front, side, overhead and perforated-fork closeups.',
   accuracy:'Main hall dimensions from the post-collapse commission report; facade, roof condition and annexes interpreted from the inspected photos. Museum rocket mounting is a display, not an operational reconstruction.',
-  instancedBatches:batches.size,meshCount:all.length,railEntries,year,
+  instancedBatches:batches.size,meshCount:all.length,railEntries,railHeadEntries,railGates,year,
+  railLayout:{version:MIK112_RAIL_LAYOUT.version,energiaGates:2,tracksPerGate:2,trackCount:4,railHeadY:MIK112_RAIL_LAYOUT.railHeadY,
+   railGaugeMetres:RAIL_PROFILE.gauge/MIK112.scale,sourceSwitches:railGates.map(gate=>gate.sourceNodeId)},
   tua:{version:'mik112-photo-transporter-v1',status:'procedural',instanceCount:2,source:'RocketTrip photo interpretation',error:null}};
  function setYear(y){info.year=y;intact.visible=y<2002;ruins.visible=y>=2002;machines.visible=y>=1986;info.roofState=y<2002?'historical-intact':'photo-ruined';if(info.tua)info.tua.visible=machines.visible;}
  // Expose measured transforms for browser geometry tests, not just labels.
@@ -312,9 +331,9 @@ export function buildMik112(root,{year=2026}={}){
   return {hall:{...MIK112_HALL_ROCKET_MOUNT,position:[...MIK112_HALL_ROCKET_MOUNT.position],rotation:[...MIK112_HALL_ROCKET_MOUNT.rotation]},tua};
  }
  info.rocketMounts=rocketMounts();info.columnDisplay={modern:'wall-attached only',historicalInternalColumns:26,modernDetachedColumns:0};
- return {stats:()=>info,setYear,rocketMounts,railEntries,transporterRoots,transportersGroup:machines,transporterRails,replaceTransporters,setTuaMetadata,setRailAdaptation,refreshStats,
+ return {stats:()=>info,setYear,rocketMounts,railEntries,railHeadEntries,railGates,transporterRoots,transportersGroup:machines,transporterRails,replaceTransporters,setTuaMetadata,setRailAdaptation,refreshStats,
   focusTarget:V(-8,22,-40),focusOffset:V(330,250,-400)};
 }
 
 // Verified clean western rail connection.
-export {connectMik112Rails} from './mik112-rail.js?v=plan-ne-v3';
+export {connectMik112Rails} from './mik112-rail.js?v=20261031-facilities-rails-lighting-v1';

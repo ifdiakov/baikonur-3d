@@ -47,6 +47,13 @@ for(const match of matches.matches.filter(m=>m.status.startsWith('exact-'))){
     assert.equal(site.geoSource.displayOffsetBasis,'owner-request-20261030');
     assert.equal(site.positionConfidence,'owner-adjusted-display');
     assert.deepEqual(site.geoSource.displayLonLat,geo.inverseProject(site.x,site.y));
+  }else if(site.id==='pad-41'){
+    const offset=site.geoSource.displayOffset;
+    assert(Math.abs(Math.hypot(...offset)-30)<1e-9,'Site41 must move exactly30 map units along its road');
+    assert(offset[0]<0&&offset[1]<0,'Site41 follows the access road northward, away from42');
+    assert(Math.hypot(site.x-expected[0]-offset[0],site.y-expected[1]-offset[1])<1e-9);
+    assert.equal(site.geoSource.displayOffsetBasis,'owner-request-20261031');
+    assert.equal(site.positionConfidence,'owner-adjusted-display');
   }else if(site.geoSource.status!=='shared-compound-relative')
     assert(Math.hypot(site.x-expected[0],site.y-expected[1])<1e-9,`${site.id}: not at its source point`);
 }

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
-import {SITE110_PORTS} from './site110-ports.js?v=20261031-rocket-exhibits-v1';
-export {SITE110_PORTS} from './site110-ports.js?v=20261031-rocket-exhibits-v1';
+import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
+export {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
 
 // Physical metres, Y up, X east and Z south. The application applies one
 // museum metres-to-world scale to this entire complex and to its rocket.
@@ -152,6 +153,7 @@ export function buildSite110(root){
    platform(parent,{x:x+sign*4.4,z:z+8,y:12,w:9,d:7,tag:'service-pylon-lower-balcony'});
   }
   ladder(parent,x+sign*(w/2+.5),z-d/2,3,Math.min(h-2,stem));
+  registerFacilityBeacon(parent,{id:`site110-service-${x}-${z}`,position:[mobile?x-sign*7+6:x+w/2,h,z+(mobile?5:d/2)],kind:'service-tower'});
  }
  function lightning(parent,x,z){
   k.box(25,1.1,25,x,.55,z,'concrete','diverter-foundation',0,parent);
@@ -167,9 +169,11 @@ export function buildSite110(root){
   for(const y of [65,120])platform(parent,{x,z,y,w:y===65?13:7,d:y===65?13:7,tag:'diverter-maintenance-deck'});
   k.rod([x,219,z],[x,225,z],.08,'steel','lightning-air-terminal',parent);
   k.rod([x-6,217,z],[x+6,217,z],.1,'red','diverter-top-crossarm',parent);
+  registerFacilityBeacon(parent,{id:`site110-diverter-${x}-${z}`,position:[x,225,z],kind:'lightning-diverter'});
  }
  function floodlightBoard(parent,x,z,yaw,count=17){
   const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;parent.add(g);
+  const lamps=[];
   frame(g,{w:5.5,d:3.8,h:47,bays:9,taper:.8,tag:'floodlight-mast',decks:false});
   frame(g,{y:47,w:10.8,d:2.8,h:15,bays:5,tag:'floodlight-board',decks:false});
   for(let i=0;i<count;i++){
@@ -177,7 +181,9 @@ export function buildSite110(root){
    k.box(1.35,1.05,.8,xx,yy,-.35,'dark','projector-body',0,g);
    k.box(1.1,.82,.04,xx,yy,.08,'white','projector-reflector',0,g);
    floodlights.push({position:transform(xx,yy,.08,x,z,yaw),kind:'projector'});
+   lamps.push({position:[xx,yy,.10],normal:[0,0,1],size:[1.1,.82]});
   }
+  registerFacilityFloodlights(g,{id:'site110-projector-board',lamps,target:[0,0,32],beacon:[5.4,62,1.4]});
  }
 
  function makeTrenches(cx,cz,radius){
@@ -254,6 +260,7 @@ export function buildSite110(root){
    // Large duct routes, folding access galleries and the narrow rear mast
    // are separate from the rocket, whose volume remains a clear mounting slot.
    frame(g,{x:0,z:-21,w:4.6,d:5.6,h:52,bays:10,tag:'rear-umbilical-mast',decks:true});
+   registerFacilityBeacon(g,{id:'site110-rear-umbilical-mast',position:[2.3,52,-18.2],kind:'service-mast'});
    gallery(g,[-20,-9],[-9,-8],43,3.6,'left-umbilical-walkway');
    gallery(g,[20,-9],[9,-8],50,3.6,'right-umbilical-walkway');
    // safck.htm distinguishes two inclined enclosed passages: the regular

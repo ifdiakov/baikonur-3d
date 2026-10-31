@@ -204,8 +204,8 @@ assert.deepEqual(exhibit.railEntries,entries);assert.deepEqual(railReport.preser
 assert.ok(oldRailChildren.every(child=>child.parent===null),'All old wide running rails are removed from the dedicated group');
 for(const {object,matrix}of siblingState)assert.ok(object.matrixWorld.equals(matrix),'MIK, aprons and unrelated tracks keep their transforms');
 assert.strictEqual(adaptTuaRails(exhibit,manifest),railReport,'Repeated adaptation is idempotent');
-near(railReport.networkGauge,RAIL_PROFILE.gauge/MIK112.scale,1e-12,'Unchanged network gauge');
-near(railReport.runningGauge,1.6298618316000013,1e-12,'Source running gauge');
+near(railReport.networkGauge,RAIL_PROFILE.gauge/MIK112.scale,1e-12,'Shared metric network gauge');
+near(railReport.runningGauge,1.52,1e-12,'Uniform running gauge');
 near(railReport.railHeadY,4.305,1e-12,'Fixed rail head elevation');
 const rails=[],sleepers=[];exhibit.transporterRails.traverse(object=>{
  if(object.userData.museumComponent==='transporter-running-rail')rails.push(object);
@@ -227,7 +227,7 @@ for(const rail of rails){
  const track=rail.userData.trackCenterX,side=rail.userData.railSide;
  for(const [key,points]of sections){
   const z=Number(key),min=Math.min(...points.map(p=>p.x)),max=Math.max(...points.map(p=>p.x));
-  near(max-min,.18,2e-5,'Actual rail head width');
+  near(max-min,.20,2e-5,'Actual rail head width');
   near((min+max)/2,trackAxisAt(track,z,profile)+side*gaugeAt(z,profile)/2,2e-5,'Rendered rail follows the declared smooth gauge');
  }
  for(const z of [-258.5,-5.5]){
@@ -236,18 +236,19 @@ for(const rail of rails){
  }
 }
 for(const z of [-258.5,-238,-128,-5.5])near(gaugeAt(z,profile),RAIL_PROFILE.gauge/MIK112.scale,1e-12,'Full network gauge beyond transitions');
-for(const z of [-218,-213.743921927,-183,-152.256078088,-148])near(gaugeAt(z,profile),1.6298618316000013,1e-12,'Straight narrow gauge covers every wheel');
-for(const [start,end,direction]of [[-238,-218,-1],[-148,-128,1]]){
- let previous=gaugeAt(start,profile);
- for(let z=start+.1;z<end+.001;z+=.1){const next=gaugeAt(z,profile);assert.ok((next-previous)*direction>=-1e-10);assert.ok(Math.abs(next-previous)<.020);previous=next;}
- for(const z of [start,end])near((gaugeAt(z+.0001,profile)-gaugeAt(z-.0001,profile))/.0002,0,1e-5,'Flat gauge tangent at transition endpoint');
+for(const z of [-218,-213.743921927,-183,-152.256078088,-148])near(gaugeAt(z,profile),1.52,1e-12,'Uniform gauge covers every original wheel');
+for(const track of profile.trackCenters)for(const [start,end]of [[-238,-218],[-148,-128]]){
+ const from=trackAxisAt(track,start,profile),to=trackAxisAt(track,end,profile),direction=Math.sign(to-from);
+ let previous=from;
+ for(let z=start+.1;z<end+.001;z+=.1){const next=trackAxisAt(track,z,profile);assert.ok((next-previous)*direction>=-1e-10);assert.ok(Math.abs(next-previous)<.012);previous=next;near(gaugeAt(z,profile),1.52,1e-12,'Axis easing never changes gauge');}
+ for(const z of [start,end])near((trackAxisAt(track,z+.0001,profile)-trackAxisAt(track,z-.0001,profile))/.0002,0,1e-5,'Flat axis tangent at transition endpoint');
 }
 const instance=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3();
 for(let i=0;i<sleepers[0].count;i++){
  sleepers[0].getMatrixAt(i,instance);assert.ok(instance.elements.every(Number.isFinite));instance.decompose(p,q,s);
  assert.ok(profile.trackCenters.some(x=>Math.abs(trackAxisAt(x,p.z,profile)-p.x)<1e-5));
- near(p.y+s.y/2,4.05,1e-5,'Sleeper supports the rail body');
- assert.ok(s.x>gaugeAt(p.z,profile)+.18&&s.x<6.6,'Sleepers cover the rail heads without a wide floating underlay');
+ near(p.y+s.y/2,4.035,1e-5,'Sleeper meets the actual rail bottom');
+ near(s.x,2.6,1e-5,'Uniform physical sleeper length');near(s.y,.16,1e-5,'Uniform physical sleeper height');near(s.z,.32,1e-5,'Uniform physical sleeper width');
 }
 const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);let wheelHeadChecks=0;
 const pairBounds=new THREE.Box3(),wheelMikBounds=new THREE.Box3();
@@ -273,7 +274,7 @@ pointNear([wheelMikBounds.min.z,wheelMikBounds.max.z],[-209.9683525682,-156.0316
 near(wheelMikBounds.min.y,4.1820046139,.004,'Preserve the source wheel flange depth below the rail head');
 assert.ok(wheelMikBounds.min.z>-218+4.25&&wheelMikBounds.max.z<-148-4.25,'Gauge changes end safely outside all actual wheels');
 for(const track of profile.trackCenters)for(const z of [-213,-183,-153])for(const side of [-1,1]){
- const world=root.localToWorld(new THREE.Vector3(track+side*profile.networkGauge/2,4.305,z));
+ const world=root.localToWorld(new THREE.Vector3(track+side*4.185333333333333/2,4.305,z));
  ray.set(world.clone().add(new THREE.Vector3(0,.5,0)),down);
  assert.equal(ray.intersectObjects(rails,false).length,0,'No obsolete wide rail remains beneath a transporter');
 }

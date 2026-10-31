@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
+import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 import {YUBILEINY_SOURCE_LAYOUT,YUBILEINY_SOURCE_ACCESS} from './yubileiny-layout.js?v=20261031-rocket-exhibits-v1';
 
 export const YUBILEINY_VERSION='yubileiny-source-layout-v1';
@@ -95,6 +96,7 @@ export function buildYubileinyAirport(root,buildRamp){
  k.box(13,24,14,755,12,39,'wall','yubileiny-control-tower');
  k.box(17,4,18,755,26,39,'glass','yubileiny-control-cab');
  k.box(18,.6,19,755,28.3,39,'light','yubileiny-control-cap');
+ registerFacilityBeacon(physical,{id:'yubileiny-control-tower',position:[755,28.6,39],kind:'control-tower'});
  for(const side of [-1,1]){
   for(let i=0;i<4;i++){
    k.box(1.4,1.1,.9,-W/2-18-i*3,2.2,side*(H-300),'white','papi-housing');

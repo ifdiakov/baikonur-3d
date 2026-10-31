@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {createSurfacePalette} from './surface-materials.js';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
-import {GAGARIN_LEGACY_METRE,GAGARIN_LEGACY_RIM_Y,GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_PHYSICAL_RAIL_GAUGE,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
-export {GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-rocket-exhibits-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {GAGARIN_LEGACY_METRE,GAGARIN_LEGACY_RIM_Y,GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_PHYSICAL_RAIL_GAUGE,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
+export {GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 
 /**
  * GAGARIN'S START — SITE 1, launch position 5
@@ -145,22 +146,19 @@ export function buildGagarinPad(root) {
   // 01 / WEST RAIL AXIS — separate bridge approach, track ballast,
   // two low side utility yards with blue-roofed service buildings.
   surface([[-43,140],[43,140],[56,85],[45,15],[-45,15],[-57,86]],.12,'oldConcrete','western-forecourt');
-  // Physical 1.52m running gauge near the start. A short museum adapter
-  // widens towards the unchanged network gauge at the external rail socket.
-  const railAt=z=>{const t=THREE.MathUtils.smoothstep(z,65,GAGARIN_RAIL_PORT[2]);return{
-    gauge:THREE.MathUtils.lerp(GAGARIN_PHYSICAL_RAIL_GAUGE,RAIL_PROFILE.gauge/MUSEUM_METRE,t),
-    y:THREE.MathUtils.lerp(.30,GAGARIN_RAIL_PORT[1],t),
-    radius:THREE.MathUtils.lerp(.045,RAIL_PROFILE.headRadius/MUSEUM_METRE,t),
-    sleeper:THREE.MathUtils.lerp(2.6,RAIL_PROFILE.sleeperLength/MUSEUM_METRE,t)
-  };};
+  // The complete approach now uses the shared metric cross-section. Its
+  // actual running surface meets the external head-level socket exactly.
+  const railAt=()=>({gauge:RAIL_PROFILE.gauge/MUSEUM_METRE,y:GAGARIN_RAIL_PORT[1],
+    width:RAIL_PROFILE.headWidth/MUSEUM_METRE,height:RAIL_PROFILE.railHeight/MUSEUM_METRE,
+    sleeper:RAIL_PROFILE.sleeperLength/MUSEUM_METRE});
   const railSamples=Array.from({length:81},(_,i)=>5.5+(GAGARIN_RAIL_PORT[2]-5.5)*i/80);
-  const ballast=[...railSamples.map(z=>[-(railAt(z).gauge+1.5)/2/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE]),...railSamples.slice().reverse().map(z=>[(railAt(z).gauge+1.5)/2/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE])];
-  surface(ballast,.08/GAGARIN_LEGACY_METRE,'soil','ballast-bed');
+  const ballast=[...railSamples.map(z=>[-RAIL_PROFILE.ballastWidth/MUSEUM_METRE/2/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE]),...railSamples.slice().reverse().map(z=>[RAIL_PROFILE.ballastWidth/MUSEUM_METRE/2/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE])];
+  surface(ballast,RAIL_PROFILE.ballastY/MUSEUM_METRE/GAGARIN_LEGACY_METRE,'soil','ballast-bed');
   for(let i=1;i<railSamples.length;i++)for(const side of [-1,1]){
     const a=railSamples[i-1],b=railSamples[i],pa=railAt(a),pb=railAt(b);
-    bar([side*pa.gauge/2/GAGARIN_LEGACY_METRE,pa.y/GAGARIN_LEGACY_METRE,a/GAGARIN_LEGACY_METRE],[side*pb.gauge/2/GAGARIN_LEGACY_METRE,pb.y/GAGARIN_LEGACY_METRE,b/GAGARIN_LEGACY_METRE],(pa.radius+pb.radius)/2/GAGARIN_LEGACY_METRE,'rail','rail-approach');
+    block(side*pa.gauge/2/GAGARIN_LEGACY_METRE,(pa.y-pa.height/2)/GAGARIN_LEGACY_METRE,(a+b)/2/GAGARIN_LEGACY_METRE,pa.width/GAGARIN_LEGACY_METRE,pa.height/GAGARIN_LEGACY_METRE,(b-a)/GAGARIN_LEGACY_METRE,'rail','rail-approach');
   }
-  for(let z=6;z<GAGARIN_RAIL_PORT[2];z+=.75){const p=railAt(z);block(0,(p.y-.16)/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE,p.sleeper/GAGARIN_LEGACY_METRE,.15/GAGARIN_LEGACY_METRE,.25/GAGARIN_LEGACY_METRE,'timber','rail-sleepers');}
+  for(let z=6;z<GAGARIN_RAIL_PORT[2];z+=.75){const p=railAt(z);block(0,RAIL_PROFILE.sleeperY/MUSEUM_METRE/GAGARIN_LEGACY_METRE,z/GAGARIN_LEGACY_METRE,p.sleeper/GAGARIN_LEGACY_METRE,RAIL_PROFILE.sleeperHeight/MUSEUM_METRE/GAGARIN_LEGACY_METRE,RAIL_PROFILE.sleeperWidth/MUSEUM_METRE/GAGARIN_LEGACY_METRE,'timber','rail-sleepers');}
   railLine([[-25,40],[-25,94],[-30,138]],.3,'asphalt',1.2,'service-road');
   railLine([[26,39],[28,104],[34,138]],.3,'asphalt',1.2,'service-road');
 
@@ -403,6 +401,7 @@ export function buildGagarinPad(root) {
   openServiceDeck(21,18,106.5,.65,5.2,'brightGreen','tower-crown');
   // Keep the side equipment chamber outside the cylindrical rocket clearance.
   block(12.4,102,zTower,6.5,8.5,8,'green','tower-upper-equipment');
+  registerFacilityBeacon(root,{id:'gagarin-service-tower',position:[12.4,106.25,zTower],kind:'service-tower'});
   for(const x of [-10,10])rungLadder([x,95,zTower+9],[x,108,zTower+9],2.0,'paleSteel','tower-crown-ladder',14);
   // Outer opposed inclined *open trusses* buttress narrow tower.
   for(const sign of [-1,1]){
@@ -465,11 +464,15 @@ export function buildGagarinPad(root) {
     }
     block(x,h+1.2,z,15,.9,1.1,'steel','lighting-array-head');
     for(let j=0;j<8;j++)block(x-6.7+j*1.85,h+2.1,z+.65,1.1,.8,.35,'white','floodlight-array');
+    registerFacilityFloodlights(root,{id:`gagarin-flood-${x}-${z}`,target:[x,GAGARIN_LEGACY_RIM_Y,z+h*.55],
+      beacon:[x,h+1.65+GAGARIN_LEGACY_RIM_Y,z],lamps:Array.from({length:8},(_,j)=>({
+        position:[x-6.7+j*1.85,h+2.1+GAGARIN_LEGACY_RIM_Y,z+.825],normal:[0,0,1],size:[1.1,.8]}))});
   }
   [[-155,-125,52],[162,-147,54],[-71,87,47],[74,88,48]].forEach(p=>floodTower(...p));
   for(const [x,z] of [[-86,49],[86,22]]){
     bar([x,0,z],[x,68,z],.19,'steel','lightning-mast');
     bar([x,68,z],[x,76,z],.09,'paleSteel','lightning-mast-tip');
+    registerFacilityBeacon(root,{id:`gagarin-lightning-${x}`,position:[x,76+GAGARIN_LEGACY_RIM_Y,z],kind:'lightning-mast'});
   }
   function outbuilding(x,z,w,l,h){
     block(x,h*.5,z,w,h,l,'concrete','utility-building');

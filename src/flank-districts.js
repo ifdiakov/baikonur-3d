@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import * as FLANK_GEOMETRY from './flank-boundaries.js?v=20261028-museum4-osm-live-v2';
-export {FLANK_BORDERS} from './flank-boundaries.js?v=20261028-museum4-osm-live-v2';
+import * as FLANK_GEOMETRY from './flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
+export {FLANK_BORDERS} from './flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 const {FLANK_BOUNDARY_VERSION,FLANK_REFERENCE,FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_COORDINATE_SYSTEM}=FLANK_GEOMETRY;
 
 /**

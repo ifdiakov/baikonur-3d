@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261030-river-roads-signs-v1';
 
 /**
@@ -369,6 +370,8 @@ export function buildSaturnIP5(root,terrain={}) {
     const lamp=rod([x,7.5,z],[x,19,z],.16,'steel','streetlight');
     rod([x,19,z],[x+3,20,z],.11,'steel','streetlight-arm');
     box(2,.4,.95,x+3,20,z,'light','streetlight-head');
+    registerFacilityFloodlights(root,{id:`saturn-service-lamp-${x}-${z}`,target:[x+3,7.5,z],
+      lamps:[{position:[x+3,19.8,z],normal:[0,-1,0],size:[2,.95]}]});
   }
   const fenceCoords=[];
   for(let x=-101;x<=102;x+=10){fenceCoords.push([x,-79],[x,75]);}

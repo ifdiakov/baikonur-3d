@@ -1,6 +1,7 @@
 // Geographic placement for the existing museum models. OSM source coordinates
 // remain separate from the illustrative model scale and local model anchors.
 // © OpenStreetMap contributors, ODbL 1.0 — https://www.openstreetmap.org/copyright
+import {SITE41_DISPLAY_OFFSET,SITE41_DISPLAY_SHIFT_MAP} from './site41-profile.js?v=20261031-facilities-rails-lighting-v1';
 
 export const OSM_GEOGRAPHY_VERSION = 'osm-geography-v1';
 const EARTH_RADIUS = 6371008.8;
@@ -13,7 +14,8 @@ export const WORLD_UNITS_PER_MAP_UNIT = 3.4;
 // Owner-approved exhibit adjustments are applied after geographic placement.
 // Keep the OSM source point and the registration of every other site intact.
 export const MUSEUM_DISPLAY_OFFSETS = Object.freeze({
-  'pad-23': Object.freeze([20,0])
+  'pad-23': Object.freeze([20,0]),
+  'pad-41': SITE41_DISPLAY_OFFSET
 });
 const X_METRES_PER_DEGREE = EARTH_RADIUS * DEG * Math.cos(REFERENCE_LAT * DEG);
 const Y_METRES_PER_DEGREE = EARTH_RADIUS * DEG;
@@ -239,9 +241,9 @@ export function createMuseumGeography({catalog,matches,sourceElements}={}){
       p=[p[0]+displayAdjustment[0],p[1]+displayAdjustment[1]];
       result.geoSource.displayLonLat=inverseProjectOsm(p);
       result.geoSource.displayOffset=[...displayAdjustment];
-      result.geoSource.displayOffsetBasis='owner-request-20261030';
+      result.geoSource.displayOffsetBasis=record.id==='pad-41'?'owner-request-20261031':'owner-request-20261030';
       result.positionConfidence='owner-adjusted-display';
-      result.positionBasis+='; музейное смещение по указанию владельца: +20 вправо';
+      result.positionBasis+='; музейное смещение по указанию владельца: '+(record.id==='pad-41'?SITE41_DISPLAY_SHIFT_MAP+' единиц схемы вдоль дороги от площадки 42':'+20 вправо');
     }
     result.x=p[0];result.y=p[1];
     return result;

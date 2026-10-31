@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {buildUkssPad,UKSS_YAW,UKSS_TRENCH,normalizeUkssContour} from './ukss-pad.js?v=ukss-drive-model-v1';
+import {buildUkssPad,UKSS_YAW,UKSS_TRENCH,normalizeUkssContour} from './ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {createSurfacePalette} from './surface-materials.js';
 
 export const UKSS_MODEL_VERSION='ukss-drive-model-v2';

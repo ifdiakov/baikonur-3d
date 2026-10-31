@@ -1,11 +1,17 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
+import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {railProfileAtScale} from './rail-profile.js?v=20261031-facilities-rails-lighting-v1';
+import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {createSurfacePalette} from './surface-materials.js';
 // Museum geometry kit. Dimensions are interpretive, not a survey.
 export function archiveKit(root){
  const colors={wall:0xc9c7bd,light:0xe0e0d7,concrete:0xa6a397,roof:0x7f9295,blue:0x6c8991,steel:0x6c7b76,dark:0x303a38,glass:0x45616a,green:0x537b67,red:0x96534a,yellow:0xc2a771,rust:0x84614f,soil:0x9c927f,asphalt:0x686a63,ballast:0x8f8a7b,rail:0x727974,white:0xe7e8df};
  const mat=createSurfacePalette(root,colors,{wall:'concrete',concrete:'concrete',roof:'sheet',steel:'metal',green:'paint',red:'paint',rust:'rust',rail:'metal'},{});
  const geos={box:new THREE.BoxGeometry(1,1,1),rod:new THREE.CylinderGeometry(1,1,1,6),cyl:new THREE.CylinderGeometry(1,1,1,20),sphere:new THREE.SphereGeometry(1,24,16)};
+ geos.sleeper=geos.box.clone();
+ const sleeperIndex=[];for(let i=0;i<geos.sleeper.index.count;i+=3){const indices=[0,1,2].map(j=>geos.sleeper.index.getX(i+j));if(geos.sleeper.attributes.normal.getY(indices[0])>-.99)sleeperIndex.push(...indices);}
+ geos.sleeper.setIndex(sleeperIndex);geos.sleeper.clearGroups();
  const batches=new Map(),counts={},meshes=[],cutouts=[],up=new THREE.Vector3(0,1,0),q0=new THREE.Quaternion();
  function count(tag){counts[tag]=(counts[tag]||0)+1;}
  // STATIC_ARCHIVE_BATCHES: bake static hall-local transforms into exhibit space.
@@ -26,8 +32,32 @@ export function archiveKit(root){
  function direct(geo,m,tag,parent=root){const o=new THREE.Mesh(geo,mat[m]);o.name=tag;o.userData.museumComponent=tag;o.receiveShadow=true;parent.add(o);meshes.push(o);count(tag);return o;}
  function poly(points,y,m='concrete',tag='apron',parent=root){const shape=new THREE.Shape();points.forEach(([x,z],i)=>i?shape.lineTo(x,-z):shape.moveTo(x,-z));shape.closePath();const o=direct(new THREE.ShapeGeometry(shape),m,tag,parent);o.rotation.x=-Math.PI/2;o.position.y=y;return o;}
  function quad(a,b,c,d,m='concrete',tag='face',parent=root){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([...a,...b,...c,...a,...c,...d],3));g.computeVertexNormals();return direct(g,m,tag,parent);}
- function path(points,width=5,y=.12,m='asphalt',tag='internal-road',parent=root){if(points.length<2)return;const pos=[],idx=[];points.forEach((p,i)=>{const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)||1;for(const s of [-1,1])pos.push(p[0]-dz/len*s*width/2,y,p[1]+dx/len*s*width/2);if(i<points.length-1){const k=i*2;idx.push(k,k+2,k+1,k+1,k+2,k+3);}});const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();return direct(geo,m,tag,parent);}
- function rail(points,{gauge=RAIL_PROFILE.gauge/(root.getWorldScale(new THREE.Vector3()).x||1),bed=true,y=.30,tag='rail',parent=root}={}){if(bed)path(points,gauge+1.6,y-.12,'ballast','rail-ballast',parent);for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)||1,nx=-dz/len,nz=dx/len,yaw=Math.atan2(dx,dz);for(const s of [-1,1])rod([a[0]+s*nx*gauge/2,y+.18,a[1]+s*nz*gauge/2],[b[0]+s*nx*gauge/2,y+.18,b[1]+s*nz*gauge/2],.09,'rail',tag,parent);for(let t=.5;t<len;t+=1.8)box(gauge+1,.14,.28,a[0]+dx*t/len,y,a[1]+dz*t/len,'dark','sleeper',yaw,parent);}}
+ function path(points,width=5,y=.12,m='asphalt',tag='internal-road',parent=root){if(points.length<2)return;const pos=[],idx=[];points.forEach((p,i)=>{const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)||1;for(const s of [-1,1])pos.push(p[0]-dz/len*s*width/2,y,p[1]+dx/len*s*width/2);if(i<points.length-1){const k=i*2;idx.push(k,k+1,k+2,k+1,k+3,k+2);}});const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();return direct(geo,m,tag,parent);}
+ function rail(points,{bed=true,y=.30,tag='rail',parent=root}={}){
+  const worldScale=parent.getWorldScale(new THREE.Vector3()).x,scale=worldScale===1?MUSEUM_METRE:worldScale,p=railProfileAtScale(scale);
+  const headTop=y+p.sleeperHeight/2+p.railHeight,headBottom=headTop-p.railHeight;
+  const frame=new THREE.Matrix4();let cursor=parent;
+  while(cursor&&cursor!==root){cursor.updateMatrix();frame.premultiply(cursor.matrix);cursor=cursor.parent;}
+  if(cursor!==root)throw new Error('Rail geometry has an unrelated model frame');
+  // Bake static local rail faces into the same root/material batch as the
+  // instanced sleepers; nested launch-pad frames must not add one draw/face.
+  const railFace=(...corners)=>quad(...corners.map(c=>new THREE.Vector3(...c).applyMatrix4(frame).toArray()),'rail',tag,root);
+  if(bed)path(points,p.ballastWidth,y-p.sleeperHeight/2,'ballast','rail-ballast',parent);
+  const normals=points.map((point,i)=>{const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],length=Math.hypot(b[0]-a[0],b[1]-a[1])||1;return [-(b[1]-a[1])/length,(b[0]-a[0])/length];});
+  for(const side of [-1,1]){
+   const sections=points.map(([x,z],i)=>[-1,1].map(s=>[x+normals[i][0]*(side*p.gauge/2+s*p.headWidth/2),headTop,z+normals[i][1]*(side*p.gauge/2+s*p.headWidth/2)]));
+   for(let i=1;i<sections.length;i++){
+    const [a,b]=sections[i-1],[c,d]=sections[i];railFace(a,b,d,c);
+    for(const [from,to]of [[a,c],[d,b]])railFace(from,[from[0],headBottom,from[2]],[to[0],headBottom,to[2]],to);
+   }
+  }
+  let next=p.sleeperStep/2,along=0;
+  for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz),yaw=Math.atan2(dx,dz);
+   while(next<=along+length){const t=(next-along)/(length||1);add(geos.sleeper,'dark',[a[0]+dx*t,y,a[1]+dz*t],new THREE.Quaternion().setFromAxisAngle(up,yaw),[p.sleeperLength,p.sleeperHeight,p.sleeperWidth],'sleeper',parent);next+=p.sleeperStep;}
+   along+=length;
+  }
+  (root.userData.railProfiles??=[]).push({tag,gauge:p.gauge,headWidth:p.headWidth,railHeight:p.railHeight,sleeperLength:p.sleeperLength,sleeperHeight:p.sleeperHeight,sleeperWidth:p.sleeperWidth,ballastWidth:p.ballastWidth,headTop,scale});
+ }
  function hall({x=0,z=0,w=30,d=80,h=16,yaw=0,wall='wall',roof='roof',floors=1,gates=1,windows=true,monitor=false,tag='hall'}){const p=new THREE.Group();p.position.set(x,0,z);p.rotation.y=yaw;root.add(p);box(w,h,d,0,h/2,0,wall,tag,0,p);box(w+.8,.6,d+.8,0,h+.3,0,roof,'roof',0,p);for(const side of [-1,1])for(let zz=-d/2+3;zz<d/2;zz+=7.5){box(.55,h,.48,side*(w/2+.2),h/2,zz,'concrete','facade-pier',0,p);if(windows)for(let f=0;f<floors;f++)box(.18,1.7,4.6,side*(w/2+.31),3+f*3.4,zz+2.9,'glass','window',0,p);}for(let n=0;n<gates;n++){const gx=(n-(gates-1)/2)*Math.min(w/gates,13),gw=Math.min(9,w/(gates+.5)),gh=Math.min(h-1.7,17);box(gw,gh,.22,gx,gh/2,d/2+.14,'dark','gate-recess',0,p);for(let k=0;k<Math.floor(gw);k++)box(.09,gh,.12,gx-gw/2+k+.5,gh/2,d/2+.3,'steel','gate-rib',0,p);for(let yy=2;yy<gh;yy+=3)box(gw,.1,.14,gx,yy,d/2+.34,'steel','gate-seam',0,p);}for(let zz=-d/2+5;zz<d/2;zz+=10)box(w,.09,.12,0,h+.64,zz,'steel','roof-sheet-seam',0,p);if(monitor){box(w*.28,2.2,d*.80,0,h+1.6,0,'glass','roof-monitor',0,p);box(w*.30,.4,d*.82,0,h+2.9,0,'light','monitor-cap',0,p);}return p;}
  function lattice(x,z,h=50,w=5,d=w,{y=0,levels=10,material='steel',tag='lattice',deck=false}={}){for(let k=0;k<levels;k++){const y0=y+h*k/levels,y1=y+h*(k+1)/levels,r0=1-.55*k/levels,r1=1-.55*(k+1)/levels;for(const sx of [-1,1])for(const sz of [-1,1])rod([x+sx*w*r0/2,y0,z+sz*d*r0/2],[x+sx*w*r1/2,y1,z+sz*d*r1/2],.26,material,tag);for(const s of [-1,1]){rod([x-w*r0/2,y0,z+s*d*r0/2],[x+w*r1/2,y1,z+s*d*r1/2],.14,material,'cross-brace');rod([x+w*r0/2,y0,z+s*d*r0/2],[x-w*r1/2,y1,z+s*d*r1/2],.14,material,'cross-brace');rod([x+s*w*r0/2,y0,z-d*r0/2],[x+s*w*r1/2,y1,z+d*r1/2],.14,material,'cross-brace');}if(deck)box(w*r0,.28,d*r0,x,y0,z,'dark','tower-deck');}}
  function tank(x,z,r=5,h=12){cyl(r,h,x,h/2,z,'light','tank-shell');sphere(r,x,h,z,'light','tank-dome',[1,.22,1]);for(const yy of [h*.28,h*.7]){const o=direct(new THREE.TorusGeometry(r+.04,.10,5,24),'steel','tank-band');o.rotation.x=Math.PI/2;o.position.set(x,yy,z);}rod([x+r+1,0,z],[x+r+1,h+1,z],.14,'steel','tank-ladder');}
@@ -42,7 +72,12 @@ export function archiveKit(root){
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));const m=new THREE.Mesh(g,b.material);m.name='Архив · объединённые поверхности';root.add(m);meshes.push(m);
   }
 for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,mat[b.m],b.matrices.length);b.matrices.forEach((a,i)=>im.setMatrixAt(i,a));im.instanceMatrix.needsUpdate=true;im.computeBoundingBox();im.computeBoundingSphere();im.receiveShadow=true;im.name='Архив · '+b.m;im.userData.museumComponent='archive-instanced-structure';b.parent.add(im);meshes.push(im);}root.updateWorldMatrix(true,true);const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());return {features:counts,primitiveCount:Object.values(counts).reduce((s,n)=>s+n,0),meshCount:meshes.length,batches:batches.size,cutouts,boundsSize:size.toArray()};}
- return {root,mat,cutouts,box,rod,cyl,sphere,direct,poly,quad,path,rail,hall,lattice,tank,pit,sign,finish};
+ const beaconRoles=new Set(['proton-service-tower','lightning-mast','soyuz-lightning-mast','soyuz-service-gantry','zenit-lightning-tower','energia-service-pylon']);
+ function latticeWithBeacon(x,z,h=50,w=5,d=w,options={}){
+  lattice(x,z,h,w,d,options);
+  if(beaconRoles.has(options.tag))registerFacilityBeacon(root,{id:`${options.tag}-${x}-${z}`,position:[x+w*.45/2,(options.y||0)+h,z+d*.45/2],kind:options.tag.includes('lightning')?'lightning-mast':'service-tower'});
+ }
+ return {root,mat,cutouts,box,rod,cyl,sphere,direct,poly,quad,path,rail,hall,lattice:latticeWithBeacon,tank,pit,sign,finish};
 }
 export const imageAxisYaw=(a,b)=>Math.atan2(b[0]-a[0],b[1]-a[1]);
 export function imageFrame(center,scale){return p=>[(p[0]-center[0])*scale,(p[1]-center[1])*scale];}

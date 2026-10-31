@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 
 export const KRAYNIY_TERMINAL_VERSION='krayniy-drive-terminal-v1';
 export const KRAYNIY_AIRPORT_DISPLAY=Object.freeze({terminalX:-270,apronX:-132.5,apronZ:0,apronWidth:195,apronLength:400,taxiX:-100});
@@ -139,6 +140,7 @@ export function buildKrayniyTerminal(parent,apronZ){
  for(const side of [-1,1]){box(.28,.3,24.6,tx+side*12.15,34.95,tz,'blue','control-cab-blue-cap');box(24.6,.3,.28,tx,34.95,tz+side*12.15,'blue','control-cab-blue-cap');}
  // A single readable antenna assembly replaces the small cables and fittings.
  rod([tx,34.9,tz],[tx,39.5,tz],.17,'silver','tower-main-aerial');
+ registerFacilityBeacon(root,{id:'krayniy-control-tower',position:[tx,39.5,tz],kind:'control-tower'});
  for(const y of [36.4,37.9])rod([tx-2,y,tz],[tx+2,y,tz],.12,'silver','tower-aerial-crossbar');
  for(const z of [tz-8.7,tz+8.7])rod([tx+7.5,34.9,z],[tx+7.5,37.2,z],.12,'silver','tower-secondary-aerial');
  // Source-visible small side balcony remains a simple slab and handrail.

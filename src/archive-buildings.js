@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import {buildMzkSdi} from './mzk-sdi.js?v=20261031-rocket-exhibits-v1';
-import {buildAirport} from './airport-models.js?v=20261031-rocket-exhibits-v1';
-import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
+import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
+import {buildMzkSdi} from './mzk-sdi.js?v=20261031-facilities-rails-lighting-v1';
+import {buildAirport} from './airport-models.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
 export function protonHalls(root){
  const k=archiveKit(root),P=imageFrame([680,450],.60);const hall=(p,w,d,h,opts={})=>{const[x,z]=P(p);return k.hall({x,z,w:w*.6,d:d*.6,h,yaw:imageAxisYaw([0,0],[260,198]),...opts});};
@@ -18,6 +19,8 @@ export function settlement95(root){
  for(const[a,b]of[[[770,310],[901,390]],[[942,316],[1050,403]],[[660,619],[807,746]]]){const pa=P(a),pb=P(b);for(let i=0;i<14;i++){const t=i/13,x=pa[0]+(pb[0]-pa[0])*t,z=pa[1]+(pb[1]-pa[1])*t;k.cyl(.3,3,x,1.5,z,'rust','tree-trunk');k.sphere(2,x,4,z,'green','tree-crown',[1,.85,1]);}}root.userData.tracedBuildingCount=buildings.length;return k.finish();
 }
 export function mik42Facade(root){
+ registerFacilityFloodlights(root,{id:'mik42-roof-floodlight',target:[-59,0,24],beacon:[-59,45.5,-5],
+  lamps:[{position:[-59,44,-4.5],normal:[0,0,1],size:[2.3,2.3]}]});
  const k=archiveKit(root);k.hall({w:142,d:34,h:28,wall:'light',roof:'dark',windows:false,gates:0,tag:'photo-visible-mik42-frontage'});
  for(const z of[-17.2,17.2]){for(let f=0;f<3;f++){k.box(142,3.8,.25,0,6+f*5,z,'red','red-window-belt');for(let x=-65;x<=66;x+=6.2){k.box(4.2,2.9,.24,x,6+f*5,z+(z>0?.19:-.19),'glass','frontage-window');k.box(.13,2.9,.26,x,6+f*5,z+(z>0?.33:-.33),'light','window-mullion');}}for(let x=-65;x<68;x+=10)k.box(.4,2,.22,x,25,z,'dark','upper-slit');}
  for(const x of[-15,56]){k.box(7,31,9,x,15.5,20,'red','red-stair-tower');k.box(1,31,9.3,x+3.5,15.5,20,'light','stair-tower-rim');}k.box(144,.7,35,0,28.6,0,'red','red-parapet');k.lattice(-59,-5,14,2,2,{y:29,levels:5,tag:'roof-floodlight-tower'});k.box(3,3,1,-59,44,-5,'dark','floodlight');k.path([[-78,32],[-40,32],[0,32],[78,32]],7,.1);for(let x=-65;x<=62;x+=13){k.cyl(.23,5,x,2.5,42,'rust','tree-trunk');for(const dx of[-2,0,2])k.rod([x,3,42],[x+dx,8,42+dx],.1,'rust','bare-tree-branch');}return k.finish();

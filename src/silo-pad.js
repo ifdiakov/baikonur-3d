@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
+import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 
 // Exterior museum interpretation of the owner's R-36M references, not a surveyed
 // reconstruction or a working launch mechanism. Only the visible upper cavity is modelled.

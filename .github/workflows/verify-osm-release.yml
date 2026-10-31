@@ -1,4 +1,4 @@
-name: Museum 6 — junction-aware road markings
+name: Museum 6 — facilities, railways and tower lighting
 on:
   push:
     branches: [main]
@@ -9,6 +9,7 @@ on:
       - 'assets/**'
       - 'tests/**'
       - 'scripts/verify-published.mjs'
+      - 'scripts/verify-mik112-osm.mjs'
       - 'scripts/build_river_water.py'
       - 'scripts/prepare-ukss-asset.mjs'
       - 'scripts/ukss-detail-policy.json'
@@ -36,7 +37,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-road-markings-20261031-v1
+  RELEASE_TAG: museum6-facilities-rails-lighting-20261031-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -59,6 +60,7 @@ jobs:
           node tests/interchange-bridge-geometry.mjs
           node tests/highway-surface-geometry.mjs
           node tests/road-markings-geometry.mjs
+          node tests/road-marking-contours.mjs
           node tests/road-lighting-geometry.mjs
           node tests/saturn-natural-terrain.mjs
           node tests/exhibit-road-filter.mjs
@@ -72,6 +74,8 @@ jobs:
           node tests/river-bank.mjs
           node tests/overview-camera.mjs
           node tests/site41-lighting.mjs
+          node tests/site41-geometry.mjs
+          node tests/facility-lighting-geometry.mjs
           node tests/silo-geometry.mjs
           node tests/all-silos-geometry.mjs
           node tests/seven-winds-geometry.mjs
@@ -79,6 +83,9 @@ jobs:
           node tests/ukss-source-model.mjs
           node tests/tua-source-model.mjs
           node tests/mik112-metric-geometry.mjs
+          node tests/mik112-rail-layout.mjs
+          node tests/mik112-destination-ports.mjs
+          node tests/access-rail-continuity.mjs
           node tests/rocket-assets.mjs
           node tests/site110-geometry.mjs
           node tests/soyuz-launch-scale.mjs
@@ -91,6 +98,16 @@ jobs:
           node tests/arrival-status.mjs
           node tests/flanks-geometry.mjs
           node tests/train-consist.mjs
+          node tests/transport-geometry.mjs
+      - name: Verify the MIK-112 corridors against current OpenStreetMap
+        run: node scripts/verify-mik112-osm.mjs --output qa-mik112-osm/current-source.json
+      - name: Preserve the OpenStreetMap source comparison
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: museum6-mik112-osm-source-attempt-${{ github.run_attempt }}
+          path: qa-mik112-osm/
+          retention-days: 14
 
   verify_bytes:
     name: Published bytes match this commit
@@ -113,10 +130,10 @@ jobs:
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      max-parallel: 12
+      max-parallel: 18
       matrix:
         target: [local, public]
-        suite: [startup-menu, bridge-exhibits, road-markings, museum, transport, silos]
+        suite: [startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -146,6 +163,15 @@ jobs:
       - name: Verify road junction, curve and lane markings
         if: matrix.suite == 'road-markings'
         run: node tests/road-markings-browser.mjs
+      - name: Verify the two MIK gates and all connected railway approaches
+        if: matrix.suite == 'facility-access'
+        run: node tests/facility-access-browser.mjs
+      - name: Verify existing mast floodlights and tower beacons by day and evening
+        if: matrix.suite == 'facility-lighting'
+        run: node tests/facility-lighting-browser.mjs
+      - name: Verify the relocated photo-based Site 41 and its entrance
+        if: matrix.suite == 'site41'
+        run: node tests/site41-browser.mjs
       - name: Verify smooth highway and paired modern / single vintage lighting
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/highway-lighting-browser.mjs
@@ -182,7 +208,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum6-road-markings-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
+          name: museum6-facilities-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
           path: |
             qa-startup/
             qa-menu/
@@ -190,6 +216,9 @@ jobs:
             qa-interchange/
             qa-highway-lighting/
             qa-road-markings/
+            qa-facility-access/
+            qa-facility-lighting/
+            qa-site41/
             qa-krayniy/
             qa-osm-release/
             qa-flanks/
@@ -239,12 +268,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/road-markings-20261031-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/facilities-rails-lighting-20261031-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 6 — разметка поворотов и примыканий',
+                name: 'Интерактивный музей 6 — пути, площадка 41 и мачтовое освещение',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

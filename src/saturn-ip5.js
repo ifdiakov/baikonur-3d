@@ -1,4 +1,4 @@
-import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261030-river-roads-signs-v1';
+import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261031-facilities-rails-lighting-v1';
 import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261030-river-roads-signs-v1';
 
 // Antennas, buildings and their instancedFrameBatches remain in the unchanged

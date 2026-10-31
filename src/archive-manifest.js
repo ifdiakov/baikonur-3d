@@ -1,6 +1,7 @@
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
+import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-facilities-rails-lighting-v1';
 // Scope is ONLY the confirmed owner folder, never the whole Google Drive.
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';
@@ -15,7 +16,7 @@ export const ARCHIVE_MAP=[
  {id:'pad-251',kind:'yubileiny',title:'Аэродром Юбилейный',scale:.28,yaw:1.948,satellite:'19t1sFdi7uFk5tAe7gQ5AAYEUjvyTnHIE',folder:'15WuQR5kx9kWrsKp-DORaRxWapXQolNPl',orientation:'image-traced',axis:'WSW-ENE'},
  {id:'pad-31',kind:'soyuz',title:'Стартовый комплекс «Союз» · пл.31/6',scale:MUSEUM_METRE,yaw:SITE31_YAW,folder:'17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII',orientation:'satellite-traced-local-plan',satelliteReference:SITE31_REFERENCE,photo:'1zSC1DyLBfQotgBUz5G8gKS1yrfcly4LO',modelVersion:'site31-satellite-trench-v3'},
  {id:'pad-45',kind:'zenit',title:'СК «Зенит» / «Байтерек» · пл.45',scale:MUSEUM_METRE,yaw:0,folder:'1UD2cFm-qIJjWK6CcjF7V7zGnjVpS5H3i',orientation:'not-verified-no-overhead',photo:'1H4sLmBqg1EbUZ0jWRNFC72T0FtQ0X7lp'},
- {id:'pad-41',kind:'nedelin',title:'Площадка №41 · исторический старт Р-16',scale:MUSEUM_METRE,yaw:0,folder:'1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId',photo:'1nE_A8ap4TGei3fnXVSzWDCjb2mf9_fiP',orientation:'not-verified-ground-photo-only'},
+ {id:'pad-41',kind:'nedelin',title:'Площадка №41 · исторический старт Р-16',scale:MUSEUM_METRE,yaw:0,folder:SITE41_REFERENCE.folder,satellite:SITE41_REFERENCE.satellite,photo:'17h2xzjy84ZlM5vUu2FIYGV-iuH2UyhNI',orientation:'satellite-plan-and-owner-ground-photographs',modelVersion:SITE41_VERSION,photoSetDate:'2026-10-31'},
  {id:'pad-42',kind:'mik42',title:'Технический комплекс · пл.42',scale:.28,yaw:0,folder:'1nhy66WCjZaGYK8VsVlEQHRre4IjkzzDZ',orientation:'not-verified-no-overhead',photo:'1r6uD1fJtqkjFbk6eoR4rrJ981SVr8whK'},
  {id:'pad-112a',kind:'mzk',title:'МЗК и СДИ · пл.112А',scale:.14,yaw:-Math.PI/4,folder:'1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09',orientation:'osm-component-centres-and-axes-photo-facades',photo:'1VhiQ85kYW0ZEfYMEZnxHgEurrrA0HesJ',modelVersion:'mzk-sdi-photo-v3',photoSetDate:'2026-10-30'},
  {id:'city',kind:'city',title:'Город Байконур · спутниковый план',scale:.20,yaw:0,satellite:'1URocxjo-ZAYAWIIrBhBGMfwx1BKhKkGT',orientation:'image-traced',completeness:'first-pass'}
@@ -23,7 +24,7 @@ export const ARCHIVE_MAP=[
 export const ARCHIVE_GALLERY=[
  {id:'np-rockettrip',kind:'observation',title:'НП RocketTrip',folder:'1WO0cKko5TsAK26X1xpR9-sOo5auDDtGR',photo:'1X6ZPCmt5y2xr0dQnyc2rFHyljd8r9eF_',note:'Модель двух укрытий. Точная точка и азимут на карте не подтверждены.'},
  {id:'kpp-7',kind:'checkpoint',title:'КПП №7',folder:'1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl',photo:'1WS2Ofp7NbMl4CV65HqNEWpfST-bfzivk',note:'Видимый фасад по фотографии. Привязка к карте ожидает опорных точек.'},
- {id:'pad-41-study',kind:'nedelin',title:'Площадка №41 · руины',folder:'1D1u03D5QlkxHJRsHtvsuAPzV1yEhiVId',photo:'1nE_A8ap4TGei3fnXVSzWDCjb2mf9_fiP',note:'Фотоэтюд руин. Площадка также размещена на макете по подписанному контуру OpenStreetMap.'},
+ {id:'pad-41-study',kind:'nedelin',title:'Площадка №41 · мемориал и руины',folder:SITE41_REFERENCE.folder,photo:'17h2xzjy84ZlM5vUu2FIYGV-iuH2UyhNI',note:'План комплекса по спутниковому снимку и семи наземным фотографиям: мемориал, командный пост, стартовые площадки и сохранившиеся сооружения.'},
  {id:'pad-2-study',kind:'buran',title:'Площадка №2 · музейный «Буран»',folder:'1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO',photo:'1Qtezy9yYrK5Fvv4ZBtlRCB8FvomKeYlO',note:'Отдельный экспонат. Не смешивается с обозначениями площадок 2А и 2Б.'},
  {id:'interior-study',kind:'cleanroom',title:'Интерьеры · сборочный зал',folder:'1zyWfNQ5x8PKWMVAsWbUQWiZkx2GYy036',photo:'1iIiV9eThfoMOy36tcHijib0awmCsTBcK',note:'Один интерьерный фотоэтюд. Принадлежность помещения конкретному зданию не установлена.'}
 ];

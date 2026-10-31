@@ -4,7 +4,7 @@
 export const GAGARIN_LEGACY_METRE=.5;
 export const GAGARIN_LEGACY_RIM_Y=18.1;
 export const GAGARIN_RIM_Y=0;
-export const GAGARIN_RAIL_PORT=Object.freeze([0,.7453333333333333,85.5]);
+export const GAGARIN_RAIL_PORT=Object.freeze([0,.55,85.5]);
 export const GAGARIN_PHYSICAL_RAIL_GAUGE=1.52;
 export const GAGARIN_ROCKET_MOUNT=Object.freeze({
  position:[0,0,0],rotation:[0,Math.PI/4,0],axis:'y',baseY:0,

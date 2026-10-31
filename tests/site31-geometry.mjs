@@ -176,7 +176,7 @@ assert.ok(Math.abs(roadHit.local.y-.1)<1e-5);
 const data=JSON.parse(fs.readFileSync('data/transport-network.json','utf8')),original=JSON.stringify(data);
 const layers={roads:new THREE.Group(),rails:new THREE.Group()},network=buildTransportNetwork({data,siteRecords,point,layers});
 assert.equal(JSON.stringify(data),original,'Rendering must not mutate the source plan');
-assert.equal(network.stats().railGauge,RAIL_PROFILE.gauge,'Only the facility feeder adapts; the museum train keeps its network gauge');
+assert.equal(network.stats().railGauge,RAIL_PROFILE.gauge,'The model and its network feeder use the same physical profile');
 Object.values(layers).forEach(layer=>layer.updateMatrixWorld(true));
 const approach=network.roadPaths().find(r=>r.id==='r-31-service');assert.ok(approach);
 const gateWorld=root.localToWorld(gateLocal.clone()),roadJoinError=approach.points.at(-1).distanceTo(gateWorld);
@@ -193,21 +193,27 @@ for(let i=1;i<approach.points.length-1;i++){
  if(twiceArea>1e-8)minimumRoadRadius=Math.min(minimumRoadRadius,ab*bc*ac/(2*twiceArea));
 }
 assert.ok(minimumRoadRadius>approach.width,'The rotated gate approach has no hairpin that folds its road edges');
-const modelRails=root.getObjectByName('Архив · rail');assert.ok(modelRails?.isInstancedMesh);
-const modelRailEnds=[],matrix=new THREE.Matrix4();
-for(let i=0;i<modelRails.count;i++){
- modelRails.getMatrixAt(i,matrix);
- for(const y of [-.5,.5])modelRailEnds.push(new THREE.Vector3(0,y,0).applyMatrix4(matrix).applyMatrix4(modelRails.matrixWorld));
-}
+const modelRails=meshes.filter(m=>m.material?.name==='museum / rail');assert(modelRails.length);
 assert.equal(model.railGauge,1.52,'The start uses the physical Russian track gauge');
-const expectedRails=[-1,1].map(side=>root.localToWorld(new THREE.Vector3(side*model.railGauge/2,SITE31_PORTS.rail[1],SITE31_PORTS.rail[2])));
-const internalEnds=expectedRails.map(p=>modelRailEnds.reduce((best,q)=>q.distanceTo(p)<best.distanceTo(p)?q:best));
-internalEnds.forEach((p,i)=>assert.ok(p.distanceTo(expectedRails[i])<1e-5,'Visible internal rails reach their ports'));
-const networkRails=layers.rails.children.filter(m=>m.userData.railRoute==='t-31-feeder'&&m.geometry?.type==='TubeGeometry');assert.equal(networkRails.length,2);
-const actualEnds=networkRails.map(m=>m.localToWorld(m.geometry.parameters.path.getPoint(1)));
-const railJoinErrors=internalEnds.map(p=>Math.min(...actualEnds.map(q=>p.distanceTo(q))));
-assert.ok(Math.max(...railJoinErrors)<.002,'Each physical network rail meets its matching internal rail');
-for(const rail of networkRails)assert.ok(rail.geometry.parameters.path.getTangent(1).dot(inward)>.999,'The final rail approach is aligned with the launch track');
+assert.equal(SITE31_PORTS.rail[1],.65,'The port records the measured top: .30 sleeper center + .08 half-sleeper + .27 rail');
+const networkRails=layers.rails.children.filter(m=>m.userData.railRoute==='t-31-feeder'&&m.material?.color?.getHex()===0x3f4242);assert.equal(networkRails.length,2);
+const railJoinErrors=[];let railHeadProbes=0;
+function railHit(local,objects){
+ const expected=root.localToWorld(new THREE.Vector3(...local));
+ const hits=new THREE.Raycaster(expected.clone().add(new THREE.Vector3(0,1,0)),new THREE.Vector3(0,-1,0),0,2).intersectObjects(objects,false);
+ return {expected,hit:hits[0]};
+}
+// Sample real top faces on both sides of the seam and across their full .20m
+// head width. This also catches downward faces and an incorrectly tagged port.
+for(const side of [-1,1])for(const along of [-1,-.03,.03,1])for(const across of [-.09,0,.09]){
+ const {expected,hit}=railHit([side*.76+across,.65,174+along],along<0?modelRails:networkRails);
+ assert(hit,'A visible rail head is missing at the model/network seam');
+ const error=Math.abs(hit.point.y-expected.y);assert(error<.002,'The actual running surface has a vertical step');railJoinErrors.push(error);railHeadProbes++;
+}
+for(const side of [-1,1])for(const along of [-1,1])for(const across of [-.12,.12]){
+ const {hit}=railHit([side*.76+across,.65,174+along],along<0?modelRails:networkRails);
+ assert(!hit,'The rail head must not retain the old oversized width');
+}
 
 const bounds=new THREE.Box3().setFromObject(root),physicalFloorWorld=root.localToWorld(new THREE.Vector3(0,model.pitFloorY,0)).y;
 assert.ok(bounds.min.y<=physicalFloorWorld+1e-6,'Excavation reaches its 24m-deep physical floor below the actual scene surface');
@@ -216,4 +222,4 @@ const dispatchRoot=new THREE.Group();dispatchRoot.scale.setScalar(manifest.scale
 const dispatched=buildArchiveModel(dispatchRoot,manifest);assert.equal(dispatched.site31.version,SITE31_VERSION);
 console.log('SITE31_GEOMETRY_PASS',JSON.stringify({version:SITE31_VERSION,primitives:result.primitiveCount,drawCalls:result.meshCount,
  excavationFloor:launchHit.local.y,cutoutArea:area,floorProbes,clearanceProbes,maxFloorError,ductBearing:bearing(ductDirection),railBearing:bearing(railDirection),
- modelRoadGap,roadJoinError,railJoinErrors,minimumRoadRadius,heightsVerified:SITE31_REFERENCE.heightsVerified,bounds:bounds.getSize(new THREE.Vector3()).toArray()}));
+ modelRoadGap,roadJoinError,railHeadProbes,maximumRailJoinError:Math.max(...railJoinErrors),minimumRoadRadius,heightsVerified:SITE31_REFERENCE.heightsVerified,bounds:bounds.getSize(new THREE.Vector3()).toArray()}));

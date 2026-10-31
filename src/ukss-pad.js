@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {RAIL_METRES} from './rail-profile.js?v=20261031-facilities-rails-lighting-v1';
+import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {createSurfacePalette} from './surface-materials.js';
 
 /**
@@ -170,15 +172,17 @@ export function buildUkssPad(root) {
     railing([-16,5.8,z],[16,5.8,z]);
   }
 
-  // Twin broad railways, including four visible rails on each pair of beds.
+  // Track-pair spacing is authored; each running track uses the shared profile.
   for(const center of [-18,18]){
-    box(center,.65,140,6,.8,174,'gravel','rail-beds');
-    for(let z=59;z<=225;z+=3.2)box(center,1.2,z,6.5,.3,.65,'oldConcrete','sleepers');
+    box(center,.9,156.5,RAIL_METRES.ballastWidth,.8,141,'gravel','rail-beds');
+    for(let z=86;z<=225;z+=3.2)box(center,1.38,z,RAIL_METRES.sleeperLength,RAIL_METRES.sleeperHeight,RAIL_METRES.sleeperWidth,'oldConcrete','sleepers');
     quad([center-8,5.6,56.5],[center+8,5.6,56.5],[center+8,1.2,86],[center-8,1.2,86],'concrete','rail-ramp');
-    for(const dx of [-2.2,2.2]){
-      bar([center+dx,5.9,56.5],[center+dx,1.55,86],.15,'rail','rail-ramp');
-      box(center+dx,1.55,140,.24,.36,174,'rail','approach-rails');
-      box(center+dx,5.9,0,.24,.3,113,'rail','bridge-rails');
+    for(const dx of [-RAIL_METRES.gauge/2,RAIL_METRES.gauge/2]){
+      const x=center+dx,half=RAIL_METRES.headWidth/2,h=RAIL_METRES.railHeight;
+      quad([x-half,6.05,56.5],[x-half,1.73,86],[x+half,1.73,86],[x+half,6.05,56.5],'rail','rail-ramp');
+      for(const side of [-1,1])quad([x+side*half,6.05,56.5],[x+side*half,6.05-h,56.5],[x+side*half,1.73-h,86],[x+side*half,1.73,86],'rail','rail-ramp');
+      box(x,1.73-h/2,156.5,RAIL_METRES.headWidth,h,141,'rail','approach-rails');
+      box(x,6.05-h/2,0,RAIL_METRES.headWidth,h,113,'rail','bridge-rails');
     }
   }
 
@@ -222,6 +226,7 @@ export function buildUkssPad(root) {
   }
   box(0,104,gz+10,43,4,9,'steel','gantry-crown');
   box(0,108,gz+10,12,4,7,'sheet','gantry-crane-cab');
+  registerFacilityBeacon(root,{id:'ukss-mobile-gantry',position:[0,110,gz+10],kind:'service-tower'});
   for(const x of [-4,0,4])box(x,108.6,gz+6.45,2.6,1.7,.15,'glass','gantry-crane-cab');
   for(const x of [-15,15])box(x,103,gz+2,6,2,24,'rust','gantry-crown');
   railing([-21,106,gz+6],[21,106,gz+6],'steel');
@@ -230,6 +235,7 @@ export function buildUkssPad(root) {
   const mx=-46,mz=0;
   box(mx,3,mz,24,6,29,'concrete','mast-foundation');
   lattice(mx,mz,6,81,15,19,10,'fuelling-mast');
+  registerFacilityBeacon(root,{id:'ukss-fuelling-mast',position:[mx+7.5,87,mz+9.5],kind:'service-tower'});
   for(let n=0;n<10;n++){
     const y=10+n*7.6,w=n>=6&&n<=8?27:15;
     box(mx+(w-15)/2,y,mz,w,.7,20,'steel','mast-platforms');
@@ -249,13 +255,16 @@ export function buildUkssPad(root) {
   // Four tall light screens, with open lattice stems and a regular array of lamps.
   const lights=[[-116,-84],[116,-84],[-116,84],[116,84]];
   for(const [x,z] of lights){
+    const lamps=[];
     box(x,1,z,10,2,10,'concrete','light-foundations');
     lattice(x,z,2,52,5.5,5.5,9,'light-tower');
     lattice(x,z,44,31,17,3.5,8,'light-screen');
     for(let row=0;row<14;row++)for(let col=0;col<8;col++){
       box(x-7+col*2,46+row*2,z-2.1,1.0,.85,.45,'white','floodlights');
       box(x-7+col*2,46+row*2,z-1.7,1.4,1.25,.7,'dark','lamp-housings');
+      lamps.push({position:[x-7+col*2,46+row*2,z-2.325],normal:[0,0,-1],size:[1,.85]});
     }
+    registerFacilityFloodlights(root,{id:`ukss-flood-${x}-${z}`,lamps,target:[x,0,z-34],beacon:[x+8.5,75,z+1.75]});
   }
   // Two red/white tapered lightning towers, distinct from the light screens.
   for(const [x,z] of [[-76,-106],[76,102]]){
@@ -271,6 +280,7 @@ export function buildUkssPad(root) {
       }
     }
     bar([x,139,z],[x,148,z],.18,'steel','lightning-spire');
+    registerFacilityBeacon(root,{id:`ukss-lightning-${x}`,position:[x,148,z],kind:'lightning-mast'});
   }
 
   // Pipe trestle enters the fixed mast from the north; repeated bays remain open.

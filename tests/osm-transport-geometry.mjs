@@ -52,12 +52,13 @@ for(const layer of Object.values(layers))layer.traverse(m=>{
  for(let i=0;i<index.count;i+=3){
   a.fromBufferAttribute(p,index.getX(i));b.fromBufferAttribute(p,index.getX(i+1));c.fromBufferAttribute(p,index.getX(i+2));
   b.sub(a);c.sub(a);normal.crossVectors(b,c).normalize();
-  assert(normal.y>0,`${m.name}: road/rail sheet has downward or degenerate winding`);
+  if(m.userData.osmRailVolume)assert(normal.y>=0&&normal.lengthSq()>.99,`${m.name}: rail volume has an inverted top or a degenerate side`);
+  else assert(normal.y>0,`${m.name}: road/rail sheet has downward or degenerate winding`);
   for(let j=0;j<3;j++){
    a.fromBufferAttribute(ns,index.getX(i+j));
    assert(normal.dot(a)>.9999,`${m.name}: winding and lighting normal disagree`);
   }
-  upwardTriangles++;
+  if(normal.y>0)upwardTriangles++;
  }
 });
 assert(upwardTriangles>100000);
@@ -171,7 +172,11 @@ for(const route of plan.routes){assert(route.length>500);assert(route.osmWayIds.
 const hotelSpec=ARCHIVE_MAP.find(s=>s.id==='pad-75'),hotelSite=geography.sites.find(s=>s.id==='pad-75'),hotelOrigin=point(hotelSite.x,hotelSite.y),up=new THREE.Vector3(0,1,0);
 for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route.length-2;d+=2){
  const pose=roadVehiclePose(route,0,{phase:d/route.length,direction,speed:12}),p=pose.position,heights=pavementHeights(p.x,p.z);
- assert(heights.some(y=>Math.abs(p.y-y)<.08),'A moving car leaves the rendered OSM pavement: '+JSON.stringify({route:route.id,direction,distance:d,position:p.toArray(),heights}));
+ if(!heights.some(y=>Math.abs(p.y-y)<.08)){
+  const nearestTriangle=Math.min(...(surfaceCells.get(Math.floor(p.x/surfaceCell)+':'+Math.floor(p.z/surfaceCell))||[]).map(t=>new THREE.Triangle(...t).closestPointToPoint(p,new THREE.Vector3()).distanceTo(p)));
+  const nearestEdges=baselineRoads.edges.map(e=>({way:e.wayId,kind:e.tags.highway,width:e.width,a:e.a.position.toArray(),b:e.b.position.toArray(),distance:new THREE.Line3(e.a.position,e.b.position).closestPointToPoint(p,true,new THREE.Vector3()).distanceTo(p)})).sort((a,b)=>a.distance-b.distance).slice(0,3);
+  assert.fail('A moving car leaves the rendered OSM pavement: '+JSON.stringify({route:route.id,direction,distance:d,position:p.toArray(),center:route.position(d).toArray(),laneOffset:pose.laneOffset,width:route.widthAt(d),heights,nearestTriangle,nearestEdges}));
+ }
  const hotelLocal=p.clone().sub(hotelOrigin).applyAxisAngle(up,-hotelSpec.yaw).divideScalar(hotelSpec.scale);
  assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }
@@ -186,9 +191,10 @@ assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','
 for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}
 assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);
-assert.equal(stats.facilityPorts.length,40,'A facility lost its road connection');
-assert.equal(stats.facilityRailPorts.length,8,'A facility lost its rail connection');
-assert.deepEqual(Object.fromEntries(['pad-110','pad-250','pad-31','pad-45'].map(id=>[id,stats.facilityRailPorts.filter(p=>p.id===id).length])),{'pad-110':4,'pad-250':2,'pad-31':1,'pad-45':1});
+assert.equal(stats.facilityPorts.length,41,'A facility lost its road connection');
+assert.equal(stats.facilityRailPorts.length,12,'A facility lost its rail connection');
+assert.deepEqual(Object.fromEntries(['pad-110','pad-112a','pad-250','pad-31','pad-45'].map(id=>[id,stats.facilityRailPorts.filter(p=>p.id===id).length])),{'pad-110':4,'pad-112a':4,'pad-250':2,'pad-31':1,'pad-45':1});
+assert(stats.facilityPorts.some(port=>port.id==='pad-41'&&port.roadGap<1e-7),'The relocated Site41 entrance remains connected');
 for(const port of stats.facilityRailPorts)if(port.physicalGaugeMetres)assert(Math.abs(port.portGauge-port.physicalGaugeMetres*.14)<1e-9);
 for(const p of stats.facilityRailPorts){assert(p.headCenterGap<1e-7);assert(p.networkDatumGap<1e-7);assert(new THREE.Vector3(...p.headCenter).distanceTo(new THREE.Vector3(...p.renderedHeadCenter))<1e-7);}
 // A drawn crossing without a common source node must never form a junction.

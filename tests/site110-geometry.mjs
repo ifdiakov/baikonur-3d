@@ -56,22 +56,31 @@ assert.equal(SITE110_ROCKET_MOUNT.axis,'y');
 assert.equal(SITE110_ROCKET_MOUNT.baseY,5.4);
 assert.ok(root.children.every(child=>!child.name.includes('QA')),'production model has no dummy rocket');
 
-// Inspect the actual instance transforms of the approach rails. They must
-// agree with a 1.52m gauge and a 20m transporter track-centre separation.
-const running=root.children.find(o=>o.isInstancedMesh&&o.name==='Архив · rail');
-assert.ok(running,'rail batch exists');
-const m=new THREE.Matrix4(),v=new THREE.Vector3(),local=new THREE.Vector3(),inverse=new THREE.Matrix4();
+// Probe the actual rendered rail-head triangles, including both edges of
+// each 20cm head. Their physical gauge and the two-track 20m spacing are
+// independent of whether those triangles are merged or instanced.
+const running=[];root.traverse(mesh=>{if(mesh.isMesh&&mesh.material?.name==='museum / rail')running.push(mesh);});
+assert.ok(running.length,'The physical running-rail surfaces exist');
+let railHeadProbes=0;
 for(const pad of model.pads){
  const frame=new THREE.Matrix4().compose(new THREE.Vector3(...pad.centre),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),pad.yaw),new THREE.Vector3(1,1,1));
- inverse.copy(frame).invert();const candidates=[];
- for(let i=0;i<running.count;i++){
-  running.getMatrixAt(i,m);v.setFromMatrixPosition(m);local.copy(v).applyMatrix4(inverse);
-  if(Math.abs(local.z-62.5)<.01&&Math.abs(local.y-.46)<.01)candidates.push(local.x);
+ for(const z of [62.5,135,225])for(const trackCenter of [-10,10])for(const side of [-1,1]){
+  const railX=trackCenter+side*1.52/2;
+  for(const across of [-.099,0,.099]){
+   const expected=root.localToWorld(new THREE.Vector3(railX+across,.63,z).applyMatrix4(frame));
+   ray.set(expected.clone().add(new THREE.Vector3(0,.2,0)),new THREE.Vector3(0,-1,0));
+   const hits=ray.intersectObjects(running,false),hit=hits.find(hit=>hit.point.distanceTo(expected)<2e-5);
+   assert.ok(hit,`${pad.id}: physical rail head is continuous at ${z}, ${railX+across}`);
+   assert.ok(hit.face.normal.y>.99,'The running surface faces upward');railHeadProbes++;
+  }
+  for(const across of [-.105,.105]){
+   const expected=root.localToWorld(new THREE.Vector3(railX+across,.63,z).applyMatrix4(frame));
+   ray.set(expected.clone().add(new THREE.Vector3(0,.2,0)),new THREE.Vector3(0,-1,0));
+   assert.ok(!ray.intersectObjects(running,false).some(hit=>Math.abs(hit.point.y-expected.y)<2e-5),'The head width stays 20cm');
+  }
  }
- candidates.sort((a,b)=>a-b);
- assert.equal(candidates.length,4,`${pad.id}: four running rails in the first straight segment`);
- for(const [i,expected]of[-10.76,-9.24,9.24,10.76].entries())assert.ok(Math.abs(candidates[i]-expected)<.001);
 }
+assert.equal(railHeadProbes,72);
 
 let drawCalls=0,triangles=0;
 root.traverse(o=>{if(o.isMesh){drawCalls++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3*(o.isInstancedMesh?o.count:1);}});
@@ -81,4 +90,4 @@ const bounds=new THREE.Box3().setFromObject(root);
 assert.ok(Math.abs(bounds.max.y/.14-225)<.01,'lightning diverters end at 225m, not a cumulative tower-section error');
 assert.ok(Math.abs(bounds.min.y/.14+23)<.01,'duct floor is 23m below the apron');
 assert.ok(SITE110_REFERENCE.dimensionConfidence.lightningDiverter.includes('drawing not available'),'published narrative dimension is qualified');
-console.log(JSON.stringify({ok:true,drawCalls,triangles,cutouts:built.cutouts.length,physicalPadSeparation:model.physicalPadSeparation,vehicleHeightWorld:.14*58.765}));
+console.log(JSON.stringify({ok:true,drawCalls,triangles,cutouts:built.cutouts.length,physicalPadSeparation:model.physicalPadSeparation,railHeadProbes,vehicleHeightWorld:.14*58.765}));

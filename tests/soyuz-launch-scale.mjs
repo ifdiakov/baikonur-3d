@@ -82,9 +82,15 @@ for(const [id,builder]of[['gagarin',buildGagarinPad],['site31',buildSite31Pad]])
    const hits=ray.intersectObjects(meshes,false);
    assert.ok(hits.length&&hits[0].point.y>=-.01,`site31: bearing below foot ${x},${z} is at grade`);
   }
-  const rails=root.children.find(o=>o.isInstancedMesh&&o.name==='Архив · rail');
-  const m=new THREE.Matrix4(),p=new THREE.Vector3(),x=[];for(let i=0;i<rails.count;i++){rails.getMatrixAt(i,m);p.setFromMatrixPosition(m);if(Math.abs(p.z-108)<1e-8)x.push(p.x);}
-  x.sort((a,b)=>a-b);assert.equal(x.length,2);assert.ok(Math.abs(x[1]-x[0]-1.52)<1e-5,'1.52m extends all the way to the external port');
+  const rails=meshes.filter(mesh=>mesh.material?.name==='museum / rail');assert.ok(rails.length,'The physical incoming rails exist');
+  for(const z of [12,50,108,160,173.9])for(const side of [-1,1])for(const across of [-.099,0,.099]){
+   const expected=root.localToWorld(new THREE.Vector3(side*1.52/2+across,.65,z));
+   ray.set(expected.clone().add(new THREE.Vector3(0,.2,0)),new THREE.Vector3(0,-1,0));
+   const hit=ray.intersectObjects(rails,false).find(hit=>hit.point.distanceTo(expected)<2e-5);
+   assert.ok(hit,`site31: the 1.52m gauge and 20cm head continue to the external port at ${z}`);
+   assert.ok(hit.face.normal.y>.99,'The running surface faces upward');
+  }
+  assert.ok(Math.abs(SITE31_PORTS.rail[1]-.65)<1e-10,'The port is the actual rail-head top');
  }
  let calls=0,triangles=0;for(const o of meshes){calls++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3*(o.isInstancedMesh?o.count:1);}
  assert.ok(calls<60,'start geometry remains batched');assert.ok(triangles<110000,'start detail budget excludes the separately optimized rocket');

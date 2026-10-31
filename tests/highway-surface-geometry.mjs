@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import * as THREE from 'three';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
-import {smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from '../src/highway-surface.js';
+import {smoothHighwayGraph,isHighwayRoad,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from '../src/highway-surface.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from '../src/interchange-aprons.js';
 
@@ -16,7 +16,9 @@ const snapshot=()=>JSON.stringify({nodes:[...graph.nodes.values()].map(n=>[n.id,
 const before=snapshot();smoothHighwayGraph(graph);assert.equal(snapshot(),before,'Display smoothing must leave source nodes, topology and route costs intact');
 let profileSamples=0,tangentJoins=0,maxLateralShift=0,minTangentDot=1;
 for(const edge of graph.edges){
- if(!edge.surfacePoints)continue;
+ // Local degree-two rounding now also exposes surfacePoints. The original
+ // highway's strict .15-width corridor bound remains unchanged here.
+ if(!isHighwayRoad(edge.tags)||!edge.surfacePoints)continue;
  const ps=edge.surfacePoints,a=edge.a.position,b=edge.b.position;
  assert.deepEqual(ps[0].toArray(),a.toArray());assert.deepEqual(ps.at(-1).toArray(),b.toArray());
  const dx=b.x-a.x,dz=b.z-a.z,length=Math.hypot(dx,dz);
@@ -229,9 +231,14 @@ for(const apron of aprons){
  const nearby=graph.edges.filter(e=>e.tags.highway==='primary'&&Math.min(e.a.position.distanceTo(center),e.b.position.distanceTo(center))<15);
  for(const p of apron.outline){
   if(p.clone().sub(center).setY(0).dot(outward)>=-.05)continue;
-  const distance=Math.min(...nearby.map(e=>{
-   const a=e.a.position.clone().setY(0),b=e.b.position.clone().setY(0),q=new THREE.Line3(a,b).closestPointToPoint(p.clone().setY(0),true,new THREE.Vector3());
-   return p.clone().setY(0).distanceTo(q)-e.width/2;
+  const distance=Math.min(...nearby.flatMap(e=>{
+   // The host's own degree-two bends now have a displayed centreline too.
+   // Compare with that actual carriageway, keeping the original tolerance.
+   const points=e.surfacePoints||[e.a.position,e.b.position];
+   return points.slice(1).map((b,i)=>{
+    const a=points[i].clone().setY(0),q=new THREE.Line3(a,b.clone().setY(0)).closestPointToPoint(p.clone().setY(0),true,new THREE.Vector3());
+    return p.clone().setY(0).distanceTo(q)-e.width/2;
+   });
   }));
   assert(distance<.0005,'A rounded apron widens the host road toward its neighbouring railway');apronFarCurbProbes++;
  }

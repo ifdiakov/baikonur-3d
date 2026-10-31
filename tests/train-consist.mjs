@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {createGroundTraffic,TRAIN_DURATION} from '../src/ground-traffic.js';
-import {COACH_OFFSETS,TRAIN_START_DISTANCE} from '../src/rail-vehicles.js';
+import {COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_METRIC_SCALE} from '../src/rail-vehicles.js';
 
 const node={addEventListener(){},setAttribute(){}};
 globalThis.document={...node,querySelector(){return null;},body:{classList:{add(){},remove(){}}},hidden:false};
@@ -22,7 +22,7 @@ let minCoachGap=Infinity,maxRailError=0;
 const vehicles=layers.rails.children.find(o=>o.name==='Поезд · площадка 1 → город').children.filter(o=>o.userData.railVehicle);
 // Separating-axis test on oriented vehicle footprints: a centre-distance test
 // alone misses side swipes on the sharper bends of the actual OSM route.
-function footprint(v){const half=v.userData.railVehicle==='coach'?4.15:3.05;return [-1,1].flatMap(x=>[-1,1].map(z=>new THREE.Vector3(x*.62,0,z*half).applyQuaternion(v.quaternion).add(v.position)));}
+function footprint(v){v.updateWorldMatrix(true,false);const half=v.userData.railVehicle==='coach'?4.15:3.05;return [-1,1].flatMap(x=>[-1,1].map(z=>new THREE.Vector3(x*.62,0,z*half).applyMatrix4(v.matrixWorld)));}
 function separated(a,b){const A=footprint(a),B=footprint(b);return [a,b].some(v=>[new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,1)].some(axis=>{axis.applyQuaternion(v.quaternion);const p=A.map(c=>c.dot(axis)),q=B.map(c=>c.dot(axis));return Math.max(...p)<Math.min(...q)||Math.max(...q)<Math.min(...p);}));}
 
 for(let t=0;t<=TRAIN_DURATION;t+=3){
@@ -30,13 +30,13 @@ for(let t=0;t<=TRAIN_DURATION;t+=3){
  for(let i=1;i<vehicles.length;i++)assert(separated(vehicles[i-1],vehicles[i]),'Vehicle footprints must not overlap on OSM bends');
  assert.equal(stats.coachCount,4);assert.equal(stats.coaches.length,4);
  assert.equal(stats.coaches.filter(c=>c.tailLights).length,1);assert.equal(stats.coaches[3].tailLights,true);
- assert.ok(stats.coaches[3].distance>3,'The entire consist is on the track at departure');
+ assert.ok(stats.coaches[3].distance>4.15*TRAIN_METRIC_SCALE,'The actual rear body is on the track at departure');
  assert.ok(stats.distance<=stats.length-8,'The locomotive stops before the route ends');
  const units=[stats.locomotive,...stats.coaches.map(c=>c.position)];
  for(let i=1;i<units.length;i++){
   const gap=new THREE.Vector3(...units[i]).distanceTo(new THREE.Vector3(...units[i-1]));
   minCoachGap=Math.min(minCoachGap,gap);
-  assert.ok(gap>(i===1?7.25:8.35),'Coach bodies do not overlap on curves');
+  assert.ok(gap>(i===1?7.25:8.35)*TRAIN_METRIC_SCALE,'The physical coupler spacing survives the shared metric scale');
  }
  for(const contact of stats.wheelContacts){
   const error=new THREE.Vector3(...contact.position).distanceTo(new THREE.Vector3(...contact.railPosition));
@@ -48,19 +48,26 @@ for(let t=0;t<=TRAIN_DURATION;t+=3){
 }
 assert.equal(traffic.stats().train.startDistance,TRAIN_START_DISTANCE);
 const details=traffic.stats().train.vehicleDetails;
+assert.equal(details[0].bodyLength,6.1*TRAIN_METRIC_SCALE);
+assert(details.slice(1).every(v=>v.bodyLength===8.3*TRAIN_METRIC_SCALE));
 assert.equal(details[0].axles,6);assert.equal(details[0].bogies,2);
 assert.equal(details[0].detailCounts['kosmicheskiy-centr-yuzhnyy'],2);
 assert(details.slice(1).every(v=>v.axles===4&&v.bogies===2&&v.detailCounts['lit-window']===22));
 assert.equal(details[4].detailCounts['tail-lamp'],2);
 traffic.seek(80);traffic.setFollowing(true);
+const frameSpans=[];
 for(const aspect of [1.6,390/844]){
  camera.aspect=aspect;camera.updateProjectionMatrix();traffic.seek(80);
  const stats=traffic.stats().train;
+ const screens=[];
  for(const p of [stats.locomotive,...stats.coaches.map(c=>c.position)]){
   const screen=new THREE.Vector3(...p).project(camera);
+  screens.push(screen);
   assert.ok(Math.abs(screen.x)<.9&&Math.abs(screen.y)<.9,'Follow framing includes all four coaches on desktop and mobile');
  }
+ const span=Math.max(...screens.map(p=>p.x))-Math.min(...screens.map(p=>p.x));frameSpans.push(span);
+ assert(span>.45,'The uniformly scaled train still fills a useful part of its close view');
 }
 traffic.setEvening(false);assert.equal(traffic.stats().night,false);traffic.setEvening(true);
 assert.ok(traffic.stats().train.vehicleDetails.every(v=>v.meshes<=12),'Static detail is batched by material');
-console.log('TRAIN_CONSIST_PASS',JSON.stringify({coachCount:4,axles:22,wheels:44,minCoachGap,maxRailError,startDistance:TRAIN_START_DISTANCE,lights:traffic.stats().train.vehicleDetails.map(v=>v.lightCount)}));
+console.log('TRAIN_CONSIST_PASS',JSON.stringify({coachCount:4,axles:22,wheels:44,minCoachGap,maxRailError,startDistance:TRAIN_START_DISTANCE,frameSpans,lights:traffic.stats().train.vehicleDetails.map(v=>v.lightCount)}));

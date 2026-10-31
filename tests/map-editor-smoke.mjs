@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
+import {RAIL_PROFILE} from '../src/rail-profile.js';
 
 const browser=await chromium.launch({headless:true,
  ...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),
@@ -23,7 +24,7 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().uiRevision==='20261028-museum4-clean-menu',null,{timeout:90000});
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(stats.sites,97);assert.equal(stats.stations,7);
- assert.ok(Math.abs(stats.transport.railGauge-7.3*.43*.28/1.5)<1e-10);assert.equal(stats.transport.railRoutes,14);
+ assert.ok(Math.abs(stats.transport.railGauge-RAIL_PROFILE.gauge)<1e-10);assert.equal(stats.transport.railRoutes,14);
  assert.equal(stats.transport.roadMarkings,'arc-length-paint-with-junction-gaps');assert.ok(stats.transport.markingSegments>100);
  assert.ok(stats.transport.kazGateGap<.001);
  assert.equal(stats.transport.interchange.bridges.length,2);

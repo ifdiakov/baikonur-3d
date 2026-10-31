@@ -322,8 +322,10 @@ reference table](https://www.buran.ru/htm/transp.htm) gives 56.3 × 29.5 × 21.2
 and a 20 m distance between the two railway axes. The native authored pose
 and the published envelope are recorded separately; individual axes are not
 stretched to force a match. The source wheel-centre gauge, approximately
-1.629862 m, is likewise retained without a nonuniform squeeze to the nominal
-1.524 m railway gauge.
+1.629862 m, is likewise retained without squeezing the original wheelsets.
+The rendered railway uses the museum's common **1.52 m** gauge. Its **.20 m**
+heads fully support the original **.08 m** wheel treads despite the small
+difference between source wheel centres and rail centres.
 
 ### Horizontal rocket anchors
 
@@ -347,28 +349,31 @@ the exhibit; their shape is not presented as a surveyed historical fixture.
 `mikExhibit.transporterRails` group. `adaptTuaRails(mikExhibit, manifest)` builds
 eight continuous rail meshes and one instanced sleeper batch before replacing
 the old children. Shared scene geometry and materials are not disposed.
-Building geometry, the low-hall track, placement transforms and external rail
-entries stay unchanged.
+Placement transforms, actual contact height and the four external track centre
+axes stay unchanged. The low-hall track and other museum rails use the same
+shared profile from `src/rail-profile.js`.
 
 The four external track centre axes remain at X **−82.4, −59.6, −30.4, −7.6**.
 The running axes beneath the vehicles now lie at **−81, −61, −29, −9**,
 matching each source vehicle's **20 m** double-track spacing. Each rail
 runs from Z **−258.5** to **−5.5**, with head Y **4.305**, body height **0.27** and
-head width **0.18**. The gauge varies along the following stations:
+head width **0.20**. The gauge remains **1.52 m** throughout; only the track-centre
+axis changes at the following stations:
 
-| MIK-local Z | Centre-to-centre gauge |
-|---:|---:|
-| −258.5 | 4.185333333333333 |
-| −238 | 4.185333333333333 |
-| −218 | 1.6298618316000013 |
-| −148 | 1.6298618316000013 |
-| −128 | 4.185333333333333 |
-| −5.5 | 4.185333333333333 |
+| MIK-local Z | Individual gauge | Track axes |
+|---:|---:|---|
+| −258.5 | 1.52 m | External entry axes |
+| −238 | 1.52 m | External entry axes |
+| −218 | 1.52 m | Vehicle running axes |
+| −148 | 1.52 m | Vehicle running axes |
+| −128 | 1.52 m | External entry axes |
+| −5.5 | 1.52 m | External entry axes |
 
-The two 20 m transitions use monotone smoothstep easing for both gauge and
-track-centre position; the vehicle section and external end sections are straight. The entire wheel-surface range
-Z **−209.968352568 to −156.031647445** lies inside the constant running gauge.
-The 420 instanced sleepers scale their length with the current gauge. Rail
+The two 20 m transitions use monotone smoothstep easing for track-centre
+position, independently of gauge; the vehicle section and external end
+sections are straight. The entire wheel-surface range
+Z **−209.968352568 to −156.031647445** lies inside the straight running section.
+The 420 instanced sleepers share the same **2.6 × .16 × .32 m** dimensions. Rail
 geometry totals 2,784 triangles, with continuous faces across the bends.
 
 The helper exports `gaugeAt`, `trackAxisAt`, `createTuaRailGeometry` and
@@ -378,9 +383,11 @@ vectors. Local verification checked actual rail buffers, sleeper matrices,
 768 head raycasts through the actual decoded wheel widths, unchanged external world coordinates and the absence of
 the old wide rails beneath the vehicles.
 
-The final asset manifest records this calibration, selection, protected
-running gear, placement, camera and rail adaptation. The source converter
-does not modify runtime files or publish an asset.
+The asset manifest preserves the original source calibration, selection,
+protected running gear, placement and camera. Its older gauge-adaptation
+recommendation is historical; the current runtime profile owns railway gauge
+and head width. The source converter does not modify runtime files or publish
+an asset.
 
 ## License and source references
 

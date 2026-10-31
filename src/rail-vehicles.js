@@ -1,14 +1,17 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js?v=20261028-site41-v1';
+import {RAIL_PROFILE} from './rail-profile.js?v=20261031-facilities-rails-lighting-v1';
 
 // Photo-based Baikonur service train, sized to the museum's shared rail gauge.
 // Principal reference: the teal shunter and pale coaches in the owner's Мотовоз folder.
 // The geometry is interpretive; no fleet number or exact surveyed dimensions are claimed.
 export const COACH_COUNT=4;
-export const COACH_OFFSETS=Object.freeze([7.90,16.90,25.90,34.90]);
-export const TRAIN_START_DISTANCE=COACH_OFFSETS.at(-1)+5.4;
-export const TRAIN_CONSIST_LENGTH=COACH_OFFSETS.at(-1)+4.51+3.41;
+const AUTHORED_GAUGE=.5859466666666666;
+export const TRAIN_METRIC_SCALE=RAIL_PROFILE.gauge/AUTHORED_GAUGE;
+export const COACH_OFFSETS=Object.freeze([7.90,16.90,25.90,34.90].map(n=>n*TRAIN_METRIC_SCALE));
+export const TRAIN_START_DISTANCE=COACH_OFFSETS.at(-1)+5.4*TRAIN_METRIC_SCALE;
+export const TRAIN_CONSIST_LENGTH=COACH_OFFSETS.at(-1)+(4.51+3.41)*TRAIN_METRIC_SCALE;
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const standard=(color,extra={})=>new THREE.MeshStandardMaterial({color,roughness:.61,metalness:.34,...extra});
 
@@ -84,6 +87,7 @@ function lettering(){
 }
 
 export function buildRailVehicle(parent,{wagon=false,gauge,index=0,last=false}){
+ const metricScale=(gauge??RAIL_PROFILE.gauge)/AUTHORED_GAUGE;gauge=AUTHORED_GAUGE;
  const root=new THREE.Group();root.name=wagon?'Пассажирский вагон '+(index+1):'Мотовоз · маневровый тепловоз';
  root.userData.pickable=false;root.userData.railVehicle=wagon?'coach':'locomotive';parent.add(root);
  const paint=standard(wagon?0xc3c9c4:0x176b78),cream=standard(wagon?0x7fa792:0xe4bf48),dark=standard(0x202a2e),red=standard(0x9b4937),steel=standard(0x7e898a,{metalness:.72,roughness:.42});
@@ -214,8 +218,13 @@ export function buildRailVehicle(parent,{wagon=false,gauge,index=0,last=false}){
   }
   bb.box(gauge+.25,.11,.23,0,.40,0,steel,'bogie-bolster');bb.finish();bogies.push({root:bogie,offset});
  }
- return {root,axles,bogies,glass,lights,windows,wheelRadius,wheelbase:Math.abs(bogieOffsets[1]-bogieOffsets[0]),
-  kind:wagon?'coach':'locomotive',last,detailCounts,bodyLength:half*2,lightCount:markers.length+(wagon?6:2),
+ // Scale the complete authored train coherently. Separate wheel/bogie roots
+ // follow the same scale and arc-distance offsets as the body and couplers.
+ root.scale.setScalar(metricScale);
+ for(const axle of axles){axle.root.scale.setScalar(metricScale);axle.offset*=metricScale;}
+ for(const bogie of bogies){bogie.root.scale.setScalar(metricScale);bogie.offset*=metricScale;}
+ return {root,axles,bogies,glass,lights,windows,wheelRadius:wheelRadius*metricScale,wheelbase:Math.abs(bogieOffsets[1]-bogieOffsets[0])*metricScale,
+  kind:wagon?'coach':'locomotive',last,detailCounts,bodyLength:half*2*metricScale,metricScale,gauge:AUTHORED_GAUGE*metricScale,lightCount:markers.length+(wagon?6:2),
   setEvening(night){glass.emissiveIntensity=night?.68:.025;lens.emissiveIntensity=night?2.4:.06;tail.emissiveIntensity=night?1.8:.06;lights.setStrength(night?1:.06);windows.setStrength(night?.46:0);if(spill)spill.visible=night;}
  };
 }

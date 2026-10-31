@@ -3,7 +3,7 @@ import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-road-markings-v1';
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-facilities-rails-lighting-v1';
 const sections=['sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'];
 const titles=['ПЛОЩАДКИ И ОБЪЕКТЫ','РАКЕТЫ И ТЕХНИКА','ЦИКЛОГРАММЫ','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};

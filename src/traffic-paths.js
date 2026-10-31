@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
-import {nearestRoadPoint} from './road-layout.js?v=20261031-rocket-exhibits-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {nearestRoadPoint} from './road-layout.js?v=20261031-facilities-rails-lighting-v1';
 
 export function distancePath(points){
  const clean=points.filter((p,i)=>!i||p.distanceTo(points[i-1])>1e-8).map(p=>p.clone());
@@ -38,7 +38,7 @@ export function buildTrainRoutePlan({data,point,gagarinRail}){
  const points=[],joins=[];let previous=null;
  for(const section of sections){
   const n=Math.max(80,Math.ceil(section.curve.getLength()*Math.abs(section.to-section.from)/.5));
-  const get=t=>{const p=section.curve.getPoint(t);p.y=(section.datum?section.datum(t):.75)+RAIL_PROFILE.headY+RAIL_PROFILE.headRadius;return p;};
+  const get=t=>{const p=section.curve.getPoint(t);p.y=(section.datum?section.datum(t):.75)+RAIL_PROFILE.headY;return p;};
   const start=get(section.from),end=get(section.to);
   const sign=Math.sign(section.to-section.from),heading=section.curve.getTangent(section.from).multiplyScalar(sign).setY(0).normalize();
   if(previous)joins.push({from:previous.id,to:section.id,gap:previous.end.distanceTo(start),tangentDot:previous.heading.dot(heading)});

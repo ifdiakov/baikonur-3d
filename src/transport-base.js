@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
 import {buildRoadSurfaces,sampleRoadCurve} from './road-surface.js?v=20261028-museum4-osm-live-v2';
 
 /**
@@ -56,7 +56,7 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     }
     return samples;
   }
-  function ribbon(group,samples,width,y,material,edgeOffset=0,elevationAt=null) {
+  function ribbon(group,samples,width,y,material,edgeOffset=0,elevationAt=null,thickness=0) {
     if(samples.length<2)return null;
     const xyz=[],uv=[],ids=[];
     samples.forEach((s,i)=>{
@@ -66,6 +66,11 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
       }
       if(i<samples.length-1){const k=i*2;ids.push(k,k+1,k+2,k+1,k+3,k+2)}
     });
+    if(thickness>0){
+      const count=xyz.length/3;for(let i=0;i<count;i++){xyz.push(xyz[i*3],xyz[i*3+1]-thickness,xyz[i*3+2]);uv.push(uv[i*2],uv[i*2+1]);}
+      for(let i=0;i<samples.length-1;i++){const a=i*2,b=a+1,c=a+2,d=a+3;ids.push(a,c,a+count,c,c+count,a+count,b,b+count,d,d,b+count,d+count);}
+      const a=0,b=1,c=count-2,d=count-1;ids.push(a,a+count,b,b,a+count,b+count,c,d,c+count,d,d+count,c+count);
+    }
     const g=new THREE.BufferGeometry();
     g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
     g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.setIndex(ids);
@@ -114,16 +119,11 @@ export function buildTransportNetwork({data,point,layers,siteRecords,roadElevati
     const custom=facilityRails?.replacements.get(id)||extraRails.find(r=>r.id===id&&r.datum);
     const samples=baseSamples(curve,Math.max(32,Math.ceil(curve.getLength()/(isGagarin?2.5:8))),!!custom);
     const length=curve.getLength();
-    // The museum train keeps its original network gauge. At an explicitly
-    // metric facility socket only the final feeder section adapts smoothly
-    // to that start's actual running rails, with zero gauge slope at the join.
-    const gauge=s=>THREE.MathUtils.lerp(RAIL_PROFILE.gauge,custom?.endGauge??RAIL_PROFILE.gauge,THREE.MathUtils.smoothstep(s.t,.65,1));
+    const gauge=()=>RAIL_PROFILE.gauge;
     const datum=s=>isGagarin?gagarinRail.datum(s.t):custom?.datum?custom.datum(s.t):.75+railElevation(id,s.pos);
-    ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth*1.12,0,materials.gravel,0,s=>datum(s)+.01);
     ribbon(layers.rails,samples,RAIL_PROFILE.ballastWidth,0,materials.crushed,0,s=>datum(s)+RAIL_PROFILE.ballastY);
     for(const side of [-1,1]){
-      ribbon(layers.rails,samples,RAIL_PROFILE.bodyWidth,0,materials.rail,s=>side*gauge(s)/2,s=>datum(s)+RAIL_PROFILE.bodyY);
-      tube(layers.rails,samples,s=>side*gauge(s)/2,RAIL_PROFILE.headRadius,materials.rail,0,6,s=>datum(s)+RAIL_PROFILE.headY);
+      ribbon(layers.rails,samples,RAIL_PROFILE.headWidth,0,materials.rail,s=>side*gauge(s)/2,s=>datum(s)+RAIL_PROFILE.headY,RAIL_PROFILE.railHeight);
     }
     // Near the pad, sleeper spacing also matches its detailed track exactly.
     // Distant network ties are sampled more sparsely to keep the large map fast.

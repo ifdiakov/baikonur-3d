@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
-import {buildMzkHall} from './mzk-hall.js?v=20261030-mzk-sdi-v1';
+import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {buildMzkHall} from './mzk-hall.js?v=20261031-facilities-rails-lighting-v1';
+import {MZK_SDI_RAIL_STUBS,MZK_SDI_RAIL_PORTS} from './mik112-destination-ports.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSdiStand} from './mzk-sdi-stand.js?v=20261030-mzk-sdi-v1';
 
 export const MZK_SDI_REFERENCE=Object.freeze({
@@ -30,15 +31,16 @@ export function buildMzkSdi(root){
   [[120,130],[80,130],[80,154],[sdiOfficeDoor[0],154],[sdiOfficeDoor[0],sdiOfficeDoor[2]]]
  ];
  for(const path of roads)k.path(path,6,.15,'asphalt','mzk-sdi-internal-access');
- // The visible SDI approach and its track stubs end inside this exhibit.
+ // Two parallel SDI tracks meet the verified paired source routes.
  const apron=[[-30,24],[30,24],[30,63],[-30,63]].map(([x,z])=>{
   const p=transformed(s,[x,0,z]);return [p[0],p[2]];
  });
  k.poly(apron,.10,'concrete','sdi-gate-apron');
- const railPoints=[[0,24],[0,66]].map(([x,z])=>{
-  const p=transformed(s,[x,0,z]);return [p[0],p[2]];
- });
- k.rail(railPoints,{gauge:4,bed:false,y:.27,tag:'sdi-gate-approach-rail'});
+ for(const stub of MZK_SDI_RAIL_STUBS.filter(stub=>stub.component==='sdi')){
+  const railPoints=stub.points.map(([x,z])=>{const p=transformed(s,[x,0,z]);return [p[0],p[2]];});
+  k.rail(railPoints,{bed:false,y:stub.sleeperY,tag:'sdi-gate-approach-rail'});
+ }
+ root.userData.railHeadPorts=MZK_SDI_RAIL_PORTS;
 
  const views={
   all:{target:[0,38,0],eye:[260,340,390]},

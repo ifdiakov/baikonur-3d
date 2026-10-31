@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-rocket-exhibits-v1';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-rocket-exhibits-v1';
+import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSite31Trench} from './site31-trench.js?v=20261028-museum4-osm-live-v2';
 import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
@@ -18,7 +19,7 @@ export const SITE31_SOURCES=Object.freeze([
  'https://www.russian.space/upload/iblock/c07/11221_d.jpg',
  'https://sufps70.organizations.mchs.gov.ru/deyatelnost/press-centr/novosti/4233814'
 ]);
-export const SITE31_PORTS=Object.freeze({road:[60,.1,133],rail:[0,.48,174]});
+export const SITE31_PORTS=Object.freeze({road:[60,.1,133],rail:[0,.65,174]});
 export const SITE31_MACHINERY_METRE=2/3;
 export const SITE31_ROCKET_MOUNT=Object.freeze({position:[0,0,0],rotation:[0,Math.PI/4,0],axis:'y',baseY:0,vehicle:'soyuz',heightMetres:49.51161217689514});
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -178,6 +179,7 @@ export function buildSite31Pad(root){
   // Cable pipes follow the boom; hinges and hydraulic struts remain at grade.
   for(const z of [-2.3,2.3])k.rod([side*2.4,2,z],[side*1.7,height,z*.7],.12,'light','mast-utility-pipe',pivot);
   k.box(4.2,4.1,4.6,0,height-1.5,0,'green','mast-equipment-cabin',0,pivot);
+  registerFacilityBeacon(pivot,{id:'site31-service-mast',position:[0,height+.55,0],kind:'service-mast'});
   k.box(3.1,1.1,.12,0,height-1.0,2.36,'glass','mast-cabin-window',0,pivot);
   const hinge=k.direct(new THREE.CylinderGeometry(2.0,2.0,7,20),'yellow','service-mast-base-hinge');hinge.position.set(side*20,2.0,5);hinge.rotation.x=Math.PI/2;
   k.rod([side*29,.5,7],[side*24,13,6],.45,'steel','mast-hydraulic-cylinder');
@@ -209,11 +211,14 @@ export function buildSite31Pad(root){
    }
   }
   k.rod([x,h,z],[x,h+6,z],.075,'dark','lightning-rod-tip');
+  registerFacilityBeacon(root,{id:`site31-lightning-${x}`,position:[x,h+6,z],kind:'lightning-mast'});
  }
  for(const [x,z] of [[-56,69],[52,54]]){
   k.lattice(x,z,35,3.4,3.4,{levels:12,material:'steel',tag:'floodlight-tower'});
   k.box(7,.4,1,x,35.4,z,'steel','floodlight-head');
   for(let row=0;row<2;row++)for(let j=0;j<5;j++)k.box(.9,.72,.38,x-2.8+j*1.4,35.9+row*.9,z+.4,'white','floodlight-panel');
+  registerFacilityFloodlights(root,{id:`site31-flood-${x}`,target:[x,0,z+22],beacon:[x,37.16,z+.4],
+   lamps:Array.from({length:10},(_,i)=>({position:[x-2.8+(i%5)*1.4,35.9+Math.floor(i/5)*.9,z+.59],normal:[0,0,1],size:[.9,.72]}))});
  }
  k.hall({x:61,z:91,w:22,d:40,h:7,roof:'blue',gates:1,tag:'soyuz-service-house'});
  k.hall({x:-64,z:100,w:15,d:24,h:5.5,roof:'roof',gates:1,tag:'soyuz-utility-house'});

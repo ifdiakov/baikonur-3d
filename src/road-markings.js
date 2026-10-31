@@ -10,6 +10,12 @@ const xzKey=p=>p.x.toFixed(5)+':'+p.z.toFixed(5);
 const comparePoint=(a,b)=>a.x-b.x||a.z-b.z||a.y-b.y;
 const horizontal=(a,b)=>Math.hypot(b.x-a.x,b.z-a.z);
 const normal=d=>V(-d.z,0,d.x).normalize();
+function between(a,b,t){
+ const p=a.clone().lerp(b,t);
+ if(a.markingNormal&&b.markingNormal)p.markingNormal=a.markingNormal.clone().lerp(b.markingNormal,t).normalize();
+ return p;
+}
+function copyPoint(p){const q=p.clone();if(p.markingNormal)q.markingNormal=p.markingNormal.clone();return q;}
 
 export function roadMarkingPolicy(tags={},width=3.6,marked=true){
  const highway=HIGHWAY.has(tags.highway),family=highway?'highway':'local';
@@ -41,12 +47,12 @@ function pathOf(points){
  return {points,distances,length,at(distance){
   const s=THREE.MathUtils.clamp(distance,0,length);let lo=0,hi=points.length-1;
   while(hi-lo>1){const middle=(lo+hi)>>1;if(distances[middle]<=s)lo=middle;else hi=middle;}
-  return points[lo].clone().lerp(points[hi],(s-distances[lo])/(distances[hi]-distances[lo]||1));
+  return between(points[lo],points[hi],(s-distances[lo])/(distances[hi]-distances[lo]||1));
  }};
 }
 function resample(points,step=STEP){
- const out=[points[0].clone()];
- for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],n=Math.max(1,Math.ceil(a.distanceTo(b)/step));for(let j=1;j<=n;j++)out.push(a.clone().lerp(b,j/n));}
+ const out=[copyPoint(points[0])];
+ for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],n=Math.max(1,Math.ceil(a.distanceTo(b)/step));for(let j=1;j<=n;j++)out.push(between(a,b,j/n));}
  return out;
 }
 function roundedCenters(points,width){
@@ -67,8 +73,8 @@ function intervals(points,visible){
  for(let i=1;i<points.length;i++){
   const a=points[i-1],b=points[i],va=visible(a),vb=visible(b);
   if(va&&!run.length)run.push(a);
-  if(va!==vb){let lo=0,hi=1;for(let k=0;k<13;k++){const mid=(lo+hi)/2;if(visible(a.clone().lerp(b,mid))===va)lo=mid;else hi=mid;}
-   const cut=a.clone().lerp(b,(lo+hi)/2);if(va){run.push(cut);flush();}else run.push(cut);
+  if(va!==vb){let lo=0,hi=1;for(let k=0;k<13;k++){const mid=(lo+hi)/2;if(visible(between(a,b,mid))===va)lo=mid;else hi=mid;}
+   const cut=between(a,b,(lo+hi)/2);if(va){run.push(cut);flush();}else run.push(cut);
   }
   if(vb)run.push(b);else flush();
  }
@@ -80,10 +86,10 @@ function intervals(points,visible){
  * compatible real pavement then determines its side and exact extent. */
 export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeightAt,directionAt=(p,d)=>d,extraEdges=[],excludePoint=()=>false}={}){
  if(typeof surfaceHeightAt!=='function')throw new Error('Road markings require an actual pavement-height sampler');
- const quads=[],junctionIndex=new SpatialIndex(),segmentIndex=new SpatialIndex(),nodePositions=new Map(),nodeOccurrences=new Map(),edgeOpenings=new Set(),centerOpenings=new Set();
+ const quads=[],junctionIndex=new SpatialIndex(),segmentIndex=new SpatialIndex(),nodePositions=new Map(),nodeOccurrences=new Map(),edgeOpenings=new Set(),centerOpenings=new Set(),contourOpenings=new Set();
  const stats={version:ROAD_MARKINGS_VERSION,roadRuns:roads.length,eligibleRoadRuns:0,chains:0,continuationSeams:0,junctionCount:0,junctionSamples:[],seamSamples:[],
   edgeQuads:0,centerQuads:0,dividerQuads:0,projectedVertices:0,projectionMisses:0,projectionRejectedQuads:0,boundaryRejectedQuads:0,
-  edgeOpenings:0,centerOpenings:0,suppressedOneWayCenters:0,suppressedSingleLaneCenters:0,suppressedUnpavedRuns:0,regulatoryMarks:0};
+  edgeOpenings:0,centerOpenings:0,replacementContourOpenings:0,suppressedOneWayCenters:0,suppressedSingleLaneCenters:0,suppressedUnpavedRuns:0,regulatoryMarks:0};
  const sourceNodes=graph.nodes instanceof Map?[...graph.nodes.values()]:Array.isArray(graph.nodes)?graph.nodes:Object.values(graph.nodes||{}),sourceNodeById=new Map(sourceNodes.map(n=>[String(n.id),n]));
  for(const n of sourceNodes){if(!n.position)continue;const key=xzKey(n.position);if(!nodePositions.has(key))nodePositions.set(key,[]);nodePositions.get(key).push(n);}
  const prepared=roads.filter(r=>r.points?.length>1).map((r,i)=>{
@@ -187,22 +193,51 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
  }
  stats.chains=chains.length;
  const compatibleHeight=(p,y)=>Number.isFinite(y)&&Math.abs(y-p.y)<.65;
+ const junctionHeight=(p,y)=>Number.isFinite(y)&&Math.abs(y-p.y)<1.2;
+ const contourIndex=new SpatialIndex(),contours=extraEdges.filter(edge=>edge.points?.length>1).map((edge,i)=>{
+  const points=edge.points,tangent=(at,other)=>{
+   const fallback=points[other].clone().sub(points[at]).setY(0).normalize().multiplyScalar(at===0?1:-1);
+   return edge.directionAt?edge.directionAt(points[at],fallback).clone().setY(0).normalize():fallback;
+  };
+  return {id:edge.id??i,points,start:tangent(0,1),end:tangent(points.length-1,points.length-2)};
+ });
+ for(const contour of contours){const xs=contour.points.map(p=>p.x),zs=contour.points.map(p=>p.z);contourIndex.add(contour,Math.min(...xs)-.4,Math.max(...xs)+.4,Math.min(...zs)-.4,Math.max(...zs)+.4);}
+ function insideReplacementContour(p,chain){
+  for(const contour of contourIndex.at(p)){
+   const first=contour.points[0],last=contour.points.at(-1);
+   // A curved replacement edge owns only the interval between its two
+   // seam planes. Do not shorten the adjoining exposed straight edges.
+   if(p.clone().sub(first).dot(contour.start)<-1e-5||p.clone().sub(last).dot(contour.end)>1e-5)continue;
+   for(let i=1;i<contour.points.length;i++){
+    const near=nearestOnSegment(p,contour.points[i-1],contour.points[i]);
+    if(near.distance<chain.policy.edgeInset+chain.policy.edgeWidth+.05&&junctionHeight(p,near.y)){
+     contourOpenings.add(contour.id+':'+chain.id);return true;
+    }
+   }
+  }
+  return false;
+ }
  function nearbyJunctions(p,chain){return junctionIndex.at(p).filter(j=>j.arms.some(a=>chain.keys.has(a.road.key))&&Math.abs(j.position.y-p.y)<1.2&&horizontal(j.position,p)<j.radius);}
  function foreignPavement(p,j,chain,outward){
   for(const segment of segmentIndex.at(p)){
    if(chain.keys.has(segment.road.key)||!j.roads.has(segment.road.key))continue;
    const near=nearestOnSegment(p,segment.a,segment.b);
-   if(near.distance<segment.road.width/2+.025&&Math.abs(near.y-p.y)<.65&&compatibleHeight(p,surfaceHeightAt(p)))return true;
+   // The real sampler intentionally selects only the level near query Y.
+   // Seed it with this explicitly connected arm's grade, then retain the
+   // junction-height guard relative to the candidate line. This cannot
+   // select a five-unit-higher bridge or an unconnected visual crossing.
+   if(near.distance<segment.road.width/2+.025&&junctionHeight(p,near.y)&&junctionHeight(p,surfaceHeightAt(p.clone().setY(near.y))))return true;
   }
   // Rounded junction returns/aprons extend beyond the original narrow
   // branch ribbon. The actual union owns that wider mouth too. Restrict
   // this check to an explicitly connected branch on this side, so the
   // opposite curb and unconnected visual crossings remain continuous.
-  return horizontal(p,j.position)<j.width*2&&j.arms.some(a=>!chain.keys.has(a.road.key)&&a.direction.dot(outward)>.01)&&compatibleHeight(p,surfaceHeightAt(p));
+  return horizontal(p,j.position)<j.width*2&&j.arms.some(a=>!chain.keys.has(a.road.key)&&a.direction.dot(outward)>.01)&&junctionHeight(p,surfaceHeightAt(p));
  }
  function allowed(p,kind,chain,outward=null){
   const road=chain.road,family=chain.policy.family;
   if(excludePoint(p,{kind,road,family}))return {allowed:false,reason:'replacement-surface'};
+  if(kind==='edge'&&insideReplacementContour(p,chain))return {allowed:false,reason:'replacement-contour'};
   for(const j of nearbyJunctions(p,chain)){
    if(kind==='edge'){
     if(!outward)continue;const probe=p.clone().addScaledVector(outward,chain.policy.edgeInset+.11);
@@ -218,9 +253,11 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
  function emit(points,{width,color,kind,chain,directionAt:customDirection}){
   if(points.length<2)return;
   const frames=points.map((p,i)=>{
-   let d=points[Math.min(i+1,points.length-1)].clone().sub(points[Math.max(0,i-1)]).setY(0).normalize();
-   if(customDirection)d=customDirection(p,d,chain.road).clone().setY(0).normalize();
-   const n=normal(d);return [project(p.clone().addScaledVector(n,-width/2)),project(p.clone().addScaledVector(n,width/2))];
+   let n=p.markingNormal;
+   if(!n){let d=points[Math.min(i+1,points.length-1)].clone().sub(points[Math.max(0,i-1)]).setY(0).normalize();
+    if(customDirection)d=customDirection(p,d,chain.road).clone().setY(0).normalize();n=normal(d);
+   }
+   return [project(p.clone().addScaledVector(n,-width/2)),project(p.clone().addScaledVector(n,width/2))];
   });
   for(let i=1;i<frames.length;i++){
    const vertices=[...frames[i-1],...frames[i]];
@@ -231,11 +268,14 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
   }
  }
  function drawStroke(chain,points,{width,color,kind,offset=0,dashed=false,directionAt:customDirection}){
-  const ps=resample(points),centers=ps.map((p,i)=>{
-   let d=ps[Math.min(i+1,ps.length-1)].clone().sub(ps[Math.max(0,i-1)]).setY(0).normalize();
+  // Offset the same source cross-sections used by the pavement first.
+  // Recomputing normals after densifying uneven source segments changed
+  // those frames and produced tiny hooks on tight, already smooth loops.
+  const framed=points.map((p,i)=>{
+   let d=points[Math.min(i+1,points.length-1)].clone().sub(points[Math.max(0,i-1)]).setY(0).normalize();
    if(customDirection)d=customDirection(p,d,chain.road).clone().setY(0).normalize();
-   return p.clone().addScaledVector(normal(d),offset);
-  }),path=pathOf(centers);
+   const n=normal(d),value=typeof offset==='function'?offset(p):offset,q=p.clone().addScaledVector(n,value);q.markingNormal=n;return q;
+  }),centers=resample(framed),path=pathOf(centers);
   const outwardAt=p=>{
    let best=Infinity,n=null;for(const segment of segmentIndex.at(p))if(chain.keys.has(segment.road.key)){const near=nearestOnSegment(p,segment.a,segment.b);if(near.distance<best){best=near.distance;const at=segment.a.clone().lerp(segment.b,near.t);n=p.clone().sub(at).setY(0).normalize();}}
    return n||V();
@@ -249,9 +289,9 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
   for(const stroke of strokes)for(const run of intervals(stroke,visible))emit(run,{width,color,kind,chain,directionAt:customDirection});
  }
  for(const chain of chains){
-  const {policy:p,width}=chain,edgeDirection=p.highway?directionAt:null;
-  for(const side of [-1,1])drawStroke(chain,chain.points,{kind:'edge',width:p.edgeWidth,color:'white',offset:side*(width/2-p.edgeInset),directionAt:edgeDirection});
-  const centerPoints=p.highway?chain.points:roundedCenters(chain.points,width);
+  const {policy:p,width}=chain,edgeDirection=chain.road.directionAt||(p.highway?directionAt:null),widthAt=chain.road.widthAt;
+  for(const side of [-1,1])drawStroke(chain,chain.points,{kind:'edge',width:p.edgeWidth,color:'white',offset:point=>side*((typeof widthAt==='function'?widthAt(point):width)/2-p.edgeInset),directionAt:edgeDirection});
+  const centerPoints=p.highway||chain.members.every(road=>road.surfaceSmoothed)?chain.points:roundedCenters(chain.points,width);
   if(p.center==='double-yellow')for(const side of [-1,1])drawStroke(chain,centerPoints,{kind:'center',width:HIGHWAY_MARKINGS.centerWidth,color:'yellow',offset:side*HIGHWAY_MARKINGS.centerOffset,directionAt:directionAt});
   else if(p.center)drawStroke(chain,centerPoints,{kind:'center',width:p.centerWidth,color:'white',dashed:true});
   if(p.divider)for(let lane=1;lane<p.lanes;lane++)drawStroke(chain,centerPoints,{kind:'divider',width:p.centerWidth,color:'white',offset:width*(lane/p.lanes-.5),dashed:true,directionAt:edgeDirection});
@@ -259,9 +299,12 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
  for(const [index,edge] of extraEdges.entries()){
   if(edge.points?.length<2)continue;
   const chain={id:'extra-'+index,road:edge,roadIds:[String(edge.id||'apron-edge-'+index)],policy:{family:edge.family||'highway'}};
-  emit(resample(edge.points),{width:edge.width||HIGHWAY_MARKINGS.edgeWidth,color:'white',kind:'edge',chain,directionAt:edge.directionAt});
+  const points=edge.points.map((p,i)=>{let d=edge.points[Math.min(i+1,edge.points.length-1)].clone().sub(edge.points[Math.max(i-1,0)]).setY(0).normalize();
+   if(edge.directionAt)d=edge.directionAt(p,d).clone().setY(0).normalize();const q=p.clone();q.markingNormal=normal(d);return q;
+  });
+  emit(resample(points),{width:edge.width||HIGHWAY_MARKINGS.edgeWidth,color:'white',kind:'edge',chain});
  }
- stats.edgeOpenings=edgeOpenings.size;stats.centerOpenings=centerOpenings.size;stats.boundaryRejectedQuads=stats.projectionRejectedQuads;
+ stats.edgeOpenings=edgeOpenings.size;stats.centerOpenings=centerOpenings.size;stats.replacementContourOpenings=contourOpenings.size;stats.boundaryRejectedQuads=stats.projectionRejectedQuads;
  function coveragePolicyAt(p,kind='edge',wayId){
   const mainOnly=['white','yellow','highway-edge','highway-center'].includes(kind),role=['white','highway-edge'].includes(kind)?'edge':['yellow','highway-center'].includes(kind)?'center':kind;
   let selected=null,best=Infinity,nearest=null;

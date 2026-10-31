@@ -6,6 +6,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from '../src/vendor/meshopt_decoder-v1.mjs';
 import {FACILITY_PORTS} from '../src/facility-ports.js';
 import {RAIL_PROFILE} from '../src/gagarin-rail-approach.js';
+import {RAIL_METRES} from '../src/rail-profile.js';
 import {buildUkssConnections} from '../src/ukss-connections.js';
 
 const sourceSha='2e51706e5267564fba9fd6d90262a2fb67f3d84ccfd7c3a002b23895fc704ebb';
@@ -173,9 +174,9 @@ for(const name of ['overview','tower','trench','top']){
  assert.ok(camera.eye[1]>camera.target[1]&&Math.hypot(...camera.eye.map((v,i)=>v-camera.target[i]))>10,'A usable elevated view for '+name);
 }
 
-// Recover the four source rail ends from decoded vertices, independently of the
-// manifest and adapter metadata. The imported gauge remains authored, while the
-// network uses the shared rail profile; matching metadata alone is insufficient.
+// Recover the four forward source rail ends before any runtime adaptation.
+// The archived binary keeps its authored gauge; the following separate checks
+// exercise the actual live adaptation and its joins to the common profile.
 const sourceEndZ=Math.max(...sourceRailPoints.map(p=>p.z));
 const endVertices=sourceRailPoints.filter(p=>Math.abs(p.z-sourceEndZ)<.02).sort((a,b)=>a.x-b.x);
 const clusters=[];
@@ -189,29 +190,151 @@ for(let i=0;i<2;i++){
 }
 const decodedTrackCentres=[0,1].map(i=>sourceHeads[i*2].clone().add(sourceHeads[i*2+1]).multiplyScalar(.5));
 near(decodedTrackCentres[1].x-decodedTrackCentres[0].x,19.997275352478028,.025,'Twenty-metre twin-track spacing independently confirms the metric source scale');
-near(sourceHeads[1].x-sourceHeads[0].x,1.650303,.02,'The source gauge is preserved without stretching imported geometry');
-const connectionsRoot=new THREE.Group(),connection=buildUkssConnections(connectionsRoot,manifest.connections);
+near(sourceHeads[1].x-sourceHeads[0].x,1.650303,.02,'The original binary retains its authored forward gauge');
+
+function bufferHash(geometry){
+ const hash=createHash('sha256');
+ for(const [name,attribute] of Object.entries(geometry.attributes)){
+  hash.update(name+':'+attribute.itemSize+':'+attribute.normalized+':'+attribute.array.constructor.name);
+  hash.update(new Uint8Array(attribute.array.buffer,attribute.array.byteOffset,attribute.array.byteLength));
+ }
+ if(geometry.index)hash.update(new Uint8Array(geometry.index.array.buffer,geometry.index.array.byteOffset,geometry.index.array.byteLength));
+ return hash.digest('hex');
+}
+const nonRailBefore=sourceMeshes.filter(mesh=>mesh.material.name!=='Rails').map(mesh=>({mesh,geometry:mesh.geometry,hash:bufferHash(mesh.geometry),matrix:[...mesh.matrixWorld.elements],material:mesh.material}));
+const sourceRailMeshes=sourceMeshes.filter(mesh=>mesh.material.name==='Rails');
+const railBefore=sourceRailMeshes.map(mesh=>({mesh,geometry:mesh.geometry,hash:bufferHash(mesh.geometry),index:[...mesh.geometry.index.array]}));
+function railMembers(meshes){
+ const result=[];
+ for(const mesh of meshes){
+  const p=mesh.geometry.attributes.position,index=mesh.geometry.index,parents=Array.from({length:p.count},(_,i)=>i),find=i=>parents[i]===i?i:(parents[i]=find(parents[i]));
+  for(let i=0;i<index.count;i+=3){const a=find(index.getX(i));for(let j=1;j<3;j++)parents[find(index.getX(i+j))]=a;}
+  const components=new Map();
+  for(let i=0;i<p.count;i++){const key=find(i);if(!components.has(key))components.set(key,[]);components.get(key).push(i);}
+  for(const indices of components.values()){
+   const points=indices.map(i=>new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld));
+   const bounds=new THREE.Box3().setFromPoints(points);
+   result.push({key:mesh.uuid+':'+Math.min(...indices),mesh,indices,points,bounds,centerX:(bounds.min.x+bounds.max.x)/2});
+  }
+ }
+ return result;
+}
+const originalMembers=railMembers(sourceRailMeshes);
+assert.equal(originalMembers.length,8,'The actual Rails batch contains four rear and four forward members');
+assert(originalMembers.every(member=>member.indices.length===8),'Each protected member is a connected box');
+const forwardOriginal=originalMembers.filter(member=>Math.abs(member.bounds.max.z-sourceEndZ)<.02).sort((a,b)=>a.centerX-b.centerX);
+const rearOriginal=originalMembers.filter(member=>member.bounds.min.z<-400).sort((a,b)=>a.centerX-b.centerX);
+assert.equal(forwardOriginal.length,4);assert.equal(rearOriginal.length,4);
+near(rearOriginal[1].centerX-rearOriginal[0].centerX,1.019811,.001,'The distinct rear corridor is identified independently');
+near(RAIL_METRES.gauge,1.52,1e-12,'Requested common gauge');near(RAIL_METRES.headWidth,.20,1e-12,'Requested rail-head width');near(RAIL_METRES.railHeight,.27,1e-12,'Common rail profile height');
+
+// Attach the decoded model, exactly as production does. An empty adapter root
+// would miss changes to the quantized source attribute and its rear corridor.
+const connectionsRoot=new THREE.Group();connectionsRoot.add(scene);
+const connection=buildUkssConnections(connectionsRoot,manifest.connections);
 connectionsRoot.updateWorldMatrix(true,true);
-assert.equal(connection.connected,true);assert.equal(connection.sourceGeometryStretched,false);
+assert.equal(connection.connected,true);assert.equal(connection.version,'ukss-source-connections-v3');
+assert.equal(connection.sourceGeometryStretched,true,'Only the explicitly tagged running rails are adapted at runtime');
+assert.equal(connection.sourceStructuresStretched,false);
+assert.equal(connection.railAdaptation.version,'uniform-metric-rail-v1');assert.equal(connection.railAdaptation.railMembers,8);
+assert.equal(connection.railAdaptation.railMeshes,1);assert.equal(connection.railAdaptation.vertices,64);
+assert.equal(connection.railAdaptation.trackCenters.length,4);assert.equal(connection.railAdaptation.headEndpoints.length,2);
+for(const before of nonRailBefore){
+ assert.equal(before.mesh.geometry,before.geometry,'Architecture keeps its original geometry object');
+ assert.equal(bufferHash(before.mesh.geometry),before.hash,'All non-Rails source buffers are byte-for-byte unchanged');
+ assert.deepEqual(before.mesh.matrixWorld.elements,before.matrix,'No source structure is moved or stretched');assert.equal(before.mesh.material,before.material);
+}
+for(const before of railBefore){
+ assert.notEqual(before.mesh.geometry,before.geometry,'Runtime adaptation owns a cloned rail geometry');
+ assert.equal(bufferHash(before.geometry),before.hash,'The retained decoded source buffer remains unchanged');
+ assert.deepEqual([...before.mesh.geometry.index.array],before.index,'Rail triangle topology is preserved');
+ assert(before.mesh.geometry.attributes.position.array instanceof Float32Array,'Metre-valued rail coordinates cannot be re-quantized into a normalized integer attribute');
+ assert.equal(before.mesh.geometry.attributes.position.normalized,false);
+}
+const adaptedMembers=railMembers(sourceRailMeshes),adaptedByKey=new Map(adaptedMembers.map(member=>[member.key,member]));
+assert.equal(adaptedMembers.length,8);
+const memberRay=new THREE.Raycaster(),sourceProfileProbes=[];
+for(const before of originalMembers){
+ const after=adaptedByKey.get(before.key);assert(after);assert.deepEqual(after.indices,before.indices);
+ near(after.bounds.max.x-after.bounds.min.x,.20,5e-6,'Actual adapted source head width');
+ near(after.bounds.max.y-after.bounds.min.y,.27,1e-6,'Actual adapted source rail height');
+ near(after.bounds.max.y,before.bounds.max.y,1e-6,'Every individual source rail keeps its contact elevation');
+ near(after.bounds.min.z,before.bounds.min.z,3e-5,'Source rail near extent is unchanged');near(after.bounds.max.z,before.bounds.max.z,3e-5,'Source rail far extent is unchanged');
+ for(const t of [.1,.5,.9])for(const offset of [-.095,0,.095]){
+  const z=THREE.MathUtils.lerp(after.bounds.min.z,after.bounds.max.z,t),origin=new THREE.Vector3(after.centerX+offset,after.bounds.max.y+1,z);
+  memberRay.set(origin,new THREE.Vector3(0,-1,0));memberRay.near=0;memberRay.far=2;
+  const hit=memberRay.intersectObjects(sourceRailMeshes,false)[0];assert(hit,'A source rail head supports its full20cm width');
+  near(hit.point.y,before.bounds.max.y,2e-6,'Actual adapted top triangle retains source height');sourceProfileProbes.push(hit.point.toArray());
+ }
+ for(const side of [-1,1]){
+  memberRay.set(new THREE.Vector3(after.centerX+side*.11,after.bounds.max.y+1,(after.bounds.min.z+after.bounds.max.z)/2),new THREE.Vector3(0,-1,0));
+  assert.equal(memberRay.intersectObjects(sourceRailMeshes,false).length,0,'The source head does not grow beyond20cm');
+ }
+}
+for(const originalGroup of [rearOriginal,forwardOriginal])for(let i=0;i<4;i+=2){
+ const [left,right]=originalGroup.slice(i,i+2),a=adaptedByKey.get(left.key),b=adaptedByKey.get(right.key);
+ near(b.centerX-a.centerX,1.52,5e-6,'Each actual source track has the common gauge');
+ near((a.centerX+b.centerX)/2,(left.centerX+right.centerX)/2,3e-6,'The separate rear/forward track axes remain where the source placed them');
+}
+const adaptedForward=forwardOriginal.map(member=>adaptedByKey.get(member.key)).sort((a,b)=>a.centerX-b.centerX);
+const adaptedHeads=adaptedForward.map(member=>new THREE.Vector3(member.centerX,member.bounds.max.y,member.bounds.max.z));
 assert.equal(connection.railTracks.length,2);assert.equal(connection.road.sourcePlatformId,25196);
-for(const track of connection.railTracks){assert.ok(track.sourceGap<1e-8);assert.ok(track.socketGap<1e-8);}
-const adapterMeshes=[];connectionsRoot.traverse(object=>{if(object.isMesh)adapterMeshes.push(object);});
+for(const [i,track] of connection.railTracks.entries()){
+ assert.ok(track.sourceGap<1e-8);assert.ok(track.socketGap<1e-8);assert.deepEqual(track.sourceManifestEndpoint,manifest.connections.railSourceEndpoints[i]);
+ const decoded=adaptedHeads[i*2].clone().add(adaptedHeads[i*2+1]).multiplyScalar(.5);
+ pointNear(track.sourceEndpoint,decoded.toArray(),3e-5,'Adapter starts at the actual decoded running surface');
+ near(track.sourceQuantizationGap,new THREE.Vector3(...track.sourceManifestEndpoint).distanceTo(decoded),3e-5,'Manifest quantization is accounted for separately from physical joins');
+}
+const adapterGroup=connectionsRoot.getObjectByName('УКСС · стыки с дорогами музея');assert(adapterGroup);
+const adapterMeshes=[];adapterGroup.traverse(object=>{if(object.isMesh)adapterMeshes.push(object);});
 const railMeshes=adapterMeshes.filter(mesh=>mesh.name==='УКСС · непрерывный рельс');
 assert.equal(railMeshes.length,4);
 function extremeSection(mesh,axis,maximum){
  const attribute=mesh.geometry.attributes.position,points=[];
  for(let i=0;i<attribute.count;i++)points.push(new THREE.Vector3().fromBufferAttribute(attribute,i).applyMatrix4(mesh.matrixWorld));
- const value=(maximum?Math.max:Math.min)(...points.map(p=>p[axis])),section=points.filter(p=>Math.abs(p[axis]-value)<.001);
+ const value=(maximum?Math.max:Math.min)(...points.map(p=>p[axis])),all=points.filter(p=>Math.abs(p[axis]-value)<.001),top=Math.max(...all.map(p=>p.y)),section=all.filter(p=>Math.abs(p.y-top)<1e-5);
  assert.ok(section.length>=2,'The actual ribbon has a complete end cross-section');
- return section.reduce((sum,p)=>sum.add(p),new THREE.Vector3()).multiplyScalar(1/section.length);
+ const bounds=new THREE.Box3().setFromPoints(section);return new THREE.Vector3((bounds.min.x+bounds.max.x)/2,top,(bounds.min.z+bounds.max.z)/2);
 }
 const renderedSourceHeads=railMeshes.map(mesh=>extremeSection(mesh,'z',false)).sort((a,b)=>a.x-b.x);
 const renderedNetworkHeads=railMeshes.map(mesh=>extremeSection(mesh,'z',true)).sort((a,b)=>a.x-b.x);
-for(let i=0;i<4;i++)near(renderedSourceHeads[i].distanceTo(sourceHeads[i]),0,.02,'Actual adapter/source head join');
+for(let i=0;i<4;i++)near(renderedSourceHeads[i].distanceTo(adaptedHeads[i]),0,3e-5,'Actual adapter/adapted-source head join');
 const networkHeads=port.rail.flatMap(socket=>[-1,1].map(side=>new THREE.Vector3(
- socket[0]+side*RAIL_PROFILE.gauge/(2*port.scale),socket[1]+RAIL_PROFILE.headRadius/port.scale,socket[2]
+ socket[0]+side*RAIL_PROFILE.gauge/(2*port.scale),socket[1],socket[2]
 ))).sort((a,b)=>a.x-b.x);
 for(let i=0;i<4;i++)near(renderedNetworkHeads[i].distanceTo(networkHeads[i]),0,.0002,'Actual adapter/network head join');
+const seamRay=new THREE.Raycaster(),seamProbes=[];
+for(let i=0;i<4;i++){
+ const sourceHead=adaptedHeads[i],networkHead=networkHeads[i];
+ for(const offset of [-.095,0,.095]){
+  for(const dz of [-.003,0,.003]){
+   seamRay.set(sourceHead.clone().add(new THREE.Vector3(offset,.8,dz)),new THREE.Vector3(0,-1,0));seamRay.near=0;seamRay.far=1.2;
+   const hit=seamRay.intersectObjects([...sourceRailMeshes,...railMeshes],false)[0];assert(hit,'No gap across the complete source-to-adapter running head');
+   near(hit.point.y,sourceHead.y,3e-5,'Physical source seam has no quantization step');seamProbes.push(hit.point.toArray());
+  }
+  for(const dz of [-.003,0]){
+   seamRay.set(networkHead.clone().add(new THREE.Vector3(offset,.8,dz)),new THREE.Vector3(0,-1,0));
+   const hit=seamRay.intersectObjects(railMeshes,false)[0];assert(hit,'Adapter top reaches the declared network head over its full width');
+   near(hit.point.y,networkHead.y,3e-5,'Physical adapter top meets the network socket');seamProbes.push(hit.point.toArray());
+  }
+ }
+}
+let sideWallProbes=0;
+for(const mesh of railMeshes){
+ const sourceHead=extremeSection(mesh,'z',false),networkHead=extremeSection(mesh,'z',true),attribute=mesh.geometry.attributes.position;
+ for(const [head,sign] of [[sourceHead,1],[networkHead,-1]]){
+  const section=[];for(let i=0;i<attribute.count;i++){
+   const p=new THREE.Vector3().fromBufferAttribute(attribute,i).applyMatrix4(mesh.matrixWorld);if(Math.abs(p.z-head.z)<.001)section.push(p);
+  }
+  const box=new THREE.Box3().setFromPoints(section);near(box.max.x-box.min.x,.20,5e-6,'Adapter end has the same20cm head width');near(box.max.y-box.min.y,.27,2e-6,'Adapter end has the full27cm rail height');
+  for(const side of [-1,1]){
+   // Sample immediately inside the end plane: farther along the curved
+   // piece, a world-X cross-section is oblique to its true rail width.
+   seamRay.set(head.clone().add(new THREE.Vector3(side*.15,-.13,sign*.00001)),new THREE.Vector3(-side,0,0));seamRay.near=0;seamRay.far=.1;
+   const hit=seamRay.intersectObject(mesh,false)[0];assert(hit,'The27cm profile has actual rendered side-wall triangles');near(Math.abs(hit.point.x-head.x),.10,3e-5,'Actual adapter side wall is at the shared head width');sideWallProbes++;
+  }
+ }
+}
 const road=adapterMeshes.find(mesh=>mesh.name==='УКСС · подъезд к площадке');assert.ok(road);
 // Recover boundary edges from triangle adjacency. The two full-width terminal
 // edges are longer than the finely sampled side segments; this avoids assuming
@@ -261,4 +384,4 @@ for(const mesh of adapterMeshes){
  }
 }
 assert.ok(adapterTriangles>100,'Actual connecting surfaces and sleepers were inspected');
-console.log('UKSS_SOURCE_MODEL_PASS',JSON.stringify({version:manifest.version,bytes:bytes.length,meshes,draws,materials:materials.size,vertices,triangles,mockupTriangles,lotokTriangles,bounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},sourceTransformErrors,checkedSubgradeVertices:trenchPoints.length,adapterTriangles,railSourceJoins:renderedSourceHeads.map((p,i)=>p.distanceTo(sourceHeads[i])),roadPlatform:roadPlatform.toArray()}));
+console.log('UKSS_SOURCE_MODEL_PASS',JSON.stringify({version:manifest.version,bytes:bytes.length,meshes,draws,materials:materials.size,vertices,triangles,mockupTriangles,lotokTriangles,bounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},sourceTransformErrors,checkedSubgradeVertices:trenchPoints.length,adapterTriangles,sourceRailMembers:adaptedMembers.length,sourceProfileProbes:sourceProfileProbes.length,seamProbes:seamProbes.length,sideWallProbes,railSourceJoins:renderedSourceHeads.map((p,i)=>p.distanceTo(adaptedHeads[i])),railNetworkJoins:renderedNetworkHeads.map((p,i)=>p.distanceTo(networkHeads[i])),sourceQuantizationGaps:connection.railTracks.map(track=>track.sourceQuantizationGap),roadPlatform:roadPlatform.toArray()}));
