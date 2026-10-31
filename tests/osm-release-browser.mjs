@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261031-interchange-bridge-v1';
+const revision='20261031-highway-lighting-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));
@@ -147,7 +147,7 @@ try{
  assert.equal(initial.highwaySigns.version,'two-readable-faces-four-aimed-floodlights-v1');
  assert.equal(initial.highwaySigns.signCount,2);assert.equal(initial.highwaySigns.faceCount,4);
  assert.equal(initial.highwaySigns.floodlightCount,8);assert.equal(initial.highwaySigns.floodlightsPerFace,2);
- assert.equal(initial.evening.version,'evening-east-cutoff-v3');assert.equal(initial.evening.bankFilter.rule,'north-of-syr-darya-water-v2');
+ assert.equal(initial.evening.version,'evening-road-lighting-v4');assert.equal(initial.evening.bankFilter.rule,'north-of-syr-darya-water-v2');
  assert.equal(initial.evening.bankFilter.outsideBankCount,0);assert.ok(initial.evening.bankFilter.remaining>0);assert.ok(initial.evening.bankFilter.excludedByBank.road>0);
  const lightPositions=await page.evaluate(()=>({scene:window.__BAIKONUR_QA.evening.lightPositions(),editor:window.__BAIKONUR_QA.lighting.visibleLightPositions()}));
  assert.equal(lightPositions.scene.length,initial.evening.bankFilter.remaining);

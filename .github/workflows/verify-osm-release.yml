@@ -1,4 +1,4 @@
-name: Museum 5 — highway interchange bridge and release
+name: Museum 6 — continuous highway and road lighting
 on:
   push:
     branches: [main]
@@ -36,7 +36,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum5-interchange-20261031-v1
+  RELEASE_TAG: museum6-highway-lighting-20261031-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -57,6 +57,8 @@ jobs:
           node tests/transport-pruning.mjs
           node tests/osm-transport-geometry.mjs
           node tests/interchange-bridge-geometry.mjs
+          node tests/highway-surface-geometry.mjs
+          node tests/road-lighting-geometry.mjs
           node tests/saturn-natural-terrain.mjs
           node tests/exhibit-road-filter.mjs
           node tests/industrial-road-continuity.mjs
@@ -140,6 +142,9 @@ jobs:
       - name: Verify the interchange bridge
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/interchange-browser.mjs
+      - name: Verify smooth highway and paired modern / single vintage lighting
+        if: matrix.suite == 'bridge-exhibits'
+        run: node tests/highway-lighting-browser.mjs
       - name: Verify the source rockets, TUA choices and encyclopedia
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/rocket-exhibits-browser.mjs
@@ -164,12 +169,13 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-interchange-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
+          name: museum6-highway-lighting-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
           path: |
             qa-startup/
             qa-menu/
             qa-rocket-exhibits/
             qa-interchange/
+            qa-highway-lighting/
             qa-krayniy/
             qa-osm-release/
             qa-flanks/
@@ -219,12 +225,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/interchange-20261031-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/highway-lighting-20261031-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 5 — мост на развязке',
+                name: 'Интерактивный музей 6 — трасса и дорожное освещение',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

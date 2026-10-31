@@ -67,8 +67,8 @@ assert(meshCount<100,`Unexpected draw-call growth: ${meshCount}`);
 const saturn=geography.sites.find(s=>s.id==='pad-23'),saturnCenter=point(saturn.x,saturn.y),surfaceCells=new Map(),surfaceCell=16;
 let terrainSamples=0,minTerrainClearance=Infinity;
 layers.roads.traverse(m=>{
- if(m.name!=='OSM · единое дорожное полотно')return;
- assert.equal(m.material.color.getHexString(),'adb2b3');
+ if(!['OSM · единое дорожное полотно','OSM · асфальт трассы'].includes(m.name))return;
+ assert.equal(m.material.color.getHexString(),m.name==='OSM · асфальт трассы'?'42494c':'adb2b3');
  const p=m.geometry.attributes.position,ix=m.geometry.index;
  for(let i=0;i<ix.count;i+=3){
   const triangle=[0,1,2].map(k=>new THREE.Vector3().fromBufferAttribute(p,ix.getX(i+k)));
@@ -120,13 +120,18 @@ for(const kind of ['trunk','primary','trunk_link','primary_link'])assert(corrido
 function sourceRoadHeight(way,p){
  let distance=Infinity,height;
  for(const edge of way.segments){
-  const a=edge.a.position,b=edge.b.position,dx=b.x-a.x,dz=b.z-a.z;
-  const t=THREE.MathUtils.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz),0,1);
-  const d=(p.x-a.x-dx*t)**2+(p.z-a.z-dz*t)**2;
-  if(d<distance){distance=d;height=a.y+(b.y-a.y)*t;}
+  // The same endpoint-preserving highway profile is consumed by the bridge,
+  // road surface and cars. Terrain must not lift any of those samples.
+  const samples=edge.surfacePoints||[edge.a.position,edge.b.position];
+  for(let i=1;i<samples.length;i++){
+   const a=samples[i-1],b=samples[i],dx=b.x-a.x,dz=b.z-a.z;
+   const t=THREE.MathUtils.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz),0,1);
+   const d=(p.x-a.x-dx*t)**2+(p.z-a.z-dz*t)**2;
+   if(d<distance){distance=d;height=a.y+(b.y-a.y)*t;}
+  }
  }
- assert(distance<1e-8,'Rendered arterial left its OSM source centerline');
- return height;
+ assert(distance<1e-8,'Rendered arterial left its shared source-anchored centerline');
+ return baselineRoads.highwaySurfaceHeight(new THREE.Vector3(p.x,height,p.z),way.width);
 }
 for(const road of transport.roadPaths()){
  if(!road.id.startsWith('osm-road-'))continue;

@@ -52,15 +52,17 @@ export function createLightField(parent, records, {poles=false,pools=false,name=
    }`});
  const poolMesh=pools?new THREE.InstancedMesh(new THREE.PlaneGeometry(2,2),poolMat,capacity):null;
  if(poolMesh){poolMesh.setColorAt(0,new THREE.Color(0xffffff));poolMesh.frustumCulled=false;poolMesh.renderOrder=5;root.add(poolMesh);}
- const dummy=new THREE.Object3D(),color=new THREE.Color();let priorVisibility='';
+ const dummy=new THREE.Object3D(),color=new THREE.Color(),poolBasis=new THREE.Matrix4();let priorVisibility='';
  function refresh(next=records){
   if(next.length>capacity)throw Error('Light field capacity exceeded');records=next;g.setDrawRange(0,records.length);
   for(const mesh of [poleMesh,headMesh,poolMesh])if(mesh)mesh.count=records.length;
   records.forEach((r,i)=>{
-   const h=r.height??7;positions.set([r.x,r.y+h,r.z],i*3);color.set(r.color??0xffc780);colors.set(color.toArray(),i*3);sizes[i]=r.size??7;
+   const h=r.height??7;positions.set([r.lightX??r.x,r.lightY??r.y+h,r.lightZ??r.z],i*3);color.set(r.color??0xffc780);colors.set(color.toArray(),i*3);sizes[i]=r.size??7;
    if(poleMesh){dummy.position.set(r.x,r.y+h/2,r.z);dummy.rotation.set(0,0,0);dummy.scale.set(1,h,1);dummy.updateMatrix();poleMesh.setMatrixAt(i,dummy.matrix);
     dummy.position.y=r.y+h;dummy.rotation.y=r.yaw||0;dummy.scale.set(1,1,1);dummy.updateMatrix();headMesh.setMatrixAt(i,dummy.matrix);}
-   if(poolMesh){dummy.position.set(r.poolX??r.x,(r.poolY??r.y)+.045,r.poolZ??r.z);dummy.rotation.set(-Math.PI/2,0,r.yaw||0);const rad=r.radius??h*1.45;dummy.scale.set(rad,rad,1);dummy.updateMatrix();poolMesh.setMatrixAt(i,dummy.matrix);poolMesh.setColorAt(i,color);}
+   if(poolMesh){dummy.position.set(r.poolX??r.x,(r.poolY??r.y)+.045,r.poolZ??r.z);dummy.rotation.set(-Math.PI/2,0,r.yaw||0);
+    if(r.poolAxis){const along=new THREE.Vector3(...r.poolAxis).normalize(),across=new THREE.Vector3(-along.z,0,along.x).normalize(),up=new THREE.Vector3().crossVectors(across,along).normalize();poolBasis.makeBasis(across,along,up);dummy.quaternion.setFromRotationMatrix(poolBasis);}
+    const rad=r.radius??h*1.45;dummy.scale.set(r.poolRadiusX??rad,r.poolRadiusY??rad,1);dummy.updateMatrix();poolMesh.setMatrixAt(i,dummy.matrix);poolMesh.setColorAt(i,color);}
   });
   for(const attr of Object.values(g.attributes))attr.needsUpdate=true;
   for(const mesh of [poleMesh,headMesh,poolMesh])if(mesh){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}

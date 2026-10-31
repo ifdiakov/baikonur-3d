@@ -44,7 +44,8 @@ class PolygonIndex{
 }
 function sameLevel(a,b){
  const x=(Math.max(a.bounds.minX,b.bounds.minX)+Math.min(a.bounds.maxX,b.bounds.maxX))/2,z=(Math.max(a.bounds.minZ,b.bounds.minZ)+Math.min(a.bounds.maxZ,b.bounds.maxZ))/2;
- return Math.abs(a.height(x,z)-b.height(x,z))<.22;
+ const tolerance=a.gradeTolerance!=null&&b.gradeTolerance!=null&&a.priority===b.priority?Math.min(a.gradeTolerance,b.gradeTolerance):.22;
+ return Math.abs(a.height(x,z)-b.height(x,z))<tolerance;
 }
 function record(poly,road,section){
  poly=cleanPolygon(poly);if(!poly.length)return null;
@@ -61,7 +62,7 @@ function triangulate(polygons){
  }
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));g.computeVertexNormals();g.computeBoundingSphere();return g;
 }
-function unionRecords(records,occluders=[]){
+function unionRecords(records,occluders=[],indexRecords=true){
  const index=new PolygonIndex(),out=[];for(const r of occluders)index.add(r);
  let clipped=0;
  for(const r of records){
@@ -71,9 +72,24 @@ function unionRecords(records,occluders=[]){
    pieces=pieces.flatMap(p=>subtractRoadPolygon(p,previous.poly));if(!pieces.length)break;
   }
   if(pieces.length!==1||pieces[0]?.length!==r.poly.length)clipped++;
-  out.push(...pieces);index.add(r);
+  out.push(...pieces);if(indexRecords)index.add(r);
  }
  return {polygons:out,clipped};
+}
+
+// Reuse the same X/Z clipping for already sampled highway ribbons. Each
+// input triangle keeps its own grade plane, so a ramp cannot erase a lower
+// underpass simply because their map projections overlap.
+export function unionRoadSurfacePolygons(polygons){
+ const records=polygons.map(poly=>{
+  const r=record(poly,'highway');if(!r)return null;r.priority=poly.priority??0;r.gradeTolerance=.008;
+  const [a,b,c]=r.poly,den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);
+  r.height=(x,z)=>{const u=((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/den,v=((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/den;return u*a.y+v*b.y+(1-u-v)*c.y;};
+  return r;
+ }).filter(Boolean);
+ const through=records.filter(r=>r.priority===0),ramps=records.filter(r=>r.priority!==0);
+ const main=unionRecords(through),merge=unionRecords(ramps,through,false);
+ return {polygons:[...main.polygons,...merge.polygons],clipped:main.clipped+merge.clipped};
 }
 
 export function sampleRoadCurve(curve,{width=5.2,heightAt=null,step=ROAD_PROFILE.sampleStep,shoulder=3.1}={}){
