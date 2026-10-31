@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js?v=20261031-road-lighting-v1';
+import {createLightField} from './light-field.js?v=20261031-highway-lighting-v2';
 
-export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v1';
+export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v2';
 export const ROAD_LIGHT_STYLES=Object.freeze({
- highway:Object.freeze({id:'highway',fixture:'modern-led',height:3.2,spacing:58,color:0xd8e8ff,colorTemperature:4800,
+ highway:Object.freeze({id:'highway',fixture:'modern-led',height:3.2,spacing:58/1.5,brightness:1.5,density:1.5,poolScale:1.5,color:0xd8e8ff,colorTemperature:4800,
   poleColor:0x344552,armReach:.72,headLength:.62,headWidth:.22,headThickness:.075}),
- cosmodrome:Object.freeze({id:'cosmodrome',fixture:'vintage-industrial',height:2.8,spacing:58,color:0xffbf7b,colorTemperature:2700,
+ cosmodrome:Object.freeze({id:'cosmodrome',fixture:'vintage-industrial',height:2.8,spacing:29,brightness:2,density:2,poolScale:2,color:0xffbf7b,colorTemperature:2700,
   poleColor:0x8c887b,armReach:.61,headLength:.45,headWidth:.28,headThickness:.18})
 });
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -48,11 +48,11 @@ export function buildRoadLightRecords(roads,{baseHeightAt=(road,p)=>p.y-.055,ter
     for(const side of paired?[-1,1]:[1]){
      const nx=-dz/len*side,nz=dx/len*side,x=center.x+nx*offset,z=center.z+nz*offset;
      const inward=V(-nx,0,-nz),yaw=Math.atan2(-inward.z,inward.x),base=V(x,center.y,z);
-     group.push({x,y:baseHeightAt(road,base),z,height:style.height,yaw,style:style.id,
+     group.push({x,y:baseHeightAt(road,base),z,height:style.height,yaw,style:style.id,brightness:style.brightness,
       roadId:road.id,stationId,side,center:center.toArray(),terrain:terrainAt(road),
       poolY:center.y+.015,poolX:center.x+nx*road.width*.18,poolZ:center.z+nz*road.width*.18,
-      poolAxis:tangent.toArray(),poolRadiusX:road.width*.46,poolRadiusY:8.5,
-      radius:8.5,color:style.color,size:1.35});
+      poolAxis:tangent.toArray(),poolRadiusX:road.width*.46*style.poolScale,poolRadiusY:8.5*style.poolScale,
+      radius:8.5*style.poolScale,color:style.color,size:1.35});
     }
     if(!group.some(p=>occupiedNear(p.x,p.z))){records.push(...group);group.forEach(remember);}
     next+=style.spacing;
@@ -79,10 +79,11 @@ export function roadLightLayoutStats(records){
  const groupCounts=new Map();for(const r of records)groupCounts.set(r.stationId,(groupCounts.get(r.stationId)||0)+1);
  const byStyle=id=>records.filter(r=>r.style===id);
  const highway=byStyle('highway'),cosmodrome=byStyle('cosmodrome');
- return {version:ROAD_LIGHTING_VERSION,highway:{fixture:ROAD_LIGHT_STYLES.highway.fixture,colorTemperature:4800,
+ const parameters=id=>{const {fixture,colorTemperature,spacing,brightness,density,poolScale}=ROAD_LIGHT_STYLES[id];return {fixture,colorTemperature,spacing,brightness,density,poolScale};};
+ return {version:ROAD_LIGHTING_VERSION,highway:{...parameters('highway'),
   lamps:highway.length,stations:new Set(highway.map(r=>r.stationId)).size,
   incompletePairs:[...new Set(highway.filter(r=>groupCounts.get(r.stationId)!==2).map(r=>r.stationId))]},
-  cosmodrome:{fixture:ROAD_LIGHT_STYLES.cosmodrome.fixture,colorTemperature:2700,lamps:cosmodrome.length,
+  cosmodrome:{...parameters('cosmodrome'),lamps:cosmodrome.length,
    stations:new Set(cosmodrome.map(r=>r.stationId)).size,
    extraLamps:[...new Set(cosmodrome.filter(r=>groupCounts.get(r.stationId)!==1).map(r=>r.stationId))]}};
 }
@@ -134,7 +135,7 @@ export function createRoadLightField(parent,records,{name='Фонари доро
  const withHeads=records.map(r=>{
   const style=ROAD_LIGHT_STYLES[r.style||'highway'],head=roadFixtureHead(style.id),heightScale=(r.height??style.height)/style.height;
   head.y*=heightScale;head.applyAxisAngle(V(0,1,0),r.yaw||0);
-  return {...r,lightX:r.x+head.x,lightY:r.y+head.y+.07,lightZ:r.z+head.z};
+  return {...r,brightness:r.brightness??style.brightness,lightX:r.x+head.x,lightY:r.y+head.y+.07,lightZ:r.z+head.z};
  });
  const field=createLightField(parent,withHeads,{pools:true,name,minPixels}),fixtures=[],dummy=new THREE.Object3D(),color=new THREE.Color();
  field.root.userData.roadLightingVersion=ROAD_LIGHTING_VERSION;
@@ -171,10 +172,11 @@ export function createRoadLightField(parent,records,{name='Фонари доро
   });
  }
  function setEvening(value){evening=!!value;field.root.visible=true;field.setStrength(evening?1:0);
-  for(const {mesh,part} of fixtures)if(part==='lens')mesh.material.emissiveIntensity=evening?1.65:0;
+  for(const {mesh,part} of fixtures)if(part==='lens')mesh.material.emissiveIntensity=evening?1.65*ROAD_LIGHT_STYLES[mesh.userData.roadFixture].brightness:0;
  }
  setEvening(true);sync();
  return {...field,records:withHeads,setEvening,sync,stats:()=>({...field.stats(),version:ROAD_LIGHTING_VERSION,
   drawCalls:field.stats().drawCalls+fixtures.length,fixtureDrawCalls:fixtures.length,physicalPoles:records.length,hardwareVisible:field.root.visible,
-  poweredLamps:withHeads.filter(r=>r.powered!==false).length,emissiveIntensity:Math.max(0,...fixtures.filter(f=>f.part==='lens').map(f=>f.mesh.material.emissiveIntensity)),evening})};
+  poweredLamps:withHeads.filter(r=>r.powered!==false).length,emissiveIntensity:Math.max(0,...fixtures.filter(f=>f.part==='lens').map(f=>f.mesh.material.emissiveIntensity)),
+  styles:Object.fromEntries(Object.keys(ROAD_LIGHT_STYLES).map(id=>{const {brightness,density,poolScale,spacing}=ROAD_LIGHT_STYLES[id];return [id,{brightness,density,poolScale,spacing,emissiveIntensity:fixtures.find(f=>f.part==='lens'&&f.mesh.userData.roadFixture===id)?.mesh.material.emissiveIntensity??0}];})),evening})};
 }

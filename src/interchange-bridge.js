@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {createLightField} from './light-field.js?v=20261028-site41-v1';
+import {createLightField} from './light-field.js?v=20261031-highway-lighting-v2';
 import {createHighwayAsphaltMaterial,HIGHWAY_ASPHALT_COLOR} from './highway-surface.js?v=20261031-highway-lighting-v1';
-import {ROAD_LIGHT_STYLES} from './road-lighting.js?v=20261031-highway-lighting-v1';
+import {ROAD_LIGHT_STYLES} from './road-lighting.js?v=20261031-highway-lighting-v2';
 
 export const INTERCHANGE_BRIDGE_VERSION='reference-viaduct-v1';
 export const INTERCHANGE_BRIDGE_WAY='172422627';
@@ -195,7 +195,11 @@ export function buildInterchangeBridge({parent,plan}){
     const joint=plan.sample(sign*(plan.halfLength-.42));
     box(joint.p.clone().add(V(0,.015,0)),plan.width,.012,.07,'shadow','expansion-joint',Math.atan2(joint.tangent.x,joint.tangent.z));
   }
-  for(let z=-17.5;z<=17.5;z+=5){
+  const lampStyle=ROAD_LIGHT_STYLES.highway;
+  const lampPairs=Math.round(plan.length/(5/lampStyle.density)),lampPitch=plan.length/lampPairs;
+  const firstLampStation=-plan.halfLength+lampPitch/2;
+  for(let row=0;row<lampPairs;row++){
+    const z=firstLampStation+row*lampPitch;
     const at=plan.sample(z);
     for(const side of [-1,1]){
       const style=ROAD_LIGHT_STYLES.highway,yaw=Math.atan2(at.tangent.x,at.tangent.z);
@@ -237,7 +241,8 @@ export function buildInterchangeBridge({parent,plan}){
   spillGeometry.setAttribute('bridgeLightCoord',new THREE.Float32BufferAttribute(lightCoordinates,2));
   spillGeometry.computeBoundingBox();spillGeometry.computeBoundingSphere();
   const spillMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,
-    uniforms:{strength:{value:0},tint:{value:new THREE.Color(ROAD_LIGHT_STYLES.highway.color)},halfLength:{value:plan.halfLength}},
+    uniforms:{strength:{value:0},tint:{value:new THREE.Color(lampStyle.color)},halfLength:{value:plan.halfLength},
+      firstLamp:{value:firstLampStation},lampPitch:{value:lampPitch},lastLampRow:{value:lampPairs-1},poolScale:{value:lampStyle.poolScale}},
     vertexShader:`attribute vec2 bridgeLightCoord;varying vec2 lightCoord;
       #include <common>
       #include <logdepthbuf_pars_vertex>
@@ -245,13 +250,14 @@ export function buildInterchangeBridge({parent,plan}){
         #include <logdepthbuf_vertex>
       }`,
     fragmentShader:`varying vec2 lightCoord;uniform float strength;uniform vec3 tint;uniform float halfLength;
+      uniform float firstLamp;uniform float lampPitch;uniform float lastLampRow;uniform float poolScale;
       #include <common>
       #include <logdepthbuf_pars_fragment>
       void main(){
         #include <logdepthbuf_fragment>
-        float row=clamp(floor((lightCoord.y+17.5)/5.+.5),0.,7.);
-        float dz=(lightCoord.y-(-17.5+row*5.))/3.2;
-        float dx=min(abs(lightCoord.x-.85),abs(lightCoord.x+.85))/1.3;
+        float row=clamp(floor((lightCoord.y-firstLamp)/lampPitch+.5),0.,lastLampRow);
+        float dz=(lightCoord.y-(firstLamp+row*lampPitch))/(3.2*poolScale);
+        float dx=min(abs(lightCoord.x-.85),abs(lightCoord.x+.85))/(1.3*poolScale);
         float falloff=pow(max(0.,1.-dx*dx-dz*dz),2.);
         float endFade=1.-smoothstep(halfLength-.45,halfLength,abs(lightCoord.y));
         gl_FragColor=vec4(tint,falloff*endFade*.32*strength);
@@ -287,14 +293,15 @@ export function buildInterchangeBridge({parent,plan}){
     approachProfile:plan.samples.map(s=>plan.world(s.p).toArray()),
     sourceTopologyPreserved:true,profile:'shared-smooth-highway-profile',physicalDetailMetre:MUSEUM_METRE,
     asphaltColor:'#'+new THREE.Color(HIGHWAY_ASPHALT_COLOR).getHexString(),
-    lighting:{style:'modern-led',color:'#'+new THREE.Color(ROAD_LIGHT_STYLES.highway.color).getHexString(),colorTemperature:ROAD_LIGHT_STYLES.highway.colorTemperature,pairs:lamps.length/2,height:ROAD_LIGHT_STYLES.highway.height},
+    lighting:{style:'modern-led',color:'#'+new THREE.Color(lampStyle.color).getHexString(),colorTemperature:lampStyle.colorTemperature,pairs:lamps.length/2,height:lampStyle.height,
+      brightness:lampStyle.brightness,density:lampStyle.density,poolScale:lampStyle.poolScale,spacing:lampPitch},
     supportStations:[-14,-6.5,6.5,14],centralClearSpan:12.3,supportParts,
     protectedCorridors:plan.protectedCorridors,lamps:lamps.length,drawCalls:meshCount+1,triangles,
     bounds:{min:bounds.min.toArray(),max:bounds.max.toArray()}};
   root.userData.interchangeBridgeModel=report;
   function setEvening(value){
-    evening=!!value;lights.root.visible=evening;lights.setStrength(evening?1:0);
-    spill.visible=evening;spillMaterial.uniforms.strength.value=evening?1:0;mats.lens.emissiveIntensity=evening?3.2:0;
+    evening=!!value;lights.root.visible=evening;lights.setStrength(evening?lampStyle.brightness:0);
+    spill.visible=evening;spillMaterial.uniforms.strength.value=evening?lampStyle.brightness:0;mats.lens.emissiveIntensity=evening?3.2*lampStyle.brightness:0;
   }
   setEvening(false);
   return {root,plan,setEvening,isPoleAllowed:plan.isPoleAllowed,stats:()=>({...report,evening,

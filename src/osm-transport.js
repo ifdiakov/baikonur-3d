@@ -8,9 +8,9 @@ import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261031-rocket-ex
 import {distancePath} from './traffic-paths.js?v=20261031-rocket-exhibits-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=krayniy-drive-terminal-v1';
-import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-highway-lighting-v1';
-import {createHighwayAsphaltMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR} from './highway-surface.js?v=20261031-highway-lighting-v1';
-import {unionRoadSurfacePolygons} from './road-surface.js?v=20261031-highway-lighting-v1';
+import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-highway-lighting-v2';
+import {createHighwayAsphaltMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR} from './highway-surface.js?v=20261031-highway-lighting-v2';
+import {unionRoadSurfacePolygons} from './road-surface.js?v=20261031-highway-lighting-v2';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;

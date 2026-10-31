@@ -4,26 +4,27 @@ import * as THREE from 'three';
 export function createLightField(parent, records, {poles=false,pools=false,name='Огни',minPixels=2.8,maxCount=records.length}={}) {
  const root=new THREE.Group();root.name=name;root.userData.pickable=false;parent.add(root);
  const capacity=Math.max(maxCount,records.length,1),g=new THREE.BufferGeometry();
- const positions=new Float32Array(capacity*3),colors=new Float32Array(capacity*3),sizes=new Float32Array(capacity),visibility=new Float32Array(capacity);
+ const positions=new Float32Array(capacity*3),colors=new Float32Array(capacity*3),sizes=new Float32Array(capacity),visibility=new Float32Array(capacity),brightness=new Float32Array(capacity);
  g.setAttribute('position',new THREE.BufferAttribute(positions,3));g.setAttribute('color',new THREE.BufferAttribute(colors,3));
  g.setAttribute('lightSize',new THREE.BufferAttribute(sizes,1));g.setAttribute('enabled',new THREE.BufferAttribute(visibility,1));
+ g.setAttribute('lightIntensity',new THREE.BufferAttribute(brightness,1));
  const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,
   uniforms:{strength:{value:1},pixelRatio:{value:Math.min(globalThis.devicePixelRatio||1,2)},minPixels:{value:minPixels}},
-  vertexShader:`attribute float lightSize;attribute float enabled;uniform float pixelRatio;uniform float minPixels;varying vec3 lightColor;varying float power;
+  vertexShader:`attribute float lightSize;attribute float enabled;attribute float lightIntensity;uniform float pixelRatio;uniform float minPixels;varying vec3 lightColor;varying float power;varying float intensity;
    #include <common>
    #include <logdepthbuf_pars_vertex>
-   void main(){lightColor=color;power=enabled;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;
+   void main(){lightColor=color;power=enabled;intensity=lightIntensity;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;
     gl_PointSize=clamp(lightSize*700./max(1.,-mvPosition.z),minPixels,34.)*pixelRatio;
     #include <logdepthbuf_vertex>
    }`,
-  fragmentShader:`uniform float strength;varying vec3 lightColor;varying float power;
+  fragmentShader:`uniform float strength;varying vec3 lightColor;varying float power;varying float intensity;
    #include <common>
    #include <logdepthbuf_pars_fragment>
    void main(){
     #include <logdepthbuf_fragment>
     float r=length(gl_PointCoord-.5)*2.;if(r>1.||power<.01)discard;
     float a=(exp(-r*r*6.)*.45+exp(-r*r*70.)*.8)*(1.-smoothstep(.75,1.,r));
-    gl_FragColor=vec4(lightColor,a*strength*power);
+    gl_FragColor=vec4(lightColor,a*strength*power*intensity);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
    }`});
@@ -34,30 +35,30 @@ export function createLightField(parent, records, {poles=false,pools=false,name=
  if(poles){root.add(poleMesh,headMesh);poleMesh.frustumCulled=headMesh.frustumCulled=false;}
  const poolMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,
   uniforms:{strength:{value:1}},vertexColors:true,
-  vertexShader:`varying vec2 vUv;varying vec3 tint;
+  vertexShader:`attribute float lightIntensity;varying vec2 vUv;varying vec3 tint;varying float intensity;
    #include <common>
    #include <logdepthbuf_pars_vertex>
-   void main(){vUv=uv;tint=instanceColor;vec4 mvPosition=modelViewMatrix*instanceMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;
+   void main(){vUv=uv;tint=instanceColor;intensity=lightIntensity;vec4 mvPosition=modelViewMatrix*instanceMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;
     #include <logdepthbuf_vertex>
    }`,
-  fragmentShader:`uniform float strength;varying vec2 vUv;varying vec3 tint;
+  fragmentShader:`uniform float strength;varying vec2 vUv;varying vec3 tint;varying float intensity;
    #include <common>
    #include <logdepthbuf_pars_fragment>
    void main(){
     #include <logdepthbuf_fragment>
     float r=length(vUv-.5)*2.;if(r>1.)discard;float a=pow(1.-r*r,3.)*.24*strength;
-    gl_FragColor=vec4(tint,a);
+    gl_FragColor=vec4(tint,a*intensity);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
    }`});
  const poolMesh=pools?new THREE.InstancedMesh(new THREE.PlaneGeometry(2,2),poolMat,capacity):null;
- if(poolMesh){poolMesh.setColorAt(0,new THREE.Color(0xffffff));poolMesh.frustumCulled=false;poolMesh.renderOrder=5;root.add(poolMesh);}
+ if(poolMesh){poolMesh.geometry.setAttribute('lightIntensity',new THREE.InstancedBufferAttribute(brightness,1));poolMesh.setColorAt(0,new THREE.Color(0xffffff));poolMesh.frustumCulled=false;poolMesh.renderOrder=5;root.add(poolMesh);}
  const dummy=new THREE.Object3D(),color=new THREE.Color(),poolBasis=new THREE.Matrix4();let priorVisibility='';
  function refresh(next=records){
   if(next.length>capacity)throw Error('Light field capacity exceeded');records=next;g.setDrawRange(0,records.length);
   for(const mesh of [poleMesh,headMesh,poolMesh])if(mesh)mesh.count=records.length;
   records.forEach((r,i)=>{
-   const h=r.height??7;positions.set([r.lightX??r.x,r.lightY??r.y+h,r.lightZ??r.z],i*3);color.set(r.color??0xffc780);colors.set(color.toArray(),i*3);sizes[i]=r.size??7;
+   const h=r.height??7;positions.set([r.lightX??r.x,r.lightY??r.y+h,r.lightZ??r.z],i*3);color.set(r.color??0xffc780);colors.set(color.toArray(),i*3);sizes[i]=r.size??7;brightness[i]=r.brightness??1;
    if(poleMesh){dummy.position.set(r.x,r.y+h/2,r.z);dummy.rotation.set(0,0,0);dummy.scale.set(1,h,1);dummy.updateMatrix();poleMesh.setMatrixAt(i,dummy.matrix);
     dummy.position.y=r.y+h;dummy.rotation.y=r.yaw||0;dummy.scale.set(1,1,1);dummy.updateMatrix();headMesh.setMatrixAt(i,dummy.matrix);}
    if(poolMesh){dummy.position.set(r.poolX??r.x,(r.poolY??r.y)+.045,r.poolZ??r.z);dummy.rotation.set(-Math.PI/2,0,r.yaw||0);
@@ -65,6 +66,7 @@ export function createLightField(parent, records, {poles=false,pools=false,name=
     const rad=r.radius??h*1.45;dummy.scale.set(r.poolRadiusX??rad,r.poolRadiusY??rad,1);dummy.updateMatrix();poolMesh.setMatrixAt(i,dummy.matrix);poolMesh.setColorAt(i,color);}
   });
   for(const attr of Object.values(g.attributes))attr.needsUpdate=true;
+  if(poolMesh)poolMesh.geometry.attributes.lightIntensity.needsUpdate=true;
   for(const mesh of [poleMesh,headMesh,poolMesh])if(mesh){mesh.instanceMatrix.needsUpdate=true;if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;}
   priorVisibility='';sync();
  }

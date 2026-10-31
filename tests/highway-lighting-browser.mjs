@@ -4,7 +4,8 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-highway-lighting';
-const revision='20261031-highway-lighting-v1';
+const revision='20261031-highway-lighting-v2';
+const factors={highway:1.5,cosmodrome:2};
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],views:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -51,6 +52,12 @@ function checkLightingMode(state,night,recordCount,poweredCount){
  assert(field.fixtureDrawCalls>0&&field.drawCalls<=10,'The two fixture families remain instanced');
  if(night)assert(field.emissiveIntensity>0&&field.poweredLamps>0,'Powered lamp lenses glow at night');
  else assert.equal(field.emissiveIntensity,0,'Daytime lamp lenses do not emit light');
+ for(const [style,factor] of Object.entries(factors)){
+  const actual=field.styles[style];assert(actual,'Renderer reports the '+style+' fixture family');
+  assert.equal(actual.brightness,factor);assert.equal(actual.density,factor);assert.equal(actual.poolScale,factor);
+  assert(Math.abs(actual.spacing-58/factor)<1e-9,'The '+style+' row uses the requested closer spacing');
+  assert(Math.abs(actual.emissiveIntensity-(night?1.65*factor:0))<1e-9,'The '+style+' lenses use their own requested brightness');
+ }
  assert.equal(state.bridge.evening,night);
  assert.equal(state.bridge.visibleLampGlows,night?state.bridge.lamps:0);
  assert.equal(state.bridge.lightSpill.enabled,night);
@@ -69,6 +76,9 @@ function checkAllStations(records,stats){
   assert(['highway','cosmodrome'].includes(r.style));
   assert(r.stationId&&r.roadId);assert([r.height,...r.position,...r.center].every(Number.isFinite));
   assert.equal(r.color,r.style==='highway'?0xd8e8ff:0xffbf7b,'The light tint follows the road family');
+  assert.equal(r.brightness,factors[r.style],'Every emitted light record carries its own brightness multiplier');
+  assert(Math.abs(r.poolRadiusY-8.5*factors[r.style])<1e-9,'Each ground-light pool has the requested enlarged length');
+  assert(Number.isFinite(r.poolRadiusX)&&r.poolRadiusX>0,'The enlarged light pool retains a usable width');
   assert(r.height>0);assert([-1,1].includes(r.side));
   const key=r.position.map(n=>n.toFixed(5)).join(':');
   assert(!positions.has(key),'A source-way boundary must not duplicate a pole');positions.add(key);
@@ -90,9 +100,13 @@ function checkAllStations(records,stats){
  }
  assert(highwayStations>1&&cosmodromeStations>1,'Both complete road families are exercised');
  const layout=stats.roadLighting;
- assert.equal(layout.version,'road-lighting-modern-vintage-v1');
+ assert.equal(layout.version,'road-lighting-modern-vintage-v2');
  assert.equal(layout.highway.fixture,'modern-led');assert.equal(layout.cosmodrome.fixture,'vintage-industrial');
  assert.equal(layout.highway.colorTemperature,4800);assert.equal(layout.cosmodrome.colorTemperature,2700);
+ for(const [style,factor] of Object.entries(factors)){
+  const actual=layout[style];assert.equal(actual.brightness,factor);assert.equal(actual.density,factor);assert.equal(actual.poolScale,factor);
+  assert(Math.abs(actual.spacing-58/factor)<1e-9,'Requested density is applied along the '+style+' road family');
+ }
  assert.equal(layout.highway.stations,highwayStations);assert.equal(layout.highway.lamps,highwayStations*2);
  assert.equal(layout.cosmodrome.stations,cosmodromeStations);assert.equal(layout.cosmodrome.lamps,cosmodromeStations);
  assert.deepEqual(layout.highway.incompletePairs,[]);assert.deepEqual(layout.cosmodrome.extraLamps,[]);
@@ -121,6 +135,7 @@ try{
  assert.equal(initial.bridge.lighting.style,'modern-led');assert.equal(initial.bridge.lighting.color,'#d8e8ff');
  assert.equal(initial.bridge.lighting.colorTemperature,4800);
  assert.equal(initial.bridge.lighting.pairs*2,initial.bridge.lamps,'Bridge lights continue the opposite-pair layout');
+ assert.equal(initial.bridge.lamps,24,'The bridge retains opposite pairs at 1.5 times the previous lamp density');
 
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.setLabelsVisible(false);q.evening.setEvening(false);});
  await page.locator('#close').click();

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createLightField} from './light-field.js?v=20261031-road-lighting-v1';
-import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightLayoutStats} from './road-lighting.js?v=20261031-road-lighting-v1';
+import {createLightField} from './light-field.js?v=20261031-highway-lighting-v2';
+import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightLayoutStats} from './road-lighting.js?v=20261031-highway-lighting-v2';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {buildAirportLightRecords,AIRPORT_LIGHT_LAYOUT_VERSION} from './airport-light-layout.js?v=20261031-rocket-exhibits-v1';
 
@@ -100,7 +100,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  return {setEvening,lightPositions:({poweredOnly=false}={})=>stationaryLights.filter(l=>!poweredOnly||l.powered!==false).map(l=>[l.x,l.y,l.z]),
   airportLightPositions:key=>[...runway,...apron].filter(l=>!key||l.airport===key).map(l=>({airport:l.airport,kind:l.kind,position:[l.x,l.y,l.z],radius:l.radius||0,local:l.local})),
   get evening(){return evening;},update(now){sky.position.copy(camera.position);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
-  roadLightRecords:()=>roadLights.map(r=>({style:r.style,roadId:r.roadId,stationId:r.stationId,side:r.side,position:[r.x,r.y,r.z],center:r.center,color:r.color,height:r.height,powered:r.powered})),
+  roadLightRecords:()=>roadLights.map(r=>({style:r.style,roadId:r.roadId,stationId:r.stationId,side:r.side,position:[r.x,r.y,r.z],center:r.center,color:r.color,height:r.height,powered:r.powered,brightness:r.brightness,poolRadiusX:r.poolRadiusX,poolRadiusY:r.poolRadiusY})),
   stats:()=>({version:'evening-road-lighting-v4',evening,roadLights:roadLights.length,roadLighting:roadLightLayoutStats(roadLights),roadFixtures:roadField.stats(),siteLights:siteLights.length,runwayLights:runway.length,
    powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered===false).length,litSiteIds:[...new Set(siteLights.filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
    airportLighting:{version:AIRPORT_LIGHT_LAYOUT_VERSION,airports:objects.filter(o=>o.g.userData.airport).map(o=>({key:o.g.userData.airport.key,length:o.g.userData.airport.length,approachLength:o.g.userData.airport.approachLength??480,

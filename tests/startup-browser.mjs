@@ -6,7 +6,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 // Only frame scheduling is controlled; every deliberate frame is real WebGL.
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
-const revision='20261031-highway-lighting-v1';
+const revision='20261031-highway-lighting-v2';
 const evidence={base,prefix,revision,cases:{}};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,

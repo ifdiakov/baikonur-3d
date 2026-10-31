@@ -30,7 +30,7 @@ const roots=transport.bridgeObjects();assert.equal(roots.length,1);
 const root=roots[0],report=transport.stats().interchange.bridges.find(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY);
 assert.equal(report.version,'reference-viaduct-v1');assert.equal(report.sourceTopologyPreserved,true);
 assert.equal(report.reference.author,'3DtechVN');assert.equal(report.reference.license,'CC BY 4.0');
-assert.equal(report.lamps,16);assert.ok(report.triangles<20000);assert.ok(report.drawCalls<=12,'Separate graphite lamp hardware adds just one batched material');
+assert.equal(report.lamps,24);assert.ok(report.triangles<20000);assert.ok(report.drawCalls<=12,'Separate graphite lamp hardware adds just one batched material');
 assert.equal(layers.roads.getObjectByName('Мост OSM '+INTERCHANGE_BRIDGE_WAY),undefined,'The old slab and intrusive supports are replaced');
 assert.equal(transport.stats().interchange.bridges.length,3,'Other source bridges remain present');
 assert.equal(transport.stats().vehicleRoutes.length,4);
@@ -112,7 +112,7 @@ assert.ok(vehicleProbes>100);assert.ok(minWheelGap>-.035&&maxWheelGap<.045,JSON.
 
 transport.setBridgeEvening(true);assert.equal(transport.stats().interchange.bridges[0].evening,true);
 assert.equal(root.getObjectByName('Виадук · фонари').visible,true);
-assert.equal(transport.stats().interchange.bridges[0].visibleLampGlows,16);
+assert.equal(transport.stats().interchange.bridges[0].visibleLampGlows,24);
 assert.equal(transport.stats().interchange.bridges[0].lightSpill.enabled,true);assert.equal(spill.visible,true);
 transport.setBridgeEvening(false);assert.equal(root.getObjectByName('Виадук · фонари').visible,false);
 assert.equal(transport.stats().interchange.bridges[0].lightSpill.enabled,false);assert.equal(spill.visible,false);
