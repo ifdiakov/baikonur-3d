@@ -76,6 +76,7 @@ jobs:
           node tests/site41-lighting.mjs
           node tests/site41-geometry.mjs
           node tests/facility-lighting-geometry.mjs
+          node tests/vertical-ground-query.mjs
           node tests/silo-geometry.mjs
           node tests/all-silos-geometry.mjs
           node tests/seven-winds-geometry.mjs

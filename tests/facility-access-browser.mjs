@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 
-const revision='20261031-facilities-rails-lighting-v1';
+const revision='20261031-facilities-rails-lighting-v2';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-facility-access';
 const manifest=JSON.parse(await readFile(new URL('../assets/models/tua/manifest-v2.json',import.meta.url),'utf8'));
@@ -10,6 +10,7 @@ const destinations={
  'mzk-through':'6336523428','mzk-side':'1834612260','sdi-west':'2529010043','sdi-east':'2529010042',
  'site110-left-west':'1834613559','site110-left-east':'1834613553','site110-right-west':'1834613467','site110-right-east':'1834613464'
 };
+const initialRocketModels={gagarin:'soyuz',site31:'soyuz',ukss:'energia-polyus',site110:'energia-buran','mik112-hall':'energia-buran','tua-0':'energia-buran','tua-1':'energia-buran'};
 const views=[['mik112-gates','top'],['mik112-gates','oblique'],['mik112-fanout','top'],
  ['mzk','top'],['mzk','oblique'],['sdi','top'],['sdi','oblique'],['site110-left','oblique'],['site110-right','oblique']];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],views:[]};
@@ -36,7 +37,8 @@ const elevation=camera=>Math.atan2(camera.position[1]-camera.target[1],Math.hypo
 async function snapshot(){return page.evaluate(()=>{
  const q=window.__BAIKONUR_QA,s=q.stats();return {revision:s.museumRevision,render:s.render,shadersValid:s.shadersValid,camera:q.cameraState(),
   evening:s.evening.evening,labelsVisible:s.labelsVisible,commonMetre:s.commonMetre,mik112:s.mik112,mik112Rail:s.mik112Rail,
-  railProfile:s.transport.railProfile,railPorts:s.transport.facilityRailPorts,roadFeatures:s.transport.roadFeatureCount,railFeatures:s.transport.railFeatureCount};
+  railProfile:s.transport.railProfile,railPorts:s.transport.facilityRailPorts,roadFeatures:s.transport.roadFeatureCount,railFeatures:s.transport.railFeatureCount,
+  rockets:q.rockets.stats()};
 });}
 function checkState(s){
  assert.equal(s.revision,revision);assert.equal(s.shadersValid,true);assert(s.render.drawCalls>0&&s.render.triangles>0);
@@ -77,7 +79,13 @@ try{
  const url=new URL(base);url.searchParams.delete('site');url.searchParams.delete('station');url.searchParams.set('view','mik112');url.searchParams.set('detail','tua');
  await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected&&document.getElementById('museumLoading')?.dataset.state==='ready',revision,{timeout:180000});
- const ready=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.whenReady());assert(ready.length>=7&&ready.every(Boolean),'Startup waits for the source rocket assets');
+ const readiness=await page.evaluate(async()=>{const q=window.__BAIKONUR_QA;return {results:await q.rockets.whenReady(),...q.rockets.stats()};});
+ evidence.rocketReadiness=readiness;
+ const failed=readiness.placements.filter(p=>p.status!=='ready'||p.error).map(({key,modelId,status,error})=>({key,modelId,status,error}));
+ console.log('FACILITY_ACCESS_ROCKET_READINESS',JSON.stringify({results:readiness.results,placements:readiness.placements.map(({key,modelId,status,error})=>({key,modelId,status,error}))}));
+ assert.deepEqual(Object.fromEntries(readiness.placements.map(p=>[p.key,p.modelId])),initialRocketModels,'All seven initial rocket placements are registered for this museum view');
+ assert.deepEqual(readiness.results,Array(Object.keys(initialRocketModels).length).fill(true),'Every requested source rocket loads successfully: '+JSON.stringify(failed));
+ assert.deepEqual(failed,[],'No failed or incomplete rocket asset may enter the inspection');
  await step();assert.equal(await page.locator('#error').isVisible(),false);
  const initial=await snapshot();evidence.initial=initial;evidence.coverage=checkState(initial);
  for(const [target,view] of views){

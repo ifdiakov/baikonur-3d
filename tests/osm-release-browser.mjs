@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261031-facilities-rails-lighting-v1';
+const revision='20261031-facilities-rails-lighting-v2';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));
@@ -359,7 +359,7 @@ try{
  // Building placement, historical roofs and external rail ports retain their
  // established contracts while local running rails match the real wheels.
  const mik=initial.mik112,tua=mik.tua;
- assert.equal(mik.version,'2.0-metric-photo-surfaces');assert.equal(mik.transporterCount,2);
+ assert.equal(mik.version,'2.1-two-energia-gates');assert.equal(mik.transporterCount,2);
  assert.equal(mik.physicalUnits,'metres');
  assert.deepEqual(mik.dimensions,{length:240,width:190,high:{length:240,width:120,height:56,bays:3},low:{length:240,width:70,height:30,bays:2}});
  assert.equal(tua.version,'tua-drive-model-v2');assert.equal(tua.status,'ready');assert.equal(tua.error,null);

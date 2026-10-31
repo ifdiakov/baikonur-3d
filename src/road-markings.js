@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {HIGHWAY_MARKINGS,HIGHWAY_ASPHALT_LIFT} from './highway-surface.js?v=20261031-road-markings-v1';
+import {HIGHWAY_MARKINGS,HIGHWAY_ASPHALT_LIFT} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
 
 export const ROAD_MARKINGS_VERSION='junction-aware-markings-v1';
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -41,6 +41,12 @@ function nearestOnSegment(p,a,b){
  const dx=b.x-a.x,dz=b.z-a.z,t=THREE.MathUtils.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1),0,1);
  return {distance:Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t),y:a.y+(b.y-a.y)*t,t};
 }
+function inTriangleXZ(p,a,b,c){
+ const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(Math.abs(den)<1e-12)return false;
+ const u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/den,v=((c.z-a.z)*(p.x-c.x)+(a.x-c.x)*(p.z-c.z))/den;
+ return u>=-1e-8&&v>=-1e-8&&u+v<=1+1e-8;
+}
+const inRibbon=(p,[a,b,c,d])=>inTriangleXZ(p,a,c,b)||inTriangleXZ(p,b,c,d);
 function pathOf(points){
  const distances=[0];for(let i=1;i<points.length;i++)distances.push(distances.at(-1)+points[i].distanceTo(points[i-1]));
  const length=distances.at(-1);
@@ -70,8 +76,23 @@ function roundedCenters(points,width){
 function intervals(points,visible){
  const result=[];let run=[];
  const flush=()=>{if(run.length>1)result.push(run);run=[];};
- for(let i=1;i<points.length;i++){
-  const a=points[i-1],b=points[i],va=visible(a),vb=visible(b);
+ const sections=[{p:points[0],visible:visible(points[0])}];
+ function refine(a,b,va,vb,depth=0){
+  if(va===vb&&depth<5&&a.distanceTo(b)>.025){
+   const middle=between(a,b,.5);
+   // Two nearby mouths can leave a short exposed curb between sampled
+   // sections. Conversely a small mouth can sit between two painted ends.
+   // Resolve that local interval without densifying every road stripe.
+   if(visible.refine?.(middle)){
+    const vm=visible(middle);
+    if(vm!==va){refine(a,middle,va,vm,depth+1);refine(middle,b,vm,vb,depth+1);return;}
+   }
+  }
+  sections.push({p:b,visible:vb});
+ }
+ for(let i=1;i<points.length;i++)refine(points[i-1],points[i],sections.at(-1).visible,visible(points[i]));
+ for(let i=1;i<sections.length;i++){
+  const {p:a,visible:va}=sections[i-1],{p:b,visible:vb}=sections[i];
   if(va&&!run.length)run.push(a);
   if(va!==vb){let lo=0,hi=1;for(let k=0;k<13;k++){const mid=(lo+hi)/2;if(visible(between(a,b,mid))===va)lo=mid;else hi=mid;}
    const cut=between(a,b,(lo+hi)/2);if(va){run.push(cut);flush();}else run.push(cut);
@@ -99,8 +120,14 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
  for(const road of prepared){
   const p=road.policy;if(p.eligible)stats.eligibleRoadRuns++;if(p.unpaved)stats.suppressedUnpavedRuns++;
   if(p.eligible&&p.oneway)stats.suppressedOneWayCenters++;if(p.eligible&&p.lanes===1)stats.suppressedSingleLaneCenters++;
+  const frames=road.points.map((p,i)=>{
+   let d=road.points[Math.min(i+1,road.points.length-1)].clone().sub(road.points[Math.max(i-1,0)]).setY(0).normalize();
+   if(road.directionAt)d=road.directionAt(p,d).clone().setY(0).normalize();
+   const n=normal(d),width=typeof road.widthAt==='function'?road.widthAt(p):road.width;
+   return {normal:n,rim:[-1,1].map(side=>p.clone().addScaledVector(n,side*width/2)),edge:[-1,1].map(side=>p.clone().addScaledVector(n,side*(width/2-road.policy.edgeInset)))};
+  });
   for(let i=1;i<road.points.length;i++){const a=road.points[i-1],b=road.points[i],margin=road.width/2+.5;
-   segmentIndex.add({a,b,road},Math.min(a.x,b.x)-margin,Math.max(a.x,b.x)+margin,Math.min(a.z,b.z)-margin,Math.max(a.z,b.z)+margin);
+   segmentIndex.add({a,b,road,ribbon:[...frames[i-1].rim,...frames[i].rim],frames:[frames[i-1],frames[i]]},Math.min(a.x,b.x)-margin,Math.max(a.x,b.x)+margin,Math.min(a.z,b.z)-margin,Math.max(a.z,b.z)+margin);
   }
   road.nodeAt=new Map();
   for(let i=0;i<road.points.length;i++){
@@ -226,13 +253,32 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
    // Seed it with this explicitly connected arm's grade, then retain the
    // junction-height guard relative to the candidate line. This cannot
    // select a five-unit-higher bridge or an unconnected visual crossing.
-   if(near.distance<segment.road.width/2+.025&&junctionHeight(p,near.y)&&junctionHeight(p,surfaceHeightAt(p.clone().setY(near.y))))return true;
+   if(inRibbon(p,segment.ribbon)&&junctionHeight(p,near.y)&&junctionHeight(p,surfaceHeightAt(p.clone().setY(near.y))))return true;
   }
   // Rounded junction returns/aprons extend beyond the original narrow
   // branch ribbon. The actual union owns that wider mouth too. Restrict
   // this check to an explicitly connected branch on this side, so the
   // opposite curb and unconnected visual crossings remain continuous.
-  return horizontal(p,j.position)<j.width*2&&j.arms.some(a=>!chain.keys.has(a.road.key)&&a.direction.dot(outward)>.01)&&junctionHeight(p,surfaceHeightAt(p));
+  // This wider-footprint fallback has no per-arm polygon identity. Keep a
+  // physical margin beyond the curb so a chord approximation of the same
+  // curved road cannot be mistaken for a neighbouring junction apron.
+  const apronProbe=p.clone().addScaledVector(outward,.108);
+  return horizontal(p,j.position)<j.width*2&&j.arms.some(a=>!chain.keys.has(a.road.key)&&a.direction.dot(outward)>.01)&&junctionHeight(p,surfaceHeightAt(apronProbe));
+ }
+ function sharedEdgeOwner(p,j,chain,outward){
+  const rank=road=>road.policy.main?3:road.policy.link?1:2,own=chain.road;
+  for(const segment of segmentIndex.at(p)){
+   const other=segment.road;
+   if(chain.keys.has(other.key)||!j.roads.has(other.key)||!other.policy.eligible)continue;
+   if(rank(other)<rank(own)||rank(other)===rank(own)&&other.wayId.localeCompare(own.wayId)>=0)continue;
+   for(const side of [0,1]){
+    const a=segment.frames[0],b=segment.frames[1],near=nearestOnSegment(p,a.edge[side],b.edge[side]);
+    const n=a.normal.clone().lerp(b.normal,near.t).normalize().multiplyScalar(side?1:-1);
+    if(n.dot(outward)<.98||near.distance>.006)continue;
+    if(junctionHeight(p,near.y)&&junctionHeight(p,surfaceHeightAt(p.clone().setY(near.y))))return true;
+   }
+  }
+  return false;
  }
  function allowed(p,kind,chain,outward=null){
   const road=chain.road,family=chain.policy.family;
@@ -240,8 +286,12 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
   if(kind==='edge'&&insideReplacementContour(p,chain))return {allowed:false,reason:'replacement-contour'};
   for(const j of nearbyJunctions(p,chain)){
    if(kind==='edge'){
-    if(!outward)continue;const probe=p.clone().addScaledVector(outward,chain.policy.edgeInset+.11);
+    // Probe immediately outside the actual curb. The previous .11 margin
+    // kept both nearly coincident edges for a short distance at a taper,
+    // leaving forked white tips even though their pavement already merged.
+    if(!outward)continue;const probe=p.clone().addScaledVector(outward,chain.policy.edgeInset+.002);
     if(foreignPavement(probe,j,chain,outward)){edgeOpenings.add(j.nodeId+':'+chain.id+':'+(outward.dot(normal(j.axis))>0?1:-1));return {allowed:false,reason:'junction-mouth',nodeId:j.nodeId};}
+    if(sharedEdgeOwner(p,j,chain,outward))return {allowed:false,reason:'shared-edge-owner',nodeId:j.nodeId};
    }else{
     if(j.type==='merge'&&chain.policy.main&&j.arms.some(a=>chain.keys.has(a.road.key)&&j.through.has(a.road.key)))continue;
     if(horizontal(p,j.position)<j.width/2+Math.max(.45,chain.width*.2)){centerOpenings.add(j.nodeId+':'+chain.id);return {allowed:false,reason:'junction-center',nodeId:j.nodeId};}
@@ -281,6 +331,7 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
    return n||V();
   };
   const visible=p=>allowed(p,kind,chain,kind==='edge'?outwardAt(p):null).allowed;
+  visible.refine=p=>nearbyJunctions(p,chain).length>0;
   const strokes=[];
   if(dashed){let cursor=1;for(let start=2;start<path.length-.15;start+=chain.policy.dashPeriod){const end=Math.min(path.length,start+chain.policy.dashLength);if(end-start<.12)continue;
    while(cursor<centers.length&&path.distances[cursor]<=start)cursor++;

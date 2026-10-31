@@ -392,7 +392,7 @@ import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-facilit
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261031-facilities-rails-lighting-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261028-museum4-osm-live-v2';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261031-facilities-rails-lighting-v1';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261031-facilities-rails-lighting-v2';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261031-facilities-rails-lighting-v1';
 import {createNorthBankMask} from './src/river-bank.js?v=20261030-river-roads-signs-v1';
 import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261030-river-roads-signs-v1';
@@ -405,7 +405,7 @@ import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261031-facilities-rails-lighting-v1';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261030-krayniy-terminal-v1';
-import {buildEveningScene} from './src/evening-scene.js?v=20261031-facilities-rails-lighting-v1';
+import {buildEveningScene} from './src/evening-scene.js?v=20261031-facilities-rails-lighting-v2';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261031-museum-menu-v1';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261031-facilities-rails-lighting-v1';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
@@ -427,7 +427,7 @@ const attribution=document.createElement('a');attribution.id='osmAttribution';at
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261031-facilities-rails-lighting-v1';
+const MUSEUM_REVISION='20261031-facilities-rails-lighting-v2';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 startup.stage('Загружаем карту космодрома…');
@@ -437,7 +437,7 @@ const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirport
  './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson','./data/osm/places.geojson','./data/transport-network.json','./data/buran-knowledge.json'
 ].map(loadMuseumData));
 const museumKnowledge=createMuseumKnowledge(knowledgeData,{onNavigate:action=>openMuseumAction(action)});
-startup.stage('Создаём ландшафт и дороги…');
+startup.stage('Создаём ландшафт…');
 await new Promise(resolve=>setTimeout(resolve,0));
 const geography=createMuseumGeography({catalog,matches:osmMatches});
 const siteRecords=geography.sites.filter(record=>!record.aliasOf&&record.render!==false);
@@ -588,19 +588,6 @@ const riverStats={source:'OpenStreetMap © contributors · ODbL',cartographicAcc
  planBoundaryLeft:0,planBoundaryRight:W,geoDataset:osmRiver.osmBaseTimestamp,osmRelation:1206456,...riverSurface.stats()};
 
 const riparianShrubs=outerTerrain.addRiparian({riverCorePts,point,siteRecords});
-const transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords});
-const roadSignData=await loadMuseumData('./data/road-signs.json');
-for(const direction of ['west','east']){
- const road=transport.roadPaths().find(r=>r.id==='r-south-'+direction);
- if(road?.points?.length>2){const i=Math.max(1,Math.min(road.points.length-2,Math.floor(road.points.length*.82))),a=road.points[i-1],b=road.points[i];
-  const d=b.clone().sub(a).setY(0).normalize(),side=new THREE.Vector3(-d.z,0,d.x),pos=b.clone().addScaledVector(side,(road.width||6)/2+8);
-  roadSignData[direction]={...roadSignData[direction],x:pos.x/S+W/2,y:pos.z/S+H/2};
- }
-}
-
-const highwaySigns=buildHighwaySigns({data:roadSignData,point,parent:layers.roads,roads:transport.roadPaths()});
-
-
 const [historyData,researchData]=await Promise.all([startup.fetchJSON('./data/history.json',{optional:true}),startup.fetchJSON('./data/field-research.json',{optional:true})]);
 const historyEvents=historyData?.events||[],researchObjects=researchData?.objects||[];
 const sites=siteRecords.map(s=>[s.name,s.x,s.y,s.model,s.firstYear]);
@@ -660,15 +647,15 @@ const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSit
 }
 sites.forEach(makeSite);
 startup.stage('Загружаем модели УКСС и Кузнечиков…');
-// Load the independent exhibits together. Keep their original integration
-// order: selection, terrain clipping and lighting still wait for the models.
+// Prepare both source-model parents, then load them together before the
+// synchronous road build. Their existing deadlines measure the network/body
+// work and cannot be consumed by unrelated scene construction.
 const ukssIndex=objects.findIndex(o=>o.record.id==='pad-250');
 if(ukssIndex<0)throw new Error('Площадка 250 отсутствует в каталоге');
 const ukssSite=objects[ukssIndex],ukssGroup=ukssSite.g;
 ukssGroup.clear();
 for(let j=clickable.length-1;j>=0;j--)if(clickable[j].userData.idx===ukssIndex)clickable.splice(j,1);
 ukssGroup.scale.setScalar(UKSS_SCALE);ukssGroup.position.y=-2.755;
-const ukssPending=loadUkssExhibit(ukssGroup).then(value=>({value}),error=>({error}));
 // MIK112_INTEGRATION_V1: replace only Site 112; do not move adjacent 112A.
 const mik112Index=objects.findIndex(o=>o.record.id==='pad-112');
 let mik112Exhibit=null,mik112Rail=null,tuaExhibit=null,mik112DetailView='all';
@@ -677,16 +664,38 @@ if(mik112Index>=0){
  for(let i=clickable.length-1;i>=0;i--)if(clickable[i].userData.idx===mik112Index)clickable.splice(i,1);
  group.scale.setScalar(MIK112.scale);group.rotation.y=MIK112.yaw;
  mik112Exhibit=buildMik112(group,{year:2026});entry.type='mik112-photo';
- tuaExhibit=await loadTuaExhibit(group,mik112Exhibit);
+ // MIK112_LAYOUT_NE_V3: preserve adjacent 112A and the source TUA poses.
+ group.userData.mik112Model.suppressedFallbackGeometry=[];
+}
+const [ukssExhibit,loadedTuaExhibit]=await Promise.all([
+ loadUkssExhibit(ukssGroup),
+ mik112Exhibit?loadTuaExhibit(objects[mik112Index].g,mik112Exhibit):Promise.resolve(null)
+]);
+tuaExhibit=loadedTuaExhibit;
+if(mik112Exhibit){
+ const group=objects[mik112Index].g;
  if(tuaExhibit.metadata.status==='ready')adaptTuaRails(mik112Exhibit,tuaExhibit.metadata);
  group.traverse(o=>{if(o.isMesh){o.userData.idx=mik112Index;clickable.push(o);}});
- mik112Rail=transport.connectMik112?.(group)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
- // MIK112_PLACEHOLDER_OCCLUSION: no fallback hidden at the corrected site.
- // MIK112_LAYOUT_NE_V3: separate 112 from 2B and 112A; preserve their geometry.
- group.userData.mik112Model.suppressedFallbackGeometry=[];
-
-
 }
+startup.stage('Создаём дороги и железнодорожные подходы…');
+// Paint the completed loading stage before the next synchronous build. A
+// frame followed by a task also lets pending network/body aborts settle.
+await new Promise(resolve=>{
+ const backgroundFallback=setTimeout(resolve,120);
+ requestAnimationFrame(()=>{clearTimeout(backgroundFallback);resolve();});
+});
+await new Promise(resolve=>setTimeout(resolve,0));
+const transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords});
+if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
+const roadSignData=await loadMuseumData('./data/road-signs.json');
+for(const direction of ['west','east']){
+ const road=transport.roadPaths().find(r=>r.id==='r-south-'+direction);
+ if(road?.points?.length>2){const i=Math.max(1,Math.min(road.points.length-2,Math.floor(road.points.length*.82))),a=road.points[i-1],b=road.points[i];
+  const d=b.clone().sub(a).setY(0).normalize(),side=new THREE.Vector3(-d.z,0,d.x),pos=b.clone().addScaledVector(side,(road.width||6)/2+8);
+  roadSignData[direction]={...roadSignData[direction],x:pos.x/S+W/2,y:pos.z/S+H/2};
+ }
+}
+const highwaySigns=buildHighwaySigns({data:roadSignData,point,parent:layers.roads,roads:transport.roadPaths()});
 function focusMik112(view='all'){
  if(!mik112Exhibit)return;
  arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();
@@ -1307,10 +1316,8 @@ padGroup.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=0;clickable.push(mesh
 // Empty by default: no rocket is standing at the closed historical pad in 2026.
 
 // Site 250's imported asset is normalized to the existing launch origin/axes.
-// Finish loading before selection, terrain clipping and evening light placement.
-const ukssLoaded=await ukssPending;
-if(ukssLoaded.error)throw ukssLoaded.error;
-const ukssExhibit=ukssLoaded.value;
+// Both source models finished loading before roads; integrate the prepared
+// exhibit before selection, terrain clipping and evening light placement.
 startup.stage('Готовим освещение и управление…');
 await new Promise(resolve=>setTimeout(resolve,0));
 if(ukssExhibit.metadata.status==='ready')ukssGroup.userData.ukssConnections=buildUkssConnections(ukssGroup,ukssExhibit.metadata.connections);
@@ -1375,6 +1382,15 @@ if(mik112Exhibit){
  rocketExhibits.add('mik112-hall',{parent,...mounts.hall,modelId:'energia-buran',siteId:'pad-112'});
  mounts.tua.forEach((mount,index)=>rocketExhibits.add('tua-'+index,{parent:mik112Exhibit.transportersGroup,...mount,modelId:'energia-buran',siteId:'pad-112'}));
 }
+startup.stage('Загружаем ракетные экспонаты…');
+// Let the seven placements finish while the event loop can handle their
+// responses. Building lighting and traffic below is synchronous and must not
+// consume the models' existing fetch deadlines before their bodies settle.
+// Failed placements retain their visible retry action.
+const initialRocketModels=rocketExhibits.whenReady();
+await initialRocketModels;
+startup.stage('Готовим освещение и управление…');
+await new Promise(resolve=>setTimeout(resolve,0));
 tuaRocketControls=createTuaRocketControls({container:document.getElementById('description').parentElement,exhibits:rocketExhibits,keys:['tua-0','tua-1'],onSelect:id=>{
  if(activeKnowledge?.kind==='rocket'&&activeKnowledge.id!=='tua')showRocketKnowledge(id,'pad-112',false);
 }});
@@ -1845,12 +1861,6 @@ const sceneSelection=installSceneSelection({element:renderer.domElement,camera,c
   },blocked:()=>Boolean(lightingEditor?.active),
  onNavigate:()=>{if(fly){fly=false;}}
 });
-startup.stage('Загружаем ракетные экспонаты…');
-// Settle the existing model requests before the first expensive GPU frame.
-// Their fetch deadlines must not race the initial shader compilation/render.
-// Failed placements still keep their existing visible retry action.
-const initialRocketModels=rocketExhibits.whenReady();
-await initialRocketModels;
 startup.stage('Открываем 3D-карту…');
 await new Promise(resolve=>setTimeout(resolve,0));
 window.__MUSEUM_ROCKETS_READY=initialRocketModels;

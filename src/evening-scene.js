@@ -3,7 +3,8 @@ import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
 import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightLayoutStats} from './road-lighting.js?v=20261031-road-markings-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {buildAirportLightRecords,AIRPORT_LIGHT_LAYOUT_VERSION} from './airport-light-layout.js?v=20261031-rocket-exhibits-v1';
-import {buildFacilityTowerLighting} from './facility-tower-lighting.js?v=20261031-facilities-rails-lighting-v1';
+import {buildFacilityTowerLighting} from './facility-tower-lighting.js?v=20261031-facilities-rails-lighting-v2';
+import {createVerticalGroundQuery} from './vertical-ground-query.js?v=20261031-facilities-rails-lighting-v2';
 
 export function buildEveningScene({scene,camera,renderer,sun,layers,objects,roads,airfield,groundMeshes,button,onModeChange,isLightAllowed=()=>true,isPoleAllowed=()=>true,isLightPowered=()=>true,bankRule='north-of-syr-darya-v1'}){
  const hemisphere=scene.children.find(o=>o.isHemisphereLight),fields=[],originals=new Map();
@@ -45,14 +46,15 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  const roadField=createRoadLightField(layers.roads,roadLights,{name:'Дороги · современные и винтажные фонари',minPixels:2.8});fields.push(roadField);
  const siteLights=[],cityLights=[];
  scene.updateMatrixWorld(true);
+ const groundQuery=createVerticalGroundQuery(groundMeshes);
  const down=new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,-1,0));
- function baseAt(x,z,meshes,ceiling){down.ray.origin.set(x,1000,z);return down.intersectObjects(meshes,false).find(h=>h.point.y<=ceiling)?.point.y??-2.755;}
+ function baseAt(x,z,meshes,ceiling){down.ray.origin.set(x,1000,z);return groundQuery.intersections(down,meshes).find(h=>h.point.y<=ceiling)?.point.y??-2.755;}
  for(const o of objects){
   if(o.type==='air')continue;
   const center=o.g.getWorldPosition(new THREE.Vector3()),id=o.record.id;
   const radius=id==='pad-1'?19:id==='pad-250'?36:id==='pad-112'?25:id==='pad-23'?53:o.type==='city'?23:10;
   const height=id==='pad-1'?2:1.2;
-  const surfaces=[...groundMeshes];o.g.traverse(m=>{if(m.isMesh)surfaces.push(m);});
+  const surfaces=[];o.g.traverse(m=>{if(m.isMesh)surfaces.push(m);});
   const count=o.type==='city'?12:4;
   for(let j=0;j<count;j++){const angle=(j+.5)*Math.PI*2/count;
    // Site 31's traced bowl is wider than the former generic light circle.
@@ -78,7 +80,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  filterBank(runway,'runway');filterBank(apron,'apron');
  fields.push(createLightField(layers.city,runway,{name:'Аэродромы · ВПП, глиссада и рулёжные огни',minPixels:1.8}));
  fields.push(createLightField(layers.city,apron,{poles:true,pools:true,name:'Аэродромы · перроны'}));
- const facilityLighting=buildFacilityTowerLighting({scene,objects,groundMeshes,isLightAllowed,isLightPowered});fields.push(facilityLighting);
+ const facilityLighting=buildFacilityTowerLighting({scene,objects,groundMeshes,groundQuery,isLightAllowed,isLightPowered});fields.push(facilityLighting);
  const floods=[];
  for(const id of ['pad-1','pad-250','pad-112','pad-23']){const o=objects.find(o=>o.record.id===id);if(!o)continue;
   const c=o.g.getWorldPosition(new THREE.Vector3()),light=new THREE.PointLight(0xffc48a,100,75,1.4);
@@ -111,5 +113,5 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
    bankFilter:{rule:bankRule,excludedByBank:{...excludedByBank},remaining:stationaryLights.length,outsideBankCount},clearanceFilter:{...excludedByClearance},
    saturnLights:siteLights.filter(l=>l.owner===saturn?.g).map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
    saturnRoadLights:roadLights.filter(l=>l.terrain==='saturn').map(l=>({x:l.x,y:l.y,z:l.z,height:l.height,terrainY:saturnGround(l.x,l.z)})),
-   lightBatches:fields.reduce((n,f)=>n+f.stats().drawCalls,0),dynamicLights:floods.length,terrainMaterials:originals.size})};
+   lightBatches:fields.reduce((n,f)=>n+f.stats().drawCalls,0),dynamicLights:floods.length,terrainMaterials:originals.size,groundProjection:groundQuery.stats()})};
 }

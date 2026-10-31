@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {HIGHWAY_ASPHALT_LIFT} from './highway-surface.js?v=20261031-road-markings-v1';
+import {HIGHWAY_ASPHALT_LIFT} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
 
 export const INTERCHANGE_APRON_VERSION='rounded-lower-junctions-v1';
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);

@@ -5,6 +5,7 @@ import {buildRoadMarkings} from '../src/road-markings.js';
 import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {createInterchangeAprons} from '../src/interchange-aprons.js';
+import {clipOrdinaryRoadMeshes} from '../src/road-surface.js';
 
 const V=(x=0,y=.72,z=0)=>new THREE.Vector3(x,y,z),normal=d=>V(-d.z,0,d.x).normalize();
 function triangle(p,a,b,c){
@@ -78,11 +79,42 @@ for(const i of [0,1,2,3,4,6,20,22,23]){
 }
 assert(hits(apron.quads,V(5,.72,1.58)).some(q=>q.roadIds.includes('host')),'The exposed host edge before the exact replacement seam is lost');
 
+// Two close, explicit side mouths leave a real short curb between them.
+// Both neighbouring samples are inside a mouth, so checking only their
+// endpoints used to discard the whole section of otherwise required paint.
+const closeMouths=fixture([
+ {id:'host',points:[['west',-6,.72,0],['a',0,.72,0],['b',2,.72,0],['east',6,.72,0]]},
+ {id:'branch-a',points:[['a',0,.72,0],['north-a',0,.72,10]],extra:{width:1.6,marked:false}},
+ {id:'branch-b',points:[['b',2,.72,0],['north-b',2,.72,10]],extra:{width:1.6,marked:false}}
+],p=>Math.abs(p.z)<=1.8||p.z>=0&&p.z<=10&&(Math.abs(p.x)<=.8||Math.abs(p.x-2)<=.8)?.72:null);
+const shortCurb=buildRoadMarkings(closeMouths);
+assert.equal(hits(shortCurb.quads,V(1.037,.72,1.58)).length,1,'A genuine exposed curb between two nearby mouths loses its edge marking');
+assert.equal(hits(shortCurb.quads,V(1.037,.72,-1.58)).length,1,'The opposite curb stays continuous beside the same two mouths');
+const narrowMouth=fixture([
+ {id:'host',points:[['west',-2,.72,0],['middle',0,.72,0],['east',2,.72,0]]},
+ {id:'access',points:[['access-end',1,.72,0],['north',1,.72,10]],extra:{width:.5,marked:false,connections:[{nodeId:'explicit-access',position:V(1,.72,0),hostWayId:'host'}]}}
+],p=>Math.abs(p.z)<=1.8||Math.abs(p.x-1)<=.25&&p.z>=0&&p.z<=10?.72:null);
+const shortOpening=buildRoadMarkings(narrowMouth);
+assert.equal(hits(shortOpening.quads,V(1.037,.72,1.58)).length,0,'Two painted samples must not span a genuine narrow mouth between them');
+assert.equal(hits(shortOpening.quads,V(1.037,.72,-1.58)).length,1,'A narrow side mouth must retain the opposite edge');
+
+// A bent ribbon has two different grade planes. A pale shoulder above its
+// lower triangle must disappear, while a genuinely lower road stays intact.
+function triangleMesh(y,name){
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute([-.95,y,-.95,-.65,y,-.95,-.8,y,-.65],3));geometry.setIndex([0,2,1]);
+ const mesh=new THREE.Mesh(geometry,new THREE.MeshBasicMaterial());mesh.name=name;return mesh;
+}
+const pale=triangleMesh(.05,'pale overlay'),lowerRoad=triangleMesh(-5.8,'lower road');
+clipOrdinaryRoadMeshes([pale,lowerRoad],null,[[V(-1,0,-1),V(1,0,-1),V(1,2,1),V(-1,0,1)]]);
+assert.equal(pale.geometry.attributes.position.count,0,'A nonplanar owner extrapolates the wrong grade plane and leaves a pale chip');
+assert.equal(lowerRoad.geometry.attributes.position.count,3,'An upper ribbon must not remove the lower road');
+
 // Check the two published trouble spots in the real museum geometry.
 const read=p=>JSON.parse(fs.readFileSync(new URL('../'+p,import.meta.url)));
 const geography=createMuseumGeography({catalog:read('data/catalog.json'),matches:read('data/osm/catalog-matches.json')});
 const point=(x,y,h=0)=>V((x-650)*3.4,h,(y-522.5)*3.4),data={roads:read('data/osm/roads.geojson'),railways:read('data/osm/railways.geojson'),railPoints:read('data/osm/rail-points.geojson'),places:read('data/osm/places.geojson')};
-const network=buildOsmTransportNetwork({data,legacyData:read('data/transport-network.json'),geography,point,layers:{roads:new THREE.Group(),rails:new THREE.Group()},siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false)});
+const layers={roads:new THREE.Group(),rails:new THREE.Group()};
+const network=buildOsmTransportNetwork({data,legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false)});
 const nearby=network.roadMarkingPlan.quads.filter(q=>q.kind==='edge'&&q.vertices.some(p=>p.x>-140&&p.x<-80&&p.z>985&&p.z<1025));
 for(const p of [V(-100.7991066,2.4476557,1003.2613678),V(-99.6374130,2.3869651,1002.7759705),V(-99.3511639,2.3686178,1002.6624603)])
  assert(!hits(nearby,p).some(q=>q.roadIds.some(id=>id.startsWith('marking-road-369722065-'))),'The published internal upper-ramp arc remains painted');
@@ -99,4 +131,40 @@ for(const patch of aprons)for(const [side,edge] of patch.edgeLines.entries()){
   assert(!patch.contains(p),'Old replaced connector paint survives inside the new apron');
  }
 }
-console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({frameChecks,gradedMouthChecks:3,seamChecks,actualUpperArcChecks:3,actualContourChecks,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));
+// The published U rims had repeated same-way paint and asphalt folds at
+// almost every short source interval. Probe their complete emitted strips,
+// not just the source-node endpoints or the earlier large mouth opening.
+const physicalPaint=[];
+for(const mesh of [layers.roads.getObjectByName('Трасса · белые кромки'),network.bridgeObjects()[0].getObjectByName('Виадук · white')]){
+ mesh.updateWorldMatrix(true,false);const positions=mesh.geometry.attributes.position,index=mesh.geometry.index;
+ for(let i=0;i<(index?.count??positions.count);i+=3){
+  const vertices=[0,1,2].map(k=>V().fromBufferAttribute(positions,index?index.getX(i+k):i+k).applyMatrix4(mesh.matrixWorld));
+  if(vertices.some(p=>p.x>-140&&p.x<-80&&p.z>985&&p.z<1025))physicalPaint.push(vertices);
+ }
+}
+let loopOwnershipChecks=0,physicalLoopChecks=0;
+for(const quad of nearby.filter(q=>q.roadIds.some(id=>/^marking-road-36972206[12]-/.test(id)))){
+ const [a,b,c,d]=quad.vertices,p=a.clone().lerp(b,.413).lerp(c.clone().lerp(d,.413),.371),owners=hits(nearby,p);
+ assert.equal(owners.length,1,'A U-rim has folded or duplicate paint: '+JSON.stringify({p:p.toArray(),owners:owners.map(q=>q.roadIds)}));loopOwnershipChecks++;
+ const actual=physicalPaint.filter(t=>Math.abs(t[0].y-p.y)<1.2&&triangle(p,...t));
+ assert.equal(actual.length,1,'The final Float32 U-rim mesh must have exactly one physical paint triangle at each interior probe');physicalLoopChecks++;
+}
+assert(loopOwnershipChecks>100,'Both complete U-rims are covered by the overlap probes');
+function meshHeights(mesh,p){
+ const result=[],position=mesh.geometry.attributes.position,index=mesh.geometry.index;
+ for(let i=0;i<(index?.count??position.count);i+=3){
+  const [a,b,c]=[0,1,2].map(k=>V().fromBufferAttribute(position,index?index.getX(i+k):i+k));
+  if(!triangle(p,a,b,c))continue;
+  const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z),u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/den,v=((c.z-a.z)*(p.x-c.x)+(a.x-c.x)*(p.z-c.z))/den;
+  result.push(u*a.y+v*b.y+(1-u-v)*c.y);
+ }
+ return result;
+}
+let shoulderChipChecks=0;
+const dark=layers.roads.getObjectByName('OSM · асфальт трассы'),shoulder=layers.roads.getObjectByName('OSM · единые обочины');
+for(const center of [V(-101.6824584,3.0732456,990.2943364),V(-100.1709601,3.1498889,991.8727639)])for(const dx of [-.12,0,.12])for(const dz of [-.12,0,.12]){
+ const p=center.clone().add(V(dx,0,dz)),pavement=meshHeights(dark,p).filter(y=>Math.abs(y-p.y)<1.2);
+ assert(pavement.length,'The published chip probe must retain actual dark pavement');
+ assert(!meshHeights(shoulder,p).some(y=>pavement.some(top=>y>top&&y-top<1.2)),'A detached pale shoulder chip survives above the dark ramp');shoulderChipChecks++;
+}
+console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({frameChecks,gradedMouthChecks:3,seamChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));

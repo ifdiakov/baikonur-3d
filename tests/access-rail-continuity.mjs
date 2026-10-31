@@ -69,6 +69,28 @@ function surfaceSampler(meshes){
  };
 }
 const asphaltAt=surfaceSampler(['OSM · единое дорожное полотно','OSM · асфальт трассы'].map(name=>layers.roads.getObjectByName(name)));
+// The published close view of this T exposed a tiny folded white stroke on
+// way54566004. Inspect the final merged paint triangles, independently of
+// the curve planner: interior points must have a single visible owner.
+const localJunction=sourceGraph.nodes.get('687038520').position,localPaint=layers.roads.getObjectByName('OSM · разметка'),localPaintTriangles=[];
+localPaint.updateWorldMatrix(true,false);
+const localPositions=localPaint.geometry.attributes.position,localIndices=localPaint.geometry.index;
+for(let i=0;i<(localIndices?.count??localPositions.count);i+=3){
+ const t=[0,1,2].map(k=>V().fromBufferAttribute(localPositions,localIndices?localIndices.getX(i+k):i+k).applyMatrix4(localPaint.matrixWorld));
+ if(t.some(p=>horizontal(p,localJunction)<18)&&Math.abs(t[0].y-localJunction.y)<.05)localPaintTriangles.push(t);
+}
+function interiorPaintHit(p,[a,b,c]){
+ const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(Math.abs(den)<1e-14)return false;
+ const u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/den,v=((c.z-a.z)*(p.x-c.x)+(a.x-c.x)*(p.z-c.z))/den;
+ return u>1e-7&&v>1e-7&&u+v<1-1e-7;
+}
+let localPaintProbes=0;
+for(const t of localPaintTriangles){
+ const p=t.reduce((sum,p)=>sum.add(p),V()).multiplyScalar(1/3);if(horizontal(p,localJunction)>=18)continue;
+ const hits=localPaintTriangles.filter(other=>interiorPaintHit(p,other));
+ assert.equal(hits.length,1,'A local road stroke folds into duplicate visible triangles near T687038520: '+JSON.stringify({point:p.toArray(),hits:hits.length}));localPaintProbes++;
+}
+assert(localPaintProbes>300,'The close T view includes the actual curved stroke and neighbouring source seams');
 // These source junctions exposed an unrelated service/residential tangent
 // overwriting the through-road frame. Probe real lane pavement, independently
 // of the direction-map implementation and its QA metadata.
@@ -115,4 +137,4 @@ for(const vehicle of [engine,coach])for(const axle of vehicle.axles){
  for(const wheel of axle.wheels){const b=new THREE.Box3().setFromObject(wheel);assert(b.min.y<.001&&b.max.y>vehicle.wheelRadius,'Wheel treads reach the running datum');}
 }
 near(engine.bodyLength/coach.bodyLength,6.1/8.3,1e-12,'Coherent locomotive/coach scale');near(COACH_OFFSETS[0],7.9*TRAIN_METRIC_SCALE,1e-12,'Scaled coupler spacing');
-console.log('ACCESS_RAIL_CONTINUITY_PASS',JSON.stringify({roadGates:stats.facilityPorts.length,railPorts:stats.facilityRailPorts.length,accessProbes,railHeadProbes,minSourceDot,minGateDot,sourceSwitches:mik.sourceSwitches,profile:RAIL_METRES.version,gauge:RAIL_PROFILE.gauge,headWidth:RAIL_PROFILE.headWidth}));
+console.log('ACCESS_RAIL_CONTINUITY_PASS',JSON.stringify({roadGates:stats.facilityPorts.length,railPorts:stats.facilityRailPorts.length,accessProbes,railHeadProbes,localPaintProbes,minSourceDot,minGateDot,sourceSwitches:mik.sourceSwitches,profile:RAIL_METRES.version,gauge:RAIL_PROFILE.gauge,headWidth:RAIL_PROFILE.headWidth}));

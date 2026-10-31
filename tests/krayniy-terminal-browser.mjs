@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-krayniy';
-const revision='20261031-facilities-rails-lighting-v1';
+const revision='20261031-facilities-rails-lighting-v2';
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
  ...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),

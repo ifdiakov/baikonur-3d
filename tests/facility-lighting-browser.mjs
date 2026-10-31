@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 
-const revision='20261031-facilities-rails-lighting-v1';
+const revision='20261031-facilities-rails-lighting-v2';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-facility-lighting';
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],views:[]};
@@ -43,6 +43,9 @@ function checkRender(state){
  const [x,y,z]=state.camera.position,[tx,ty,tz]=state.camera.target;
  assert(Math.atan2(y-ty,Math.hypot(x-tx,z-tz))*180/Math.PI>=29.99,'Inspection respects the museum minimum camera elevation');
  const f=state.evening.facilityLighting;
+ const projection=state.evening.groundProjection;
+ assert(projection?.indexedMeshes>0&&projection.queries>0,'The live lighting uses the exact ground-triangle spatial query');
+ assert.equal(projection.staleFallbacks,0,'Static scene surfaces keep their original transforms during lighting placement');
  assert.equal(f.version,'facility-tower-lighting-v1');assert(f.drawCalls>0&&f.drawCalls<=6,'All added fixtures remain batched');
  assert.equal(f.dynamicLights,0,'No individual PointLight or SpotLight is created per mast');
  assert.equal(f.rendered.visibilityLeaks,0,'Hidden source structures leave no orphan luminous instances');

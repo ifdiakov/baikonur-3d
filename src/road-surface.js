@@ -26,13 +26,18 @@ function halfPlane(poly,a,b,inside){
 }
 // A convex clipping polygon partitions a subject into disjoint convex pieces.
 // New intersection vertices interpolate Y, so graded entrances stay smooth.
-export function subtractRoadPolygon(subject,clip){
- let inner=cleanPolygon(subject),parts=[];const boundary=cleanPolygon(clip);
+export function subtractRoadPolygon(subject,clip,overlapAllowed=null){
+ const original=cleanPolygon(subject);let inner=original,parts=[];const boundary=cleanPolygon(clip);
  if(!boundary.length)return inner.length?[inner]:[];
  for(let i=0;i<boundary.length&&inner.length;i++){
   const a=boundary[i],b=boundary[(i+1)%boundary.length],outer=halfPlane(inner,a,b,false);
   if(outer.length)parts.push(outer);inner=halfPlane(inner,a,b,true);
- }return parts;
+ }
+ // Grade compatibility must be evaluated on the actual shared footprint.
+ // The centre of overlapping bounding boxes can lie far outside either
+ // sloping triangle and extrapolate a completely unrelated height.
+ if(overlapAllowed&&(!inner.length||!overlapAllowed(inner)))return original.length?[original]:[];
+ return parts;
 }
 function bounds(poly){return {minX:Math.min(...poly.map(v=>v.x)),maxX:Math.max(...poly.map(v=>v.x)),minZ:Math.min(...poly.map(v=>v.z)),maxZ:Math.max(...poly.map(v=>v.z))};}
 function overlaps(a,b){return a.maxX>b.minX+EPS&&a.minX<b.maxX-EPS&&a.maxZ>b.minZ+EPS&&a.minZ<b.maxZ-EPS;}
@@ -106,7 +111,13 @@ export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[]){
   if(Number.isFinite(poly.clipHeight))r.height=()=>poly.clipHeight;
   r.priority=0;r.gradeTolerance=gradeTolerance;return r;
  };
- if(ownershipPolygons.length){for(const poly of ownershipPolygons){const r=make(poly);if(r)index.add(r);}}
+ if(ownershipPolygons.length){for(const poly of ownershipPolygons){
+  // A bent, graded ribbon quad is not necessarily planar. Preserve the
+  // same b-c diagonal as geometryBatch.quad instead of extending one of
+  // its two grade planes across the entire footprint.
+  const pieces=poly.length===4&&!Number.isFinite(poly.clipHeight)?[[poly[0],poly[3],poly[1]],[poly[1],poly[3],poly[2]]]:[poly];
+  for(const piece of pieces){const r=make(piece);if(r)index.add(r);}
+ }}
  else{
   const hp=highwayMesh.geometry.attributes.position,hi=highwayMesh.geometry.index;
   for(let i=0;i<hi.count;i+=3){const poly=[0,1,2].map(k=>{const j=hi.getX(i+k);return{x:hp.getX(j),y:hp.getY(j),z:hp.getZ(j)};}),r=make(poly);if(r)index.add(r);}
@@ -121,7 +132,13 @@ export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[]){
    if(!near.length){append(...original);continue;}
    const subject=make(original);if(!subject){append(...original);continue;}
    let pieces=[subject.poly];
-   for(const host of near){if(!sameLevel(subject,host))continue;pieces=pieces.flatMap(poly=>subtractRoadPolygon(poly,host.poly));if(!pieces.length)break;}
+   for(const host of near){
+    pieces=pieces.flatMap(poly=>subtractRoadPolygon(poly,host.poly,overlap=>{
+     const x=overlap.reduce((sum,p)=>sum+p.x,0)/overlap.length,z=overlap.reduce((sum,p)=>sum+p.z,0)/overlap.length;
+     return Math.abs(subject.height(x,z)-host.height(x,z))<gradeTolerance;
+    }));
+    if(!pieces.length)break;
+   }
    if(!pieces.length){removed++;clipped++;continue;}
    if(pieces.length!==1||pieces[0].length!==3)clipped++;
    for(const poly of pieces)for(let k=1;k<poly.length-1;k++){

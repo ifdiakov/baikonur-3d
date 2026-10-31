@@ -21,6 +21,9 @@ export function registerImportedUkssLights(root){
  root.updateWorldMatrix(true,true);const inverse=root.matrixWorld.clone().invert(),lenses=[],structure=[],serviceTowers=new Map(),diverterPoints=[];
  root.traverse(mesh=>{
   if(!mesh.isMesh||Array.isArray(mesh.material))return;
+  // Rocket choices are loaded before lighting now. They share the site's
+  // parent but are independent exhibits, never part of the fixed masts.
+  if(mesh.userData.rocketExhibitKey||mesh.userData.museumComponent==='rocket-exhibit')return;
   const name=mesh.material.name,position=mesh.geometry.attributes.position,index=mesh.geometry.index;
   if(!position)return;const matrix=inverse.clone().multiply(mesh.matrixWorld);
   const points=Array.from({length:position.count},(_,i)=>new THREE.Vector3().fromBufferAttribute(position,i).applyMatrix4(matrix));
@@ -98,7 +101,7 @@ function spillMaterial(beam=false){
    }`});
 }
 
-export function buildFacilityTowerLighting({scene,objects=[],groundMeshes=[],isLightAllowed=()=>true,isLightPowered=()=>true}={}){
+export function buildFacilityTowerLighting({scene,objects=[],groundMeshes=[],groundQuery=null,isLightAllowed=()=>true,isLightPowered=()=>true}={}){
  const ukss=objects.find(o=>o.record?.id==='pad-250');
  const importedUkss=ukss?.g.userData.ukssModel?.status==='ready'?registerImportedUkssLights(ukss.g):null;
  const root=new THREE.Group();root.name='Площадки · мачтовое освещение и маяки';root.userData.pickable=false;scene.add(root);
@@ -115,8 +118,9 @@ export function buildFacilityTowerLighting({scene,objects=[],groundMeshes=[],isL
   ray.ray.origin.set(target.x,Math.max(target.y+10,head.y+1),target.z);
   // archiveKit bakes the primitives into their facility root; the source
   // anchor group may therefore have no meshes of its own.
-  const surfaces=[...groundMeshes];facility.traverse(mesh=>{if(mesh.isMesh)surfaces.push(mesh);});
-  return ray.intersectObjects(surfaces,false).find(hit=>hit.point.y<=target.y+.8)?.point.y??target.y;
+  const surfaces=[];facility.traverse(mesh=>{if(mesh.isMesh)surfaces.push(mesh);});
+  const hits=groundQuery?groundQuery.intersections(ray,surfaces):ray.intersectObjects([...groundMeshes,...surfaces],false);
+  return hits.find(hit=>hit.point.y<=target.y+.8)?.point.y??target.y;
  }
  function positionBindings(){
   scene.updateMatrixWorld(true);lensRecords.length=boards.length=beaconRecords.length=lensMatrices.length=beaconMatrices.length=0;siteCounts.clear();

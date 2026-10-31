@@ -51,10 +51,18 @@ export function smoothLocalRoadGraph(graph,{sampleStep=.5}={}){
   const reachA=Math.min(length*.28,edge.width*3,(start?.reach??length)*.32);
   const reachB=Math.min(length*.28,edge.width*3,(end?.reach??length)*.32);
   const a0=a.clone().setY(0),b0=b.clone().setY(0),innerA=a0.clone().addScaledVector(chord,reachA),innerB=b0.clone().addScaledVector(chord,-reachB);
-  const points=sampleCubic(a0,innerA,da,chord,reachA/3,reachA/3,sampleStep);
-  const middle=Math.max(1,Math.ceil(innerA.distanceTo(innerB)/1.4));
-  for(let i=1;i<=middle;i++)points.push(innerA.clone().lerp(innerB,i/middle));
-  points.push(...sampleCubic(innerB,b0,chord,db,reachB/3,reachB/3,sampleStep).slice(1));
+  // Dense source nodes on a bend need distributed curvature. Three short
+  // turn/straight/turn pieces can fold the inside pavement and paint back
+  // over themselves even when the centre line looks smooth. Keep the exact
+  // source endpoints and shared frames, bounded to the source corridor.
+  const continuous=length<=edge.width*2.5?sampleCubic(a0,b0,da,db,length/3,length/3,Math.min(sampleStep,length/8)):null;
+  const withinCorridor=continuous?.every(p=>Math.abs((p.x-a.x)*chord.z-(p.z-a.z)*chord.x)<edge.width*.15);
+  const points=withinCorridor?continuous:sampleCubic(a0,innerA,da,chord,reachA/3,reachA/3,sampleStep);
+  if(!withinCorridor){
+   const middle=Math.max(1,Math.ceil(innerA.distanceTo(innerB)/1.4));
+   for(let i=1;i<=middle;i++)points.push(innerA.clone().lerp(innerB,i/middle));
+   points.push(...sampleCubic(innerB,b0,chord,db,reachB/3,reachB/3,sampleStep).slice(1));
+  }
   const cumulative=[0];for(let i=1;i<points.length;i++)cumulative.push(cumulative.at(-1)+horizontal(points[i-1],points[i]));
   const total=cumulative.at(-1),secant=(b.y-a.y)/total;
   let m0=start?start.slope*(start.axis.dot(chord)<0?-1:1):secant,m1=end?end.slope*(end.axis.dot(chord)<0?-1:1):secant;

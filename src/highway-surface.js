@@ -100,10 +100,19 @@ export function smoothHighwayGraph(graph){
   const start=endpoint(edge,edge.a),end=endpoint(edge,edge.b),chord=b.clone().sub(a).setY(0).normalize();
   const reachA=Math.min(h*.3,edge.width*2.5,start.reach*.35),reachB=Math.min(h*.3,edge.width*2.5,end.reach*.35);
   const a0=a.clone().setY(0),b0=b.clone().setY(0),insideA=a0.clone().addScaledVector(chord,reachA),insideB=b0.clone().addScaledVector(chord,-reachB);
-  const points=curveSegment(a0,insideA,start.direction,chord,HIGHWAY_SAMPLE_STEP);
-  const middle=Math.max(1,Math.ceil(insideA.distanceTo(insideB)/HIGHWAY_SAMPLE_STEP));
-  for(let i=1;i<=middle;i++)points.push(insideA.clone().lerp(insideB,i/middle));
-  points.push(...curveSegment(insideB,b0,chord,end.direction.clone().negate(),HIGHWAY_SAMPLE_STEP).slice(1));
+  // Dense OSM nodes on a bend already describe one continuous arc. Three
+  // separate turn/straight/turn pieces between every short pair concentrate
+  // curvature at the node and make the inside road edge run backwards.
+  // A single cubic keeps the same pinned ends and shared tangents, while
+  // the existing corridor budget bounds its displacement from the source.
+  const continuous=h<=edge.width*2.5?curveSegment(a0,b0,start.direction,end.direction.clone().negate(),Math.min(HIGHWAY_SAMPLE_STEP,h/8)):null;
+  const withinCorridor=continuous?.every(p=>Math.abs((p.x-a.x)*chord.z-(p.z-a.z)*chord.x)<edge.width*.15);
+  const points=withinCorridor?continuous:curveSegment(a0,insideA,start.direction,chord,HIGHWAY_SAMPLE_STEP);
+  if(!withinCorridor){
+   const middle=Math.max(1,Math.ceil(insideA.distanceTo(insideB)/HIGHWAY_SAMPLE_STEP));
+   for(let i=1;i<=middle;i++)points.push(insideA.clone().lerp(insideB,i/middle));
+   points.push(...curveSegment(insideB,b0,chord,end.direction.clone().negate(),HIGHWAY_SAMPLE_STEP).slice(1));
+  }
   const distances=[0];for(let i=1;i<points.length;i++)distances.push(distances[i-1]+points[i].distanceTo(points[i-1]));
   const length=distances.at(-1),secant=(b.y-a.y)/length;
   let m0=start.slope,m1=-end.slope;
