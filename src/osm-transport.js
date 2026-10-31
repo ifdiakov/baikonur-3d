@@ -10,12 +10,14 @@ import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-r
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
 import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-facilities-rails-lighting-v2';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS,highwayRunsOutsideBridge} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
-import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes} from './road-surface.js?v=20261031-facilities-rails-lighting-v2';
+import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes} from './road-surface.js?v=20261031-facilities-rails-lighting-v4';
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-facilities-rails-lighting-v2';
 import {buildRoadMarkings} from './road-markings.js?v=20261031-facilities-rails-lighting-v2';
 import {smoothLocalRoadGraph,createAccessTransition} from './access-transitions.js?v=20261031-facilities-rails-lighting-v3';
-import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v1';
+import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
+import {railApproachSleeperDistances} from './paired-rail-approach.js?v=20261031-facilities-rails-lighting-v4';
+import {createSite110RailFan} from './site110-rail-fan.js?v=20261031-facilities-rails-lighting-v4';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -400,7 +402,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // have a purpose even when their endpoint is not a catalogue marker.
  const roadProtected=new Set([...roadGraph.edges.filter(e=>protectedTrafficWays.has(e.wayId)),...site41Replacement.protectedEdges]);
  const mikRailSourcePlan=createMik112RailSourcePlan(railGraph);
- const railProtected=new Set([...graphTrain.edges,...mikRailSourcePlan.protectedEdges]);
+ const site110Site=siteRecords.find(site=>site.id==='pad-110'),site110Spec=site110Site?{...FACILITY_PORTS['pad-110'],yaw:site110Site.runtimeYaw??FACILITY_PORTS['pad-110'].yaw}:null;
+ const site110Fan=site110Spec?createSite110RailFan({railGraph,sourcePlan:mikRailSourcePlan,ports:site110Spec.railConnections.map(port=>({id:port.id,
+  end:portWorld(site110Spec,port.position,site110Site,point).add(V(0,-RAIL_PROFILE.headY,0)),inward:V(...port.outward).negate().applyAxisAngle(V(0,1,0),site110Spec.yaw)}))}):null;
+ const railProtected=new Set([...graphTrain.edges,...mikRailSourcePlan.protectedEdges,...(site110Fan?.replacedEdges??[])]);
  for(const [id,spec] of Object.entries(FACILITY_PORTS)){
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;
   const effective={...spec,yaw:site.runtimeYaw??spec.yaw},gate=portWorld(effective,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),effective.yaw);
@@ -577,7 +582,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   railClearanceReport.cuts.push(...clipped.cuts.map(p=>({sourceWayId:wayId,position:airportWorld(p).toArray()})));
   return runs;
  }
- function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null){
+ function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null,sleeperAnchor=null){
   if(points.length<2)return [];
   const displayed=clipAirportRails(points,wayId,RAIL_PROFILE.gauge),renderedRuns=[];
   for(const visible of displayed){
@@ -598,7 +603,9 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     for(const side of [-1,1])steel.ribbon(ps,RAIL_PROFILE.headWidth,RAIL_PROFILE.headY,side*RAIL_PROFILE.gauge/2,0,directionAt,null,RAIL_PROFILE.railHeight);
    }
    if(isAbandoned)continue;
-   for(let d=.4;d<path.length;d+=1.45){const at=path.sample(d,.3);if(!force&&masked(at.position,{}))continue;const normal=V(-at.tangent.z,0,at.tangent.x).normalize(),half=RAIL_PROFILE.sleeperLength/2,a=at.position.clone().addScaledVector(normal,-half),b=at.position.clone().addScaledVector(normal,half);ties.ribbon([a,b],RAIL_PROFILE.sleeperWidth,RAIL_PROFILE.sleeperY+RAIL_PROFILE.sleeperHeight/2,0,0,null,null,RAIL_PROFILE.sleeperHeight);railTies++;}
+   const sleeperDistances=sleeperAnchor?railApproachSleeperDistances(path.length,{step:RAIL_PROFILE.sleeperStep,anchor:sleeperAnchor}):[];
+   if(!sleeperAnchor)for(let d=.4;d<path.length;d+=1.45)sleeperDistances.push(d);
+   for(const d of sleeperDistances){const at=path.sample(d,sleeperAnchor ? .035 : .3);if(!force&&masked(at.position,{}))continue;const normal=V(-at.tangent.z,0,at.tangent.x).normalize(),half=RAIL_PROFILE.sleeperLength/2,a=at.position.clone().addScaledVector(normal,-half),b=at.position.clone().addScaledVector(normal,half);ties.ribbon([a,b],RAIL_PROFILE.sleeperWidth,RAIL_PROFILE.sleeperY+RAIL_PROFILE.sleeperHeight/2,0,0,null,null,RAIL_PROFILE.sleeperHeight);railTies++;}
   }
   return renderedRuns;
  }
@@ -608,7 +615,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...visible],width:RAIL_PROFILE.ballastWidth,source:'OpenStreetMap',osmWayIds:[way.osmId]});run++;
   }};
   for(const e of way.segments){
-   if(!edgeKept(railGraph,e)||mikRailSourcePlan.replacedEdges.has(e)){render();points.length=0;continue;}
+   if(!edgeKept(railGraph,e)||mikRailSourcePlan.replacedEdges.has(e)||site110Fan?.replacedEdges.has(e)){render();points.length=0;continue;}
    if(points.length&&points.at(-1).distanceTo(e.a.position)>1e-5){render();points.length=0;}
    if(!points.length)points.push(e.a.position);points.push(e.b.position);
   }render();
@@ -678,13 +685,20 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const railPorts=spec.railConnections??(spec.rail||[]).map((position,i)=>({id:id+'-rail-'+i,position,outward:spec.railOutward??[0,0,1]}));
   for(const port of railPorts){
    const railOut=V(...(port.outward||spec.railOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw);
-   const headCenter=portWorld(spec,port.position,site,point),end=headCenter.clone().add(V(0,-RAIL_PROFILE.headY,0)),rr=port.sourceRouteId?assignedRailJoin(port):nearestSegment(railGraph,end.clone().addScaledVector(railOut,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(!rr||rr.distance>250**2)continue;
+   const headCenter=portWorld(spec,port.position,site,point),end=headCenter.clone().add(V(0,-RAIL_PROFILE.headY,0)),fanTrack=id==='pad-110'?site110Fan?.tracks.find(track=>track.id===port.id):null;
+   const rr=fanTrack?{edge:{wayId:fanTrack.sourceWayId},point:V(...fanTrack.sourcePoint),tangent:V(...fanTrack.sourceTangent),distance:0}:port.sourceRouteId?assignedRailJoin(port):nearestSegment(railGraph,end.clone().addScaledVector(railOut,35),e=>!masked(e.a.position.clone().lerp(e.b.position,.5),{}));if(!rr||rr.distance>250**2)continue;
    const tangent=rr.tangent.clone();if(tangent.dot(end.clone().sub(rr.point))<0)tangent.negate();
-   const transition=createAccessTransition({start:rr.point,end,startTangent:tangent,endTangent:railOut.clone().negate(),startWidth:RAIL_PROFILE.ballastWidth,endWidth:RAIL_PROFILE.ballastWidth,sampleStep:.4}),points=transition.points,endGauge=RAIL_PROFILE.gauge;
+   const transition=fanTrack??createAccessTransition({start:rr.point,end,startTangent:tangent,endTangent:railOut.clone().negate(),startWidth:RAIL_PROFILE.ballastWidth,endWidth:RAIL_PROFILE.ballastWidth,sampleStep:.4}),points=transition.points,endGauge=RAIL_PROFILE.gauge;
    const frame=(p,fallback)=>p.distanceToSquared(end)<1e-10?railOut.clone().negate():p.distanceToSquared(rr.point)<1e-10?tangent:fallback;
-   drawRail(points,false,true,endGauge,null,frame);connections++;
-   const renderedHeadCenter=points.at(-1).clone().add(V(0,RAIL_PROFILE.headY,0));railPortReports.push({id,portId:port.id,sourceWayId:rr.edge.wayId,sourceNodeId:port.sourceNodeId??null,sourceRouteId:port.sourceRouteId??null,sourcePoint:rr.point.toArray(),sourceTangent:tangent.toArray(),gateInward:railOut.clone().negate().toArray(),points:points.map(p=>p.toArray()),headCenter:headCenter.toArray(),renderedHeadCenter:renderedHeadCenter.toArray(),headCenterGap:renderedHeadCenter.distanceTo(headCenter),networkDatumGap:points[0].distanceTo(rr.point),networkGauge:RAIL_PROFILE.gauge,portGauge:endGauge,physicalGaugeMetres:spec.physicalRailGauge??null});
+   drawRail(points,false,true,endGauge,null,frame,'end');connections++;
+   const renderedHeadCenter=points.at(-1).clone().add(V(0,RAIL_PROFILE.headY,0));railPortReports.push({id,portId:port.id,sourceWayId:rr.edge.wayId,sourceNodeId:port.sourceNodeId??null,sourceRouteId:port.sourceRouteId??null,sourcePoint:rr.point.toArray(),sourceTangent:tangent.toArray(),gateInward:railOut.clone().negate().toArray(),points:points.map(p=>p.toArray()),headCenter:headCenter.toArray(),renderedHeadCenter:renderedHeadCenter.toArray(),headCenterGap:renderedHeadCenter.distanceTo(headCenter),networkDatumGap:points[0].distanceTo(rr.point),networkGauge:RAIL_PROFILE.gauge,portGauge:endGauge,physicalGaugeMetres:spec.physicalRailGauge??null,
+    ...(fanTrack?{displaySourceNodeId:fanTrack.displaySourceNodeId,displayLayout:site110Fan.version,sourceDestination:fanTrack.originalDestination,metrics:fanTrack.metrics}:{} )});
   }
+ }
+ if(site110Fan)for(const link of site110Fan.joinedLinks){
+  const first=link.points[0],last=link.points.at(-1),frame=(p,fallback)=>p.distanceToSquared(first)<1e-10?link.startTangent:p.distanceToSquared(last)<1e-10?link.endTangent:fallback;
+  drawRail(link.points,false,true,RAIL_PROFILE.gauge,link.wayId,frame,'end');renderedRailWays.add(link.wayId);
+  railPaths.push({id:link.id,points:link.points,width:RAIL_PROFILE.ballastWidth,source:'museum-source-display-link',osmWayIds:[link.wayId]});
  }
  // The owner removed the reconstructed external Saturn approach. Its road,
  // embankment and lighting path are absent; the OSM roads and hill stay intact.
@@ -697,7 +711,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   {id:'r-south-east',points:mainRoadPoints.slice(split),width:highway.width,source:'OpenStreetMap'});
  // Build the train's long route on the real connected railway network.
  const connection=new THREE.CubicBezierCurve3(straight,straight.clone().add(V(-25,0,0)),railStart.position.clone().addScaledVector(railTangent,-25),railStart.position);
- const connectionPoints=[gate,...sampleCurve(connection)];drawRail(connectionPoints,false,true);connections++;
+ const connectionPoints=[gate,...sampleCurve(connection)];drawRail(connectionPoints,false,true,RAIL_PROFILE.gauge,null,null,'start');connections++;
  const gagarinJoinGap=connectionPoints.at(-1).distanceTo(graphTrain.nodes[0].position);
  const trainPoints=conformPath(simplifyPath([...connectionPoints,...graphTrain.nodes.map(n=>n.position)]),RAIL_PROFILE.ballastWidth).map(p=>p.clone().add(V(0,RAIL_PROFILE.headY,0))),train={path:distancePath(trainPoints),gauge:RAIL_PROFILE.gauge,source:'OpenStreetMap',from:'Пл. №1 · Гагаринский старт',to:'Тюратам · город',joins:[{from:'museum-pad1-port',to:'osm-rail-network',gap:gagarinJoinGap,tangentDot:connection.getTangent(1).dot(railTangent)}],sections:[{id:'osm-pad1-to-tyuratam'}],osmWayIds:[...new Set(graphTrain.edges.map(e=>e.wayId))]};
  for(const f of data.railPoints?.features||[]){const tags=tagsFor(f);if(!['station','halt'].includes(tags.railway)||f.geometry.type!=='Point')continue;const [lon,lat]=f.geometry.coordinates;if(lon<BBOX[0]||lon>BBOX[2]||lat<BBOX[1]||lat>BBOX[3])continue;
@@ -720,6 +734,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return [corner(previous,-1),corner(previous,1),corner(at,1),corner(at,-1)];
  }):[];
  const ordinarySurfaceClip=clipOrdinaryRoadMeshes([asphalt.mesh,shoulder.mesh,unpaved.mesh,paint.mesh],highwayAsphalt.mesh,[...highwayAsphalt.ownershipPolygons,...bridgeOwnership]);
+ clipOrdinaryRoadMeshes([shoulder.mesh],asphalt.mesh,[],{onlyProtruding:true});
  const bridgeAsphalt=interchangeBridge?.root.getObjectByName('Виадук · asphalt');
  const pavementY=pavementHeightSampler([highwayAsphalt.mesh,bridgeAsphalt]);
  for(const route of roadPlan.routes)route.surfaceHeightAt=p=>pavementY(p)??p.y;
@@ -748,12 +763,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const tracks=createMik112RailApproaches(root,mikRailSourcePlan,{headY:RAIL_PROFILE.headY});
   const forward=V(0,0,-1).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
   for(const track of tracks){const points=track.points.map(p=>p.clone().add(V(0,-RAIL_PROFILE.headY,0)));
-   drawRail(points,false,true,RAIL_PROFILE.gauge,null,(p,fallback)=>p.distanceToSquared(points[0])<1e-10?forward:p.distanceToSquared(points.at(-1))<1e-10?V(...track.sourceTangent):fallback);
+   drawRail(points,false,true,RAIL_PROFILE.gauge,null,(p,fallback)=>p.distanceToSquared(points[0])<1e-10?forward:p.distanceToSquared(points.at(-1))<1e-10?V(...track.sourceTangent):fallback,'start');
   }
   for(const b of [ballast,ties,steel])b.flush();connections+=tracks.length;
   return {connected:true,tracks:tracks.map(({points,...track})=>track),joinGap:Math.max(...tracks.map(track=>track.junctionGap)),version:mikRailSourcePlan.version,
    sourceRoutes:mikRailSourcePlan.gates.map(gate=>'osm-rail-'+gate.sourceWayId),sourceSwitches:mikRailSourcePlan.gates.map(gate=>gate.sourceNodeId),
-   destinationRoutes:mikRailSourcePlan.destinationRoutes.map(({edges,points,...route})=>route),replacedSourceEdges:mikRailSourcePlan.replacedEdges.size,
+   destinationRoutes:mikRailSourcePlan.destinationRoutes.map(({edges,points,...route})=>route),replacedSourceEdges:mikRailSourcePlan.replacedEdges.size,displayReplacements:mikRailSourcePlan.displayReplacements,
    railGauge:RAIL_PROFILE.gauge,railProfile:RAIL_PROFILE};
  }
  const buildMilliseconds=Date.now()-started;
@@ -778,7 +793,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    settlementRoadSimplification:settlements.map(region=>({id:region.id,name:region.name,sourceBoundary:region.feature?.id||null,minimalProfile:region.profile,sourceWayCount:region.sourceWays.size,renderedWayCount:region.keptWays.size,hiddenWays:region.hiddenWays.size,keptWayIds:[...region.keptWays],preservedTrafficWayIds:[...region.trafficWays]})),
    stationCount:stationLabels.length,stationNames:stationLabels.map(s=>s.name),railSwitches:(data.railPoints?.features||[]).filter(f=>tagsFor(f).railway==='switch').length,
    abandonedRailWays:railGraph.ways.filter(w=>w.abandoned).length,mergedMeshCount:batches.filter(b=>b.mesh).length,triangles:batches.reduce((n,b)=>n+b.triangles,0),buildMilliseconds,
-   modelPortConnections:connections,facilityPorts:accessReports,facilityRailPorts:railPortReports,siteAccess:accessReports.map(r=>r.id.replace('pad-','')),gatePorts:accessReports.map(r=>r.id),
+   modelPortConnections:connections,facilityPorts:accessReports,facilityRailPorts:railPortReports,
+   site110RailFan:site110Fan?{...site110Fan.stats,mappedNodes:site110Fan.mappedNodes,declaredJunctions:site110Fan.declaredJunctions,
+    joinedLinks:site110Fan.joinedLinks.map(({points,startTangent,endTangent,...link})=>({...link,points:points.map(p=>p.toArray()),startTangent:startTangent.toArray(),endTangent:endTangent.toArray()})),hiddenLinks:site110Fan.hiddenLinks}:null,
+   siteAccess:accessReports.map(r=>r.id.replace('pad-','')),gatePorts:accessReports.map(r=>r.id),
    vehicleRoutes:roadPlan.routes.map(r=>({id:r.id,source:r.source,length:r.length,osmWayCount:r.osmWayIds.length,nodeCount:r.nodeIds.length,vehicleScale:r.vehicleScale})),trainSource:train.source,trainWayCount:train.osmWayIds.length,
    saturnAccess:null,
    interchange:{version:'osm-reference-viaduct-v1',bridges:bridges.map(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY?{...b,...interchangeBridge?.stats()}:b),ramps:0,source:'OpenStreetMap bridge/layer topology; Bridge Design by 3DtechVN, CC BY 4.0'},gagarinRail:{version:'osm-pad1-port-v1',joinGap:gagarinJoinGap,entryWorld:gate.toArray(),gauge:RAIL_PROFILE.gauge,straightLength:18}})};

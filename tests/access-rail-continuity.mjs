@@ -9,6 +9,7 @@ import {RAIL_PROFILE,RAIL_METRES} from '../src/rail-profile.js';
 import {buildRailVehicle,TRAIN_METRIC_SCALE,COACH_OFFSETS} from '../src/rail-vehicles.js';
 import {buildMik112,MIK112} from '../src/mik112.js';
 import {SITE110_REFERENCE} from '../src/site110.js';
+import {distancePath} from '../src/traffic-paths.js';
 
 const V=(...p)=>new THREE.Vector3(...p),near=(a,b,e,message)=>assert(Math.abs(a-b)<=e,`${message}: ${a} != ${b}`);
 const horizontal=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
@@ -130,6 +131,52 @@ for(const report of stats.facilityRailPorts){
  }
 }
 assert.equal(stats.facilityRailPorts.filter(p=>p.sourceRouteId).length,8,'All eight source-bound destination sockets are rendered');
+const fan=stats.site110RailFan;assert.equal(fan.version,'site110-four-track-source-fan-v1');assert.equal(fan.joinedLinks.length,3);
+// Verify the new source fan against the final merged steel, including the
+// formerly floating physical diamond and the auxiliary source connections.
+let fanHeadProbes=0;
+for(const link of fan.joinedLinks){
+ const points=link.points.map(p=>V(...p));
+ for(const i of [0,Math.floor(points.length/2),points.length-1]){
+  const p=points[i].clone().add(V(0,RAIL_PROFILE.headY,0)),d=i===0?V(...link.startTangent):i===points.length-1?V(...link.endTangent):tangent(points,i),n=normal(d);
+  for(const side of [-1,1]){const q=p.clone().addScaledVector(n,side*RAIL_PROFILE.gauge/2);assert(steelAt(q).some(y=>Math.abs(y-q.y)<.001),'Actual source-link head gap '+link.id);fanHeadProbes++;}
+ }
+}
+const diamond=V(...fan.crossingPosition),diamondRows=['site110-left-east','site110-right-west'].map(id=>stats.facilityRailPorts.find(p=>p.portId===id).points.map(p=>V(...p)));
+for(const points of diamondRows)for(let i=1;i<points.length-1;i++){
+ if(horizontal(points[i],diamond)>.4)continue;
+ const n=normal(tangent(points,i));
+ for(const side of [-1,1]){
+  const q=points[i].clone().addScaledVector(n,side*RAIL_PROFILE.gauge/2);q.y=diamond.y+RAIL_PROFILE.headY;
+  const heights=steelAt(q);assert(heights.some(y=>Math.abs(y-q.y)<.0003),'The source diamond has an actual common running level');
+  assert(!heights.some(y=>y>q.y+.001),'An old raised rail fragment remains above the source diamond');fanHeadProbes++;
+ }
+}
+// These exact source fragments were visible as two disconnected old sidings
+// in the published MIK frame. Their source nodes remain in the graph, while
+// their steel geometry is owned by the reconstructed four-track apron.
+const railGraph=buildOsmGraph(data.railways.features,{geography,point,rail:true});let removedStubProbes=0;
+for(const [from,to]of [['1834611997','1834612003'],['1834611980','1834611993'],['1834611993','1834612001']]){
+ const a=railGraph.nodes.get(from).position,b=railGraph.nodes.get(to).position,n=normal(b.clone().sub(a));
+ for(const t of [.25,.5,.75])for(const side of [-1,1]){
+  const q=a.clone().lerp(b,t).addScaledVector(n,side*RAIL_PROFILE.gauge/2);q.y+=RAIL_PROFILE.headY;
+  assert(!steelAt(q).some(y=>Math.abs(y-q.y)<.001),'Detached MIK siding steel remains at '+from+'/'+to);removedStubProbes++;
+ }
+}
+// The first adapter sleepers meet the canonical model cadence at half a
+// period; inspect real top triangles, not only the placement helper.
+const sleeperAt=surfaceSampler([layers.rails.getObjectByName('OSM · шпалы')]);let sleeperSeamProbes=0;
+const sleeperRows=[...stats.facilityRailPorts.map(row=>({id:row.portId,points:row.points.map(p=>V(...p)),anchor:'end'})),
+ ...mik.tracks.map(row=>({id:row.gateId+'-'+row.trackIndex,points:row.curveSamples.map(p=>V(...p).add(V(0,-RAIL_PROFILE.headY,0))),anchor:'start'}))];
+for(const row of sleeperRows){
+ const path=distancePath(row.points);
+ for(const period of [.5,1.5]){
+  const d=RAIL_PROFILE.sleeperStep*period;if(d>=path.length)continue;
+  const p=path.sample(row.anchor==='start'?d:path.length-d).position;p.y+=RAIL_PROFILE.sleeperY+RAIL_PROFILE.sleeperHeight/2;
+  assert(sleeperAt(p).some(y=>Math.abs(y-p.y)<.0004),'Sleeper cadence/phase gap at '+row.id);sleeperSeamProbes++;
+ }
+}
+assert(sleeperSeamProbes>=30);
 near(RAIL_PROFILE.headWidth,.028,1e-12,'Physical head width');near(RAIL_PROFILE.railHeight,.0378,1e-12,'Physical rail height');
 const trainRoot=new THREE.Group(),engine=buildRailVehicle(trainRoot,{gauge:RAIL_PROFILE.gauge}),coach=buildRailVehicle(trainRoot,{gauge:RAIL_PROFILE.gauge,wagon:true});trainRoot.updateWorldMatrix(true,true);
 for(const vehicle of [engine,coach])for(const axle of vehicle.axles){
@@ -137,4 +184,4 @@ for(const vehicle of [engine,coach])for(const axle of vehicle.axles){
  for(const wheel of axle.wheels){const b=new THREE.Box3().setFromObject(wheel);assert(b.min.y<.001&&b.max.y>vehicle.wheelRadius,'Wheel treads reach the running datum');}
 }
 near(engine.bodyLength/coach.bodyLength,6.1/8.3,1e-12,'Coherent locomotive/coach scale');near(COACH_OFFSETS[0],7.9*TRAIN_METRIC_SCALE,1e-12,'Scaled coupler spacing');
-console.log('ACCESS_RAIL_CONTINUITY_PASS',JSON.stringify({roadGates:stats.facilityPorts.length,railPorts:stats.facilityRailPorts.length,accessProbes,railHeadProbes,localPaintProbes,minSourceDot,minGateDot,sourceSwitches:mik.sourceSwitches,profile:RAIL_METRES.version,gauge:RAIL_PROFILE.gauge,headWidth:RAIL_PROFILE.headWidth}));
+console.log('ACCESS_RAIL_CONTINUITY_PASS',JSON.stringify({roadGates:stats.facilityPorts.length,railPorts:stats.facilityRailPorts.length,accessProbes,railHeadProbes,fanHeadProbes,removedStubProbes,sleeperSeamProbes,localPaintProbes,minSourceDot,minGateDot,sourceSwitches:mik.sourceSwitches,profile:RAIL_METRES.version,gauge:RAIL_PROFILE.gauge,headWidth:RAIL_PROFILE.headWidth}));

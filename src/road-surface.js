@@ -47,9 +47,11 @@ class PolygonIndex{
  add(record){for(const key of this.keys(record.bounds)){const cell=this.cells.get(key)||[];cell.push(record);this.cells.set(key,cell);}}
  near(b){const out=new Set();for(const key of this.keys(b))for(const r of this.cells.get(key)||[])if(overlaps(b,r.bounds))out.add(r);return [...out];}
 }
-function sameLevel(a,b){
- const x=(Math.max(a.bounds.minX,b.bounds.minX)+Math.min(a.bounds.maxX,b.bounds.maxX))/2,z=(Math.max(a.bounds.minZ,b.bounds.minZ)+Math.min(a.bounds.maxZ,b.bounds.maxZ))/2;
- const tolerance=a.priority<0||b.priority<0?1.2:a.gradeTolerance!=null&&b.gradeTolerance!=null&&a.priority===b.priority?Math.min(a.gradeTolerance,b.gradeTolerance):.22;
+function sameLevel(a,b,overlap=null){
+ const x=overlap?overlap.reduce((sum,p)=>sum+p.x,0)/overlap.length:(Math.max(a.bounds.minX,b.bounds.minX)+Math.min(a.bounds.maxX,b.bounds.maxX))/2;
+ const z=overlap?overlap.reduce((sum,p)=>sum+p.z,0)/overlap.length:(Math.max(a.bounds.minZ,b.bounds.minZ)+Math.min(a.bounds.maxZ,b.bounds.maxZ))/2;
+ const mergingHighway=a.road==='highway'&&b.road==='highway'&&a.priority!==b.priority;
+ const tolerance=a.priority<0||b.priority<0||mergingHighway?1.2:a.gradeTolerance!=null&&b.gradeTolerance!=null&&a.priority===b.priority?Math.min(a.gradeTolerance,b.gradeTolerance):.22;
  return Math.abs(a.height(x,z)-b.height(x,z))<tolerance;
 }
 function record(poly,road,section){
@@ -73,8 +75,9 @@ function unionRecords(records,occluders=[],indexRecords=true){
  for(const r of records){
   let pieces=[r.poly];
   for(const previous of index.near(r.bounds)){
-   if(!sameLevel(r,previous))continue;
-   pieces=pieces.flatMap(p=>subtractRoadPolygon(p,previous.poly));if(!pieces.length)break;
+   const mergingHighway=r.road==='highway'&&previous.road==='highway'&&r.priority!==previous.priority;
+   if(!mergingHighway&&!sameLevel(r,previous))continue;
+   pieces=pieces.flatMap(p=>subtractRoadPolygon(p,previous.poly,mergingHighway?overlap=>sameLevel(r,previous,overlap):null));if(!pieces.length)break;
   }
   if(pieces.length!==1||pieces[0]?.length!==r.poly.length)clipped++;
   out.push(...pieces);if(indexRecords)index.add(r);
@@ -96,13 +99,42 @@ export function unionRoadSurfacePolygons(polygons,exclusivePolygons=[]){
  const records=polygons.map(make).filter(Boolean),exclusive=exclusivePolygons.map(poly=>{const r=make(poly);if(r)r.priority=-1;return r;}).filter(Boolean);
  const through=records.filter(r=>r.priority===0),ramps=records.filter(r=>r.priority!==0);
  const main=unionRecords(through,exclusive),merge=unionRecords(ramps,[...through,...exclusive],false);
- return {polygons:[...main.polygons,...merge.polygons],clipped:main.clipped+merge.clipped};
+ // X/Z subtraction alone leaves an open vertical seam where the flat
+ // cross-section of a graded ramp meets a differently sloping main road.
+ // Share the actual visible owner's plane at that cut edge and ease the
+ // crossfall into the last .9 scene units of ramp. Changing just the cut
+ // vertices would form steep needle triangles beside tiny clipped pieces.
+ // The ramp footprint and source points remain untouched; an underpass is
+ // excluded by the same local-level band used by pavement ownership.
+ const seams=new PolygonIndex(),blendWidth=.9;
+ for(const poly of main.polygons){const owner=make(poly);if(owner)seams.add(owner);}
+ const sharedHeights=new Map();
+ const joined=merge.polygons.map(poly=>poly.map(p=>{
+  const key=p.x+':'+p.y+':'+p.z;if(sharedHeights.has(key))return sharedHeights.get(key);
+  let result=p,bestDistance=blendWidth,bestHeightDifference=Infinity;
+  for(const owner of seams.near({minX:p.x-blendWidth,maxX:p.x+blendWidth,minZ:p.z-blendWidth,maxZ:p.z+blendWidth})){
+   const y=owner.height(p.x,p.z),difference=Math.abs(y-p.y);if(difference>=1.2)continue;
+   let distance=Infinity,inside=true;
+   for(let i=0;i<owner.poly.length;i++){
+    const a=owner.poly[i],b=owner.poly[(i+1)%owner.poly.length],dx=b.x-a.x,dz=b.z-a.z,t=THREE.MathUtils.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1),0,1);
+    distance=Math.min(distance,Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz));
+    if(cross(a,b,p)<-EPS)inside=false;
+   }
+   if(inside)distance=0;
+   if(distance>bestDistance+EPS||Math.abs(distance-bestDistance)<=EPS&&difference>=bestHeightDifference)continue;
+   bestDistance=distance;bestHeightDifference=difference;
+   const t=THREE.MathUtils.clamp(distance/blendWidth,0,1),weight=1-t*t*(3-2*t);
+   result={x:p.x,y:THREE.MathUtils.lerp(p.y,y,weight),z:p.z};
+  }
+  sharedHeights.set(key,result);return result;
+ }));
+ return {polygons:[...main.polygons,...joined],clipped:main.clipped+merge.clipped};
 }
 
 // The dark through carriageway owns its footprint at every grade-compatible
 // junction. Pale local-road and shoulder sheets must end at that footprint,
 // rather than protruding through the ramp or viaduct approach above it.
-export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[]){
+export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[],{onlyProtruding=false}={}){
  const index=new PolygonIndex(),gradeTolerance=1.2;
  const make=poly=>{
   const r=record(poly,'highway-owner');if(!r)return null;
@@ -120,19 +152,23 @@ export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[]){
  }}
  else{
   const hp=highwayMesh.geometry.attributes.position,hi=highwayMesh.geometry.index;
-  for(let i=0;i<hi.count;i+=3){const poly=[0,1,2].map(k=>{const j=hi.getX(i+k);return{x:hp.getX(j),y:hp.getY(j),z:hp.getZ(j)};}),r=make(poly);if(r)index.add(r);}
+  for(let i=0;i<(hi?.count??hp.count);i+=3){const poly=[0,1,2].map(k=>{const j=hi?hi.getX(i+k):i+k;return{x:hp.getX(j),y:hp.getY(j),z:hp.getZ(j)};}),r=make(poly);if(r)index.add(r);}
  }
  const reports=[];
  for(const mesh of meshes){
   if(!mesh)continue;const p=mesh.geometry.attributes.position,ix=mesh.geometry.index,positions=[];let clipped=0,removed=0;
   const append=(a,b,c)=>{for(const q of [a,b,c])positions.push(q.x,q.y,q.z);};
-  for(let i=0;i<ix.count;i+=3){
-   const original=[0,1,2].map(k=>{const j=ix.getX(i+k);return{x:p.getX(j),y:p.getY(j),z:p.getZ(j)};});
+  for(let i=0;i<(ix?.count??p.count);i+=3){
+   const original=[0,1,2].map(k=>{const j=ix?ix.getX(i+k):i+k;return{x:p.getX(j),y:p.getY(j),z:p.getZ(j)};});
    const box=bounds(original),near=index.near(box);
    if(!near.length){append(...original);continue;}
    const subject=make(original);if(!subject){append(...original);continue;}
    let pieces=[subject.poly];
    for(const host of near){
+    // A fully buried shoulder is already invisible. Plane differences are
+    // linear on each subject triangle, so its vertex extrema safely bound
+    // every possible shared point without a costly polygon subtraction.
+    if(onlyProtruding&&subject.poly.every(p=>p.y-host.height(p.x,p.z)<-1e-6))continue;
     pieces=pieces.flatMap(poly=>subtractRoadPolygon(poly,host.poly,overlap=>{
      const x=overlap.reduce((sum,p)=>sum+p.x,0)/overlap.length,z=overlap.reduce((sum,p)=>sum+p.z,0)/overlap.length;
      return Math.abs(subject.height(x,z)-host.height(x,z))<gradeTolerance;
@@ -148,7 +184,7 @@ export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[]){
   }
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geometry.setIndex(Array.from({length:positions.length/3},(_,i)=>i));geometry.computeVertexNormals();geometry.computeBoundingSphere();
-  const inputTriangles=ix.count/3;mesh.geometry.dispose();mesh.geometry=geometry;
+  const inputTriangles=(ix?.count??p.count)/3;mesh.geometry.dispose();mesh.geometry=geometry;
   reports.push({mesh:mesh.name,inputTriangles,outputTriangles:positions.length/9,clipped,removed});
  }
  return {version:'highway-pavement-owner-v1',gradeTolerance,reports};

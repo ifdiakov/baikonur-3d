@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261031-facilities-rails-lighting-v3';
+const revision='20261031-facilities-rails-lighting-v4';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));
@@ -390,7 +390,8 @@ try{
  assert.equal(mik.layout.transporterPlacementBasis,'tua-source-manifest');
  assert.equal(mik.features['energia-transporter'],2);assert.equal(mik.features['imported-transporter'],2);
  for(const feature of ['bogie-wheel','ochre-perforated-fork'])assert.equal(mik.features[feature]??0,0,'Old procedural TUA feature counts must be removed');
- assert.equal(mik.features['closed-sliding-door'],4);assert.equal(mik.features['hall-floor'],1);
+ assert.equal(mik.features['energia-gate'],2,'Two high gates each serve one two-track carrier');
+ assert.equal(mik.features['closed-sliding-door'],3,'Two high gates and the closed low-hall gate');assert.equal(mik.features['hall-floor'],1);
  assert.equal(mik.features['retained-light-roof'],1);assert.equal(mik.features['retained-dark-roof'],1);
  const originalMikPorts=[[-82.4,4.17,-258.5],[-59.6,4.17,-258.5],[-30.4,4.17,-258.5],[-7.6,4.17,-258.5]];
  assert.ok(mik.railEntries.every((port,i)=>near(port,originalMikPorts[i])));

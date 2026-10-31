@@ -25,7 +25,11 @@ const ROUTES=Object.freeze([
  {id:'site110-right-west',destination:'site110-right',gateIndex:0,runs:[['172571288','1834612063','1834612466'],['172571232','1834612466','1834613467']]},
  {id:'site110-right-east',destination:'site110-right',gateIndex:1,runs:[['172571295','1834612065','1834612452'],['172571347','1834612452','1834612469'],['172571233','1834612469','1834613464']]}
 ]);
-export const MIK112_OSM_WAY_IDS=Object.freeze([...new Set(['172571066','172571084',...ROUTES.flatMap(route=>route.runs.map(row=>row[0]))])].sort((a,b)=>Number(a)-Number(b)));
+const MIK112_LEGACY_DISPLAY_TAILS=Object.freeze([
+ Object.freeze({wayId:'172571405',from:'1834611991',to:'1834612003',reason:'terminal siding inside reconstructed four-track apron'}),
+ Object.freeze({wayId:'172571154',from:'1834611581',to:'1834612058',reason:'isolated legacy siding inside reconstructed four-track apron'})
+]);
+export const MIK112_OSM_WAY_IDS=Object.freeze([...new Set(['172571066','172571084','172571316',...MIK112_LEGACY_DISPLAY_TAILS.map(row=>row.wayId),...ROUTES.flatMap(route=>route.runs.map(row=>row[0]))])].sort((a,b)=>Number(a)-Number(b)));
 const V=(...p)=>new THREE.Vector3(...p);
 
 /** Select original edge identities without inserting or moving graph nodes. */
@@ -66,7 +70,17 @@ export function createMik112RailSourcePlan(railGraph){
   return {id:route.id,destination:route.destination,gateIndex:route.gateIndex,
    sourceWayIds:route.runs.map(row=>row[0]),nodeIds:nodes.map(node=>String(node.id)),edges,points:nodes.map(node=>node.position.clone())};
  });
+ // These exact old apron intervals were exposed as detached fragments by
+ // the enlarged model mask. The new four tracks own this small display
+ // area. Keep every source edge/node and every downstream route untouched.
+ const displayReplacements=MIK112_LEGACY_DISPLAY_TAILS.map(row=>{
+  const section=run(row.wayId,row.from,row.to);
+  if(section.edges.some(edge=>protectedEdges.has(edge)))throw new Error('MIK display tail overlaps a protected source route');
+  section.edges.forEach(edge=>replacedEdges.add(edge));
+  return {...row,edgeCount:section.edges.length,sourceGraphPreserved:true};
+ });
  return {version:MIK112_RAIL_LAYOUT.version,gates,replacedEdges,protectedEdges,destinationRoutes,
+  displayReplacements,
   sourceTimestamp:'2026-10-28T17:10:51Z',confidence:'OSM-shared-source-node-chains',
   sourceWayIds:[...new Set(destinationRoutes.flatMap(route=>route.sourceWayIds))]};
 }

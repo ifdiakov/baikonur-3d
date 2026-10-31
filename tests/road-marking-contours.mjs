@@ -5,7 +5,7 @@ import {buildRoadMarkings} from '../src/road-markings.js';
 import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {createInterchangeAprons} from '../src/interchange-aprons.js';
-import {clipOrdinaryRoadMeshes} from '../src/road-surface.js';
+import {clipOrdinaryRoadMeshes,unionRoadSurfacePolygons} from '../src/road-surface.js';
 import {smoothLocalRoadGraph} from '../src/access-transitions.js';
 
 const V=(x=0,y=.72,z=0)=>new THREE.Vector3(x,y,z),normal=d=>V(-d.z,0,d.x).normalize();
@@ -125,6 +125,33 @@ clipOrdinaryRoadMeshes([pale,lowerRoad],null,[[V(-1,0,-1),V(1,0,-1),V(1,2,1),V(-
 assert.equal(pale.geometry.attributes.position.count,0,'A nonplanar owner extrapolates the wrong grade plane and leaves a pale chip');
 assert.equal(lowerRoad.geometry.attributes.position.count,3,'An upper ribbon must not remove the lower road');
 
+// Clipping a graded ramp in plan must also weld its exposed cut to the
+// owning main-road plane. Otherwise oblique cameras see ground through a
+// vertical slit although a top-down coverage test reports no missing X/Z.
+const seamHeight=x=>1+.04*x;
+const ownerPoints=[V(-3,seamHeight(-3),-2),V(3,seamHeight(3),-2),V(3,seamHeight(3),2),V(-3,seamHeight(-3),2)];
+const rampPoints=[V(0,.95,-1),V(7,1.23,-1),V(7,1.23,5),V(0,.95,5)];
+const seamInput=[];
+for(const [points,priority] of [[ownerPoints,0],[rampPoints,1],[rampPoints.map(p=>p.clone().add(V(0,-5.8,0))),1]])for(const indices of [[0,1,2],[0,2,3]]){
+ const poly=indices.map(i=>points[i]);poly.priority=priority;seamInput.push(poly);
+}
+const seamSource=JSON.stringify(seamInput),seamUnion=unionRoadSurfacePolygons(seamInput);assert.equal(JSON.stringify(seamInput),seamSource);
+let seamHeightChecks=0,lowerSeamChecks=0;
+for(const poly of seamUnion.polygons)for(const p of poly){
+ if(p.y<0){assert(Math.abs(p.y-(.95+.04*p.x-5.8))<1e-10,'An upper-road seam changes the lower underpass');lowerSeamChecks++;continue;}
+ if(p.x>=0&&p.x<=3&&(Math.abs(p.z-2)<1e-8||Math.abs(p.x-3)<1e-8&&p.z>=-1&&p.z<=2)){
+  assert(Math.abs(p.y-seamHeight(p.x))<1e-10,'The ramp cut and its owning main-road plane have different heights');seamHeightChecks++;
+ }
+}
+assert(seamHeightChecks>2&&lowerSeamChecks>2);
+// Ordinary asphalt owns its visible footprint too: a slightly raised old
+// connector shoulder must not protrude, while a lower-level road survives.
+const localOwner=triangleMesh(.72,'ordinary asphalt');localOwner.geometry=localOwner.geometry.toNonIndexed();
+const oldShoulder=triangleMesh(.735,'old connector shoulder'),underpassShoulder=triangleMesh(-5.08,'underpass shoulder');
+clipOrdinaryRoadMeshes([oldShoulder,underpassShoulder],localOwner,[],{onlyProtruding:true});
+assert.equal(oldShoulder.geometry.attributes.position.count,0);
+assert.equal(underpassShoulder.geometry.attributes.position.count,3);
+
 // Check the two published trouble spots in the real museum geometry.
 const read=p=>JSON.parse(fs.readFileSync(new URL('../'+p,import.meta.url)));
 const geography=createMuseumGeography({catalog:read('data/catalog.json'),matches:read('data/osm/catalog-matches.json')});
@@ -166,12 +193,37 @@ for(const quad of nearby.filter(q=>q.roadIds.some(id=>/^marking-road-36972206[12
  assert.equal(actual.length,1,'The final Float32 U-rim mesh must have exactly one physical paint triangle at each interior probe');physicalLoopChecks++;
 }
 assert(loopOwnershipChecks>100,'Both complete U-rims are covered by the overlap probes');
-function meshHeights(mesh,p){
- const result=[],position=mesh.geometry.attributes.position,index=mesh.geometry.index;
- for(let i=0;i<(index?.count??position.count);i+=3){
-  const [a,b,c]=[0,1,2].map(k=>V().fromBufferAttribute(position,index?index.getX(i+k):i+k));
-  if(!triangle(p,a,b,c))continue;
-  const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z),u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/den,v=((c.z-a.z)*(p.x-c.x)+(a.x-c.x)*(p.z-c.z))/den;
+const surfaceCells=new WeakMap(),surfaceCellSize=6;
+function meshHeights(mesh,p,edgeTolerance=0){
+ let cells=surfaceCells.get(mesh);
+ if(!cells){
+  mesh.updateWorldMatrix(true,false);
+  cells=new Map();const position=mesh.geometry.attributes.position,index=mesh.geometry.index;
+  for(let i=0;i<(index?.count??position.count);i+=3){
+   const points=[0,1,2].map(k=>V().fromBufferAttribute(position,index?index.getX(i+k):i+k).applyMatrix4(mesh.matrixWorld)),box=new THREE.Box3().setFromPoints(points);
+   for(let x=Math.floor(box.min.x/surfaceCellSize);x<=Math.floor(box.max.x/surfaceCellSize);x++)for(let z=Math.floor(box.min.z/surfaceCellSize);z<=Math.floor(box.max.z/surfaceCellSize);z++){
+    const key=x+':'+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(points);
+   }
+  }
+  surfaceCells.set(mesh,cells);
+ }
+ const result=[],nearby=new Set();
+ for(let x=Math.floor((p.x-edgeTolerance)/surfaceCellSize);x<=Math.floor((p.x+edgeTolerance)/surfaceCellSize);x++)for(let z=Math.floor((p.z-edgeTolerance)/surfaceCellSize);z<=Math.floor((p.z+edgeTolerance)/surfaceCellSize);z++)
+  for(const t of cells.get(x+':'+z)||[])nearby.add(t);
+ for(const [a,b,c] of nearby){
+  const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(Math.abs(den)<1e-12)continue;
+  const u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/den,v=((c.z-a.z)*(p.x-c.x)+(a.x-c.x)*(p.z-c.z))/den;
+  if(u<0||v<0||u+v>1){
+   if(!edgeTolerance)continue;
+   let distance=Infinity,height=null;
+   for(const [start,end] of [[a,b],[b,c],[c,a]]){
+    const dx=end.x-start.x,dz=end.z-start.z,t=THREE.MathUtils.clamp(((p.x-start.x)*dx+(p.z-start.z)*dz)/(dx*dx+dz*dz||1),0,1);
+    const d=Math.hypot(p.x-start.x-t*dx,p.z-start.z-t*dz);
+    if(d<distance){distance=d;height=THREE.MathUtils.lerp(start.y,end.y,t);}
+   }
+   if(distance<=edgeTolerance)result.push(height);
+   continue;
+  }
   result.push(u*a.y+v*b.y+(1-u-v)*c.y);
  }
  return result;
@@ -183,4 +235,56 @@ for(const center of [V(-101.6824584,3.0732456,990.2943364),V(-100.1709601,3.1498
  assert(pavement.length,'The published chip probe must retain actual dark pavement');
  assert(!meshHeights(shoulder,p).some(y=>pavement.some(top=>y>top&&y-top<1.2)),'A detached pale shoulder chip survives above the dark ramp');shoulderChipChecks++;
 }
-console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({throughTChecks:5,frameChecks,gradedMouthChecks:3,seamChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));
+// These exact public-v3 camera rays passed between the clipped ramp and
+// main road despite their continuous plan footprints. Both upper joins
+// must now have real asphalt in front of the visible ground.
+const raycaster=new THREE.Raycaster();let obliqueSeamChecks=0;
+dark.updateWorldMatrix(true,false);
+for(const view of [
+ {position:[-101.46706142284488,21.845853203085692,1009.8127201063572],target:[-88.26706142284488,2.0458532030856924,995.5127201063573],pixels:[[704,674],[707,668],[697,514],[719,496]]},
+ {position:[-117.38813820783946,23.436540219278715,1012.6406333868829],target:[-104.18813820783946,3.636540219278713,998.3406333868829],pixels:[[856,529],[900,490]]}
+]){
+ const camera=new THREE.PerspectiveCamera(52,1.6,.1,80000);camera.position.fromArray(view.position);camera.lookAt(V(...view.target));camera.updateMatrixWorld(true);
+ for(const [x,y] of view.pixels){
+  raycaster.setFromCamera(new THREE.Vector2(x/800-1,1-y/500),camera);
+  assert(raycaster.intersectObject(dark,false).some(hit=>hit.point.y>1.8&&hit.point.y<4&&hit.point.x>-108&&hit.point.x<-85&&hit.point.z>992&&hit.point.z<1003),'An oblique ray still sees ground through the upper ramp seam: '+[x,y]);obliqueSeamChecks++;
+ }
+}
+// The two older ordinary connector shoulders remain outside the rounded
+// replacement boundary, but cannot paint a beige crescent over its host.
+const ordinary=layers.roads.getObjectByName('OSM · единое дорожное полотно');let ordinaryShoulderChecks=0;
+for(const p of [V(-125.0242656,.9808682,1007.3363964),V(-124.6730805,.9808682,1006.9241348),V(-124.1997428,.9808682,1006.6645649),V(-123.8027498,.9808682,1006.5729542),V(-123.2988746,.9808682,1006.5576899),V(-122.9629584,.9808682,1006.5576931),V(-120.6725809,.9797363,1015.8718446),V(-120.2450413,.9797363,1015.6886106),V(-119.9243870,.9797363,1015.5511853)]){
+ const asphalt=meshHeights(ordinary,p);assert(asphalt.length,'The lower crescent probe has no retained ordinary road');
+ assert(!meshHeights(shoulder,p).some(y=>y>Math.max(...asphalt)-.0003&&y<Math.max(...asphalt)+1.2),'An old connector shoulder remains above the ordinary host asphalt');ordinaryShoulderChecks++;
+}
+let upwardTriangles=0,seamPaintChecks=0,seamPaintEdgeChecks=0,maxUpperCrossfall=0,maxSeamPaintLiftError=0;
+const positions=dark.geometry.attributes.position,index=dark.geometry.index;
+for(let i=0;i<(index?.count??positions.count);i+=3){
+ const [a,b,c]=[0,1,2].map(k=>V().fromBufferAttribute(positions,index?index.getX(i+k):i+k)),normal=b.clone().sub(a).cross(c.clone().sub(a));
+ assert(normal.y>0,'A pavement seam has an inverted or vertical Float32 triangle');upwardTriangles++;
+ if([a,b,c].every(p=>p.x>-108&&p.x<-85&&p.z>992&&p.z<1003)){
+  const crossfall=Math.hypot(normal.x,normal.z)/normal.y;maxUpperCrossfall=Math.max(maxUpperCrossfall,crossfall);
+  assert(crossfall<.6,'The welded upper seam forms a steep needle triangle');
+ }
+}
+const white=layers.roads.getObjectByName('Трасса · белые кромки').geometry.attributes.position;
+const pavementOwners=[dark,ordinary,network.bridgeObjects()[0].getObjectByName('Виадук · asphalt')];
+const float32Ulp=value=>2**Math.max(-149,Math.floor(Math.log2(Math.abs(value)||2**-149))-23);
+for(let i=0;i<white.count;i++){
+ const p=V().fromBufferAttribute(white,i);if(p.x<=-108||p.x>=-85||p.z<=992||p.z>=1003)continue;
+ const atLevel=y=>y<p.y+.0003&&y>p.y-.1;
+ // Include the canonical bridge in world coordinates. Strict containment
+ // across all owners wins; only an otherwise unsupported Float32 vertex
+ // may use an actual triangle edge within one coordinate ULP. A fixed
+ // barycentric epsilon cannot express that physical precision on slivers.
+ let tops=pavementOwners.flatMap(mesh=>meshHeights(mesh,p)).filter(atLevel);
+ if(!tops.length){
+  const tolerance=Math.max(float32Ulp(p.x),float32Ulp(p.z));
+  tops=pavementOwners.flatMap(mesh=>meshHeights(mesh,p,tolerance)).filter(atLevel);seamPaintEdgeChecks++;
+ }
+ assert(tops.length,'A marking has no pavement support in the welded upper seam: '+JSON.stringify({vertex:i,point:p.toArray()}));
+ const error=Math.abs(p.y-Math.max(...tops)-.011);maxSeamPaintLiftError=Math.max(maxSeamPaintLiftError,error);
+ assert(error<.002,'A marking loses exact asphalt support in the welded upper seam');seamPaintChecks++;
+}
+assert(seamPaintChecks>100);
+console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({throughTChecks:5,frameChecks,gradedMouthChecks:3,seamChecks,seamHeightChecks,lowerSeamChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,obliqueSeamChecks,ordinaryShoulderChecks,upwardTriangles,maxUpperCrossfall,seamPaintChecks,seamPaintEdgeChecks,maxSeamPaintLiftError,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));

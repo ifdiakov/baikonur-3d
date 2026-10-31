@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 
-const revision='20261031-facilities-rails-lighting-v3';
+const revision='20261031-facilities-rails-lighting-v4';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-facility-access';
 const manifest=JSON.parse(await readFile(new URL('../assets/models/tua/manifest-v2.json',import.meta.url),'utf8'));
@@ -37,7 +37,7 @@ const elevation=camera=>Math.atan2(camera.position[1]-camera.target[1],Math.hypo
 async function snapshot(){return page.evaluate(()=>{
  const q=window.__BAIKONUR_QA,s=q.stats();return {revision:s.museumRevision,render:s.render,shadersValid:s.shadersValid,camera:q.cameraState(),
   evening:s.evening.evening,labelsVisible:s.labelsVisible,commonMetre:s.commonMetre,mik112:s.mik112,mik112Rail:s.mik112Rail,
-  railProfile:s.transport.railProfile,railPorts:s.transport.facilityRailPorts,roadFeatures:s.transport.roadFeatureCount,railFeatures:s.transport.railFeatureCount,
+  railProfile:s.transport.railProfile,railPorts:s.transport.facilityRailPorts,site110RailFan:s.transport.site110RailFan,roadFeatures:s.transport.roadFeatureCount,railFeatures:s.transport.railFeatureCount,
   rockets:q.rockets.stats()};
 });}
 function checkState(s){
@@ -53,7 +53,7 @@ function checkState(s){
  assert.equal(m.tua.runningGear.retentionAudit.afterVehicleWheels,128);assert.equal(m.tua.runningGear.retentionAudit.afterVehicleAxles,64);
  assert.deepEqual(m.tua.runningGear.retentionAudit.missingProtectedIDs,[]);
  assert.equal(r.connected,true);assert.equal(r.version,'mik112-two-gates-osm-rails-v1');assert.equal(r.tracks.length,4);
- assert.deepEqual(r.sourceSwitches,['1834612063','1834612065']);assert.equal(r.replacedSourceEdges,39);near(r.joinGap,0,1e-8,'Four approach joins');
+ assert.deepEqual(r.sourceSwitches,['1834612063','1834612065']);assert.equal(r.replacedSourceEdges,55,'Original39 apron edges plus2 terminal and14 isolated legacy siding edges');near(r.joinGap,0,1e-8,'Four approach joins');
  near(p.gauge,1.52*.14,1e-12,'Uniform railway gauge');near(p.headWidth,.20*.14,1e-12,'Uniform rail-head width');near(p.railHeight,.27*.14,1e-12,'Uniform rail profile');
  near(r.railGauge,p.gauge,1e-12,'MIK approach gauge');
  for(const track of r.tracks){
@@ -72,7 +72,34 @@ function checkState(s){
   pointNear(port.points[0],port.sourcePoint,'Actual source attachment');near(port.headCenterGap,0,1e-8,'Destination head gap');near(port.networkDatumGap,0,1e-8,'Source datum gap');
   near(port.networkGauge,p.gauge,1e-12,'Approach network gauge');near(port.portGauge,p.gauge,1e-12,'Approach model gauge');
  }
- return {gates:2,carrierCount:2,tracks:4,destinations:8,gaugeMetres:1.52,headWidthMetres:.20};
+ const fan=s.site110RailFan,fanPorts=new Map(mapped.filter(port=>port.id==='pad-110').map(port=>[port.portId,port]));
+ assert(fan,'The coordinated Site 110 display fan is installed in the running scene');
+ assert.equal(fan.version,'site110-four-track-source-fan-v1');assert.equal(fan.sourceNodesPreserved,true);assert.equal(fan.sourceRoutesPreserved,true);
+ assert.deepEqual(fan.sourceEntryNodes,['1834612466','1834612469']);assert.equal(fan.replacedDisplayEdges,119);
+ assert.equal(fanPorts.size,4);assert.equal(fan.tracks.length,4);assert.equal(fan.mappedNodes.length,112);assert.equal(fan.declaredJunctions.length,10);
+ const mappedNodes=new Map(fan.mappedNodes.map(node=>[node.sourceNodeId,node]));
+ for(const node of mappedNodes.values()){
+  assert(finitePoint(node.sourcePosition)&&finitePoint(node.displayPosition),'Source and displayed node coordinates are explicit');
+  for(const id of node.trackIds){
+   const port=fanPorts.get(id);assert(port,'Mapped source node belongs to a rendered approach');
+   assert(port.points.some(p=>p.every((v,i)=>Math.abs(v-node.displayPosition[i])<1e-7)),'The actual approach contains mapped node '+node.sourceNodeId+' / '+id);
+  }
+ }
+ for(const entry of fan.sourceEntryNodes){const node=mappedNodes.get(entry);pointNear(node.displayPosition,node.sourcePosition,'Fixed upstream source node '+entry);}
+ for(const [id,port] of fanPorts){
+  assert.equal(port.displayLayout,fan.version);assert(fan.sourceEntryNodes.includes(port.displaySourceNodeId));
+  pointNear(port.sourcePoint,mappedNodes.get(port.displaySourceNodeId).displayPosition,'Approach attaches to the fixed upstream node '+id);
+  pointNear(port.sourceDestination,mappedNodes.get(port.sourceNodeId).sourcePosition,'Original OSM destination remains recorded '+id);
+ }
+ assert.equal(fan.declaredCrossingNode,'1834612534');pointNear(fan.crossingPosition,mappedNodes.get(fan.declaredCrossingNode).displayPosition,'The real shared crossing has one position');
+ assert.deepEqual(fan.joinedLinks.map(link=>link.id).sort(),['site110-source-crossover-316','site110-source-crossover-347','site110-west-source-entry']);
+ for(const link of fan.joinedLinks){
+  assert.equal(link.sourceGraphPreserved,true);assert.equal(link.visible,true);assert(link.points.length>3);
+  pointNear(link.points[0],mappedNodes.get(link.from)?.displayPosition??link.sourcePoints[0],'Visible source link start '+link.id);
+  pointNear(link.points.at(-1),mappedNodes.get(link.to)?.displayPosition??link.sourcePoints.at(-1),'Visible source link end '+link.id);
+ }
+ assert.equal(fan.hiddenLinks.length,3);assert(fan.hiddenLinks.every(link=>link.sourceGraphPreserved&&link.visible===false&&link.visibility==='hidden-by-existing-pad110-mask'));
+ return {gates:2,carrierCount:2,tracks:4,destinations:8,gaugeMetres:1.52,headWidthMetres:.20,site110Junctions:fan.declaredJunctions.length,visibleSourceLinks:fan.joinedLinks.length};
 }
 
 try{
@@ -105,6 +132,14 @@ try{
    const anchor=chosen.anchors.find(anchor=>anchor.id===port.portId);if(anchor)pointNear(anchor.position,port.headCenter,'Rendered destination transform and network agree');
   }
   const name=target+'-'+view+'-day';await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});
+  // Source and gate anchors fit the live UI, but a curved approach can extend
+  // between them beneath the menu. Preserve an unobstructed inspection frame
+  // as well so the complete paired corridor can be reviewed for crossings.
+  if(target==='mik112-gates'||target.startsWith('site110-')){
+   const inspectionStyle=await page.addStyleTag({content:'#ui,#timeDock,#info{visibility:hidden!important}'});
+   try{await page.screenshot({path:`${out}/${prefix}-${name}-clear.png`,timeout:90000});}
+   finally{await inspectionStyle.evaluate(element=>element.remove());}
+  }
   evidence.views.push({name,chosen,camera:state.camera,elevation:angle,projected,render:state.render});console.log('FACILITY_ACCESS_VIEW',name);
  }
  const final=await snapshot();checkState(final);evidence.final=final;

@@ -86,6 +86,7 @@ jobs:
           node tests/mik112-metric-geometry.mjs
           node tests/mik112-rail-layout.mjs
           node tests/mik112-destination-ports.mjs
+          node tests/site110-rail-fan.mjs
           node tests/access-rail-continuity.mjs
           node tests/rocket-assets.mjs
           node tests/site110-geometry.mjs

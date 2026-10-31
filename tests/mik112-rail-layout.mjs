@@ -17,7 +17,13 @@ const before=snapshot(),plan=createMik112RailSourcePlan(graph);
 assert.equal(plan.gates.length,2);assert.equal(plan.destinationRoutes.length,8);
 assert.equal(new Set(plan.gates.map(gate=>gate.sourceNodeId)).size,2,'Four approaches must reach two real OSM switches');
 assert.deepEqual(plan.gates.map(gate=>gate.sourceNodeId),['1834612063','1834612065']);
-assert.equal(plan.replacedEdges.size,39);assert.equal(plan.protectedEdges.size,194);
+assert.equal(plan.replacedEdges.size,55);assert.equal(plan.protectedEdges.size,194);
+assert.deepEqual(plan.displayReplacements.map(({wayId,from,to,edgeCount})=>({wayId,from,to,edgeCount})),[
+ {wayId:'172571405',from:'1834611991',to:'1834612003',edgeCount:2},
+ {wayId:'172571154',from:'1834611581',to:'1834612058',edgeCount:14}
+],'Only the two identified old apron fragments join the original39 display replacements');
+assert(![...plan.replacedEdges].some(edge=>plan.protectedEdges.has(edge)),'A legacy apron fragment cannot remove any of the eight downstream routes');
+for(const wayId of ['172571405','172571154'])assert(MIK112_OSM_WAY_IDS.includes(wayId),'Live source verification covers the replaced legacy siding too');
 for(const edge of plan.replacedEdges){assert(graph.edges.includes(edge));assert(!plan.protectedEdges.has(edge),'A display replacement cannot remove downstream destination track');}
 for(const edge of plan.protectedEdges)assert(graph.edges.includes(edge));
 let connectedSourceSegments=0;
