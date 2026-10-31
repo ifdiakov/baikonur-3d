@@ -23,5 +23,5 @@ const io=new NodeIO().registerExtensions(ALL_EXTENSIONS),gltf=await io.binaryToJ
 assert.equal(gltf.json.scenes.length,1);assert.ok(!gltf.json.cameras?.length);assert.ok(gltf.json.extensionsRequired.includes('EXT_meshopt_compression'));
 for(const buffer of gltf.json.buffers)assert.ok(!buffer.uri);for(const image of gltf.json.images)assert.ok(image.bufferView!==undefined&&!image.uri);
 const viewer=await readFile('workshop/zenit.html','utf8');assert.ok(viewer.includes('Морской старт'));
-const main=await readFile('index.html','utf8');assert.ok(main.includes("case 'zenit-3sl':location.assign('./workshop/zenit.html')"));
+const main=await readFile('index.html','utf8');assert.ok(main.includes("case 'zenit-3sl':openMenuSite('pad-45')"));
 console.log('ZENIT_GEOMETRY_OK',JSON.stringify({near:near.stats(),far:far.stats(),clearLatticeSamples:clear,assetBytes:bytes.length}));near.dispose();far.dispose();

@@ -46,14 +46,14 @@ function sourceFingerprint(){
 const sourceBefore=sourceFingerprint(),lighting=buildFacilityTowerLighting({scene,objects}),records=lighting.records(),stats=lighting.stats();
 assert.deepEqual(sourceFingerprint(),sourceBefore,'Lighting does not reshape, duplicate or move any source geometry');
 assert.equal(stats.version,'facility-tower-lighting-v1');assert.equal(stats.dynamicLights,0);assert.equal(stats.drawCalls,6);
-assert.equal(stats.fixtures,907);assert.equal(stats.boards,26);assert.equal(stats.beacons,77);
+assert.equal(stats.fixtures,987);assert.equal(stats.boards,30);assert.equal(stats.beacons,81);
 assert.equal(stats.rendered.visibilityLeaks,0);assert(stats.rendered.maximumError<.002);
 assert.equal(stats.rendered.activeLenses,0);assert.equal(stats.rendered.activeBeacons,0);
 assert.equal(stats.importedUkss.lensComponents,735,'All source-preserved UKSS lens components are enabled');
 assert.equal(stats.importedUkss.boards,7);assert(stats.importedUkss.lightningTowers>0);assert.equal(stats.importedUkss.source,'preserved-imported-geometry');
 assert.equal(stats.importedUkss.serviceTowers,2,'Both the fixed Tower_2 and mobile Telega source service structures are covered');
 const counts=new Map(stats.sites.map(s=>[s.siteId,s]));
-for(const [id,count] of [['pad-1',32],['pad-250',735],['pad-110',115],['pad-31',20],['pad-42',1],['pad-23',4]])assert.equal(counts.get(id)?.fixtures,count,id+' existing lens count');
+for(const [id,count] of [['pad-1',32],['pad-250',735],['pad-110',115],['pad-31',20],['pad-45',80],['pad-42',1],['pad-23',4]])assert.equal(counts.get(id)?.fixtures,count,id+' existing lens count');
 for(const id of ['pad-1','pad-250','pad-110','pad-31','pad-81','pad-200','pad-45','pad-42','pad-112','airfield','pad-251'])assert(counts.get(id)?.beacons>0,id+' actual towers receive beacons');
 assert.equal(counts.get('pad-23').beacons,0,'No speculative dish-feed beacon is added');
 assert(!counts.has('pad-41'),'The unpowered Site41 ruins have no invented mast');

@@ -67,14 +67,4 @@ export function soyuz31(root){
  for(const s of[-1,1]){k.lattice(s*22,28,48,7,8,{levels:9,deck:true,material:'green',tag:'soyuz-service-gantry'});for(let y=12;y<46;y+=7){k.box(11,.6,8,s*17,y,26,'green','folding-service-balcony');k.rod([s*22,y+1,21],[s*12,y+1,21],.08,'yellow','service-railing');}}
  for(const[x,z]of[[-70,-48],[70,-48]])k.lattice(x,z,88,5,5,{levels:15,tag:'soyuz-lightning-mast'});k.rail([[0,174],[0,42],[0,3]]);k.path([[-59,139],[-51,57],[-47,-44],[57,-44],[60,133]],6,.1);k.hall({x:61,z:91,w:22,d:40,h:7,roof:'blue',gates:1,tag:'soyuz-service-house'});root.userData.orientationNote='No overhead of Site 31 in the satellite folder; azimuth remains schematic.';return k.finish();
 }
-export function zenit45(root){
- const k=archiveKit(root);k.cutouts.push({x:0,z:0,rx:26,rz:51,yaw:0,shape:'rectangle'});k.poly([[-26,-51],[26,-51],[26,51],[-26,51]],-27,'dark','zenit-flame-well-floor');
- for(const s of[-1,1]){k.quad([s*26,0,-51],[s*26,0,51],[s*22,-27,46],[s*22,-27,-46],'green','green-flame-well-wall');k.box(11,3,108,s*31.5,1.5,0,'green','zenit-bridge-side');k.rod([s*27,4,-53],[s*27,4,53],.12,'red','red-flame-well-handrail');for(let z=-50;z<=50;z+=5)k.rod([s*27,3,z],[s*27,4,z],.1,'red','handrail-post');}
- for(const z of[-54,54])k.box(74,3,9,0,1.5,z,'concrete','zenit-cross-bridge');for(let i=0;i<18;i++){const a=i/18*Math.PI/2,b=(i+1)/18*Math.PI/2;k.quad([-21,-27+22*(1-Math.cos(a)),-42+28*Math.sin(a)],[21,-27+22*(1-Math.cos(a)),-42+28*Math.sin(a)],[21,-27+22*(1-Math.cos(b)),-42+28*Math.sin(b)],[-21,-27+22*(1-Math.cos(b)),-42+28*Math.sin(b)],'dark','curved-flame-deflector');}
- for(const[x,z]of[[-75,-70],[75,-70],[-75,70],[75,70]])k.lattice(x,z,73,4,4,{levels:12,tag:'zenit-lightning-tower'});k.lattice(44,-20,42,7,9,{levels:8,deck:true,tag:'zenit-fixed-service-mast'});k.box(7,18,8,44,36,-20,'green','zenit-mast-top');k.rail([[0,145],[0,60]],{gauge:1.52});k.hall({x:78,z:102,w:23,d:50,h:7,roof:'blue',gates:1,tag:'zenit-utility-building'});
- registerFacilityBeacon(root,{id:'zenit-fixed-service-mast',position:[44,45,-20],kind:'service-tower'});
- const physical={units:'metres',localScale:1,railGaugeMetres:1.52,heightsSurveyed:false,planSurveyed:false,
-  interpretation:'One schematic Zenit launch position; not a surveyed reconstruction of both Site 45 pads.',
-  referenceVehicle:{name:'Zenit-2, basic two-stage version',heightMetres:57,diameterMetres:3.9,source:'https://rvsn.ruzhany.info/umz_2014_03.html'}};
- root.userData.physicalUnits=physical;return {...k.finish(),physical};
-}
+export {buildSite45 as zenit45} from './site45.js?v=20261101-model-inspector-v1';

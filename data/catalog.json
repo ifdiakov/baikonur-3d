@@ -2797,9 +2797,9 @@
         "attributionSource": "owner-correction-2026-10-28"
       },
       "contentSource": "reviewed-sites-workbook-20261028",
-      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "modelStatus": "Исторический старт «Зенит» №45/1 с ракетой «Зенит-3SLБ»: реконструкция по десяти фотографиям. Высоты и планировка сооружений оценены по фото; современная конфигурация «Союза-5» здесь не показана.",
       "archiveModel": {
-        "version": "1.0-portal-photo-pass",
+        "version": "site45-photo-v2",
         "kind": "zenit",
         "orientation": "not-verified-no-overhead",
         "satellite": null,

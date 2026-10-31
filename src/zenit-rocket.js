@@ -9,9 +9,10 @@ const radial=(a,r,y)=>V(Math.sin(a)*r,y,Math.cos(a)*r);
 // Original geometry reconstructed from the owner's eight Sea Launch reference
 // views. Metres, +Y up, nozzle exit at Y=0. It is not a recovered source mesh.
 // Published overall dimensions: Yuzhmash Zenit-3SL product specification.
-export function createZenitRocket({detail='near',textures=typeof document!=='undefined'}={}){
+export function createZenitRocket({detail='near',textures=typeof document!=='undefined',variant='sea'}={}){
+ const land=variant==='land',dimensions=land?{...ZENIT_DIMENSIONS,height:58.7,fairingDiameter:4.10}:ZENIT_DIMENSIONS,version=land?'zenit-3slb-v1':ZENIT_VERSION;
  const near=detail==='near',radialSegments=near?64:32;
- const root=new THREE.Group();root.name='Зенит-3SL · Sea Launch';root.userData={museumAsset:'zenit-3sl',unit:'metre',version:ZENIT_VERSION,referenceReconstruction:true};
+ const root=new THREE.Group();root.name=land?'Зенит-3SLБ · Наземный старт':'Зенит-3SL · Sea Launch';root.userData={museumAsset:land?'zenit-3slb':'zenit-3sl',unit:'metre',version,referenceReconstruction:true};
  const stages=Array.from({length:4},(_,i)=>{const g=new THREE.Group();g.name=['Первая ступень · РД-171','Вторая ступень · РД-120 и РД-8','Блок ДМ-SL · внешний корпус','Головной обтекатель'][i];g.userData.stage=i+1;root.add(g);return g;});
  const make=(color,metalness=0,roughness=.5)=>new THREE.MeshStandardMaterial({color,metalness,roughness});
  const materials={paint:make('#e7e9e6',.12,.43),red:make('#ab282e',.12,.4),steel:make('#818e98',.72,.34),dark:make('#1a2228',.48,.68),gold:make('#9d8862',.65,.39),seam:make('#adb4b4',.4,.53)};
@@ -28,10 +29,11 @@ export function createZenitRocket({detail='near',textures=typeof document!=='und
    const x=w*fraction;
    if(kind==='body'||kind==='second'){
     ctx.save();ctx.translate(x,h*.5);ctx.rotate(-Math.PI/2);ctx.font=`italic 900 ${kind==='body'?150:125}px Arial, sans-serif`;
-    const label=kind==='body'?'SEA LAUNCH':'ZENIT-3SL',size=ctx.measureText(label).width;ctx.scale((h*.80)/size,1);ctx.fillText(label,0,0);ctx.restore();
+    const label=land?(kind==='body'?'ЗЕНИТ-3SLБ':'ЗЕНИТ'):(kind==='body'?'SEA LAUNCH':'ZENIT-3SL'),size=ctx.measureText(label).width;ctx.scale((h*.80)/size,1);ctx.fillText(label,0,0);ctx.restore();
    }else if(kind==='upper'){
-    ctx.save();ctx.translate(x,h*.48);ctx.rotate(-Math.PI/2);ctx.font='italic bold 52px Arial, sans-serif';ctx.fillText('BOEING',0,-70);ctx.font='bold 42px Arial, sans-serif';ctx.fillText('YUZHNOYE',0,0);ctx.font='bold 29px Arial, sans-serif';ctx.fillText('RSC ENERGIA',0,58);ctx.restore();
+    ctx.save();ctx.translate(x,h*.48);ctx.rotate(-Math.PI/2);ctx.font='italic bold 52px Arial, sans-serif';ctx.fillText(land?'НАЗЕМНЫЙ СТАРТ':'BOEING',0,-70);ctx.font='bold 42px Arial, sans-serif';ctx.fillText(land?'ЮЖМАШ':'YUZHNOYE',0,0);ctx.font='bold 29px Arial, sans-serif';ctx.fillText('RSC ENERGIA',0,58);ctx.restore();
    }else{
+    if(land){ctx.save();ctx.translate(x,h*.5);ctx.rotate(-Math.PI/2);ctx.font='bold 48px Arial';ctx.fillText('ЗЕНИТ-3SLБ',0,0);ctx.restore();continue;}
     ctx.save();ctx.translate(x,h*.57);ctx.rotate(-Math.PI/2);ctx.scale(.9,.9);
     ctx.fillStyle='#c43637';ctx.beginPath();ctx.ellipse(0,-20,116,47,-.12,0,Math.PI*2);ctx.fill();
     ctx.fillStyle='#eff1ee';ctx.beginPath();ctx.ellipse(0,-23,99,36,-.12,0,Math.PI*2);ctx.fill();
@@ -97,9 +99,10 @@ export function createZenitRocket({detail='near',textures=typeof document!=='und
  cylinder(2,1.95,4.9,45.75,'upper');
  for(const y of [43.38,46.45,48.1])ring(2,1.956,y,.024,'paint');
  // Fairing widened to 4.15 m, a soft shoulder and a rounded ogive.
- const fairingProfile=[[1.95,48.2],[2.01,48.28],[2.075,48.44],[2.075,54.15]];
- for(let i=1;i<=30;i++){const t=i/30,a=t*Math.PI/2;fairingProfile.push([2.075*Math.cos(a),54.15+5.45*Math.sin(a)]);}
- lathe(3,fairingProfile,'fairing');cylinder(3,1.95,.045,48.22,'paint');ring(3,2.08,48.49,.028,'seam');
+ const fairingRadius=dimensions.fairingDiameter/2;
+ const fairingProfile=[[1.95,48.2],[2.01,48.28],[fairingRadius,48.44],[fairingRadius,54.15]];
+ for(let i=1;i<=30;i++){const t=i/30,a=t*Math.PI/2;fairingProfile.push([fairingRadius*Math.cos(a),54.15+(dimensions.height-54.15)*Math.sin(a)]);}
+ lathe(3,fairingProfile,'fairing');cylinder(3,1.95,.045,48.22,'paint');ring(3,fairingRadius+.005,48.49,.028,'seam');
  // Fairing split line, kept subtle and flush with the rounded shell.
  if(near)for(const a of [Math.PI*.61,Math.PI*1.61]){
   const line=fairingProfile.slice(1,-1).map(([r,y])=>radial(a,r+.007,y));tube(3,line,.009,'seam',44);
@@ -121,7 +124,7 @@ export function createZenitRocket({detail='near',textures=typeof document!=='und
   }
   // Rivets are grouped with the skin, rather than one draw call per fastener.
   for(const [stage,y] of [[0,2.62],[0,4.81],[0,30.48],[1,33.08],[2,43.36],[3,48.55]])for(let j=0;j<56;j++){
-   const a=j*Math.PI/28,r=stage===3?2.08:1.964;
+   const a=j*Math.PI/28,r=stage===3?fairingRadius+.005:1.964;
    const g=new THREE.SphereGeometry(.018,5,3);add(stage,g,'steel',radial(a,r,y));
   }
   for(let i=0;i<12;i++){
@@ -144,8 +147,8 @@ export function createZenitRocket({detail='near',textures=typeof document!=='und
   const mesh=new THREE.Mesh(geometry,materials[material]);mesh.name=stages[i].name+' · '+material;mesh.castShadow=true;mesh.receiveShadow=true;
   stages[i].add(mesh);triangles+=geometry.attributes.position.count/3;drawCalls++;
  }
- root.userData.dimensions={...ZENIT_DIMENSIONS};root.userData.engineNozzles=nozzleCenters;root.userData.assetStats={triangles,drawCalls,components,detail};
+ root.userData.dimensions={...dimensions};root.userData.engineNozzles=nozzleCenters;root.userData.assetStats={triangles,drawCalls,components,detail};
  function setExploded(amount){const t=THREE.MathUtils.clamp(Number(amount)||0,0,1);stages.forEach((g,i)=>g.position.y=i*t*6);root.userData.exploded=t;root.updateMatrixWorld(true);}
  function dispose(){root.traverse(o=>{if(o.isMesh)o.geometry.dispose();});Object.values(materials).forEach(m=>m.dispose());maps.forEach(t=>t.dispose());}
- return {root,stages,setExploded,dispose,stats:()=>({...root.userData.assetStats,version:ZENIT_VERSION,dimensions:ZENIT_DIMENSIONS,nozzles:nozzleCenters.length,exploded:root.userData.exploded||0})};
+ return {root,stages,setExploded,dispose,stats:()=>({...root.userData.assetStats,version,dimensions,nozzles:nozzleCenters.length,exploded:root.userData.exploded||0})};
 }

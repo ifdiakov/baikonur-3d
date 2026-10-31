@@ -1,10 +1,12 @@
-name: Museum 6 — Buran landing, navigation and facilities
+name: Museum 6 — model inspector and Site 45
 on:
   push:
     branches: [main]
     paths:
       - 'index.html'
       - 'workshop/zenit.html'
+      - 'workshop/model.html'
+      - 'docs/site45-reference-model.md'
       - 'scripts/build-zenit-asset.mjs'
       - 'docs/zenit-reference-model.md'
       - 'src/**'
@@ -40,7 +42,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-buran-navigation-20261101-v1
+  RELEASE_TAG: museum6-model-inspector-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -54,6 +56,11 @@ jobs:
       - name: Install verification dependencies
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
+      - name: Verify the photo-based Site 45 and both Zenit variants
+        run: |
+          node tests/site45-geometry.mjs
+          node tests/zenit-geometry.mjs
+          node tests/facility-lighting-geometry.mjs
       - name: Verify geography, source topology and complete Krayniy flight circuit
         run: |
           python3 scripts/build_river_water.py --check
@@ -146,7 +153,7 @@ jobs:
       max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera]
+        suite: [startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -167,6 +174,9 @@ jobs:
       - name: Verify the Zenit model, orbit controls and mobile views
         if: matrix.suite == 'zenit'
         run: node tests/zenit-browser.mjs
+      - name: Verify all models, object cards, modal lifecycle and mobile views
+        if: matrix.suite == 'model-inspector'
+        run: node tests/model-inspector-browser.mjs
       - name: Verify startup and failure recovery
         if: matrix.suite == 'startup-menu'
         run: node tests/startup-browser.mjs
@@ -238,6 +248,7 @@ jobs:
             qa-buran-landing/
             qa-rocket-exhibits/
             qa-zenit/
+            qa-inspector/
             qa-interchange/
             qa-highway-lighting/
             qa-road-markings/
@@ -293,12 +304,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/facilities-rails-lighting-20261031-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/model-inspector-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 6 — посадка «Бурана», навигация и площадки',
+                name: 'Интерактивный музей 6 — просмотр моделей и площадка №45',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

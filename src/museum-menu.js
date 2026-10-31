@@ -16,7 +16,7 @@ export function museumCatalogueSection(record){
 export const MUSEUM_SECTIONS=Object.freeze([
  {id:'sitesAccordion',title:'СТАРТОВЫЕ КОМПЛЕКСЫ',catalogue:true},
  {id:'equipmentAccordion',title:'РАКЕТЫ И ТЕХНИКА',items:[
-  {action:'zenit-3sl',title:'«Зенит-3SL»',description:'Морской старт · подробная 3D-модель'},
+  {action:'zenit-3sl',title:'«Зенит»',description:'Площадка №45 · просмотр ракеты в 3D'},
   {action:'r7',title:'«Союз»',description:'Гагаринский старт и площадка №31'},
   {action:'energia-polyus',title:'«Энергия — Полюс»',description:'Ракета-экспонат на УКСС'},
   {action:'energia-buran',title:'«Энергия — Буран»',description:'Площадка №110, МИК и транспортёры'},
