@@ -1841,9 +1841,15 @@ const sceneSelection=installSceneSelection({element:renderer.domElement,camera,c
   },blocked:()=>Boolean(lightingEditor?.active),
  onNavigate:()=>{if(fly){fly=false;}}
 });
+startup.stage('Загружаем ракетные экспонаты…');
+// Settle the existing model requests before the first expensive GPU frame.
+// Their fetch deadlines must not race the initial shader compilation/render.
+// Failed placements still keep their existing visible retry action.
+const initialRocketModels=rocketExhibits.whenReady();
+await initialRocketModels;
 startup.stage('Открываем 3D-карту…');
 await new Promise(resolve=>setTimeout(resolve,0));
-window.__MUSEUM_ROCKETS_READY=rocketExhibits.whenReady();
+window.__MUSEUM_ROCKETS_READY=initialRocketModels;
 window.__BAIKONUR_QA={rockets:{stats:rocketExhibits.stats,whenReady:rocketExhibits.whenReady,chooseTua:tuaRocketControls.choose,setVisible:rocketExhibits.setVisible},knowledge:museumKnowledge.stats,clearance:exhibitClearance.stats,inspectSite110:view=>portalArchive.inspectSite110(view,camera,ctl),site110:()=>site110Root?.userData.site110Model,showOverview,setLabelsVisible,setLayerVisible,menu:museumMenu,inspectUkss,setUkssMockupVisible,inspectKrayniyTerminal,inspectFlankBoundaries(){
  showFlanks();const damping=ctl.enableDamping;ctl.enableDamping=false;ctl.update();
  ctl.target.copy(point(...flankViewCenter));camera.position.copy(ctl.target).add(new THREE.Vector3(0,800*SCENE_SCALE,1380*SCENE_SCALE));

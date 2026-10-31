@@ -7,7 +7,7 @@ const prefix=process.env.QA_PREFIX||'local',out='qa-interchange';
 const revision='20261031-highway-lighting-v3';
 const reference='https://sketchfab.com/3d-models/bridge-design-6c2d7e65a2e14600bde311a01e1baa27';
 const views=['bridge','all','side','top'];
-const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],views:[],mobile:[]};
+const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],rocketReadiness:[],views:[],mobile:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
  ...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),
@@ -21,6 +21,9 @@ page.on('console',message=>{
 page.on('response',response=>{
  if(response.status()>=400&&new URL(response.url()).origin===new URL(base).origin)evidence.failedResources.push({url:response.url(),status:response.status()});
 });
+page.on('requestfailed',request=>{
+ if(new URL(request.url()).origin===new URL(base).origin)evidence.failedRequests.push({url:request.url(),error:request.failure()?.errorText,type:request.resourceType()});
+});
 await page.addInitScript(()=>{
  const native=requestAnimationFrame.bind(window);let pending;
  window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);
@@ -30,8 +33,9 @@ const step=()=>page.evaluate(()=>window.__INTERCHANGE_FRAME());
 function url(view){const u=new URL(base);u.searchParams.delete('site');u.searchParams.delete('station');u.searchParams.set('view','south-interchange');u.searchParams.set('detail',view);return u.href;}
 async function ready(){
  await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected&&document.getElementById('museumLoading')?.dataset.state==='ready',revision,{timeout:180000});
- const readyModels=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.whenReady());
- assert(readyModels.every(Boolean),'The bridge view retains the existing loaded rocket exhibits');
+ const models=await page.evaluate(async()=>{const q=window.__BAIKONUR_QA;return {results:await q.rockets.whenReady(),...q.rockets.stats()};});
+ evidence.rocketReadiness.push(models);
+ assert(models.results.every(Boolean),'The bridge view retains the existing loaded rocket exhibits: '+JSON.stringify(models.placements.filter(p=>p.status!=='ready').map(({key,status,error})=>({key,status,error}))));
  await step();assert.equal(await page.locator('#error').isVisible(),false);
 }
 async function snapshot(){
@@ -149,6 +153,47 @@ try{
  console.log('INTERCHANGE_BROWSER_PASS',JSON.stringify({prefix,triangles:final.bridge.triangles,draws:final.bridge.drawCalls,lamps:final.bridge.lamps,views:views.length,mobile:true,selection:true,errors:[]}));
 }catch(error){
  console.error('INTERCHANGE_BROWSER_FAILURE',error.message);
- await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(()=>{});
- await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({...evidence,passed:false,message:error.message,stack:error.stack},null,2));throw error;
+ const diagnostic=evidence.failureDiagnostics={views:[],errors:[]};
+ await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(failure=>diagnostic.errors.push({stage:'original-frame',message:failure.message}));
+ try{
+  Object.assign(diagnostic,await page.evaluate(()=>{
+   const q=window.__BAIKONUR_QA,result={qaAvailable:!!q,startupState:document.getElementById('museumLoading')?.dataset.state};
+   if(!q)return result;
+   try{
+    const rockets=q.rockets.stats();
+    result.rockets={version:rockets.version,loadedAssetCount:rockets.loadedAssetCount,
+     placements:rockets.placements.map(({key,siteId,modelId,status,error,visible,effectiveVisible})=>({key,siteId,modelId,status,error,visible,effectiveVisible}))};
+   }catch(failure){result.rocketStatsError=failure.message;}
+   try{
+    const bridge=q.stats().transport?.interchange?.bridges.find(b=>String(b.osmWayId)==='172422627');
+    if(bridge){
+     const {version,sourceWayId,sourceTopologyPreserved,center,length,sourceSpanLength,totalWidth,deckTop,clearance,
+      asphaltColor,markings,embankments,lighting,lamps,drawCalls,triangles,bounds,evening}=bridge;
+     result.bridge={version,sourceWayId,sourceTopologyPreserved,center,length,sourceSpanLength,totalWidth,deckTop,clearance,
+      asphaltColor,markings,embankments,lighting,lamps,drawCalls,triangles,bounds,evening,approachProfileSamples:bridge.approachProfile?.length};
+    }
+   }catch(failure){result.bridgeStatsError=failure.message;}
+   return result;
+  }));
+  if(diagnostic.qaAvailable&&diagnostic.startupState==='ready'){
+   await page.setViewportSize({width:1600,height:1000});
+   for(const view of ['all','side','top']){
+    try{
+     const state=await page.evaluate(view=>{
+      const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.setLabelsVisible(false);
+      const selected=q.focusInterchange(view);document.getElementById('close')?.click();
+      return {view:selected,camera:q.cameraState()};
+     },view);
+     await step();
+     const name=`failure-${view}-day`,path=`${out}/${prefix}-${name}.png`;
+     await page.screenshot({path,timeout:15000});
+     diagnostic.views.push({name,path,...state,evening:false});
+     console.log('INTERCHANGE_DIAGNOSTIC_VIEW',name);
+    }catch(failure){diagnostic.errors.push({stage:`daylight-${view}`,message:failure.message});}
+   }
+  }
+ }catch(failure){diagnostic.errors.push({stage:'capture',message:failure.message});}
+ await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({...evidence,passed:false,message:error.message,stack:error.stack},null,2))
+  .catch(failure=>console.error('INTERCHANGE_DIAGNOSTIC_WRITE_FAILURE',failure.message));
+ throw error;
 }finally{await browser.close();}
