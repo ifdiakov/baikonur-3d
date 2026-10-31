@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261031-highway-lighting-v4';
+const revision='20261031-road-markings-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));

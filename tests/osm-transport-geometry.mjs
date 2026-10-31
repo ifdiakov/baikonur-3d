@@ -163,7 +163,7 @@ assert.equal(stats.saturnAccess,null);
 let paintVertices=0;
 layers.roads.traverse(m=>{if(m.name!=='OSM · разметка')return;const p=m.geometry.attributes.position;for(let i=0;i<p.count;i++){
  const heights=pavementHeights(p.getX(i),p.getZ(i)),y=p.getY(i);
- assert(heights.some(h=>y-h>.02&&y-h<.08),'Road paint has no pavement beneath it');paintVertices++;
+ assert(heights.some(h=>Math.abs(y-h-stats.roadSurface.paintLift)<.002),'Road paint must follow the actual pavement at the shared paint lift');paintVertices++;
 }});
 assert(paintVertices>1000);
 const plan=buildRoadVehicleRoutes(transport.roadPaths());assert.equal(plan.source,'OpenStreetMap');assert.equal(plan.routes.length,4);

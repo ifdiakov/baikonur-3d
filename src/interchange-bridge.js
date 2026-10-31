@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {createLightField} from './light-field.js?v=20261031-highway-lighting-v4';
-import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from './highway-surface.js?v=20261031-highway-lighting-v4';
-import {ROAD_LIGHT_STYLES,ROAD_LIGHT_LENS_EMISSION,createRoadFixtureGeometry,createRoadFixtureMaterials,roadFixtureHead} from './road-lighting.js?v=20261031-highway-lighting-v4';
-import {createBridgeApproachPlan,createBridgeEmbankmentGeometry} from './bridge-embankments.js?v=20261031-highway-lighting-v4';
+import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
+import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from './highway-surface.js?v=20261031-road-markings-v1';
+import {ROAD_LIGHT_STYLES,ROAD_LIGHT_LENS_EMISSION,createRoadFixtureGeometry,createRoadFixtureMaterials,roadFixtureHead} from './road-lighting.js?v=20261031-road-markings-v1';
+import {createBridgeApproachPlan,createBridgeEmbankmentGeometry} from './bridge-embankments.js?v=20261031-road-markings-v1';
 
 export const INTERCHANGE_BRIDGE_VERSION='reference-viaduct-v1';
 export const INTERCHANGE_BRIDGE_WAY='172422627';

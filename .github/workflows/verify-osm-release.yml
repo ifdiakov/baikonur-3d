@@ -1,4 +1,4 @@
-name: Museum 6 — continuous highway and road lighting
+name: Museum 6 — junction-aware road markings
 on:
   push:
     branches: [main]
@@ -36,7 +36,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-highway-lighting-20261031-v4
+  RELEASE_TAG: museum6-road-markings-20261031-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -58,6 +58,7 @@ jobs:
           node tests/osm-transport-geometry.mjs
           node tests/interchange-bridge-geometry.mjs
           node tests/highway-surface-geometry.mjs
+          node tests/road-markings-geometry.mjs
           node tests/road-lighting-geometry.mjs
           node tests/saturn-natural-terrain.mjs
           node tests/exhibit-road-filter.mjs
@@ -112,10 +113,10 @@ jobs:
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      max-parallel: 10
+      max-parallel: 12
       matrix:
         target: [local, public]
-        suite: [startup-menu, bridge-exhibits, museum, transport, silos]
+        suite: [startup-menu, bridge-exhibits, road-markings, museum, transport, silos]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -142,6 +143,9 @@ jobs:
       - name: Verify the interchange bridge
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/interchange-browser.mjs
+      - name: Verify road junction, curve and lane markings
+        if: matrix.suite == 'road-markings'
+        run: node tests/road-markings-browser.mjs
       - name: Verify smooth highway and paired modern / single vintage lighting
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/highway-lighting-browser.mjs
@@ -178,13 +182,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum6-highway-lighting-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
+          name: museum6-road-markings-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
           path: |
             qa-startup/
             qa-menu/
             qa-rocket-exhibits/
             qa-interchange/
             qa-highway-lighting/
+            qa-road-markings/
             qa-krayniy/
             qa-osm-release/
             qa-flanks/
@@ -234,12 +239,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/highway-lighting-20261031-v4.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/road-markings-20261031-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 6 — единая трасса и рельеф развязки',
+                name: 'Интерактивный музей 6 — разметка поворотов и примыканий',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

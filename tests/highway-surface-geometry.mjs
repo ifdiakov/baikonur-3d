@@ -47,20 +47,23 @@ assert.equal(layers.roads.getObjectByName('OSM · единое дорожное 
 // nearby pavement detects raised flat junction patches as well as missing
 // segments: a valid centreline alone does not prove a smooth carriageway.
 const cells=new Map(),cellSize=12;
-for(const mesh of [dark,bridge]){
+function indexPavement(meshes,grid){
+for(const mesh of meshes){
  mesh.updateWorldMatrix(true,false);
  const p=mesh.geometry.attributes.position,index=mesh.geometry.index;
  for(let i=0;i<(index?.count??p.count);i+=3){
   const t=[0,1,2].map(k=>new THREE.Vector3().fromBufferAttribute(p,index?index.getX(i+k):i+k).applyMatrix4(mesh.matrixWorld));
   const box=new THREE.Box3().setFromPoints(t);
   for(let x=Math.floor(box.min.x/cellSize);x<=Math.floor(box.max.x/cellSize);x++)for(let z=Math.floor(box.min.z/cellSize);z<=Math.floor(box.max.z/cellSize);z++){
-   const key=x+':'+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(t);
+   const key=x+':'+z;if(!grid.has(key))grid.set(key,[]);grid.get(key).push(t);
   }
  }
 }
-function heights(p,interior=false){
+}
+indexPavement([dark,bridge],cells);
+function heights(p,interior=false,grid=cells){
  const out=[],nearby=[];
- for(const [a,b,c] of cells.get(Math.floor(p.x/cellSize)+':'+Math.floor(p.z/cellSize))||[]){
+ for(const [a,b,c] of grid.get(Math.floor(p.x/cellSize)+':'+Math.floor(p.z/cellSize))||[]){
   const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(Math.abs(den)<1e-12)continue;
   const u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/den,v=((c.z-a.z)*(p.x-c.x)+(a.x-c.x)*(p.z-c.z))/den;
   const tolerance=.0004*Math.max(a.distanceTo(b),b.distanceTo(c),a.distanceTo(c))/Math.abs(den);
@@ -137,34 +140,74 @@ function markingQuery(meshes,queryBounds=null){
   return found;
  };
 }
-const yellowAt=markingQuery([yellow,bridgeRoot.getObjectByName('Виадук · yellow')]),whiteAt=markingQuery([white,bridgeRoot.getObjectByName('Виадук · white')]);
-let markingCoverageProbes=0,markingSurfaceProbes=0,maxMarkingLiftError=0;
-for(let distance=1.234;distance<highway.length-1;distance+=.73){
- const at=highway.sample(distance,.25),normal=new THREE.Vector3(-at.tangent.z,0,at.tangent.x).normalize();
- for(const side of [-1,1])for(const [query,offset,label] of [[yellowAt,HIGHWAY_MARKINGS.centerOffset,'yellow'],[whiteAt,highway.width/2-HIGHWAY_MARKINGS.edgeInset,'white']]){
-  const p=at.position.clone().addScaledVector(normal,side*offset);
-  assert(query(p).some(y=>Math.abs(y-p.y-HIGHWAY_MARKINGS.lift)<.012),'Missing continuous '+label+' marking at '+p.toArray());markingCoverageProbes++;
+const yellowAt=markingQuery([yellow,bridgeRoot.getObjectByName('Виадук · yellow')]),whiteAt=markingQuery([white,bridgeRoot.getObjectByName('Виадук · white')]),bridgePavementAt=markingQuery([bridge]);
+// Resolve the source carriageway at the route centre before offsetting to
+// its edge. At a divided-road fork that edge can be closer to a different
+// carriageway's centre; its junction rule does not own this paint probe.
+const highwayWayIds=new Set(highway.osmWayIds.map(String)),routeSegmentCells=new Map();
+for(const edge of graph.edges){
+ if(!highwayWayIds.has(String(edge.wayId)))continue;
+ const points=edge.surfacePoints||[edge.a.position,edge.b.position];
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i],segment={a,b,wayId:edge.wayId};
+  for(let x=Math.floor((Math.min(a.x,b.x)-3)/cellSize);x<=Math.floor((Math.max(a.x,b.x)+3)/cellSize);x++)for(let z=Math.floor((Math.min(a.z,b.z)-3)/cellSize);z<=Math.floor((Math.max(a.z,b.z)+3)/cellSize);z++){
+   const key=x+':'+z;if(!routeSegmentCells.has(key))routeSegmentCells.set(key,[]);routeSegmentCells.get(key).push(segment);
+  }
  }
 }
+function routeWayAt(p){
+ let best=Infinity,wayId=null;
+ for(const segment of routeSegmentCells.get(Math.floor(p.x/cellSize)+':'+Math.floor(p.z/cellSize))||[]){
+  const {a,b}=segment,dx=b.x-a.x,dz=b.z-a.z,t=THREE.MathUtils.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1),0,1);
+  if(Math.abs(a.y+(b.y-a.y)*t-p.y)>.65)continue;
+  const distance=Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t);
+  if(distance<best){best=distance;wayId=segment.wayId;}
+ }
+ assert(wayId!=null&&best<.5,'The sampled highway centre must retain its source carriageway: '+p.toArray());
+ return wayId;
+}
+let markingCoverageProbes=0,markingPaintProbes=0,markingOpeningProbes=0,markingSurfaceProbes=0,maxMarkingLiftError=0;
+for(let distance=1.234;distance<highway.length-1;distance+=.73){
+ const at=highway.sample(distance,.25),normal=new THREE.Vector3(-at.tangent.z,0,at.tangent.x).normalize(),wayId=routeWayAt(at.position);
+ for(const side of [-1,1])for(const [query,offset,label] of [[yellowAt,HIGHWAY_MARKINGS.centerOffset,'yellow'],[whiteAt,highway.width/2-HIGHWAY_MARKINGS.edgeInset,'white']]){
+  const p=at.position.clone().addScaledVector(normal,side*offset);
+  const bridgeOwns=bridgePavementAt(p).some(y=>Math.abs(y-p.y-HIGHWAY_ASPHALT_LIFT)<.012);
+  const policy=bridgeOwns?{allowed:true}:transport.roadMarkingPlan.coveragePolicyAt(p,label,wayId);
+  if(!policy.allowed){
+   assert(policy.reason&&policy.reason!=='no-marked-road','A required highway marking disappeared outside a declared junction or lane rule: '+JSON.stringify({point:p.toArray(),label,distance,policy}));markingOpeningProbes++;
+  }else{
+   assert(query(p).some(y=>Math.abs(y-p.y-HIGHWAY_MARKINGS.lift)<.012),'Missing required '+label+' marking at '+p.toArray());markingPaintProbes++;
+  }
+  markingCoverageProbes++;
+ }
+}
+// A rounded ramp edge can end on the host road's ordinary asphalt, just
+// outside the dark apron. Strict hits on any real asphalt owner take
+// precedence over tolerated extrapolations from the neighbouring surface.
+const paintCells=new Map([...cells].map(([key,triangles])=>[key,[...triangles]]));
+indexPavement([layers.roads.getObjectByName('OSM · единое дорожное полотно')],paintCells);
 for(const mesh of [yellow,white]){
  const p=mesh.geometry.attributes.position;
  for(let i=0;i<p.count;i++){
-  const q=new THREE.Vector3().fromBufferAttribute(p,i),surface=heights(q).filter(y=>y<q.y+.0003&&y>q.y-.1);
+  const q=new THREE.Vector3().fromBufferAttribute(p,i),surface=heights(q,false,paintCells).filter(y=>y<q.y+.0003&&y>q.y-.1);
   assert(surface.length,'A paint vertex has no actual pavement below it at '+q.toArray());
   const error=Math.abs(q.y-Math.max(...surface)-(HIGHWAY_MARKINGS.lift-HIGHWAY_ASPHALT_LIFT));maxMarkingLiftError=Math.max(maxMarkingLiftError,error);
   assert(error<.002,'Paint floats over or sinks below a sloping approach: '+JSON.stringify({mesh:mesh.name,point:q.toArray(),surface,error}));markingSurfaceProbes++;
  }
 }
-assert(markingCoverageProbes>25000&&markingSurfaceProbes>150000);
-assert.equal(transport.stats().roadSurface.highway.markings.projectionMisses,0,'No paint sections may be dropped during projection');
+assert(markingPaintProbes>25000&&markingSurfaceProbes>150000,'Actual paint remains continuous along the main highway outside legitimate openings');
+assert.equal(transport.stats().roadSurface.highway.markings.projectionMisses,0,'Every emitted marking vertex must be projected onto actual pavement');
 const junctionBounds=new THREE.Box3().setFromCenterAndSize(bridgeRoot.position,new THREE.Vector3(300,30,300));
-const paleAt=markingQuery(['OSM · единое дорожное полотно','OSM · единые обочины','OSM · грунтовые проезды','OSM · разметка'].map(name=>layers.roads.getObjectByName(name)),junctionBounds);
+// All paint is now generated after pavement ownership is resolved. Correct
+// host-road markings may continue on the dark junction apron; only paving
+// and shoulders belong in the independent duplicate-surface query.
+const paleAt=markingQuery(['OSM · единое дорожное полотно','OSM · единые обочины','OSM · грунтовые проезды'].map(name=>layers.roads.getObjectByName(name)),junctionBounds);
 let junctionOwnershipProbes=0;
 for(let distance=highway.bridgeDistance-110;distance<highway.bridgeDistance+110;distance+=.4){
  const at=highway.sample(distance,.25),normal=new THREE.Vector3(-at.tangent.z,0,at.tangent.x).normalize();
  for(const offset of [-1.6,-.8,0,.8,1.6]){
   const p=at.position.clone().addScaledVector(normal,offset),overlaps=paleAt(p).filter(y=>Math.abs(y-p.y)<1.19);
-  assert.equal(overlaps.length,0,'A pale road, shoulder or old marking overlays the dark interchange pavement at '+p.toArray());junctionOwnershipProbes++;
+  assert.equal(overlaps.length,0,'A pale road or shoulder overlays the dark interchange pavement at '+p.toArray());junctionOwnershipProbes++;
  }
 }
 assert(transport.stats().roadSurface.highway.ordinarySurfaceClip.reports.some(r=>r.clipped>0));
@@ -177,7 +220,7 @@ for(const apron of aprons){
   const p=triangle[0].clone().multiplyScalar(.23).addScaledVector(triangle[1],.31).addScaledVector(triangle[2],.46);
   const darkHits=heights(p,true).filter(y=>Math.abs(y-p.y)<1.2),paleHits=paleAt(p).filter(y=>Math.abs(y-p.y)<1.2);
   assert.equal(darkHits.length,1,'An apron interior has missing/overlapping dark pavement: '+JSON.stringify({node:apron.spec.nodeId,p:p.toArray(),darkHits}));
-  assert.equal(paleHits.length,0,'An apron interior retains ordinary asphalt, a shoulder or obsolete paint: '+JSON.stringify({node:apron.spec.nodeId,p:p.toArray(),paleHits}));
+  assert.equal(paleHits.length,0,'An apron interior retains ordinary asphalt or a shoulder: '+JSON.stringify({node:apron.spec.nodeId,p:p.toArray(),paleHits}));
   apronOwnershipProbes++;
  }
  // The railway runs immediately behind these host roads. Every far-side
@@ -203,5 +246,5 @@ for(const apron of aprons){
 }
 assert(apronOwnershipProbes>2000&&apronFarCurbProbes>30&&apronSeamProbes>30);
 console.log('HIGHWAY_SURFACE_GEOMETRY_PASS',JSON.stringify({profileSamples,tangentJoins,maxLateralShift,minTangentDot,laneProbes,overlapProbes,maxWheelGap,
- approachSegments,maxApproachGradeChange,markingCoverageProbes,markingSurfaceProbes,maxMarkingLiftError,junctionOwnershipProbes,
+ approachSegments,maxApproachGradeChange,markingCoverageProbes,markingPaintProbes,markingOpeningProbes,markingSurfaceProbes,maxMarkingLiftError,junctionOwnershipProbes,
  apronOwnershipProbes,apronFarCurbProbes,apronSeamProbes,asphaltColor:dark.material.color.getHexString()}));

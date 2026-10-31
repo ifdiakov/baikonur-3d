@@ -392,7 +392,7 @@ import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-rocket-
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261028-museum4-osm-live-v2';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261028-museum4-osm-live-v2';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261028-museum4-osm-live-v2';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261031-highway-lighting-v4';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261031-road-markings-v1';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261030-river-roads-signs-v1';
 import {createNorthBankMask} from './src/river-bank.js?v=20261030-river-roads-signs-v1';
 import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261030-river-roads-signs-v1';
@@ -405,9 +405,9 @@ import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261031-rocket-exhibits-v1';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261030-krayniy-terminal-v1';
-import {buildEveningScene} from './src/evening-scene.js?v=20261031-highway-lighting-v4';
+import {buildEveningScene} from './src/evening-scene.js?v=20261031-road-markings-v1';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261031-museum-menu-v1';
-import {createGroundTraffic} from './src/ground-traffic.js?v=20261031-highway-lighting-v4';
+import {createGroundTraffic} from './src/ground-traffic.js?v=20261031-road-markings-v1';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261031-rocket-exhibits-v1';
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
@@ -426,7 +426,7 @@ const attribution=document.createElement('a');attribution.id='osmAttribution';at
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261031-highway-lighting-v4';
+const MUSEUM_REVISION='20261031-road-markings-v1';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 startup.stage('Загружаем карту космодрома…');
@@ -1920,6 +1920,16 @@ window.__BAIKONUR_QA={rockets:{stats:rocketExhibits.stats,whenReady:rocketExhibi
  camera.position.copy(ctl.target).addScaledVector(outward,view==='run'?65:8).addScaledVector(along,view==='run'?55:7).add(new THREE.Vector3(0,view==='run'?72:8,0));
  ctl.update();ctl.enableDamping=damping;camera.updateMatrixWorld(true);updateLabels();
  return {stationId:record.stationId,style,position:record.position,center:record.center,view};
+},inspectRoadMarkings(nodeId,view='top'){
+ const chosen=transport.roadMarkingTarget(nodeId);if(!chosen)return null;
+ view=view==='oblique'?'oblique':'top';const range=22;
+ arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
+ document.getElementById('info').style.display='none';setLabelsVisible(false);
+ const damping=ctl.enableDamping;ctl.enableDamping=false;ctl.update();
+ ctl.target.set(...chosen.center);
+ const offset=view==='top'?new THREE.Vector3(.001,range,.001):new THREE.Vector3(-range*.6,range*.9,range*.65);
+ camera.position.copy(ctl.target).add(offset);ctl.update();ctl.enableDamping=damping;
+ camera.updateMatrixWorld(true);updateLabels();return {...chosen,view,range};
 },inspectLocalRoads(id,range=160){
  const o=cardObjects.find(o=>o.record.id===id);if(!o)return false;
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();
