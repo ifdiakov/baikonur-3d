@@ -38,8 +38,8 @@ permissions:
 env:
   RELEASE_TAG: museum5-interchange-20261031-v1
 jobs:
-  verify_local:
-    name: Local geometry and browser checks
+  verify_geometry:
+    name: Geography, geometry and source invariants
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -50,7 +50,6 @@ jobs:
       - name: Install verification dependencies
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
-          npx playwright install --with-deps chromium
       - name: Verify geography, source topology and complete Krayniy flight circuit
         run: |
           python3 scripts/build_river_water.py --check
@@ -89,55 +88,35 @@ jobs:
           node tests/arrival-status.mjs
           node tests/flanks-geometry.mjs
           node tests/train-consist.mjs
-      - name: Serve this exact checkout
-        run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-preview.log 2>&1 &
-          curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
-      - name: Verify local startup and failure recovery
-        run: node tests/startup-browser.mjs
-      - name: Verify the local menu and flight status
-        run: node tests/left-menu-browser.mjs
-      - name: Verify the local interchange bridge
-        run: node tests/interchange-browser.mjs
-      - name: Verify the local source rockets, TUA choices and encyclopedia
-        run: node tests/rocket-exhibits-browser.mjs
-      - name: Verify the local Krayniy terminal
-        run: node tests/krayniy-terminal-browser.mjs
-      - name: Verify the complete local museum in Chromium
-        run: node tests/osm-release-browser.mjs
-      - name: Verify local flank navigation
-        run: node tests/flanks-browser.mjs
-      - name: Verify the local Mriya exhibit
-        run: node tests/mriya-browser.mjs
-      - name: Verify the local train
-        run: node tests/train-browser.mjs
-      - name: Verify local silos and hotel
-        run: node tests/silo-browser.mjs
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: museum5-interchange-qa-local
-          path: |
-            qa-startup/
-            qa-menu/
-            qa-rocket-exhibits/
-            qa-interchange/
-            qa-krayniy/
-            qa-osm-release/
-            qa-flanks/
-            qa-mriya/
-            qa-train/
-            qa-silo/
-            qa-hotel/
-          retention-days: 14
 
-  verify_public:
-    name: Published bytes and live browser checks
+  verify_bytes:
+    name: Published bytes match this commit
     runs-on: ubuntu-24.04
     timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
+      - name: Verify every published runtime source against this commit
+        run: node scripts/verify-published.mjs
+
+  verify_browser:
+    name: Browser — ${{ matrix.target }} / ${{ matrix.suite }}
+    needs: [verify_geometry, verify_bytes]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      max-parallel: 10
+      matrix:
+        target: [local, public]
+        suite: [startup-menu, bridge-exhibits, museum, transport, silos]
     env:
-      BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/?release=${{ github.sha }}
-      QA_PREFIX: public
+      BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
+      QA_PREFIX: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -147,32 +126,45 @@ jobs:
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
           npx playwright install --with-deps chromium
-      - name: Verify every published runtime source against this commit
-        run: node scripts/verify-published.mjs
-      - name: Verify live startup and failure recovery
+      - name: Serve this exact checkout
+        if: matrix.target == 'local'
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-preview.log 2>&1 &
+          curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Verify startup and failure recovery
+        if: matrix.suite == 'startup-menu'
         run: node tests/startup-browser.mjs
-      - name: Verify the live menu and flight status
+      - name: Verify the menu and flight status
+        if: matrix.suite == 'startup-menu'
         run: node tests/left-menu-browser.mjs
-      - name: Verify the live interchange bridge
+      - name: Verify the interchange bridge
+        if: matrix.suite == 'bridge-exhibits'
         run: node tests/interchange-browser.mjs
-      - name: Verify the live source rockets, TUA choices and encyclopedia
+      - name: Verify the source rockets, TUA choices and encyclopedia
+        if: matrix.suite == 'bridge-exhibits'
         run: node tests/rocket-exhibits-browser.mjs
-      - name: Verify the live Krayniy terminal
+      - name: Verify the Krayniy terminal
+        if: matrix.suite == 'bridge-exhibits'
         run: node tests/krayniy-terminal-browser.mjs
-      - name: Verify the complete live museum in Chromium
+      - name: Verify the complete museum in Chromium
+        if: matrix.suite == 'museum'
         run: node tests/osm-release-browser.mjs
-      - name: Verify live flank navigation
+      - name: Verify flank navigation
+        if: matrix.suite == 'transport'
         run: node tests/flanks-browser.mjs
-      - name: Verify the live Mriya exhibit
+      - name: Verify the Mriya exhibit
+        if: matrix.suite == 'transport'
         run: node tests/mriya-browser.mjs
-      - name: Verify the live train
+      - name: Verify the train
+        if: matrix.suite == 'transport'
         run: node tests/train-browser.mjs
-      - name: Verify live silos and hotel
+      - name: Verify silos and hotel
+        if: matrix.suite == 'silos'
         run: node tests/silo-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: museum5-interchange-qa-public
+          name: museum5-interchange-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
           path: |
             qa-startup/
             qa-menu/
@@ -188,7 +180,7 @@ jobs:
           retention-days: 14
 
   release:
-    needs: [verify_local, verify_public]
+    needs: [verify_geometry, verify_bytes, verify_browser]
     if: github.event_name == 'push' || inputs.publish_release == true
     runs-on: ubuntu-24.04
     timeout-minutes: 5
