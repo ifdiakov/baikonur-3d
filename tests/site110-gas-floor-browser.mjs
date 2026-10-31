@@ -7,7 +7,7 @@ const prefix=process.env.QA_PREFIX||'diagnostic',out='qa-site110-gas-floor';
 const revision=process.env.QA_EXPECTED_REVISION||'20261031-facilities-rails-lighting-v5';
 const probes=[[820,620],[835,640],[817,715],[847,715],[870,800]];
 const pose={position:[-188.91781968042898,8.48,-693.616637878786],target:[-199.685499680429,-3.56,-679.294217878786]};
-const cases=[['baseline',[]],['main-off',['main']],['regional-off',['regional']],['intermediate-off',['intermediate']],['satellite-off',['satellite']],['all-terrain-off',['main','regional','intermediate','satellite']]];
+const cases=[['baseline',[]],['main-off',['main']],['regional-off',['regional']],['intermediate-off',['intermediate']],['satellite-off',['satellite']],['all-terrain-off',['main','regional','intermediate','satellite']],['subdivisions-16',[],16],['subdivisions-64',[],64]];
 const evidence={base,prefix,revision,probes,pose,errors:[],shaderErrors:[],failedResources:[],views:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),
@@ -40,14 +40,16 @@ try{
   const q=window.__BAIKONUR_QA;q.focusSite('pad-110');q.inspectSite110('trench');q.evening.setEvening(false);
   q.terrainMaskDiagnostics.pinCamera(pose);q.terrainMaskDiagnostics.requestProgramCapture();
  },pose);
- for(const [name,hidden]of cases){
-  await page.evaluate(hidden=>window.__BAIKONUR_QA.terrainMaskDiagnostics.setHidden(hidden),hidden);await step();
+ for(const [name,hidden,segments=0]of cases){
+  await page.evaluate(({hidden,segments})=>{const d=window.__BAIKONUR_QA.terrainMaskDiagnostics;d.setHidden(hidden);d.setSubdivisions(segments);},{hidden,segments});await step();
   const bytes=await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});
   const state=await page.evaluate(({probes,first})=>window.__BAIKONUR_QA.terrainMaskDiagnostics.snapshot({probes,includePrograms:first,includeRays:first}),{probes,first:name==='baseline'});
   for(const key of ['position','target'])state.camera[key].forEach((value,i)=>assert(Math.abs(value-pose[key][i])<1e-9,'The diagnostic camera must not move between layer toggles'));
   assert.deepEqual(state.layers.filter(layer=>!layer.visible).map(layer=>layer.id).sort(),[...hidden].sort());
-  const rgb=await pixels(bytes);evidence.views.push({name,hidden,pixels:rgb,state});
+  const rgb=await pixels(bytes),readback=name==='baseline'||segments?await page.evaluate(probes=>window.__BAIKONUR_QA.terrainMaskDiagnostics.readWorldCoordinates(probes),probes):null;
+  evidence.views.push({name,hidden,segments,pixels:rgb,state,...(readback?{readback}:{})});
   console.log('SITE110_GAS_OWNER_VIEW',name,JSON.stringify(rgb));
+  if(readback)console.log('SITE110_GAS_GPU_COORDINATES',name,JSON.stringify(readback));
   await writeFile(`${out}/${prefix}-result.json`,JSON.stringify(evidence,null,2));
  }
  await page.evaluate(()=>window.__BAIKONUR_QA.terrainMaskDiagnostics.restore());
