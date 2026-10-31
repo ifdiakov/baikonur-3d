@@ -1,0 +1,48 @@
+name: Museum 6 — camera and gas-floor preflight
+on:
+  push:
+    branches: ['qa/museum6-camera-floor-20261101']
+permissions:
+  contents: read
+jobs:
+  verify:
+    name: Preflight ${{ matrix.suite }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [landing, floor]
+    env:
+      BAIKONUR_URL: http://127.0.0.1:8765/
+      QA_PREFIX: preflight
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the existing museum verification dependencies
+        run: npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
+      - name: Install Chromium for CI
+        run: npx playwright install --with-deps chromium
+      - name: Serve the isolated checkout
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/museum6-camera-floor-http.log 2>&1 &
+          curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Verify the independent overview camera geometry
+        if: matrix.suite == 'landing'
+        run: node tests/buran-overview-camera.mjs
+      - name: Verify the landing, modal lifecycle and responsive camera
+        if: matrix.suite == 'landing'
+        run: node tests/buran-landing-browser.mjs
+      - name: Verify the actual source exhibits and gas-floor pixels
+        if: matrix.suite == 'floor'
+        run: node tests/rocket-exhibits-browser.mjs
+      - name: Preserve the actual frames and assertions
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: museum6-camera-floor-preflight-${{ matrix.suite }}
+          path: ${{ matrix.suite == 'landing' && 'qa-buran-landing/' || 'qa-rocket-exhibits/' }}
+          if-no-files-found: warn
+          retention-days: 7

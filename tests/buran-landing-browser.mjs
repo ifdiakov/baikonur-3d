@@ -23,11 +23,11 @@ page.on('response',response=>{
 page.on('requestfailed',request=>{
  if(new URL(request.url()).origin===origin)evidence.failedRequests.push({url:request.url(),error:request.failure()?.errorText});
 });
-// Only the museum's named render loop is frozen. Browser UI/RAF scheduling is
-// unchanged, and every captured frame goes through the production renderer.
+// Freeze the museum and temporary inspector's named render loops. Browser UI
+// scheduling is unchanged; their normal load/render functions still run.
 await page.addInitScript(()=>{
  const native=requestAnimationFrame.bind(window);let pending;
- window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);
+ window.requestAnimationFrame=fn=>['animate','animateModel'].includes(fn.name)?(pending=fn,0):native(fn);
  window.__BURAN_FRAME=()=>{const fn=pending;pending=null;const started=performance.now();fn?.(started);return started;};
  window.__BURAN_INPUT=[];
  for(const type of ['click','keydown','input','change'])document.addEventListener(type,event=>{
@@ -43,9 +43,15 @@ async function state(){
  return page.evaluate(()=>{
   const q=window.__BAIKONUR_QA,s=q.stats(),b=q.buranLanding.stats();
   const rect=element=>{if(!element)return null;const r=element.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
+  const overview=b.active&&b.mode==='overview'?q.buranLanding.overviewState():null;
+  if(overview){
+   overview.projected=[...overview.points,...overview.runwayPoints].map(point=>q.projectWorld(...point));
+   overview.guidePoints=overview.points.length;overview.runwayPointsCount=overview.runwayPoints.length;
+   delete overview.points;delete overview.runwayPoints;
+  }
   return {revision:s.museumRevision,landing:b,scene:s.buranLandingScene,airport:s.airports.find(a=>a.id==='pad-251'),
    airportTransform:q.siteState('pad-251'),camera:q.cameraState(),render:s.render,shadersValid:s.shadersValid,
-   arrival:q.arrival.stats(),selection:q.selectionState(),width:innerWidth,height:innerHeight,
+   arrival:q.arrival.stats(),selection:q.selectionState(),overview,width:innerWidth,height:innerHeight,
    projected:{buran:b.position?q.projectWorld(...b.position):null,mig:b.escort?.position?q.projectWorld(...b.escort.position):null},
    ui:{panelHidden:document.getElementById('buranLandingPanel').hidden,panel:rect(document.getElementById('buranLandingPanel')),
     clock:document.getElementById('buranLandingClock').textContent,dateTime:document.getElementById('buranLandingClock').dateTime,
@@ -54,7 +60,8 @@ async function state(){
     progress:Number(document.getElementById('buranLandingProgress').value),pause:document.getElementById('buranLandingPause').textContent,
     follow:document.getElementById('buranLandingFollow').getAttribute('aria-pressed'),
     activeClass:document.body.classList.contains('buran-landing-active'),followingClass:document.body.classList.contains('following-buran'),
-    callsignHidden:document.getElementById('buranCallsign').hidden,activeElement:document.activeElement?.id}};
+    callsignHidden:document.getElementById('buranCallsign').hidden,callsign:rect(document.getElementById('buranCallsign')),
+    sidebar:rect(document.getElementById('ui')),activeElement:document.activeElement?.id}};
  });
 }
 function checkRender(s){
@@ -101,8 +108,34 @@ function checkTyres(s,{noseOnGround=false,noseRaised=false}={}){
  }
  evidence.contacts.push({elapsed:b.elapsed,clock:b.clock,ground,contacts});
 }
+function checkOverview(s){
+ checkActive(s);assert.equal(s.landing.mode,'overview');assert.equal(s.landing.following,false);
+ const o=s.overview;assert.equal(o.active,true);assert.equal(o.fit.version,'buran-overview-fit-v1');
+ assert.equal(o.guide.visible,true);assert.equal(o.guide.color,'#075b68');near(o.guide.opacity,.95,1e-12,'The route annotation has useful contrast');
+ assert.equal(o.guide.fog,false);assert.equal(o.guide.depthTest,false);assert(o.guide.renderOrder>0);
+ assert.equal(o.guidePoints,560);assert.equal(o.runwayPointsCount,4);assert.equal(o.projected.length,564);
+ for(const p of o.projected){
+  assert(p&&Number.isFinite(p.x)&&Number.isFinite(p.y),'Every actual guide vertex and runway corner is inside the camera frustum');
+  assert(p.x>=16&&p.x<=s.width-16&&p.y>=16&&p.y<=s.ui.panel.y-16,'The whole manoeuvre stays clear of the viewport edge and event panel');
+  if(s.ui.sidebar.width>s.width*.65)assert(p.y>s.ui.sidebar.bottom+16,'The portrait header does not cover the path');
+  else assert(p.x>s.ui.sidebar.right+16,'The desktop sidebar does not cover the path');
+ }
+ assert(s.projected.buran&&!s.ui.callsignHidden,'The current aircraft retains its label in the full-route view');
+ near(s.ui.callsign.x+s.ui.callsign.width/2,s.projected.buran.x,.6,'The callsign horizontal anchor matches the final rendered camera');
+ near(s.ui.callsign.bottom,s.projected.buran.y-16,.6,'The callsign vertical anchor matches the final rendered camera');
+}
+async function stableOverview(){
+ const frames=[];
+ for(let i=0;i<3;i++){await step();const s=await state();checkRender(s);checkOverview(s);frames.push(s);}
+ for(const s of frames.slice(1)){
+  assert(distance(s.camera.position,frames[0].camera.position)<1e-6&&distance(s.camera.target,frames[0].camera.target)<1e-6,'Production frames retain the fitted pose without a later height or distance clamp');
+  near(s.landing.elapsed,frames[0].landing.elapsed,1e-9,'A paused overview remains paused');
+ }
+ evidence.controls.push({kind:'stable-overview',width:frames[0].width,frames});return frames.at(-1);
+}
 async function shot(name,{active=true,craft=false}={}){
  evidence.lastView=name;await step();const s=await state();checkRender(s);if(active)checkActive(s);
+ if(s.landing.active&&s.landing.mode==='overview')checkOverview(s);
  if(craft){
   assert(s.projected.buran,'The event aircraft is inside the captured viewport');
   assert(s.projected.buran.y<s.ui.panel.y-12,'The aircraft remains above the event panel');
@@ -197,8 +230,31 @@ try{
  await page.waitForTimeout(80);await step();near((await state()).landing.elapsed,paused.landing.elapsed,1e-9,'Pause freezes event time across real frames');
  evidence.controls.push({kind:'native-range-and-playback',beforePlayback,afterPlayback,paused});
 
- await seek(0);await page.locator('#buranLandingOverview').click();s=await shot('whole-manoeuvre');
+ await seek(0);await page.locator('#buranLandingOverview').click();const desktopOverview=await stableOverview();s=await shot('whole-manoeuvre');
  assert.equal(s.landing.mode,'overview');assert.equal(s.landing.following,false);assert.equal(s.camera.controls.enablePan,true);
+ // Keep the event active behind the real inspector while resizing. One small
+ // procedural aircraft avoids a second GLB download; the ordinary inspector
+ // suite already covers its full model catalogue. The native close button
+ // must preserve the event and refit after restoring the pre-resize map pose.
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.modelInspector.open(['aircraft'])),true);
+ await page.waitForFunction(()=>window.__BAIKONUR_QA.modelInspector.stats().ready,null,{timeout:90000});
+ const child=page.frames().find(frame=>frame.url().includes('/workshop/model.html'));
+ assert(child,'The actual model inspector created its single viewer frame');
+ const model=await child.evaluate(()=>window.__MODEL_VIEWER_QA.stats());
+ assert.equal(model.modelId,'aircraft');assert.equal(model.ready,true);assert(model.drawCalls>0&&model.triangles>0);
+ assert.equal(await page.locator('#modelInspector iframe').count(),1);
+ const inspectorOpen=await state();assert.equal(inspectorOpen.landing.active,true);assert.equal(inspectorOpen.landing.paused,true);assert.equal(inspectorOpen.camera.controls.enabled,false);
+ await page.setViewportSize({width:375,height:812});await step();const inspectorResized=await state();
+ assert.equal(inspectorResized.landing.mode,'overview');assert.equal(inspectorResized.overview.fit.width,375);
+ near(inspectorResized.landing.elapsed,desktopOverview.landing.elapsed,1e-9,'The modal does not advance the underlying paused event');
+ await page.locator('#modelInspector .model-inspector-close').click();
+ await page.waitForFunction(()=>!window.__BAIKONUR_QA.modelInspector.isOpen());assert.equal(await page.locator('#modelInspector iframe').count(),0);
+ s=await stableOverview();assert.equal(s.camera.controls.enabled,true);assert.equal(s.landing.paused,desktopOverview.landing.paused);
+ evidence.controls.push({kind:'inspector-resize-close',model,opened:inspectorOpen,resized:inspectorResized,restored:s});
+ await shot('mobile-manoeuvre-after-resize');
+ await page.setViewportSize({width:1600,height:1000});s=await stableOverview();
+ assert(distance(s.camera.position,desktopOverview.camera.position)<1e-6&&distance(s.camera.target,desktopOverview.camera.target)<1e-6,'A desktop/phone/desktop resize cycle returns to the same physical fit');
+ assert.deepEqual(s.camera.controls,desktopOverview.camera.controls,'Resize does not accumulate a larger overview control limit');
  await page.locator('#buranLandingPanel .buran-event-note > summary').click();
  assert.equal(await page.locator('#buranSources a').count(),5);assert.match(await page.locator('#buranReconstructionNotice').textContent(),/телеметр|реконструкц/i);
  await page.locator('#buranLandingPanel .buran-event-note > summary').click();
@@ -264,7 +320,7 @@ try{
  const mobileControls=await page.locator('#buranLandingPanel .buran-event-controls').evaluate(element=>({client:element.clientWidth,scroll:element.scrollWidth}));
  assert(mobileControls.scroll<=mobileControls.client+1,'Playback controls wrap without horizontal overflow');
  checkTyres(s,{noseRaised:true});
- await page.locator('#buranLandingOverview').click();s=await shot('mobile-manoeuvre');assert.equal(s.landing.mode,'overview');
+ await page.locator('#buranLandingOverview').click();await stableOverview();s=await shot('mobile-manoeuvre');assert.equal(s.landing.mode,'overview');
  await page.locator('#buranLandingClose').click();await step();checkClosed(await state(),mobileBaseline);
 
  evidence.inputEvents=await page.evaluate(()=>window.__BURAN_INPUT);

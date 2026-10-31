@@ -6,6 +6,35 @@ import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './came
 
 export const BURAN_LANDING_VERSION='buran-landing-event-v1';
 const V=(x,y,z)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
+
+// Fit the actual 3D samples into an unobscured screen rectangle. The target is
+// translated in the camera's right/up plane; the normal perspective projection
+// and the airport/aircraft metre are unchanged. Every perspective half-plane
+// supplies a lower bound on distance, so high descent points and both runway
+// ends fit as well as the horizontal extent of the route.
+export function fitBuranOverviewCamera({points,width,height,rect,fov=52,near=.1,padding=6}){
+ if(!(width>0&&height>0&&rect.right>rect.left&&rect.bottom>rect.top&&points.length))throw new Error('Invalid Buran overview viewport');
+ const vectors=points.map(p=>p.isVector3?p:V(...p)),centre=new THREE.Box3().setFromPoints(vectors).getCenter(V(0,0,0));
+ const eyeAxis=V(0,1,.55).normalize(),right=V(1,0,0),up=V(0,0,0).crossVectors(eyeAxis,right);
+ const tanV=Math.tan(fov*Math.PI/360),tanH=tanV*width/height;
+ const left=2*rect.left/width-1,rightEdge=2*rect.right/width-1,bottom=1-2*rect.bottom/height,top=1-2*rect.top/height;
+ let maxRight=-Infinity,minLeft=Infinity,maxTop=-Infinity,minBottom=Infinity,distance=80;
+ for(const point of vectors)for(const dx of [-padding,padding])for(const dy of [-padding,padding])for(const dz of [-padding,padding]){
+  const relative=point.clone().add(V(dx,dy,dz)).sub(centre),x=relative.dot(right),y=relative.dot(up),z=relative.dot(eyeAxis);
+  distance=Math.max(distance,z+near+1);
+  maxRight=Math.max(maxRight,x/tanH+rightEdge*z);minLeft=Math.min(minLeft,x/tanH+left*z);
+  maxTop=Math.max(maxTop,y/tanV+top*z);minBottom=Math.min(minBottom,y/tanV+bottom*z);
+ }
+ distance=Math.max(distance,(maxRight-minLeft)/(rightEdge-left),(maxTop-minBottom)/(top-bottom))*1.025;
+ // The midpoint of the feasible translation intervals centres the projected
+ // envelope, including perspective depth; an axis-aligned world-box centre
+ // alone leaves much of a portrait viewport unused.
+ const target=centre.clone().addScaledVector(right,tanH*(maxRight+minLeft-(rightEdge+left)*distance)/2)
+  .addScaledVector(up,tanV*(maxTop+minBottom-(top+bottom)*distance)/2);
+ return {version:'buran-overview-fit-v1',position:target.clone().addScaledVector(eyeAxis,distance).toArray(),target:target.toArray(),
+  distance,rect:{...rect},width,height,pointCount:vectors.length,padding};
+}
+
 const titles={manoeuvre:'Предпосадочный манёвр',escort:'Встреча с МиГ-25',final:'Заход на ВПП 24',flare:'Шасси и выравнивание',rollout:'Касание и пробег',parachutes:'Тормозные парашюты',stop:'Посадка завершена'};
 const beforeFacts=[
  ['Два витка вокруг Земли','15 ноября 1988 года «Буран» возвращается из своего первого орбитального полёта. На борту нет экипажа.','chronology'],
@@ -53,14 +82,15 @@ export function createBuranLanding({scene,camera,controls,airfield,getSourceBura
  $('buranSources').append(sourceList);
  const precision=document.createElement('p');precision.textContent='Касание — 09:24:42, остановка — 09:25:24. Дальний маршрут вписан в макет; ВПП, корабль и пробег сохраняют единый масштаб. Точка касания, позы и траектория сопровождения восстановлены. Разные редакции архива расходятся в длине пробега, боковом отклонении и времени выпуска парашютов.';$('buranSources').append(precision);
  let actors=null,path=null,active=false,following=false,paused=false,elapsed=0,speed=3,lastNow=null,savedControls=null,lastTarget=V(0,0,0),restoreScene=null,guide=null,mode='craft',state=null,lastFact='',lastRelease=null;
+ let overviewControls=null,overviewFit=null;const labelPoint=V(0,0,0);
  const modelRoot=new THREE.Group();modelRoot.name='15.11.1988 · посадка «Бурана»';modelRoot.visible=false;modelRoot.userData.pickable=false;scene.add(modelRoot);
  function ensureModels(){
   if(actors)return;
   const sourceBuran=getSourceBuran();if(!sourceBuran)throw new Error('Модель «Бурана» ещё загружается. Попробуйте ещё раз.');
   actors=buildLandingAircraft({sourceBuran});path=createBuranLandingPath({airfield,bounds:getNavigationBounds?.()});
   for(const model of [actors.buran,actors.mig]){model.scale.setScalar(path.metre);model.traverse(o=>{o.userData.pickable=false;});modelRoot.add(model);}
-  const geometry=new THREE.BufferGeometry().setFromPoints(path.points),material=new THREE.LineBasicMaterial({color:0xe1bc81,transparent:true,opacity:.50,depthWrite:false});
-  guide=new THREE.Line(geometry,material);guide.name='Восстановленная предпосадочная траектория';guide.userData.pickable=false;guide.visible=false;modelRoot.add(guide);
+  const geometry=new THREE.BufferGeometry().setFromPoints(path.points),material=new THREE.LineBasicMaterial({color:0x075b68,transparent:true,opacity:.95,depthWrite:false,depthTest:false,fog:false,toneMapped:false});
+  guide=new THREE.Line(geometry,material);guide.name='Восстановленная предпосадочная траектория';guide.userData.pickable=false;guide.visible=false;guide.renderOrder=40;modelRoot.add(guide);
  }
  function pose(model,position,heading,pitch,bank=0){
   model.quaternion.setFromAxisAngle(V(0,1,0),Math.atan2(heading.x,heading.z));
@@ -90,34 +120,76 @@ export function createBuranLanding({scene,camera,controls,airfield,getSourceBura
   }
   if(following){camera.position.add(actors.buran.position.clone().sub(lastTarget));controls.target.copy(actors.buran.position);lastTarget.copy(actors.buran.position);controls.update();}
   modelRoot.updateWorldMatrix(true,true);camera.updateMatrixWorld(true);
-  const point=actors.buran.position.clone().project(camera);callSign.hidden=!active||point.z<0||point.z>1||Math.abs(point.x)>1||Math.abs(point.y)>1;
-  if(!callSign.hidden){callSign.style.left=(point.x*.5+.5)*innerWidth+'px';callSign.style.top=(-point.y*.5+.5)*innerHeight-16+'px';}
+  syncOverlay();
   const clock=landingClock(elapsed);$('buranLandingClock').textContent=clock+' МСК';$('buranLandingClock').dateTime='1988-11-15T'+clock+'+03:00';
   $('buranLandingPhase').textContent=titles[state.phase];$('buranLandingProgress').value=String(elapsed);$('buranLandingProgress').setAttribute('aria-valuetext',clock+', '+titles[state.phase]);
   const fact=factFor(state),key=fact.join('|');if(key!==lastFact){lastFact=key;$('buranFactTitle').textContent=fact[0];$('buranFactText').textContent=fact[1];$('buranFactSource').href=SOURCES[fact[2]].url;}
   panel.dataset.phase=state.phase;panel.dataset.clock=clock;panel.dataset.playing=String(!paused);
  }
+ function syncOverlay(){
+  if(!active||!actors){callSign.hidden=true;return;}
+  if(mode==='overview'&&overviewControls){
+   const rect=overviewRectangle();
+   if(!overviewFit||overviewFit.width!==innerWidth||overviewFit.height!==innerHeight||
+    Object.keys(rect).some(key=>Math.abs(rect[key]-overviewFit.rect[key])>.25))applyOverviewFit(rect);
+  }
+  camera.updateMatrixWorld(true);actors.buran.getWorldPosition(labelPoint);labelPoint.project(camera);
+  callSign.hidden=labelPoint.z<=-1||labelPoint.z>=1||Math.abs(labelPoint.x)>1||Math.abs(labelPoint.y)>1;
+  if(!callSign.hidden){callSign.style.left=(labelPoint.x*.5+.5)*innerWidth+'px';callSign.style.top=(-labelPoint.y*.5+.5)*innerHeight-16+'px';}
+ }
+ function leaveOverview({releaseCamera=false}={}){
+  if(!overviewControls)return;
+  if(releaseCamera)lastRelease=releaseFollowCamera({camera,controls,savedControls:overviewControls,bounds:getNavigationBounds?.()});
+  else Object.assign(controls,overviewControls);
+  overviewControls=null;guide.visible=false;
+ }
  function setFollowing(value,{releaseCamera=true}={}){
-  if(!active||value===following)return;
+  if(!active)return;
+  if(value===following){
+   if(!value&&mode==='overview'){leaveOverview({releaseCamera});mode='free';}
+   return;
+  }
   if(!value){
    if(savedControls){if(releaseCamera)lastRelease=releaseFollowCamera({camera,controls,savedControls,bounds:getNavigationBounds?.()});else Object.assign(controls,savedControls);}
    following=false;document.body.classList.remove('following-buran');$('buranLandingFollow').setAttribute('aria-pressed','false');$('buranLandingFollow').textContent='Корабль';mode='free';return;
   }
-  savedControls=captureOrbitSettings(controls);following=true;mode='craft';guide.visible=false;
+  leaveOverview();savedControls=captureOrbitSettings(controls);following=true;mode='craft';guide.visible=false;
   Object.assign(controls,{minDistance:6,maxDistance:240,minPolarAngle:.06,maxPolarAngle:Math.PI/3,enablePan:false,mouseButtons:{LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE},touches:{ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_ROTATE}});
   lastTarget.copy(actors.buran.position);controls.target.copy(lastTarget);
   const forward=state?.heading||path.northEnd.clone().negate(),right=new THREE.Vector3().crossVectors(V(0,1,0),forward),offset=right.multiplyScalar(20).addScaledVector(forward,-32).add(V(0,27,0));
   camera.position.copy(lastTarget).add(offset.multiplyScalar(camera.aspect<.8?1.45:1));controls.update();
   document.body.classList.add('following-buran');$('buranLandingFollow').setAttribute('aria-pressed','true');$('buranLandingFollow').textContent='Свободно';
  }
- function overview(){
-  if(!active)return;setFollowing(false,{releaseCamera:false});mode='overview';guide.visible=true;
-  const box=new THREE.Box3().setFromPoints(path.points);box.expandByPoint(airfield.localToWorld(V(0,specRunwayY(),1125)));box.expandByPoint(airfield.localToWorld(V(0,specRunwayY(),-1125)));
-  const centre=box.getCenter(V(0,0,0)),size=box.getSize(V(0,0,0));
-  const fov=camera.fov*Math.PI/180,distance=Math.max(size.x/(2*Math.tan(fov/2)*camera.aspect),size.z/(2*Math.tan(fov/2)),size.y)*1.65;
-  const damping=controls.enableDamping;controls.enableDamping=false;controls.update();controls.target.copy(centre);camera.position.copy(centre).add(V(0,distance*.88,distance*.76));controls.update();controls.enableDamping=damping;render();
+ function runwayPoints(){
+  const spec=airfield.userData.airport;
+  return [-1,1].flatMap(end=>[-1,1].map(side=>airfield.localToWorld(V(side*spec.width/2,spec.runwayY,end*spec.length/2))));
  }
- const specRunwayY=()=>airfield.userData.airport.runwayY;
+ function overviewRectangle(){
+  const panelRect=panel.getBoundingClientRect(),ui=document.getElementById('ui')?.getBoundingClientRect();
+  let left=18,right=innerWidth-18,top=18,bottom=Math.min(innerHeight-18,panelRect.top-18);
+  if(ui?.width>0&&ui.height>0){
+   if(ui.width>innerWidth*.65)top=Math.max(top,ui.bottom+18);
+   else if(ui.left<innerWidth/2)left=Math.max(left,ui.right+18);
+   else right=Math.min(right,ui.left-18);
+  }
+  // Leave room for the short callsign above either end of the path. The panel's
+  // expanded source list can cover most of a short screen; retain a finite
+  // camera in that reading state, then fit the normal layout when it closes.
+  left+=32;right-=32;top+=24;
+  if(right-left<96){left=18;right=innerWidth-18;}
+  if(bottom-top<96){top=18;bottom=Math.max(114,panelRect.top-18);}
+  return {left,right,top,bottom};
+ }
+ function applyOverviewFit(rect=overviewRectangle()){
+  overviewFit=fitBuranOverviewCamera({points:[...path.points,...runwayPoints()],width:innerWidth,height:innerHeight,rect,fov:camera.fov,near:camera.near});
+  const damping=controls.enableDamping;controls.enableDamping=false;controls.update();
+  controls.maxDistance=Math.max(overviewControls.maxDistance,overviewFit.distance*1.12);
+  controls.target.fromArray(overviewFit.target);camera.position.fromArray(overviewFit.position);controls.update();controls.enableDamping=damping;
+ }
+ function overview(){
+  if(!active)return;if(following)setFollowing(false,{releaseCamera:false});
+  overviewControls??=captureOrbitSettings(controls);mode='overview';guide.visible=true;applyOverviewFit();render();
+ }
  function start(){
   try{ensureModels();}catch(error){console.error('BURAN_LANDING_START',error);return false;}
   if(active){elapsed=0;paused=false;lastNow=null;$('buranLandingPause').textContent='Пауза';render();if(!following)setFollowing(true);return true;}
@@ -140,11 +212,19 @@ export function createBuranLanding({scene,camera,controls,airfield,getSourceBura
  });
  // End the event before a different map action runs, so its camera pose and
  // history/light choice cannot be overwritten by a delayed follow update.
- const leaveForOtherAction=e=>{if(active&&e.target.closest('button,a,input,select,summary')&&!e.target.closest('#buranLandingPanel,#buranLandingStart'))stop({releaseCamera:false});};
+ const leaveForOtherAction=e=>{if(active&&e.target.closest('button,a,input,select,summary')&&!e.target.closest('#buranLandingPanel,#buranLandingStart,#modelInspector'))stop({releaseCamera:false});};
  document.addEventListener('pointerdown',leaveForOtherAction,{capture:true});
  document.addEventListener('click',leaveForOtherAction,{capture:true});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
- return {start,stop,setFollowing,overview,seek(seconds){if(!active&&!start())return;elapsed=clamp(Number(seconds)||0,0,BURAN_LANDING_TIMES.end);paused=true;lastNow=null;$('buranLandingPause').textContent='Продолжить';render();},
+ return {start,stop,setFollowing,overview,syncOverlay,isOverviewActive:()=>active&&mode==='overview',
+  overviewState(){
+   if(!guide||!path)return null;
+   const attribute=guide.geometry.getAttribute('position');guide.updateWorldMatrix(true,false);
+   return {active:active&&mode==='overview',fit:overviewFit,guide:{visible:modelRoot.visible&&guide.visible,color:'#'+guide.material.color.getHexString(),opacity:guide.material.opacity,
+    depthTest:guide.material.depthTest,fog:guide.material.fog,renderOrder:guide.renderOrder},
+    points:Array.from({length:attribute.count},(_,i)=>V(0,0,0).fromBufferAttribute(attribute,i).applyMatrix4(guide.matrixWorld).toArray()),runwayPoints:runwayPoints().map(p=>p.toArray())};
+  },
+  seek(seconds){if(!active&&!start())return;elapsed=clamp(Number(seconds)||0,0,BURAN_LANDING_TIMES.end);paused=true;lastNow=null;$('buranLandingPause').textContent='Продолжить';render();},
   play(){paused=false;lastNow=null;$('buranLandingPause').textContent='Пауза';},pause(){paused=true;lastNow=null;$('buranLandingPause').textContent='Продолжить';},
   update(now){if(!active)return;if(lastNow!==null&&!paused&&!document.hidden)elapsed=Math.min(BURAN_LANDING_TIMES.end,elapsed+Math.max(0,(now-lastNow)/1000)*speed);lastNow=now;if(elapsed>=BURAN_LANDING_TIMES.end){paused=true;$('buranLandingPause').textContent='Сначала';}render();},
   stats(){

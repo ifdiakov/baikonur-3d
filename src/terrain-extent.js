@@ -1,5 +1,9 @@
 import * as THREE from 'three';
 
+// Two enormous triangles lose metres in GPU world-coordinate interpolation
+// near a close camera. This modest grid keeps terrain cutouts on their rims.
+export const LARGE_TERRAIN_SEGMENTS=16;
+
 /**
  * BAIKONUR STEPPES / terrain v4
  *
@@ -70,7 +74,7 @@ export function sampleSteppe(x,z,detail=1){
  */
 export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
   const config=[
-    {id:'regional',extent:116000,resolution:512,height:-4.95,fade:.22,detail:0,order:0},
+    {id:'regional',extent:116000,resolution:512,height:-4.95,fade:.22,detail:0,order:0,segments:LARGE_TERRAIN_SEGMENTS},
     {id:'intermediate',extent:18000,resolution:768,height:-3.75,fade:.24,detail:1,order:1}
   ];
   const planes=[],textures=[],regionInfo=[];
@@ -108,7 +112,7 @@ export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
       polygonOffset:true,polygonOffsetFactor:-1
     });
     material.name='Earth / '+spec.id+' / no survey';
-    const plane=new THREE.Mesh(new THREE.PlaneGeometry(spec.extent,spec.extent),material);
+    const plane=new THREE.Mesh(new THREE.PlaneGeometry(spec.extent,spec.extent,spec.segments||1,spec.segments||1),material);
     plane.name='Степь Байконура / '+spec.id;
     plane.rotation.x=-Math.PI/2;plane.position.y=spec.height;
     plane.renderOrder=spec.order;
