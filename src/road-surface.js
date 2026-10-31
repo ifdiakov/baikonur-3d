@@ -44,7 +44,7 @@ class PolygonIndex{
 }
 function sameLevel(a,b){
  const x=(Math.max(a.bounds.minX,b.bounds.minX)+Math.min(a.bounds.maxX,b.bounds.maxX))/2,z=(Math.max(a.bounds.minZ,b.bounds.minZ)+Math.min(a.bounds.maxZ,b.bounds.maxZ))/2;
- const tolerance=a.gradeTolerance!=null&&b.gradeTolerance!=null&&a.priority===b.priority?Math.min(a.gradeTolerance,b.gradeTolerance):.22;
+ const tolerance=a.priority<0||b.priority<0?1.2:a.gradeTolerance!=null&&b.gradeTolerance!=null&&a.priority===b.priority?Math.min(a.gradeTolerance,b.gradeTolerance):.22;
  return Math.abs(a.height(x,z)-b.height(x,z))<tolerance;
 }
 function record(poly,road,section){
@@ -80,15 +80,17 @@ function unionRecords(records,occluders=[],indexRecords=true){
 // Reuse the same X/Z clipping for already sampled highway ribbons. Each
 // input triangle keeps its own grade plane, so a ramp cannot erase a lower
 // underpass simply because their map projections overlap.
-export function unionRoadSurfacePolygons(polygons){
- const records=polygons.map(poly=>{
+export function unionRoadSurfacePolygons(polygons,exclusivePolygons=[]){
+ const make=poly=>{
   const r=record(poly,'highway');if(!r)return null;r.priority=poly.priority??0;r.gradeTolerance=.008;
   const [a,b,c]=r.poly,den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);
   r.height=(x,z)=>{const u=((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/den,v=((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/den;return u*a.y+v*b.y+(1-u-v)*c.y;};
+  if(Number.isFinite(poly.clipHeight))r.height=()=>poly.clipHeight;
   return r;
- }).filter(Boolean);
+ };
+ const records=polygons.map(make).filter(Boolean),exclusive=exclusivePolygons.map(poly=>{const r=make(poly);if(r)r.priority=-1;return r;}).filter(Boolean);
  const through=records.filter(r=>r.priority===0),ramps=records.filter(r=>r.priority!==0);
- const main=unionRecords(through),merge=unionRecords(ramps,through,false);
+ const main=unionRecords(through,exclusive),merge=unionRecords(ramps,[...through,...exclusive],false);
  return {polygons:[...main.polygons,...merge.polygons],clipped:main.clipped+merge.clipped};
 }
 
@@ -101,6 +103,7 @@ export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[]){
   const r=record(poly,'highway-owner');if(!r)return null;
   const [a,b,c]=r.poly,den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);
   r.height=(x,z)=>{const u=((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/den,v=((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/den;return u*a.y+v*b.y+(1-u-v)*c.y;};
+  if(Number.isFinite(poly.clipHeight))r.height=()=>poly.clipHeight;
   r.priority=0;r.gradeTolerance=gradeTolerance;return r;
  };
  if(ownershipPolygons.length){for(const poly of ownershipPolygons){const r=make(poly);if(r)index.add(r);}}

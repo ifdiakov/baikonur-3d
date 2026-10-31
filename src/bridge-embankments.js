@@ -84,15 +84,18 @@ export function createBridgeEmbankmentGeometry(plan){
   const geometry=new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();
   const normals=geometry.attributes.normal,colors=[];
-  const light=V(-.45,.80,.40).normalize();
+  // Match the museum sun in world space. The plain stays exactly unshaded
+  // at each toe; the hills receive enough directional relief to read clearly
+  // against the shared, otherwise flat steppe texture in both viewing modes.
+  const light=V(-.45,.80,.40).normalize().applyAxisAngle(V(0,1,0),-plan.yaw);
   for(let i=0;i<normals.count;i++){
     const n=V().fromBufferAttribute(normals,i),slope=Math.max(0,1-n.y);
-    const shade=1-slope*(.23-.12*n.dot(light));colors.push(shade,shade,shade);
+    const shade=1-slope*(.82-.34*n.dot(light));colors.push(shade,shade,shade);
   }
   geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
   geometry.computeBoundingBox();geometry.computeBoundingSphere();
   return {geometry,report:{version:profile.version,count:2,groundY:profile.groundY,centralOpenLength:profile.inner*2,
-    maximumWidth:profile.halfWidth*2,roadClearance:.18,railClearance:.35,texture:'shared-world-steppe',
+    maximumWidth:profile.halfWidth*2,roadClearance:.18,railClearance:.35,texture:'shared-world-steppe',reliefShading:'directional-earth-slope-v2',
     constrainedCorridors:[...new Set(profile.corridors.map(e=>e.kind+':'+e.wayId))],parts,
     triangles:indices.length/3}};
 }

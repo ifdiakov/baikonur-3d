@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-interchange';
-const revision='20261031-highway-lighting-v3';
+const revision='20261031-highway-lighting-v4';
 const reference='https://sketchfab.com/3d-models/bridge-design-6c2d7e65a2e14600bde311a01e1baa27';
 const views=['bridge','all','side','top'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],rocketReadiness:[],views:[],mobile:[]};

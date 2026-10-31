@@ -8,9 +8,10 @@ import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261031-rocket-ex
 import {distancePath} from './traffic-paths.js?v=20261031-rocket-exhibits-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=krayniy-drive-terminal-v1';
-import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-highway-lighting-v3';
-import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS,highwayRunsOutsideBridge} from './highway-surface.js?v=20261031-highway-lighting-v3';
-import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes} from './road-surface.js?v=20261031-highway-lighting-v3';
+import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-highway-lighting-v4';
+import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS,highwayRunsOutsideBridge} from './highway-surface.js?v=20261031-highway-lighting-v4';
+import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes} from './road-surface.js?v=20261031-highway-lighting-v4';
+import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-highway-lighting-v4';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -111,7 +112,7 @@ export function buildOsmGraph(features,{geography,point,rail=false}){
 }
 
 function geometryBatch(parent,name,material,{joined=false}={}){
- const positions=[],normals=[],indices=[],pending=[],ownershipPolygons=[];let mesh=null,clippedSections=0,currentPriority=0;
+ const positions=[],normals=[],indices=[],pending=[],ownershipPolygons=[],exclusivePolygons=[];let mesh=null,clippedSections=0,currentPriority=0;
  function tri(a,b,c){
   // The visible side of every road/rail sheet is its top. Float32 rounding
   // happens before the area test, so tiny source segments cannot turn into
@@ -126,6 +127,7 @@ function geometryBatch(parent,name,material,{joined=false}={}){
   positions.push(ax,ay,az,bx,by,bz,cx,cy,cz);normals.push(nx,ny,nz,nx,ny,nz,nx,ny,nz);indices.push(n,n+1,n+2);
  }
  function quad(a,b,c,d){if(joined){ownershipPolygons.push([a,b,d,c]);for(const p of [[a,c,b],[b,c,d]]){p.priority=currentPriority;pending.push(p);}}else{tri(a,c,b);tri(b,c,d);}}
+ function patch(triangles,mask){for(const p of triangles)tri(...p);exclusivePolygons.push(...mask);ownershipPolygons.push(...mask);}
  function disc(center,radius,y=0){for(let i=0;i<14;i++){const a=i*Math.PI/7,b=(i+1)*Math.PI/7;tri(V(center.x,center.y+y,center.z),V(center.x+Math.cos(a)*radius,center.y+y,center.z+Math.sin(a)*radius),V(center.x+Math.cos(b)*radius,center.y+y,center.z+Math.sin(b)*radius));}}
  function ribbon(points,width,lift=0,offset=0,priority=0,directionAt=null,heightAt=null){
   currentPriority=priority;
@@ -140,12 +142,12 @@ function geometryBatch(parent,name,material,{joined=false}={}){
   for(let i=1;i<rims.length;i++)if([...rims[i-1],...rims[i]].every(Boolean))quad(rims[i-1][0],rims[i-1][1],rims[i][0],rims[i][1]);
  }
  function flush(){
-  if(pending.length){const result=unionRoadSurfacePolygons(pending.sort((a,b)=>a.priority-b.priority));clippedSections=result.clipped;for(const p of result.polygons)for(let i=1;i<p.length-1;i++)tri(p[0],p[i],p[i+1]);pending.length=0;}
+  if(pending.length){const result=unionRoadSurfacePolygons(pending.sort((a,b)=>a.priority-b.priority),exclusivePolygons);clippedSections=result.clipped;for(const p of result.polygons)for(let i=1;i<p.length-1;i++)tri(p[0],p[i],p[i+1]);pending.length=0;}
   if(mesh){parent.remove(mesh);mesh.geometry.dispose();}if(!positions.length)return null;
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.setIndex(indices);g.computeBoundingSphere();
   mesh=new THREE.Mesh(g,material);mesh.name=name;mesh.userData.groundSurface=true;mesh.userData.osmSource=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
  }
- return {ribbon,disc,quad,flush,ownershipPolygons,get clippedSections(){return clippedSections;},get triangles(){return mesh?(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3:indices.length/3;},get mesh(){return mesh;}};
+ return {ribbon,disc,quad,patch,flush,ownershipPolygons,get clippedSections(){return clippedSections;},get triangles(){return mesh?(mesh.geometry.index?.count||mesh.geometry.attributes.position.count)/3:indices.length/3;},get mesh(){return mesh;}};
 }
 
 function pavementHeightSampler(meshes){
@@ -668,6 +670,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const building=new THREE.Mesh(new THREE.BoxGeometry(5.4,3.8,9),material(0x999992));building.position.set(4,1.9,0);group.add(building);const roof=new THREE.Mesh(new THREE.BoxGeometry(6,.45,9.6),material(0x6f8b8a));roof.position.set(4,3.9,0);group.add(roof);
   stationLabels.push({id:'osm-station-'+f.properties.osmId,name:f.properties.name,anchor,group,osmUrl:f.properties.osmUrl,record:{label:f.properties.name,x:p[0],y:p[1],source:'OpenStreetMap'}});
  }
+ const lowerAprons=createInterchangeAprons(roadGraph);
+ for(const apron of lowerAprons){
+  highwayAsphalt.patch(apron.triangles,apron.mask);
+  for(const curb of apron.curbs)shoulder.ribbon(curb,ROAD_STYLE.shoulderExtra,-.055-HIGHWAY_ASPHALT_LIFT);
+  for(const edge of apron.edgeLines)highwayPaintPaths.push({...edge,width:HIGHWAY_MARKINGS.edgeWidth,offset:0,color:'white',ramp:true,apron:true});
+ }
  batches.forEach(b=>b.flush());
  const interchangeBridge=buildInterchangeBridge({parent:roadRoot,plan:interchangeBridgePlan});
  // The architectural span is the sole pavement owner between its exact
@@ -683,13 +691,13 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const paintHeight=p=>{const q=p.clone();q.x=Math.fround(q.x);q.z=Math.fround(q.z);const y=pavementY(q);if(y===null){highwayPaintProjectionMisses++;return null;}return y+paintLift;};
  for(const path of highwayPaintPaths){
   const target=path.color==='yellow'?highwayYellow:highwayWhite;
-  if(!path.ramp){target.ribbon(path.points,path.width,HIGHWAY_MARKINGS.lift,path.offset,0,highwayDirectionAt,paintHeight);continue;}
+  if(!path.ramp||path.apron){target.ribbon(path.points,path.width,HIGHWAY_MARKINGS.lift,path.offset,0,path.directionAt||highwayDirectionAt,paintHeight);continue;}
   const line=path.points.map((p,i)=>{const direction=path.points[Math.min(i+1,path.points.length-1)].clone().sub(path.points[Math.max(0,i-1)]).setY(0).normalize();
    const d=highwayDirectionAt(p,direction).setY(0).normalize();return p.clone().addScaledVector(V(-d.z,0,d.x),path.offset);
   });
   // Ramp edge lines terminate at the host carriageway. In particular, no
   // ramp centre stripe is drawn across the through-lane double yellow pair.
-  const visible=p=>{const host=roadGraph.highwaySurfaceHeight.nearest(p);return !host||Math.abs(host.y-p.y)>1.2||host.distance>host.width/2+.2;};
+  const visible=p=>{if(!path.apron&&lowerAprons.some(apron=>apron.contains(p)))return false;const host=roadGraph.highwaySurfaceHeight.nearest(p);return !host||Math.abs(host.y-p.y)>1.2||host.distance>host.width/2+.2;};
   for(const run of visiblePolylineRuns(line,visible))target.ribbon(run,path.width,HIGHWAY_MARKINGS.lift,0,0,null,paintHeight);
  }
  highwayYellow.flush();highwayWhite.flush();batches.push(highwayYellow,highwayWhite);
@@ -722,6 +730,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    roadRoutes:roadGraph.ways.length,railRoutes:railGraph.ways.length,roadNodes:roadGraph.nodes.size,railNodes:railGraph.nodes.size,roadComponents:roadGraph.components.length,railComponents:railGraph.components.length,
    roadSurface:{version:'osm-batched-upward-terrain-surfaces-v2',junctionCount,markingSegments,roads:renderedRoadWays.size,paintLift:.052,sampleStep:1.4,normalDirection:'upward',terrainClearance:.38,
     highway:{...roadGraph.highwaySurface,asphaltColor:'#'+HIGHWAY_ASPHALT_COLOR.toString(16),asphaltLift:HIGHWAY_ASPHALT_LIFT,sharedWithBridge:true,clippedOverlapSections:highwayAsphalt.clippedSections,ordinarySurfaceClip,
+     lowerJunctionAprons:{version:INTERCHANGE_APRON_VERSION,junctions:lowerAprons.map(apron=>apron.report)},
      markings:{...HIGHWAY_MARKINGS,sourceWayIds:[...highwayMarkedWays],mainRuns:highwayMarkingRuns,rampRuns:rampMarkingRuns,projectionMisses:highwayPaintProjectionMisses,
       yellowTriangles:highwayYellow.triangles,whiteTriangles:highwayWhite.triangles,bridgeBoundary:'exact-profile-seams',rampCenterlines:'white-dashed-two-way-only'}},
     continuousThroughRoads:[{sourceWayId:INDUSTRIAL_THROUGH_ROAD,siteIds:[...INDUSTRIAL_THROUGH_SITES],renderedRuns:roadPaths.filter(r=>r.source==='OpenStreetMap'&&r.osmWayIds?.includes(INDUSTRIAL_THROUGH_ROAD)).length}]},junctionCount,markingSegments,railTies,railGauge:RAIL_PROFILE.gauge,

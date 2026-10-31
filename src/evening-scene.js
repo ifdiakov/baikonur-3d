@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createLightField} from './light-field.js?v=20261031-highway-lighting-v3';
-import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightLayoutStats} from './road-lighting.js?v=20261031-highway-lighting-v3';
+import {createLightField} from './light-field.js?v=20261031-highway-lighting-v4';
+import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightLayoutStats} from './road-lighting.js?v=20261031-highway-lighting-v4';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {buildAirportLightRecords,AIRPORT_LIGHT_LAYOUT_VERSION} from './airport-light-layout.js?v=20261031-rocket-exhibits-v1';
 

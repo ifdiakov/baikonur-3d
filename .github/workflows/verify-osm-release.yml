@@ -36,7 +36,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-highway-lighting-20261031-v3
+  RELEASE_TAG: museum6-highway-lighting-20261031-v4
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -234,7 +234,7 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/highway-lighting-20261031-v3.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/highway-lighting-20261031-v4.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({

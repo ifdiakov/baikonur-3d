@@ -5,6 +5,7 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from '../src/highway-surface.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
+import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from '../src/interchange-aprons.js';
 
 const read=p=>JSON.parse(fs.readFileSync(new URL('../'+p,import.meta.url)));
 const geography=createMuseumGeography({catalog:read('data/catalog.json'),matches:read('data/osm/catalog-matches.json')});
@@ -167,5 +168,40 @@ for(let distance=highway.bridgeDistance-110;distance<highway.bridgeDistance+110;
  }
 }
 assert(transport.stats().roadSurface.highway.ordinarySurfaceClip.reports.some(r=>r.clipped>0));
+const aprons=createInterchangeAprons(graph),apronStats=transport.stats().roadSurface.highway.lowerJunctionAprons;
+assert.equal(apronStats.version,INTERCHANGE_APRON_VERSION);assert.equal(aprons.length,2);assert.equal(apronStats.junctions.length,2);
+assert.equal(snapshot(),before,'Rounded junctions must not change source nodes, topology or route costs');
+let apronOwnershipProbes=0,apronFarCurbProbes=0,apronSeamProbes=0;
+for(const apron of aprons){
+ for(const triangle of apron.triangles){
+  const p=triangle[0].clone().multiplyScalar(.23).addScaledVector(triangle[1],.31).addScaledVector(triangle[2],.46);
+  const darkHits=heights(p,true).filter(y=>Math.abs(y-p.y)<1.2),paleHits=paleAt(p).filter(y=>Math.abs(y-p.y)<1.2);
+  assert.equal(darkHits.length,1,'An apron interior has missing/overlapping dark pavement: '+JSON.stringify({node:apron.spec.nodeId,p:p.toArray(),darkHits}));
+  assert.equal(paleHits.length,0,'An apron interior retains ordinary asphalt, a shoulder or obsolete paint: '+JSON.stringify({node:apron.spec.nodeId,p:p.toArray(),paleHits}));
+  apronOwnershipProbes++;
+ }
+ // The railway runs immediately behind these host roads. Every far-side
+ // vertex must remain within the existing primary-road carriageway.
+ const center=new THREE.Vector3(...apron.report.center),outward=new THREE.Vector3(...apron.report.throat).sub(center).setY(0).normalize();
+ const nearby=graph.edges.filter(e=>e.tags.highway==='primary'&&Math.min(e.a.position.distanceTo(center),e.b.position.distanceTo(center))<15);
+ for(const p of apron.outline){
+  if(p.clone().sub(center).setY(0).dot(outward)>=-.05)continue;
+  const distance=Math.min(...nearby.map(e=>{
+   const a=e.a.position.clone().setY(0),b=e.b.position.clone().setY(0),q=new THREE.Line3(a,b).closestPointToPoint(p.clone().setY(0),true,new THREE.Vector3());
+   return p.clone().setY(0).distanceTo(q)-e.width/2;
+  }));
+  assert(distance<.0005,'A rounded apron widens the host road toward its neighbouring railway');apronFarCurbProbes++;
+ }
+ const top=apron.grid.at(-1),previous=apron.grid.at(-2);
+ for(let i=2;i<top.length-2;i+=2){
+  const tangent=top[i].clone().sub(previous[i]).setY(0).normalize();
+  for(const sign of [-1,1]){
+   const p=top[i].clone().addScaledVector(tangent,sign*.012),hits=heights(p).filter(y=>Math.abs(y-p.y)<.012);
+   assert(hits.length,'The rounded apron has a gap/step at its ramp seam');apronSeamProbes++;
+  }
+ }
+}
+assert(apronOwnershipProbes>2000&&apronFarCurbProbes>30&&apronSeamProbes>30);
 console.log('HIGHWAY_SURFACE_GEOMETRY_PASS',JSON.stringify({profileSamples,tangentJoins,maxLateralShift,minTangentDot,laneProbes,overlapProbes,maxWheelGap,
- approachSegments,maxApproachGradeChange,markingCoverageProbes,markingSurfaceProbes,maxMarkingLiftError,junctionOwnershipProbes,asphaltColor:dark.material.color.getHexString()}));
+ approachSegments,maxApproachGradeChange,markingCoverageProbes,markingSurfaceProbes,maxMarkingLiftError,junctionOwnershipProbes,
+ apronOwnershipProbes,apronFarCurbProbes,apronSeamProbes,asphaltColor:dark.material.color.getHexString()}));

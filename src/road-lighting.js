@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js?v=20261031-highway-lighting-v3';
+import {createLightField} from './light-field.js?v=20261031-highway-lighting-v4';
 
 export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v3';
 export const ROAD_LIGHT_LENS_EMISSION=1.65;
