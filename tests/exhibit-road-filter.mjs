@@ -93,7 +93,7 @@ for(const route of roads.osmVehiclePlan.routes)for(const region of simplificatio
 // discs. Node-only tests missed the final Krayniy road crossing the enlarged
 // runway outside the source airport bounding box.
 const cellSize=16,cells=new Map(),triangles=[];
-const surfaceNames=new Set(['OSM · единое дорожное полотно','OSM · единые обочины','OSM · грунтовые проезды','OSM · разметка']);
+const surfaceNames=new Set(['OSM · единое дорожное полотно','OSM · асфальт трассы','OSM · единые обочины','OSM · грунтовые проезды','OSM · разметка']);
 layers.roads.traverse(mesh=>{
  if(!mesh.isMesh||!surfaceNames.has(mesh.name))return;
  const p=mesh.geometry.attributes.position,ix=mesh.geometry.index;
@@ -110,7 +110,7 @@ layers.roads.traverse(mesh=>{
 function heights(x,z,{asphaltOnly=false}={}){
  const values=[];
  for(const tri of cells.get(Math.floor(x/cellSize)+':'+Math.floor(z/cellSize))||[]){
-  if(asphaltOnly&&tri.name!=='OSM · единое дорожное полотно')continue;
+  if(asphaltOnly&&!['OSM · единое дорожное полотно','OSM · асфальт трассы'].includes(tri.name))continue;
   const [a,b,c]=tri.vertices,den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);if(Math.abs(den)<1e-12)continue;
   const u=((b[2]-c[2])*(x-c[0])+(c[0]-b[0])*(z-c[2]))/den,v=((c[2]-a[2])*(x-c[0])+(a[0]-c[0])*(z-c[2]))/den;
   if(u>=-1e-6&&v>=-1e-6&&u+v<=1+1e-6)values.push(u*a[1]+v*b[1]+(1-u-v)*c[1]);
