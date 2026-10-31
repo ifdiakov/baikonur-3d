@@ -23,8 +23,21 @@ function sampleCubic(a,b,da,db,reachA,reachB,step){
 export function smoothLocalRoadGraph(graph,{sampleStep=.5}={}){
  const endpoints=new Map(),nodes=[];
  for(const node of graph.nodes.values()){
-  const edges=node.edges.filter(edge=>!edge.abandoned);
-  if(edges.length!==2||edges.some(edge=>highway(edge.tags)))continue;
+  let edges=node.edges.filter(edge=>!edge.abandoned);
+  if(edges.some(edge=>highway(edge.tags)))continue;
+  if(edges.length===3){
+   // A side road must not break the display tangent of a gently turning
+   // source way. Only its two explicit, opposing same-way arms share this
+   // frame; the third arm remains an independent T-junction approach.
+   let through=null,best=-.75;
+   for(let i=0;i<edges.length;i++)for(let j=i+1;j<edges.length;j++){
+    const a=edges[i],b=edges[j];if(a.wayId==null||String(a.wayId)!==String(b.wayId))continue;
+    const dot=direction(node.position,other(a,node).position).dot(direction(node.position,other(b,node).position));
+    if(dot<best){best=dot;through=[a,b];}
+   }
+   if(!through)continue;edges=through;
+  }
+  if(edges.length!==2)continue;
   const [a,b]=edges;
   if(Math.abs(a.width-b.width)>.01||dirt(a.tags)!==dirt(b.tags)||
     (a.tags.layer||'0')!==(b.tags.layer||'0')||Boolean(a.tags.bridge&&a.tags.bridge!=='no')!==Boolean(b.tags.bridge&&b.tags.bridge!=='no'))continue;
@@ -37,7 +50,8 @@ export function smoothLocalRoadGraph(graph,{sampleStep=.5}={}){
  let edgeCount=0,sampleCount=0,maxLateralShift=0;
  for(const edge of graph.edges){
   if(highway(edge.tags)||edge.abandoned)continue;
-  const start=endpoints.get(edge.a.id),end=endpoints.get(edge.b.id);
+  const atStart=endpoints.get(edge.a.id),atEnd=endpoints.get(edge.b.id);
+  const start=atStart?.edges.includes(edge)?atStart:null,end=atEnd?.edges.includes(edge)?atEnd:null;
   if(!start&&!end)continue;
   const a=edge.a.position,b=edge.b.position,length=horizontal(a,b);if(length<1e-6)continue;
   const chord=direction(a,b),axis=(entry,node)=>{

@@ -6,6 +6,7 @@ import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {createInterchangeAprons} from '../src/interchange-aprons.js';
 import {clipOrdinaryRoadMeshes} from '../src/road-surface.js';
+import {smoothLocalRoadGraph} from '../src/access-transitions.js';
 
 const V=(x=0,y=.72,z=0)=>new THREE.Vector3(x,y,z),normal=d=>V(-d.z,0,d.x).normalize();
 function triangle(p,a,b,c){
@@ -26,6 +27,21 @@ function fixture(definitions,surfaceHeightAt){
  }
  return {graph:{nodes,edges},roads,surfaceHeightAt};
 }
+
+// A side branch on an otherwise continuous source way must not replace
+// the incoming host frame with its different outgoing chord. The source
+// node is pinned and the third arm keeps its own original approach frame.
+const throughT=fixture([
+ {id:'through',points:[['a',-8,.72,0],['t',0,.72,0],['b',8,.72,1.2]]},
+ {id:'side',points:[['t',0,.72,0],['c',0,.72,9]]}
+],()=>.72).graph;
+const topology=()=>JSON.stringify({nodes:[...throughT.nodes.values()].map(n=>[n.id,n.position.toArray()]),edges:throughT.edges.map(e=>[e.a.id,e.b.id,e.wayId])});
+const sourceT=topology();smoothLocalRoadGraph(throughT);assert.equal(topology(),sourceT);
+const [incoming,outgoing,sideRoad]=throughT.edges;
+assert(incoming.surfaceTangents[1].dot(outgoing.surfaceTangents[0])>1-1e-12,'Both same-way host arms at a T must share one C1 display frame');
+assert.equal(sideRoad.surfacePoints,undefined,'The side branch must not inherit the host-road frame');
+assert.deepEqual(incoming.surfacePoints.at(-1).toArray(),throughT.nodes.get('t').position.toArray());
+assert.deepEqual(outgoing.surfacePoints[0].toArray(),throughT.nodes.get('t').position.toArray());
 
 // Irregular source sampling must preserve the exact pavement frames. A
 // second resampling pass used to rotate the offset and leave short hooks.
@@ -167,4 +183,4 @@ for(const center of [V(-101.6824584,3.0732456,990.2943364),V(-100.1709601,3.1498
  assert(pavement.length,'The published chip probe must retain actual dark pavement');
  assert(!meshHeights(shoulder,p).some(y=>pavement.some(top=>y>top&&y-top<1.2)),'A detached pale shoulder chip survives above the dark ramp');shoulderChipChecks++;
 }
-console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({frameChecks,gradedMouthChecks:3,seamChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));
+console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({throughTChecks:5,frameChecks,gradedMouthChecks:3,seamChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));

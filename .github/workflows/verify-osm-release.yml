@@ -126,7 +126,10 @@ jobs:
 
   verify_browser:
     name: Browser — ${{ matrix.target }} / ${{ matrix.suite }}
-    needs: [verify_geometry, verify_bytes]
+    # Both suites examine the same immutable commit independently. Start the
+    # visual checks as soon as its public bytes match; release still requires
+    # geometry, published-byte verification and every browser job below.
+    needs: [verify_bytes]
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     strategy:

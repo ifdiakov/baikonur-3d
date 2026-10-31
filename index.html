@@ -392,7 +392,7 @@ import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-facilit
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261031-facilities-rails-lighting-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261028-museum4-osm-live-v2';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261031-facilities-rails-lighting-v2';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261031-facilities-rails-lighting-v3';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261031-facilities-rails-lighting-v1';
 import {createNorthBankMask} from './src/river-bank.js?v=20261030-river-roads-signs-v1';
 import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261030-river-roads-signs-v1';
@@ -427,7 +427,7 @@ const attribution=document.createElement('a');attribution.id='osmAttribution';at
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261031-facilities-rails-lighting-v2';
+const MUSEUM_REVISION='20261031-facilities-rails-lighting-v3';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 startup.stage('Загружаем карту космодрома…');

@@ -1,6 +1,6 @@
 # Интерактивный музей 6 — пути, площадка 41 и мачтовое освещение
 
-[Открыть музей](https://ifdiakov.github.io/baikonur-3d/?v=20261031-facilities-rails-lighting-v2)
+[Открыть музей](https://ifdiakov.github.io/baikonur-3d/?v=20261031-facilities-rails-lighting-v3)
 
 ## МИК-112 и железнодорожные подходы
 

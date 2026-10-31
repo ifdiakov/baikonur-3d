@@ -13,7 +13,7 @@ import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,
 import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes} from './road-surface.js?v=20261031-facilities-rails-lighting-v2';
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-facilities-rails-lighting-v2';
 import {buildRoadMarkings} from './road-markings.js?v=20261031-facilities-rails-lighting-v2';
-import {smoothLocalRoadGraph,createAccessTransition} from './access-transitions.js?v=20261031-facilities-rails-lighting-v2';
+import {smoothLocalRoadGraph,createAccessTransition} from './access-transitions.js?v=20261031-facilities-rails-lighting-v3';
 import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v1';
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
 
