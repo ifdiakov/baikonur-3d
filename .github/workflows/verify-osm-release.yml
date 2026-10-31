@@ -1,4 +1,4 @@
-name: Museum 6 — model inspector and Site 45
+name: Museum 6 — Buran overview, navigation and facilities
 on:
   push:
     branches: [main]
@@ -42,7 +42,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-model-inspector-20261101-v1
+  RELEASE_TAG: museum6-buran-navigation-20261101-v2
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -105,6 +105,7 @@ jobs:
           node tests/yubileiny-source-geometry.mjs
           node tests/buran-landing-path.mjs
           node tests/buran-landing-aircraft.mjs
+          node tests/buran-overview-camera.mjs
           node tests/camera-navigation.mjs
           node tests/menu-catalog-contract.mjs
       - name: Preserve the detailed Site 31, road, rail and flank invariants
@@ -304,12 +305,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/model-inspector-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/facilities-rails-lighting-20261031-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 6 — просмотр моделей и площадка №45',
+                name: 'Интерактивный музей 6 — посадка «Бурана», навигация и площадки',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

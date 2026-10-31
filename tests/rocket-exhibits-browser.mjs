@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-rocket-exhibits';
-const revision='20261031-facilities-rails-lighting-v5';
+const revision='20261031-facilities-rails-lighting-v6';
 const expected={
  gagarin:['pad-1','soyuz'],site31:['pad-31','soyuz'],ukss:['pad-250','energia-polyus'],
  site110:['pad-110','energia-buran'],'mik112-hall':['pad-112','energia-buran'],
@@ -40,9 +40,16 @@ await page.addInitScript(()=>{
 });
 const step=()=>page.evaluate(()=>window.__ROCKET_FRAME());
 const shot=async name=>{
- await step();await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});
+ await step();const bytes=await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});
  evidence.views.push({name,camera:await page.evaluate(()=>window.__BAIKONUR_QA.cameraState())});
+ return bytes;
 };
+const pixels=(bytes,points)=>page.evaluate(async({encoded,points})=>{
+ const image=new Image();image.src='data:image/png;base64,'+encoded;await image.decode();
+ const canvas=document.createElement('canvas');canvas.width=image.width;canvas.height=image.height;
+ const context=canvas.getContext('2d',{willReadFrequently:true});context.drawImage(image,0,0);
+ return points.map(point=>Array.from(context.getImageData(point[0],point[1],1,1).data).slice(0,3));
+},{encoded:bytes.toString('base64'),points});
 const near=(a,b,message)=>assert.ok(Math.abs(a-b)<1e-8,`${message}: ${a} != ${b}`);
 function checkScale(stats){
  assert.equal(stats.placements.length,7);near(stats.commonMetre,.14,'Common physical unit');
@@ -165,7 +172,29 @@ try{
  const ducts=site110.pads.flatMap(pad=>pad.ducts);assert.equal(ducts.length,6);
  for(const duct of ducts){assert.equal(duct.shape,'rectangular');assert.equal(duct.wallProfile,'vertical');assert.equal(duct.floorProfile,'planar-rise');assert.equal(duct.polygon.length,4);}
  evidence.site110RectangularGasDucts=ducts;
- await page.locator('#energiaViews button').filter({hasText:'Газоотвод'}).click();await shot('site110-rectangular-duct-close');
+ await page.locator('#energiaViews button').filter({hasText:'Газоотвод'}).click();
+ const gasFloorBaseline=await shot('site110-rectangular-duct-close');
+ const gasFloorCamera=evidence.views.at(-1).camera,gasFloorProbes=[[820,620],[835,640],[817,715],[847,715],[870,800]];
+ const terrainVisibility=await page.evaluate(()=>window.__BAIKONUR_QA.terrainVisibility());
+ try{
+  // The first three pixels were covered by the two large terrain sheets;
+  // the last two are nearby dark-floor controls. Compare actual rendering
+  // with the terrain hidden, keeping the camera and source model fixed.
+  await page.evaluate(()=>window.__BAIKONUR_QA.terrainVisibility({main:false,regional:false,intermediate:false,satellite:false}));
+  const gasFloorReference=await shot('site110-rectangular-duct-floor-reference');
+  const referenceCamera=evidence.views.at(-1).camera;
+  for(const key of ['position','target'])referenceCamera[key].forEach((value,i)=>near(value,gasFloorCamera[key][i],'Gas-floor comparison camera '+key));
+  const baseline=await pixels(gasFloorBaseline,gasFloorProbes),reference=await pixels(gasFloorReference,gasFloorProbes);
+  const maximumChannelDeltas=baseline.map((rgb,i)=>Math.max(...rgb.map((value,j)=>Math.abs(value-reference[i][j]))));
+  evidence.site110FloorTerrainVisibility={probes:gasFloorProbes,baseline,reference,maximumChannelDeltas,terrain:terrainVisibility.layers};
+  for(let i=0;i<gasFloorProbes.length;i++){
+   assert.ok(Math.max(...reference[i])<110,'The reference pixel must reach the actual dark gas floor');
+   assert.ok(maximumChannelDeltas[i]<=2,'Terrain must not cover the gas floor at pixel '+gasFloorProbes[i]);
+  }
+ }finally{
+  const restored=await page.evaluate(visible=>window.__BAIKONUR_QA.terrainVisibility(visible),terrainVisibility.visible);
+  assert.deepEqual(restored.visible,terrainVisibility.visible,'Terrain visibility is restored after the floor check');await step();
+ }
  await page.locator('#energiaViews button').filter({hasText:'Сверху'}).click();await shot('site110-rectangular-ducts-top');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-112');window.__BAIKONUR_QA.inspectMik112('top');});await shot('mik112-hall');
  await page.evaluate(()=>window.__BAIKONUR_QA.inspectMik112('tua'));await shot('tua-buran');

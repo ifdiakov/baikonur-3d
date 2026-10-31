@@ -10,9 +10,9 @@ import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-r
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
 import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-facilities-rails-lighting-v2';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS,highwayRunsOutsideBridge} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
-import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes} from './road-surface.js?v=20261031-facilities-rails-lighting-v5';
+import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes,fillEnclosedRoadSurfaceVoid} from './road-surface.js?v=20261031-facilities-rails-lighting-v6';
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-facilities-rails-lighting-v2';
-import {buildRoadMarkings} from './road-markings.js?v=20261031-facilities-rails-lighting-v2';
+import {buildRoadMarkings} from './road-markings.js?v=20261031-facilities-rails-lighting-v6';
 import {smoothLocalRoadGraph,createAccessTransition} from './access-transitions.js?v=20261031-facilities-rails-lighting-v3';
 import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
@@ -169,12 +169,13 @@ function pavementHeightSampler(meshes){
  for(let i=0;i<(index?.count??p.count);i+=3){
   const t=[0,1,2].flatMap(k=>V().fromBufferAttribute(p,index?index.getX(i+k):i+k).applyMatrix4(mesh.matrixWorld).toArray());
   const [ax,,az,bx,,bz,cx,,cz]=t,den=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz);if(Math.abs(den)<1e-12)continue;t.push(den);
+  t.bounds={minX:Math.min(ax,bx,cx),maxX:Math.max(ax,bx,cx),minZ:Math.min(az,bz,cz),maxZ:Math.max(az,bz,cz)};
   for(let x=Math.floor(Math.min(ax,bx,cx)/cellSize);x<=Math.floor(Math.max(ax,bx,cx)/cellSize);x++)for(let z=Math.floor(Math.min(az,bz,cz)/cellSize);z<=Math.floor(Math.max(az,bz,cz)/cellSize);z++){
    const key=x+':'+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(t);
   }
  }
  }
- return q=>{
+ const sample=q=>{
   let top=-Infinity,nearbyTop=-Infinity;
   for(const [ax,ay,az,bx,by,bz,cx,cy,cz,den] of cells.get(Math.floor(q.x/cellSize)+':'+Math.floor(q.z/cellSize))||[]){
    const u=((bz-cz)*(q.x-cx)+(cx-bx)*(q.z-cz))/den,v=((cz-az)*(q.x-cx)+(ax-cx)*(q.z-cz))/den;
@@ -187,6 +188,14 @@ function pavementHeightSampler(meshes){
   }
   return Number.isFinite(top)?top:Number.isFinite(nearbyTop)?nearbyTop:null;
  };
+ sample.trianglesAt=box=>{
+  const selected=new Set();
+  for(let x=Math.floor(box.minX/cellSize);x<=Math.floor(box.maxX/cellSize);x++)for(let z=Math.floor(box.minZ/cellSize);z<=Math.floor(box.maxZ/cellSize);z++)for(const t of cells.get(x+':'+z)||[]){
+   const b=t.bounds;if(b.maxX>=box.minX&&b.minX<=box.maxX&&b.maxZ>=box.minZ&&b.minZ<=box.maxZ)selected.add(t);
+  }
+  return [...selected].map(t=>t.vertices??=(Array.from({length:3},(_,i)=>V(t[i*3],t[i*3+1],t[i*3+2]))));
+ };
+ return sample;
 }
 
 function sampleCurve(curve,step=1.4){const n=Math.max(4,Math.ceil(curve.getLength()/step));return Array.from({length:n+1},(_,i)=>curve.getPointAt(i/n));}
@@ -725,6 +734,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   for(const curb of apron.curbs)shoulder.ribbon(curb,ROAD_STYLE.shoulderExtra,-.055-HIGHWAY_ASPHALT_LIFT);
  }
  batches.forEach(b=>b.flush());
+ // The short retained return between these source junctions surrounds one
+ // tiny flat void. Its bounded fill cannot reach an outer curb or a lane.
+ const returnStart=roadGraph.nodes.get('1833467924'),returnEnd=roadGraph.nodes.get('1833467955');
+ if(returnStart&&returnEnd)fillEnclosedRoadSurfaceVoid(asphalt.mesh,returnStart.position.clone().lerp(returnEnd.position,.5));
  const interchangeBridge=buildInterchangeBridge({parent:roadRoot,plan:interchangeBridgePlan});
  // The architectural span is the sole pavement owner between its exact
  // seam sections. Its footprint still excludes grade-compatible local-road
@@ -739,7 +752,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const pavementY=pavementHeightSampler([highwayAsphalt.mesh,bridgeAsphalt]);
  for(const route of roadPlan.routes)route.surfaceHeightAt=p=>pavementY(p)??p.y;
  const markingPavementY=pavementHeightSampler([asphalt.mesh,highwayAsphalt.mesh,bridgeAsphalt]);
- const roadMarkingPlan=buildRoadMarkings({roads:markingRoads,graph:roadGraph,surfaceHeightAt:markingPavementY,directionAt:highwayDirectionAt,
+ const roadMarkingPlan=buildRoadMarkings({roads:markingRoads,graph:roadGraph,surfaceHeightAt:markingPavementY,surfaceTrianglesAt:markingPavementY.trianglesAt,directionAt:highwayDirectionAt,
   extraEdges:lowerAprons.flatMap(apron=>apron.edgeLines.map((edge,i)=>({...edge,id:'apron-'+apron.spec.nodeId+'-'+i,family:'highway',width:HIGHWAY_MARKINGS.edgeWidth}))),
   excludePoint:(p,{kind,road,family})=>lowerAprons.some(apron=>apron.contains(p)&&(apron.spec.connectorWayIds.includes(String(road.wayId))||family==='highway'&&kind==='edge'&&road.tags?.highway?.endsWith('_link')))});
  for(const quad of roadMarkingPlan.quads){

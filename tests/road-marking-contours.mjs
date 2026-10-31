@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
-import {buildRoadMarkings} from '../src/road-markings.js';
+import {buildRoadMarkings,projectMarkingOnPavement} from '../src/road-markings.js';
 import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {createInterchangeAprons} from '../src/interchange-aprons.js';
-import {clipOrdinaryRoadMeshes,unionRoadSurfacePolygons} from '../src/road-surface.js';
+import {clipOrdinaryRoadMeshes,unionRoadSurfacePolygons,fillEnclosedRoadSurfaceVoid} from '../src/road-surface.js';
 import {smoothLocalRoadGraph} from '../src/access-transitions.js';
 
 const V=(x=0,y=.72,z=0)=>new THREE.Vector3(x,y,z),normal=d=>V(-d.z,0,d.x).normalize();
@@ -16,6 +16,23 @@ function triangle(p,a,b,c){
 }
 const contains=(q,p)=>Math.abs(q.vertices[0].y-p.y)<1.2&&(triangle(p,q.vertices[0],q.vertices[2],q.vertices[1])||triangle(p,q.vertices[1],q.vertices[2],q.vertices[3]));
 const hits=(quads,p)=>quads.filter(q=>q.kind==='edge'&&contains(q,p));
+
+// The upper owner changes both at a real sheet boundary and where two
+// inclined planes cross. Paint must cover that footprint exactly once at
+// the visible height; a grade-separated sheet cannot capture the stroke.
+const planeRect=(x0,x1,height)=>{const a=V(x0,height(x0,-1),-1),b=V(x1,height(x1,-1),-1),c=V(x1,height(x1,1),1),d=V(x0,height(x0,1),1);return [[a,b,c],[a,c,d]];};
+const lowerPlane=x=>.72+.012*x,upperPlane=x=>.96-.08*x;
+const exactStroke=projectMarkingOnPavement([V(-3,lowerPlane(-3)+.011,-.0325),V(-3,lowerPlane(-3)+.011,.0325),V(3,lowerPlane(3)+.011,-.0325),V(3,lowerPlane(3)+.011,.0325)],
+ [...planeRect(-4,4,lowerPlane),...planeRect(0,4,upperPlane),...planeRect(-4,4,()=>6.52)]);
+let exactPlaneChecks=0,exactCoverageChecks=0;
+for(const vertices of exactStroke)for(const indices of [[0,2,1],[1,2,3]]){
+ const [a,b,c]=indices.map(i=>vertices[i]);if(Math.abs((b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x))<1e-8)continue;
+ const p=indices.reduce((sum,k,i)=>sum.addScaledVector(vertices[k],[.23,.31,.46][i]),V(0,0,0)),height=p.x>=0?Math.max(lowerPlane(p.x),upperPlane(p.x)):lowerPlane(p.x);
+ assert(Math.abs(p.y-height-.011)<1e-6,'Clipped paint must follow its exact highest compatible plane');exactPlaneChecks++;
+}
+for(let x=-2.9;x<2.9;x+=.037){const p=V(x,.72,.013),count=exactStroke.filter(v=>triangle(p,v[0],v[2],v[1])||triangle(p,v[1],v[2],v[3])).length;
+ assert.equal(count,1,'The visible-plane split must not leave a white gap or duplicate footprint at '+x);exactCoverageChecks++;
+}
 function fixture(definitions,surfaceHeightAt){
  const nodes=new Map(),edges=[],roads=[];
  for(const row of definitions){
@@ -124,6 +141,27 @@ const pale=triangleMesh(.05,'pale overlay'),lowerRoad=triangleMesh(-5.8,'lower r
 clipOrdinaryRoadMeshes([pale,lowerRoad],null,[[V(-1,0,-1),V(1,0,-1),V(1,2,1),V(-1,0,1)]]);
 assert.equal(pale.geometry.attributes.position.count,0,'A nonplanar owner extrapolates the wrong grade plane and leaves a pale chip');
 assert.equal(lowerRoad.geometry.attributes.position.count,3,'An upper ribbon must not remove the lower road');
+
+// A tiny enclosed flat cavity may be filled; an open curb or a proper
+// traffic island must retain its original footprint and geometry.
+function voidFrame(half=.06,open=false){
+ const rectangles=[[-1,-half,-1,1],[half,1,-1,1],[-half,half,-1,-half],[-half,half,half,1]],xyz=[];
+ for(const [i,[minX,maxX,minZ,maxZ]] of rectangles.entries()){
+  if(open&&i===3)continue;
+  const p=[V(minX,.72,minZ),V(maxX,.72,minZ),V(maxX,.72,maxZ),V(minX,.72,maxZ)];
+  for(const k of [0,2,1,0,3,2])xyz.push(...p[k].toArray());
+ }
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
+ return new THREE.Mesh(geometry,new THREE.MeshBasicMaterial());
+}
+const tinyVoid=voidFrame(),tinyFill=fillEnclosedRoadSurfaceVoid(tinyVoid,V(0,.72,0),{radius:.4});
+assert(tinyFill&&Math.abs(tinyFill.uncoveredArea-.0144)<1e-6);
+assert(tinyFill.patch.every(([x,,z])=>Math.abs(x)<.061&&Math.abs(z)<.061),'The tiny fill reaches an existing outer curb');
+for(const untouched of [voidFrame(.06,true),voidFrame(.2)]){
+ const source=Array.from(untouched.geometry.attributes.position.array);
+ assert.equal(fillEnclosedRoadSurfaceVoid(untouched,V(0,.72,0),{radius:.4}),null);
+ assert.deepEqual(Array.from(untouched.geometry.attributes.position.array),source);
+}
 
 // Clipping a graded ramp in plan must also weld its exposed cut to the
 // owning main-road plane. Otherwise oblique cameras see ground through a
@@ -286,6 +324,36 @@ for(const p of [V(-125.0242656,.9808682,1007.3363964),V(-124.6730805,.9808682,10
  const asphalt=meshHeights(ordinary,p);assert(asphalt.length,'The lower crescent probe has no retained ordinary road');
  assert(!meshHeights(shoulder,p).some(y=>y>Math.max(...asphalt)-.0003&&y<Math.max(...asphalt)+1.2),'An old connector shoulder remains above the ordinary host asphalt');ordinaryShoulderChecks++;
 }
+// Exact v5 public observations: two white strokes existed but their long
+// faces passed through the upper return sheet. Their clipped paint follows
+// the original visible pavement planes, including triangle interiors.
+const actualWhiteMesh=layers.roads.getObjectByName('Трасса · белые кромки');
+let returnPaintChecks=0,maxReturnPaintLiftError=0;
+for(const [wayId,center] of [['172422655',V(-103.9977283,2.57,989.6343231)],['369722065',V(-101.2503548,2.55,1006.5455475)]]){
+ let wayChecks=0;
+ for(const quad of nearby.filter(q=>q.roadIds.some(id=>id.startsWith('marking-road-'+wayId+'-')))){
+  const middle=quad.vertices.reduce((sum,p)=>sum.add(p),V(0,0,0)).multiplyScalar(.25);
+  if(Math.hypot(middle.x-center.x,middle.z-center.z)>.8)continue;
+  for(const indices of [[0,2,1],[1,2,3]])for(const weights of [[.27,.31,.42],[.51,.23,.26],[.22,.53,.25]]){
+   const [a,b,c]=indices.map(i=>quad.vertices[i]);if(Math.abs((b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x))<1e-8)continue;
+   const p=indices.reduce((sum,k,i)=>sum.addScaledVector(quad.vertices[k],weights[i]),V(0,0,0)),tops=meshHeights(dark,p).filter(y=>Math.abs(y-p.y)<1.2),paint=meshHeights(actualWhiteMesh,p).filter(y=>Math.abs(y-p.y)<.02);
+   assert(tops.length&&paint.length,'The public return-edge stroke loses actual mesh support');
+   const visibleTop=Math.max(...tops),visiblePaint=Math.max(...paint),error=Math.abs(visiblePaint-visibleTop-.011);
+   assert(visiblePaint>visibleTop,'The public return-edge stroke is buried below another ramp plane');
+   assert(error<.002,'The return-edge paint must follow its visible pavement, including triangle interiors: '+JSON.stringify({wayId,point:p.toArray(),error}));
+   maxReturnPaintLiftError=Math.max(maxReturnPaintLiftError,error);returnPaintChecks++;wayChecks++;
+  }
+ }
+ assert(wayChecks>6,'Both previously buried public strokes must be sampled');
+}
+const voidFill=ordinary.userData.enclosedJunctionVoids?.[0];
+assert(voidFill&&voidFill.uncoveredArea<.03&&voidFill.patchArea<.03,'Only the tiny enclosed source-junction void is filled');
+let tinyVoidChecks=0;
+for(const center of [V(-147.3812693,.72,-332.3594400),V(-147.3102988,.72,-332.3670815)])for(const dx of [-.012,0,.012])for(const dz of [-.012,0,.012]){
+ const p=center.clone().add(V(dx,0,dz)),paving=meshHeights(ordinary,p),oldShoulders=meshHeights(shoulder,p);
+ assert.equal(paving.length,1,'The tiny enclosed void must have exactly one physical asphalt owner');
+ assert(Math.abs(paving[0]-.72)<1e-6&&oldShoulders.every(y=>y<paving[0]-.05),'The old beige triangle must be covered by the unchanged ordinary-road plane');tinyVoidChecks++;
+}
 let upwardTriangles=0,seamPaintChecks=0,seamPaintEdgeChecks=0,maxUpperCrossfall=0,maxSeamPaintLiftError=0;
 const positions=dark.geometry.attributes.position,index=dark.geometry.index;
 for(let i=0;i<(index?.count??positions.count);i+=3){
@@ -316,4 +384,4 @@ for(let i=0;i<white.count;i++){
  assert(error<.002,'A marking loses exact asphalt support in the welded upper seam');seamPaintChecks++;
 }
 assert(seamPaintChecks>100);
-console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({throughTChecks:5,frameChecks,gradedMouthChecks:3,seamChecks,seamHeightChecks,lowerSeamChecks,outsideSeamChecks,sharedBoundaryChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,obliqueSeamChecks,sourceCenterHeightChecks:1,ordinaryShoulderChecks,upwardTriangles,maxUpperCrossfall,seamPaintChecks,seamPaintEdgeChecks,maxSeamPaintLiftError,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));
+console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({throughTChecks:5,frameChecks,gradedMouthChecks:3,seamChecks,seamHeightChecks,lowerSeamChecks,outsideSeamChecks,sharedBoundaryChecks,shortVisibilityChecks:4,exactPlaneChecks,exactCoverageChecks,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,obliqueSeamChecks,sourceCenterHeightChecks:1,ordinaryShoulderChecks,returnPaintChecks,maxReturnPaintLiftError,tinyVoidChecks,tinyVoidArea:voidFill.uncoveredArea,surfaceClippedQuads:network.roadMarkingPlan.stats.surfaceClippedQuads,upwardTriangles,maxUpperCrossfall,seamPaintChecks,seamPaintEdgeChecks,maxSeamPaintLiftError,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));

@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import {HIGHWAY_MARKINGS,HIGHWAY_ASPHALT_LIFT} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
+import {subtractRoadPolygon} from './road-surface.js?v=20261031-facilities-rails-lighting-v6';
 
 export const ROAD_MARKINGS_VERSION='junction-aware-markings-v1';
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const MAIN=new Set(['motorway','trunk']),HIGHWAY=new Set(['motorway','trunk','motorway_link','trunk_link']);
+const EXACT_PAVEMENT_JUNCTIONS=new Set(['1833284269','3734910042']);
 const UNPAVED=new Set(['unpaved','gravel','fine_gravel','compacted','ground','dirt','earth','sand','grass','mud']);
 const LIFT=HIGHWAY_MARKINGS.lift-HIGHWAY_ASPHALT_LIFT,CELL=20,STEP=.75;
 const xzKey=p=>p.x.toFixed(5)+':'+p.z.toFixed(5);
@@ -16,6 +18,75 @@ function between(a,b,t){
  return p;
 }
 function copyPoint(p){const q=p.clone();if(p.markingNormal)q.markingNormal=p.markingNormal.clone();return q;}
+
+// A strip can cross two overlapping pavement sheets with different grades.
+// Vertex projection alone joins those heights through the upper sheet. Split
+// the footprint by the actual visible triangle planes, retaining the exact
+// outside stroke edges and the ordinary paint lift on every resulting face.
+export function projectMarkingOnPavement(vertices,triangles,lift=LIFT){
+ const orient=poly=>{const out=poly.map(p=>({x:p.x,y:p.y,z:p.z})),area=out.reduce((sum,a,i)=>{const b=out[(i+1)%out.length];return sum+a.x*b.z-b.x*a.z;},0);return area<0?out.reverse():out;};
+ const clip=(poly,value)=>{
+  const out=[];for(let i=0;i<poly.length;i++){
+   const a=poly[i],b=poly[(i+1)%poly.length],va=value(a),vb=value(b),inside=va>=0;
+   if(inside)out.push(a);if(inside!==(vb>=0)){const t=va/(va-vb);out.push({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t});}
+  }return out;
+ };
+ const box=poly=>({minX:Math.min(...poly.map(p=>p.x)),maxX:Math.max(...poly.map(p=>p.x)),minZ:Math.min(...poly.map(p=>p.z)),maxZ:Math.max(...poly.map(p=>p.z))});
+ const overlaps=(a,b)=>a.maxX>b.minX&&a.minX<b.maxX&&a.maxZ>b.minZ&&a.minZ<b.maxZ;
+ const cross=(a,b,p)=>(b.x-a.x)*(p.z-a.z)-(b.z-a.z)*(p.x-a.x),inside=(p,poly)=>poly.every((a,i)=>cross(a,poly[(i+1)%poly.length],p)>=0);
+ const float=new Float32Array(1),bits=new Uint32Array(float.buffer),nextFloat=(value,direction)=>{if(value===0)return direction*2**-149;float[0]=value;bits[0]+=value>0?direction:-direction;return float[0];};
+ const hull=points=>{points.sort((a,b)=>a.x-b.x||a.z-b.z);const half=rows=>{const out=[];for(const p of rows){while(out.length>1&&cross(out.at(-2),out.at(-1),p)<=0)out.pop();out.push(p);}return out;};return [...half(points).slice(0,-1),...half([...points].reverse()).slice(0,-1)];};
+ const intersect=(poly,boundary)=>{for(let i=0;i<boundary.length&&poly.length;i++){const a=boundary[i],b=boundary[(i+1)%boundary.length];poly=clip(poly,p=>(b.x-a.x)*(p.z-a.z)-(b.z-a.z)*(p.x-a.x));}return poly;};
+ const referenceY=vertices.reduce((sum,p)=>sum+p.y,0)/vertices.length-lift,owners=[];
+ for(const triangle of triangles){
+  const poly=orient(triangle),[a,b,c]=poly,den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(Math.abs(den)<1e-12)continue;
+  const height=(x,z)=>{const u=((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/den,v=((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/den;return u*a.y+v*b.y+(1-u-v)*c.y;};
+  // Match the sampler's actual road level. An overhead bridge or a lower
+  // underpass cannot own this paint just because its X/Z footprint crosses.
+  let level=clip(poly,p=>height(p.x,p.z)-(referenceY-.6));level=clip(level,p=>referenceY+.6-height(p.x,p.z));
+  if(level.length>=3)owners.push({poly:level,height,bounds:box(level)});
+ }
+ const output=[];
+ for(const indices of [[0,2,1],[1,2,3]]){
+  const footprint=orient(indices.map(i=>vertices[i])),footprintBounds=box(footprint);
+  for(let i=0;i<owners.length;i++){
+   const owner=owners[i];if(!overlaps(footprintBounds,owner.bounds))continue;
+   const shared=intersect(footprint,owner.poly);if(shared.length<3)continue;let pieces=[shared];
+   for(let j=0;j<owners.length&&pieces.length;j++){
+    if(i===j)continue;const other=owners[j];if(!overlaps(owner.bounds,other.bounds))continue;
+    const difference=p=>other.height(p.x,p.z)-owner.height(p.x,p.z),coplanar=other.poly.every(p=>Math.abs(difference(p))<1e-8);
+    if(coplanar&&j>i)continue;
+    const mask=coplanar?other.poly:clip(other.poly,difference);if(mask.length<3)continue;
+    pieces=pieces.flatMap(piece=>overlaps(box(piece),other.bounds)?subtractRoadPolygon(piece,mask):[piece]);
+   }
+   for(const piece of pieces){
+    // An intersection on an upper sheet's edge can round onto the lower
+    // sheet. Choose the nearest representable point inside the same visible
+    // fragment (at most one ULP from the initially rounded X/Z), then
+    // evaluate its real plane. Acute corners can require that adjacent
+    // representable value even when round-to-nearest landed just outside.
+    const projected=piece.map(p=>{
+     const x=Math.fround(p.x),z=Math.fround(p.z),ulp=Math.max(Math.abs(nextFloat(x,1)-x),Math.abs(nextFloat(x,-1)-x),Math.abs(nextFloat(z,1)-z),Math.abs(nextFloat(z,-1)-z));let best=null,distance=Infinity;
+     const representable=value=>[...new Set([-1,-.5,0,.5,1].map(t=>Math.fround(value+t*ulp)))];
+     for(const qx of representable(x))for(const qz of representable(z)){
+      const q={x:qx,z:qz},d=(qx-p.x)**2+(qz-p.z)**2;if(d>=distance||!inside(q,piece)||!inside(q,owner.poly))continue;
+      const y=owner.height(qx,qz);if(owners.some(other=>other!==owner&&inside(q,other.poly)&&other.height(qx,qz)>y+1e-8))continue;
+      best=V(qx,y+lift,qz);distance=d;
+     }return best;
+    }).filter(Boolean);
+    if(projected.length<3)continue;
+    const boundary=hull(projected);
+    for(let k=1;k<boundary.length-1;k++){
+     const [a,b,c]=[boundary[0],boundary[k],boundary[k+1]];if(Math.abs(cross(a,b,c))<1e-8)continue;
+     // The batch already culls zero-area faces. Keep one actual triangle;
+     // a rounded midpoint on a very narrow face can fold its two halves.
+     output.push([a,b,c,c]);
+    }
+   }
+  }
+ }
+ return output;
+}
 
 export function roadMarkingPolicy(tags={},width=3.6,marked=true){
  const highway=HIGHWAY.has(tags.highway),family=highway?'highway':'local';
@@ -105,12 +176,12 @@ function intervals(points,visible){
 /** Marking geometry only: input topology, pavement, routes and lights are
  * immutable. Source-node connectivity authorizes a junction opening; the
  * compatible real pavement then determines its side and exact extent. */
-export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeightAt,directionAt=(p,d)=>d,extraEdges=[],excludePoint=()=>false}={}){
+export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeightAt,surfaceTrianglesAt,directionAt=(p,d)=>d,extraEdges=[],excludePoint=()=>false}={}){
  if(typeof surfaceHeightAt!=='function')throw new Error('Road markings require an actual pavement-height sampler');
  const quads=[],junctionIndex=new SpatialIndex(),segmentIndex=new SpatialIndex(),nodePositions=new Map(),nodeOccurrences=new Map(),edgeOpenings=new Set(),centerOpenings=new Set(),contourOpenings=new Set();
  const stats={version:ROAD_MARKINGS_VERSION,roadRuns:roads.length,eligibleRoadRuns:0,chains:0,continuationSeams:0,junctionCount:0,junctionSamples:[],seamSamples:[],
   edgeQuads:0,centerQuads:0,dividerQuads:0,projectedVertices:0,projectionMisses:0,projectionRejectedQuads:0,boundaryRejectedQuads:0,
-  edgeOpenings:0,centerOpenings:0,replacementContourOpenings:0,suppressedOneWayCenters:0,suppressedSingleLaneCenters:0,suppressedUnpavedRuns:0,regulatoryMarks:0};
+  edgeOpenings:0,centerOpenings:0,replacementContourOpenings:0,surfaceClippedQuads:0,suppressedOneWayCenters:0,suppressedSingleLaneCenters:0,suppressedUnpavedRuns:0,regulatoryMarks:0};
  const sourceNodes=graph.nodes instanceof Map?[...graph.nodes.values()]:Array.isArray(graph.nodes)?graph.nodes:Object.values(graph.nodes||{}),sourceNodeById=new Map(sourceNodes.map(n=>[String(n.id),n]));
  for(const n of sourceNodes){if(!n.position)continue;const key=xzKey(n.position);if(!nodePositions.has(key))nodePositions.set(key,[]);nodePositions.get(key).push(n);}
  const prepared=roads.filter(r=>r.points?.length>1).map((r,i)=>{
@@ -314,6 +385,11 @@ export function buildRoadMarkings({roads=[],graph={nodes:new Map()},surfaceHeigh
    if(vertices.some(p=>!p)){stats.projectionRejectedQuads++;continue;}
    const probes=[vertices[0].clone().lerp(vertices[2],.5),vertices[1].clone().lerp(vertices[3],.5),vertices.reduce((p,q)=>p.add(q),V()).multiplyScalar(.25)];
    if(probes.some(p=>!compatibleHeight(p,surfaceHeightAt(p)))){stats.projectionRejectedQuads++;continue;}
+   if(surfaceTrianglesAt&&kind==='edge'&&chain.keys&&nearbyJunctions(probes[2],chain).some(j=>EXACT_PAVEMENT_JUNCTIONS.has(j.nodeId)&&horizontal(j.position,probes[2])<3.5)){
+    const box={minX:Math.min(...vertices.map(p=>p.x)),maxX:Math.max(...vertices.map(p=>p.x)),minZ:Math.min(...vertices.map(p=>p.z)),maxZ:Math.max(...vertices.map(p=>p.z))};
+    for(const clipped of projectMarkingOnPavement(vertices,surfaceTrianglesAt(box))){quads.push({vertices:clipped,width,color,kind,family:chain.policy.family,roadIds:chain.roadIds,exactSurface:true});stats[kind+'Quads']++;stats.projectedVertices+=4;stats.surfaceClippedQuads++;}
+    continue;
+   }
    quads.push({vertices,width,color,kind,family:chain.policy.family,roadIds:chain.roadIds});stats[kind+'Quads']++;stats.projectedVertices+=4;
   }
  }

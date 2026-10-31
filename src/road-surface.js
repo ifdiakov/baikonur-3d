@@ -191,6 +191,57 @@ export function unionRoadSurfacePolygons(polygons,exclusivePolygons=[]){
  return {polygons:[...main.polygons,...joined],clipped:main.clipped+merge.clipped};
 }
 
+// A single tightly packed source junction leaves a sub-metre display void
+// between its otherwise connected ribbons. Fill only a fully enclosed,
+// flat, tiny cavity inside an explicitly supplied source junction window.
+// The convex patch also replaces its minute overlap with existing asphalt,
+// so the final mesh has one owner and no coplanar paint/shoulder workaround.
+export function fillEnclosedRoadSurfaceVoid(mesh,center,{radius=.8,maxArea=.03,maxDiameter=.5}={}){
+ if(!mesh)return null;
+ const position=mesh.geometry.attributes.position,index=mesh.geometry.index,
+  box={minX:center.x-radius,maxX:center.x+radius,minZ:center.z-radius,maxZ:center.z+radius},candidates=[];
+ for(let i=0;i<(index?.count??position.count);i+=3){
+  const poly=[0,1,2].map(k=>{const j=index?index.getX(i+k):i+k;return{x:position.getX(j),y:position.getY(j),z:position.getZ(j)};});
+  if(overlaps(box,bounds(poly))&&poly.every(p=>Math.abs(p.y-center.y)<.002))candidates.push({offset:i,poly});
+ }
+ if(!candidates.length)return null;
+ const level=candidates[0].poly[0].y;
+ if(candidates.some(r=>r.poly.some(p=>Math.abs(p.y-level)>1e-6)))return null;
+ let gaps=[[{x:box.minX,y:level,z:box.minZ},{x:box.maxX,y:level,z:box.minZ},{x:box.maxX,y:level,z:box.maxZ},{x:box.minX,y:level,z:box.maxZ}]];
+ for(const {poly} of candidates){
+  const clipBounds=bounds(poly);
+  gaps=gaps.flatMap(gap=>overlaps(bounds(gap),clipBounds)?subtractRoadPolygon(gap,poly):[gap]);
+  if(!gaps.length)return null;
+ }
+ const uncoveredArea=gaps.reduce((sum,p)=>sum+Math.abs(area(p)),0);
+ if(uncoveredArea>maxArea||gaps.some(p=>p.some(v=>Math.abs(v.x-center.x)>=radius-1e-5||Math.abs(v.z-center.z)>=radius-1e-5)))return null;
+ const points=gaps.flat().sort((a,b)=>a.x-b.x||a.z-b.z),unique=points.filter((p,i)=>!i||Math.hypot(p.x-points[i-1].x,p.z-points[i-1].z)>EPS);
+ const half=points=>{const out=[];for(const p of points){while(out.length>1&&cross(out.at(-2),out.at(-1),p)<=EPS)out.pop();out.push(p);}return out;};
+ const lower=half(unique),upper=half([...unique].reverse()),patch=cleanPolygon([...lower.slice(0,-1),...upper.slice(0,-1)]);
+ if(!patch.length||Math.abs(area(patch))>maxArea)return null;
+ const patchBounds=bounds(patch);
+ if(Math.hypot(patchBounds.maxX-patchBounds.minX,patchBounds.maxZ-patchBounds.minZ)>maxDiameter)return null;
+ const affected=new Map(candidates.map(r=>[r.offset,r.poly])),xyz=[];
+ const append=(a,b,c)=>{for(const p of [a,b,c])xyz.push(p.x,p.y,p.z);};
+ for(let i=0;i<(index?.count??position.count);i+=3){
+  const poly=affected.get(i);
+  if(!poly||!overlaps(bounds(poly),patchBounds)){
+   for(let k=0;k<3;k++){const j=index?index.getX(i+k):i+k;xyz.push(position.getX(j),position.getY(j),position.getZ(j));}
+   continue;
+  }
+  for(const piece of subtractRoadPolygon(poly,patch))for(let j=1;j<piece.length-1;j++){
+   const t=[piece[0],piece[j],piece[j+1]].map(p=>({x:Math.fround(p.x),y:Math.fround(p.y),z:Math.fround(p.z)}));
+   if(cross(...t)>1e-8)append(t[0],t[2],t[1]);
+  }
+ }
+ for(let i=1;i<patch.length-1;i++)append(patch[0],patch[i+1],patch[i]);
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
+ geometry.setIndex(Array.from({length:xyz.length/3},(_,i)=>i));geometry.computeVertexNormals();geometry.computeBoundingSphere();
+ mesh.geometry.dispose();mesh.geometry=geometry;
+ const report={center:center.toArray(),radius,uncoveredArea,patchArea:Math.abs(area(patch)),patch:patch.map(p=>[p.x,p.y,p.z])};
+ (mesh.userData.enclosedJunctionVoids??=[]).push(report);return report;
+}
+
 // The dark through carriageway owns its footprint at every grade-compatible
 // junction. Pale local-road and shoulder sheets must end at that footprint,
 // rather than protruding through the ramp or viaduct approach above it.
