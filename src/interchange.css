@@ -1,0 +1,19 @@
+#interchangeViews{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:14px 0 11px}
+#interchangeViews[hidden],#interchangeCredit[hidden]{display:none!important}
+#interchangeViews button{font-family:inherit;font-size:12px;line-height:1.35;padding:10px 8px;min-height:38px;background:#233e4c;color:#e4edf3;border:1px solid #53717e;border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s}
+#interchangeViews button:hover{background:#314e5c;border-color:#88a2ae}
+#interchangeViews button:focus-visible{outline:2px solid #e7776d;outline-offset:2px}
+#interchangeViews button[aria-pressed="true"]{background:#3d5d6d;border-color:#7692a2;color:#fff}
+#interchangeCredit{font-size:10px;line-height:1.55;color:#afc0ca;margin:10px 0 0}
+#interchangeCredit a{color:#dbe6ec;text-decoration:underline;text-underline-offset:2px}
+#info.bridge-active>[hidden],#info.bridge-active>p:last-child{display:none!important}
+#info.bridge-active #title{display:block;padding-right:25px;line-height:1.45}
+@media(max-width:850px){
+ #info.bridge-active{top:auto;bottom:var(--ukss-dock-bottom,164px);left:8px;right:8px;max-width:none;height:auto;max-height:min(29dvh,245px);padding:12px;overflow-y:auto}
+ #info.bridge-active .orgrow,#info.bridge-active #infoPurpose,#info.bridge-active #description{display:none}
+ #info.bridge-active .close{position:absolute;right:9px;top:7px}
+ #info.bridge-active #title{font-size:12px}
+ #info.bridge-active #interchangeViews{margin:9px 0 7px;gap:5px}
+ #info.bridge-active #interchangeViews button{min-height:32px;padding:7px;font-size:11px}
+ #info.bridge-active #interchangeCredit{font-size:8px;line-height:1.35;margin-top:7px}
+}
