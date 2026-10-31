@@ -101,16 +101,22 @@ export function unionRoadSurfacePolygons(polygons,exclusivePolygons=[]){
  const main=unionRecords(through,exclusive),merge=unionRecords(ramps,[...through,...exclusive],false);
  // X/Z subtraction alone leaves an open vertical seam where the flat
  // cross-section of a graded ramp meets a differently sloping main road.
- // Share the actual visible owner's plane at that cut edge and ease the
- // crossfall into the last .9 scene units of ramp. Changing just the cut
- // vertices would form steep needle triangles beside tiny clipped pieces.
+ // Share the actual visible owner's plane at that cut edge. The transition
+ // width follows the real height difference: small seams stay local, while
+ // a larger difference needs enough pavement to avoid a steep crossfall.
+ // Smoothstep has a peak derivative of 1.5, so this bounds its added slope
+ // to .45 until the maximum local width is reached.
  // The ramp footprint and source points remain untouched; an underpass is
  // excluded by the same local-level band used by pavement ownership.
- const seams=new PolygonIndex(),blendWidth=.9;
+ const seams=new PolygonIndex(),blendWidth=2.4;
  for(const poly of main.polygons){const owner=make(poly);if(owner)seams.add(owner);}
  const sharedHeights=new Map();
- const joined=merge.polygons.map(poly=>poly.map(p=>{
-  const key=p.x+':'+p.y+':'+p.z;if(sharedHeights.has(key))return sharedHeights.get(key);
+ const weld=p=>{
+  // Shared clipped edges must use the same final GPU vertex, including
+  // their height. Otherwise two equivalent intersections can round to
+  // different sides of a Float32 edge after a nonlinear height adjustment.
+  const key=Math.fround(p.x)+':'+Math.round(p.y*1e7)+':'+Math.fround(p.z);if(sharedHeights.has(key))return sharedHeights.get(key);
+  p={x:Math.fround(p.x),y:p.y,z:Math.fround(p.z)};
   let result=p,bestDistance=blendWidth,bestHeightDifference=Infinity;
   for(const owner of seams.near({minX:p.x-blendWidth,maxX:p.x+blendWidth,minZ:p.z-blendWidth,maxZ:p.z+blendWidth})){
    const y=owner.height(p.x,p.z),difference=Math.abs(y-p.y);if(difference>=1.2)continue;
@@ -123,11 +129,65 @@ export function unionRoadSurfacePolygons(polygons,exclusivePolygons=[]){
    if(inside)distance=0;
    if(distance>bestDistance+EPS||Math.abs(distance-bestDistance)<=EPS&&difference>=bestHeightDifference)continue;
    bestDistance=distance;bestHeightDifference=difference;
-   const t=THREE.MathUtils.clamp(distance/blendWidth,0,1),weight=1-t*t*(3-2*t);
+   const width=Math.max(.6,Math.min(blendWidth,difference*(1.5/.45))),t=THREE.MathUtils.clamp(distance/width,0,1),weight=1-t*t*(3-2*t);
    result={x:p.x,y:THREE.MathUtils.lerp(p.y,y,weight),z:p.z};
   }
   sharedHeights.set(key,result);return result;
- }));
+ };
+ // Warp a local, conforming grid rather than just the two rims of a wide
+ // source ribbon. A rim-only warp spreads the correction across its whole
+ // width and opens cracks at T vertices introduced by polygon clipping.
+ // The source plane outside the seam strip stays unchanged.
+ const gridStep=.2,unchanged=[],pieces=[];
+ for(const poly of merge.polygons){
+  const box=bounds(poly),near=seams.near({minX:box.minX-blendWidth,maxX:box.maxX+blendWidth,minZ:box.minZ-blendWidth,maxZ:box.maxZ+blendWidth});
+  const compatible=near.some(owner=>{
+   const differences=poly.map(p=>p.y-owner.height(p.x,p.z));
+   return Math.min(...differences)<1.2&&Math.max(...differences)>-1.2;
+  });
+  if(!compatible){unchanged.push(poly);continue;}
+  for(let x=Math.floor(box.minX/gridStep);x<=Math.floor(box.maxX/gridStep);x++)for(let z=Math.floor(box.minZ/gridStep);z<=Math.floor(box.maxZ/gridStep);z++){
+   const minX=x*gridStep,maxX=(x+1)*gridStep,minZ=z*gridStep,maxZ=(z+1)*gridStep;
+   const cell=[{x:minX,z:minZ},{x:maxX,z:minZ},{x:maxX,z:maxZ},{x:minX,z:maxZ}];let part=poly;
+   for(let i=0;i<4&&part.length;i++)part=halfPlane(part,cell[i],cell[(i+1)%4],true);
+   if(part.length)pieces.push(part);
+  }
+ }
+ // Insert every coincident boundary vertex on both sides of an edge.
+ // Their welded heights need not be linear along the unsplit source edge.
+ const vertices=new Map(),vertexStep=gridStep,vertexEpsilon=1e-7;
+ for(const poly of pieces)for(const p of poly){const key=Math.floor(p.x/vertexStep)+':'+Math.floor(p.z/vertexStep);if(!vertices.has(key))vertices.set(key,[]);vertices.get(key).push(p);}
+ const joined=[...unchanged];
+ for(const poly of pieces){
+  const boundary=[];
+  for(let i=0;i<poly.length;i++){
+   const a=poly[i],b=poly[(i+1)%poly.length],dx=b.x-a.x,dz=b.z-a.z,lengthSquared=dx*dx+dz*dz,along=[{t:0,p:a}];
+   for(let x=Math.floor((Math.min(a.x,b.x)-vertexEpsilon)/vertexStep);x<=Math.floor((Math.max(a.x,b.x)+vertexEpsilon)/vertexStep);x++)for(let z=Math.floor((Math.min(a.z,b.z)-vertexEpsilon)/vertexStep);z<=Math.floor((Math.max(a.z,b.z)+vertexEpsilon)/vertexStep);z++)for(const p of vertices.get(x+':'+z)||[]){
+    const t=((p.x-a.x)*dx+(p.z-a.z)*dz)/(lengthSquared||1);if(t<=1e-7||t>=1-1e-7)continue;
+    if(Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz)>vertexEpsilon)continue;
+    along.push({t,p:{x:a.x+t*dx,y:a.y+t*(b.y-a.y),z:a.z+t*dz}});
+   }
+   along.sort((a,b)=>a.t-b.t);let last=-Infinity;
+   for(const row of along)if(row.t-last>1e-7){boundary.push(row.p);last=row.t;}
+  }
+  // Triangulate the convex boundary itself, retaining every clipping T
+  // vertex. A newly height-sampled centre inside a very narrow cell would
+  // turn longitudinal curvature into a false, steep transverse needle.
+  const outline=[...boundary],triangles=[];
+  while(outline.length>3){
+   let best=-1,score=-Infinity;
+   for(let i=0;i<outline.length;i++){
+    const a=outline[(i+outline.length-1)%outline.length],b=outline[i],c=outline[(i+1)%outline.length],twiceArea=cross(a,b,c);
+    if(twiceArea<=1e-10||area(outline)-twiceArea/2<=1e-10)continue;
+    const quality=twiceArea/((a.x-b.x)**2+(a.z-b.z)**2+(c.x-b.x)**2+(c.z-b.z)**2+(a.x-c.x)**2+(a.z-c.z)**2);
+    if(quality>score){score=quality;best=i;}
+   }
+   if(best<0)break;
+   triangles.push([outline[(best+outline.length-1)%outline.length],outline[best],outline[(best+1)%outline.length]]);outline.splice(best,1);
+  }
+  if(outline.length===3)triangles.push(outline);
+  for(const triangle of triangles)joined.push(triangle.map(weld));
+ }
  return {polygons:[...main.polygons,...joined],clipped:main.clipped+merge.clipped};
 }
 

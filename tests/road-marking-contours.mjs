@@ -130,7 +130,7 @@ assert.equal(lowerRoad.geometry.attributes.position.count,3,'An upper ribbon mus
 // vertical slit although a top-down coverage test reports no missing X/Z.
 const seamHeight=x=>1+.04*x;
 const ownerPoints=[V(-3,seamHeight(-3),-2),V(3,seamHeight(3),-2),V(3,seamHeight(3),2),V(-3,seamHeight(-3),2)];
-const rampPoints=[V(0,.95,-1),V(7,1.23,-1),V(7,1.23,5),V(0,.95,5)];
+const rampPoints=[V(0,.75,-1),V(7,1.03,-1),V(7,1.03,5),V(0,.75,5)];
 const seamInput=[];
 for(const [points,priority] of [[ownerPoints,0],[rampPoints,1],[rampPoints.map(p=>p.clone().add(V(0,-5.8,0))),1]])for(const indices of [[0,1,2],[0,2,3]]){
  const poly=indices.map(i=>points[i]);poly.priority=priority;seamInput.push(poly);
@@ -138,12 +138,35 @@ for(const [points,priority] of [[ownerPoints,0],[rampPoints,1],[rampPoints.map(p
 const seamSource=JSON.stringify(seamInput),seamUnion=unionRoadSurfacePolygons(seamInput);assert.equal(JSON.stringify(seamInput),seamSource);
 let seamHeightChecks=0,lowerSeamChecks=0;
 for(const poly of seamUnion.polygons)for(const p of poly){
- if(p.y<0){assert(Math.abs(p.y-(.95+.04*p.x-5.8))<1e-10,'An upper-road seam changes the lower underpass');lowerSeamChecks++;continue;}
+ if(p.y<0){assert(Math.abs(p.y-(.75+.04*p.x-5.8))<1e-10,'An upper-road seam changes the lower underpass');lowerSeamChecks++;continue;}
  if(p.x>=0&&p.x<=3&&(Math.abs(p.z-2)<1e-8||Math.abs(p.x-3)<1e-8&&p.z>=-1&&p.z<=2)){
   assert(Math.abs(p.y-seamHeight(p.x))<1e-10,'The ramp cut and its owning main-road plane have different heights');seamHeightChecks++;
  }
 }
 assert(seamHeightChecks>2&&lowerSeamChecks>2);
+let outsideSeamChecks=0,sharedBoundaryChecks=0;
+for(const p of [V(1.037,.75,3.213),V(4.213,.75,.137)]){
+ const expected=.75+.04*p.x,heights=[];
+ for(const poly of seamUnion.polygons)for(let i=1;i<poly.length-1;i++){
+  const [a,b,c]=[poly[0],poly[i],poly[i+1]];if(!triangle(p,a,b,c))continue;
+  const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z),u=((b.z-c.z)*(p.x-c.x)+(c.x-b.x)*(p.z-c.z))/den,v=((c.z-a.z)*(p.x-c.x)+(a.x-c.x)*(p.z-c.z))/den;
+  heights.push(u*a.y+v*b.y+(1-u-v)*c.y);
+ }
+ assert(heights.some(y=>Math.abs(y-expected)<1e-5),'A rim weld lifts the original ramp plane outside its local transition strip');outsideSeamChecks++;
+}
+const sharedEdges=new Map(),seamVertices=new Map();
+for(const poly of seamUnion.polygons)for(let i=0;i<poly.length;i++){
+ const a=poly[i],b=poly[(i+1)%poly.length];if(a.y<0||b.y<0)continue;
+ seamVertices.set(a.x+':'+a.y+':'+a.z,a);
+ for(let x=Math.floor(Math.min(a.x,b.x)*2);x<=Math.floor(Math.max(a.x,b.x)*2);x++)for(let z=Math.floor(Math.min(a.z,b.z)*2);z<=Math.floor(Math.max(a.z,b.z)*2);z++){
+  const key=x+':'+z;if(!sharedEdges.has(key))sharedEdges.set(key,[]);sharedEdges.get(key).push([a,b]);
+ }
+}
+for(const p of seamVertices.values())for(const [a,b] of sharedEdges.get(Math.floor(p.x*2)+':'+Math.floor(p.z*2))||[]){
+ const dx=b.x-a.x,dz=b.z-a.z,t=((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1);if(t<=1e-6||t>=1-1e-6||Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz)>2e-6)continue;
+ assert(Math.abs(p.y-THREE.MathUtils.lerp(a.y,b.y,t))<1e-5,'A height-warped clipping T vertex opens a vertical crack between adjacent triangles');sharedBoundaryChecks++;
+}
+assert(sharedBoundaryChecks>20);
 // Ordinary asphalt owns its visible footprint too: a slightly raised old
 // connector shoulder must not protrude, while a lower-level road survives.
 const localOwner=triangleMesh(.72,'ordinary asphalt');localOwner.geometry=localOwner.geometry.toNonIndexed();
@@ -241,7 +264,7 @@ for(const center of [V(-101.6824584,3.0732456,990.2943364),V(-100.1709601,3.1498
 const raycaster=new THREE.Raycaster();let obliqueSeamChecks=0;
 dark.updateWorldMatrix(true,false);
 for(const view of [
- {position:[-101.46706142284488,21.845853203085692,1009.8127201063572],target:[-88.26706142284488,2.0458532030856924,995.5127201063573],pixels:[[704,674],[707,668],[697,514],[719,496]]},
+ {position:[-101.46706142284488,21.845853203085692,1009.8127201063572],target:[-88.26706142284488,2.0458532030856924,995.5127201063573],pixels:[[704,674],[707,668],[697,514],[719,496],[555,595],[559,577]]},
  {position:[-117.38813820783946,23.436540219278715,1012.6406333868829],target:[-104.18813820783946,3.636540219278713,998.3406333868829],pixels:[[856,529],[900,490]]}
 ]){
  const camera=new THREE.PerspectiveCamera(52,1.6,.1,80000);camera.position.fromArray(view.position);camera.lookAt(V(...view.target));camera.updateMatrixWorld(true);
@@ -250,6 +273,12 @@ for(const view of [
   assert(raycaster.intersectObject(dark,false).some(hit=>hit.point.y>1.8&&hit.point.y<4&&hit.point.x>-108&&hit.point.x<-85&&hit.point.z>992&&hit.point.z<1003),'An oblique ray still sees ground through the upper ramp seam: '+[x,y]);obliqueSeamChecks++;
  }
 }
+// This exact public-v4 regression was outside the local seam band but a
+// wide, unsplit ribbon interpolated its raised inner rim over the centre.
+// The new local mesh must retain the original path plane at that point.
+const sourceCenter=network.roadPaths().find(road=>road.id==='osm-road-172422655').points.find(p=>Math.hypot(p.x+94.70477007422159,p.z-993.27221900585)<1e-6);
+assert(sourceCenter);
+assert(meshHeights(dark,sourceCenter).some(y=>Math.abs(y-sourceCenter.y-.006)<.002),'The upper seam changes the source centreline plane outside its transition band');
 // The two older ordinary connector shoulders remain outside the rounded
 // replacement boundary, but cannot paint a beige crescent over its host.
 const ordinary=layers.roads.getObjectByName('OSM · единое дорожное полотно');let ordinaryShoulderChecks=0;
@@ -264,7 +293,7 @@ for(let i=0;i<(index?.count??positions.count);i+=3){
  assert(normal.y>0,'A pavement seam has an inverted or vertical Float32 triangle');upwardTriangles++;
  if([a,b,c].every(p=>p.x>-108&&p.x<-85&&p.z>992&&p.z<1003)){
   const crossfall=Math.hypot(normal.x,normal.z)/normal.y;maxUpperCrossfall=Math.max(maxUpperCrossfall,crossfall);
-  assert(crossfall<.6,'The welded upper seam forms a steep needle triangle');
+  assert(crossfall<.6,'The welded upper seam forms a steep needle triangle: '+JSON.stringify({triangle:i/3,crossfall,vertices:[a,b,c].map(p=>p.toArray())}));
  }
 }
 const white=layers.roads.getObjectByName('Трасса · белые кромки').geometry.attributes.position;
@@ -287,4 +316,4 @@ for(let i=0;i<white.count;i++){
  assert(error<.002,'A marking loses exact asphalt support in the welded upper seam');seamPaintChecks++;
 }
 assert(seamPaintChecks>100);
-console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({throughTChecks:5,frameChecks,gradedMouthChecks:3,seamChecks,seamHeightChecks,lowerSeamChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,obliqueSeamChecks,ordinaryShoulderChecks,upwardTriangles,maxUpperCrossfall,seamPaintChecks,seamPaintEdgeChecks,maxSeamPaintLiftError,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));
+console.log('ROAD_MARKING_CONTOURS_PASS',JSON.stringify({throughTChecks:5,frameChecks,gradedMouthChecks:3,seamChecks,seamHeightChecks,lowerSeamChecks,outsideSeamChecks,sharedBoundaryChecks,shortVisibilityChecks:4,actualUpperArcChecks:3,actualContourChecks,loopOwnershipChecks,physicalLoopChecks,shoulderChipChecks,obliqueSeamChecks,sourceCenterHeightChecks:1,ordinaryShoulderChecks,upwardTriangles,maxUpperCrossfall,seamPaintChecks,seamPaintEdgeChecks,maxSeamPaintLiftError,replacementContourOpenings:network.roadMarkingPlan.stats.replacementContourOpenings}));

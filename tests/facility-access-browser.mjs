@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 
-const revision='20261031-facilities-rails-lighting-v4';
+const revision='20261031-facilities-rails-lighting-v5';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-facility-access';
 const manifest=JSON.parse(await readFile(new URL('../assets/models/tua/manifest-v2.json',import.meta.url),'utf8'));
@@ -38,8 +38,25 @@ async function snapshot(){return page.evaluate(()=>{
  const q=window.__BAIKONUR_QA,s=q.stats();return {revision:s.museumRevision,render:s.render,shadersValid:s.shadersValid,camera:q.cameraState(),
   evening:s.evening.evening,labelsVisible:s.labelsVisible,commonMetre:s.commonMetre,mik112:s.mik112,mik112Rail:s.mik112Rail,
   railProfile:s.transport.railProfile,railPorts:s.transport.facilityRailPorts,site110RailFan:s.transport.site110RailFan,roadFeatures:s.transport.roadFeatureCount,railFeatures:s.transport.railFeatureCount,
-  rockets:q.rockets.stats()};
+  rockets:q.rockets.stats(),site110a:q.siteState('pad-110a')};
 });}
+function pointToSegment(p,a,b){
+ const dx=b[0]-a[0],dz=b[1]-a[1],length=dx*dx+dz*dz;
+ const t=length?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/length)):0;
+ return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dz);
+}
+function segmentToFootprint(a,b,bounds){
+ const lo=[bounds.min[0],bounds.min[2]],hi=[bounds.max[0],bounds.max[2]],p=[a[0],a[2]],q=[b[0],b[2]];
+ let enter=0,leave=1;
+ for(let axis=0;axis<2;axis++){
+  const delta=q[axis]-p[axis];
+  if(Math.abs(delta)<1e-12){if(p[axis]<lo[axis]||p[axis]>hi[axis]){enter=Infinity;break;}}
+  else{const u=(lo[axis]-p[axis])/delta,v=(hi[axis]-p[axis])/delta;enter=Math.max(enter,Math.min(u,v));leave=Math.min(leave,Math.max(u,v));}
+ }
+ if(enter<=leave)return 0;
+ const pointToBox=point=>Math.hypot(Math.max(lo[0]-point[0],0,point[0]-hi[0]),Math.max(lo[1]-point[1],0,point[1]-hi[1]));
+ return Math.min(pointToBox(p),pointToBox(q),...[[lo[0],lo[1]],[lo[0],hi[1]],[hi[0],lo[1]],[hi[0],hi[1]]].map(c=>pointToSegment(c,p,q)));
+}
 function checkState(s){
  assert.equal(s.revision,revision);assert.equal(s.shadersValid,true);assert(s.render.drawCalls>0&&s.render.triangles>0);
  near(s.commonMetre,.14,1e-12,'The existing museum metre');assert.equal(s.roadFeatures,3185);assert.equal(s.railFeatures,543);
@@ -99,7 +116,12 @@ function checkState(s){
   pointNear(link.points.at(-1),mappedNodes.get(link.to)?.displayPosition??link.sourcePoints.at(-1),'Visible source link end '+link.id);
  }
  assert.equal(fan.hiddenLinks.length,3);assert(fan.hiddenLinks.every(link=>link.sourceGraphPreserved&&link.visible===false&&link.visibility==='hidden-by-existing-pad110-mask'));
- return {gates:2,carrierCount:2,tracks:4,destinations:8,gaugeMetres:1.52,headWidthMetres:.20,site110Junctions:fan.declaredJunctions.length,visibleSourceLinks:fan.joinedLinks.length};
+ assert(s.site110a.worldBounds&&finitePoint(s.site110a.worldBounds.min)&&finitePoint(s.site110a.worldBounds.max),'Site 110A exposes its actual rendered bounds');
+ assert.equal(s.site110a.illustrativeFootprint.sourceAnchorPreserved,true);
+ const corridors=[...fanPorts.values(),...fan.joinedLinks];let minTechnicalBuildingClearance=Infinity;
+ for(const corridor of corridors)for(let i=1;i<corridor.points.length;i++)minTechnicalBuildingClearance=Math.min(minTechnicalBuildingClearance,segmentToFootprint(corridor.points[i-1],corridor.points[i],s.site110a.worldBounds));
+ assert(minTechnicalBuildingClearance>4,'The neighbouring 110A building or slab obscures the actual railway fan: '+minTechnicalBuildingClearance);
+ return {gates:2,carrierCount:2,tracks:4,destinations:8,gaugeMetres:1.52,headWidthMetres:.20,site110Junctions:fan.declaredJunctions.length,visibleSourceLinks:fan.joinedLinks.length,minTechnicalBuildingClearance};
 }
 
 try{

@@ -25,7 +25,7 @@ try{
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.equal(await page.locator('#flanksView,#eveningToggle,#lightingToggle,#trainFollow,#carsFocus,#ui a[href*="archive.html"]').count(),0,'Removed menu shortcuts must not remain in the DOM');
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
- for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'])assert.equal(await page.locator('#'+id).count(),1);
+ for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'])assert.equal(await page.locator('#'+id).count(),1);
  await shot('overview-menu');
  const runways=s.airports.map(a=>({key:a.key,length:a.length,width:a.width,worldLength:a.worldLength}));
  assert.equal(runways.find(a=>a.key==='krayniy').length,1550);assert.equal(runways.find(a=>a.key==='yubileiny').length,2250);

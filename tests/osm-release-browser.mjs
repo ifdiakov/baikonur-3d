@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261031-facilities-rails-lighting-v4';
+const revision='20261031-facilities-rails-lighting-v5';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));
@@ -157,7 +157,7 @@ try{
  evidence.lighting={bankFilter:initial.evening.bankFilter,editor:initial.lighting,checkedPositions:lightPositions.scene.length+lightPositions.editor.length};
  assert.equal(await page.locator('#flanksView,#eveningToggle,#lightingToggle,#trainFollow,#carsFocus,#ui a[href*="archive.html"]').count(),0);
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0,'Removed sidebar controls must not remain hidden in the DOM');
- for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'])assert.equal(await page.locator('#'+id).count(),1);
+ for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'])assert.equal(await page.locator('#'+id).count(),1);
  assert.ok(await page.locator('a[href="https://www.openstreetmap.org/copyright"]').count()>0,'Visible OSM attribution is part of the live map');
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));
  const overview=await shot('overview-day');
@@ -529,7 +529,7 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());await step();evidence.hierarchy.push({mobile:true,...await hierarchy('overview')});
  const mobileMenu=page.locator('#mobileMenuToggle');
  assert.equal(await mobileMenu.isVisible(),true);assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
- const menuSections=['sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'];
+ const menuSections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'];
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),false);
  await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),true);

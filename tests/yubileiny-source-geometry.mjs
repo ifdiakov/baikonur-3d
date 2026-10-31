@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {buildAirport,airportDisplaySpec,AIRPORT_SCALE} from '../src/airport-models.js';
-import {YUBILEINY_SOURCE_LAYOUT} from '../src/yubileiny-layout.js';
-import {YUBILEINY_PHYSICAL,YUBILEINY_VERSION} from '../src/yubileiny-airport.js';
+import {YUBILEINY_SOURCE_LAYOUT,YUBILEINY_SOURCE_ACCESS} from '../src/yubileiny-layout.js';
+import {YUBILEINY_PHYSICAL,YUBILEINY_VERSION,YUBILEINY_LANDING_MARKS,YUBILEINY_VYMPEL_FIXTURES} from '../src/yubileiny-airport.js';
 import {airportLocalLightLayout,buildAirportLightRecords} from '../src/airport-light-layout.js';
 
 globalThis.document={createElement:()=>({width:0,height:0,getContext:()=>({clearRect(){},fillRect(){},fillText(){}})})};
 const near=(a,b,t=1e-5)=>assert.ok(Math.abs(a-b)<t,`${a} != ${b}`);
+const originalSource=JSON.stringify([YUBILEINY_SOURCE_LAYOUT,YUBILEINY_SOURCE_ACCESS]);
 const spec=airportDisplaySpec('yubileiny');
 assert.equal(spec.version,YUBILEINY_VERSION);
 assert.equal(spec.length,2250);assert.equal(spec.width,42);
@@ -24,7 +25,7 @@ const root=new THREE.Group();root.scale.setScalar(AIRPORT_SCALE);buildAirport(ro
 const physical=root.getObjectByName('Юбилейный · физическая геометрия в метрах');assert(physical);
 assert.deepEqual(physical.scale.toArray(),[.5,.5,.5]);
 const inverse=physical.matrixWorld.clone().invert(),instance=new THREE.Matrix4();
-let checkedVertices=0,triangles=0,runwayBoxes=0,endSafetyBoxes=0,highObjects=0;
+let checkedVertices=0,triangles=0,runwayBoxes=0,endSafetyBoxes=0,highObjects=0,azimuthBases=0;
 root.traverse(mesh=>{
  if(!mesh.isMesh)return;
  const geo=mesh.geometry,positions=geo.attributes.position,count=mesh.isInstancedMesh?mesh.count:1;
@@ -41,6 +42,9 @@ root.traverse(mesh=>{
   const size=bounds.getSize(new THREE.Vector3()),center=bounds.getCenter(new THREE.Vector3());
   if(Math.abs(size.x-84)<.001&&Math.abs(size.z-4500)<.001){near(size.y,.3);near(center.y,1.6);runwayBoxes++;}
   if(Math.abs(size.x-84)<.001&&Math.abs(size.z-250)<.001){near(Math.abs(center.z),2375);endSafetyBoxes++;}
+  if(Math.abs(size.x-20)<.001&&Math.abs(size.y-.3)<.001&&Math.abs(size.z-8)<.001){
+   near(center.x,0);near(Math.abs(center.z)-2250,1000);azimuthBases++;
+  }
  }
 });
 assert.equal(runwayBoxes,1);assert.equal(endSafetyBoxes,2);assert(highObjects>500);
@@ -48,6 +52,29 @@ assert.equal(root.userData.airport.features['concrete-runway'],1);
 assert.equal(root.userData.airport.features['parallel-taxiway'],undefined,'No fabricated full-length taxiway remains');
 assert.equal(root.userData.airport.features['airport-terminal'],undefined,'No generic terminal is retained');
 assert.equal(root.userData.airport.geometry.taxiwaySourceFeatures,11);
+assert.equal(JSON.stringify([YUBILEINY_SOURCE_LAYOUT,YUBILEINY_SOURCE_ACCESS]),originalSource,'The landing-complex detail must not alter surveyed taxiways or access roads');
+assert.equal(root.userData.airport.features['buran-aiming-diamond'],2);
+assert.equal(root.userData.airport.features['okdp-storey-window'],72);
+assert.equal(root.userData.airport.features['vympel-azimuth-module'],2);assert.equal(azimuthBases,2);
+assert.equal(root.userData.airport.features['vympel-glide-module'],2);
+assert.equal(root.userData.airport.features['vympel-rangefinder-module'],2);
+assert.equal(root.userData.airport.features['vympel-volkhov-antenna'],1);
+assert.equal(root.userData.airport.features['vympel-ilmen-antenna'],1);
+assert.equal(root.userData.airport.features['vympel-adrm-module'],1);
+assert.equal(YUBILEINY_VYMPEL_FIXTURES.length,9);
+assert(YUBILEINY_VYMPEL_FIXTURES.every(f=>Math.abs(f.x)>50||Math.abs(f.z)>2500),'No radio facility intrudes on the runway strip');
+assert.deepEqual(spec.historicalLandingComplex.vympel.omittedUnfinishedEquipment,['ОЛП','СРЛС','МРЛ-5']);
+assert.equal(YUBILEINY_LANDING_MARKS.distanceFromThresholdM,1000);
+// Inspect actual triangles after archive batching; metadata alone cannot prove
+// the two aiming marks were drawn at the documented centres or face upward.
+const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0),white=0xe9e9de,diamondProbes=[];
+for(const side of [-1,1])for(const x of [-3,0,3]){
+ const z=side*1250,origin=new THREE.Vector3(x,20,z).applyMatrix4(physical.matrixWorld);
+ ray.set(origin,down);const hit=ray.intersectObject(root,true).find(h=>h.object.material?.color?.getHex()===white);
+ assert(hit,'The Buran aiming diamond must be a visible white pavement surface');
+ const p=hit.point.clone().applyMatrix4(inverse);near(p.y,YUBILEINY_LANDING_MARKS.paintY,2e-4);
+ assert(hit.face.normal.y>0,'Aiming-paint triangle must face up after batching');diamondProbes.push(p.toArray());
+}
 assert.equal(root.userData.airport.mriya.physicalToAirportLocal,.5);
 const aircraft=root.getObjectByName('Ан-225 «Мрия» с «Бураном» · импортированная модель');assert(aircraft);
 near(aircraft.getWorldPosition(new THREE.Vector3()).y,1.75*.28);
@@ -60,4 +87,4 @@ const taxi=lights.runway.filter(l=>l.kind==='taxiway');assert(taxi.length>60&&ta
 function segmentDistance(p,a,b){const dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((p.x-a[0])*dx+(p.z-a[1])*dz)/(dx*dx+dz*dz)));return Math.hypot(p.x-a[0]-dx*t,p.z-a[1]-dz*t);}
 for(const light of taxi)assert(spec.lightPaths.some(path=>path.points.slice(1).some((p,i)=>segmentDistance(light,path.points[i],p)<1e-5)),'Taxiway light must follow an actual source path');
 assert.equal(buildAirportLightRecords(root).apron.length,8);
-console.log('YUBILEINY_SOURCE_GEOMETRY_PASS',JSON.stringify({version:spec.version,reference:[4500,84],local:[2250,42],world:[630,11.76],checkedVertices,triangles,taxiLights:taxi.length,apronPoles:lights.apron.length,sourceFeatures:11}));
+console.log('YUBILEINY_SOURCE_GEOMETRY_PASS',JSON.stringify({version:spec.version,reference:[4500,84],local:[2250,42],world:[630,11.76],checkedVertices,triangles,taxiLights:taxi.length,apronPoles:lights.apron.length,sourceFeatures:11,diamondProbes:diamondProbes.length,vympelFixtures:YUBILEINY_VYMPEL_FIXTURES.length,azimuthBases}));

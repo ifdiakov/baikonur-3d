@@ -1,9 +1,21 @@
-export const MUSEUM_MENU_VERSION='museum-sections-knowledge-v2';
+import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
+
+export const MUSEUM_MENU_VERSION='museum-six-sections-v3';
+
+// Use the reviewed catalogue and the same silo roster as the rendered models.
+// Technical complexes, measurement sites, hotels and rail stations are not
+// launch sites merely because they have a numbered cosmodrome address.
+const LAUNCH_SITE_IDS=new Set([...SILO_SITE_IDS,'pad-1','pad-41','pad-130','pad-175','pad-250']);
+export function museumCatalogueSection(record){
+ return record.category==='стартовый'||record.model==='launch'||LAUNCH_SITE_IDS.has(record.id)
+  ?'sitesAccordion':'infrastructureAccordion';
+}
 
 // These entries open exhibits and animations already present in the museum.
 // The separate knowledge base can add stories later without inventing them here.
 export const MUSEUM_SECTIONS=Object.freeze([
- {id:'equipmentAccordion',items:[
+ {id:'sitesAccordion',title:'СТАРТОВЫЕ КОМПЛЕКСЫ',catalogue:true},
+ {id:'equipmentAccordion',title:'РАКЕТЫ И ТЕХНИКА',items:[
   {action:'zenit-3sl',title:'«Зенит-3SL»',description:'Морской старт · подробная 3D-модель'},
   {action:'r7',title:'«Союз»',description:'Гагаринский старт и площадка №31'},
   {action:'energia-polyus',title:'«Энергия — Полюс»',description:'Ракета-экспонат на УКСС'},
@@ -14,18 +26,18 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'mriya',title:'«Мрия» с «Бураном»',description:'Экспонат на Юбилейном'},
   {action:'aircraft',title:'Самолёт',description:'Сопровождение текущего рейса'},
   {action:'train',title:'Мотовоз и вагоны',description:'Локомотив и четыре вагона'},
-  {action:'silo',title:'Шахтная пусковая установка',description:'Площадка №109'}
- ]},
- {id:'cyclogramsAccordion',items:[
+  {action:'silo',title:'Шахтная пусковая установка',description:'Площадка №109'},
   {action:'flight-cycle',title:'Москва — Крайний — Москва',description:'Посадка · стоянка · вылет'},
   {action:'train-cycle',title:'Рейс мотовоза',description:'Площадка №1 → Тюратам'},
   {action:'silo-cycle',title:'Открытие шахты',description:'Крышка и пар при приближении'}
  ]},
- {id:'mythsAccordion',items:[],empty:'Материалы раздела пока не добавлены.'},
- {id:'graveyardAccordion',items:[
+ {id:'infrastructureAccordion',title:'ИНФРАСТРУКТУРА',catalogue:true},
+ {id:'mythsAccordion',title:'МИФЫ И ЛЕГЕНДЫ',items:[],empty:'Материалы раздела пока не добавлены.'},
+ {id:'graveyardAccordion',title:'КОСМИЧЕСКОЕ КЛАДБИЩЕ',items:[
   {action:'r16-memorial',title:'Катастрофа Р-16',description:'Площадка №41'},
   {action:'mik-ruins',title:'Разрушенные пролёты МИК',description:'Площадка №112'}
- ]}
+ ]},
+ {id:'toursAccordion',title:'ПУСКОВЫЕ ТУРЫ',items:[],empty:'Программы пусковых туров в музее не опубликованы.'}
 ]);
 
 export function installMuseumMenu({container,onAction,stories=[]}){
@@ -40,8 +52,9 @@ export function installMuseumMenu({container,onAction,stories=[]}){
   const section=baseSection.id==='mythsAccordion'?{...baseSection,items:stories}:baseSection;
   const details=container.querySelector('#'+section.id);
   if(!details)throw new Error('Museum section is missing: '+section.id);
-  const body=details.querySelector('.sites-accordion-body'),counter=details.querySelector('.sites-accordion-count');
-  body.replaceChildren();counter.textContent=String(section.items.length);counter.hidden=section.items.length===0;
+  if(section.catalogue)continue;
+  const body=details.querySelector('[data-menu-items]')||details.querySelector('.sites-accordion-body'),counter=details.querySelector('.sites-accordion-count');
+  body.replaceChildren();
   for(const item of section.items){
    const button=document.createElement('button');button.type='button';button.className='museum-menu-entry';button.dataset.museumAction=item.action;
    const title=document.createElement('span');title.className='museum-menu-entry-title';title.textContent=item.title;
@@ -56,7 +69,10 @@ export function installMuseumMenu({container,onAction,stories=[]}){
    body.append(button);
   }
   if(!section.items.length){const empty=document.createElement('p');empty.className='museum-menu-empty';empty.textContent=section.empty;body.append(empty);}
+  const count=details.querySelectorAll('[data-museum-action],.entry').length;counter.textContent=String(count);counter.hidden=count===0;
  }
  return {stats:()=>({version:MUSEUM_MENU_VERSION,lastAction,sections:sections.map(section=>({id:section.id,open:section.open,
-  count:section.querySelectorAll('[data-museum-action]').length}))})};
+  count:section.querySelectorAll('[data-museum-action],.entry').length,
+  siteIds:[...section.querySelectorAll('[data-site-id]')].map(entry=>entry.dataset.siteId),
+  researchIds:[...section.querySelectorAll('[data-research-id]')].map(entry=>entry.dataset.researchId)}))})};
 }

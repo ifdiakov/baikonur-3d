@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "edition": "museum-buran-20261030-v1",
   "language": "ru",
-  "updatedAt": "2026-10-31",
+  "updatedAt": "2026-11-01",
   "editorialPolicy": {
     "method": "Краткие самостоятельные пересказы с источниками; исторические документы, технические сведения и воспоминания помечены отдельно.",
     "historicalScope": "Состояние и события указанного периода; архивные фразы «в настоящее время» не перенесены в 2026 год.",
@@ -363,6 +363,46 @@
       "kind": "historical-reference",
       "author": "Справочник rvsn.info; источник страницы — исторический очерк В. А. Кудряшова о 50-летии измерительного комплекса Байконура (1957–2007).",
       "accessed": "2026-10-31"
+    },
+    "landing-chronology": {
+      "id": "landing-chronology",
+      "title": "Циклограмма полёта 15 ноября 1988 года",
+      "url": "https://www.buran.ru/htm/cikloniz.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru",
+      "accessed": "2026-11-01"
+    },
+    "landing-radar": {
+      "id": "landing-radar",
+      "title": "Вымпел: радиолокационная проводка посадки",
+      "url": "https://www.buran.ru/htm/vympel07.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru",
+      "accessed": "2026-11-01"
+    },
+    "landing-okdp": {
+      "id": "landing-okdp",
+      "title": "Крылья Родины: посадочный комплекс и ОКДП",
+      "url": "https://www.buran.ru/htm/str.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru",
+      "accessed": "2026-11-01"
+    },
+    "landing-escort": {
+      "id": "landing-escort",
+      "title": "Сергей Грачев: подготовка и сопровождение посадки",
+      "url": "https://www.buran.ru/htm/memory39.htm",
+      "kind": "recollection",
+      "author": "Архив buran.ru",
+      "accessed": "2026-11-01"
+    },
+    "landing-analysis": {
+      "id": "landing-analysis",
+      "title": "Алгоритмы автоматического управления и анализ места касания",
+      "url": "https://www.buran.ru/htm/algoritm.htm",
+      "kind": "technical",
+      "author": "Архив buran.ru",
+      "accessed": "2026-11-01"
     }
   },
   "sites": {
@@ -793,10 +833,10 @@
       "id": "pad-251",
       "title": "Площадка 251 · Юбилейный",
       "subtitle": "Посадочный комплекс «Бурана»",
-      "summary": "15 ноября 1988 года здесь закончился единственный космический полёт «Бурана». Полоса, рулёжные дорожки и радиотехнические средства проектировались как единый посадочный комплекс.",
+      "summary": "Посадочный комплекс орбитального корабля: бетонная ВПП 4500 × 84 м, рулёжные дорожки, ОКДП и средства «Вымпела». 15 ноября 1988 года «Буран» приземлился здесь автоматически. Кнопка «ПОСАДКА БУРАНА» запускает реконструкцию возвращения с МиГ-25 и исторической хронологией.",
       "summarySources": [
-        "announcement",
-        "runway"
+        "runway",
+        "landing-chronology"
       ],
       "metrics": [
         {
@@ -831,6 +871,39 @@
           ],
           "value": "24 / 21 м",
           "label": "ширина рулёжных дорожек"
+        },
+        {
+          "value": "1 000 м",
+          "label": "расчётная точка касания от торца",
+          "text": "Белые ромбы на ВПП.",
+          "sources": [
+            "runway"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/pk.htm"
+          ]
+        },
+        {
+          "value": "09:24:42",
+          "label": "касание · 15 ноября 1988",
+          "text": "Московское время.",
+          "sources": [
+            "landing-chronology"
+          ],
+          "sourceUrls": [
+            "https://www.buran.ru/htm/cikloniz.htm"
+          ]
+        },
+        {
+          "value": "42 с / 1 620 м",
+          "label": "пробег по циклограмме",
+          "text": "Остановка в 09:25:24. В редакциях архива встречаются другие оценки расстояния.",
+          "sources": [
+            "landing-chronology"
+          ],
+          "sourceUrls": [
+            "https://www.buran.ru/htm/cikloniz.htm"
+          ]
         }
       ],
       "facts": [
@@ -853,9 +926,51 @@
             "http://www.buran.ru/htm/memory22.htm"
           ],
           "title": "От самолёта к кораблю"
+        },
+        {
+          "title": "Объединённый командно-диспетчерский пункт",
+          "text": "Шестиэтажный ОКДП объединял управление, вычислительные и навигационные средства посадочного комплекса.",
+          "sources": [
+            "landing-okdp"
+          ],
+          "sourceUrls": [
+            "https://www.buran.ru/htm/str.htm"
+          ]
+        },
+        {
+          "title": "МиГ-25 ЛЛ22",
+          "text": "Магомед Толбоев и оператор Сергей Жадовский обеспечивали телевизионное наблюдение с МиГ-25 ЛЛ22. Второй МиГ-25 №9210 находился в резерве.",
+          "sources": [
+            "landing-escort"
+          ],
+          "sourceUrls": [
+            "https://www.buran.ru/htm/memory39.htm"
+          ]
+        },
+        {
+          "title": "Как восстановлена посадка",
+          "text": "Опорные точки взяты из радиолокационной проводки «Вымпела». Промежуточные положения, позы и финальное выравнивание реконструированы. Дальний манёвр вписан в макет, пробег сохраняет масштаб ВПП.",
+          "sources": [
+            "landing-radar",
+            "landing-analysis"
+          ],
+          "sourceUrls": [
+            "https://www.buran.ru/htm/vympel07.htm",
+            "https://www.buran.ru/htm/algoritm.htm"
+          ]
         }
       ],
       "timeline": [
+        {
+          "date": "24.12.1981",
+          "text": "Принята первая очередь посадочного комплекса.",
+          "sources": [
+            "runway"
+          ],
+          "sourceUrls": [
+            "http://www.buran.ru/htm/pk.htm"
+          ]
+        },
         {
           "text": "Описанный Грачёвым испытательный полёт с пробежками по ВПП.",
           "sources": [
@@ -875,6 +990,16 @@
             "http://www.buran.ru/htm/firstext.htm"
           ],
           "date": "15.11.1988"
+        },
+        {
+          "date": "15.11.1988 · 09:25:24 МСК",
+          "text": "Полная остановка после автоматической посадки.",
+          "sources": [
+            "landing-chronology"
+          ],
+          "sourceUrls": [
+            "https://www.buran.ru/htm/cikloniz.htm"
+          ]
         }
       ],
       "stories": [

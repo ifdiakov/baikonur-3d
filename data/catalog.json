@@ -1935,12 +1935,15 @@
       "purposeLong": "Посадочный комплекс «Бурана» и аэродром «Юбилейный»",
       "category": "аэродром",
       "publicReferences": [
-        "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38"
+        "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38",
+        "https://www.buran.ru/htm/pk.htm",
+        "https://www.buran.ru/htm/vympel07.htm",
+        "https://www.buran.ru/htm/cikloniz.htm"
       ],
       "evidenceLevel": "public-source-confirmed-function",
       "positionVerified": false,
       "contentSource": "reviewed-sites-workbook-20261028",
-      "modelStatus": "Фотореконструкция первого прохода; высоты и скрытая геометрия ориентировочны.",
+      "modelStatus": "Посадочный комплекс уточнён по плану buran.ru и OSM: ВПП, ромбы, ОКДП и средства посадки. Недокументированные положения аппаратуры остаются реконструкцией.",
       "archiveModel": {
         "version": "1.0-portal-photo-pass",
         "kind": "yubileiny",

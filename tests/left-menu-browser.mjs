@@ -3,9 +3,9 @@ import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-facilities-rails-lighting-v4';
-const sections=['sitesAccordion','equipmentAccordion','cyclogramsAccordion','mythsAccordion','graveyardAccordion'];
-const titles=['ПЛОЩАДКИ И ОБЪЕКТЫ','РАКЕТЫ И ТЕХНИКА','ЦИКЛОГРАММЫ','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-facilities-rails-lighting-v5';
+const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ','ПУСКОВЫЕ ТУРЫ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -51,12 +51,46 @@ try{
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
  assert.ok(!(await page.locator('#ui').innerText()).includes('СЛОИ СЦЕНЫ'));
  assert.deepEqual(await page.locator('.museum-section > summary .sites-accordion-title').allTextContents(),titles);
+ assert.deepEqual(await page.locator('#ui > .museum-section').evaluateAll(elements=>elements.map(element=>element.id)),sections);
+ assert.equal(await page.locator('#museumIdentity .museum-name').textContent(),'Байконур');
+ assert.equal(await page.locator('#museumIdentity .museum-subtitle').textContent(),'интерактивный музей 3d');
+ assert.equal(await page.locator('#museumIdentity img,.rockettrip-logo,#cyclogramsAccordion,#timelineEvents,#timelineEventPanel').count(),0,'Removed branding and event UI do not remain hidden in the page');
+ const catalogue=await page.evaluate(()=>{
+  const q=window.__BAIKONUR_QA,s=q.stats();return{sections:q.menu.stats().sections,sites:s.sites,stations:s.stations,research:s.researchObjects,history:s.historyEvents};
+ });
+ const launch=catalogue.sections.find(s=>s.id==='sitesAccordion'),infrastructure=catalogue.sections.find(s=>s.id==='infrastructureAccordion'),graveyard=catalogue.sections.find(s=>s.id==='graveyardAccordion');
+ const siteIds=catalogue.sections.flatMap(section=>section.siteIds);
+ assert.equal(siteIds.length,catalogue.sites+catalogue.stations,'Every existing rendered object remains reachable');
+ assert.equal(new Set(siteIds).size,siteIds.length,'A site has one catalogue entry, with no duplicate category');
+ for(const id of ['pad-1','pad-31','pad-41','pad-45','pad-81','pad-90','pad-109','pad-110','pad-200','pad-250'])assert.ok(launch.siteIds.includes(id),id+' is a launch or stand-start complex');
+ for(const id of ['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254'])assert.ok(infrastructure.siteIds.includes(id),id+' is infrastructure');
+ assert.equal(graveyard.researchIds.length,catalogue.research);assert.equal(catalogue.history,18,'The historical data is preserved after removing its bottom strip');
+ assert.equal(await page.locator('#infrastructureList .entry-station').count(),catalogue.stations,'Railway stations and depots stay in infrastructure');
+ evidence.catalogue=catalogue;
  for(const id of sections)assert.equal(await page.locator('#'+id).evaluate(element=>element.open),false);
  assert.equal(await page.locator('#mobileMenuToggle').isVisible(),false);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().labelsVisible),true);
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));
  await shot('desktop-menu');evidence.desktop=await menuBounds();
  assert.ok(evidence.desktop.stack.bottom<evidence.desktop.dock.y,'Sidebar and time dock do not overlap');
+ assert.ok(evidence.desktop.dock.height<=90&&evidence.desktop.dock.height>=70,'The desktop time dock is compact');
+ await page.locator('#year').focus();await page.keyboard.press('ArrowLeft');
+ assert.equal(await page.locator('#yearVal').textContent(),'2025','The compact year control remains keyboard-accessible');
+ await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#yearVal').textContent(),'2026');
+ await openSection('infrastructureAccordion');await page.locator('#infrastructureSearch').fill('Юбилейный');
+ assert.equal(await page.locator('#infrastructureList [data-site-id="pad-251"]').count(),1);
+ await page.locator('#infrastructureList [data-site-id="pad-251"]').click();await selectedSite('pad-251');
+ await page.locator('#infrastructureSearch').fill('');await shot('desktop-infrastructure');
+ await openSection('sitesAccordion');await page.locator('#search').fill('Протон');
+ for(const id of ['pad-81','pad-200'])assert.equal(await page.locator('#list [data-site-id="'+id+'"]').count(),1);
+ assert.equal(await page.locator('#list [data-site-id="pad-251"]').count(),0,'Airports no longer appear among launch complexes');
+ await page.locator('#search').fill('');
+ await openSection('graveyardAccordion');await page.locator('#graveyardSearch').fill('BAI-001');
+ assert.equal(await page.locator('#graveyardList [data-research-id="BAI-001"]').count(),1);
+ await page.locator('#graveyardList [data-research-id="BAI-001"]').click();assert.ok((await page.locator('#title').textContent()).startsWith('BAI-001'));
+ await page.locator('#graveyardSearch').fill('');
+ await openSection('toursAccordion');assert.equal(await page.locator('#toursAccordion a,#toursAccordion button').count(),0,'No invented booking service is presented');
+ assert.equal(await page.locator('#toursAccordion .museum-menu-empty').textContent(),'Программы пусковых туров в музее не опубликованы.');
 
  // Native details controls must work from the keyboard as well as the mouse.
  await page.locator('#mythsAccordion > summary').focus();await page.keyboard.press('Enter');
@@ -65,7 +99,8 @@ try{
  assert.equal(await page.locator('#mythsAccordion .museum-menu-empty').count(),0);
  await openSection('equipmentAccordion');
  assert.equal(await page.locator('#mythsAccordion').evaluate(element=>element.open),false);
- assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').count(),11);
+ assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').count(),14);
+ assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').first().getAttribute('data-museum-action'),'zenit-3sl');
  await shot('desktop-equipment');
  await action('r7');await selectedSite('pad-1');
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),true);
@@ -81,7 +116,7 @@ try{
  const train=await action('train');assert.equal(train.train,true);assert.equal(train.arrival,false);
  await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),true,'Sidebar event bubbling must not cancel the selected following mode');
 
- const cycle=await action('flight-cycle','cyclogramsAccordion');assert.equal(cycle.arrival,true);assert.equal(cycle.train,false);
+ const cycle=await action('flight-cycle');assert.equal(cycle.arrival,true);assert.equal(cycle.train,false);
  const cases=[[0,'inbound',148],[147.1,'inbound',1],[148,'parking',20],[167.1,'parking',1],[168,'outbound',238],[405.1,'outbound',1],[406,'inbound',148],[554,'parking',20],[574,'outbound',238],[812,'inbound',148]];
  const labels={inbound:'МОСКВА-КРАЙНИЙ',parking:'СТОЯНКА',outbound:'КРАЙНИЙ-МОСКВА'};
  for(const [time,id,seconds]of cases){
@@ -100,9 +135,9 @@ try{
   const q=window.__BAIKONUR_QA;q.arrival.seek(148);q.arrival.resume();const now=performance.now();q.arrival.update(now);q.arrival.update(now+1100);
  });
  assert.equal(await page.locator('#arrivalClock').textContent(),'19 сек','The displayed countdown advances with simulation time');
- const trainCycle=await action('train-cycle','cyclogramsAccordion');assert.equal(trainCycle.train,true);assert.equal(trainCycle.arrival,false);
+ const trainCycle=await action('train-cycle');assert.equal(trainCycle.train,true);assert.equal(trainCycle.arrival,false);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().elapsed),0);
- await action('silo-cycle','cyclogramsAccordion');await selectedSite('pad-109');
+ await action('silo-cycle');await selectedSite('pad-109');
  await action('r16-memorial','graveyardAccordion');await selectedSite('pad-41');
  await page.evaluate(()=>{document.getElementById('year').value='1990';document.getElementById('year').dispatchEvent(new Event('input',{bubbles:true}));});
  await action('mik-ruins','graveyardAccordion');await selectedSite('pad-112');
@@ -114,13 +149,15 @@ try{
  for(const id of sections)assert.equal(await page.locator('#'+id).isVisible(),false);
  await toggle.click();for(const id of sections)assert.equal(await page.locator('#'+id).isVisible(),true);
  evidence.mobile=await menuBounds();assert.ok(evidence.mobile.stack.bottom<evidence.mobile.dock.y,'The expanded mobile menu stays above the time dock');
+ assert.ok(evidence.mobile.dock.height<=80,'The phone time dock is compact');
+ assert.equal(await page.locator('#museumIdentity .museum-name').isVisible(),true);assert.equal(await page.locator('#museumIdentity .museum-subtitle').isVisible(),true);
  for(const h of evidence.mobile.headers){assert.ok(h.x>=0&&h.right<=390&&h.height>=40,h.id+' remains a full-width touch target');assert.ok(h.y>=0&&h.bottom<evidence.mobile.dock.y,h.id+' is visible before opening a section');}
  await shot('mobile-menu');
  await openSection('equipmentAccordion');await page.locator('[data-museum-action="tua"]').click();
  assert.equal(await toggle.getAttribute('aria-expanded'),'false');await selectedSite('pad-112');
  assert.equal(await page.locator('#mik112Tua').getAttribute('aria-pressed'),'true');
  await shot('mobile-tua');
- await toggle.click();await openSection('cyclogramsAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();
+ await toggle.click();await openSection('equipmentAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().following),true);
  assert.equal(await toggle.getAttribute('aria-expanded'),'false');
  assert.equal(await toggle.isVisible(),true,'Mobile following retains a visible exit to the menu');
@@ -136,12 +173,12 @@ try{
  // The existing compact following layout starts at 750px, above the normal
  // phone-menu breakpoint. Its escape control must also work in this band.
  await page.setViewportSize({width:700,height:900});
- await openSection('cyclogramsAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();
+ await openSection('equipmentAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();
  assert.equal(await toggle.isVisible(),true);assert.equal(await page.locator('#arrivalPanel').isVisible(),true);
  await toggle.click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().following),false);
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);assert.deepEqual(evidence.failedResources,[]);
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,checkedAt:new Date().toISOString()},null,2));
- console.log('LEFT_MENU_BROWSER_PASS',JSON.stringify({prefix,revision,sections:5,actions:evidence.actions.length,statusCases:evidence.statuses.length,mobile:true}));
+ console.log('LEFT_MENU_BROWSER_PASS',JSON.stringify({prefix,revision,sections:6,actions:evidence.actions.length,statusCases:evidence.statuses.length,desktopDock:evidence.desktop.dock.height,mobileDock:evidence.mobile.dock.height,mobile:true}));
 }catch(error){
  await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(()=>{});
  await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({...evidence,passed:false,message:error.message,stack:error.stack},null,2));throw error;

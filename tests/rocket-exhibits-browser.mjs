@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-rocket-exhibits';
-const revision='20261031-facilities-rails-lighting-v4';
+const revision='20261031-facilities-rails-lighting-v5';
 const expected={
  gagarin:['pad-1','soyuz'],site31:['pad-31','soyuz'],ukss:['pad-250','energia-polyus'],
  site110:['pad-110','energia-buran'],'mik112-hall':['pad-112','energia-buran'],
@@ -160,6 +160,13 @@ try{
  await page.locator('#ukssMockupToggle').click();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='ukss').visible),true);
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-110');window.__BAIKONUR_QA.inspectSite110('left');});await shot('site110-buran');
+ const site110=await page.evaluate(()=>window.__BAIKONUR_QA.site110());
+ assert.equal(site110.version,'site110-rectangular-ducts-v2');
+ const ducts=site110.pads.flatMap(pad=>pad.ducts);assert.equal(ducts.length,6);
+ for(const duct of ducts){assert.equal(duct.shape,'rectangular');assert.equal(duct.wallProfile,'vertical');assert.equal(duct.floorProfile,'planar-rise');assert.equal(duct.polygon.length,4);}
+ evidence.site110RectangularGasDucts=ducts;
+ await page.locator('#energiaViews button').filter({hasText:'Газоотвод'}).click();await shot('site110-rectangular-duct-close');
+ await page.locator('#energiaViews button').filter({hasText:'Сверху'}).click();await shot('site110-rectangular-ducts-top');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-112');window.__BAIKONUR_QA.inspectMik112('top');});await shot('mik112-hall');
  await page.evaluate(()=>window.__BAIKONUR_QA.inspectMik112('tua'));await shot('tua-buran');
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-251'));

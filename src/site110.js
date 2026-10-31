@@ -2,11 +2,12 @@ import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 import {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
+import {createSite110IncomingRails} from './site110-incoming-rails.js?v=20261031-facilities-rails-lighting-v5';
 export {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
 
 // Physical metres, Y up, X east and Z south. The application applies one
 // museum metres-to-world scale to this entire complex and to its rocket.
-export const SITE110_VERSION='site110-photo-rebuild-v1';
+export const SITE110_VERSION='site110-rectangular-ducts-v2';
 export const SITE110_REFERENCE=Object.freeze({
  originLonLat:[63.3077,45.9635], axes:{x:'east',y:'up',z:'south'}, units:'metres',
  sources:[
@@ -34,11 +35,11 @@ export const SITE110_REFERENCE=Object.freeze({
  // Photographs establish the shape, not a fabrication drawing. Widths of
  // steel members, accessory elevations and buried rooms remain estimates.
  estimated:['left service-pylon height inferred from rocket photograph','service-member sections','platform elevations',
-  'floodlight-mast heights','hidden foundations','duct-bank profile away from the central shaft','escape-passage diameters'],
+  'floodlight-mast heights','hidden foundations','duct width and longitudinal floor slope away from the central shaft','escape-passage diameters'],
  dimensionConfidence:{lightningDiverter:'225m published in the archival narrative; construction drawing not available',
   fixedServiceTower:'60m caption describes the secondary right tower; left pair calibrated against the 58.765m vehicle photograph',
   pivotingServiceTower:'100m explicitly identified in the photo captions',
-  shaftAndDucts:'dimensions explicitly described; bank curvature reconstructed from photographs'},
+  shaftAndDucts:'shaft diameter, maximum depth and 120-degree separation are documented; rectangular channels have reconstructed width and longitudinal slope'},
  numberingNote:'The archive uses inconsistent 37/38 labels; the model uses left/right positions.'
 });
 
@@ -193,18 +194,24 @@ export function buildSite110(root){
   for(const angle of angles){
    const axis=[Math.cos(angle),Math.sin(angle)],normal=[-axis[1],axis[0]];
    const at=(u,v,y)=>[cx+axis[0]*u+normal[0]*v,y,cz+axis[1]*u+normal[1]*v];
-   const rows=Array.from({length:17},(_,i)=>{const t=i/16;return{u:8+126*t,rim:6+25*Math.sin(Math.PI*t*.87),floor:4.8+9*Math.sin(Math.PI*t*.94),y:-23*(1-t*t*t)};});
-   const polygon=[...rows.map(r=>at(r.u,-r.rim,0)),...rows.slice().reverse().map(r=>at(r.u,r.rim,0))].map(p=>[p[0],p[2]]);
+   // The six channels are rectangular concrete troughs, not widening petals.
+   // Their plan has four right-angle corners, the walls stand vertically and
+   // the floor is one plane rising from the 23m shaft to the outer outlet.
+   // The 12m throat meets the existing 20m shaft exactly at u=8, v=+/-6.
+   const rows=[{u:8,rim:6,floor:6,y:-23},{u:134,rim:6,floor:6,y:0}];
+   const polygon=[at(8,-6,0),at(134,-6,0),at(134,6,0),at(8,6,0)].map(p=>[p[0],p[2]]);
    holes.push(polygon);k.cutouts.push({polygon});
    for(let i=1;i<rows.length;i++){
     const a=rows[i-1],b=rows[i];quad(at(a.u,-a.floor,a.y),at(b.u,-b.floor,b.y),at(b.u,b.floor,b.y),at(a.u,a.floor,a.y),'dark','flame-duct-floor');
     for(const s of [-1,1]){
      quad(at(a.u,s*a.floor,a.y),at(b.u,s*b.floor,b.y),at(b.u,s*b.rim,0),at(a.u,s*a.rim,0),'concrete','flame-duct-concrete-bank');
      k.rod(at(a.u,s*a.rim,.16),at(b.u,s*b.rim,.16),.22,'concrete','flame-duct-rim');
-     if(i%2===0)k.rod(at(b.u,s*b.floor,b.y+.025),at(b.u,s*b.rim,.025),.045,'steel','concrete-expansion-joint');
     }
    }
-   ducts.push({angle,depth:23,length:126,polygon,rows});
+   for(let i=1;i<8;i++)for(const s of [-1,1]){
+    const t=i/8;k.rod(at(8+126*t,s*6,-23*(1-t)+.025),at(8+126*t,s*6,.025),.045,'steel','concrete-expansion-joint');
+   }
+   ducts.push({angle,depth:23,length:126,width:12,shape:'rectangular',wallProfile:'vertical',floorProfile:'planar-rise',polygon,rows});
   }
   // Circular apron and the voids are a single triangulated surface. The
   // intersecting shaft/duct holes are unioned by using three apron sectors.
@@ -212,8 +219,8 @@ export function buildSite110(root){
    const a=angles[sector],b=a+2*Math.PI/3,points=[];
    // Apron sectors stop at each bank. The short inner circular arc joins the
    // adjacent duct lips and leaves the central shaft physically open.
-   const firstPositive=ducts[sector].polygon.slice(17).reverse();
-   const nextNegative=ducts[(sector+1)%3].polygon.slice(0,17);
+   const firstPositive=ducts[sector].polygon.slice(2).reverse();
+   const nextNegative=ducts[(sector+1)%3].polygon.slice(0,2);
    points.push(...firstPositive);
    const rows=ducts[sector].rows,outerAngle=Math.atan2(rows.at(-1).rim,rows.at(-1).u),innerAngle=Math.atan2(rows[0].rim,rows[0].u);
    for(let j=0;j<=24;j++){const ang=a+outerAngle+(b-a-2*outerAngle)*j/24;points.push([cx+radius*Math.cos(ang),cz+radius*Math.sin(ang)]);}
@@ -293,7 +300,7 @@ export function buildSite110(root){
    for(let n=0;n<5;n++)k.cyl(.5,3.8,side*(47+n*3),6.1,-37,'green','buried-services-vent',0,g);
    pipe(g,[[side*55,2,-30],[side*43,2,-20],[side*32,2,-8]],.7,'light','ground-service-pipe');
   }
-  padMetadata.push({id:pad.id,centre:[cx,0,cz],apronRadius:pad.radius,shafts:1,ducts:ducts.map(d=>({angle:d.angle,depth:d.depth,length:d.length})),
+  padMetadata.push({id:pad.id,centre:[cx,0,cz],apronRadius:pad.radius,shafts:1,ducts:ducts.map(d=>({angle:d.angle,depth:d.depth,length:d.length,width:d.width,shape:d.shape,wallProfile:d.wallProfile,floorProfile:d.floorProfile,polygon:d.polygon})),
    serviceConfiguration:isLeft?'paired-60m-energia-service-pylons':'100m-pivot-and-60m-secondary',
    serviceTowerHeights:isLeft?[60,60]:[100,60],lightningDiverterHeight:225,
    physicalTransporterRailGauge:1.52,transporterTrackCentres:20,yaw:YAW,
@@ -306,10 +313,9 @@ export function buildSite110(root){
  for(const [x,z,w,d,h] of buildings)k.hall({x,z,w,d,h,yaw:YAW,roof:'roof',windows:false,gates:1,tag:'source-traced-technical-house'});
  k.path([[-350,415],[-240,265],[-74,77],[65,-102],[219,-310]],8,.12,'asphalt','main-complex-access');
  k.path([[-390,-280],[-380,300],[-350,415]],6,.10,'asphalt','perimeter-service-access');
- for(const [pad,x] of [[SITE110_REFERENCE.pads[0],-410],[SITE110_REFERENCE.pads[1],10]])for(const s of [-1,1]){
-  const entry=transform(s*10,0,260,...pad.centre,YAW);
-  k.rail([[x+s*10,485],[entry[0],entry[2]]],{gauge:1.52,y:.28,tag:'transporter-incoming-rail'});
- }
+ const incomingRails=createSite110IncomingRails({pads:SITE110_REFERENCE.pads,ports:SITE110_PORTS.rail,yaw:YAW});
+ for(const track of incomingRails.tracks)k.rail(track.points,{gauge:1.52,y:.28,tag:'transporter-incoming-rail'});
+ root.userData.site110IncomingRails=incomingRails;
  const features=k.finish();
  root.userData.flamePetals={perLaunch:3,launches:2,belowGrade:true};
  root.userData.tracedPads=SITE110_REFERENCE.pads.map(p=>p.centre.slice());

@@ -1,4 +1,4 @@
-name: Museum 6 — Zenit-3SL model
+name: Museum 6 — Buran landing, navigation and facilities
 on:
   push:
     branches: [main]
@@ -40,7 +40,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-zenit-20261101-v1
+  RELEASE_TAG: museum6-buran-navigation-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -96,6 +96,10 @@ jobs:
           node tests/site110-geometry.mjs
           node tests/soyuz-launch-scale.mjs
           node tests/yubileiny-source-geometry.mjs
+          node tests/buran-landing-path.mjs
+          node tests/buran-landing-aircraft.mjs
+          node tests/camera-navigation.mjs
+          node tests/menu-catalog-contract.mjs
       - name: Preserve the detailed Site 31, road, rail and flank invariants
         run: |
           node tests/site31-geometry.mjs
@@ -139,10 +143,10 @@ jobs:
     timeout-minutes: 45
     strategy:
       fail-fast: false
-      max-parallel: 18
+      max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit]
+        suite: [startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -169,6 +173,12 @@ jobs:
       - name: Verify the menu and flight status
         if: matrix.suite == 'startup-menu'
         run: node tests/left-menu-browser.mjs
+      - name: Verify camera movement after leaving aircraft follow
+        if: matrix.suite == 'landing-camera'
+        run: node tests/camera-navigation-browser.mjs
+      - name: Verify the historical Buran landing and scene restoration
+        if: matrix.suite == 'landing-camera'
+        run: node tests/buran-landing-browser.mjs
       - name: Verify the interchange bridge
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/interchange-browser.mjs
@@ -224,6 +234,8 @@ jobs:
           path: |
             qa-startup/
             qa-menu/
+            qa-camera-navigation/
+            qa-buran-landing/
             qa-rocket-exhibits/
             qa-zenit/
             qa-interchange/
@@ -281,12 +293,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/zenit-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/facilities-rails-lighting-20261031-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 6 — Зенит-3SL',
+                name: 'Интерактивный музей 6 — посадка «Бурана», навигация и площадки',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

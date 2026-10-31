@@ -61,13 +61,13 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('rails',false));await step();
  await label.waitFor({state:'hidden'});
  await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('rails',true));await step();await label.waitFor({state:'visible'});
- await page.locator('#sitesAccordion > summary').click();
- await page.locator('#search').fill('Нагорная');
- assert.equal(await page.locator('#list .entry-station').count(),1);
- await page.locator('#list .entry-station').click();
+ await page.locator('#infrastructureAccordion > summary').click();
+ await page.locator('#infrastructureSearch').fill('Нагорная');
+ assert.equal(await page.locator('#infrastructureList .entry-station').count(),1);
+ await page.locator('#infrastructureList .entry-station').click();
  assert.ok((await page.locator('#title').textContent()).includes('Нагорная'));
  await page.locator('#detailMore').click();assert.ok((await page.locator('#infoExtra a').first().getAttribute('href')).includes('baykonur-plan.png'));
- await page.locator('#search').fill('');await page.locator('#sitesAccordion > summary').click();
+ await page.locator('#infrastructureSearch').fill('');await page.locator('#infrastructureAccordion > summary').click();
  await page.screenshot({path:'qa-station-card.png'});
  console.log('STATION CARDS PASS: common rendering, selection, collapse, zoom, layers and search');
 

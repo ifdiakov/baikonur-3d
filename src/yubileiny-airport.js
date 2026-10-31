@@ -3,11 +3,29 @@ import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-fac
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 import {YUBILEINY_SOURCE_LAYOUT,YUBILEINY_SOURCE_ACCESS} from './yubileiny-layout.js?v=20261031-rocket-exhibits-v1';
 
-export const YUBILEINY_VERSION='yubileiny-source-layout-v1';
+export const YUBILEINY_VERSION='yubileiny-source-landing-complex-v2';
 export const YUBILEINY_PHYSICAL=Object.freeze({length:4500,width:84,taxiwayWidth:24,connectorWidth:21,
  endSafetyLength:250,physicalToLocal:.5,gradeOffset:.875,runwayY:1.75,
  pua:[625,-1115],puaApronWidth:142,puaApronLength:355});
 const P=YUBILEINY_PHYSICAL;
+const PK_SOURCE='https://www.buran.ru/htm/pk.htm';
+const VYMPEL_SOURCE='https://www.buran.ru/htm/vympel05.htm';
+export const YUBILEINY_LANDING_MARKS=Object.freeze({distanceFromThresholdM:1000,diamondWidthM:14,diamondLengthM:44,
+ paintY:1.825,source:PK_SOURCE,shapeDimensions:'interpretive; centre distance is documented'});
+// Equipment composition is documented; only the on-axis RM-K setback has an
+// explicit distance in the cited plan. The other small housings are schematic
+// placements on the facilities side, never substituted for surveyed OSM data.
+export const YUBILEINY_VYMPEL_FIXTURES=Object.freeze([
+ {id:'rm-k-06',kind:'azimuth-beacon',label:'РМ-К · направление06',x:0,z:3250,placementAccuracy:'documented-axis-setback'},
+ {id:'rm-k-24',kind:'azimuth-beacon',label:'РМ-К · направление24',x:0,z:-3250,placementAccuracy:'documented-axis-setback'},
+ {id:'rm-g-06',kind:'glide-beacon',label:'РМ-Г · направление06',x:120,z:-1900,placementAccuracy:'interpretive'},
+ {id:'rm-g-24',kind:'glide-beacon',label:'РМ-Г · направление24',x:120,z:1900,placementAccuracy:'interpretive'},
+ {id:'rd-p-06',kind:'landing-rangefinder',label:'РД-П · направление06',x:72,z:2400,placementAccuracy:'interpretive'},
+ {id:'rd-p-24',kind:'landing-rangefinder',label:'РД-П · направление24',x:72,z:-2400,placementAccuracy:'interpretive'},
+ {id:'volkhov',kind:'landing-radar',label:'ПРЛ «Волхов»',x:695,z:-240,placementAccuracy:'interpretive'},
+ {id:'ilmen',kind:'surveillance-radar',label:'ОРЛ «Ильмень»',x:855,z:-215,placementAccuracy:'interpretive'},
+ {id:'adrm',kind:'azimuth-range-beacon',label:'Азимутально-дальномерный радиомаяк',x:900,z:220,placementAccuracy:'interpretive'}
+].map(Object.freeze));
 const local=([x,z])=>[x*P.physicalToLocal,z*P.physicalToLocal];
 const source=id=>YUBILEINY_SOURCE_LAYOUT.features.find(f=>f.id===id);
 const rect=(x0,z0,x1,z1)=>[[x0,z0],[x1,z0],[x1,z1],[x0,z1]];
@@ -18,6 +36,15 @@ export function yubileinyDisplaySpec(){
   physicalToLocal:.5,longitudinalScale:.5,heading:1.948,runwayY:1.75,threshold:1117.5,touchdown:935,papiSetback:150,
   approachLength:480,approachStations:8,apron:local(P.pua),taxiX:226.8,apronWidth:71,apronLength:177.5,apronLightRadius:5,
   physicalDimensions:{runway:[4500,84],mainTaxiwayWidth:24,connectingTaxiwayWidth:21,endSafetyLength:250},
+  historicalLandingComplex:{version:'buran-landing-complex-v1',source:PK_SOURCE,
+   aimingDiamonds:{distanceFromThresholdM:YUBILEINY_LANDING_MARKS.distanceFromThresholdM,
+    centresMetres:[-1,1].map(side=>[0,side*(P.length/2-YUBILEINY_LANDING_MARKS.distanceFromThresholdM)]),
+    meaning:'Calculated orbiter touchdown marks; not measured touchdown positions'},
+   okdp:{floors:6,source:'https://www.buran.ru/htm/str.htm',architecture:'Interpretive detail within the existing control-tower envelope'},
+   vympel:{source:VYMPEL_SOURCE,azimuthBeacons:2,glideBeacons:2,landingRangefinders:2,
+    radarTypes:['Волхов','Ильмень'],fixtures:YUBILEINY_VYMPEL_FIXTURES.map(f=>({...f,positionMetres:[f.x,0,f.z]})),
+    omittedUnfinishedEquipment:['ОЛП','СРЛС','МРЛ-5']},
+   sourceLayoutUnchanged:true,aircraftScaleUnchanged:true},
   lightPaths,apronPoleHeight:2.8,
   apronPolePositions:[[548,-1300],[710,-1300],[548,-930],[710,-930],[455,680],[715,680],[455,1150],[715,1150]].map(local),
   runwayClearancePolygon:rect(-72,-2500,72,2500).map(local),
@@ -37,6 +64,40 @@ function paintDesignator(root,number,z,side){
  const mesh=new THREE.Mesh(new THREE.PlaneGeometry(13,30),new THREE.MeshBasicMaterial({map:texture,transparent:true,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));
  mesh.name='Юбилейный · обозначение '+number;mesh.userData.museumComponent='runway-designator';
  mesh.rotation.x=-Math.PI/2;mesh.rotation.z=side>0?Math.PI:0;mesh.position.set(0,1.83,z);root.add(mesh);
+}
+
+function buildVympelEquipment(k){
+ for(const f of YUBILEINY_VYMPEL_FIXTURES){
+  const {x,z,kind}=f;
+  if(kind==='azimuth-beacon'){
+   k.box(20,.3,8,x,.15,z,'concrete','vympel-azimuth-base');
+   k.box(5,2.7,3,x+12,1.5,z,'wall','vympel-azimuth-module');
+   for(let a=-8;a<=8;a+=2){
+    k.rod([x+a,.3,z],[x+a,3.1,z],.12,'steel','vympel-azimuth-antenna');
+    k.rod([x+a-.7,2.7,z],[x+a+.7,2.7,z],.09,'light','vympel-azimuth-dipole');
+   }
+  }else if(kind==='glide-beacon'){
+   k.box(8,.3,7,x,.15,z,'concrete','vympel-glide-base');
+   k.box(5,3.4,3,x,2,z,'wall','vympel-glide-module');
+   k.box(3.6,4,.35,x,5.4,z-1.9,'light','vympel-glide-antenna');
+   for(let y=4;y<=6.8;y+=.55)k.box(3.1,.08,.12,x,y,z-2.1,'steel','vympel-glide-array');
+  }else if(kind==='landing-rangefinder'){
+   k.box(4,.25,4,x,.125,z,'concrete','vympel-rangefinder-base');
+   k.box(2.4,2.5,2.4,x,1.5,z,'light','vympel-rangefinder-module');
+   k.cyl(.28,1.8,x,3.65,z,'white','vympel-rangefinder-antenna');
+  }else if(kind==='azimuth-range-beacon'){
+   k.cyl(3,.4,x,.2,z,'concrete','vympel-adrm-base');
+   k.cyl(1.8,3.2,x,2,z,'light','vympel-adrm-module');
+   k.cyl(2.4,.4,x,3.8,z,'dark','vympel-adrm-antenna');
+  }else{
+   k.box(10,.35,9,x,.175,z,'concrete','vympel-radar-base');
+   k.box(6,3.2,4,x,1.95,z,'wall','vympel-radar-cabin');
+   k.cyl(.55,4,x,5.4,z,'steel','vympel-radar-pedestal');
+   const width=kind==='landing-radar'?6:9,height=kind==='landing-radar'?3:4;
+   k.box(width,height,.28,x,8.7,z,'dark','vympel-'+f.id+'-antenna');
+   for(let y=7.4;y<10;y+=.5)k.box(width-.4,.08,.12,x,y,z-.2,'steel','vympel-radar-grid');
+  }
+ }
 }
 
 export function buildYubileinyAirport(root,buildRamp){
@@ -60,8 +121,11 @@ export function buildYubileinyAirport(root,buildRamp){
     k.box(1.8,.045,22,x+(n-(pairs-1)/2)*3.3,1.80,side*(H-distance),'white','touchdown-zone');
   }
   paintDesignator(physical,side>0?'24':'06',side*(H-76),side);
+  const z=side*(H-YUBILEINY_LANDING_MARKS.distanceFromThresholdM),w=YUBILEINY_LANDING_MARKS.diamondWidthM/2,d=YUBILEINY_LANDING_MARKS.diamondLengthM/2;
+  k.poly([[0,z-d],[w,z],[0,z+d],[-w,z]],YUBILEINY_LANDING_MARKS.paintY,'white','buran-aiming-diamond');
  }
- for(let z=-H+115;z<H-100;z+=60)k.box(.9,.04,30,0,1.80,z,'white','runway-centre-mark');
+ for(let z=-H+115;z<H-100;z+=60)if(Math.abs(Math.abs(z)-(H-YUBILEINY_LANDING_MARKS.distanceFromThresholdM))>YUBILEINY_LANDING_MARKS.diamondLengthM/2+16)
+  k.box(.9,.04,30,0,1.80,z,'white','runway-centre-mark');
  // Slab joints and rubber traces are shallow batched details, not separate
  // texture requests or raised strips that could intersect the aeroplane.
  for(let x=-35;x<=35;x+=14)k.box(.055,.012,L-4,x,1.757,0,'asphalt','concrete-longitudinal-joint');
@@ -96,7 +160,17 @@ export function buildYubileinyAirport(root,buildRamp){
  k.box(13,24,14,755,12,39,'wall','yubileiny-control-tower');
  k.box(17,4,18,755,26,39,'glass','yubileiny-control-cab');
  k.box(18,.6,19,755,28.3,39,'light','yubileiny-control-cap');
+ // Six occupied storeys are described in the contemporary account. Retain the
+ // already placed tower and add facade detail instead of moving source roads.
+ for(let floor=0;floor<6;floor++){
+  const y=3.5+floor*3.6;
+  for(const side of [-1,1]){
+   for(let n=0;n<4;n++)k.box(2.2,1.55,.13,750.5+n*3,y,39+side*7.08,'glass','okdp-storey-window');
+   for(const zz of [35.5,42.5])k.box(.13,1.55,3.2,755+side*6.58,y,zz,'glass','okdp-storey-window');
+  }
+ }
  registerFacilityBeacon(physical,{id:'yubileiny-control-tower',position:[755,28.6,39],kind:'control-tower'});
+ buildVympelEquipment(k);
  for(const side of [-1,1]){
   for(let i=0;i<4;i++){
    k.box(1.4,1.1,.9,-W/2-18-i*3,2.2,side*(H-300),'white','papi-housing');
