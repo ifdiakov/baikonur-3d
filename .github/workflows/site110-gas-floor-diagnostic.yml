@@ -1,0 +1,35 @@
+name: Museum 6 — Site 110 floor owner diagnostic
+on:
+  push:
+    branches: ['qa/museum6-site110-floor-20261101']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    name: Inspect the Site 110 floor samples
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the existing museum verification dependencies
+        run: npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
+      - name: Install Chromium for the isolated CI diagnostic
+        run: npx playwright install --with-deps chromium
+      - name: Serve the isolated checkout
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/tmp/site110-gas-floor-http.log 2>&1 &
+          curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Capture the actual floor and each terrain owner
+        run: node tests/site110-gas-floor-browser.mjs
+      - name: Preserve the images, shaders and sample data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: site110-gas-floor-owner-diagnostic
+          path: qa-site110-gas-floor/
+          if-no-files-found: error
+          retention-days: 7
