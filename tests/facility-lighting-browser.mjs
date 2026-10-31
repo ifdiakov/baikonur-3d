@@ -69,7 +69,7 @@ function checkMode(state,evening){
 function checkRecords(records,state){
  const f=state.evening.facilityLighting,boards=new Map(records.boards.map(b=>[b.id,b])),ids=new Set(),bySite=new Map();
  assert.equal(records.floodlights.length,f.fixtures);assert.equal(records.beacons.length,f.beacons);assert.equal(boards.size,f.boards);
- assert.equal(f.fixtures,907);assert.equal(f.boards,26);assert.equal(f.beacons,77,'Only the audited existing high structures receive beacons');
+ assert.equal(f.fixtures,987);assert.equal(f.boards,30);assert.equal(f.beacons,81,'Only the audited existing high structures receive beacons');
  assert.equal(state.ukss.status,'ready','The real imported UKSS is required for this release check');
  assert.equal(f.importedUkss.source,'preserved-imported-geometry');assert.equal(f.importedUkss.lensComponents,735);assert.equal(f.importedUkss.boards,7);
  for(const r of [...records.floodlights,...records.beacons]){
@@ -94,7 +94,7 @@ function checkRecords(records,state){
   assert(finitePoint(board.target)&&board.target[1]<board.position[1]);assert(board.radiusX>0&&board.radiusY>0);
  }
  for(const site of f.sites){const count=bySite.get(site.siteId);assert(count);assert.equal(count.fixtures,site.fixtures);assert.equal(count.beacons,site.beacons);}
- for(const [id,count] of [['pad-1',32],['pad-250',735],['pad-110',115],['pad-31',20],['pad-42',1],['pad-23',4]])assert.equal(bySite.get(id)?.fixtures,count);
+ for(const [id,count] of [['pad-1',32],['pad-250',735],['pad-110',115],['pad-31',20],['pad-45',80],['pad-42',1],['pad-23',4]])assert.equal(bySite.get(id)?.fixtures,count);
  for(const id of ['pad-1','pad-250','pad-110','pad-31','pad-81','pad-200','pad-45','pad-42','pad-112','airfield','pad-251'])assert(bySite.get(id)?.beacons>0,id+' has source tower beacons');
  assert.equal(bySite.get('pad-23').beacons,0,'Dish feeds remain free of speculative beacons');
  return {fixtures:f.fixtures,boards:f.boards,beacons:f.beacons,sites:f.sites,drawCalls:f.drawCalls};
