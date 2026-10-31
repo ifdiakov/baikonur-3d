@@ -36,7 +36,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-highway-lighting-20261031-v2
+  RELEASE_TAG: museum6-highway-lighting-20261031-v3
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -145,6 +145,15 @@ jobs:
       - name: Verify smooth highway and paired modern / single vintage lighting
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/highway-lighting-browser.mjs
+      - name: Upload the interchange views for immediate visual review
+        if: always() && matrix.suite == 'bridge-exhibits'
+        uses: actions/upload-artifact@v4
+        with:
+          name: museum6-interchange-first-look-${{ matrix.target }}-attempt-${{ github.run_attempt }}
+          path: |
+            qa-interchange/
+            qa-highway-lighting/
+          retention-days: 14
       - name: Verify the source rockets, TUA choices and encyclopedia
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/rocket-exhibits-browser.mjs
@@ -225,12 +234,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/highway-lighting-20261031-v2.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/highway-lighting-20261031-v3.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 6 — трасса и дорожное освещение',
+                name: 'Интерактивный музей 6 — единая трасса и рельеф развязки',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

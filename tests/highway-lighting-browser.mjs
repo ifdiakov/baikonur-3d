@@ -4,8 +4,11 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-highway-lighting';
-const revision='20261031-highway-lighting-v2';
-const factors={highway:1.5,cosmodrome:2};
+const revision='20261031-highway-lighting-v3';
+const requested={
+ highway:{brightness:1.5,density:1.5,poolScale:1.5,spacing:58/1.5},
+ cosmodrome:{brightness:2,density:4/3,poolScale:2,spacing:43.5}
+};
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],views:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -52,11 +55,12 @@ function checkLightingMode(state,night,recordCount,poweredCount){
  assert(field.fixtureDrawCalls>0&&field.drawCalls<=10,'The two fixture families remain instanced');
  if(night)assert(field.emissiveIntensity>0&&field.poweredLamps>0,'Powered lamp lenses glow at night');
  else assert.equal(field.emissiveIntensity,0,'Daytime lamp lenses do not emit light');
- for(const [style,factor] of Object.entries(factors)){
+ for(const [style,expected] of Object.entries(requested)){
   const actual=field.styles[style];assert(actual,'Renderer reports the '+style+' fixture family');
-  assert.equal(actual.brightness,factor);assert.equal(actual.density,factor);assert.equal(actual.poolScale,factor);
-  assert(Math.abs(actual.spacing-58/factor)<1e-9,'The '+style+' row uses the requested closer spacing');
-  assert(Math.abs(actual.emissiveIntensity-(night?1.65*factor:0))<1e-9,'The '+style+' lenses use their own requested brightness');
+  assert.equal(actual.brightness,expected.brightness);assert.equal(actual.poolScale,expected.poolScale);
+  assert(Math.abs(actual.density-expected.density)<1e-9);
+  assert(Math.abs(actual.spacing-expected.spacing)<1e-9,'The '+style+' row uses the requested spacing');
+  assert(Math.abs(actual.emissiveIntensity-(night?1.65*expected.brightness:0))<1e-9,'The '+style+' lenses use their own requested brightness');
  }
  assert.equal(state.bridge.evening,night);
  assert.equal(state.bridge.visibleLampGlows,night?state.bridge.lamps:0);
@@ -76,8 +80,8 @@ function checkAllStations(records,stats){
   assert(['highway','cosmodrome'].includes(r.style));
   assert(r.stationId&&r.roadId);assert([r.height,...r.position,...r.center].every(Number.isFinite));
   assert.equal(r.color,r.style==='highway'?0xd8e8ff:0xffbf7b,'The light tint follows the road family');
-  assert.equal(r.brightness,factors[r.style],'Every emitted light record carries its own brightness multiplier');
-  assert(Math.abs(r.poolRadiusY-8.5*factors[r.style])<1e-9,'Each ground-light pool has the requested enlarged length');
+  assert.equal(r.brightness,requested[r.style].brightness,'Every emitted light record carries its own brightness multiplier');
+  assert(Math.abs(r.poolRadiusY-8.5*requested[r.style].poolScale)<1e-9,'Each ground-light pool has the requested enlarged length');
   assert(Number.isFinite(r.poolRadiusX)&&r.poolRadiusX>0,'The enlarged light pool retains a usable width');
   assert(r.height>0);assert([-1,1].includes(r.side));
   const key=r.position.map(n=>n.toFixed(5)).join(':');
@@ -100,12 +104,13 @@ function checkAllStations(records,stats){
  }
  assert(highwayStations>1&&cosmodromeStations>1,'Both complete road families are exercised');
  const layout=stats.roadLighting;
- assert.equal(layout.version,'road-lighting-modern-vintage-v2');
+ assert.equal(layout.version,'road-lighting-modern-vintage-v3');
  assert.equal(layout.highway.fixture,'modern-led');assert.equal(layout.cosmodrome.fixture,'vintage-industrial');
  assert.equal(layout.highway.colorTemperature,4800);assert.equal(layout.cosmodrome.colorTemperature,2700);
- for(const [style,factor] of Object.entries(factors)){
-  const actual=layout[style];assert.equal(actual.brightness,factor);assert.equal(actual.density,factor);assert.equal(actual.poolScale,factor);
-  assert(Math.abs(actual.spacing-58/factor)<1e-9,'Requested density is applied along the '+style+' road family');
+ for(const [style,expected] of Object.entries(requested)){
+  const actual=layout[style];assert.equal(actual.brightness,expected.brightness);assert.equal(actual.poolScale,expected.poolScale);
+  assert(Math.abs(actual.density-expected.density)<1e-9);
+  assert(Math.abs(actual.spacing-expected.spacing)<1e-9,'Requested density is applied along the '+style+' road family');
  }
  assert.equal(layout.highway.stations,highwayStations);assert.equal(layout.highway.lamps,highwayStations*2);
  assert.equal(layout.cosmodrome.stations,cosmodromeStations);assert.equal(layout.cosmodrome.lamps,cosmodromeStations);
@@ -136,10 +141,38 @@ try{
  assert.equal(initial.bridge.lighting.colorTemperature,4800);
  assert.equal(initial.bridge.lighting.pairs*2,initial.bridge.lamps,'Bridge lights continue the opposite-pair layout');
  assert.equal(initial.bridge.lamps,24,'The bridge retains opposite pairs at 1.5 times the previous lamp density');
+ assert.equal(initial.bridge.lighting.sharedFixtureGeometry,true,'The bridge uses the same modern fixture geometry as the highway');
+ assert.equal(initial.bridge.lighting.sharedFixtureMaterials,true,'The bridge uses the same fixture finish as the highway');
+ assert(Math.abs(initial.bridge.lighting.lensEmission-1.65*requested.highway.brightness)<1e-9,'Bridge and highway lenses have equal brightness');
+ const markings=initial.highway.markings;
+ assert.equal(markings.version,'bridge-continuous-markings-v1');
+ assert.equal(markings.yellowColor,0xe2b746);assert.equal(markings.whiteColor,0xf0eee3);
+ assert.equal(initial.bridge.markings.sharedWithHighway,true);
+ for(const key of ['version','yellowColor','whiteColor','centerWidth','centerOffset','edgeWidth','edgeInset','lift'])
+  assert.equal(markings[key],initial.bridge.markings[key],'Highway and bridge share marking '+key);
+ assert.equal(markings.bridgeBoundary,'exact-profile-seams');
+ assert(markings.sourceWayIds.length>0&&new Set(markings.sourceWayIds).size===markings.sourceWayIds.length);
+ assert(markings.mainRuns>0&&markings.rampRuns>0&&markings.yellowTriangles>0&&markings.whiteTriangles>0,'Continuous center and edge markings are rendered across the highway network');
+ const embankments=initial.bridge.embankments;
+ assert.equal(embankments.version,'road-constrained-embankments-v1');
+ assert.equal(embankments.count,2);assert.equal(embankments.texture,'shared-world-steppe');
+ assert.equal(embankments.centralOpenLength,24,'The central underpass remains open');
+ assert(embankments.roadClearance>=.18&&embankments.railClearance>=.35&&embankments.triangles>0);
+ assert.deepEqual(embankments.parts.map(p=>p.side).sort((a,b)=>a-b),[-1,1]);
+ for(const part of embankments.parts)
+  assert(part.stationRange[0]<part.abutment&&part.stationRange[1]>part.abutment&&part.count>0,'An embankment connects each abutment to its approach');
 
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.setLabelsVisible(false);q.evening.setEvening(false);});
  await page.locator('#close').click();
  let state=await shot('interchange-day');checkLightingMode(state,false,layout.lamps,layout.poweredLamps);
+ // The side view exposes terrain-to-deck transitions; the top view shows
+ // marking continuity and whether joining road surfaces overlap or leave gaps.
+ for(const view of ['side','top']){
+  assert.equal(await page.evaluate(view=>window.__BAIKONUR_QA.focusInterchange(view),view),view);
+  await page.locator('#close').click();await shot('interchange-'+view+'-day');
+ }
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.focusInterchange('all')),'all');
+ await page.locator('#close').click();
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
  state=await shot('interchange-evening');checkLightingMode(state,true,layout.lamps,layout.poweredLamps);
 

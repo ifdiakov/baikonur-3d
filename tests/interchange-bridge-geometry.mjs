@@ -30,7 +30,13 @@ const roots=transport.bridgeObjects();assert.equal(roots.length,1);
 const root=roots[0],report=transport.stats().interchange.bridges.find(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY);
 assert.equal(report.version,'reference-viaduct-v1');assert.equal(report.sourceTopologyPreserved,true);
 assert.equal(report.reference.author,'3DtechVN');assert.equal(report.reference.license,'CC BY 4.0');
-assert.equal(report.lamps,24);assert.ok(report.triangles<20000);assert.ok(report.drawCalls<=12,'Separate graphite lamp hardware adds just one batched material');
+assert.equal(report.lamps,24);
+// The shared curved fixtures and two smooth earth fields add geometry, while
+// retaining the same material batches and draw-call budget.
+assert.ok(report.triangles<32000);assert.ok(report.drawCalls<=12,'Shared lamps and the two embankments remain batched');
+assert.equal(report.lighting.sharedFixtureGeometry,true);assert.equal(report.lighting.sharedFixtureMaterials,true);
+assert.equal(report.markings.sharedWithHighway,true);
+assert.equal(report.embankments.count,2);assert.equal(report.embankments.centralOpenLength,24);
 assert.equal(layers.roads.getObjectByName('Мост OSM '+INTERCHANGE_BRIDGE_WAY),undefined,'The old slab and intrusive supports are replaced');
 assert.equal(transport.stats().interchange.bridges.length,3,'Other source bridges remain present');
 assert.equal(transport.stats().vehicleRoutes.length,4);
@@ -65,6 +71,34 @@ for(const at of plan.samples)for(const side of [-.91,0,.91]){
   maxDeckHeightError=Math.max(maxDeckHeightError,Math.abs(hit.point.y-world.y-plan.asphaltLift));surfaceProbes++;
 }
 assert.ok(maxDeckHeightError<2e-5);
+
+// Probe the actual tessellated earth under every adjacent road and rail lane,
+// not just the two central corridors already protected by the old bridge.
+// This catches a visually plausible mound that buries a ramp or service road.
+const earth=root.getObjectByName('Виадук · earth');assert.ok(earth?.userData.bridgeApproachTerrain);
+const ep=earth.geometry.attributes.position;let earthVertices=0;
+for(let i=0;i<ep.count;i++){
+  const x=ep.getX(i),y=ep.getY(i),z=ep.getZ(i);
+  assert.ok(Math.abs(z)>=12-1e-6,'Earth cannot close the central underpass');
+  assert.ok(y+plan.origin.y>=-2.755-1e-5,'Embankment toes join the terrain datum');
+  if(Math.abs(z)>=82-1e-6||Math.abs(z)<=12+1e-6||Math.abs(x)>=13-1e-6)
+    assert.ok(Math.abs(y+plan.origin.y+2.755)<1e-5,'All outer edges finish flush with the plain');
+  earthVertices++;
+}
+let embankmentProbes=0,minEarthClearance=Infinity;
+for(const e of plan.approachTerrain.corridors){
+  const delta=e.b.clone().sub(e.a),length=Math.hypot(delta.x,delta.z),n=Math.max(1,Math.ceil(length/.55));
+  const normal=new THREE.Vector3(delta.z,0,-delta.x).normalize();
+  for(let i=0;i<=n;i++)for(const side of [-1,0,1]){
+    const p=e.a.clone().lerp(e.b,i/n).addScaledVector(normal,side*e.width/2);
+    if(Math.abs(p.z)<12.05||Math.abs(p.z)>81.95||Math.abs(p.x)>12.95)continue;
+    const world=fromLocal(p);down.ray.origin.copy(world).add(new THREE.Vector3(0,12,0));
+    const hit=down.intersectObject(earth,false)[0];assert.ok(hit,'A continuous earth field under '+e.wayId);
+    const gap=world.y-hit.point.y;minEarthClearance=Math.min(minEarthClearance,gap);embankmentProbes++;
+    assert.ok(gap>.10,'Earth intrudes into '+e.kind+' '+e.wayId+' at '+p.toArray()+': '+gap);
+  }
+}
+assert.ok(embankmentProbes>500,'Cover adjoining loops, ramps, service roads and rail branches');
 
 // The deck overlays only the original upper road. Replaced dashed center paint
 // must not shine through the new asphalt or collide with the double centerline.
@@ -114,10 +148,13 @@ transport.setBridgeEvening(true);assert.equal(transport.stats().interchange.brid
 assert.equal(root.getObjectByName('Виадук · фонари').visible,true);
 assert.equal(transport.stats().interchange.bridges[0].visibleLampGlows,24);
 assert.equal(transport.stats().interchange.bridges[0].lightSpill.enabled,true);assert.equal(spill.visible,true);
+assert.ok(Math.abs(root.getObjectByName('Виадук · lens').material.emissiveIntensity-2.475)<1e-10,'The bridge uses the same LED emission as the highway');
 transport.setBridgeEvening(false);assert.equal(root.getObjectByName('Виадук · фонари').visible,false);
 assert.equal(transport.stats().interchange.bridges[0].lightSpill.enabled,false);assert.equal(spill.visible,false);
+assert.equal(root.getObjectByName('Виадук · lens').material.emissiveIntensity,0);
 assert.equal(transport.isBridgePoleAllowed(plan.origin.x,plan.origin.z),false);
 assert.equal(transport.isBridgePoleAllowed(plan.origin.x+100,plan.origin.z+100),true);
 assert.doesNotThrow(()=>JSON.stringify(transport.stats()));
 console.log('INTERCHANGE_BRIDGE_GEOMETRY_PASS',JSON.stringify({version:report.version,triangles,drawCalls:report.drawCalls,lamps:report.lamps,
-  surfaceProbes,maxDeckHeightError,clearanceProbes,minClearance,protectedWays:[...protectedKinds],vehicleProbes,minWheelGap,maxWheelGap}));
+  surfaceProbes,maxDeckHeightError,clearanceProbes,minClearance,earthVertices,embankmentProbes,minEarthClearance,
+  protectedWays:[...protectedKinds],vehicleProbes,minWheelGap,maxWheelGap}));

@@ -1,12 +1,13 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js?v=20261031-highway-lighting-v2';
+import {createLightField} from './light-field.js?v=20261031-highway-lighting-v3';
 
-export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v2';
+export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v3';
+export const ROAD_LIGHT_LENS_EMISSION=1.65;
 export const ROAD_LIGHT_STYLES=Object.freeze({
  highway:Object.freeze({id:'highway',fixture:'modern-led',height:3.2,spacing:58/1.5,brightness:1.5,density:1.5,poolScale:1.5,color:0xd8e8ff,colorTemperature:4800,
   poleColor:0x344552,armReach:.72,headLength:.62,headWidth:.22,headThickness:.075}),
- cosmodrome:Object.freeze({id:'cosmodrome',fixture:'vintage-industrial',height:2.8,spacing:29,brightness:2,density:2,poolScale:2,color:0xffbf7b,colorTemperature:2700,
+ cosmodrome:Object.freeze({id:'cosmodrome',fixture:'vintage-industrial',height:2.8,spacing:43.5,brightness:2,density:2/1.5,poolScale:2,color:0xffbf7b,colorTemperature:2700,
   poleColor:0x8c887b,armReach:.61,headLength:.45,headWidth:.28,headThickness:.18})
 });
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -94,7 +95,9 @@ export function roadFixtureHead(styleId='highway'){
  return V(s.armReach,s.height+(styleId==='highway'?.055:-.045),0);
 }
 
-function fixtureGeometry(styleId){
+// Geometry is shared by instanced road lamps and the batched viaduct lamps.
+// Local origin is the foot, +Y is up and +X points from the mast to the road.
+export function createRoadFixtureGeometry(styleId='highway'){
  const s=ROAD_LIGHT_STYLES[styleId],pole=[],hardware=[],lens=[];
  const add=(target,g)=>{if(g.index){const nonIndexed=g.toNonIndexed();g.dispose();g=nonIndexed;}g.deleteAttribute('uv');target.push(g);};
  const box=(target,x,y,z,w,h,d)=>{const g=new THREE.BoxGeometry(w,h,d);g.translate(x,y,z);add(target,g);};
@@ -129,6 +132,21 @@ function fixtureGeometry(styleId){
  return {pole:merge(pole),hardware:merge(hardware),lens:merge(lens)};
 }
 
+export function createRoadFixtureMaterials(styleId='highway',{instancePower=false}={}){
+ const style=ROAD_LIGHT_STYLES[styleId],materials={
+  pole:new THREE.MeshStandardMaterial({color:style.poleColor,roughness:.94}),
+  hardware:new THREE.MeshStandardMaterial({color:styleId==='highway'?style.poleColor:0x50615d,roughness:styleId==='highway'?.48:.82,metalness:.48}),
+  lens:new THREE.MeshStandardMaterial({color:0xe8ece8,emissive:style.color,emissiveIntensity:0,roughness:.42})
+ };
+ // The bridge batches ordinary meshes; only the road instances have vColor
+ // and use its binary power mask to extinguish each lens independently.
+ if(instancePower){
+  materials.lens.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance *= vColor.rgb;');};
+  materials.lens.customProgramCacheKey=()=>ROAD_LIGHTING_VERSION+'-lens-power';
+ }
+ return materials;
+}
+
 /** Separate instanced fixture families keep a whole road network to a few
  * draws. Only halos/pools/emission turn off by day; the poles stay in place. */
 export function createRoadLightField(parent,records,{name='Фонари дорог',minPixels=2.8}={}){
@@ -142,13 +160,7 @@ export function createRoadLightField(parent,records,{name='Фонари доро
  for(const id of Object.keys(ROAD_LIGHT_STYLES)){
   const style=ROAD_LIGHT_STYLES[id],items=withHeads.map((r,index)=>({r,index})).filter(({r})=>(r.style||'highway')===id);
   if(!items.length)continue;
-  const geometry=fixtureGeometry(id),mats={
-   pole:new THREE.MeshStandardMaterial({color:style.poleColor,roughness:.94}),
-   hardware:new THREE.MeshStandardMaterial({color:id==='highway'?style.poleColor:0x50615d,roughness:id==='highway'?.48:.82,metalness:.48}),
-   lens:new THREE.MeshStandardMaterial({color:0xe8ece8,emissive:style.color,emissiveIntensity:0,roughness:.42})
-  };
-  mats.lens.onBeforeCompile=shader=>{shader.fragmentShader=shader.fragmentShader.replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n totalEmissiveRadiance *= vColor.rgb;');};
-  mats.lens.customProgramCacheKey=()=>ROAD_LIGHTING_VERSION+'-lens-power';
+  const geometry=createRoadFixtureGeometry(id),mats=createRoadFixtureMaterials(id,{instancePower:true});
   for(const [part,g] of Object.entries(geometry)){
    if(!g)continue;const mesh=new THREE.InstancedMesh(g,mats[part],items.length);
    mesh.name=(id==='highway'?'Трасса · LED':'Космодром · винтаж')+' · '+part;
@@ -172,7 +184,7 @@ export function createRoadLightField(parent,records,{name='Фонари доро
   });
  }
  function setEvening(value){evening=!!value;field.root.visible=true;field.setStrength(evening?1:0);
-  for(const {mesh,part} of fixtures)if(part==='lens')mesh.material.emissiveIntensity=evening?1.65*ROAD_LIGHT_STYLES[mesh.userData.roadFixture].brightness:0;
+  for(const {mesh,part} of fixtures)if(part==='lens')mesh.material.emissiveIntensity=evening?ROAD_LIGHT_LENS_EMISSION*ROAD_LIGHT_STYLES[mesh.userData.roadFixture].brightness:0;
  }
  setEvening(true);sync();
  return {...field,records:withHeads,setEvening,sync,stats:()=>({...field.stats(),version:ROAD_LIGHTING_VERSION,

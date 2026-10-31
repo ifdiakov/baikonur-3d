@@ -92,6 +92,48 @@ export function unionRoadSurfacePolygons(polygons){
  return {polygons:[...main.polygons,...merge.polygons],clipped:main.clipped+merge.clipped};
 }
 
+// The dark through carriageway owns its footprint at every grade-compatible
+// junction. Pale local-road and shoulder sheets must end at that footprint,
+// rather than protruding through the ramp or viaduct approach above it.
+export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[]){
+ const index=new PolygonIndex(),gradeTolerance=1.2;
+ const make=poly=>{
+  const r=record(poly,'highway-owner');if(!r)return null;
+  const [a,b,c]=r.poly,den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);
+  r.height=(x,z)=>{const u=((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/den,v=((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/den;return u*a.y+v*b.y+(1-u-v)*c.y;};
+  r.priority=0;r.gradeTolerance=gradeTolerance;return r;
+ };
+ if(ownershipPolygons.length){for(const poly of ownershipPolygons){const r=make(poly);if(r)index.add(r);}}
+ else{
+  const hp=highwayMesh.geometry.attributes.position,hi=highwayMesh.geometry.index;
+  for(let i=0;i<hi.count;i+=3){const poly=[0,1,2].map(k=>{const j=hi.getX(i+k);return{x:hp.getX(j),y:hp.getY(j),z:hp.getZ(j)};}),r=make(poly);if(r)index.add(r);}
+ }
+ const reports=[];
+ for(const mesh of meshes){
+  if(!mesh)continue;const p=mesh.geometry.attributes.position,ix=mesh.geometry.index,positions=[];let clipped=0,removed=0;
+  const append=(a,b,c)=>{for(const q of [a,b,c])positions.push(q.x,q.y,q.z);};
+  for(let i=0;i<ix.count;i+=3){
+   const original=[0,1,2].map(k=>{const j=ix.getX(i+k);return{x:p.getX(j),y:p.getY(j),z:p.getZ(j)};});
+   const box=bounds(original),near=index.near(box);
+   if(!near.length){append(...original);continue;}
+   const subject=make(original);if(!subject){append(...original);continue;}
+   let pieces=[subject.poly];
+   for(const host of near){if(!sameLevel(subject,host))continue;pieces=pieces.flatMap(poly=>subtractRoadPolygon(poly,host.poly));if(!pieces.length)break;}
+   if(!pieces.length){removed++;clipped++;continue;}
+   if(pieces.length!==1||pieces[0].length!==3)clipped++;
+   for(const poly of pieces)for(let k=1;k<poly.length-1;k++){
+    const triangle=[poly[0],poly[k],poly[k+1]].map(q=>({x:Math.fround(q.x),y:Math.fround(q.y),z:Math.fround(q.z)}));
+    if(cross(...triangle)>1e-6)append(triangle[0],triangle[2],triangle[1]);
+   }
+  }
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+  geometry.setIndex(Array.from({length:positions.length/3},(_,i)=>i));geometry.computeVertexNormals();geometry.computeBoundingSphere();
+  const inputTriangles=ix.count/3;mesh.geometry.dispose();mesh.geometry=geometry;
+  reports.push({mesh:mesh.name,inputTriangles,outputTriangles:positions.length/9,clipped,removed});
+ }
+ return {version:'highway-pavement-owner-v1',gradeTolerance,reports};
+}
+
 export function sampleRoadCurve(curve,{width=5.2,heightAt=null,step=ROAD_PROFILE.sampleStep,shoulder=3.1}={}){
  curve.arcLengthDivisions=Math.max(2048,Math.ceil(curve.getLength()*1.2));curve.updateArcLengths();
  const length=curve.getLength(),count=Math.max(8,Math.ceil(length/step));

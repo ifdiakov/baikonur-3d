@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js?v=20261028-site41-v1';
+import {createLightField} from './light-field.js?v=20261031-highway-lighting-v3';
 import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261031-rocket-exhibits-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -67,8 +67,18 @@ export function roadVehiclePose(route,elapsed,vehicle){
  const s=((vehicle.phase*route.length+vehicle.direction*vehicle.speed*elapsed)%route.length+route.length)%route.length;
  const at=route.sample(s,1.5),right=V(-at.tangent.z,0,at.tangent.x).normalize(),width=route.widthAt(s),halfCar=.9*(route.vehicleScale||1);
  const laneOffset=vehicle.direction*(route.source==='OpenStreetMap'?Math.min(width/4,Math.max(0,width/2-halfCar-.035)):width/4);
- const position=at.position.clone().addScaledVector(right,laneOffset);position.y+=.022;
- return {position,tangent:at.tangent.multiplyScalar(vehicle.direction),direction:vehicle.direction,speed:vehicle.speed,distance:s,laneOffset,opacity:fade(s,route.length),phase:vehicle.phase,routeId:route.id,routeLength:route.length};
+ const position=at.position.clone().addScaledVector(right,laneOffset);let tangent=at.tangent;
+ if(route.surfaceHeightAt){
+  position.y=route.surfaceHeightAt(position);
+  // The final joined pavement owns the height at each wheel lane. Sampling
+  // ahead and behind in that same lane keeps vehicle pitch with the surface
+  // when an oblique local-road centreline merges onto the graded highway.
+  const lanePoint=distance=>{const sample=route.sample(distance,.5),normal=V(-sample.tangent.z,0,sample.tangent.x).normalize(),w=route.widthAt(clamp(distance,0,route.length));
+   const offset=vehicle.direction*Math.min(w/4,Math.max(0,w/2-halfCar-.035)),p=sample.position.clone().addScaledVector(normal,offset);p.y=route.surfaceHeightAt(p);return p;};
+  tangent=lanePoint(s+.75).sub(lanePoint(s-.75)).normalize();
+ }
+ position.y+=.022;
+ return {position,tangent:tangent.multiplyScalar(vehicle.direction),direction:vehicle.direction,speed:vehicle.speed,distance:s,laneOffset,opacity:fade(s,route.length),phase:vehicle.phase,routeId:route.id,routeLength:route.length};
 }
 
 const material=(color,options={})=>new THREE.MeshStandardMaterial({color,roughness:.54,metalness:.32,...options});

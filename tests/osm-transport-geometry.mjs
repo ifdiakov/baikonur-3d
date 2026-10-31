@@ -16,7 +16,7 @@ const layers={roads:new THREE.Group(),rails:new THREE.Group()};
 const transport=buildOsmTransportNetwork({data,legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false)});
 const stats=transport.stats();
 assert.equal(stats.source,'OpenStreetMap');assert.equal(stats.roadFeatureCount,3185);assert.equal(stats.railFeatureCount,543);assert(stats.roadRoutes>2000);assert(stats.railRoutes>400);
-assert(stats.junctionCount>100);assert(stats.mergedMeshCount<=10);assert(stats.stationCount>=20);assert.equal(stats.abandonedRailWays,30);
+assert(stats.junctionCount>100);assert(stats.mergedMeshCount<=11,'Road paint adds only two color batches');assert(stats.stationCount>=20);assert.equal(stats.abandonedRailWays,30);
 assert(stats.markingSegments>100);assert(stats.railTies>1000);assert(stats.interchange.bridges.length>0);
 assert.equal(stats.roadStyle.asphaltColor,'#adb2b3');assert.equal(stats.roadStyle.widths.trunk,3.6);assert.equal(stats.roadStyle.widths.service,1.6);
 assert.equal(stats.cityRoadSimplification.sourceBoundary,'way/39209179');assert(stats.cityRoadSimplification.hiddenWays>100);
@@ -67,11 +67,12 @@ assert(meshCount<100,`Unexpected draw-call growth: ${meshCount}`);
 const saturn=geography.sites.find(s=>s.id==='pad-23'),saturnCenter=point(saturn.x,saturn.y),surfaceCells=new Map(),surfaceCell=16;
 let terrainSamples=0,minTerrainClearance=Infinity;
 layers.roads.traverse(m=>{
- if(!['OSM · единое дорожное полотно','OSM · асфальт трассы'].includes(m.name))return;
- assert.equal(m.material.color.getHexString(),m.name==='OSM · асфальт трассы'?'42494c':'adb2b3');
+ if(!['OSM · единое дорожное полотно','OSM · асфальт трассы','Виадук · asphalt'].includes(m.name))return;
+ assert.equal(m.material.color.getHexString(),m.name==='OSM · единое дорожное полотно'?'adb2b3':'42494c');
+ m.updateWorldMatrix(true,false);
  const p=m.geometry.attributes.position,ix=m.geometry.index;
- for(let i=0;i<ix.count;i+=3){
-  const triangle=[0,1,2].map(k=>new THREE.Vector3().fromBufferAttribute(p,ix.getX(i+k)));
+ for(let i=0;i<(ix?.count??p.count);i+=3){
+  const triangle=[0,1,2].map(k=>new THREE.Vector3().fromBufferAttribute(p,ix?ix.getX(i+k):i+k).applyMatrix4(m.matrixWorld));
   for(let x=Math.floor(Math.min(...triangle.map(v=>v.x))/surfaceCell);x<=Math.floor(Math.max(...triangle.map(v=>v.x))/surfaceCell);x++)for(let z=Math.floor(Math.min(...triangle.map(v=>v.z))/surfaceCell);z<=Math.floor(Math.max(...triangle.map(v=>v.z))/surfaceCell);z++){
    const key=x+':'+z;if(!surfaceCells.has(key))surfaceCells.set(key,[]);surfaceCells.get(key).push(triangle);
   }
@@ -86,7 +87,10 @@ function pavementHeights(x,z){
  const out=[];for(const [a,b,c] of surfaceCells.get(Math.floor(x/surfaceCell)+':'+Math.floor(z/surfaceCell))||[]){
   const den=(b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z);if(!den)continue;
   const u=((b.z-c.z)*(x-c.x)+(c.x-b.x)*(z-c.z))/den,v=((c.z-a.z)*(x-c.x)+(a.x-c.x)*(z-c.z))/den;
-  if(u>=-1e-5&&v>=-1e-5&&u+v<=1+1e-5)out.push(u*a.y+v*b.y+(1-u-v)*c.y);
+  // World-space Float32 precision, including source probes exactly on a
+  // shared short section. This stays below 0.0004 map units at road edges.
+  const epsilon=.0004*Math.max(a.distanceTo(b),b.distanceTo(c),a.distanceTo(c))/Math.abs(den);
+  if(u>=-epsilon&&v>=-epsilon&&u+v<=1+epsilon)out.push(u*a.y+v*b.y+(1-u-v)*c.y);
  }return out;
 }
 // A lifted road can clear an oversized hill and still violate the requested
@@ -167,7 +171,7 @@ for(const route of plan.routes){assert(route.length>500);assert(route.osmWayIds.
 const hotelSpec=ARCHIVE_MAP.find(s=>s.id==='pad-75'),hotelSite=geography.sites.find(s=>s.id==='pad-75'),hotelOrigin=point(hotelSite.x,hotelSite.y),up=new THREE.Vector3(0,1,0);
 for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route.length-2;d+=2){
  const pose=roadVehiclePose(route,0,{phase:d/route.length,direction,speed:12}),p=pose.position,heights=pavementHeights(p.x,p.z);
- assert(heights.some(y=>Math.abs(p.y-y)<.08),'A moving car leaves the rendered OSM pavement');
+ assert(heights.some(y=>Math.abs(p.y-y)<.08),'A moving car leaves the rendered OSM pavement: '+JSON.stringify({route:route.id,direction,distance:d,position:p.toArray(),heights}));
  const hotelLocal=p.clone().sub(hotelOrigin).applyAxisAngle(up,-hotelSpec.yaw).divideScalar(hotelSpec.scale);
  assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }

@@ -2,7 +2,10 @@ import * as THREE from 'three';
 
 export const HIGHWAY_SURFACE_VERSION='continuous-highway-v1';
 export const HIGHWAY_ASPHALT_COLOR=0x42494c;
+export const HIGHWAY_ASPHALT_LIFT=.006;
 export const HIGHWAY_SAMPLE_STEP=.65;
+export const HIGHWAY_MARKINGS=Object.freeze({version:'bridge-continuous-markings-v1',yellowColor:0xe2b746,whiteColor:0xf0eee3,
+ centerWidth:.055,centerOffset:.074,edgeWidth:.065,edgeInset:.22,lift:.017});
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const MAIN=new Set(['motorway','trunk']),HIGHWAY=new Set(['motorway','trunk','motorway_link','trunk_link']);
 
@@ -12,6 +15,33 @@ export function createHighwayAsphaltMaterial(){
  material.name='Трасса · асфальт виадука';
  material.userData.highwaySurfaceVersion=HIGHWAY_SURFACE_VERSION;
  return material;
+}
+export function createHighwayMarkingMaterial(color){
+ const material=new THREE.MeshStandardMaterial({color,roughness:.72,metalness:0,side:THREE.DoubleSide,
+  polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+ material.name='Трасса · разметка виадука';material.userData.highwayMarkings=HIGHWAY_MARKINGS.version;
+ return material;
+}
+
+// Clip at the exact architectural ownership planes, inserting boundary
+// vertices instead of dropping complete sampled segments next to the bridge.
+export function highwayRunsOutsideBridge(points,plan,wayId){
+ if(!plan||!plan.sourceWayIds.includes(String(wayId)))return [points];
+ const runs=[];let run=[];
+ const flush=()=>{if(run.length>1)runs.push(run);run=[];};
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i],az=plan.local(a).z,bz=plan.local(b).z,breaks=[0,1];
+  if(Math.abs(bz-az)>1e-10)for(const edge of [-plan.halfLength,plan.halfLength]){const t=(edge-az)/(bz-az);if(t>1e-9&&t<1-1e-9)breaks.push(t);}
+  breaks.sort((a,b)=>a-b);
+  for(let j=1;j<breaks.length;j++){
+   const lo=breaks[j-1],hi=breaks[j],middle=az+(bz-az)*(lo+hi)/2;
+   if(Math.abs(middle)<plan.halfLength-1e-9){flush();continue;}
+   const start=a.clone().lerp(b,lo),end=a.clone().lerp(b,hi);
+   if(!run.length||run.at(-1).distanceTo(start)>1e-8){flush();run.push(start);}
+   run.push(end);
+  }
+ }
+ flush();return runs;
 }
 
 const other=(edge,node)=>edge.a===node?edge.b:edge.a;
@@ -115,17 +145,25 @@ export function createHighwayGradeSampler(graph){
     }
   }
  }
- return (p,width=3.6)=>{
+ const nearest=p=>{
   let best=null,distance=Infinity;
   for(const segment of cells.get(Math.floor(p.x/cellSize)+':'+Math.floor(p.z/cellSize))||[]){
    const {a,b}=segment,dx=b.x-a.x,dz=b.z-a.z,t=THREE.MathUtils.clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(dx*dx+dz*dz||1),0,1);
    const y=a.y+(b.y-a.y)*t,d=Math.hypot(p.x-a.x-dx*t,p.z-a.z-dz*t);
-   // This is a lane merge, never a bridge-over-underpass projection.
-   if(d<distance&&Math.abs(p.y-y)<1){distance=d;best={y,width:segment.width};}
+   if(d<distance){distance=d;best={y,width:segment.width,distance:d};}
   }
+  return best;
+ };
+ const sample=(p,width=3.6)=>{
+  const best=nearest(p);
   if(!best)return p.y;
   const core=(best.width+width)/2+.2,outer=core+Math.max(2,width*1.6);
-  const weight=1-THREE.MathUtils.smoothstep(distance,core,outer);
+  // Both the distance and the vertical compatibility fade continuously.
+  // Rejecting candidates with a hard one-unit height cutoff made the
+  // nearest segment jump along the main road on the tight interchange loops.
+  const gradeWeight=1-THREE.MathUtils.smoothstep(Math.abs(p.y-best.y),.5,1.4);
+  const weight=(1-THREE.MathUtils.smoothstep(best.distance,core,outer))*gradeWeight;
   return THREE.MathUtils.lerp(p.y,best.y,weight);
  };
+ sample.nearest=nearest;return sample;
 }

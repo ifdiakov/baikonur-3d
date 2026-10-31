@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-interchange';
-const revision='20261031-highway-lighting-v2';
+const revision='20261031-highway-lighting-v3';
 const reference='https://sketchfab.com/3d-models/bridge-design-6c2d7e65a2e14600bde311a01e1baa27';
 const views=['bridge','all','side','top'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],views:[],mobile:[]};
@@ -83,7 +83,7 @@ try{
  assert.equal(initial.bridge.sourceWayId,'172422627');
  assert.equal(initial.bridge.sourceTopologyPreserved,true);
  assert(initial.bridge.length>initial.bridge.sourceSpanLength*5,'The visual viaduct includes its approaches');
- assert(initial.bridge.triangles>1000&&initial.bridge.triangles<=20000,'The bridge stays within its lightweight geometry budget');
+ assert(initial.bridge.triangles>1000&&initial.bridge.triangles<=32000,'The bridge, shared curved lamps and two smooth embankments stay within their batched geometry budget');
  assert(initial.bridge.drawCalls<=16);assert(initial.bridge.lamps>=12);
  assert.equal(initial.roadFeatures,3185);assert.equal(initial.railFeatures,543);
  assert.equal(initial.trainSource,'OpenStreetMap');assert.equal(initial.trainWayCount,7);

@@ -93,12 +93,14 @@ for(const route of roads.osmVehiclePlan.routes)for(const region of simplificatio
 // discs. Node-only tests missed the final Krayniy road crossing the enlarged
 // runway outside the source airport bounding box.
 const cellSize=16,cells=new Map(),triangles=[];
-const surfaceNames=new Set(['OSM · единое дорожное полотно','OSM · асфальт трассы','OSM · единые обочины','OSM · грунтовые проезды','OSM · разметка']);
+const asphaltNames=new Set(['OSM · единое дорожное полотно','OSM · асфальт трассы','Виадук · asphalt']);
+const surfaceNames=new Set([...asphaltNames,'OSM · единые обочины','OSM · грунтовые проезды','OSM · разметка']);
+layers.roads.updateWorldMatrix(true,true);
 layers.roads.traverse(mesh=>{
  if(!mesh.isMesh||!surfaceNames.has(mesh.name))return;
  const p=mesh.geometry.attributes.position,ix=mesh.geometry.index;
- for(let i=0;i<ix.count;i+=3){
-  const vertices=[0,1,2].map(j=>{const n=ix.getX(i+j);return [p.getX(n),p.getY(n),p.getZ(n)];});
+ for(let i=0;i<(ix?.count??p.count);i+=3){
+  const vertices=[0,1,2].map(j=>new THREE.Vector3().fromBufferAttribute(p,ix?ix.getX(i+j):i+j).applyMatrix4(mesh.matrixWorld).toArray());
   const tri={vertices,name:mesh.name};triangles.push(tri);
   const minX=Math.floor(Math.min(...vertices.map(v=>v[0]))/cellSize),maxX=Math.floor(Math.max(...vertices.map(v=>v[0]))/cellSize),
    minZ=Math.floor(Math.min(...vertices.map(v=>v[2]))/cellSize),maxZ=Math.floor(Math.max(...vertices.map(v=>v[2]))/cellSize);
@@ -110,7 +112,7 @@ layers.roads.traverse(mesh=>{
 function heights(x,z,{asphaltOnly=false}={}){
  const values=[];
  for(const tri of cells.get(Math.floor(x/cellSize)+':'+Math.floor(z/cellSize))||[]){
-  if(asphaltOnly&&!['OSM · единое дорожное полотно','OSM · асфальт трассы'].includes(tri.name))continue;
+  if(asphaltOnly&&!asphaltNames.has(tri.name))continue;
   const [a,b,c]=tri.vertices,den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);if(Math.abs(den)<1e-12)continue;
   const u=((b[2]-c[2])*(x-c[0])+(c[0]-b[0])*(z-c[2]))/den,v=((c[2]-a[2])*(x-c[0])+(a[0]-c[0])*(z-c[2]))/den;
   if(u>=-1e-6&&v>=-1e-6&&u+v<=1+1e-6)values.push(u*a[1]+v*b[1]+(1-u-v)*c[1]);

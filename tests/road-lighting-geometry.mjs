@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightingPaths,roadLightLayoutStats,ROAD_LIGHT_STYLES} from '../src/road-lighting.js';
+import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightingPaths,roadLightLayoutStats,createRoadFixtureGeometry,createRoadFixtureMaterials,ROAD_LIGHT_STYLES} from '../src/road-lighting.js';
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const highway={id:'highway',width:3.6,osmWayIds:['42','43'],points:[V(0,.72,0),V(100,1.2,0),V(180,3.2,60)]};
 const roads=[
@@ -18,14 +18,14 @@ const paths=roadLightingPaths(roads);
 assert.deepEqual(paths.map(p=>p.id),['highway','cosmodrome-road','osm-access-pad-1']);
 const records=buildRoadLightRecords(roads),layout=roadLightLayoutStats(records);
 assert.equal(layout.highway.lamps,10);assert.equal(layout.highway.stations,5);
-assert.equal(layout.cosmodrome.lamps,10);assert.equal(layout.cosmodrome.stations,10);
-assert.equal(layout.highway.spacing,58/1.5);assert.equal(layout.cosmodrome.spacing,29);
-for(const [id,factor]of [['highway',1.5],['cosmodrome',2]]){
- assert.equal(layout[id].brightness,factor);assert.equal(layout[id].density,factor);assert.equal(layout[id].poolScale,factor);
+assert.equal(layout.cosmodrome.lamps,7);assert.equal(layout.cosmodrome.stations,7);
+assert.equal(layout.highway.spacing,58/1.5);assert.equal(layout.cosmodrome.spacing,43.5);
+for(const [id,factor,density]of [['highway',1.5,1.5],['cosmodrome',2,2/1.5]]){
+ assert.equal(layout[id].brightness,factor);assert.equal(layout[id].density,density);assert.equal(layout[id].poolScale,factor);
 }
 assert.equal(ROAD_LIGHT_STYLES.highway.color,0xd8e8ff);assert.equal(ROAD_LIGHT_STYLES.cosmodrome.color,0xffbf7b);
 const singles=records.filter(r=>r.roadId==='cosmodrome-road');
-for(let i=1;i<singles.length;i++)assert.ok(Math.abs(singles[i].center[0]-singles[i-1].center[0]-29)<1e-9,'Single vintage lamps are twice as frequent');
+for(let i=1;i<singles.length;i++)assert.ok(Math.abs(singles[i].center[0]-singles[i-1].center[0]-43.5)<1e-9,'Single vintage lamps are 1.5 times farther apart than the preceding 29-unit layout');
 assert.deepEqual(layout.highway.incompletePairs,[]);assert.deepEqual(layout.cosmodrome.extraLamps,[]);
 const groups=new Map();for(const r of records){const g=groups.get(r.stationId)||[];g.push(r);groups.set(r.stationId,g);}
 for(const group of groups.values()){
@@ -53,7 +53,7 @@ for(const rule of ['isLightAllowed','isPoleAllowed']){
 const powered=filterRoadLightStations(records,{isLightPowered:excludesOneSide});
 assert.equal(powered.records.filter(r=>r.stationId==='highway:0'&&r.powered===false).length,2);
 const root=new THREE.Group(),field=createRoadLightField(root,powered.records);
-assert.equal(field.stats().physicalPoles,20);assert.equal(field.stats().fixtureDrawCalls,5);
+assert.equal(field.stats().physicalPoles,17);assert.equal(field.stats().fixtureDrawCalls,5);
 const meshes=field.root.children.filter(o=>o.isInstancedMesh),pointLights=[];root.traverse(o=>{if(o.isPointLight)pointLights.push(o);});
 assert.equal(pointLights.length,0,'Network illumination stays batched');
 assert.equal(meshes.filter(m=>m.userData.roadFixture==='highway').length,2);
@@ -62,6 +62,15 @@ const glow=field.root.children.find(o=>o.isPoints),pool=meshes.find(o=>!o.userDa
 assert.deepEqual([...glow.geometry.attributes.enabled.array].slice(0,2),[0,0]);
 pool.getMatrixAt(0,matrix);assert.ok(matrix.elements[13]<-50000,'Unpowered pools are hidden');
 const metal=meshes.find(o=>o.userData.roadFixture==='highway'&&o.userData.fixturePart==='hardware');
+const sharedFixture=createRoadFixtureGeometry('highway'),sharedMaterials=createRoadFixtureMaterials('highway');
+assert.equal(sharedFixture.pole,null,'Modern pole and swept arm share one hardware mesh');
+assert.deepEqual(sharedFixture.hardware.attributes.position.array,metal.geometry.attributes.position.array,'Bridge export and road instances use identical vertices');
+assert.equal(sharedMaterials.hardware.color.getHex(),metal.material.color.getHex());
+assert.equal(sharedMaterials.hardware.roughness,metal.material.roughness);
+assert.equal(sharedMaterials.hardware.metalness,metal.material.metalness);
+const bridgeShader={fragmentShader:'#include <emissivemap_fragment>'};sharedMaterials.lens.onBeforeCompile(bridgeShader);
+assert.ok(!bridgeShader.fragmentShader.includes('vColor'),'Ordinary batched bridge lenses need no instancing varying');
+Object.values(sharedFixture).forEach(g=>g?.dispose());Object.values(sharedMaterials).forEach(m=>m.dispose());
 metal.getMatrixAt(0,matrix);assert.ok(matrix.elements[13]>-50000,'Unpowered poles remain physical');
 field.setEvening(false);assert.equal(field.root.visible,true);assert.equal(field.stats().emissiveIntensity,0);
 assert.equal(glow.material.uniforms.strength.value,0);assert.equal(pool.material.uniforms.strength.value,0);
