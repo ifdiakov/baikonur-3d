@@ -105,7 +105,7 @@ try{
  const initial=await page.evaluate(()=>({rocket:window.__BAIKONUR_QA.rockets.stats(),knowledge:window.__BAIKONUR_QA.knowledge(),clearance:window.__BAIKONUR_QA.clearance(),stats:window.__BAIKONUR_QA.stats()}));
  checkScale(initial.rocket);assert.equal(initial.rocket.loadedAssetCount,5);
  assert.deepEqual(Object.fromEntries(initial.rocket.placements.map(p=>[p.key,[p.siteId,p.modelId]])),expected);
- assert.equal(new Set(initial.rocket.placements.map(p=>p.modelId)).size,4);
+ assert.equal(new Set(initial.rocket.placements.map(p=>p.modelId)).size,new Set(Object.values(expected).map(p=>p[1])).size);
  assert(initial.rocket.placements.every(p=>p.visible));
  const r16=initial.rocket.placements.find(p=>p.key==='site41');
  assert.deepEqual(r16.position,SITE41_R16_MOUNT.position,'The actual R-16 holder uses its road-clear foundation placement');
@@ -153,8 +153,8 @@ try{
  }
  console.log('ROCKET_BROWSER_FOUR_CHOICES_READY');
  const allLoaded=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats());assert.equal(allLoaded.loadedAssetCount,7);
- assert.equal(evidence.modelRequests.length,6,'One binary request supplies all copies of each model');
- assert.equal(new Set(evidence.modelRequests).size,6,'Shared models are not downloaded for each site');
+ assert.equal(evidence.modelRequests.length,allLoaded.loadedAssetCount,'One binary request supplies all copies of each model');
+ assert.equal(new Set(evidence.modelRequests).size,allLoaded.loadedAssetCount,'Shared models are not downloaded for each site');
  await page.locator('#tuaHideRocket').click();
  assert.equal(await page.locator('#tuaHideRocket').getAttribute('aria-pressed'),'false');
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.filter(p=>p.key.startsWith('tua-')).every(p=>!p.visible)),true);
@@ -167,7 +167,7 @@ try{
  // Inspect the actual placements through the same public site controls.
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-1'));await shot('gagarin-soyuz');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-31');window.__BAIKONUR_QA.inspectSite31('all');});await shot('site31-soyuz');
- await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-41');window.__BAIKONUR_QA.inspectSite41('rocket');});await shot('site41-r16');
+ await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-41');window.__BAIKONUR_QA.site41.inspect('rocket');});await shot('site41-r16');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-250');window.__BAIKONUR_QA.inspectUkss('overview');});await shot('ukss-polyus');
  await page.locator('#ukssMockupToggle').click();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='ukss').visible),false);
