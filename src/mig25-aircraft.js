@@ -1,13 +1,12 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {createMig25Surface} from './mig25-surface.js?v=20261101-mig25-single-v2';
 
-// Photo-built RU, board 32. Metres, +Z nose, +Y up. This is deliberately
-// independent of the historical PU-SOTN / LL22 in the Buran flight sequence.
-export const MIG25_RU_VERSION='20261101-mig25ru-v1';
+export const MIG25_VERSION='20261101-mig25-single-v2';
 const V=(...a)=>new THREE.Vector3(...a),clamp=x=>THREE.MathUtils.clamp(x,0,1);
 function batch(parent){
  const bins=new Map();
- return {add(g,m){const flat=g.index?g.toNonIndexed():g.clone();g.dispose();flat.deleteAttribute('color');if(!flat.attributes.normal)flat.computeVertexNormals();const uv=[],p=flat.attributes.position,n=flat.attributes.normal;for(let i=0;i<p.count;i++){const ax=Math.abs(n.getX(i)),ay=Math.abs(n.getY(i));uv.push((ax>ay?p.getZ(i):p.getX(i))*.25,(ay>ax?p.getZ(i):p.getY(i))*.25);}flat.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));if(!bins.has(m))bins.set(m,[]);bins.get(m).push(flat);},finish(label){for(const [m,gs]of bins){const g=mergeGeometries(gs);gs.forEach(x=>x.dispose());const mesh=new THREE.Mesh(g,m);mesh.name=label+' · '+m.name;parent.add(mesh);}}};
+ return {add(g,m){const flat=g.index?g.toNonIndexed():g.clone();g.dispose();flat.deleteAttribute('color');if(!flat.attributes.normal)flat.computeVertexNormals();const uv=[],p=flat.attributes.position,n=flat.attributes.normal;const keepUV=g.userData.parametricUV&&flat.attributes.uv;for(let i=0;i<p.count;i++){const ax=Math.abs(n.getX(i)),ay=Math.abs(n.getY(i));uv.push((ax>ay?p.getZ(i):p.getX(i))*.16,(ay>ax?p.getZ(i):p.getY(i))*.16);}if(!keepUV)flat.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));if(!bins.has(m))bins.set(m,[]);bins.get(m).push(flat);},finish(label){for(const [m,gs]of bins){const g=mergeGeometries(gs);gs.forEach(x=>x.dispose());const mesh=new THREE.Mesh(g,m);mesh.name=label+' · '+m.name;parent.add(mesh);}}};
 }
 function polygon(points){
  const g=new THREE.BufferGeometry(),p=[];
@@ -29,138 +28,167 @@ function cylinder(radius,depth,at,axis='z',segments=32){const g=new THREE.Cylind
 function loft(stations,segments=40){
  // [z, half-width, half-height, centre-y, exponent]; exponent < 1
  // rounds the corners of the almost rectangular centre fuselage.
- const p=[],ix=[];
- for(const [z,w,h,cy,power=1]of stations)for(let j=0;j<=segments;j++){const a=j/segments*Math.PI*2,c=Math.cos(a),s=Math.sin(a);p.push(w*Math.sign(c)*Math.abs(c)**power,cy+h*Math.sign(s)*Math.abs(s)**power,z);}
+ const p=[],ix=[],uv=[];
+ for(const [z,w,h,cy,power=1]of stations)for(let j=0;j<=segments;j++){const a=j/segments*Math.PI*2,c=Math.cos(a),s=Math.sin(a);p.push(w*Math.sign(c)*Math.abs(c)**power,cy+h*Math.sign(s)*Math.abs(s)**power,z);uv.push(z*.16,j/segments*.8);}
  for(let k=0;k<stations.length-1;k++)for(let j=0;j<segments;j++){const a=k*(segments+1)+j,b=a+segments+1;ix.push(a,a+1,b,a+1,b+1,b);}
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();return g;
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));g.userData.parametricUV=true;g.computeVertexNormals();return g;
 }
 function arcPath(cx,cy,z,rx,ry,segments=24){return Array.from({length:segments+1},(_,j)=>{const a=j/segments*Math.PI;return [cx+Math.cos(a)*rx,cy+Math.sin(a)*ry,z];});}
 function path(b,points,mat,r=.012){for(let i=1;i<points.length;i++)b.add(rod(points[i-1],points[i],r,4),mat);}
 function star(b,center,u,v,r,material,project=p=>p){const p=[center];const rim=[];for(let i=0;i<10;i++){const a=i*Math.PI/5,rr=r*(i%2?.39:1);rim.push(V(...center).addScaledVector(V(...u),Math.sin(a)*rr).addScaledVector(V(...v),Math.cos(a)*rr).toArray());}for(let i=0;i<10;i++)b.add(polygon([p[0],rim[i],rim[(i+1)%10]].map(project)),material);}
 
-export function createMig25RU(){
- const root=new THREE.Group();root.name='МиГ-25РУ · борт 32';
- const material=(name,color,roughness=.63,metalness=.25,extra={})=>{const m=new THREE.MeshStandardMaterial({color,roughness,metalness,...extra});m.name=name;return m;};
- const paint=material('светло-серая обшивка',0x9da5a7,.61,.33),panel=material('панели обшивки',0x959c9b,.67,.32),light=material('кромки и створки',0xb3bab9,.57,.34),seam=material('расшивка',0x747d7e,.75,.2),black=material('антибликовое покрытие',0x253035,.91,.06),dark=material('каналы и ниши',0x101719,.92,.1),steel=material('жаропрочная сталь',0x6d6962,.5,.73),burnt=material('лепестки сопел',0x494744,.67,.7),chrome=material('штоки и крепёж',0xb7c2c5,.26,.82),tire=material('резина',0x1c2326,.97,.02),green=material('зелёные диски',0x304c3c,.65,.32),red=material('красные опознавательные знаки',0xa72625,.61,.12,{side:THREE.DoubleSide}),white=material('белая окантовка',0xe0dfcf,.75,.05,{side:THREE.DoubleSide}),seal=material('уплотнения фонарей',0xa47c6f,.72,.06),glass=material('остекление кабин',0x3d6269,.17,.24,{transparent:true,opacity:.72,depthWrite:false,side:THREE.DoubleSide});
- // Deterministic fine grain and broad mottling; no photo downloads or canvas.
- const texels=new Uint8Array(256*256*4);let seed=25132;
- const hash=(x,y)=>{let n=Math.imul(x,374761393)+Math.imul(y,668265263);n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/4294967296;};
- const noise=(x,y,scale)=>{const px=x/scale,py=y/scale,ix=Math.floor(px),iy=Math.floor(py),u=px-ix,v=py-iy,s=u*u*(3-2*u),t=v*v*(3-2*v),n=256/scale;return THREE.MathUtils.lerp(THREE.MathUtils.lerp(hash(ix%n,iy%n),hash((ix+1)%n,iy%n),s),THREE.MathUtils.lerp(hash(ix%n,(iy+1)%n),hash((ix+1)%n,(iy+1)%n),s),t);};
- for(let y=0;y<256;y++)for(let x=0;x<256;x++){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const value=Math.round(237+9*noise(x,y,32)+5*noise(x,y,8)+(seed/4294967296-.5)*6),i=(y*256+x)*4;texels.set([value,value,value,255],i);}
- const grain=new THREE.DataTexture(texels,256,256);grain.colorSpace=THREE.SRGBColorSpace;grain.wrapS=grain.wrapT=THREE.RepeatWrapping;grain.magFilter=THREE.LinearFilter;grain.minFilter=THREE.LinearMipmapLinearFilter;grain.generateMipmaps=true;grain.needsUpdate=true;grain.name='Неровность окрашенного металла';
- for(const m of [paint,panel,light,steel,burnt])m.map=grain;
- for(const m of [dark,panel,steel])m.side=THREE.DoubleSide;
- const b=batch(root),canopies=[],gearGroups=[];
- const bodyStations=[[-9.45,1.48,.65,-.1,.65],[-9.2,1.86,.9,-.03,.65],[-6.3,1.91,1.04,.02,.55],[-3,.88,1.08,.04,.8],[.8,.86,1.08,.08,.9],[2.9,.87,.89,.11],[4.1,.88,.89,.14],[5.5,.81,.82,.02],[6.5,.72,.69,-.14],[7.8,.58,.54,-.26],[8.9,.39,.36,-.28],[9.8,.14,.16,-.25],[10.32,.018,.026,-.21]];
- b.add(loft(bodyStations,48),paint);
- // The nose pitot is separate from the pointed fuselage, as in the RU photos.
- b.add(rod([0,-.21,10.26],[0,-.21,11.6],.018,8),chrome);
- for(const s of [-1,1])b.add(plate([[s*.02,-.21,10.7],[s*.19,-.21,10.56],[s*.02,-.21,10.54]],.012),chrome);
- // Black upper nose deck. The loft surface is an elliptical cylindrical patch.
- const blackStations=[[10.12,.055,.07,-.22],[9.8,.14,.16,-.25],[8.9,.39,.36,-.28],[7.8,.58,.54,-.26],[6.5,.72,.69,-.14],[5.5,.81,.82,.02]];
- for(let i=1;i<blackStations.length;i++){const rows=[];for(const [z,w,h,cy]of [blackStations[i-1],blackStations[i]])rows.push(Array.from({length:13},(_,j)=>{const a=Math.PI*.19+j/12*Math.PI*.62;return [(w+.007)*Math.cos(a),cy+(h+.009)*Math.sin(a),z];}));for(let j=0;j<12;j++)b.add(polygon([rows[0][j],rows[1][j],rows[1][j+1],rows[0][j+1]]),black);}
- // Two independent low canopies, each with a forward windscreen and rear fairing.
- function cockpit({z,base,width,height,length}){
-  const stations=[[-length*.51,.04,.025],[ -length*.36,width*.79,height*.82],[-length*.08,width,height],[length*.26,width*.88,height*.88],[length*.49,width*.54,height*.40],[length*.59,.03,.015]];
-  const rings=stations.map(([offset,w,h])=>arcPath(0,base,z+offset,w,h,20));
-  const shell=new THREE.BufferGeometry(),shellIndices=[];shell.setAttribute('position',new THREE.Float32BufferAttribute(rings.flat(2),3));
-  for(let i=0;i<rings.length-1;i++)for(let j=0;j<20;j++){const a=i*21+j,d=a+21;shellIndices.push(a,a+1,d,a+1,d+1,d);}
-  shell.setIndex(shellIndices);shell.computeVertexNormals();b.add(shell,glass);
-  for(const i of [1,3,4]){path(b,rings[i],seal,.029);path(b,rings[i].map(p=>[p[0],p[1]+.012,p[2]]),light,.015);}
-  for(const side of [-1,1]){path(b,stations.map(([dz,w])=>[side*w,base+.006,z+dz]),seal,.027);path(b,[[side*width*.47,base+height*.79,z+length*.30],[side*width*.26,base+height*.40,z+length*.49]],light,.024);}
-  b.add(box(width*1.65,.08,length*.76,[0,base-.035,z]),dark);
-  b.add(box(.52,.38,.22,[0,base+.10,z-length*.24]),black);b.add(box(.37,.14,.2,[0,base+.34,z-length*.24]),dark);
-  b.add(box(.54,.12,.38,[0,base+.07,z-length*.10]),panel);b.add(box(width*1.55,.16,.25,[0,base+.08,z+length*.33]),black);
-  b.add(rod([0,base+.04,z],[0,base+.27,z+.06],.023),black);
-  for(const s of [-1,1])path(b,[[s*.16,base+.36,z-length*.23],[s*.19,base+.15,z-length*.12]],light,.024);
-  canopies.push({z,base,width,height,length});
+/** Single-seat MiG-25, reconstructed anew from the 17 replacement views.
+ * Metres, +Y up, +Z nose. The historical LL22 remains a separate aircraft. */
+export function createMig25(){
+ const root=new THREE.Group();root.name='МиГ-25 · борт 46';
+ const {map,detail}=createMig25Surface();
+ const material=(name,color,roughness=.65,metalness=.35,extra={})=>{const m=new THREE.MeshStandardMaterial({color,roughness,metalness,...extra});m.name=name;return m;};
+ const skin={map,bumpMap:detail,bumpScale:.008,roughnessMap:detail};
+ const paint=material('панели светлой обшивки',0xc4cecd,.9,.40,skin),panel=material('панели обслуживания',0xc4cccb,.9,.35,skin),light=material('кромки и створки',0xd0d5d1,.68,.4),seam=material('линии сопряжений',0x637274,.83,.15),black=material('противобликовая панель',0x232b2c,.92,.06),dark=material('каналы и ниши',0x11191c,.93,.12,{side:THREE.DoubleSide}),radome=material('серый носовой обтекатель',0x87908d,.80,.12),steel=material('нагретый металл',0x81796a,.69,.62,skin),burnt=material('наружные лепестки сопел',0x595044,.66,.65),ceramic=material('внутренняя поверхность сопел',0x3e452c,.88,.12,{side:THREE.DoubleSide}),chrome=material('крепёж и штоки',0xb3bec1,.31,.76),tire=material('резина',0x1b2021,.97,.02),green=material('зелёные диски',0x31503d,.7,.3),red=material('красные опознавательные знаки',0xab2927,.8,.08,{side:THREE.DoubleSide}),white=material('белая окантовка',0xf0eee6,.8,.02,{side:THREE.DoubleSide}),gold=material('эмблемы',0xd4ad2c,.7,.2,{side:THREE.DoubleSide}),glass=material('остекление одной кабины',0x2c3e42,.15,.28,{transparent:true,opacity:.68,depthWrite:false,side:THREE.DoubleSide});
+ const b=batch(root),gearGroups=[];
+ // New body stations: a single continuous nose with no training-cockpit step.
+ const nose=[[-4.7,.9,.89,.02,.78],[-1.5,.87,.89,.03,.88],[2.8,.83,.81,.02],[4.5,.77,.71,-.02],[5.8,.73,.65,-.06],[7.5,.66,.57,-.10]];
+ b.add(loft(nose,64),paint);
+ const cone=[[7.5,.662,.572,-.10],[8.1,.58,.51,-.10],[8.65,.48,.42,-.10],[9.2,.34,.30,-.10],[9.7,.19,.17,-.10],[10.14,.065,.059,-.10],[10.30,0,0,-.10]];
+ b.add(loft(cone,64),radome);b.add(rod([0,-.10,10.23],[0,-.10,11.35],.014,10),chrome);
+ // Split aft fuselage: the front of each nacelle stays hollow for the intakes.
+ b.add(loft([[-8.80,1.71,.78,-.02,.72],[-8.4,1.96,.91,.01,.58],[-5.4,1.98,.96,0,.49],[-3.8,1.87,.94,.01,.53]],56),paint);
+ // Thin upper anti-glare surface, ending at the radome seam.
+ const upper=[[4.8,.75,.69,-.025],[5.8,.73,.65,-.06],[7.5,.66,.57,-.1]];
+ for(let k=1;k<upper.length;k++)for(let j=0;j<20;j++){
+  const p=([z,w,h,cy],i)=>{const a=.24*Math.PI+i/20*.52*Math.PI;return [(w+.008)*Math.cos(a),cy+(h+.01)*Math.sin(a),z];};
+  b.add(polygon([p(upper[k-1],j),p(upper[k-1],j+1),p(upper[k],j+1),p(upper[k],j)]),black);
  }
- cockpit({z:7.27,base:.26,width:.53,height:.51,length:1.88});
- cockpit({z:4.75,base:.96,width:.58,height:.55,length:2.02});
- b.add(loft([[1.1,.33,.12,1.16],[2.2,.51,.27,1.14],[3.9,.60,.25,1.04],[4.1,.59,.12,1.01]],32),paint);
- // Dorsal service spine and removable access hatches.
- b.add(loft([[-10.03,0,0,.84],[-9.9,.08,.08,.84],[-8.3,.29,.17,1.01],[-3,.35,.18,1.13],[1.4,.37,.13,1.19]],24),panel);
- for(const z of [-8,-6.5,-4.7,-2.9,-1.1,.7]){const t=clamp((z+8.3)/5.3),u=clamp((z+3)/4.4);path(b,arcPath(0,z<-3?1.01+.12*t:1.13+.06*u,z,z<-3?.29+.06*t:.35+.02*u,z<-3?.17+.01*t:.18-.05*u,16),seam,.004);}
+ // Low single canopy: arched sliding hood plus the separate angular windscreen.
+ const canopy={z:4.95,base:.665,width:.44,height:.37,length:1.63};
+ const hood=[[-.88,.31,.15],[-.65,.44,.34],[.10,.44,.37],[.38,.39,.30]];
+ const rings=hood.map(([z,w,h])=>arcPath(0,canopy.base,canopy.z+z,w,h,24)),positions=rings.flat(2),indices=[];
+ for(let i=0;i<rings.length-1;i++)for(let j=0;j<24;j++){const a=i*25+j,c=a+25;indices.push(a,a+1,c,a+1,c+1,c);}
+ const shell=new THREE.BufferGeometry();shell.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));shell.setIndex(indices);shell.computeVertexNormals();b.add(shell,glass);
+ for(const i of [0,3])path(b,rings[i],light,.023);
+ const crest=[0,1.04,5.34],front=[0,.66,6.03];
+ for(const s of [-1,1]){
+  b.add(polygon([[s*.39,.665,5.33],crest,front,[s*.30,.626,5.98]]),glass);
+  path(b,[[s*.39,.665,5.33],crest,front,[s*.30,.626,5.98]],light,.018);
+  path(b,hood.map(([dz,w])=>[s*w,canopy.base-.006,canopy.z+dz]),light,.022);
+ }
+ b.add(box(.68,.055,1.24,[0,.65,4.8]),dark);b.add(box(.43,.28,.22,[0,.76,4.42]),black);b.add(box(.29,.10,.18,[0,.925,4.42]),black);
+ b.add(box(.52,.13,.25,[0,.74,5.25]),black);b.add(rod([0,.68,4.9],[0,.82,4.98],.02),black);
+ for(const s of [-1,1])path(b,[[s*.14,.94,4.43],[s*.17,.72,4.64]],panel,.02);
+ // Shoulder fairing behind the hood blends into the long, narrow service spine.
+ b.add(loft([[-8.95,0,0,.85],[-8.6,.15,.10,.9],[-5,.31,.15,.95],[0,.33,.17,.97],[2.3,.42,.22,.94],[3.6,.49,.24,.86],[4.09,.33,.20,.78]],40),paint);
+ // Skin markings are ribbons tessellated onto their actual carrier surface.
+ function ribbon(points,width,mat,project){
+  for(let i=1;i<points.length;i++){
+   const a=points[i-1],c=points[i],dx=c[0]-a[0],dy=c[1]-a[1],len=Math.hypot(dx,dy),ox=-dy/len*width/2,oy=dx/len*width/2,n=Math.max(1,Math.ceil(len/.05));
+   for(let k=0;k<n;k++){const x=a[0]+dx*k/n,y=a[1]+dy*k/n,xx=a[0]+dx*(k+1)/n,yy=a[1]+dy*(k+1)/n;b.add(polygon([[x+ox,y+oy],[x-ox,y-oy],[xx-ox,yy-oy],[xx+ox,yy+oy]].map(project)),mat);}
+  }
+ }
+ function noseSurface(z,y,side,lift=.014){let i=1;while(i<nose.length-1&&nose[i][0]<z)i++;const a=nose[i-1],c=nose[i],t=(z-a[0])/(c[0]-a[0]),w=THREE.MathUtils.lerp(a[1],c[1],t),h=THREE.MathUtils.lerp(a[2],c[2],t),cy=THREE.MathUtils.lerp(a[3],c[3],t);return [side*(w*Math.sqrt(Math.max(0,1-((y-cy)/h)**2))+lift),y,z];}
  for(const side of [-1,1]){
-  // Hollow rectangular intake, including a recessed splitter ramp and four
-  // inner walls. The opening is 1.6 m deep, not a black plate on a solid box.
-  const inner=.88,outer=2.02,top=1.18,bottom=-1.02;
-  const mouth=[[side*inner,-.82,3.22],[side*1.03,bottom,3.16],[side*1.85,bottom,3.16],[side*outer,-.82,3.22],[side*outer,top,3.83],[side*inner,top,3.83]];
-  const throat=mouth.map(([x,y,z])=>[x*.91,y*.68,1.45]);
-  for(let i=0;i<mouth.length;i++){const j=(i+1)%mouth.length;b.add(polygon([mouth[i],mouth[j],throat[j],throat[i]]),i===4?steel:dark);path(b,[mouth[i],mouth[j]],i===0?chrome:panel,.024);}
+  // Six-sided mouth with chamfered lower corners. The floor and internal ramp
+  // recede into the duct; no skin surface crosses the opening.
+  const mouth=[[side*.89,-.80,3.41],[side*1.04,-.99,3.37],[side*1.83,-.99,3.37],[side*2.02,-.79,3.43],[side*2.02,.94,4.05],[side*.89,.94,4.05]];
+  const throat=mouth.map(([x,y])=>[x*.94,y*.74,1.6]);
+  for(let i=0;i<mouth.length;i++){const j=(i+1)%mouth.length;b.add(polygon([mouth[i],mouth[j],throat[j],throat[i]]),dark);path(b,[mouth[i],mouth[j]],light,.015);}
   b.add(polygon(throat),dark);
-  // Outer duct skin, separate from the inner cavity.
-  b.add(plate([[side*outer,-.82,3.22],[side*outer,top,3.83],[side*1.93,1.12,-4.7],[side*1.9,-.83,-4.7]],.055,V(side,0,0)),paint);
-  b.add(plate([[side*inner,top,3.83],[side*outer,top,3.83],[side*1.93,1.12,-4.7],[side*.93,1.14,-4.7]],.045),light);
-  b.add(plate([[side*1.03,bottom,3.16],[side*1.85,bottom,3.16],[side*1.74,-.98,-4.7],[side*.94,-.98,-4.7]],.035),panel);
-  b.add(polygon([[side*1.85,bottom,3.16],[side*outer,-.82,3.22],[side*1.9,-.83,-4.7],[side*1.74,-.98,-4.7]]),panel);
-  b.add(plate([[side*.84,-.7,3.51],[side*.84,1.21,4.02],[side*.84,1.17,1.1],[side*.84,-.86,1.1]],.035,V(side,0,0)),panel);
-  // Intake movable upper ramp and its visible ribbing.
-  b.add(polygon([[side*.93,1.12,3.6],[side*1.96,1.12,3.6],[side*1.81,.32,1.67],[side*.91,.32,1.67]]),panel);
-  for(let k=0;k<7;k++){const t=k/7;path(b,[[side*.94,1.09-.72*t,3.52-1.76*t],[side*1.92,1.09-.72*t,3.52-1.76*t]],seam,.011);}
-  const ductX=z=>side*(2.02+(1.93-2.02)*(3.83-z)/8.53+.004);
-  for(const z of [2.5,1.7,.3,-1.3,-3.2,-4.6])path(b,[[ductX(z),-.78,z],[ductX(z),.97,z]],seam,.004);
-  for(const y of [-.65,.03,.92])path(b,[[ductX(2.4),y,2.4],[ductX(-4.5),y,-4.5]],seam,.004);
-  // High mounted trapezoid wing. Thin wedge edges and distinct moving surfaces.
-  const wing=[[side*1.82,1.08,2.72],[side*6.99,.98,-1.91],[side*6.99,.91,-4.36],[side*1.82,.94,-4.91]];
-  b.add(plate(wing,.105),paint);
-  const wingPoint=(t,chord)=>{const x=1.83+5.16*t,front=2.71-4.62*t,back=-4.91+.55*t;return [side*x,1.148-.10*t-.14*chord,front+(back-front)*chord];};
-  for(const t of [.13,.43,.76])path(b,[wingPoint(t,0),wingPoint(t,1)],seam,.009);
-  for(const c of [.14,.72,.91]){const points=Array.from({length:9},(_,i)=>wingPoint(i/8,c));path(b,points,seam,.008);}
-  for(const t of [.25,.68]){const a=wingPoint(t,1),d=wingPoint(t+.22,1);b.add(plate([wingPoint(t,.77),wingPoint(t+.22,.77),d,a],.022),panel);}
-  // Boundary-layer fences visible both from above and in the frontal photo.
-  const fenceX=4.70,front=.15,back=-4.60;
-  b.add(plate([[side*fenceX,1.05,front],[side*fenceX,1.27,front-.19],[side*fenceX,1.20,back+.12],[side*fenceX,1.00,back]],.024,V(side,0,0)),light);
-  b.add(rod([side*7.006,1.005,-4.44],[side*7.006,1.005,-1.28],.022,8),chrome);
-  b.add(rod([side*6.99,1,-2.58],[side*6.99,1,-1.76],.050,10),panel);
-  const wingStar=[side*5.7,1.07,-2.92];star(b,wingStar,[side,0,0],[0,0,1],.53,white);star(b,[wingStar[0],wingStar[1]+.004,wingStar[2]],[side,0,0],[0,0,1],.46,red);
-  // Fin leans outward by 5 degrees. Tailplane is below the main wing.
-  const fx=y=>side*(1.31+(y-.66)*.085);
-  const fin=[[fx(.66),.66,-5.78],[fx(4.08),4.08,-8.02],[fx(4.08),4.08,-9.04],[fx(.66),.66,-10.07]];
-  b.add(plate(fin,.10,V(side,0,-.025)),paint);
-  b.add(plate([[fx(3.57),3.57,-7.69],[fx(4.08),4.08,-8.02],[fx(4.08),4.08,-9.04],[fx(3.57),3.57,-9.19]],.112,V(side,0,0)),black);
-  path(b,[[fx(.84)+side*.058,.84,-9.49],[fx(3.54)+side*.058,3.54,-8.72]],seam,.009);
-  path(b,[[fx(2.65)+side*.058,2.65,-7.08],[fx(2.65)+side*.058,2.65,-9.49]],seam,.008);
-  for(const outward of [-1,1]){const c=[fx(2.31)+outward*.063,2.31,-8.27];star(b,c,[0,0,1],[0,1,0],.56,white,p=>[fx(p[1])+outward*.061,p[1],p[2]]);star(b,c,[0,0,1],[0,1,0],.48,red,p=>[fx(p[1])+outward*.065,p[1],p[2]]);}
-  b.add(rod([fx(3.61),3.61,-8.98],[fx(3.61),3.61,-9.48],.07,10),light);
-  const tail=[[side*1.1,.01,-6.25],[side*4.35,-.10,-8.30],[side*4.19,-.14,-9.81],[side*1.15,-.03,-9.47]];
-  b.add(plate(tail,.095),paint);path(b,[[side*1.32,.035,-8.78],[side*4.2,-.075,-9.30]],seam,.009);
-  b.add(plate([[side*1.46,-.72,-6.6],[side*1.55,-1.51,-8.22],[side*1.5,-1.45,-9.91],[side*1.41,-.72,-9.59]],.06,V(side,0,0)),panel);
-  // Twin circular exhausts: open nozzles, nested rings and individual petals.
-  const ex=side*.98,ey=-.13;
-  b.add(loft([[-10.06,.945,.945,0],[-9.40,.97,.97,0]],40).translate(ex,ey,0),steel);
-  for(let i=0;i<24;i++){
-   const a=i/24*Math.PI*2,da=Math.PI*2/24*.94;
-   const p=(r,z,t)=>[ex+r*Math.cos(t),ey+r*Math.sin(t),z];
-   b.add(polygon([p(.945,-10.06,a),p(.84,-10.83,a),p(.84,-10.83,a+da),p(.945,-10.06,a+da)]),i%3===0?steel:burnt);
-   b.add(polygon([p(.805,-10.82,a),p(.59,-9.55,a),p(.59,-9.55,a+da),p(.805,-10.82,a+da)]),dark);
+  const ramp=[[side*.93,.90,3.94],[side*1.98,.90,3.94],[side*1.87,.35,1.77],[side*.91,.35,1.77]];
+  b.add(plate(ramp,.012,V(0,-1,.3).normalize()),steel);
+  for(let k=0;k<8;k++){const t=k/9;path(b,[[side*.94,.881-.52*t,3.89-2.04*t],[side*1.93,.881-.52*t,3.89-2.04*t]],seam,.005);}
+  // Wide duct with a curved lower corner and a tapered aft transition.
+  const cross=(z)=>{
+   const t=clamp((4.05-z)/8.65),x=2.02-.04*t,yt=.94+.01*t,yb=-.99+.035*t;
+   return [[side*.88,yt,z],[side*(x-.07),yt,z],[side*x,yt-.08,z],[side*x,yb+.23,z],[side*(x-.18),yb+.04,z],[side*(x-.41),yb,z],[side*.89,yb,z]];
+  };
+  const ductRings=[4.05,3.43,2.4,.7,-1.5,-3.2,-4.6].map(cross);
+  // The upper leading face ends at the forward lip, the lower one is swept back.
+  ductRings[0][3][2]=ductRings[0][4][2]=ductRings[0][5][2]=ductRings[0][6][2]=3.38;
+  for(let k=1;k<ductRings.length;k++)for(let j=0;j<6;j++)b.add(plate([ductRings[k-1][j],ductRings[k][j],ductRings[k][j+1],ductRings[k-1][j+1]],.018,V(side,0,0)),paint);
+  b.add(plate([[side*.855,-.73,3.60],[side*.855,.97,4.23],[side*.855,.96,1.25],[side*.855,-.84,1.25]],.025,V(side,0,0)),panel);
+  // Rectangular bleed-air recess on the upper intake, visible in the close-up.
+  b.add(box(.68,.012,.93,[side*1.42,.967,1.75]),seam);
+  b.add(box(.64,.012,.86,[side*1.42,.971,1.77]),panel);
+  for(let j=0;j<8;j++)b.add(box(.60,.006,.012,[side*1.42,.981,1.42+j*.09]),seam);
+  // Main wing: one wedge at the root, separately articulated trailing surfaces.
+  const wingX=6.69,rootX=1.88,frontZ=1.67,tipFront=-2.52,backZ=-4.72,tipBack=-4.65;
+  const wingPoint=(t,c,lift=0)=>{const front=frontZ+(tipFront-frontZ)*t,back=backZ+(tipBack-backZ)*t;return [side*(rootX+(wingX-rootX)*t),.965-.12*t-.028*c+lift,front+(back-front)*c];};
+  b.add(plate([wingPoint(0,0),wingPoint(1,0),wingPoint(1,1),wingPoint(0,1)],.075),paint);
+  // Panel lines follow the swept edges; the finer fasteners come from the maps.
+  for(const c of [.15,.74])ribbon([[0,c],[1,c]],.003,seam,([t,c])=>wingPoint(t,c,.042));
+  for(const t of [.18,.50,.82])ribbon([[t,0],[t,.97]],.003,seam,([t,c])=>wingPoint(t,c,.042));
+  for(const [start,end]of [[.03,.41],[.44,.72],[.75,.96]]){
+   const a=wingPoint(start,1),c=wingPoint(end,1);const flap=[a,c,[c[0],c[1]-.08,c[2]-.35],[a[0],a[1]-.08,a[2]-.35]];b.add(plate(flap,.025),panel);
+   const mid=V(...a).add(V(...c)).multiplyScalar(.5);for(let j=0;j<3;j++)b.add(box(.18,.004,.014,[mid.x,mid.y-.008-j*.012,mid.z-.11-j*.04]),red);
   }
-  b.add(ring(.83,.027,[ex,ey,-10.81]),steel);b.add(ring(.60,.025,[ex,ey,-9.62]),burnt);b.add(cylinder(.59,.025,[ex,ey,-9.54]),dark);
-  for(const z of [-9.75,-9.46])b.add(ring(.95,.013,[ex,ey,z]),chrome);
-  // Aft access panels, cooling louvres and heat-stained service panels.
-  for(const z of [-8.5,-7.5,-6.5]){const t=(z+9.2)/2.9,w=1.86+.05*t,h=.9+.14*t,cy=-.03+.05*t,power=.65-.10*t;path(b,Array.from({length:15},(_,i)=>{const a=-.6+i/14*1.70;return [side*(w*Math.cos(a)**power+.004),cy+h*Math.sign(Math.sin(a))*Math.abs(Math.sin(a))**power,z];}),seam,.004);}
-  for(let j=0;j<10;j++)b.add(box(.012,.04,.24,[side*1.94,.42-j*.076,-5.22]),dark);
-  for(let j=0;j<9;j++)b.add(box(.016,.018,.15,[side*.78,.67,3.73-j*.11]),dark);
-  // Board number faces outward on each side. The digits are triangulated
-  // vector outlines, not mirrored text or a platform-dependent canvas font.
-  const digits={3:[[0,.40],[.34,.40],[.43,.29],[.40,.08],[.27,0],[.41,-.10],[.42,-.29],[.31,-.41],[0,-.41]],2:[[0,.31],[.10,.41],[.32,.41],[.43,.29],[.40,.13],[0,-.31],[0,-.41],[.44,-.41]]};
-  const onNose=(u,y,lift)=>{const z=5.8-side*(u-.5);let i=1;while(i<bodyStations.length-1&&bodyStations[i][0]<z)i++;const a=bodyStations[i-1],c=bodyStations[i],t=(z-a[0])/(c[0]-a[0]),w=THREE.MathUtils.lerp(a[1],c[1],t),h=THREE.MathUtils.lerp(a[2],c[2],t),cy=THREE.MathUtils.lerp(a[3],c[3],t);return [side*(w*Math.sqrt(Math.max(0,1-((y-cy)/h)**2))+lift),y,z];};
-  function paintedStroke(points,width,mat,lift){
-   for(let i=1;i<points.length;i++){const a=points[i-1],c=points[i],du=c[0]-a[0],dv=c[1]-a[1],length=Math.hypot(du,dv),ox=-dv/length*width/2,oy=du/length*width/2,steps=Math.ceil(length/.055);for(let k=0;k<steps;k++){const u=a[0]+du*k/steps,v=a[1]+dv*k/steps,uu=a[0]+du*(k+1)/steps,vv=a[1]+dv*(k+1)/steps;b.add(polygon([[u+ox,v+oy],[u-ox,v-oy],[uu-ox,vv-oy],[uu+ox,vv+oy]].map(([u,v])=>onNose(u,v,lift))),mat);}}
-   for(const [u,v]of points)for(let i=0;i<8;i++){const a=i*Math.PI/4,c=(i+1)*Math.PI/4;b.add(polygon([onNose(u,v,lift),onNose(u+Math.cos(a)*width/2,v+Math.sin(a)*width/2,lift),onNose(u+Math.cos(c)*width/2,v+Math.sin(c)*width/2,lift)]),mat);}
+  // One tall fence and one lower outer fence per wing.
+  for(const [t,h]of [[.49,.17],[.78,.075]]){const a=wingPoint(t,.12),c=wingPoint(t,.91);b.add(plate([a,[a[0],a[1]+h,a[2]-.13],[c[0],c[1]+h*.5,c[2]],c],.018,V(side,0,0)),panel);}
+  const pod=loft([[-4.98,0,0,0],[-4.70,.035,.035,0],[-2.25,.055,.055,0],[-1.85,.07,.07,0],[-1.60,0,0,0]],20);pod.translate(side*6.68,.84,0);b.add(pod,light);
+  // Upper and lower wing stars are projected onto the thin sloping surface.
+  for(const underside of [false,true]){const c=wingPoint(.83,.57),offset=underside?-.043:.043;const project=p=>{const t=(Math.abs(p[0])-rootX)/(wingX-rootX),front=frontZ+(tipFront-frontZ)*t,back=backZ+(tipBack-backZ)*t,cc=(p[2]-front)/(back-front);return [p[0],wingPoint(t,cc,offset)[1],p[2]];};star(b,c,[side,0,0],[0,0,1],.48,white,project);star(b,c,[side,0,0],[0,0,1],.415,red,p=>{const q=project(p);q[1]+=underside?-.003:.003;return q;});}
+  // Pylons and empty attachment rails seen beneath the wings in the new views.
+  for(const [x,z,l]of [[2.65,-.2,2.05],[4.14,-1.35,1.78]]){
+   b.add(plate([[side*x,.80,z+.5],[side*x,.82,z-l*.55],[side*x,.51,z-l*.58],[side*x,.46,z+.2]],.055,V(side,0,0)),panel);
+   const rail=loft([[-l*.5,0,0,0],[-l*.38,.062,.06,0],[l*.38,.065,.06,0],[l*.5,0,0,0]],16);rail.translate(side*x,.47,z);b.add(rail,light);
   }
-  for(const [d,k]of [['3',0],['2',1]]){const points=digits[d].map(([u,v])=>[u+k*.56,v]);paintedStroke(points,.075,white,.015);paintedStroke(points,.047,red,.019);}
-  // Flush hatches on the forward fuselage and a rescue handle below the cockpit.
-  for(const z of [8.7,8.1,6.17]){
-   const station=bodyStations.reduce((a,p)=>Math.abs(p[0]-z)<Math.abs(a[0]-z)?p:a,bodyStations[0]);
-   const p=Array.from({length:25},(_,i)=>{const a=i/24*Math.PI*2;return [(station[1]+.006)*Math.cos(a),station[3]+(station[2]+.006)*Math.sin(a),station[0]];});path(b,p,seam,.006);
+  // Distinct single-seat tail: swept leading edge, a clipped cap and fin-root fillet.
+  const fx=y=>side*(1.30+(y-.64)*.075),fin=[[fx(.64),.64,-5.22],[fx(3.40),3.40,-8.02],[fx(3.69),3.69,-8.52],[fx(3.39),3.39,-9.12],[fx(.64),.64,-9.62]];
+  b.add(plate(fin,.085,V(side,0,0)),paint);
+  b.add(plate([[fx(2.93),2.93,-7.54],[fx(3.40),3.40,-8.02],[fx(3.69),3.69,-8.52],[fx(3.39),3.39,-9.12],[fx(2.99),2.99,-9.20]],.092,V(side,0,0)),radome);
+  for(const outward of [-1,1]){
+   const f=(z,y,lift=.047)=>[fx(y)+outward*lift,y,z];
+   ribbon([[-9.48,.77],[-8.94,2.96]],.012,seam,([z,y])=>f(z,y));
+   ribbon([[-7.28,2.46],[-9.21,2.46]],.008,seam,([z,y])=>f(z,y));
+   const c=[fx(1.95),1.95,-8.17];star(b,c,[0,0,1],[0,1,0],.53,white,p=>f(p[2],p[1],.050));star(b,c,[0,0,1],[0,1,0],.46,red,p=>f(p[2],p[1],.053));
   }
-  path(b,[[side*.77,-.13,6.62],[side*.78,-.13,6.86],[side*.78,-.24,6.86]],light,.018);
+  for(const y of [1.0,1.65,2.4])b.add(rod([fx(y),y,-9.2],[fx(y),y,-9.36],.036,8),light);
+  b.add(loft([[-9.48,0,0,0],[-9.2,.065,.07,0],[-8.68,.075,.08,0],[-8.4,0,0,0]],16).translate(fx(3.42),3.42,0),light);
+  b.add(loft([[-9.55,0,0,.67],[-9.0,.21,.20,.67],[-6.4,.21,.20,.67],[-5.1,0,0,.67]],24).translate(side*1.3,0,0),paint);
+  const tail=[[side*1.94,-.10,-6.63],[side*4.44,-.20,-8.29],[side*4.30,-.22,-9.65],[side*1.88,-.13,-9.48]];
+  b.add(plate(tail,.07),paint);
+  b.add(plate([[side*1.44,-.69,-6.35],[side*1.50,-1.42,-8.08],[side*1.47,-1.34,-9.47],[side*1.40,-.72,-9.22]],.038,V(side,0,0)),panel);
+  // Open metal nozzles with olive ceramic interiors and recessed burner grids.
+  const ex=side*.99,ey=-.08;
+  b.add(loft([[-9.58,.88,.88,0],[-9.13,.96,.96,0],[-8.42,.98,.98,0]],48).translate(ex,ey,0),steel);
+  for(let i=0;i<28;i++){
+   const a=i/28*Math.PI*2,da=Math.PI*2/28*.975,p=(r,z,t)=>[ex+r*Math.cos(t),ey+r*Math.sin(t),z];
+   b.add(polygon([p(.88,-9.58,a),p(.85,-10.47,a),p(.85,-10.47,a+da),p(.88,-9.58,a+da)]),i%4===0?steel:burnt);
+   b.add(polygon([p(.815,-10.44,a),p(.64,-8.95,a),p(.64,-8.95,a+da),p(.815,-10.44,a+da)]),ceramic);
+   path(b,[p(.81,-10.42,a),p(.637,-8.95,a)],burnt,.007);
+   if(i%2===0)path(b,[p(.12,-8.91,a),p(.61,-8.91,a+.16)],steel,.012);
+  }
+  b.add(ring(.847,.017,[ex,ey,-10.46]),steel);for(const [r,z]of [[.64,-8.96],[.46,-8.92],[.22,-8.91]])b.add(ring(r,.014,[ex,ey,z]),burnt);
+  b.add(cylinder(.635,.02,[ex,ey,-8.88]),dark);b.add(cylinder(.11,.055,[ex,ey,-8.92]),burnt);
+  // Vent holes, dorsal grilles and flush maintenance markings.
+  for(let j=0;j<12;j++){const z=3.35-j*.115;b.add(cylinder(.025,.012,[side*.46,.99,z],'x',10),dark);}
+  for(let j=0;j<8;j++)b.add(box(.012,.022,.18,[side*1.997,-.30-j*.06,-3.8]),dark);
+  for(const z of [-3.25,-1.5,.25])for(let row=0;row<3;row++){
+   const x=side*(2.02-.04*(4.05-z)/8.65+.015),y=-.50+row*.045;
+   for(let k=0;k<7;k++)b.add(box(.006,.014,.023+(k%3)*.007,[x,y,z-k*.038]),red);
+  }
+  // Flat, filled block numerals: 46, readable in the outward view on both sides.
+  const glyphs={4:[[[.31,.38],[0,-.08],[.44,-.08]],[[.31,.38],[.31,-.38]]],6:[[[.39,.31],[.27,.39],[.09,.31],[0,.08],[0,-.26],[.10,-.38],[.32,-.38],[.42,-.25],[.42,-.08],[.31,.02],[0,.02]]]};
+  for(const [digit,k]of [['4',0],['6',1]])for(const stroke of glyphs[digit])ribbon(stroke.map(([u,y])=>[u+k*.56,y]),.09,red,([u,y])=>noseSurface(5.85-side*(u-.5),y-.06,side));
+  // Restrained colour badges and the 60th-anniversary marking from the references.
+  const six= glyphs[6][0],zero=[[.10,.38],[.32,.38],[.42,.25],[.42,-.25],[.32,-.38],[.10,-.38],[0,-.25],[0,.25],[.10,.38]];
+  for(const [stroke,k]of [[six,0],[zero,1]]){const pts=stroke.map(([u,y])=>[(u+k*.57)*.31,y*.31]);ribbon(pts,.031,red,([u,y])=>noseSurface(7.14-side*(u-.15),y+.06,side,.017));ribbon(pts,.018,gold,([u,y])=>noseSurface(7.14-side*(u-.15),y+.06,side,.021));}
+  for(let row=0;row<5;row++)for(let col=0;col<8;col++){const z=6.65-side*(col*.044-.15),y=.11-row*.045;b.add(polygon([[z-.013,y-.009],[z+.013,y-.009],[z+.013,y+.009],[z-.013,y+.009]].map(([z,y])=>noseSurface(z,y,side,.017))),red);}
+  if(side===-1){
+   const font={В:['11110','10001','10001','11110','10001','10001','11110'],А:['01110','10001','10001','11111','10001','10001','10001'],Л:['00111','01001','01001','01001','01001','10001','10001'],Е:['11111','10000','10000','11110','10000','10000','11111'],Н:['10001','10001','10001','11111','10001','10001','10001'],Т:['11111','00100','00100','00100','00100','00100','00100'],И:['10001','10011','10011','10101','11001','11001','10001'],Ф:['00100','01110','10101','10101','10101','01110','00100'],У:['10001','10001','01010','00100','00100','01000','10000'],Р:['11110','10001','10001','11110','10000','10000','10000'],К:['10001','10010','10100','11000','10100','10010','10001']};
+   for(const [label,line]of [['ВАЛЕНТИН',0],['ФУТРИК',1]])for(let c=0;c<label.length;c++)for(let row=0;row<7;row++)for(let col=0;col<5;col++)if(font[label[c]][row][col]==='1'){
+    const z=-.60+(c*6+col)*.022,y=.28-line*.21-row*.022,project=(zz,yy)=>[-(2.02-.04*(4.05-zz)/8.65+.015),yy,zz];b.add(polygon([project(z,y),project(z+.019,y),project(z+.019,y-.019),project(z,y-.019)]),red);
+   }
+  }
+  // Small exterior aerials, without invented weapons.
+  b.add(plate([[side*.50,-.62,5.70],[side*.50,-.94,5.54],[side*.50,-.90,5.42],[side*.50,-.64,5.48]],.015,V(side,0,0)),light);
  }
- // Small central brake-parachute fairing between the engine nozzles.
- b.add(loft([[-11.05,0,0,.46],[-11.03,.055,.055,.46],[-10.76,.19,.19,.46],[-9.0,.22,.22,.47],[-8.3,.07,.08,.54]],24),panel);
- // Reusable gear geometry lives in three articulated groups; it is absent
- // from the flight silhouette once retracted. Doors move with their legs.
+ // Large centreline external fuel tank, prominent in every lower reference view.
+ const tank=new THREE.Group();tank.name='Подвесной топливный бак';root.add(tank);const tb=batch(tank);
+ tb.add(loft([[-8.13,0,0,-1.49],[-7.40,.20,.18,-1.51],[-5.6,.43,.38,-1.51],[-2.7,.49,.43,-1.51],[0,.40,.35,-1.51],[1.6,.22,.19,-1.51],[2.65,0,0,-1.51]],48),paint);
+ for(const z of [-4.3,.30])tb.add(box(.16,.35,.60,[0,-1.03,z]),panel);
+ for(const s of [-1,1])tb.add(plate([[s*.12,-1.56,-6.75],[s*.38,-1.53,-7.25],[s*.33,-1.53,-7.97],[s*.05,-1.56,-7.8]],.018),panel);
+ tb.finish('Подвесной бак');
+ // Brake-parachute fairing sits above, and between, the two exhausts.
+ b.add(loft([[-10.83,0,0,.90],[-10.60,.17,.16,.90],[-9.54,.23,.20,.91],[-8.5,.12,.12,.94],[-8.2,0,0,.94]],28),panel);
  function gear({name,x,z,r,w,nose=false}){
   const g=new THREE.Group();g.name=name;g.position.set(x,-.82,z);root.add(g);const gb=batch(g);
   gb.add(rod([0,.04,0],[0,-.74,.12],nose?.065:.09,12),light);gb.add(rod([0,-.43,.07],[0,-.92,.17],.044,12),chrome);
@@ -178,15 +206,15 @@ export function createMig25RU(){
  }
  gear({name:'Носовая стойка · два колеса',x:0,z:6.15,r:.31,w:.24,nose:true});
  for(const s of [-1,1])gear({name:'Основная стойка '+s,x:s*1.75,z:-1.35,r:.53,w:.39});
- // Closed wheel-well covers are exchanged for actual open wells, avoiding
- // gear protruding through an unbroken fuselage in the parked configuration.
- const closed=new THREE.Group();closed.name='Закрытые створки шасси';root.add(closed);const cb=batch(closed);
- const wells=new THREE.Group();wells.name='Открытые ниши шасси';root.add(wells);const wb=batch(wells);
- for(const [x,y,z,w,d]of [[0,-.83,6.15,.64,1.36],[-1.66,-1.055,-1.25,.60,1.45],[1.66,-1.055,-1.25,.60,1.45]]){cb.add(box(w,.035,d,[x,y,z]),panel);wb.add(box(w,.018,d,[x,y-.025,z]),dark);}
- cb.finish('Шасси убрано');wb.finish('Ниши');b.finish('МиГ-25РУ');
- let extension=1;
+ // Reference views show the aircraft in flight; gear remains available for inspection.
+ for(const {group}of gearGroups)group.position.y-=.34;
+ const closed=new THREE.Group();closed.name='Закрытые створки';root.add(closed);const cb=batch(closed);
+ const wells=new THREE.Group();wells.name='Ниши шасси';root.add(wells);const wb=batch(wells);
+ for(const [x,y,z,w,d]of [[0,-.72,6.15,.58,1.36],[-1.67,-.96,-1.3,.62,1.5],[1.67,-.96,-1.3,.62,1.5]]){cb.add(box(w,.025,d,[x,y,z]),panel);wb.add(box(w,.018,d,[x,y-.025,z]),dark);}
+ cb.finish('Створки');wb.finish('Ниши');b.finish('МиГ-25');
+ let extension=0;
  function setGear(value){extension=clamp(value);const a=extension*extension*(3-2*extension);for(const {group,nose,side}of gearGroups){group.visible=extension>.001;if(nose)group.rotation.x=(1-a)*Math.PI*.48;else group.rotation.z=-side*(1-a)*Math.PI*.48;}closed.visible=extension<.08;wells.visible=extension>=.08;root.userData.gear=extension;}
- root.userData.aircraft={type:'МиГ-25РУ',boardNumber:'32',unit:'metre',forward:'+Z',referenceImageCount:9,photoReconstruction:true,canopies:canopies.map(c=>({...c})),wheels:4,intakes:2,exhausts:2};
- setGear(1);root.updateMatrixWorld(true);
- return {root,setGear,stats:()=>({...root.userData.aircraft,gear:extension,version:MIG25_RU_VERSION})};
+ root.userData.aircraft={type:'МиГ-25',boardNumber:'46',unit:'metre',forward:'+Z',referenceImageCount:17,referenceSet:'2026-11-01-single-seat',canopies:[canopy],wheels:4,intakes:2,exhausts:2,externalTank:true};
+ setGear(0);root.updateMatrixWorld(true);
+ return {root,setGear,initialGear:0,stats:()=>({...root.userData.aircraft,gear:extension,version:MIG25_VERSION})};
 }

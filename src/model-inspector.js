@@ -1,4 +1,4 @@
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION} from './model-catalog.js?v=20261101-mig25ru-v1';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-mig25-single-v2';
 export function installModelInspector({onOpen=()=>{},onClose=()=>{}}={}){
  const dialog=document.createElement('dialog');dialog.id='modelInspector';dialog.className='model-inspector';dialog.setAttribute('aria-label','Просмотр техники в 3D');
  const close=document.createElement('button');close.type='button';close.className='model-inspector-close';close.setAttribute('aria-label','Закрыть просмотр и вернуться к объекту');close.textContent='×';
@@ -17,8 +17,8 @@ export function installModelInspector({onOpen=()=>{},onClose=()=>{}}={}){
   if(event.data?.type==='museum-model-ready'){ready=true;active=event.data.model;}
  });
  function open(ids,selected=ids?.[0]){
-  const allowed=[...new Set(ids||[])].filter(id=>MODEL_CATALOG[id]);if(!allowed.length)return false;
-  if(!allowed.includes(selected))selected=allowed[0];
+  const allowed=[...new Set((ids||[]).map(resolveModelId))].filter(id=>MODEL_CATALOG[id]);if(!allowed.length)return false;
+  selected=resolveModelId(selected);if(!allowed.includes(selected))selected=allowed[0];
   if(!dialog.open){opener=document.activeElement;closed=false;onOpen();dialog.showModal();}
   frame?.remove();frame=document.createElement('iframe');frame.title='3D-модель · '+MODEL_CATALOG[selected].title;frame.setAttribute('allow','fullscreen');frame.className='model-inspector-frame';
   const url=new URL('./workshop/model.html',location.href);url.searchParams.set('v',MODEL_VIEWER_VERSION);url.searchParams.set('embed','1');url.searchParams.set('model',selected);url.searchParams.set('models',allowed.join(','));
