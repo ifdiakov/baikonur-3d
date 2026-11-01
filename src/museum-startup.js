@@ -89,7 +89,7 @@
     preloader('stage', totalSteps, totalSteps);
     preloader('finish');
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!loading || !window.__MUSEUM_PRELOADER || reduced || document.hidden) reveal();
+    if (!loading || !window.__MUSEUM_PRELOADER || reduced || document.hidden || loading.dataset.motion === 'paused') reveal();
     else setTimeout(reveal, 460);
   }
 

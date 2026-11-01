@@ -7,6 +7,8 @@ import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
 const revision='20261101-satellite-surface-v1';
+const welcome='Добро пожаловать на космодром Байконур первый в истории и крупнейший на планете космическая гавань человечества';
+const firstLaunchStatus='выбор места для строительства космодрома';
 const evidence={base,prefix,revision,cases:{}};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -46,23 +48,34 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
   if(message.type()==='error'&&/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/.test(message.text()))record.shaderErrors.push(message.text());
  });
  await page.addInitScript(({stalledBody})=>{
-  const state=window.__STARTUP_TEST={feedback:[],ready:[],stalled:[],animateRequests:0};
+  const state=window.__STARTUP_TEST={feedback:[],launch:[],ready:[],stalled:[],animateRequests:0};
   const nativeFrame=window.requestAnimationFrame.bind(window);let pendingFrame;
   window.requestAnimationFrame=fn=>{
    if(fn.name==='animate'){state.animateRequests++;pendingFrame=fn;return 0;}
    return nativeFrame(fn);
   };
   window.__STARTUP_FRAME=()=>{const fn=pendingFrame;pendingFrame=null;fn?.(performance.now());};
-  let lastFeedback='';
+  let lastFeedback='',lastLaunchStep=null;
   new MutationObserver(()=>{
    const loading=document.getElementById('museumLoading');if(!loading)return;
    const message=document.getElementById('museumLoadingMessage')?.textContent||'';
    const progress=document.getElementById('museumStageProgress');
    const stage=progress?Number(progress.getAttribute('aria-valuenow')):null;
    const total=progress?Number(progress.getAttribute('aria-valuemax')):null;
-   const signature=[loading.hidden,loading.dataset.state||'',message,stage,total].join('|');
+   const launchStep=loading.hasAttribute('data-launch-step')?Number(loading.dataset.launchStep):null;
+   const launchStatus=document.getElementById('museumLaunchStatus')?.textContent.trim()||'';
+   const fill=document.getElementById('museumProgressFill')?.style.transform.match(/^scaleX\(([^)]+)\)$/);
+   const fillScale=fill?Number(fill[1]):null;
+   const introReady=Boolean(window.__MUSEUM_PRELOADER);
+   const signature=[loading.hidden,loading.dataset.state||'',message,stage,total,launchStep,launchStatus,fillScale,introReady].join('|');
    if(signature===lastFeedback)return;lastFeedback=signature;
-   const feedback={at:performance.now(),hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total};
+   const render=(stage===total&&total>0||launchStep===12)?window.__BAIKONUR_QA?.stats().render||null:null;
+   if(introReady&&launchStatus&&Number.isInteger(launchStep)&&launchStep!==lastLaunchStep){
+    state.launch.push({at:performance.now(),step:launchStep,text:launchStatus,stage,fillScale,render});
+    lastLaunchStep=launchStep;
+   }
+   const feedback={at:performance.now(),hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total,
+    launchStep,launchStatus,fillScale,render};
    state.feedback.push(feedback);
    if(loading.dataset.state==='ready'){
     const stats=window.__BAIKONUR_QA?.stats();
@@ -70,7 +83,7 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
     state.ready.push({...feedback,render:stats?.render||null,animateRequests:state.animateRequests,menus,
      chromeReady:document.body.classList.contains('museum-ready')});
    }
-  }).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','data-state','aria-valuenow']});
+  }).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','data-state','data-launch-step','aria-valuenow']});
   if(!stalledBody)return;
   const originalFetch=window.fetch.bind(window);
   window.fetch=(input,init)=>{
@@ -133,6 +146,11 @@ async function waitError(page){
  assert.ok(state.inert.every(item=>item.inert===true),'Incomplete scene controls remain inert');
  assert.equal(state.chromeReady,false,'Failed startup must not reveal either side menu');
  assert.equal(state.qaAvailable,false);assert.deepEqual(state.test.ready,[],'A failed required request never reports ready');
+ const intro=await preloaderState(page);
+ assert.equal(intro.paused,true);assert.equal(intro.motion,'paused');assert.equal(intro.running,0);
+ assert.ok(intro.launchStep<12&&intro.stage<intro.total,'Failed loading never claims ignition or completed progress');
+ assert.ok(intro.toggle.disabled||!await page.locator('#museumMotionToggle').isVisible(),
+  'A failed loader cannot restart the launch animation');
  return state;
 }
 const step=page=>page.evaluate(()=>window.__STARTUP_FRAME());
@@ -142,34 +160,44 @@ function assertNoRuntimeErrors(record){assert.deepEqual(record.pageErrors,[]);as
 async function preloaderState(page){
  return page.evaluate(()=>{
   const loader=document.getElementById('museumLoading'),progress=document.getElementById('museumStageProgress');
-  const message=document.getElementById('museumLoadingMessage');
-  return {story:loader?.dataset.story,year:document.getElementById('museumStoryYear')?.textContent.trim(),
-   title:document.getElementById('museumStoryTitle')?.textContent.trim(),
+  const message=document.getElementById('museumLoadingMessage'),toggle=document.getElementById('museumMotionToggle');
+  const fill=document.getElementById('museumProgressFill')?.style.transform.match(/^scaleX\(([^)]+)\)$/);
+  return {launchStep:Number(loader?.dataset.launchStep),status:document.getElementById('museumLaunchStatus')?.textContent.trim(),
+   welcome:document.getElementById('museumWelcome')?.textContent.replace(/\s+/g,' ').trim(),
    stage:Number(progress?.getAttribute('aria-valuenow')),total:Number(progress?.getAttribute('aria-valuemax')),
-   role:progress?.getAttribute('role'),stageText:Number(document.getElementById('museumStageCurrent')?.textContent),
-   buttons:[...document.querySelectorAll('[data-preloader-story]')].map(button=>({
-    story:button.dataset.preloaderStory,pressed:button.getAttribute('aria-pressed'),tag:button.tagName,
-    label:button.getAttribute('aria-label')||button.textContent.trim()})),
+   role:progress?.getAttribute('role'),fillScale:fill?Number(fill[1]):null,
+   paused:loader?.classList.contains('is-paused'),motion:loader?.dataset.motion,
+   running:loader?.getAnimations({subtree:true}).filter(animation=>animation.playState==='running').length,
+   toggle:{tag:toggle?.tagName,pressed:toggle?.getAttribute('aria-pressed'),disabled:toggle?.disabled,
+    label:toggle?.getAttribute('aria-label')||toggle?.textContent.trim()},
    live:message?.getAttribute('aria-live'),messageRole:message?.getAttribute('role'),
-   outerLive:loader?.getAttribute('aria-live'),outerRole:loader?.getAttribute('role')};
+   outerLive:loader?.getAttribute('aria-live'),outerRole:loader?.getAttribute('role'),
+   launch:window.__STARTUP_TEST.launch};
  });
 }
 
 async function assertPreloaderFits(page,viewport,{error=false}={}){
  await page.setViewportSize(viewport);
- const layout=await page.evaluate(()=>{
+ const layout=await page.evaluate(error=>{
   const loader=document.getElementById('museumLoading');
   const box=loader.getBoundingClientRect();
+  const status=document.getElementById(error?'museumLoadingMessage':'museumLaunchStatus'),statusBox=status.getBoundingClientRect();
+  const progressBox=document.getElementById('museumStageProgress').getBoundingClientRect();
+  const range=document.createRange();range.selectNodeContents(status);
+  const lines=new Set([...range.getClientRects()].filter(rect=>rect.width>0).map(rect=>Math.round(rect.top)));
   return {viewport:{width:innerWidth,height:innerHeight},left:box.left,right:box.right,
    clientWidth:loader.clientWidth,scrollWidth:loader.scrollWidth,
-   documentWidth:document.documentElement.scrollWidth};
- });
+   documentWidth:document.documentElement.scrollWidth,
+   status:{top:statusBox.top,left:statusBox.left,right:statusBox.right,lines:lines.size},progressBottom:progressBox.bottom};
+ },error);
  assert.ok(layout.left>=-1&&layout.right<=viewport.width+1,'The preloader fits the viewport horizontally');
  assert.ok(layout.scrollWidth<=layout.clientWidth+1,'Preloader content has no horizontal overflow at '+viewport.width);
  assert.ok(layout.documentWidth<=viewport.width+1,'The loading page does not create horizontal overflow');
+ assert.ok(layout.status.top>=layout.progressBottom-1,'The visible loading feedback sits beneath the real progress bar');
+ assert.ok(layout.status.left>=-1&&layout.status.right<=viewport.width+1,'The visible loading feedback fits horizontally');
  // A short viewport may scroll vertically. The status and recovery action
  // must still be reachable, rather than clipped below a fixed-height card.
- const controls=['#museumLoadingMessage',...(error?['#museumRetry']:[])];
+ const controls=error?['#museumLoadingMessage','#museumRetry']:['#museumLaunchStatus','#museumMotionToggle'];
  for(const selector of controls){
   const control=page.locator(selector);await control.scrollIntoViewIfNeeded({timeout:2000});
   const box=await control.boundingBox();
@@ -187,44 +215,80 @@ async function assertReducedMotion(page){
   loader.getBoundingClientRect();
   return {reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,
    running:loader.getAnimations({subtree:true}).filter(animation=>animation.playState==='running').length,
-   story:loader.dataset.story};
+   launchStep:Number(loader.dataset.launchStep),paused:loader.classList.contains('is-paused'),motion:loader.dataset.motion,
+   toggleDisabled:document.getElementById('museumMotionToggle').disabled,
+   togglePressed:document.getElementById('museumMotionToggle').getAttribute('aria-pressed')};
  });
  assert.equal(motion.reduced,true);assert.equal(motion.running,0,'Reduced motion removes decorative preloader animation');
+ assert.equal(motion.paused,true);assert.equal(motion.motion,'paused');
+ assert.equal(motion.toggleDisabled,true,'The control cannot override the reduced-motion preference');
+ assert.equal(motion.togglePressed,'true');
  return motion;
 }
 
 async function exercisePreloader(page){
- const initial=await preloaderState(page),interactions=[];
- assert.equal(initial.role,'progressbar');assert.ok(initial.total>1&&initial.stage<initial.total);
- assert.equal(initial.stageText,initial.stage,'The visible stage and accessible stage agree');
+ const initial=await preloaderState(page);
+ assert.equal(initial.welcome,welcome,'The welcome preserves the requested wording and letter case');
+ assert.equal(initial.role,'progressbar');assert.equal(initial.total,9);
+ assert.equal(initial.stage,0,'No scene phase is complete while the required catalog is held');
+ assert.equal(initial.fillScale,0,'The visible bar starts at the same real progress');
  assert.equal(initial.live,'polite');assert.equal(initial.messageRole,'status');
- assert.notEqual(initial.outerLive,'polite','Changing a story must not announce the entire loading screen');
+ assert.notEqual(initial.outerLive,'polite','Changing a launch phrase must not announce the entire loading screen');
  assert.notEqual(initial.outerRole,'status');
- assert.equal(initial.buttons.length,3,'Three short stories are available before map data has arrived');
- assert.ok(initial.buttons.every(button=>button.tag==='BUTTON'&&button.label),'Story points are named native buttons');
- for(const [story,year,keyboard] of [['1','1961',false],['2','1988',true],['0','1957',false]]){
-  const button=page.locator('[data-preloader-story="'+story+'"]');
-  if(keyboard){await button.focus();await page.keyboard.press('Enter');}
-  else await button.click({timeout:2000});
-  const state=await preloaderState(page);
-  assert.equal(state.story,story);assert.equal(state.year,year);assert.ok(state.title);
-  assert.equal(state.buttons.filter(item=>item.pressed==='true').length,1);
-  assert.equal(state.buttons.find(item=>item.story===story).pressed,'true');
-  assert.equal(state.stage,initial.stage,'Exploring stories cannot advance real scene loading');
-  interactions.push({story:state.story,year:state.year,title:state.title});
- }
- await page.locator('#museumStoryPrev').click({timeout:2000});
- assert.equal((await preloaderState(page)).story,'2','Previous wraps to the last story');
- await page.locator('#museumStoryNext').click({timeout:2000});
- assert.equal((await preloaderState(page)).story,'0','Next wraps to the first story');
+ assert.equal(initial.toggle.tag,'BUTTON');assert.equal(initial.toggle.label,'Пауза анимации');
+ assert.equal(initial.toggle.pressed,'false');assert.equal(initial.toggle.disabled,false);
+ assert.equal(await page.locator('[data-preloader-story],#museumStoryPrev,#museumStoryNext,#museumMapGagarin,#museumMapBuran').count(),0);
+ assert.equal(initial.launch[0]?.step,0);assert.equal(initial.launch[0]?.text,firstLaunchStatus);
+ // Imports may take longer than one narrative interval on the public host.
+ // Observe the first transition from document start instead of requiring the
+ // current phrase still to be zero when the catalog request reaches its gate.
+ await page.waitForFunction(()=>window.__STARTUP_TEST.launch.some(item=>item.step===1),null,{timeout:5000});
+ const advancing=await preloaderState(page);
+ assert.equal(advancing.launch[1]?.step,1,'Launch phrases advance in order');
+ assert.ok(advancing.launch.every((item,index)=>item.step===index&&item.step<12),
+  'Loading phrases remain sequential and cannot reach ignition while catalog data is held');
+ assert.ok(advancing.launch[1]?.text&&advancing.launch[1].text!==firstLaunchStatus);
+ assert.equal(advancing.stage,initial.stage);assert.equal(advancing.fillScale,initial.fillScale,
+  'The narrative cannot advance real scene progress');
+ const toggle=page.getByRole('button',{name:'Пауза анимации',exact:true});
+ await toggle.focus();await page.keyboard.press('Enter');
+ const paused=await preloaderState(page),pauseStarted=Date.now();
+ assert.equal(paused.paused,true);assert.equal(paused.motion,'paused');assert.equal(paused.toggle.pressed,'true');
  const layouts=[];
- for(const viewport of [{width:1280,height:800},{width:390,height:720},{width:320,height:568}])
+ for(const viewport of [{width:1280,height:800},{width:390,height:720}])
   layouts.push(await assertPreloaderFits(page,viewport));
- await page.emulateMedia({reducedMotion:'reduce'});const motion=await assertReducedMotion(page);
+ await page.emulateMedia({reducedMotion:'reduce'});
+ await page.waitForFunction(()=>document.getElementById('museumMotionToggle').disabled);
+ const motion=await assertReducedMotion(page);
  await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.waitForFunction(()=>!document.getElementById('museumMotionToggle').disabled);
+ const restored=await preloaderState(page);
+ assert.equal(restored.paused,true,'Removing the OS preference preserves a visitor-selected pause');
+ assert.equal(restored.toggle.pressed,'true');
+ // Include layout and media checks in the pause interval, keeping the real
+ // catalog deadline intact without extending this case unnecessarily.
+ await page.waitForTimeout(Math.max(0,2400-(Date.now()-pauseStarted)));
+ const stillPaused=await preloaderState(page);
+ assert.equal(stillPaused.launchStep,paused.launchStep,'A paused narrative does not advance across a whole cycle');
+ assert.equal(stillPaused.status,paused.status);assert.equal(stillPaused.stage,initial.stage);
+ assert.equal(stillPaused.fillScale,initial.fillScale);
+ assert.equal(stillPaused.running,0,'Pausing also stops the decorative motion');
  await page.setViewportSize({width:1280,height:800});
- await page.locator('[data-preloader-story="0"]').focus();
- return {initial,interactions,layouts,motion};
+ await page.locator('#museumMotionToggle').focus();await page.keyboard.press('Space');
+ const resumed=await preloaderState(page);
+ assert.equal(resumed.paused,false);assert.equal(resumed.motion,'running');assert.equal(resumed.toggle.pressed,'false');
+ if(paused.launchStep<11)
+  await page.waitForFunction(previous=>Number(document.getElementById('museumLoading').dataset.launchStep)>previous,
+   paused.launchStep,{timeout:5000});
+ else await page.waitForTimeout(2400);
+ const next=await preloaderState(page);
+ assert.equal(next.launchStep,Math.min(paused.launchStep+1,11),
+  'Resuming advances to the next phrase, or holds at the last phrase before ignition');
+ assert.equal(next.stage,initial.stage);assert.equal(next.fillScale,initial.fillScale);
+ // Keep the presentation paused as the real scene finishes: presentation
+ // controls must never stop genuine loading or prevent its final reveal.
+ await page.locator('#museumMotionToggle').focus();await page.keyboard.press('Enter');
+ return {initial,advancing,paused,stillPaused,resumed,next,layouts,motion};
 }
 
 function assertStageProgress(feedback){
@@ -232,10 +296,19 @@ function assertStageProgress(feedback){
  assert.ok(new Set(stages.map(item=>item.stage)).size>1,'The real boot advances the displayed stages');
  for(let i=0;i<stages.length;i++){
   assert.ok(stages[i].stage>=0&&stages[i].stage<=stages[i].total,'Stages stay within their declared range');
+  assert.ok(Math.abs(stages[i].fillScale-stages[i].stage/stages[i].total)<1e-6,
+   'The visible progress bar matches completed scene phases');
+  if(stages[i].stage===stages[i].total||stages[i].launchStep===12)
+   assert.ok(stages[i].render?.drawCalls>0&&stages[i].render?.triangles>0,
+    'Complete progress and ignition require an actual rendered frame, including during the exit fade');
   if(i)assert.ok(stages[i].stage>=stages[i-1].stage,'Real loading stages never move backwards');
  }
+ const firstView=stages.find(item=>/Готовим первый вид космодрома/.test(item.message));
+ assert.equal(firstView?.stage,8,'Starting the ninth phase still leaves the first render incomplete');
  const ready=stages.find(item=>item.state==='ready');
  assert.ok(ready&&ready.stage===ready.total,'All stages finish only with a rendered, ready museum');
+ assert.equal(ready.launchStep,12,'The final launch phrase belongs to the completed museum');
+ assert.equal(ready.launchStatus,'зажигание/кислород!');
 }
 
 try{
@@ -297,10 +370,13 @@ try{
  }
  {
   const run=await newCase('required-body-timeout',{stalledBody:'catalog',reducedMotion:true});await run.navigate();
-  await run.page.waitForFunction(()=>window.__MUSEUM_PRELOADER&&document.getElementById('museumLoading')?.dataset.story,
+  await run.page.waitForFunction(()=>window.__MUSEUM_PRELOADER&&document.getElementById('museumLoading')?.hasAttribute('data-launch-step'),
    null,{timeout:45000});
   const beforeTimeout=await assertReducedMotion(run.page);
-  assert.equal(beforeTimeout.story,'0','Reduced motion begins with a stable first story');
+  assert.equal(beforeTimeout.launchStep,0,'Reduced motion begins with a stable first launch phrase');
+  const intro=await preloaderState(run.page);assert.equal(intro.status,firstLaunchStatus);assert.equal(intro.welcome,welcome);
+  run.record.mobileLoading=await assertPreloaderFits(run.page,{width:320,height:568});
+  assert.ok(run.record.mobileLoading.status.lines>1,'The long launch phrase wraps at 320px');
   const state=await waitError(run.page),request=state.test.stalled[0];
   assert.equal(state.test.stalled.length,1);assert.ok(request.headersAt>=request.startedAt);
   assert.ok(request.abortedAt!==null,'The timeout aborts the body request');
@@ -308,7 +384,7 @@ try{
   assert.ok(elapsed>=14000&&elapsed<23000,'The unchanged 15-second deadline includes the response body: '+elapsed);
   assert.match(state.message,/не ответил вовремя/i);assert.equal(state.test.animateRequests,0);
   const afterTimeout=await assertReducedMotion(run.page);
-  assert.equal(afterTimeout.story,beforeTimeout.story,'Reduced motion keeps the story stable through the full network deadline');
+  assert.equal(afterTimeout.launchStep,beforeTimeout.launchStep,'Reduced motion keeps the launch phrase stable through the full network deadline');
   run.record.reducedMotion={beforeTimeout,afterTimeout};
   run.record.error=state;run.record.bodyTimeoutMs=elapsed;
   await run.page.screenshot({path:`${out}/${prefix}-required-body-timeout.png`,timeout:90000});
@@ -328,6 +404,7 @@ try{
   const total=Math.max(...requests.map(item=>item.abortedAt))-Math.min(...requests.map(item=>item.startedAt));
   assert.ok(total>=19000&&total<30000,'Both original 20-second deadlines expire within one bounded wait: '+total);
   const ready=await waitReady(run.page),models={ukss:ready.stats.ukss,tua:ready.stats.mik112.tua};
+  assertStageProgress(ready.state.test.feedback);
   for(const [name,model]of Object.entries(models)){
    assert.equal(model.status,'fallback',name+' remains usable with its fallback');
    assert.equal(model.error.name,'TimeoutError');
