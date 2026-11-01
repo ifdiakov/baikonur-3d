@@ -1,0 +1,43 @@
+{
+  "revision": "r16-reference-v2",
+  "references": [
+    {
+      "id": "1V-68yVMXLpklfhYp5Knp_YNX_hegoQwk",
+      "name": "Снимок экрана — 2026-11-01 в 19.03.27.png",
+      "url": "https://drive.google.com/file/d/1V-68yVMXLpklfhYp5Knp_YNX_hegoQwk/view",
+      "bytes": 2306211,
+      "sha256": "3e285b9176a6a4611a9bdd058dbb624c68ba77fdbd9eece2a5fb9989b6a65c35"
+    },
+    {
+      "id": "1QzXUeK6QwhV4nuEIbTkXbzbu4Qt7hbsL",
+      "name": "Снимок экрана — 2026-11-01 в 19.03.17.png",
+      "url": "https://drive.google.com/file/d/1QzXUeK6QwhV4nuEIbTkXbzbu4Qt7hbsL/view",
+      "bytes": 1081803,
+      "sha256": "0dcf5c785d9b30932a61608e4da92ff086ec5ef50e85404a234b336ddd34c5a8"
+    },
+    {
+      "id": "1NNSfnqWtNRYsX3PxCXfToh6EalTSwvxI",
+      "name": "Снимок экрана — 2026-11-01 в 19.03.02.png",
+      "url": "https://drive.google.com/file/d/1NNSfnqWtNRYsX3PxCXfToh6EalTSwvxI/view",
+      "bytes": 1932371,
+      "sha256": "f7bb6842842124297b3ff304050097e6b950ee043330efff5e34608e65ccadec"
+    },
+    {
+      "id": "1q5cNpbUmdLJcdDGCXYD1MUfVktf3nZbT",
+      "name": "Снимок экрана — 2026-11-01 в 19.02.52.png",
+      "url": "https://drive.google.com/file/d/1q5cNpbUmdLJcdDGCXYD1MUfVktf3nZbT/view",
+      "bytes": 1883836,
+      "sha256": "9df641697508810384d759bb905ec7ffae093a5435ca3a7ded4f10c3bc6b0443"
+    }
+  ],
+  "basis": "Four owner-provided rendered images, uploaded 2026-11-01; interpreted exterior finish, not measured construction drawings.",
+  "features": [
+    "dark olive enamel",
+    "warm ivory nose and light collar",
+    "silver nozzle exteriors and dark interiors",
+    "white stencil groups and 8К64 label",
+    "circumferential panel seams and crimp pattern",
+    "hatch outlines, fairing vents and small fasteners",
+    "four small external tail bells"
+  ]
+}

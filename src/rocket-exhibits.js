@@ -9,7 +9,7 @@ export const ROCKET_MODELS=Object.freeze({
   'energia-buran':{title:'Энергия — Буран',description:'Орбитальный корабль на ракете-носителе',height:58.815},
   energia:{title:'Энергия',description:'Ракета-носитель без боковой полезной нагрузки',height:58.770},
   'energia-m':{title:'Энергия-М',description:'Двухблочная компоновка проекта',height:50.257},
-  r16:{title:'Р-16',description:'Музейный экспонат · площадка №41'}
+  r16:{title:'Р-16',description:'Музейный экспонат · площадка №41',assetVersion:'r16-reference-v2'}
 });
 export const TUA_ROCKET_CHOICES=['energia-polyus','energia-buran','energia','energia-m'];
 const cache=new Map();
@@ -42,8 +42,9 @@ async function loadModel(id){
   const pending=(async()=>{
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
     try{
-      const url=new URL('../assets/models/rockets/'+id+'.glb',import.meta.url);url.searchParams.set('v',ROCKET_MODEL_VERSION);
-      const manifestUrl=new URL('../assets/models/rockets/'+id+'.json',import.meta.url);manifestUrl.searchParams.set('v',ROCKET_MODEL_VERSION);
+      const assetVersion=ROCKET_MODELS[id].assetVersion||ROCKET_MODEL_VERSION;
+      const url=new URL('../assets/models/rockets/'+id+'.glb',import.meta.url);url.searchParams.set('v',assetVersion);
+      const manifestUrl=new URL('../assets/models/rockets/'+id+'.json',import.meta.url);manifestUrl.searchParams.set('v',assetVersion);
       if(url.origin!==location.origin)throw new Error('Модель должна загружаться с сайта музея');
       const fetchPart=async(url,binary)=>{
         const response=await fetch(url,{signal:controller.signal,mode:'same-origin',redirect:'error',credentials:'same-origin'});
@@ -55,6 +56,7 @@ async function loadModel(id){
       ]);
       validateBinary(bytes);
       if(manifest.id!==id||manifest.version!==ROCKET_MODEL_VERSION||manifest.normalization?.unit!=='metre')throw new Error('Неверный масштаб модели');
+      if(ROCKET_MODELS[id].assetVersion&&manifest.modelRevision!==assetVersion)throw new Error('Версия модели ещё обновляется');
       const manager=new THREE.LoadingManager();manager.setURLModifier(resource=>{
         if(resource.startsWith('data:')||(resource.startsWith('blob:')&&new URL(resource).origin===location.origin))return resource;
         throw new Error('Внешний ресурс модели заблокирован');
@@ -81,7 +83,7 @@ export function createRocketExhibits({onChange=()=>{}}={}){
       effectiveVisible,
       position:entry.holder.position.toArray(),quaternion:entry.holder.quaternion.toArray(),
       metresToWorld:entry.holder.getWorldScale(new THREE.Vector3()).toArray(),commonMetre:MUSEUM_METRE,
-      bounds:entry.manifest?.bounds,assetStats:entry.manifest?.assetStats,error:entry.error};
+      bounds:entry.manifest?.bounds,assetStats:entry.manifest?.assetStats,modelRevision:entry.manifest?.modelRevision,appearance:entry.manifest?.appearance,error:entry.error};
   }
   function add(key,{parent,position=[0,0,0],rotation=[0,0,0],quaternion,holder,modelId,siteId}){
     if(entries.has(key))throw new Error('Повторная опора экспоната: '+key);

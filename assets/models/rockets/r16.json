@@ -1,21 +1,73 @@
 {
   "version": "rocket-exhibits-v1",
+  "modelRevision": "r16-reference-v2",
   "id": "r16",
   "configuration": "light",
-  "assetSha256": "731862c738fffd64bc64475e5094dc81e53c52f80d86d46144742b6e14109b56",
+  "assetSha256": "7cc703a1a1878360cc3ec199dfe7b906cf457f5f0ef17fa7b0c699031336d989",
   "assetStats": {
-    "bytes": 151260,
-    "triangles": 57230,
-    "vertices": 37560,
-    "primitives": 26,
-    "uniqueMeshes": 10,
-    "materials": 4,
-    "textures": 0
+    "bytes": 689740,
+    "triangles": 66712,
+    "vertices": 45011,
+    "primitives": 34,
+    "uniqueMeshes": 11,
+    "materials": 8,
+    "textures": 2
+  },
+  "appearance": {
+    "revision": "r16-reference-v2",
+    "referenceFolder": "https://drive.google.com/drive/folders/1xoJEpzkr4DRiF-X7cfW6o9An1mSFQfUC",
+    "references": [
+      {
+        "id": "1V-68yVMXLpklfhYp5Knp_YNX_hegoQwk",
+        "name": "Снимок экрана — 2026-11-01 в 19.03.27.png",
+        "url": "https://drive.google.com/file/d/1V-68yVMXLpklfhYp5Knp_YNX_hegoQwk/view",
+        "bytes": 2306211,
+        "sha256": "3e285b9176a6a4611a9bdd058dbb624c68ba77fdbd9eece2a5fb9989b6a65c35"
+      },
+      {
+        "id": "1QzXUeK6QwhV4nuEIbTkXbzbu4Qt7hbsL",
+        "name": "Снимок экрана — 2026-11-01 в 19.03.17.png",
+        "url": "https://drive.google.com/file/d/1QzXUeK6QwhV4nuEIbTkXbzbu4Qt7hbsL/view",
+        "bytes": 1081803,
+        "sha256": "0dcf5c785d9b30932a61608e4da92ff086ec5ef50e85404a234b336ddd34c5a8"
+      },
+      {
+        "id": "1NNSfnqWtNRYsX3PxCXfToh6EalTSwvxI",
+        "name": "Снимок экрана — 2026-11-01 в 19.03.02.png",
+        "url": "https://drive.google.com/file/d/1NNSfnqWtNRYsX3PxCXfToh6EalTSwvxI/view",
+        "bytes": 1932371,
+        "sha256": "f7bb6842842124297b3ff304050097e6b950ee043330efff5e34608e65ccadec"
+      },
+      {
+        "id": "1q5cNpbUmdLJcdDGCXYD1MUfVktf3nZbT",
+        "name": "Снимок экрана — 2026-11-01 в 19.02.52.png",
+        "url": "https://drive.google.com/file/d/1q5cNpbUmdLJcdDGCXYD1MUfVktf3nZbT/view",
+        "bytes": 1883836,
+        "sha256": "9df641697508810384d759bb905ec7ffae093a5435ca3a7ded4f10c3bc6b0443"
+      }
+    ],
+    "embeddedTextureSize": [
+      1024,
+      4096
+    ],
+    "paint": "dark olive with warm ivory nose",
+    "markings": "white stencil groups and 8К64",
+    "details": {
+      "tailBells": 4,
+      "fairingVentPairs": 2,
+      "hatchFasteners": 32,
+      "smallCaps": 8,
+      "noseCap": 1,
+      "tailClosure": 1
+    },
+    "addedTriangles": 9482,
+    "firstStageBellDisplayScaleY": 0.55,
+    "notes": "Exterior interpretation of four supplied renders; small unreadable lettering is not transcribed."
   },
   "bounds": {
     "min": [
       -1.899999976158142,
-      -9.992007221626409e-16,
+      -0.000004916989370995495,
       -1.899999976158142
     ],
     "max": [
@@ -25,7 +77,7 @@
     ],
     "size": [
       3.799999952316284,
-      30.299999952316284,
+      30.300004869305656,
       3.799999952316284
     ]
   },
@@ -530,5 +582,5 @@
     "90-degree total stage2 yaw aligns its cable channel with stage1 channel, but round interstage adapter does not uniquely key relative stage yaw",
     "Omit unconfirmed stage0 support/frame"
   ],
-  "interpretation": "Музейный экспонат по предоставленному STL. Геометрия и пропорции источника сохранены; окраска по музейному ориентиру. Не заявляется точной реконструкцией конкретного борта 1960 года."
+  "interpretation": "Музейный экспонат по предоставленному STL и четырём новым визуальным референсам. Габариты сохранены; наружные детали, окраска и видимая форма сопел уточнены по изображениям. Не заявляется точной реконструкцией конкретного борта 1960 года."
 }

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-a320-tail-v2';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-a320-tail-v2';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-r16-reference-v2';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-r16-reference-v2';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);

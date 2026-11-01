@@ -22,6 +22,10 @@ on:
       - 'scripts/prepare-ukss-asset.mjs'
       - 'scripts/ukss-detail-policy.json'
       - 'scripts/prepare-rocket-assets.mjs'
+      - 'scripts/prepare-r16-asset.mjs'
+      - 'scripts/build-r16-textures.py'
+      - 'scripts/r16-visual-details.mjs'
+      - 'docs/r16-source-model.md'
       - 'scripts/source-models/rockets/**'
       - 'scripts/prepare-a320-asset.mjs'
       - 'scripts/source-models/a320/**'
@@ -48,7 +52,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum8-natural-relief-20261101-v2
+  RELEASE_TAG: museum8-r16-reference-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -195,6 +199,7 @@ jobs:
       - name: Verify all models, object cards, modal lifecycle and mobile views
         if: matrix.suite == 'model-inspector'
         run: |
+          node tests/r16-browser.mjs
           node tests/a320-browser.mjs
           node tests/pua-browser.mjs
           node tests/cyclone-browser.mjs
@@ -281,6 +286,7 @@ jobs:
             qa-rocket-exhibits/
             qa-zenit/
             qa-inspector/
+            qa-r16/
             qa-a320/
             qa-pua/
             qa-mig25/
@@ -340,12 +346,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/natural-relief-20261101-v2.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/r16-reference-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей 8 — плавный рельеф и холм Сатурна',
+                name: 'Интерактивный музей — Р-16 по новым референсам',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

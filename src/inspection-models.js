@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-a320-tail-v2';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-r16-reference-v2';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -9,8 +9,8 @@ export function disposeInspectionModel(root){
  const geometries=new Set(),materials=new Set(),textures=new Set();root?.traverse(o=>{if(o.geometry)geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[]){materials.add(m);for(const t of Object.values(m))if(t?.isTexture)textures.add(t);}});
  for(const g of geometries)g.dispose();for(const m of materials)m.dispose();for(const t of textures)t.dispose();
 }
-async function gltf(path,signal){
- const url=new URL('../assets/models/'+path,import.meta.url);url.searchParams.set('v','20261101-source-exhibits-v2');
+async function gltf(path,signal,revision='20261101-source-exhibits-v2'){
+ const url=new URL('../assets/models/'+path,import.meta.url);url.searchParams.set('v',revision);
  const [{GLTFLoader},{MeshoptDecoder},response]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('./vendor/meshopt_decoder-v1.mjs'),fetch(url,{signal,credentials:'same-origin',redirect:'error'})]);
  if(!response.ok)throw new Error('Файл модели недоступен');const bytes=await response.arrayBuffer();
  const manager=new THREE.LoadingManager();manager.setURLModifier(uri=>{if(uri.startsWith('data:')||uri.startsWith('blob:')&&new URL(uri).origin===location.origin)return uri;throw new Error('Внешний ресурс модели');});
@@ -18,7 +18,7 @@ async function gltf(path,signal){
 }
 export async function createInspectionModel(id,{signal}={}){
  id=resolveModelId(id);const spec=MODEL_CATALOG[id];if(!spec)throw new Error('Модель не найдена');let root,setExploded=null,setVehicleVisible=null,setGear=null,initialGear=1,update=null;const owned=[];
- if(spec.asset){root=await gltf(spec.asset,signal);root.rotation.y=spec.yaw||0;if(id==='n1'||id==='mig25')root.userData.inspectionPrecise=true;}
+ if(spec.asset){root=await gltf(spec.asset,signal,spec.assetRevision);root.rotation.y=spec.yaw||0;if(id==='n1'||id==='mig25')root.userData.inspectionPrecise=true;}
  else if(id.startsWith('zenit-')){const {createZenitRocket}=await import('./zenit-rocket.js?v=20261101-source-exhibits-v2');const model=createZenitRocket({variant:id==='zenit-land'?'land':'sea'});root=model.root;setExploded=model.setExploded;}
  else if(id==='aircraft'){
   const {buildAlrosaAircraft}=await import('./a320-aircraft.js?v=20261101-a320-tail-v2');root=new THREE.Group();const aircraft=buildAlrosaAircraft(root,{fallback:false});if(!await aircraft.ready)throw Error('Не удалось загрузить Airbus A320');aircraft.model.scale.setScalar(1);aircraft.setEvening(true);aircraft.setGear(1);setGear=aircraft.setGear;update=time=>aircraft.updateDetails(time/1000);

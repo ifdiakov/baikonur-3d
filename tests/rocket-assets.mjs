@@ -171,11 +171,18 @@ assert.ok(totalBytes<8*1024*1024,'Five reusable exhibits stay within the combine
   readFile(new URL(id+'.json',assetRoot),'utf8').then(JSON.parse),readFile(new URL(id+'.glb',assetRoot))
  ]);
  assert.equal(manifest.version,'rocket-exhibits-v1');assert.equal(manifest.id,id);
+ assert.equal(manifest.modelRevision,'r16-reference-v2');assert.equal(manifest.appearance.references.length,4);
+ assert.equal(manifest.appearance.details.tailBells,4);assert.equal(manifest.appearance.details.hatchFasteners,32);
+ assert.equal(manifest.source.selectedTriangles+manifest.appearance.addedTriangles,manifest.assetStats.triangles);
+ assert.deepEqual(manifest.appearance.embeddedTextureSize,[1024,4096]);
  assert.equal(manifest.assetSha256,sha(bytes));assert.equal(manifest.assetStats.bytes,bytes.length);
  assert.equal(manifest.normalization.unit,'metre');assert.equal(manifest.normalization.up,'+Y');assert.equal(manifest.normalization.baseY,0);
  assert.ok(manifest.attribution.providedBy,'The print source has owner-provided provenance');
  parseGlb(bytes,id);
  const doc=await io.readBinary(bytes),root=doc.getRoot(),points=[];
+ assert.equal(root.listTextures().length,2,'Finish and roughness maps are embedded in the same GLB');
+ for(const texture of root.listTextures()){assert.equal(texture.getMimeType(),'image/jpeg');assert(texture.getImage().length>1000);assert.deepEqual(texture.getSize(),[1024,4096]);}
+ assert(root.listMaterials().some(m=>m.getBaseColorTexture()&&m.getMetallicRoughnessTexture()),'The shell uses both embedded maps');
  const bounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};
  let triangles=0,vertices=0,primitives=0;
  for(const node of root.listNodes()){
@@ -184,6 +191,7 @@ assert.ok(totalBytes<8*1024*1024,'Five reusable exhibits stay within the combine
    primitives++;assert.equal(primitive.getMode(),4);
    const positions=primitive.getAttribute('POSITION'),normals=primitive.getAttribute('NORMAL'),indices=primitive.getIndices();
    assert.ok(positions?.getElementSize()===3&&normals&&primitive.getMaterial(),'R-16 retains a shaded surface');
+   if(primitive.getMaterial().getBaseColorTexture())assert.equal(primitive.getAttribute('TEXCOORD_0')?.getCount(),positions.getCount(),'Every painted surface has complete texture coordinates');
    assert.ok(indices);assert.equal(indices.getCount()%3,0);triangles+=indices.getCount()/3;vertices+=positions.getCount();
    for(const attribute of primitive.listAttributes())for(const value of attribute.getArray())assert.ok(Number.isFinite(value));
    for(const value of indices.getArray())assert.ok(Number.isInteger(value)&&value>=0&&value<positions.getCount());
