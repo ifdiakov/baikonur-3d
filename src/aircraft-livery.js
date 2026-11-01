@@ -1,9 +1,11 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js?v=20261028-site41-v1';
+import {createLightField} from './light-field.js?v=20261101-museum-view-v1';
 
 export const AIRCRAFT_APPEARANCE_VERSION='alrosa-realistic-v1';
 export const AIRCRAFT_SCALE=.28;
+export const AIRCRAFT_LIGHT_FADE=Object.freeze([12000,32000]);
+const atmosphericLights={fog:true,distanceFade:AIRCRAFT_LIGHT_FADE};
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const SOURCES=Object.freeze([
  'https://aero.alrosa.ru/airline/our-fleet/',
@@ -181,7 +183,7 @@ export function buildAlrosaAircraft(parent){
   dummy.position.copy(pane.position);dummy.updateMatrix();windows.setMatrixAt(n,dummy.matrix);windowLights.push({x:pane.position.x,y:pane.position.y,z:pane.position.z,height:0,color:0xffd59a,size:.70});n++;
  }
  frames.instanceMatrix.needsUpdate=windows.instanceMatrix.needsUpdate=true;model.add(frames,windows);
- const cabinGlow=createLightField(model,windowLights,{name:'Самолёт · мягкое свечение салона',minPixels:1.1});
+ const cabinGlow=createLightField(model,windowLights,{...atmosphericLights,name:'Самолёт · мягкое свечение салона',minPixels:1.1});
 
  function cockpitPatch(side,corners,mat,offset){
   const xyz=[],indices=[],nu=7,nv=5;
@@ -214,10 +216,10 @@ export function buildAlrosaAircraft(parent){
   }
   for(const side of [-1,1]){const d=new THREE.Group();d.position.set(x+side*.49,pivotY+.02,z);model.add(d);const panel=box(.43,.065,nose?1.65:1.25,V(-side*.215,0,0),navy,d,'Створка ниши шасси');gearDoors.push({root:d,side});}
  }
- const nav=createLightField(model,[{x:-17.5,y:.70,z:-5.4,height:0,color:0xff3548,size:6},{x:17.5,y:.70,z:-5.4,height:0,color:0x58ffb1,size:6},{x:0,y:1,z:-20,height:0,color:0xfff6e4,size:5}],{name:'Самолёт · БАНО',minPixels:4});
- const strobes=createLightField(model,[{x:-17.6,y:.76,z:-5.3,height:0,color:0xffffff,size:13},{x:17.6,y:.76,z:-5.3,height:0,color:0xffffff,size:13}],{name:'Самолёт · стробоскопы',minPixels:8});
- const beacon=createLightField(model,[{x:0,y:2.2,z:-2,height:0,color:0xff3f31,size:10},{x:0,y:-2.2,z:1,height:0,color:0xff4d38,size:8}],{name:'Самолёт · проблесковый маяк',minPixels:6});
- const landing=createLightField(model,[{x:-2.8,y:-.35,z:3,height:0,color:0xffedc9,size:12},{x:2.8,y:-.35,z:3,height:0,color:0xffedc9,size:12}],{name:'Самолёт · посадочные фары',minPixels:6});
+ const nav=createLightField(model,[{x:-17.5,y:.70,z:-5.4,height:0,color:0xff3548,size:6},{x:17.5,y:.70,z:-5.4,height:0,color:0x58ffb1,size:6},{x:0,y:1,z:-20,height:0,color:0xfff6e4,size:5}],{...atmosphericLights,name:'Самолёт · БАНО',minPixels:4});
+ const strobes=createLightField(model,[{x:-17.6,y:.76,z:-5.3,height:0,color:0xffffff,size:13},{x:17.6,y:.76,z:-5.3,height:0,color:0xffffff,size:13}],{...atmosphericLights,name:'Самолёт · стробоскопы',minPixels:8});
+ const beacon=createLightField(model,[{x:0,y:2.2,z:-2,height:0,color:0xff3f31,size:10},{x:0,y:-2.2,z:1,height:0,color:0xff4d38,size:8}],{...atmosphericLights,name:'Самолёт · проблесковый маяк',minPixels:6});
+ const landing=createLightField(model,[{x:-2.8,y:-.35,z:3,height:0,color:0xffedc9,size:12},{x:2.8,y:-.35,z:3,height:0,color:0xffedc9,size:12}],{...atmosphericLights,name:'Самолёт · посадочные фары',minPixels:6});
 
  // Batch mechanical details by material. The animated landing-gear groups and
  // engine fans remain separate; all 60 cabin panes take one instanced draw.

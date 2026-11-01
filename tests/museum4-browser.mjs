@@ -104,18 +104,22 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(180));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleReliefSurfaces),0);evidence.flanks=flanks;
 
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
- assert.equal(initial.version,'krayniy-circuit-v4');assert.equal(initial.arrivalDuration,120);assert.equal(initial.cycleDuration,812);
+ assert.equal(initial.version,'krayniy-osm-circuit-v7');assert.equal(initial.arrivalDuration,120);assert.equal(initial.cycleDuration,812);
  assert.equal(initial.timeline.filter(p=>p.phase==='hold'&&p.duration===20).length,2);
  assert.equal(initial.timeline.filter(p=>p.phase==='away'&&p.duration===60).length,2);
  const phases=[];
- for(const t of [0,120,148,158,168,180,230,242,266,346,405,406,526,554,564,574,586,636,648,672,752,811,812]){
+ for(const t of [0,120,148,158,168,180,230,242,266,346,365.999,366,376,405,406,526,554,564,574,586,636,648,672,752,771.999,772,782,811,812]){
   await page.evaluate(t=>window.__BAIKONUR_QA.arrival.seek(t),t);
   const a=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
   assert.ok([...a.position,...a.velocity].every(Number.isFinite));
   if(a.segment==='hold'){assert.ok(Math.abs(a.runwayProgress-.8)<1e-8);assert.ok(a.velocity.every(v=>v===0));}
-  if(a.segment==='away')assert.equal(a.visible,false);
+  if(a.segment==='away')assert.equal(a.visible,a.phaseTime<a.returnHideTime,'The outgoing aircraft reaches the exterior return before becoming hidden');
   if(t===812){assert.equal(a.leg,1);assert.equal(a.elapsed,0);assert.equal(a.visible,true);}
   phases.push({t,leg:a.leg,phase:a.segment,visible:a.visible,progress:a.runwayProgress,direction:a.direction});
+ }
+ for(const leg of [1,2]){
+  assert.ok(phases.some(a=>a.leg===leg&&a.phase==='away'&&a.visible),'Each sortie includes a visible final escape');
+  assert.ok(phases.some(a=>a.leg===leg&&a.phase==='away'&&!a.visible),'Each sortie includes a hidden distant return');
  }
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.seek(158);q.arrival.inspect('port');});await shot('alrosa-stop-at-four-fifths');evidence.flight=phases;
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-43'));await step();

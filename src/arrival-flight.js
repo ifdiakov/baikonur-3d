@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261031-facilities-rails-lighting-v5';
-import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION} from './aircraft-livery.js?v=20261028-museum4-osm-live-v2';
+import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261101-museum-view-v1';
+import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION,AIRCRAFT_LIGHT_FADE} from './aircraft-livery.js?v=20261101-museum-view-v1';
 
-import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261028-museum4-osm-live-v2';
+import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261101-museum-view-v1';
 import {arrivalStatus,createArrivalStatusTimeline,ARRIVAL_STATUS_VERSION} from './arrival-status.js?v=moscow-krayniy-status-v1';
 export {FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION};
 // Airport transforms and the complex centre define the complete two-sortie circuit.
@@ -18,19 +18,32 @@ function buildContrails(parent,path){
   if(i<count-1)indices.push(k,k+1,k+2,k+1,k+3,k+2);
  }
  geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('opacity',new THREE.BufferAttribute(alphas,1));geometry.setAttribute('uv',new THREE.BufferAttribute(uvs,2));geometry.setIndex(indices);
- const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,
-  vertexShader:`attribute float opacity;varying float alpha;varying vec2 vUv;
+ const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,fog:true,
+  uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{distanceFade:{value:new THREE.Vector2(...AIRCRAFT_LIGHT_FADE)}}]),
+  vertexShader:`attribute float opacity;varying float alpha;varying vec2 vUv;varying float atmosphericDistance;
    #include <common>
+   #include <fog_pars_vertex>
    #include <logdepthbuf_pars_vertex>
    void main(){alpha=opacity;vUv=uv;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;
+    atmosphericDistance=length(mvPosition.xyz);
+    #include <fog_vertex>
     #include <logdepthbuf_vertex>
    }`,
-  fragmentShader:`varying float alpha;varying vec2 vUv;
+  fragmentShader:`varying float alpha;varying vec2 vUv;varying float atmosphericDistance;uniform vec2 distanceFade;
    #include <common>
+   #include <fog_pars_fragment>
    #include <logdepthbuf_pars_fragment>
    void main(){
     #include <logdepthbuf_fragment>
-    float soft=pow(max(0.,sin(vUv.x*3.14159)),1.8);gl_FragColor=vec4(.67,.71,.79,soft*alpha);
+    float transmission=1.-smoothstep(distanceFade.x,distanceFade.y,atmosphericDistance);
+    #ifdef USE_FOG
+     #ifdef FOG_EXP2
+      transmission*=exp(-fogDensity*fogDensity*atmosphericDistance*atmosphericDistance);
+     #else
+      transmission*=1.-smoothstep(fogNear,fogFar,atmosphericDistance);
+     #endif
+    #endif
+    float soft=pow(max(0.,sin(vUv.x*3.14159)),1.8);gl_FragColor=vec4(.67,.71,.79,soft*alpha*transmission);
     #include <colorspace_fragment>
    }`});
  // The terrain overlays render at order 2 without writing depth. Airborne
@@ -38,15 +51,15 @@ function buildContrails(parent,path){
  // against opaque buildings and the aircraft itself.
  const mesh=new THREE.Mesh(geometry,material);mesh.name='Два рассеивающихся инверсионных следа';mesh.renderOrder=7;mesh.frustumCulled=false;mesh.userData.pickable=false;parent.add(mesh);
  let visibleSamples=0;
- function update(time,camera){visibleSamples=0;const lastVisible=[null,null];
+ function update(time,camera,following=false){visibleSamples=0;const lastVisible=[null,null];
   for(let lane=0;lane<2;lane++)for(let i=0;i<count;i++){
    const age=i/(count-1)*38,emitted=time-age,state=path.sample(Math.max(0,emitted)),p=state.position.clone();
-   const enabled=emitted>=0&&state.visible&&!state.onGround&&state.position.y-state.runwayY>90;
+   const enabled=emitted>=0&&(state.visible||following)&&!state.onGround&&state.position.y-state.runwayY>90;
    const right=new THREE.Vector3().crossVectors(state.heading,V(0,1,0)).normalize();
    p.addScaledVector(right,(lane?6:-6)*AIRCRAFT_SCALE).addScaledVector(state.heading,-4*AIRCRAFT_SCALE);p.y-=1.65*AIRCRAFT_SCALE;
    p.x+=Math.sin(emitted*.4+lane)*age*.055;p.y+=age*.07;
-   // Collapse the strip at an invisible return boundary. Otherwise its last
-   // translucent triangle could stretch from the west entry to the old exit.
+   // Close the public-view trail while the return arc is outside the museum.
+   // Following mode keeps the physically continuous aircraft and trail visible.
    if(enabled)lastVisible[lane]=p.clone();else if(lastVisible[lane])p.copy(lastVisible[lane]);
    const across=new THREE.Vector3().crossVectors(state.heading,camera.position.clone().sub(p).normalize()).normalize();
    const pixelWidth=camera.position.distanceTo(p)*Math.tan(camera.fov*Math.PI/360)/(globalThis.innerHeight||1000)*2.4;
@@ -56,7 +69,7 @@ function buildContrails(parent,path){
   }
   geometry.attributes.position.needsUpdate=true;geometry.attributes.opacity.needsUpdate=true;mesh.visible=visibleSamples>0;
  }
- return {mesh,update,stats:()=>({visibleSamples,maxAge:38,emissionAbove:90,cycleDuration:FLIGHT_CYCLE_DURATION})};
+ return {mesh,update,stats:()=>({visibleSamples,maxAge:38,emissionAbove:90,cycleDuration:FLIGHT_CYCLE_DURATION,fog:true,distanceFade:[...AIRCRAFT_LIGHT_FADE]})};
 }
 
 export function createArrivalFlight({scene,camera,controls,canvas,airfield,firstAirfield=airfield,complexCenter,container,onFollow,getNavigationBounds}){
@@ -66,7 +79,7 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
  const statusTimeline=createArrivalStatusTimeline(path.phases);let status=arrivalStatus(statusTimeline,state.cycleTime);
  container.innerHTML='<div class="arrival-title"><span class="arrival-dot" aria-hidden="true"></span><span id="arrivalRoute" role="status" aria-live="polite" aria-atomic="true">МОСКВА-КРАЙНИЙ</span><time id="arrivalClock" role="timer" aria-live="off" title="До стоянки"></time></div><div class="arrival-bottom"><span id="arrivalPhase">Над космодромом</span><button id="arrivalFollow" type="button" aria-pressed="false">Следить</button><button id="arrivalReplay" type="button" aria-label="Начать цикл полёта заново" title="Начать цикл заново">↺</button></div><div class="arrival-hint">Мышь или палец — вращение · колесо — приближение</div>';
  const follow=container.querySelector('#arrivalFollow'),replay=container.querySelector('#arrivalReplay'),clock=container.querySelector('#arrivalClock'),route=container.querySelector('#arrivalRoute'),label=container.querySelector('#arrivalPhase');
- const labels={overflight:'Над космодромом',approach:'Заход на посадку',flare:'Над полосой',rollout:'Пробег до 4/5 ВПП',hold:'Самолёт на стоянке','turn-back':'Разворот для руления','taxi-back':'Возвращение к началу ВПП','turn-takeoff':'Разворот перед взлётом',takeoff:'Разгон и взлёт',departure:'Пролёт через комплекс',away:'За пределами макета'};
+ const labels={inbound:'На подлёте',overflight:'Над космодромом',approach:'Заход на посадку',flare:'Над полосой',rollout:'Пробег до 4/5 ВПП',hold:'Самолёт на стоянке','turn-back':'Разворот для руления','taxi-back':'Возвращение к началу ВПП','turn-takeoff':'Разворот перед взлётом',takeoff:'Разгон и взлёт',departure:'Пролёт через комплекс',away:'За пределами макета'};
  const countdownTitles={inbound:'До стоянки',parking:'До вылета',outbound:'До следующего прилёта'};
  const followTarget=new THREE.Vector3();let savedControls={},lastRelease=null;
  function stopFollowing({releaseCamera=true}={}){
@@ -74,13 +87,13 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
    if(releaseCamera)lastRelease=releaseFollowCamera({camera,controls,savedControls,bounds:getNavigationBounds?.()});
    else Object.assign(controls,savedControls);
   }
-  following=false;document.body.classList.remove('following-arrival');follow.textContent='Следить';follow.title='Следить за самолётом';follow.setAttribute('aria-pressed','false');
+  following=false;lastTrail=-1;root.visible=state.visible&&!suppressed;document.body.classList.remove('following-arrival');follow.textContent='Следить';follow.title='Следить за самолётом';follow.setAttribute('aria-pressed','false');
  }
  function setFollowing(value){if(!value){stopFollowing();return;}if(following)return;
   onFollow?.();
   savedControls=captureOrbitSettings(controls);
   Object.assign(controls,{minDistance:5,maxDistance:240,minPolarAngle:.06,maxPolarAngle:Math.PI-.06,enablePan:false,mouseButtons:{LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE},touches:{ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_ROTATE}});
-  following=true;followTarget.copy(craft.model.position);controls.target.copy(followTarget);camera.position.copy(followTarget).add(V(15,8,18).multiplyScalar(camera.aspect<.8?1.55:1));controls.update();
+  following=true;lastTrail=-1;root.visible=!suppressed;followTarget.copy(craft.model.position);controls.target.copy(followTarget);camera.position.copy(followTarget).add(V(15,8,18).multiplyScalar(camera.aspect<.8?1.55:1));controls.update();
   document.body.classList.add('following-arrival');follow.textContent='Свободно';follow.title='Вращайте мышью или пальцем; колесо — приближение';follow.setAttribute('aria-pressed','true');
  }
  follow.onclick=()=>setFollowing(!following);
@@ -90,17 +103,17 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
  document.addEventListener('keydown',e=>{if(!isCameraTextEntry(e.target)&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','escape'].includes(e.key.toLowerCase()))stopFollowing();});
  document.addEventListener('visibilitychange',()=>{paused=document.hidden;lastNow=null;});
  const direction=V(0,0,1),rot=new THREE.Quaternion(),bankQ=new THREE.Quaternion(),lastTrailCamera=V(Infinity,Infinity,Infinity);
- function render(t){state=arrivalPose(path,t);root.visible=state.visible&&!suppressed;craft.model.position.copy(state.bodyPosition);
+ function render(t){state=arrivalPose(path,t);const visible=state.visible||following;root.visible=visible&&!suppressed;craft.model.position.copy(state.bodyPosition);
   const ahead=path.sample(t+.2).heading,turn=new THREE.Vector3().crossVectors(state.heading,ahead).y;
-  const banking=!state.onGround&&state.visible&&(state.segment!=='approach'||state.phaseTime<108);
+  const banking=!state.onGround&&visible&&(state.segment!=='approach'||state.phaseTime<108);
   const bank=banking?clamp(-turn*12,-.32,.32):0;
   rot.copy(state.attitude);bankQ.setFromAxisAngle(direction,bank);craft.model.quaternion.copy(rot).multiply(bankQ);
   craft.updateGear(state.gear,state.segment==='approach'?state.phaseTime:null);craft.updateDetails(t);
-  craft.strobes.root.visible=state.visible&&(t%1.2<.075||(t%1.2>.17&&t%1.2<.245));
+  craft.strobes.root.visible=visible&&(t%1.2<.075||(t%1.2>.17&&t%1.2<.245));
   craft.beacon.root.visible=Math.sin(t*2*Math.PI/1.4)>.65;
-  craft.landing.root.visible=state.visible&&state.gear>.85&&(state.segment!=='approach'||state.phaseTime>=72);
-  if(following&&state.visible&&!suppressed){const target=state.bodyPosition;camera.position.add(target.clone().sub(followTarget));controls.target.copy(target);followTarget.copy(target);controls.update();}
-  if(Math.abs(t-lastTrail)>.1||lastTrail<0||lastTrailCamera.distanceToSquared(camera.position)>.01){trail.update(t,camera);lastTrail=t;lastTrailCamera.copy(camera.position);}
+  craft.landing.root.visible=visible&&state.gear>.85&&(state.segment!=='approach'||state.phaseTime>=72);
+  if(following&&!suppressed){const target=state.bodyPosition;camera.position.add(target.clone().sub(followTarget));controls.target.copy(target);followTarget.copy(target);controls.update();}
+  if(Math.abs(t-lastTrail)>.1||lastTrail<0||lastTrailCamera.distanceToSquared(camera.position)>.01){trail.update(t,camera,following);lastTrail=t;lastTrailCamera.copy(camera.position);}
   if(suppressed)trail.mesh.visible=false;
   status=arrivalStatus(statusTimeline,state.cycleTime);
   const uiKey=state.leg+':'+state.segment+':'+status.seconds;
@@ -131,6 +144,6 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
    mainWheelBottom:craft.model.localToWorld(V(3,-2.72,-3)).y-.46*AIRCRAFT_SCALE,
    noseWheelBottom:craft.model.localToWorld(V(0,-2.72,12)).y-.46*AIRCRAFT_SCALE,
    gear:state.gear,onGround:state.onGround,airport:state.airport,runwayY:state.runwayY,touchdown:state.touchdown.toArray(),axis:state.axis.toArray(),stop:state.stop.toArray(),stopFraction:path.stopFraction,runwayProgress:state.runwayProgress,timeline:path.phases,
-   complexCenter:path.complexCenter.toArray(),airports:path.runways.map(r=>({key:r.key,center:r.center.toArray(),length:r.length,width:r.width,touchdown:r.touchdown.toArray(),stop:r.stop.toArray()})),
+   complexCenter:path.complexCenter.toArray(),arrivalEntryPoints:path.arrivalEntryPoints.map(p=>p.toArray()),entryDistance:path.entryDistance,returnHideTime:path.returnHideTime,airports:path.runways.map(r=>({key:r.key,center:r.center.toArray(),length:r.length,width:r.width,touchdown:r.touchdown.toArray(),stop:r.stop.toArray()})),
    strobeVisible:craft.strobes.root.visible,beaconVisible:craft.beacon.root.visible,trail:trail.stats()})};
 }

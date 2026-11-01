@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
+import {MUSEUM_SECTIONS} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-facilities-rails-lighting-v6';
@@ -99,7 +100,9 @@ try{
  assert.equal(await page.locator('#mythsAccordion .museum-menu-empty').count(),0);
  await openSection('equipmentAccordion');
  assert.equal(await page.locator('#mythsAccordion').evaluate(element=>element.open),false);
- assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').count(),15);
+ const equipmentActions=MUSEUM_SECTIONS.find(section=>section.id==='equipmentAccordion').items.map(item=>item.action);
+ assert.deepEqual(await page.locator('#equipmentAccordion [data-museum-action]').evaluateAll(elements=>elements.map(element=>element.dataset.museumAction)),equipmentActions,
+  'The rendered equipment menu includes every current catalogue action in order');
  assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').first().getAttribute('data-museum-action'),'zenit-3sl');
  await shot('desktop-equipment');
  await action('r7');await selectedSite('pad-1');

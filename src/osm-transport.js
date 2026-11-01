@@ -18,6 +18,7 @@ import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-ra
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
 import {railApproachSleeperDistances} from './paired-rail-approach.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite110RailFan} from './site110-rail-fan.js?v=20261031-facilities-rails-lighting-v4';
+import {buildHighwayDisplay} from './highway-display.js?v=20261101-museum-view-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -761,6 +762,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  markingSegments=roadMarkingPlan.quads.length;
  paint.flush();highwayYellow.flush();highwayWhite.flush();batches.push(highwayYellow,highwayWhite);
+ // Display scenery continues beyond the source extract. Do not extend OSM
+ // topology, traffic routes, geography bounds or the museum's camera bounds.
+ const highwayDisplay=buildHighwayDisplay({parent:layers.roads,highway,directionAt:highwayDirectionAt,shoulderColor:ROAD_STYLE.shoulderColor});
+ roadPaths.displayHighwayExtensions=highwayDisplay.paths;
  const bridges=roadGraph.ways.filter(w=>w.tags.bridge&&w.tags.bridge!=='no').map(w=>({type:'road',center:w.segments[0].a.position.clone().lerp(w.segments.at(-1).b.position,.5).toArray(),deckTop:(w.segments[0].a.position.y+w.segments.at(-1).b.position.y)/2,clearance:5.8,length:w.segments.reduce((n,e)=>n+e.length,0),width:w.width,osmWayId:w.osmId,...(w.osmId===INTERCHANGE_BRIDGE_WAY?interchangeBridge?.stats():{})}));
  const concrete=material(0x96988f),guard=material(0x8c9899,{roughness:.65,metalness:.3});
  for(const w of roadGraph.ways.filter(w=>w.tags.bridge&&w.tags.bridge!=='no')){
@@ -785,7 +790,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    railGauge:RAIL_PROFILE.gauge,railProfile:RAIL_PROFILE};
  }
  const buildMilliseconds=Date.now()-started;
- return {roadPaths:()=>roadPaths,trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,
+ return {roadPaths:()=>roadPaths,trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,highwayDisplay,
   roadMarkingTarget(nodeId){const node=roadGraph.nodes.get(String(nodeId));return node?{nodeId:node.id,center:node.position.toArray(),sourceWayIds:[...new Set(node.edges.map(edge=>edge.wayId))]}:null;},
   bridgeObjects:()=>interchangeBridge?[interchangeBridge.root]:[],
   setBridgeEvening:value=>interchangeBridge?.setEvening(value),
@@ -795,7 +800,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    roadRoutes:roadGraph.ways.length,railRoutes:railGraph.ways.length,roadNodes:roadGraph.nodes.size,railNodes:railGraph.nodes.size,roadComponents:roadGraph.components.length,railComponents:railGraph.components.length,
    roadSurface:{version:'osm-batched-upward-terrain-surfaces-v2',junctionCount,markingSegments,roads:renderedRoadWays.size,paintLift:HIGHWAY_MARKINGS.lift-HIGHWAY_ASPHALT_LIFT,sampleStep:1.4,normalDirection:'upward',terrainClearance:.38,
     markings:roadMarkingPlan.stats,local:roadGraph.localRoadSurface,
-    highway:{...roadGraph.highwaySurface,asphaltColor:'#'+HIGHWAY_ASPHALT_COLOR.toString(16),asphaltLift:HIGHWAY_ASPHALT_LIFT,sharedWithBridge:true,clippedOverlapSections:highwayAsphalt.clippedSections,ordinarySurfaceClip,
+    highway:{...roadGraph.highwaySurface,displayExtensions:highwayDisplay.stats(),asphaltColor:'#'+HIGHWAY_ASPHALT_COLOR.toString(16),asphaltLift:HIGHWAY_ASPHALT_LIFT,sharedWithBridge:true,clippedOverlapSections:highwayAsphalt.clippedSections,ordinarySurfaceClip,
      lowerJunctionAprons:{version:INTERCHANGE_APRON_VERSION,junctions:lowerAprons.map(apron=>apron.report)},
      markings:{...HIGHWAY_MARKINGS,sourceWayIds:[...highwayMarkedWays],mainRuns:highwayMarkingRuns,rampRuns:rampMarkingRuns,projectionMisses:roadMarkingPlan.stats.projectionMisses,
       yellowTriangles:highwayYellow.triangles,whiteTriangles:highwayWhite.triangles,bridgeBoundary:'exact-profile-seams',lanePolicy:'source-lanes-and-direction',junctionPolicy:roadMarkingPlan.stats.version}},

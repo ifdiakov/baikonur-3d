@@ -41,7 +41,7 @@ function airport(id,key){
 const krayniy=airport('airfield','krayniy');
 const hub=point(...geography.project(63.33,45.94));
 const circuit=createFlightCircuit(krayniy,{complexCenter:hub,aircraftScale:.28});
-assert.equal(FLIGHT_CIRCUIT_VERSION,'krayniy-osm-circuit-v6');
+assert.equal(FLIGHT_CIRCUIT_VERSION,'krayniy-osm-circuit-v7');
 assert.equal(FLIGHT_CYCLE_DURATION,812);assert.equal(FLIGHT_LEG_DURATION,406);
 assert.deepEqual(circuit.runways.map(r=>r.key),['krayniy','krayniy']);
 assert.deepEqual(circuit.runways.map(r=>r.length),[AIRPORT_DIMENSIONS.krayniy.length,AIRPORT_DIMENSIONS.krayniy.length]);
@@ -84,7 +84,8 @@ for(let leg=0;leg<2;leg++){
  const exit=circuit.sample(departure.end-.001),delta=exit.position.clone().sub(hub);
  assert.ok(delta.z<-2900);assert.ok(leg===0?delta.x>2800:Math.abs(delta.x)<1);
  const away=circuit.phases.find(p=>p.leg===leg&&p.phase==='away');assert.equal(away.duration,60);
- for(const dt of [0,30,59.999])assert.equal(circuit.sample(away.start+dt).visible,false);
+ assert.equal(circuit.sample(away.start).visible,true);
+ for(const dt of [circuit.returnHideTime,30,59.999])assert.equal(circuit.sample(away.start+dt).visible,false);
 }
 const west=circuit.sample(406).position.clone().sub(hub);
 assert.ok(west.x<-2800&&Math.abs(west.z)<500,'The second approach returns from the geographic west');

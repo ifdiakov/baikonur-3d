@@ -60,13 +60,17 @@ function checkFrame(s){
 function checkFree(s,expectedControls){
  assert.equal(s.following,false);assert.equal(s.trainFollowing,false);
  near(s.camera.target[1],groundY,1e-6,'Free navigation targets the museum ground');
- const c=s.camera.controls,b=s.camera.bounds;
+ const c=s.camera.controls,b=s.camera.bounds,pb=s.camera.positionBounds,hb=s.camera.heightBounds;
  assert(c,'The QA hook reports the actual OrbitControls configuration');
  assert.equal(c.enablePan,true);assert.deepEqual(c.mouseButtons,{LEFT:2,MIDDLE:1,RIGHT:0});
  assert.deepEqual(c.touches,{ONE:1,TWO:3});
  if(expectedControls)assert.deepEqual(c,expectedControls,'A follow/release cycle restores every exposed control setting');
  assert(s.camera.target[0]>=b.minX-1e-6&&s.camera.target[0]<=b.maxX+1e-6);
  assert(s.camera.target[2]>=b.minZ-1e-6&&s.camera.target[2]<=b.maxZ+1e-6);
+ assert(pb&&hb,'The QA hook reports the actual eye and height limits');
+ assert(s.camera.position[0]>=pb.minX-1e-6&&s.camera.position[0]<=pb.maxX+1e-6,'The camera eye stays inside the lateral X limits');
+ assert(s.camera.position[2]>=pb.minZ-1e-6&&s.camera.position[2]<=pb.maxZ+1e-6,'The camera eye stays inside the lateral Z limits');
+ assert(s.camera.position[1]>=hb.min-1e-6&&s.camera.position[1]<=hb.max+1e-6,'The rendered camera stays inside both height limits');
  const offset=cameraOffset(s),elevation=Math.atan2(offset[1],Math.hypot(offset[0],offset[2]));
  assert(elevation>=Math.PI/6-1e-5,'Released navigation retains the minimum 30 degree elevation');
  assert(cameraDistance(s)>=24-1e-6,'The free view has a useful museum-scale orbit');

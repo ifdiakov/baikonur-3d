@@ -10,7 +10,12 @@ export const TOUCHDOWN_TIME=120;
 export const FLIGHT_TIMINGS=Object.freeze({approach:120,rollout:28,hold:20,turn:12,taxi:50,takeoff:24,departure:80,away:60});
 export const FLIGHT_LEG_DURATION=Object.values(FLIGHT_TIMINGS).reduce((a,b)=>a+b,0)+FLIGHT_TIMINGS.turn;
 export const FLIGHT_CYCLE_DURATION=FLIGHT_LEG_DURATION*2;
-export const FLIGHT_CIRCUIT_VERSION='krayniy-osm-circuit-v6';
+export const FLIGHT_CIRCUIT_VERSION='krayniy-osm-circuit-v7';
+// The initial frame and the hidden return stay beyond the museum's navigation
+// envelope. The aircraft reaches the existing overflight nodes only after
+// travelling through the distant atmosphere, rather than spawning over the map.
+export const FLIGHT_ENTRY_DISTANCE=55000;
+export const FLIGHT_RETURN_HIDE_TIME=20;
 
 function hermite(nodes,t){
  let i=0;while(i<nodes.length-2&&t>nodes[i+1].t)i++;
@@ -47,7 +52,8 @@ function runwayFrame(airfield,aircraftScale){
 
 // Both museum sorties land at Krayniy and use its actual model transform.
 // An optional firstAirfield remains available to callers with another route.
-// The hidden one-minute away phase is the only position discontinuity.
+// The one-minute away phase includes the final escape into the atmosphere and
+// an exterior return arc. Its position and velocity join both sorties smoothly.
 export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=airfield,complexCenter}={}){
  const hub=complexCenter?.clone?.()||V();hub.y=0;
  const atHub=(x,y,z)=>hub.clone().add(V(x,y,z));
@@ -60,8 +66,16 @@ export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=ai
   }
  }
  const approachNodes=[
-  [{t:0,p:atHub(-2700,520,-2100),v:V(45,-.6,20)}, {t:42,p:atHub(-600,400,-300),v:V(44,-4,28)}],
-  [{t:0,p:atHub(-2900,500,-450),v:V(48,-.6,6)}, {t:38,p:atHub(0,400,0),v:V(48,-3,14)}]
+  [{t:0,p:atHub(-FLIGHT_ENTRY_DISTANCE,1200,-2100),v:V(1200,-4,0)},
+   {t:4,p:atHub(-18000,960,-2100),v:V(4000,-35,0)},
+   {t:10,p:atHub(-6000,740,-2100),v:V(600,-25,10)},
+   {t:18,p:atHub(-2900,560,-1900),v:V(200,-12,40)},
+   {t:42,p:atHub(-600,400,-300),v:V(44,-4,28)}],
+  [{t:0,p:atHub(-FLIGHT_ENTRY_DISTANCE,1200,-450),v:V(1200,-4,0)},
+   {t:4,p:atHub(-18000,960,-450),v:V(4000,-35,0)},
+   {t:10,p:atHub(-6000,740,-450),v:V(600,-25,0)},
+   {t:18,p:atHub(-2600,560,-420),v:V(200,-12,8)},
+   {t:38,p:atHub(0,400,0),v:V(48,-3,14)}]
  ].map((prefix,leg)=>{const {near,along,touchdown,landingSpeed}=runways[leg];return [...prefix,
   {t:82,p:near(690,690*Math.tan(Math.PI/60)),v:along(22,-22*Math.tan(Math.PI/60))},
   {t:105,p:near(260,260*Math.tan(Math.PI/60)),v:along(19,-19*Math.tan(Math.PI/60))},
@@ -73,6 +87,16 @@ export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=ai
   {t:56,p:atHub(0,410,0),v:leg===0?V(38,4,-42):V(5,4,-60)},
   {t:80,p:leg===0?atHub(2900,650,-3000):atHub(0,650,-3500),v:leg===0?V(80,2,-80):V(0,3,-100)}
  ];});
+ const returnNodes=departureNodes.map((nodes,leg)=>{
+  const last=nodes.at(-1),entry=approachNodes[(leg+1)%2][0],out=leg===0?V(1,0,-1).normalize():V(0,0,-1);
+  const outer=(angle,radius=60000)=>atHub(Math.cos(angle)*radius,1200,Math.sin(angle)*radius);
+  return [{t:0,p:last.p.clone(),v:last.v.clone()},
+   {t:8,p:hub.clone().addScaledVector(out,6500).setY(900),v:out.clone().multiplyScalar(800).setY(20)},
+   {t:FLIGHT_RETURN_HIDE_TIME,p:hub.clone().addScaledVector(out,FLIGHT_ENTRY_DISTANCE).setY(1200),v:out.clone().multiplyScalar(3500)},
+   {t:34,p:outer((leg===0?-95:-115)*Math.PI/180),v:leg===0?V(-2600,0,200):V(-2300,0,1000)},
+   {t:46,p:outer((leg===0?-145:-155)*Math.PI/180),v:leg===0?V(-1400,0,2000):V(-1000,0,2300)},
+   {t:60,p:entry.p.clone(),v:entry.v.clone()}];
+ });
 
  function sample(seconds){
   const total=Math.max(0,Number.isFinite(seconds)?seconds:0),cycleTime=total%FLIGHT_CYCLE_DURATION;
@@ -111,9 +135,14 @@ export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=ai
    const target=clamp(Math.atan2(heading.y,Math.hypot(heading.x,heading.z))*180/Math.PI+3,-5,18);
    pitchDeg=THREE.MathUtils.lerp(9,target,smooth(0,12,t));
   }else{
-   position=departureNodes[leg].at(-1).p.clone();velocity=V();heading=departureNodes[leg].at(-1).v.clone().normalize();gear=0;onGround=false;visible=false;
+   ({position,velocity}=hermite(returnNodes[leg],t));heading.copy(velocity).normalize();gear=0;onGround=false;
+   // Keep the outgoing aircraft visible until it has physically left the
+   // atmosphere-covered museum view; the hidden section never teleports.
+   visible=t<FLIGHT_RETURN_HIDE_TIME;
+   const pathPitch=Math.atan2(heading.y,Math.hypot(heading.x,heading.z))*180/Math.PI;
+   pitchDeg=clamp(pathPitch+THREE.MathUtils.lerp(3,2,smooth(50,60,t)),-5,18);
   }
-  const phaseLabel=phase==='approach'?(t<58?'overflight':t<108?'approach':'flare'):phase;
+  const phaseLabel=phase==='approach'?(t<18?'inbound':t<58?'overflight':t<108?'approach':'flare'):phase;
   return {position,velocity,heading,gear,onGround,pitchDeg,visible,phase:phaseLabel,segment:phase,phaseTime:t,
    phaseRemaining:duration-t,phaseDuration:duration,leg:leg+1,direction,cycleTime,cycleIndex:Math.floor(total/FLIGHT_CYCLE_DURATION),
    airport:key,runwayY,runwayLength:length,runwayWidth:width,clearance,axis:axis.clone(),touchdown:touchdown.clone(),stop:stop.clone(),
@@ -123,7 +152,8 @@ export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=ai
  return {sample,phases,axis:first.axis,right:first.right,center:first.center,threshold:first.threshold,touchdown:first.touchdown,stop:first.stop,
   runwayY:first.runwayY,clearance:first.clearance,duration:FLIGHT_CYCLE_DURATION,runways,complexCenter:hub,
   arrivalDuration:FLIGHT_DURATION,legDuration:FLIGHT_LEG_DURATION,runwayLength:first.length,runwayWidth:first.width,stopFraction:.8,
-  taxiStart:first.startTakeoff.clone(),turnRadius:first.turnRadius,arrivalEntryPoints:approachNodes.map(n=>n[0].p.clone()),departureNodes};
+  taxiStart:first.startTakeoff.clone(),turnRadius:first.turnRadius,arrivalEntryPoints:approachNodes.map(n=>n[0].p.clone()),approachNodes,departureNodes,returnNodes,
+  entryDistance:FLIGHT_ENTRY_DISTANCE,returnHideTime:FLIGHT_RETURN_HIDE_TIME};
 }
 
 export function flightPose(path,seconds,{aircraftScale=.28}={}){

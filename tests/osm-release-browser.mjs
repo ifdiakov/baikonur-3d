@@ -452,7 +452,7 @@ try{
  await shot('krayniy-shore-lights');
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));
  evidence.krayniyShore={length:1380,lights:krayniyLights.length,minimumShoreClearance};
- assert.equal(initial.arrival.version,'krayniy-osm-circuit-v6');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);
+ assert.equal(initial.arrival.version,'krayniy-osm-circuit-v7');assert.equal(initial.arrival.arrivalDuration,120);assert.equal(initial.arrival.cycleDuration,812);
  assert.deepEqual(initial.arrival.airports.map(a=>a.key),['krayniy','krayniy']);
  const arrivalStatus=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().status);
  assert.ok(['inbound','parking','outbound'].includes(arrivalStatus.id));
@@ -465,16 +465,20 @@ try{
   assert.ok(Math.abs(a.center[0]-(mid[0]-650)*3.4)<1e-4&&Math.abs(a.center[2]-(mid[1]-522.5)*3.4)<1e-4,a.key+' uses the OSM runway centre');
  }
  const flight=[];
- for(const t of [0,82,120,127,148,158,167.999,168,180,230,242,266,322,346,405.999,406,444,526,533,554,564,573.999,574,586,636,648,672,728,752,811.999,812]){
+ for(const t of [0,82,120,127,148,158,167.999,168,180,230,242,266,322,346,365.999,366,376,405.999,406,444,526,533,554,564,573.999,574,586,636,648,672,728,752,771.999,772,782,811.999,812]){
   await page.evaluate(t=>window.__BAIKONUR_QA.arrival.seek(t),t);
   const a=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
   assert.ok([...a.position,...a.velocity].every(Number.isFinite));
   assert.equal(a.airport,'krayniy');
   if(a.segment==='hold'){assert.ok(Math.abs(a.runwayProgress-.8)<1e-8);assert.ok(a.velocity.every(v=>v===0));}
   if(a.onGround)assert.ok(Math.abs(a.mainWheelBottom-a.runwayY)<1e-5,'Rendered main wheels touch the active runway');
-  if(a.segment==='away')assert.equal(a.visible,false);
+  if(a.segment==='away')assert.equal(a.visible,a.phaseTime<a.returnHideTime,'The final escape remains visible until the exterior return');
   if(t===812){assert.equal(a.elapsed,0);assert.equal(a.leg,1);assert.equal(a.visible,true);}
   flight.push({t,airport:a.airport,leg:a.leg,segment:a.segment,progress:a.runwayProgress,visible:a.visible});
+ }
+ for(const leg of [1,2]){
+  assert.ok(flight.some(a=>a.leg===leg&&a.segment==='away'&&a.visible),'Each departure flies beyond the museum before it is hidden');
+  assert.ok(flight.some(a=>a.leg===leg&&a.segment==='away'&&!a.visible),'Each distant return remains hidden from the museum');
  }
  assert.equal(initial.arrival.timeline.filter(p=>p.phase==='hold'&&p.duration===20).length,2);
  assert.equal(initial.arrival.timeline.filter(p=>p.phase==='away'&&p.duration===60).length,2);

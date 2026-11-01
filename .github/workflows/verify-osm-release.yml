@@ -71,6 +71,7 @@ jobs:
           node tests/osm-transport-geometry.mjs
           node tests/interchange-bridge-geometry.mjs
           node tests/highway-surface-geometry.mjs
+          node tests/highway-horizon.mjs
           node tests/road-markings-geometry.mjs
           node tests/road-marking-contours.mjs
           node tests/road-lighting-geometry.mjs
@@ -115,6 +116,7 @@ jobs:
           node tests/site31-geometry.mjs
           node tests/road-surfaces-geometry.mjs
           node tests/arrival-geometry.mjs
+          node tests/arrival-entry.mjs
           node tests/arrival-status.mjs
           node tests/flanks-geometry.mjs
           node tests/train-consist.mjs

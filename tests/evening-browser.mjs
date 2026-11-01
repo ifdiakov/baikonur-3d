@@ -18,7 +18,7 @@ const errors=[],shaderErrors=[];page.on('pageerror',e=>errors.push(e.message));p
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',route=>route.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(route.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 try{
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded',timeout:60000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().arrival?.version==='krayniy-circuit-v4',null,{timeout:90000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().arrival?.version==='krayniy-osm-circuit-v7',null,{timeout:90000});
  await page.waitForTimeout(500);
  await frame();
  let s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
@@ -63,10 +63,11 @@ try{
 
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});
  // Exercise both sorties in the actual renderer without waiting thirteen minutes.
- for(const [t,segment,leg] of [[174,'turn-back',1],[205,'taxi-back',1],[236,'turn-takeoff',1],[260,'takeoff',1],[322,'departure',1],[376,'away',1],[432,'approach',2],[526,'rollout',2],[554,'hold',2],[728,'departure',2],[782,'away',2],[838,'approach',1]]){
+ for(const [t,segment,leg] of [[174,'turn-back',1],[205,'taxi-back',1],[236,'turn-takeoff',1],[260,'takeoff',1],[322,'departure',1],[346,'away',1],[365.999,'away',1],[366,'away',1],[376,'away',1],[432,'approach',2],[526,'rollout',2],[554,'hold',2],[728,'departure',2],[752,'away',2],[771.999,'away',2],[772,'away',2],[782,'away',2],[838,'approach',1]]){
   await page.evaluate(t=>window.__BAIKONUR_QA.arrival.seek(t),t);await frame();
   const a=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());
-  assert.equal(a.segment,segment);assert.equal(a.leg,leg);assert.equal(a.visible,segment!=='away');
+  assert.equal(a.segment,segment);assert.equal(a.leg,leg);assert.equal(a.visible,segment!=='away'||a.phaseTime<a.returnHideTime);
+  if(t===376||t===782){assert.equal(a.visible,false,'The distant return remains hidden from the museum');assert.equal(a.renderedVisible,true,'The followed aircraft stays visible throughout its distant return');}
   if(segment==='hold')assert.ok(Math.abs(a.runwayProgress-.8)<1e-9);
   if(t===174)await snapshot('first-turnaround');
   if(t===322)await snapshot('northeast-departure');

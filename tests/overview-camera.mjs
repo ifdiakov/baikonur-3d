@@ -2,8 +2,11 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {fitOverviewCamera} from '../src/overview-camera.js';
 import {FLANK_OUTLINE} from '../src/flank-boundaries.js';
+import {constrainFreeCamera} from '../src/camera-navigation.js';
 
 const SCENE_SCALE=3.4/1.45;
+const outlineX=FLANK_OUTLINE.map(([x])=>(x-650)*3.4),outlineZ=FLANK_OUTLINE.map(([,z])=>(z-522.5)*3.4);
+const bounds={minX:Math.min(...outlineX),maxX:Math.max(...outlineX),minZ:Math.min(...outlineZ),maxZ:Math.max(...outlineZ)};
 const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
 const hits=(a,b,c,d)=>cross(a,b,c)*cross(a,b,d)<=0&&cross(c,d,a)*cross(c,d,b)<=0;
 function intersects(a,b,r){
@@ -16,6 +19,7 @@ const rect=(left,top,width,height)=>({left,top,right:left+width,bottom:top+heigh
 const cases=[
  {width:1600,height:1000,uiRect:rect(15,15,320,595),heroRect:rect(1035,15,550,440),dockTop:818},
  {width:390,height:844,uiRect:rect(9,9,372,110),heroRect:null,dockTop:690},
+ {width:320,height:900,uiRect:rect(9,9,302,110),heroRect:null,dockTop:746},
  {width:1280,height:800,uiRect:rect(15,15,320,595),heroRect:rect(715,15,550,440),dockTop:618},
  {width:1920,height:1080,uiRect:rect(15,15,320,595),heroRect:rect(1355,15,550,440),dockTop:898}
 ];
@@ -33,6 +37,10 @@ for(const view of cases)for(const topDown of [false,true]){
  const target=new THREE.Vector3(...fit.target).multiplyScalar(SCENE_SCALE);
  camera.position.copy(target).add(new THREE.Vector3(0,fit.height,fit.depth).multiplyScalar(SCENE_SCALE));
  camera.lookAt(target);camera.updateMatrixWorld(true);
+ const oldPosition=camera.position.clone(),oldTarget=target.clone(),controls={target,minDistance:2.1,maxDistance:fit.maxDistance*SCENE_SCALE,minPolarAngle:0,maxPolarAngle:Math.PI/3};
+ const constrained=constrainFreeCamera({camera,controls,bounds,minHeight:-1.74,maxHeight:fit.altitudeLimit*SCENE_SCALE});
+ assert.equal(constrained.changed,false,`${view.width}×${view.height} overview remains inside the free-camera envelope`);
+ assert(camera.position.distanceTo(oldPosition)<1e-7&&target.distanceTo(oldTarget)<1e-7,'Navigation limits preserve the complete fitted overview');
  const pixels=FLANK_OUTLINE.map(([x,y])=>new THREE.Vector3((x-650)*3.4,-1.56,(y-522.5)*3.4).project(camera))
   .map(p=>[(p.x+1)*view.width/2,(1-p.y)*view.height/2]);
  for(let i=0;i<pixels.length;i++){

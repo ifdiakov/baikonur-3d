@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {buildLandingAircraft} from './buran-landing-aircraft.js?v=20261031-facilities-rails-lighting-v5';
 import {createBuranLandingPath,BURAN_LANDING_TIMES,landingClock} from './buran-landing-path.js?v=20261031-facilities-rails-lighting-v5';
 import {BURAN_LANDING_PARAMETERS as HISTORY,BURAN_LANDING_SOURCES as SOURCES,BURAN_LANDING_RECONSTRUCTION_NOTICE,BURAN_LANDING_DISCREPANCIES} from './buran-landing-history.js?v=20261031-facilities-rails-lighting-v5';
-import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261031-facilities-rails-lighting-v5';
+import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261101-museum-view-v1';
 
 export const BURAN_LANDING_VERSION='buran-landing-event-v1';
 const V=(x,y,z)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;

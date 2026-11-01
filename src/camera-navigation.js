@@ -6,6 +6,57 @@ export function captureOrbitSettings(controls){
  saved.mouseButtons={...controls.mouseButtons};saved.touches={...controls.touches};return saved;
 }
 
+// World units, independent of the schematic/model scales. The camera has a
+// finite viewing apron around the interactive map so the desktop and narrow
+// portrait overview fits can still see the complete cosmodrome.
+export const MUSEUM_CAMERA_PADDING=4000;
+export const MUSEUM_CAMERA_MAX_HEIGHT=18000;
+export function cameraPositionBounds(bounds){
+ const values=['minX','maxX','minZ','maxZ'];
+ if(!bounds||!values.every(key=>Number.isFinite(bounds[key]))||bounds.minX>=bounds.maxX||bounds.minZ>=bounds.maxZ)throw new TypeError('Finite museum navigation bounds are required');
+ return {minX:bounds.minX-MUSEUM_CAMERA_PADDING,maxX:bounds.maxX+MUSEUM_CAMERA_PADDING,
+  minZ:bounds.minZ-MUSEUM_CAMERA_PADDING,maxZ:bounds.maxZ+MUSEUM_CAMERA_PADDING};
+}
+
+/** Constrain a completed free-camera frame, after OrbitControls.update().
+ * Keep the orbit direction and translate eye/target together where possible;
+ * reduce its radius only when the entire orbit cannot fit. Do not update the
+ * controls again or consume their pending damping/pointer deltas. Scripted
+ * aircraft follows and the historical landing overview opt out at the caller. */
+export function constrainFreeCamera({camera,controls,bounds,minHeight=-1.74,maxHeight=MUSEUM_CAMERA_MAX_HEIGHT}){
+ const positionBounds=cameraPositionBounds(bounds),upper=Math.min(MUSEUM_CAMERA_MAX_HEIGHT,maxHeight);
+ if(!Number.isFinite(minHeight)||!Number.isFinite(upper)||upper<minHeight)throw new TypeError('A finite camera height interval is required');
+ const oldPosition=camera.position.clone(),oldTarget=controls.target.clone(),offset=oldPosition.clone().sub(oldTarget);
+ if(![...oldPosition.toArray(),...oldTarget.toArray()].every(Number.isFinite))throw new TypeError('A finite museum camera pose is required');
+ const distance=offset.length(),horizontal=Math.hypot(offset.x,offset.z);
+ const maxPhi=THREE.MathUtils.clamp(Number.isFinite(controls.maxPolarAngle)?controls.maxPolarAngle:Math.PI/3,0,Math.PI/3);
+ const minPhi=THREE.MathUtils.clamp(Number.isFinite(controls.minPolarAngle)?controls.minPolarAngle:0,0,maxPhi);
+ const phi=THREE.MathUtils.clamp(distance>1e-9?Math.atan2(horizontal,offset.y):0,minPhi,maxPhi);
+ const direction=new THREE.Vector3(horizontal>1e-9?offset.x/horizontal:0,0,horizontal>1e-9?offset.z/horizontal:1)
+  .multiplyScalar(Math.sin(phi));direction.y=Math.cos(phi);
+ const target=oldTarget.clone(),axisRadius=(axis)=>{
+  const d=direction[axis];
+  return Math.abs(d)<1e-12?Infinity:d>0?(positionBounds['max'+axis.toUpperCase()]-bounds['min'+axis.toUpperCase()])/d
+   :(bounds['max'+axis.toUpperCase()]-positionBounds['min'+axis.toUpperCase()])/-d;
+ };
+ // Project the target into the intersection of its own bounds and the
+ // translated eye bounds. Unlike independent XYZ clamps this preserves the
+ // viewing angle, ground anchor and pan/zoom sensitivity at an outer edge.
+ const availableRadius=Math.max(0,Math.min(Number.isFinite(controls.maxDistance)?Math.max(0,controls.maxDistance):Infinity,axisRadius('x'),axisRadius('z')));
+ const minimumRadius=Math.min(availableRadius,Math.max(0,Number.isFinite(controls.minDistance)?controls.minDistance:0));
+ target.y=THREE.MathUtils.clamp(target.y,minHeight-availableRadius*direction.y,upper-minimumRadius*direction.y);
+ const lo=Math.max(minimumRadius,(minHeight-target.y)/direction.y,0),hi=Math.min(availableRadius,(upper-target.y)/direction.y);
+ const radius=THREE.MathUtils.clamp(distance,lo,Math.max(lo,hi));offset.copy(direction).multiplyScalar(radius);
+ for(const axis of ['x','z']){
+  const key=axis.toUpperCase(),low=Math.max(bounds['min'+key],positionBounds['min'+key]-offset[axis]);
+  const high=Math.min(bounds['max'+key],positionBounds['max'+key]-offset[axis]);
+  target[axis]=THREE.MathUtils.clamp(target[axis],low,Math.max(low,high));
+ }
+ const position=target.clone().add(offset),changed=position.distanceToSquared(oldPosition)>1e-16||target.distanceToSquared(oldTarget)>1e-16;
+ if(changed){controls.target.copy(target);camera.position.copy(position);camera.lookAt(target);camera.updateMatrixWorld(true);}
+ return {changed,positionBounds,minHeight,maxHeight:upper,distance:radius};
+}
+
 // Follow mode orbits a small moving aircraft. Merely restoring its switches
 // leaves that tiny orbit high above the ground: both pointer pan and keyboard
 // speed then remain appropriate to the aircraft, not to the museum. Re-anchor

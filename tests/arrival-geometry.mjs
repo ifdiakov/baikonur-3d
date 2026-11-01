@@ -82,7 +82,8 @@ for(let leg=0;leg<2;leg++){
  assert.ok(path.sample(takeoff.start).position.distanceTo(path.taxiStart)<1e-8);
  assert.ok(path.sample(takeoff.start+4).velocity.dot(path.axis)<0,'Second turn aligns the departure with the runway');
  const away=path.phases.find(p=>p.leg===leg&&p.phase==='away');assert.equal(away.duration,60);
- for(const dt of [0,30,59.999])assert.equal(path.sample(away.start+dt).visible,false,'The one-minute return happens outside the visible scene');
+ assert.equal(path.sample(away.start).visible,true,'The aircraft keeps flying out of the museum instead of vanishing at the departure endpoint');
+ for(const dt of [path.returnHideTime,30,59.999])assert.equal(path.sample(away.start+dt).visible,false,'The exterior return happens outside the visible scene');
  const departure=path.phases.find(p=>p.leg===leg&&p.phase==='departure');
  const leaving=path.sample(departure.end-.001);
  assert.ok(leaving.position.z<-2900,'Both departures leave to the north');
