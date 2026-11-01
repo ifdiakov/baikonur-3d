@@ -87,8 +87,8 @@ try{
  assert.equal(initial.transport.branchSimplification.version,'terminal-branches-v2');
  assert.ok(initial.transport.branchSimplification.road.branchCount>270);
  assert.ok(initial.transport.branchSimplification.rail.branchCount>75);
- assert.equal(initial.transport.facilityPorts.length,41);
- assert.equal(initial.transport.facilityRailPorts.length,12);
+ assert.equal(initial.transport.facilityPorts.length,42);
+ assert.equal(initial.transport.facilityRailPorts.length,14);
  assert.equal(initial.transport.cityRoadSimplification.sourceBoundary,'way/39209179');
  assert.ok(initial.transport.cityRoadSimplification.hiddenWays>500);
  const settlementFilters=new Map(initial.transport.settlementRoadSimplification.map(s=>[s.id,s]));

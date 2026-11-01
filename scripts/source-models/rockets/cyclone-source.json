@@ -1,0 +1,171 @@
+{
+  "folder": "https://drive.google.com/drive/folders/1ZLdUz8V2m4WrIYehc2OBYXq0mSFCnXjR",
+  "files": [
+    {
+      "id": "1TNdiFfKXAdggnA4-qCCXDAauMMKSWCBy",
+      "name": "stage  part center.STL",
+      "size": 24084,
+      "url": "https://drive.google.com/file/d/1TNdiFfKXAdggnA4-qCCXDAauMMKSWCBy/view",
+      "sha256": "48a3d5568282fe05f199e208176f41c62842658a540ca9262c8e80201920bea0",
+      "triangles": 480
+    },
+    {
+      "id": "1uDO3FMqfrp64TZKVGkDG3YBoy4zCROdS",
+      "name": "C fairhead sheld ver1.STL",
+      "size": 86484,
+      "url": "https://drive.google.com/file/d/1uDO3FMqfrp64TZKVGkDG3YBoy4zCROdS/view",
+      "sha256": "d6074c8bb7c24556a63e06dd206a5e58493b05b29cdb3108645c13c2b1950903",
+      "triangles": 1728
+    },
+    {
+      "id": "1lwdClaJnWhplai7hOtZdusltirkGlQSd",
+      "name": "C fairhead sheld ver2.STL",
+      "size": 43284,
+      "url": "https://drive.google.com/file/d/1lwdClaJnWhplai7hOtZdusltirkGlQSd/view",
+      "sha256": "d2159f05199085d4e1a3d181c5192162aa31e56ec19658afee828997fa601408",
+      "triangles": 864
+    },
+    {
+      "id": "1UfNaXm6TNWwAA7vFmcugheABIqsORwgc",
+      "name": "C stage 1 pr1.STL",
+      "size": 230584,
+      "url": "https://drive.google.com/file/d/1UfNaXm6TNWwAA7vFmcugheABIqsORwgc/view",
+      "sha256": "4dee27fc55d06fcbab66aa557aa0f2e0c7f7203aa37df9bbf2a3389b79b500d8",
+      "triangles": 4610
+    },
+    {
+      "id": "1UsmOg3YqqSSlZEc7CE-j5cCne5cSrjqY",
+      "name": "C stage 1 pr2.STL",
+      "size": 82084,
+      "url": "https://drive.google.com/file/d/1UsmOg3YqqSSlZEc7CE-j5cCne5cSrjqY/view",
+      "sha256": "7c85d7138c5510b88f88072f36f2e1e3930e595e450c788cbaed1efdd7e5fde4",
+      "triangles": 1640
+    },
+    {
+      "id": "1DnzuZL8s9m4ZAO_6Tq5sjq9lWOd25vZQ",
+      "name": "C stage 1 pr3.STL",
+      "size": 286084,
+      "url": "https://drive.google.com/file/d/1DnzuZL8s9m4ZAO_6Tq5sjq9lWOd25vZQ/view",
+      "sha256": "de48c4f2ea0bd83f03a62e4d0209152ef52c462efe1c1b72fd5d0d1f13b2417e",
+      "triangles": 5720
+    },
+    {
+      "id": "1I91_KMtu10YgsBr-tfLmajP1KXvmI3EM",
+      "name": "C stage 1 pr4.STL",
+      "size": 88984,
+      "url": "https://drive.google.com/file/d/1I91_KMtu10YgsBr-tfLmajP1KXvmI3EM/view",
+      "sha256": "40836d6aa278fa19728479ad683ad511b279ad617e401515e4da5dcfeef8ef3d",
+      "triangles": 1778
+    },
+    {
+      "id": "1mG6t8U9VKcCIHpNbfvVxFXU409prkg1Y",
+      "name": "C stage 2 pr1.STL",
+      "size": 142084,
+      "url": "https://drive.google.com/file/d/1mG6t8U9VKcCIHpNbfvVxFXU409prkg1Y/view",
+      "sha256": "e7358677587e598bcc1fe583845f60755be5cb16365cbdb39c66fb815c4ccece",
+      "triangles": 2840
+    },
+    {
+      "id": "1KYN8m6ufZZ34QQ8fFCIoMwtZJTdKumLj",
+      "name": "C stage 2 pr2.STL",
+      "size": 78784,
+      "url": "https://drive.google.com/file/d/1KYN8m6ufZZ34QQ8fFCIoMwtZJTdKumLj/view",
+      "sha256": "490fd6cb4dd4015f5878f7d4ce5ba0e770827141e665bddb2e0d8443636b2cf9",
+      "triangles": 1574
+    },
+    {
+      "id": "1r4UkmLkBu5RuTA-mOb0rXgDg4mToFTpX",
+      "name": "C stage 3 adapter.STL",
+      "size": 39884,
+      "url": "https://drive.google.com/file/d/1r4UkmLkBu5RuTA-mOb0rXgDg4mToFTpX/view",
+      "sha256": "5bdf0c4aaded71badc375ea9910078ec553073e9a6f3145cab4686cc34f71689",
+      "triangles": 796
+    },
+    {
+      "id": "172HJTIh6f7the3uwDMonfKHTBDnGNRRC",
+      "name": "C Uper stage 1.STL",
+      "size": 142584,
+      "url": "https://drive.google.com/file/d/172HJTIh6f7the3uwDMonfKHTBDnGNRRC/view",
+      "sha256": "e8f3ae0138ee082c6a715ed8a92e553901e3f5240ad2d7cbef2633b67faffc67",
+      "triangles": 2850
+    },
+    {
+      "id": "1pp4P4a1VO39U_CtWoVvSiN00WireBlVK",
+      "name": "C Uper stage pr1.STL",
+      "size": 278184,
+      "url": "https://drive.google.com/file/d/1pp4P4a1VO39U_CtWoVvSiN00WireBlVK/view",
+      "sha256": "1087077398bc8964f66a07759e98e0d5ace4f90604f473ef37a29316b00d38fb",
+      "triangles": 5562
+    },
+    {
+      "id": "1_GxKBgLcdrk68eADnYRdtMDfr0RhH7pN",
+      "name": "C Uper stage pr2.STL",
+      "size": 118284,
+      "url": "https://drive.google.com/file/d/1_GxKBgLcdrk68eADnYRdtMDfr0RhH7pN/view",
+      "sha256": "81dfe21ee2b76d6c3b4d248ea08564378eea424420d2ea448263e82428cc7c96",
+      "triangles": 2364
+    },
+    {
+      "id": "1JhvSmVXcopJrEXRi-vet50liTQgTkL03",
+      "name": "KA koronos foton pr1.STL",
+      "size": 97484,
+      "url": "https://drive.google.com/file/d/1JhvSmVXcopJrEXRi-vet50liTQgTkL03/view",
+      "sha256": "8c12924029dd3e9d5b7a07bd5097269996f0e63901ce7e894cf65a06d83cd8bb",
+      "triangles": 1948
+    },
+    {
+      "id": "1pvpq4c7eTL8QwQvEiF76DBg6H-KwFJ5q",
+      "name": "KA koronos foton pr2.STL",
+      "size": 20884,
+      "url": "https://drive.google.com/file/d/1pvpq4c7eTL8QwQvEiF76DBg6H-KwFJ5q/view",
+      "sha256": "33d535cf11c9764ad881237aed649859a93ec7bc0ddc48decee21cf595f6bdfa",
+      "triangles": 416
+    },
+    {
+      "id": "1E3TCq9rleQV6ZXOR5YIoq2pMpXQWJPog",
+      "name": "KA koronos foton pr3 v2.STL",
+      "size": 20084,
+      "url": "https://drive.google.com/file/d/1E3TCq9rleQV6ZXOR5YIoq2pMpXQWJPog/view",
+      "sha256": "4f92c4403bfadb67563d667a89a111a1c44c6ee23077fec1118dddfe22a62fc5",
+      "triangles": 400
+    },
+    {
+      "id": "1vPuZu9JSAQ15MS2J3Wb7wXXwco-1YmW7",
+      "name": "RD marsh stage1.STL",
+      "size": 275684,
+      "url": "https://drive.google.com/file/d/1vPuZu9JSAQ15MS2J3Wb7wXXwco-1YmW7/view",
+      "sha256": "33eda978cf0cd467c60ae296335acf5569481c45942aeb6e2bf8bd9793d9b18b",
+      "triangles": 5512
+    },
+    {
+      "id": "1TsVZ_k6HJe9EQnf4i9BHA_2Ukx7mUhnv",
+      "name": "RD marsh stage2.STL",
+      "size": 316184,
+      "url": "https://drive.google.com/file/d/1TsVZ_k6HJe9EQnf4i9BHA_2Ukx7mUhnv/view",
+      "sha256": "971ad1c5c7f2218228a2fa7dc2505af975339e26c2e51bada760b87c6306acea",
+      "triangles": 6322
+    },
+    {
+      "id": "19g5r8a9AFJ8a1vPiC0BpQc_RaT1Bwvav",
+      "name": "RD Uper stage.STL",
+      "size": 257784,
+      "url": "https://drive.google.com/file/d/19g5r8a9AFJ8a1vPiC0BpQc_RaT1Bwvav/view",
+      "sha256": "62daafbf44932fb03cf6bb49e4e350d9a30960baa30e3e76202b0d74a9d47635",
+      "triangles": 5154
+    }
+  ],
+  "references": [
+    {
+      "url": "https://rvsn.ruzhany.info/0_2019/kbu_2019_08_06_ru.html",
+      "basis": "КБ Южное, 6 августа 2019: фото, компоновочная схема, диаметр корпуса 3 м и двухступенчатая конфигурация."
+    },
+    {
+      "url": "https://www.russian.space/o-predpriyatii/filialy/nii-sk.html",
+      "basis": "Разработчик стартового комплекса: две пусковые установки Циклона-2 на Байконуре."
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=krwhzpg-CFo",
+      "basis": "Телестудия Роскосмоса: площадка 90."
+    }
+  ]
+}

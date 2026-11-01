@@ -3,6 +3,7 @@ import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 
 export const ROCKET_MODEL_VERSION='rocket-exhibits-v1';
 export const ROCKET_MODELS=Object.freeze({
+  'cyclone-2':{title:'Циклон-2',description:'Историческая площадка №90',height:39},
   soyuz:{title:'Союз',description:'Пилотируемая компоновка · ракета-экспонат',height:49.512},
   'energia-polyus':{title:'Энергия — Полюс',description:'Ракета-носитель и аппарат «Полюс»',height:58.770},
   'energia-buran':{title:'Энергия — Буран',description:'Орбитальный корабль на ракете-носителе',height:58.815},

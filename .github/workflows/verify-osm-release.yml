@@ -44,7 +44,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-without-ll22-20261101-v1
+  RELEASE_TAG: museum6-cyclone-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -60,6 +60,7 @@ jobs:
           npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 @gltf-transform/functions@4.5.1 meshoptimizer@1.3.0
       - name: Verify the photo-based Site 45 and both Zenit variants
         run: |
+          node tests/cyclone-geometry.mjs
           node tests/mig25-geometry.mjs
           node tests/proton-geometry.mjs
           node tests/proton-launch-geometry.mjs
@@ -186,6 +187,7 @@ jobs:
       - name: Verify all models, object cards, modal lifecycle and mobile views
         if: matrix.suite == 'model-inspector'
         run: |
+          node tests/cyclone-browser.mjs
           node tests/proton-launch-browser.mjs
           node tests/model-inspector-browser.mjs
           node tests/mig25-browser.mjs
@@ -317,12 +319,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/without-ll22-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/cyclone-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей — удалён МиГ-25 ЛЛ22',
+                name: 'Интерактивный музей — Циклон и площадка 90',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

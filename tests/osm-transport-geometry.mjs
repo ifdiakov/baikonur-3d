@@ -5,6 +5,7 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork,buildOsmGraph} from '../src/osm-transport.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
+import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from '../src/cyclone-profile.js';
 import {SATURN_ACCESS,saturnTerrainHeight,saturnTerrainSample} from '../src/saturn-access.js';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
@@ -201,9 +202,18 @@ assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','
 for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}
 assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);
-assert.equal(stats.facilityPorts.length,41,'A facility lost its road connection');
-assert.equal(stats.facilityRailPorts.length,12,'A facility lost its rail connection');
+assert.equal(stats.facilityPorts.length,42,'A facility lost its road connection');
+assert.equal(stats.facilityRailPorts.length,14,'A facility lost its rail connection');
 assert.deepEqual(Object.fromEntries(['pad-110','pad-112a','pad-250','pad-31','pad-45'].map(id=>[id,stats.facilityRailPorts.filter(p=>p.id===id).length])),{'pad-110':4,'pad-112a':4,'pad-250':2,'pad-31':1,'pad-45':1});
+// Inspect the entire new curves: zero endpoint gap alone did not catch a
+// nearest-way attachment running through the neighbouring rocket and masts.
+const cycloneSite=geography.sites.find(s=>s.id==='pad-90'),cycloneOrigin=point(cycloneSite.x,cycloneSite.y,-2.72);
+const cycloneRails=stats.facilityRailPorts.filter(p=>p.id==='pad-90');
+assert.deepEqual(cycloneRails.map(p=>p.sourceWayId),['172571256','172571160']);
+for(const port of cycloneRails)for(const sample of port.points){
+ const p=new THREE.Vector3(...sample).sub(cycloneOrigin).applyAxisAngle(up,-CYCLONE_YAW).divideScalar(.14);
+ for(const [x,z]of CYCLONE_PAD_ORIGINS)assert(!(Math.abs(p.x-x)<38&&p.z>z-29&&p.z<z+110),'Cyclone approach intersects a launch position');
+}
 assert(stats.facilityPorts.some(port=>port.id==='pad-41'&&port.roadGap<1e-7),'The relocated Site41 entrance remains connected');
 for(const port of stats.facilityRailPorts)if(port.physicalGaugeMetres)assert(Math.abs(port.portGauge-port.physicalGaugeMetres*.14)<1e-9);
 for(const p of stats.facilityRailPorts){assert(p.headCenterGap<1e-7);assert(p.networkDatumGap<1e-7);assert(new THREE.Vector3(...p.headCenter).distanceTo(new THREE.Vector3(...p.renderedHeadCenter))<1e-7);}

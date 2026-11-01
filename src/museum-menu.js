@@ -23,6 +23,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'energia',title:'«Энергия»',description:'Четырёхблочная ракета-носитель'},
   {action:'energia-m',title:'«Энергия-М»',description:'Двухблочная компоновка проекта'},
   {action:'tua',title:'«Кузнечики»',description:'Транспортно-установочные агрегаты'},
+  {action:'cyclone-2',title:'«Циклон»',description:'Площадка №90 · Циклон-2 и Циклон-3 в 3D'},
   {action:'proton',title:'«Протон-М»',description:'Площадки №81 и №200 · просмотр в 3D'},
   {action:'n1',title:'«Н-1»',description:'Лунная ракета · просмотр в 3D'},
   {action:'r16',title:'Р-16',description:'Музейный экспонат на площадке №41 · просмотр в 3D'},

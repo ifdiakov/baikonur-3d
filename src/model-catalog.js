@@ -1,6 +1,9 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-export const MODEL_VIEWER_VERSION='r16-exhibit-v1';
+export const MODEL_VIEWER_VERSION='cyclone-v1';
 export const MODEL_CATALOG=Object.freeze({
+ 'cyclone-2':{title:'Циклон-2',subtitle:'Площадка №90 · Байконур',description:'Двухступенчатая ракета: шесть основных сопел первой ступени, наружные каналы и узкая головная часть по фотографиям КБ «Южное».',kind:'rocket',asset:'rockets/cyclone-2.glb'},
+ 'cyclone-3':{title:'Циклон-3',subtitle:'Коллекция моделей · Плесецк',description:'Трёхступенчатый носитель космодрома Плесецк. Третья ступень и «Коронас-Фотон» находятся под обтекателем — разнесите детали, чтобы их рассмотреть.',kind:'rocket',asset:'rockets/cyclone-3.glb'},
+ 'cyclone-pad':{title:'Старт Циклона',subtitle:'Площадка №90 · историческая реконструкция',description:'Низкая пусковая установка, откидной транспортёр-установщик, мачты молниезащиты и прожекторы. Габариты сооружений оценены по фото.',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/cyclone-reference.md',sourceLabel:'Источники реконструкции ↗',viewLabels:{front:'Стартовый стол',side:'Установщик',top:'Сверху'},views:{front:{target:[0,1.5,0],offset:[-11,7,-13]},side:{target:[0,18,4],offset:[26,12,-35]}}},
  soyuz:{title:'Союз',subtitle:'Ракета-экспонат',description:'Подробная модель из коллекции музея. Доступна на Гагаринском старте и площадке №31.',kind:'rocket',asset:'rockets/soyuz.glb'},
  'energia-polyus':{title:'Энергия — Полюс',subtitle:'Ракета и полезная нагрузка',description:'Компоновка «Энергии» с аппаратом «Полюс», представленная на УКСС.',kind:'rocket',asset:'rockets/energia-polyus.glb'},
  'energia-buran':{title:'Энергия — Буран',subtitle:'Ракетно-космический комплекс',description:'Орбитальный корабль и ракета-носитель из коллекции музея.',kind:'rocket',asset:'rockets/energia-buran.glb'},
@@ -23,6 +26,7 @@ export const MODEL_CATALOG=Object.freeze({
  site45:{title:'Старт Зенита',subtitle:'Историческая площадка №45/1',description:'Реконструкция по десяти фотографиям: открытый газоход, стартовый стол, откидная стрела, удалённая башня и мачты. Размеры сооружений оценены по фото.',kind:'site'}
 });
 const siteModels={
+ 'pad-90':['cyclone-2','cyclone-pad','cyclone-3'],
  'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','site45','zenit-sea'],
  'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
  'pad-110':['energia-buran','energia','n1'],'pad-112':['tua','energia-buran','energia-polyus','energia','energia-m','n1'],

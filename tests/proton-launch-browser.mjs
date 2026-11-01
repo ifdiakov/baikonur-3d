@@ -10,8 +10,8 @@ page.on('pageerror',e=>evidence.errors.push(e.message));page.on('console',m=>{if
 await page.addInitScript(()=>{const native=requestAnimationFrame;window.requestAnimationFrame=fn=>['animate','animateModel'].includes(fn.name)?(window.__PROTON_FRAME=fn,0):native(fn);});
 const frame=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.frame());const stats=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.stats());
 try{
- await page.goto(new URL('workshop/model.html?model=proton-pad',base).href);await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);assert.equal(await page.evaluate(()=>__MODEL_VIEWER_QA.version),'r16-exhibit-v1');
- assert.equal((await stats()).view,'front');assert.equal((await stats()).dark,true);assert.equal((await stats()).choices.length,20);
+ await page.goto(new URL('workshop/model.html?model=proton-pad',base).href);await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);assert.equal(await page.evaluate(()=>__MODEL_VIEWER_QA.version),'cyclone-v1');
+ assert.equal((await stats()).view,'front');assert.equal((await stats()).dark,true);assert.equal((await stats()).choices.length,23);
  for(const view of ['full','front','side','top','interface']){await page.locator(`[data-view="${view}"]`).click();await frame();const s=await stats();assert.equal(s.view,view);assert(s.drawCalls<=50&&s.triangles<120000);assert(s.camera.every(Number.isFinite));evidence.views[view]=s;await page.waitForTimeout(180);await page.screenshot({path:`${out}/${prefix}-proton-${view}.png`});}
  const withRocket=(await stats()).triangles;await page.locator('#siteRocket').click();await frame();assert.equal((await stats()).vehicleVisible,false);assert((await stats()).triangles<withRocket-15000);await page.waitForTimeout(180);await page.screenshot({path:`${out}/${prefix}-proton-open-aperture.png`});
  const before=(await stats()).camera,c=await page.locator('#modelView canvas').boundingBox();await page.mouse.move(c.x+c.width*.5,c.y+c.height*.5);await page.mouse.down();await page.mouse.move(c.x+c.width*.65,c.y+c.height*.59,{steps:5});await page.mouse.up();await frame();assert.notDeepEqual((await stats()).camera,before);
