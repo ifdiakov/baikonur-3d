@@ -23,6 +23,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'energia',title:'«Энергия»',description:'Четырёхблочная ракета-носитель'},
   {action:'energia-m',title:'«Энергия-М»',description:'Двухблочная компоновка проекта'},
   {action:'tua',title:'«Кузнечики»',description:'Транспортно-установочные агрегаты'},
+  {action:'mig25ru',title:'МиГ-25РУ',description:'Борт 32 · рассмотреть самолёт в 3D'},
   {action:'mriya',title:'«Мрия» с «Бураном»',description:'Экспонат на Юбилейном'},
   {action:'aircraft',title:'Самолёт',description:'Сопровождение текущего рейса'},
   {action:'train',title:'Мотовоз и вагоны',description:'Локомотив и четыре вагона'},

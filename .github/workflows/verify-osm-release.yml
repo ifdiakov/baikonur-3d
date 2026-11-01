@@ -42,7 +42,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum6-buran-navigation-20261101-v2
+  RELEASE_TAG: museum6-mig25ru-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -58,6 +58,7 @@ jobs:
           npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1
       - name: Verify the photo-based Site 45 and both Zenit variants
         run: |
+          node tests/mig25-geometry.mjs
           node tests/site45-geometry.mjs
           node tests/zenit-geometry.mjs
           node tests/facility-lighting-geometry.mjs
@@ -177,7 +178,9 @@ jobs:
         run: node tests/zenit-browser.mjs
       - name: Verify all models, object cards, modal lifecycle and mobile views
         if: matrix.suite == 'model-inspector'
-        run: node tests/model-inspector-browser.mjs
+        run: |
+          node tests/model-inspector-browser.mjs
+          node tests/mig25-browser.mjs
       - name: Verify startup and failure recovery
         if: matrix.suite == 'startup-menu'
         run: node tests/startup-browser.mjs
@@ -250,6 +253,7 @@ jobs:
             qa-rocket-exhibits/
             qa-zenit/
             qa-inspector/
+            qa-mig25/
             qa-interchange/
             qa-highway-lighting/
             qa-road-markings/

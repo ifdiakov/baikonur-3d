@@ -40,7 +40,7 @@ for(const station of stations)assert.equal(museumCatalogueSection({id:'osm-stati
 assert.equal(field.objects.length,7);assert.equal(new Set(field.objects.map(record=>record.id)).size,7);
 assert.match(aside,/<details id="graveyardAccordion"[\s\S]*id="graveyardList"/);
 const equipment=MUSEUM_SECTIONS.find(section=>section.id==='equipmentAccordion'),actions=equipment.items.map(item=>item.action);
-assert.deepEqual([...actions].sort(),['zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','aircraft','train','silo','flight-cycle','train-cycle','silo-cycle'].sort(),'All original exhibits and three animations remain available');
+assert.deepEqual([...actions].sort(),['mig25ru','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','aircraft','train','silo','flight-cycle','train-cycle','silo-cycle'].sort(),'All original exhibits and three animations remain available');
 assert.equal(actions[0],'zenit-3sl','The independently added source model is preserved as the first equipment item');
 assert.ok(html.includes("case 'zenit-3sl':openMenuSite('pad-45');portalArchive.inspectSite45('rocket',camera,ctl);break;"),'Zenit opens its site card and the universal model inspector');
 const tours=MUSEUM_SECTIONS.find(section=>section.id==='toursAccordion');assert.deepEqual(tours.items,[]);assert.equal(tours.empty,'Программы пусковых туров в музее не опубликованы.');
