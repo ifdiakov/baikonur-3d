@@ -1,6 +1,6 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 
-export const MUSEUM_MENU_VERSION='museum-six-sections-v3';
+export const MUSEUM_MENU_VERSION='museum-six-sections-v4';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -25,6 +25,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'tua',title:'«Кузнечики»',description:'Транспортно-установочные агрегаты'},
   {action:'proton',title:'«Протон-М»',description:'Площадки №81 и №200 · просмотр в 3D'},
   {action:'n1',title:'«Н-1»',description:'Лунная ракета · просмотр в 3D'},
+  {action:'r16',title:'Р-16',description:'Музейный экспонат на площадке №41 · просмотр в 3D'},
   {action:'mig25',title:'МиГ-25',description:'Рассмотреть самолёт в 3D'},
   {action:'mriya',title:'«Мрия» с «Бураном»',description:'Экспонат на Юбилейном'},
   {action:'aircraft',title:'Самолёт',description:'Сопровождение текущего рейса'},

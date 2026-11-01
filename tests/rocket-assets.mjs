@@ -4,6 +4,9 @@ import {createHash} from 'node:crypto';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {MeshoptDecoder} from '../src/vendor/meshopt_decoder-v1.mjs';
+import * as THREE from 'three';
+import {buildSite41} from '../src/site41.js';
+import {SITE41_ACCESS,SITE41_R16_MOUNT} from '../src/site41-profile.js';
 
 // Usage: node tests/rocket-assets.mjs [--deps /path/to/node_modules]
 // The ordinary package resolver is preferred; the conversion workspace is the
@@ -160,4 +163,86 @@ near(bare.bounds.size[1],polyus.bounds.size[1],.03,'Same launcher height after p
 assert.ok(polyus.bounds.size[2]>bare.bounds.size[2]+2,'The side-mounted Polyus is present in the decoded envelope');
 assert.ok(buran.bounds.size[0]>bare.bounds.size[0]+5&&buran.bounds.size[2]>bare.bounds.size[2]+10,'The orbiter wings and side-mounted fuselage remain in the envelope');
 assert.ok(totalBytes<8*1024*1024,'Five reusable exhibits stay within the combined download budget');
+
+// R-16 comes from an owner-provided print assembly, independently of the
+// BDF archive above. Validate the shipped geometry and its actual foundation.
+{
+ const id='r16',[manifest,bytes]=await Promise.all([
+  readFile(new URL(id+'.json',assetRoot),'utf8').then(JSON.parse),readFile(new URL(id+'.glb',assetRoot))
+ ]);
+ assert.equal(manifest.version,'rocket-exhibits-v1');assert.equal(manifest.id,id);
+ assert.equal(manifest.assetSha256,sha(bytes));assert.equal(manifest.assetStats.bytes,bytes.length);
+ assert.equal(manifest.normalization.unit,'metre');assert.equal(manifest.normalization.up,'+Y');assert.equal(manifest.normalization.baseY,0);
+ assert.ok(manifest.attribution.providedBy,'The print source has owner-provided provenance');
+ parseGlb(bytes,id);
+ const doc=await io.readBinary(bytes),root=doc.getRoot(),points=[];
+ const bounds={min:[Infinity,Infinity,Infinity],max:[-Infinity,-Infinity,-Infinity]};
+ let triangles=0,vertices=0,primitives=0;
+ for(const node of root.listNodes()){
+  const matrix=node.getWorldMatrix();assert.ok(matrix.every(Number.isFinite));
+  for(const primitive of node.getMesh()?.listPrimitives()||[]){
+   primitives++;assert.equal(primitive.getMode(),4);
+   const positions=primitive.getAttribute('POSITION'),normals=primitive.getAttribute('NORMAL'),indices=primitive.getIndices();
+   assert.ok(positions?.getElementSize()===3&&normals&&primitive.getMaterial(),'R-16 retains a shaded surface');
+   assert.ok(indices);assert.equal(indices.getCount()%3,0);triangles+=indices.getCount()/3;vertices+=positions.getCount();
+   for(const attribute of primitive.listAttributes())for(const value of attribute.getArray())assert.ok(Number.isFinite(value));
+   for(const value of indices.getArray())assert.ok(Number.isInteger(value)&&value>=0&&value<positions.getCount());
+   const v=[];
+   for(let i=0;i<positions.getCount();i++){
+    positions.getElement(i,v);
+    const point=[0,1,2].map(j=>matrix[j]*v[0]+matrix[4+j]*v[1]+matrix[8+j]*v[2]+matrix[12+j]);
+    point.forEach((n,j)=>{assert.ok(Number.isFinite(n));bounds.min[j]=Math.min(bounds.min[j],n);bounds.max[j]=Math.max(bounds.max[j],n);});
+    points.push(point);
+   }
+  }
+ }
+ bounds.size=bounds.max.map((n,j)=>n-bounds.min[j]);
+ for(const key of ['min','max','size'])vectorNear(bounds[key],manifest.bounds[key],1e-5,`${id}: decoded ${key}`);
+ assert.equal(triangles,manifest.assetStats.triangles);assert.equal(vertices,manifest.assetStats.vertices);assert.equal(primitives,manifest.assetStats.primitives);
+ assert.equal(root.listMaterials().length,manifest.assetStats.materials);assert.equal(root.listTextures().length,manifest.assetStats.textures);
+ assert.ok(primitives<=60&&bytes.length<1024*1024,'The print assembly stays within the browser draw/download budget');
+ near(bounds.min[1],0,.002,'The decoded R-16 base is at y=0');
+ for(const axis of [0,2])near((bounds.min[axis]+bounds.max[axis])/2,0,.03,'R-16 is centred on the launcher axis');
+ assert.ok(bounds.size[1]>bounds.size[0]*4&&bounds.size[1]>bounds.size[2]*4,'The long vehicle axis is +Y');
+
+ const mount=new THREE.Object3D();mount.position.fromArray(SITE41_R16_MOUNT.position);mount.rotation.set(...SITE41_R16_MOUNT.rotation);mount.updateMatrix();
+ const placed=points.map(point=>new THREE.Vector3(...point).applyMatrix4(mount.matrix));
+ const cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
+ function hull(points){
+  const sorted=[...new Map(points.map(p=>[p.join(','),p])).values()].sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+  const half=ps=>{const result=[];for(const p of ps){while(result.length>1&&cross(result.at(-2),result.at(-1),p)<=0)result.pop();result.push(p);}return result;};
+  const lower=half(sorted),upper=half([...sorted].reverse());return [...lower.slice(0,-1),...upper.slice(0,-1)];
+ }
+ const footprint=hull(placed.map(p=>[p.x,p.z]));assert.ok(footprint.length>=3);
+ const pointDistance=(p,a,b)=>{
+  const dx=b[0]-a[0],dz=b[1]-a[1],square=dx*dx+dz*dz,t=square?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dz)/square)):0;
+  return Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dz);
+ };
+ const segmentDistance=(a,b,c,d)=>cross(a,b,c)*cross(a,b,d)<0&&cross(c,d,a)*cross(c,d,b)<0?0:
+  Math.min(pointDistance(a,c,d),pointDistance(b,c,d),pointDistance(c,a,b),pointDistance(d,a,b));
+ const inside=p=>footprint.every((a,i)=>cross(a,footprint[(i+1)%footprint.length],p)>=0);
+ const siteRoot=new THREE.Group();siteRoot.scale.setScalar(SITE41_ACCESS.scale);siteRoot.position.y=SITE41_ACCESS.elevation;
+ buildSite41(siteRoot);siteRoot.updateWorldMatrix(true,true);
+ let roadClearance=Infinity;
+ for(const road of siteRoot.userData.site41.roads)for(let i=1;i<road.points.length;i++){
+  const a=road.points[i-1],b=road.points[i];
+  const distance=inside(a)||inside(b)?0:Math.min(...footprint.map((p,j)=>segmentDistance(p,footprint[(j+1)%footprint.length],a,b)));
+  roadClearance=Math.min(roadClearance,distance-road.width/2);
+ }
+ assert.ok(roadClearance>.15,`The full decoded R-16 silhouette clears the actual Site 41 road by 0.15 m: ${roadClearance}`);
+
+ // Probe the real foundation under both the outer silhouette and the lowest
+ // engine contacts, so a moved, hovering or buried exhibit fails this check.
+ const baseY=Math.min(...placed.map(p=>p.y));
+ const contacts=hull(placed.filter(p=>p.y<=baseY+.002).map(p=>[p.x,p.z]));assert.ok(contacts.length>=3);
+ const ray=new THREE.Raycaster(),down=new THREE.Vector3(0,-1,0);
+ for(const [x,z] of [...footprint,...contacts]){
+  const expected=siteRoot.localToWorld(new THREE.Vector3(x,baseY,z));
+  ray.set(expected.clone().add(new THREE.Vector3(0,2*SITE41_ACCESS.scale,0)),down);
+  const hit=ray.intersectObject(siteRoot,true)[0];assert.ok(hit,'The R-16 footprint is supported by the existing foundation');
+  near(hit.point.y,expected.y,.002*SITE41_ACCESS.scale,'The decoded engine base meets the actual foundation surface');
+ }
+ totalBytes+=bytes.length;
+ results.push({id,bytes:bytes.length,triangles,primitives,metreBounds:bounds.size,roadClearanceMetres:roadClearance,foundationProbes:footprint.length+contacts.length});
+}
 console.log(JSON.stringify({ok:true,totalBytes,exhibits:results},null,2));

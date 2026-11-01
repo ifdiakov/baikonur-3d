@@ -7,7 +7,8 @@ export const ROCKET_MODELS=Object.freeze({
   'energia-polyus':{title:'Энергия — Полюс',description:'Ракета-носитель и аппарат «Полюс»',height:58.770},
   'energia-buran':{title:'Энергия — Буран',description:'Орбитальный корабль на ракете-носителе',height:58.815},
   energia:{title:'Энергия',description:'Ракета-носитель без боковой полезной нагрузки',height:58.770},
-  'energia-m':{title:'Энергия-М',description:'Двухблочная компоновка проекта',height:50.257}
+  'energia-m':{title:'Энергия-М',description:'Двухблочная компоновка проекта',height:50.257},
+  r16:{title:'Р-16',description:'Музейный экспонат · площадка №41'}
 });
 export const TUA_ROCKET_CHOICES=['energia-polyus','energia-buran','energia','energia-m'];
 const cache=new Map();

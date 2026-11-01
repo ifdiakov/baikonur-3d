@@ -360,7 +360,7 @@ import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/O
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261031-rocket-exhibits-v1';
-import {installArchiveModels} from './src/archive-models.js?v=20261101-proton-launch-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261101-r16-exhibit-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-facilities-rails-lighting-v1';
@@ -390,12 +390,13 @@ import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261031-
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
 import {adaptTuaRails} from './src/tua-rails.js?v=20261031-facilities-rails-lighting-v1';
 import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-exhibits-v1';
-import {installModelInspector} from './src/model-inspector.js?v=20261101-without-ll22-v1';
-import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261101-without-ll22-v1';
-import {installMuseumMenu,museumCatalogueSection} from './src/museum-menu.js?v=20261101-source-exhibits-v2';
+import {installModelInspector} from './src/model-inspector.js?v=20261101-r16-exhibit-v1';
+import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261101-r16-exhibit-v1';
+import {installMuseumMenu,museumCatalogueSection} from './src/museum-menu.js?v=20261101-r16-exhibit-v1';
 import {MUSEUM_METRE} from './src/museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=20261031-rocket-exhibits-v1';
-import {createTuaRocketControls} from './src/rocket-controls.js?v=20261031-rocket-exhibits-v1';
+import {SITE41_R16_MOUNT} from './src/site41-profile.js?v=20261101-r16-exhibit-v1';
+import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=20261101-r16-exhibit-v1';
+import {createTuaRocketControls} from './src/rocket-controls.js?v=20261101-r16-exhibit-v1';
 import {createMuseumKnowledge} from './src/museum-knowledge.js?v=20261031-rocket-exhibits-v1';
 import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261031-facilities-rails-lighting-v5';
 import {createExhibitClearance} from './src/exhibit-clearance.js?v=20261031-rocket-exhibits-v1';
@@ -1378,6 +1379,8 @@ const rocketExhibits=createRocketExhibits({onChange({key,entry,added,removed}){
 rocketExhibits.add('gagarin',{parent:padGroup,holder:gagarinExhibit.rocket,...gagarinExhibit.rocketMount,modelId:'soyuz',siteId:'pad-1'});
 const site31Root=objects.find(o=>o.record.id==='pad-31')?.g;
 if(site31Root)rocketExhibits.add('site31',{parent:site31Root,...site31Root.userData.site31Model.rocketMount,modelId:'soyuz',siteId:'pad-31'});
+const site41Root=objects.find(o=>o.record.id==='pad-41')?.g;
+if(site41Root)rocketExhibits.add('site41',{parent:site41Root,...SITE41_R16_MOUNT,modelId:'r16',siteId:'pad-41'});
 rocketExhibits.add('ukss',{parent:ukssGroup,...(ukssExhibit.metadata.rocketMount||{position:[0,6.055,0],rotation:[0,Math.PI,0]}),modelId:'energia-polyus',siteId:'pad-250'});
 const site110Root=objects.find(o=>o.record.id==='pad-110')?.g;
 if(site110Root)rocketExhibits.add('site110',{parent:site110Root,...SITE110_ROCKET_MOUNT,rotation:[0,SITE110_ROCKET_MOUNT.rotation[1]+Math.PI,0],modelId:'energia-buran',siteId:'pad-110'});
@@ -1387,7 +1390,7 @@ if(mik112Exhibit){
  mounts.tua.forEach((mount,index)=>rocketExhibits.add('tua-'+index,{parent:mik112Exhibit.transportersGroup,...mount,modelId:'energia-buran',siteId:'pad-112'}));
 }
 startup.stage('Загружаем ракетные экспонаты…');
-// Let the seven placements finish while the event loop can handle their
+// Let the initial placements finish while the event loop can handle their
 // responses. Building lighting and traffic below is synchronous and must not
 // consume the models' existing fetch deadlines before their bodies settle.
 // Failed placements retain their visible retry action.
@@ -1560,7 +1563,7 @@ function focus(i){
  }
  let site41Views=document.getElementById('site41Views');if(!site41Views){site41Views=document.createElement('div');site41Views.id='site41Views';site41Views.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';site41Views.setAttribute('aria-label','Ракурсы площадки 41');document.getElementById('description').after(site41Views);}
  site41Views.replaceChildren();site41Views.hidden=r.id!=='pad-41';site41Views.style.display=site41Views.hidden?'none':'flex';
- if(r.id==='pad-41')for(const [label,view]of [['Вся площадка','all'],['Мемориал','memorial'],['Командный пост','command'],['Руины','ruins'],['Подъезд','access'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.className='detail-button';b.dataset.site41View=view;b.onclick=()=>portalArchive.inspectSite41(view,camera,ctl);site41Views.append(b);}
+ if(r.id==='pad-41')for(const [label,view]of [['Вся площадка','all'],['Р-16','rocket'],['Мемориал','memorial'],['Командный пост','command'],['Руины','ruins'],['Подъезд','access'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.className='detail-button';b.dataset.site41View=view;b.onclick=()=>portalArchive.inspectSite41(view,camera,ctl);site41Views.append(b);}
  syncUkssControls();syncTuaControls();syncTerminalControls();
  document.getElementById("mik112Controls").hidden=i!==mik112Index;
  document.getElementById("title").textContent=displaySiteName(o);
@@ -1826,6 +1829,7 @@ function openMuseumAction(action){
   case 'energia':case 'energia-m':showRocketKnowledge(action,'pad-112');focusMik112('tua');tuaRocketControls.choose(action);break;
   case 'tua':openMenuSite('pad-112');focusMik112('tua');showRocketKnowledge('tua','pad-112',false);break;
   case 'proton':case 'n1':modelInspector.open([action]);break;
+  case 'r16':openMenuSite('pad-41');portalArchive.inspectSite41('rocket',camera,ctl);modelInspector.open(['r16']);break;
   case 'mig25ru':case 'mig25':modelInspector.open(['mig25']);break;
   case 'mriya':openMenuSite('pad-251');document.querySelector('#airportViews button:last-child')?.click();break;
   case 'aircraft':arrivalFlight.resume();if(!arrivalFlight.stats().visible)arrivalFlight.restart();arrivalFlight.setFollowing(true);break;

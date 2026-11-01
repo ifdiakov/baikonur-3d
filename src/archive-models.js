@@ -7,10 +7,10 @@ import {buildSite31Pad} from './site31-pad.js?v=20261031-facilities-rails-lighti
 import {buildSiloPad,siloController} from './silo-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSevenWinds} from './seven-winds.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSite110,SITE110_VIEWS} from './site110.js?v=20261031-facilities-rails-lighting-v5';
-import {buildSite41} from './site41.js?v=20261031-facilities-rails-lighting-v1';
+import {buildSite41} from './site41.js?v=20261101-r16-exhibit-v1';
 import {SITE45_VIEWS} from './site45.js?v=20261101-model-inspector-v1';
 import {protonPositionController} from './proton-launch.js?v=20261101-proton-launch-v1';
-import {SITE41_VIEWS} from './site41-profile.js?v=20261031-facilities-rails-lighting-v1';
+import {SITE41_VIEWS} from './site41-profile.js?v=20261101-r16-exhibit-v1';
 export function buildArchiveModel(root,entry){
  const builders={'seven-winds':buildSevenWinds,silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildSite41,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:buildSite110,soyuz:buildSite31Pad,zenit:launches.zenit45,city:photoCity};
  if(entry.kind==='silo')return buildSiloPad(root,{siteId:entry.id,title:entry.title});

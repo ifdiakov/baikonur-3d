@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
+import {SITE41_R16_MOUNT} from '../src/site41-profile.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-rocket-exhibits';
 const revision='20261031-facilities-rails-lighting-v6';
 const expected={
- gagarin:['pad-1','soyuz'],site31:['pad-31','soyuz'],ukss:['pad-250','energia-polyus'],
+ gagarin:['pad-1','soyuz'],site31:['pad-31','soyuz'],site41:['pad-41','r16'],ukss:['pad-250','energia-polyus'],
  site110:['pad-110','energia-buran'],'mik112-hall':['pad-112','energia-buran'],
  'tua-0':['pad-112','energia-buran'],'tua-1':['pad-112','energia-buran']
 };
@@ -52,7 +53,7 @@ const pixels=(bytes,points)=>page.evaluate(async({encoded,points})=>{
 },{encoded:bytes.toString('base64'),points});
 const near=(a,b,message)=>assert.ok(Math.abs(a-b)<1e-8,`${message}: ${a} != ${b}`);
 function checkScale(stats){
- assert.equal(stats.placements.length,7);near(stats.commonMetre,.14,'Common physical unit');
+ assert.equal(stats.placements.length,8);near(stats.commonMetre,.14,'Common physical unit');
  for(const placement of stats.placements){
   assert.equal(placement.status,'ready',placement.key+' loaded');assert.equal(placement.error,null);
   assert.equal(placement.metresToWorld.length,3);placement.metresToWorld.forEach(n=>near(n,.14,placement.key+' world metre'));
@@ -86,7 +87,7 @@ try{
  const url=new URL(base);url.searchParams.delete('view');url.searchParams.delete('detail');url.searchParams.delete('site');
  await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected&&document.getElementById('museumLoading')?.dataset.state==='ready',revision,{timeout:180000});
- const readiness=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.whenReady());assert.deepEqual(readiness,[true,true,true,true,true,true,true]);
+ const readiness=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.whenReady());assert.deepEqual(readiness,Array(Object.keys(expected).length).fill(true));
  const statsCycles=await page.evaluate(()=>{
   const ancestors=new WeakMap(),cycles=[];let count=0;
   function walk(value,path){
@@ -102,10 +103,15 @@ try{
  evidence.statsCycles=statsCycles;if(statsCycles.length)console.log('ROCKET_STATS_CYCLES',JSON.stringify(statsCycles));
  const serializable=await page.evaluate(()=>{try{JSON.stringify(window.__BAIKONUR_QA.stats());return true;}catch(error){return error.message;}});assert.equal(serializable,true,'Public QA statistics serialize without scene handles');
  const initial=await page.evaluate(()=>({rocket:window.__BAIKONUR_QA.rockets.stats(),knowledge:window.__BAIKONUR_QA.knowledge(),clearance:window.__BAIKONUR_QA.clearance(),stats:window.__BAIKONUR_QA.stats()}));
- checkScale(initial.rocket);assert.equal(initial.rocket.loadedAssetCount,3);
+ checkScale(initial.rocket);assert.equal(initial.rocket.loadedAssetCount,4);
  assert.deepEqual(Object.fromEntries(initial.rocket.placements.map(p=>[p.key,[p.siteId,p.modelId]])),expected);
- assert.equal(new Set(initial.rocket.placements.map(p=>p.modelId)).size,3);
+ assert.equal(new Set(initial.rocket.placements.map(p=>p.modelId)).size,4);
  assert(initial.rocket.placements.every(p=>p.visible));
+ const r16=initial.rocket.placements.find(p=>p.key==='site41');
+ assert.deepEqual(r16.position,SITE41_R16_MOUNT.position,'The actual R-16 holder uses its road-clear foundation placement');
+ const yaw=SITE41_R16_MOUNT.rotation[1],r16Quaternion=[0,Math.sin(yaw/2),0,Math.cos(yaw/2)];
+ r16.quaternion.forEach((value,i)=>near(value,r16Quaternion[i],'R-16 fairing orientation '+i));
+ assert.equal(r16.effectiveVisible,true,'The Site 41 exhibit is rendered through its visible parent');
  assert.equal(initial.knowledge.stories,12);assert(initial.knowledge.sources>=15);
  assert(initial.clearance.areas.some(a=>a.id==='mik112-hall'));
  assert(initial.clearance.areas.some(a=>a.id==='yubileiny-runway'&&a.polygon.length===4));
@@ -146,9 +152,9 @@ try{
   for(const p of state.placements.filter(p=>!p.key.startsWith('tua-')))assert.equal(p.modelId,expected[p.key][1],'TUA selection leaves other exhibits unchanged');
  }
  console.log('ROCKET_BROWSER_FOUR_CHOICES_READY');
- const allLoaded=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats());assert.equal(allLoaded.loadedAssetCount,5);
- assert.equal(evidence.modelRequests.length,5,'One binary request supplies all copies of each model');
- assert.equal(new Set(evidence.modelRequests).size,5,'Shared models are not downloaded for each site');
+ const allLoaded=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats());assert.equal(allLoaded.loadedAssetCount,6);
+ assert.equal(evidence.modelRequests.length,6,'One binary request supplies all copies of each model');
+ assert.equal(new Set(evidence.modelRequests).size,6,'Shared models are not downloaded for each site');
  await page.locator('#tuaHideRocket').click();
  assert.equal(await page.locator('#tuaHideRocket').getAttribute('aria-pressed'),'false');
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.filter(p=>p.key.startsWith('tua-')).every(p=>!p.visible)),true);
@@ -158,9 +164,10 @@ try{
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.filter(p=>p.key.startsWith('tua-')).every(p=>p.visible)),true);
  await chooseThroughUi('energia-buran');
 
- // Inspect the actual seven placements through the same public site controls.
+ // Inspect the actual placements through the same public site controls.
  await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-1'));await shot('gagarin-soyuz');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-31');window.__BAIKONUR_QA.inspectSite31('all');});await shot('site31-soyuz');
+ await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-41');window.__BAIKONUR_QA.inspectSite41('rocket');});await shot('site41-r16');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-250');window.__BAIKONUR_QA.inspectUkss('overview');});await shot('ukss-polyus');
  await page.locator('#ukssMockupToggle').click();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='ukss').visible),false);
@@ -239,7 +246,7 @@ try{
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);assert.deepEqual(evidence.failedResources,[]);
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,checkedAt:new Date().toISOString()},null,2));
- console.log('ROCKET_EXHIBITS_BROWSER_PASS',JSON.stringify({prefix,placements:7,initialUniqueModels:3,loadedModels:5,commonMetre:.14,choices:4,storyTypes:4,mobile:true,views:evidence.views.length}));
+ console.log('ROCKET_EXHIBITS_BROWSER_PASS',JSON.stringify({prefix,placements:8,initialUniqueModels:4,loadedModels:6,commonMetre:.14,choices:4,storyTypes:4,mobile:true,views:evidence.views.length}));
 }catch(error){
  console.error('ROCKET_BROWSER_FAILURE',error.message);
  await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(()=>{});

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
-import {SITE41_VERSION,SITE41_REFERENCE,SITE41_ACCESS,SITE41_VIEWS,site41ImagePoint as P} from './site41-profile.js?v=20261031-facilities-rails-lighting-v1';
+import {SITE41_VERSION,SITE41_REFERENCE,SITE41_ACCESS,SITE41_VIEWS,site41ImagePoint as P} from './site41-profile.js?v=20261101-r16-exhibit-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const PATHS=[

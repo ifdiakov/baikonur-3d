@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import {MUSEUM_SECTIONS,museumCatalogueSection} from '../src/museum-menu.js';
+import {MODEL_CATALOG,modelsForObject,modelsForKnowledge} from '../src/model-catalog.js';
+import {ROCKET_MODELS} from '../src/rocket-exhibits.js';
 
 const [html,catalogue,field,history,railPoints]=await Promise.all([
   readFile(new URL('../index.html',import.meta.url),'utf8'),
@@ -40,7 +42,10 @@ for(const station of stations)assert.equal(museumCatalogueSection({id:'osm-stati
 assert.equal(field.objects.length,7);assert.equal(new Set(field.objects.map(record=>record.id)).size,7);
 assert.match(aside,/<details id="graveyardAccordion"[\s\S]*id="graveyardList"/);
 const equipment=MUSEUM_SECTIONS.find(section=>section.id==='equipmentAccordion'),actions=equipment.items.map(item=>item.action);
-assert.deepEqual([...actions].sort(),['proton','n1','mig25','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','aircraft','train','silo','flight-cycle','train-cycle','silo-cycle'].sort(),'All original exhibits and three animations remain available');
+assert.deepEqual([...actions].sort(),['proton','n1','r16','mig25','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','aircraft','train','silo','flight-cycle','train-cycle','silo-cycle'].sort(),'All original exhibits and three animations remain available');
+assert.equal(MODEL_CATALOG.r16.asset,'rockets/r16.glb');assert.equal(MODEL_CATALOG.r16.kind,'rocket');assert(ROCKET_MODELS.r16,'The site exhibit loader accepts the same R-16 as the viewer');
+assert.deepEqual(modelsForObject({id:'pad-41'}),['r16']);assert.deepEqual(modelsForKnowledge('r16'),['r16']);
+assert(MUSEUM_SECTIONS.find(section=>section.id==='graveyardAccordion').items.some(item=>item.action==='r16-memorial'),'The memorial entry remains separate from the rocket exhibit');
 assert.equal(actions[0],'zenit-3sl','The independently added source model is preserved as the first equipment item');
 assert.ok(html.includes("case 'zenit-3sl':openMenuSite('pad-45');portalArchive.inspectSite45('rocket',camera,ctl);break;"),'Zenit opens its site card and the universal model inspector');
 const tours=MUSEUM_SECTIONS.find(section=>section.id==='toursAccordion');assert.deepEqual(tours.items,[]);assert.equal(tours.empty,'Программы пусковых туров в музее не опубликованы.');

@@ -1,0 +1,534 @@
+{
+  "version": "rocket-exhibits-v1",
+  "id": "r16",
+  "configuration": "light",
+  "assetSha256": "731862c738fffd64bc64475e5094dc81e53c52f80d86d46144742b6e14109b56",
+  "assetStats": {
+    "bytes": 151260,
+    "triangles": 57230,
+    "vertices": 37560,
+    "primitives": 26,
+    "uniqueMeshes": 10,
+    "materials": 4,
+    "textures": 0
+  },
+  "bounds": {
+    "min": [
+      -1.899999976158142,
+      -9.992007221626409e-16,
+      -1.899999976158142
+    ],
+    "max": [
+      1.899999976158142,
+      30.299999952316284,
+      1.899999976158142
+    ],
+    "size": [
+      3.799999952316284,
+      30.299999952316284,
+      3.799999952316284
+    ]
+  },
+  "normalization": {
+    "unit": "metre",
+    "up": "+Y",
+    "baseY": 0,
+    "uniformSourceUnitMetres": 0.1,
+    "sourceBaseShift": 5,
+    "bodyDiameterMetres": 3,
+    "sourceBodyDiameter": 30
+  },
+  "source": {
+    "format": "binary STL",
+    "sourceFolder": "https://drive.google.com/drive/folders/1xoJEpzkr4DRiF-X7cfW6o9An1mSFQfUC",
+    "sourceFileCount": 15,
+    "sourceBytes": 1477960,
+    "sourceTriangles": 29534,
+    "sourceInstanceTriangles": 58674,
+    "selectedTriangles": 57230,
+    "files": [
+      {
+        "name": "R16 stage 2 pr3 light.STL",
+        "id": "1Y2ZYhxn9uIC9fL6h294d6Sk-lX9mSkY9",
+        "sourceUrl": "https://drive.google.com/file/d/1Y2ZYhxn9uIC9fL6h294d6Sk-lX9mSkY9/view?usp=drivesdk",
+        "bytes": 22284,
+        "triangles": 444,
+        "sha256": "5ad5d494adcc2eaff88cfdcd4b598ebe637e70e5544ef0566925e34f0492cb0b"
+      },
+      {
+        "name": "R16  RD marsh stage2.STL",
+        "id": "15QBEM1dmv3kz_q8LkQfZWOdIC3C-fjWO",
+        "sourceUrl": "https://drive.google.com/file/d/15QBEM1dmv3kz_q8LkQfZWOdIC3C-fjWO/view?usp=drivesdk",
+        "bytes": 252284,
+        "triangles": 5044,
+        "sha256": "eb865fb4411b6a1f5b04ac21792082a248eed3872e4d5e4acfdc5b6699a589af"
+      },
+      {
+        "name": "R16 stage 1 adapter.STL",
+        "id": "1YVUutS3ZD3aqCb56zS2QwxFk25rSVj9E",
+        "sourceUrl": "https://drive.google.com/file/d/1YVUutS3ZD3aqCb56zS2QwxFk25rSVj9E/view?usp=drivesdk",
+        "bytes": 34284,
+        "triangles": 684,
+        "sha256": "0620a3101160d405a6224856e79fb52518ba54600065b6dbba642f518728e75c"
+      },
+      {
+        "name": "R16 stage 1 pr1.STL",
+        "id": "1J2HWWKb96MwFI321GNRhfs_XBGPdwzFh",
+        "sourceUrl": "https://drive.google.com/file/d/1J2HWWKb96MwFI321GNRhfs_XBGPdwzFh/view?usp=drivesdk",
+        "bytes": 228184,
+        "triangles": 4562,
+        "sha256": "e07f0fcc1112075007783c4944b57e0838e5cbe1eea081eea84195f63642823b"
+      },
+      {
+        "name": "R16 stage 1 pr2.STL",
+        "id": "1esd1hjUpXhizP0fxJ8G7ADBSYVRSzIB1",
+        "sourceUrl": "https://drive.google.com/file/d/1esd1hjUpXhizP0fxJ8G7ADBSYVRSzIB1/view?usp=drivesdk",
+        "bytes": 85284,
+        "triangles": 1704,
+        "sha256": "90c8c692e484656331d4a620ff493fe104a9c6eb6a34915830b083ca4a9b8282"
+      },
+      {
+        "name": "R16 stage 1 pr3.STL",
+        "id": "1CXUNBPB7oTo3-vTA8-kqFEonxHbk3hh3",
+        "sourceUrl": "https://drive.google.com/file/d/1CXUNBPB7oTo3-vTA8-kqFEonxHbk3hh3/view?usp=drivesdk",
+        "bytes": 65484,
+        "triangles": 1308,
+        "sha256": "d487f56245eb57f287abf5b48412e55f82351057cc93a8d92e73141f2572edf8"
+      },
+      {
+        "name": "R16 stage 1 pr4.STL",
+        "id": "1_c2ShvCxhmTK5s9hdKf0ZHhhANAvpOwy",
+        "sourceUrl": "https://drive.google.com/file/d/1_c2ShvCxhmTK5s9hdKf0ZHhhANAvpOwy/view?usp=drivesdk",
+        "bytes": 101584,
+        "triangles": 2030,
+        "sha256": "04489ab343216f07309bbbaa0e496d7b9054b131fd78c407a180d93e3f4274d2"
+      },
+      {
+        "name": "R16 stage 2 pr1.STL",
+        "id": "1yMKqIQkmCeGJ0qAix8TfAkj2tJIzMElb",
+        "sourceUrl": "https://drive.google.com/file/d/1yMKqIQkmCeGJ0qAix8TfAkj2tJIzMElb/view?usp=drivesdk",
+        "bytes": 183184,
+        "triangles": 3662,
+        "sha256": "e183f00db84f992fa4fa34c49a0148d786c8b9d7385d5c74be2a45c03cb34070"
+      },
+      {
+        "name": "R16 stage 2 pr2.STL",
+        "id": "1IWqI1W2H8NnMUi-c5OG6duZ1bmSwQBos",
+        "sourceUrl": "https://drive.google.com/file/d/1IWqI1W2H8NnMUi-c5OG6duZ1bmSwQBos/view?usp=drivesdk",
+        "bytes": 55484,
+        "triangles": 1108,
+        "sha256": "d53bd88533c3470e11a07b106e339a1335cb3caa9810c67afa5926c604938f99"
+      },
+      {
+        "name": "R16 stage 2 pr3 heavy.STL",
+        "id": "1NPT1AXS8nE33i0Kc5p28RJ_JroA3phCU",
+        "sourceUrl": "https://drive.google.com/file/d/1NPT1AXS8nE33i0Kc5p28RJ_JroA3phCU/view?usp=drivesdk",
+        "bytes": 77084,
+        "triangles": 1540,
+        "sha256": "5239a8abd92372f2c62a8fb66eff8bc9dfabf78764738e9ef0472810966c93de"
+      },
+      {
+        "name": "RD marsh stage0.STL",
+        "id": "1pkZYBeUvTHz79Xu1eITEz-mBYcG6pmNG",
+        "sourceUrl": "https://drive.google.com/file/d/1pkZYBeUvTHz79Xu1eITEz-mBYcG6pmNG/view?usp=drivesdk",
+        "bytes": 26384,
+        "triangles": 526,
+        "sha256": "87b160f2474f796ffee974e64aadee64a78cf0095d1365ab89a5933f68d96bac"
+      },
+      {
+        "name": "RD marsh stage1.STL",
+        "id": "1gy2qGLTnUJaLdlOEOBpKPv0IpyL5QDyq",
+        "sourceUrl": "https://drive.google.com/file/d/1gy2qGLTnUJaLdlOEOBpKPv0IpyL5QDyq/view?usp=drivesdk",
+        "bytes": 275784,
+        "triangles": 5514,
+        "sha256": "878e004a05723533becd788d3511980fc1f270b994424aae30744573388d9aae"
+      },
+      {
+        "name": "stage 1 part center.STL",
+        "id": "1dTScPW0JMZBBJSF29LNmih039M4mHIgc",
+        "sourceUrl": "https://drive.google.com/file/d/1dTScPW0JMZBBJSF29LNmih039M4mHIgc/view?usp=drivesdk",
+        "bytes": 24084,
+        "triangles": 480,
+        "sha256": "c6b7a1eec1d5a20f4709203856ad8356b455be17aeecc1e93516f2ddbe7c0489"
+      },
+      {
+        "name": "stage 2 part center.STL",
+        "id": "1qD-A_sTX5WLDYC9-B-CcCJbPkpzje5f4",
+        "sourceUrl": "https://drive.google.com/file/d/1qD-A_sTX5WLDYC9-B-CcCJbPkpzje5f4/view?usp=drivesdk",
+        "bytes": 23684,
+        "triangles": 472,
+        "sha256": "c9fcf2990c967ac40cfd70df5f4d62cd1d186e20e3afcc300ee17af265b23d64"
+      },
+      {
+        "name": "stage 2 part center2.STL",
+        "id": "1rSDegt2gW_YZF6dZ3S0-9o_9ulMuwTCr",
+        "sourceUrl": "https://drive.google.com/file/d/1rSDegt2gW_YZF6dZ3S0-9o_9ulMuwTCr/view?usp=drivesdk",
+        "bytes": 22884,
+        "triangles": 456,
+        "sha256": "10aad537f02192be90df8a02de0a4bdd4619dd56f7392799a5d0714c6ac66bef"
+      }
+    ],
+    "selectedFiles": [
+      "R16 stage 1 pr1.STL",
+      "R16 stage 1 pr2.STL",
+      "R16 stage 1 pr3.STL",
+      "R16 stage 1 pr4.STL",
+      "R16 stage 1 adapter.STL",
+      "R16 stage 2 pr1.STL",
+      "R16 stage 2 pr2.STL",
+      "R16 stage 2 pr3 light.STL",
+      "RD marsh stage1.STL",
+      "R16  RD marsh stage2.STL"
+    ],
+    "omitted": [
+      {
+        "file": "stage 1 part center.STL",
+        "reason": "internal print assembly sleeve, outer radius12.5, inner12, length5.5; intended three joins atY30/70/90, centered over each seam"
+      },
+      {
+        "file": "stage 2 part center.STL",
+        "reason": "internal print assembly sleeve, outer radius11, inner10.25, length5.5; seamY180"
+      },
+      {
+        "file": "stage 2 part center2.STL",
+        "reason": "internal print assembly sleeve, outer radius5, inner4.25, length5.5; seamY270"
+      },
+      {
+        "file": "RD marsh stage0.STL",
+        "reason": "inferred assembly/protection frame; thin annulus and four tabs, not a nozzle; attachment not keyed, historical identity unconfirmed",
+        "axisXZ": [
+          13.5,
+          13.5
+        ],
+        "sourceYBounds": [
+          0,
+          6
+        ],
+        "maxRadiusApprox": 13.73
+      },
+      {
+        "file": "R16 stage 2 pr3 heavy.STL",
+        "reason": "alternate nose, mutually exclusive with light; length23 instead of28",
+        "axisXZ": [
+          7.8544784,
+          7.8544784
+        ]
+      }
+    ]
+  },
+  "assembly": [
+    {
+      "name": "R16 stage 1 pr1",
+      "file": "R16 stage 1 pr1.STL",
+      "sourceAxisXZ": [
+        19,
+        19
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0,
+        0.5,
+        0
+      ],
+      "yawDegrees": 0,
+      "triangles": 4562,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "R16 stage 1 pr2",
+      "file": "R16 stage 1 pr2.STL",
+      "sourceAxisXZ": [
+        15,
+        16
+      ],
+      "sourceYMin": 0.02820499986410141,
+      "translationMetres": [
+        0,
+        3.5,
+        0
+      ],
+      "yawDegrees": 45,
+      "triangles": 1704,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "R16 stage 1 pr3",
+      "file": "R16 stage 1 pr3.STL",
+      "sourceAxisXZ": [
+        15,
+        16
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0,
+        7.5,
+        0
+      ],
+      "yawDegrees": 45,
+      "triangles": 1308,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "R16 stage 1 pr4",
+      "file": "R16 stage 1 pr4.STL",
+      "sourceAxisXZ": [
+        15,
+        16
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0,
+        9.5,
+        0
+      ],
+      "yawDegrees": 45,
+      "triangles": 2030,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "R16 stage 1 adapter",
+      "file": "R16 stage 1 adapter.STL",
+      "sourceAxisXZ": [
+        15,
+        15
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0,
+        14.600000000000001,
+        0
+      ],
+      "yawDegrees": 0,
+      "triangles": 684,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "R16 stage 2 pr1",
+      "file": "R16 stage 2 pr1.STL",
+      "sourceAxisXZ": [
+        15,
+        15
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0,
+        15.8,
+        0
+      ],
+      "yawDegrees": 90,
+      "triangles": 3662,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "R16 stage 2 pr2",
+      "file": "R16 stage 2 pr2.STL",
+      "sourceAxisXZ": [
+        13.5000245,
+        12.5
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0,
+        18.5,
+        0
+      ],
+      "yawDegrees": -45,
+      "triangles": 1108,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "R16 stage 2 pr3 light",
+      "file": "R16 stage 2 pr3 light.STL",
+      "sourceAxisXZ": [
+        7.8447582,
+        7.8447582
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0.0014164763040728924,
+        27.5,
+        0.001416476304072892
+      ],
+      "yawDegrees": -45,
+      "triangles": 444,
+      "removedPinTriangles": 0
+    },
+    {
+      "name": "Ступень 1 · сопло 1",
+      "file": "RD marsh stage1.STL",
+      "sourceAxisXZ": [
+        4.0685716,
+        4.0685716
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        -7.28379191627937e-8,
+        0,
+        -0.8500000702682057
+      ],
+      "yawDegrees": 0,
+      "triangles": 5336,
+      "removedPinTriangles": 178
+    },
+    {
+      "name": "Ступень 1 · сопло 2",
+      "file": "RD marsh stage1.STL",
+      "sourceAxisXZ": [
+        4.0685716,
+        4.0685716
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        -0.7361216451521702,
+        0,
+        -0.4250000599578927
+      ],
+      "yawDegrees": 0,
+      "triangles": 5336,
+      "removedPinTriangles": 178
+    },
+    {
+      "name": "Ступень 1 · сопло 3",
+      "file": "RD marsh stage1.STL",
+      "sourceAxisXZ": [
+        4.0685716,
+        4.0685716
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0.7361215158273083,
+        0,
+        -0.4250000724280565
+      ],
+      "yawDegrees": 0,
+      "triangles": 5336,
+      "removedPinTriangles": 178
+    },
+    {
+      "name": "Ступень 1 · сопло 4",
+      "file": "RD marsh stage1.STL",
+      "sourceAxisXZ": [
+        4.0685716,
+        4.0685716
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        -7.283792697876379e-8,
+        0,
+        0.8499999770904498
+      ],
+      "yawDegrees": 0,
+      "triangles": 5336,
+      "removedPinTriangles": 178
+    },
+    {
+      "name": "Ступень 1 · сопло 5",
+      "file": "RD marsh stage1.STL",
+      "sourceAxisXZ": [
+        4.0685716,
+        4.0685716
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        -0.7361216442022288,
+        0,
+        0.4249999228593822
+      ],
+      "yawDegrees": 0,
+      "triangles": 5336,
+      "removedPinTriangles": 178
+    },
+    {
+      "name": "Ступень 1 · сопло 6",
+      "file": "RD marsh stage1.STL",
+      "sourceAxisXZ": [
+        4.0685716,
+        4.0685716
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0.7361215154947115,
+        0,
+        0.4249999071719479
+      ],
+      "yawDegrees": 0,
+      "triangles": 5336,
+      "removedPinTriangles": 178
+    },
+    {
+      "name": "Ступень 2 · сопло 1",
+      "file": "R16  RD marsh stage2.STL",
+      "sourceAxisXZ": [
+        5,
+        5
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        -0.6000000375756882,
+        15.55,
+        3.0928891411217225e-8
+      ],
+      "yawDegrees": 90,
+      "triangles": 4856,
+      "removedPinTriangles": 188
+    },
+    {
+      "name": "Ступень 2 · сопло 2",
+      "file": "R16  RD marsh stage2.STL",
+      "sourceAxisXZ": [
+        5,
+        5
+      ],
+      "sourceYMin": 0,
+      "translationMetres": [
+        0.6146398488383227,
+        15.55,
+        3.0928888465785836e-8
+      ],
+      "yawDegrees": 90,
+      "triangles": 4856,
+      "removedPinTriangles": 188
+    }
+  ],
+  "optimization": {
+    "geometryDecimation": false,
+    "normalCreaseAngleDegrees": 36,
+    "removedPinTriangles": 1444,
+    "omittedInternalSleeves": 3,
+    "omittedUnconfirmedFrame": true,
+    "sharedEngineMeshes": true,
+    "compression": "EXT_meshopt_compression",
+    "positionBits": 16,
+    "normalBits": 12
+  },
+  "references": [
+    {
+      "url": "https://rvsn.ruzhany.info/umz_2000_01_01.html",
+      "basis": "Издание ГКБ «Южное», 2000: основной диаметр 3 м; разные верхние части не приводятся к одной высоте."
+    },
+    {
+      "url": "https://www.testpilot.ru/espace/bibl/kb-ujn/63.jpg",
+      "basis": "Силуэт из издания ГКБ «Южное», 2004: выбор вытянутого конуса light."
+    },
+    {
+      "url": "https://commons.wikimedia.org/wiki/File:RVSN_gallery11.jpg",
+      "basis": "Фотография экспозиции музея РВСН, Mil.ru, 2014: оливковая окраска. Фотография не включена в ассет."
+    },
+    {
+      "url": "https://museumgagarin.ru/news/khronika_chernogo_dnya/",
+      "basis": "Связь Р-16 с площадками 41 и 42 Байконура."
+    }
+  ],
+  "attribution": {
+    "authors": [],
+    "providedBy": "Владелец проекта / Google Drive",
+    "driveUrl": "https://drive.google.com/drive/folders/1xoJEpzkr4DRiF-X7cfW6o9An1mSFQfUC",
+    "licenseNote": "Автор и лицензия исходного STL-набора в предоставленных файлах не указаны. Открытая лицензия не заявляется."
+  },
+  "museumChoices": [
+    "LIGHT nose chosen by root",
+    "90-degree total stage2 yaw aligns its cable channel with stage1 channel, but round interstage adapter does not uniquely key relative stage yaw",
+    "Omit unconfirmed stage0 support/frame"
+  ],
+  "interpretation": "Музейный экспонат по предоставленному STL. Геометрия и пропорции источника сохранены; окраска по музейному ориентиру. Не заявляется точной реконструкцией конкретного борта 1960 года."
+}

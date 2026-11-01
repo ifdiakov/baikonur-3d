@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-export const MODEL_VIEWER_VERSION='without-ll22-v1';
+export const MODEL_VIEWER_VERSION='r16-exhibit-v1';
 export const MODEL_CATALOG=Object.freeze({
  soyuz:{title:'Союз',subtitle:'Ракета-экспонат',description:'Подробная модель из коллекции музея. Доступна на Гагаринском старте и площадке №31.',kind:'rocket',asset:'rockets/soyuz.glb'},
  'energia-polyus':{title:'Энергия — Полюс',subtitle:'Ракета и полезная нагрузка',description:'Компоновка «Энергии» с аппаратом «Полюс», представленная на УКСС.',kind:'rocket',asset:'rockets/energia-polyus.glb'},
@@ -12,6 +12,7 @@ export const MODEL_CATALOG=Object.freeze({
  buran:{title:'Буран',subtitle:'Орбитальный корабль · посадочная конфигурация',description:'Отдельный корабль из реконструкции посадки на Юбилейном: исходная обшивка, открытые створки и выпущенное шасси.',kind:'aircraft'},
  'mig25':{title:'МиГ-25',subtitle:'Борт 31 · стояночная конфигурация',description:'Кабина, воздухозаборники, шасси, подвески и сопла в исходной модели из коллекции.',kind:'aircraft',asset:'mig25/model-v1.glb',source:'https://sketchfab.com/3d-models/mig25-afe67617c5294dce9056106a22f640ff',credit:'manilov.ap · CC BY 4.0 · адаптация',views:{cockpit:{target:[0,3.2724,4.0717],offset:[3.6,1.6,4.4]},exhaust:{target:[0,2.3543,-9.1059],offset:[3.1,1.2,-5.3]}}},
  n1:{title:'Н-1',subtitle:'Лунная ракета · площадка №110',description:'Ступени, решётчатые переходники, двигательный блок и головная часть сверхтяжёлой лунной ракеты.',kind:'rocket',asset:'rockets/n1.glb',source:'https://sketchfab.com/3d-models/n1-rocket-7e9fbb8d9b794060bd8331934571c4dc',credit:'Scilence · CC BY 4.0 · адаптация'},
+ r16:{title:'Р-16',subtitle:'8К64 · площадка №41',description:'Двухступенчатая Р-16 в оливковой музейной окраске. На макете экспонат установлен на восточном основании площадки №41.',kind:'rocket',asset:'rockets/r16.glb',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/r16-source-model.md',sourceLabel:'Источники модели ↗'},
  proton:{title:'Протон-М',subtitle:'Площадки №81 и №200',description:'Шесть боковых баков, открытая межступенчатая ферма, двигатели и обтекатель в окраске по референсам. Ступени можно разнести для осмотра.',kind:'rocket',source:'https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/',views:{front:{target:[0,1.6,0],offset:[8,-7,11]},side:{target:[0,22.2,0],offset:[8,2,11]},top:{target:[0,49,0],offset:[12,4,16]}}},
  mriya:{title:'Мрия и Буран',subtitle:'Ан-225 · аэродром Юбилейный',description:'Транспортный самолёт с орбитальным кораблём в музейной окраске по референсам.',kind:'aircraft',asset:'mriya-buran/near-v2.glb',yaw:Math.PI/2},
  aircraft:{title:'Самолёт Алросы',subtitle:'Рейс на Крайний',description:'Музейная модель семейства Boeing 737: окраска Алросы, освещённые окна, кабина и выпущенное шасси.',kind:'aircraft'},
@@ -22,7 +23,7 @@ export const MODEL_CATALOG=Object.freeze({
  site45:{title:'Старт Зенита',subtitle:'Историческая площадка №45/1',description:'Реконструкция по десяти фотографиям: открытый газоход, стартовый стол, откидная стрела, удалённая башня и мачты. Размеры сооружений оценены по фото.',kind:'site'}
 });
 const siteModels={
- 'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-45':['zenit-land','site45','zenit-sea'],
+ 'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','site45','zenit-sea'],
  'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
  'pad-110':['energia-buran','energia','n1'],'pad-112':['tua','energia-buran','energia-polyus','energia','energia-m','n1'],
  'pad-112a':['buran','energia-buran'],'pad-251':['mriya','buran','mig25'],'airfield':['aircraft'],'city':['train','coach'],

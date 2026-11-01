@@ -24,11 +24,18 @@ export const SITE41_REFERENCE=Object.freeze({
  confidence:'satellite-plan-and-owner-ground-photographs',surveyed:false
 });
 export const site41ImagePoint=([x,z])=>[(x-1225)*.52,(z-595)*.52];
+// A museum exhibit on the east foundation. The half-metre westward shift
+// keeps the authored engine fairings clear of the existing access road.
+export const SITE41_R16_MOUNT=Object.freeze({
+ position:Object.freeze([44.220758855,.42,-162.212463124]),
+ rotation:Object.freeze([0,Math.PI/4,0])
+});
 export const SITE41_VIEWS=Object.freeze({
  all:{target:[20,0,-35],eye:[450,510,530]},
  top:{target:[20,0,-25],eye:[20,640,-24.99]},
  memorial:{target:[-160,1.6,-128],eye:[-132,28,-85]},
  command:{target:[-138,1.7,-100],eye:[-111,27,-66]},
  ruins:{target:[115,2.5,-123],eye:[165,44,-60]},
+ rocket:{target:[44.220758855,15.57,-162.212463124],eye:[76.220758855,47.57,-120.212463124]},
  access:{target:[-13,0,195],eye:[105,130,350]}
 });

@@ -1,0 +1,233 @@
+{
+  "units": "source STL units; uniform metric scale 0.1 m per unit",
+  "axis": "+Y is longitudinal, bell exits face -Y",
+  "transformOrder": "p_metres = 0.1 * ([0,5,0] + [0,yBase,0] + R_y(yaw) * (p_source - [cx,yMin,cz] + optionalLocalOffset))",
+  "yawConvention": "Three.js rotationY: x=cos(a)*x+sin(a)*z; z=-sin(a)*x+cos(a)*z",
+  "shells": [
+    {
+      "file": "R16 stage 1 pr1.STL",
+      "axisXZ": [
+        19,
+        19
+      ],
+      "yMin": 0,
+      "yBase": 0,
+      "yawDegrees": 0
+    },
+    {
+      "file": "R16 stage 1 pr2.STL",
+      "axisXZ": [
+        15,
+        16
+      ],
+      "yMin": 0.02820499986410141,
+      "yBase": 30,
+      "yawDegrees": 45
+    },
+    {
+      "file": "R16 stage 1 pr3.STL",
+      "axisXZ": [
+        15,
+        16
+      ],
+      "yMin": 0,
+      "yBase": 70,
+      "yawDegrees": 45
+    },
+    {
+      "file": "R16 stage 1 pr4.STL",
+      "axisXZ": [
+        15,
+        16
+      ],
+      "yMin": 0,
+      "yBase": 90,
+      "yawDegrees": 45,
+      "rimY": 51,
+      "domeY": 57
+    },
+    {
+      "file": "R16 stage 1 adapter.STL",
+      "axisXZ": [
+        15,
+        15
+      ],
+      "yMin": 0,
+      "yBase": 141,
+      "yawDegrees": 0
+    },
+    {
+      "file": "R16 stage 2 pr1.STL",
+      "axisXZ": [
+        15,
+        15
+      ],
+      "yMin": 0,
+      "yBase": 153,
+      "yawDegrees": 90
+    },
+    {
+      "file": "R16 stage 2 pr2.STL",
+      "axisXZ": [
+        13.5000245,
+        12.5
+      ],
+      "yMin": 0,
+      "yBase": 180,
+      "yawDegrees": -45,
+      "upperSocketAxisXZ": [
+        13.5200565,
+        12.5
+      ]
+    },
+    {
+      "file": "R16 stage 2 pr3 light.STL",
+      "axisXZ": [
+        7.8447582,
+        7.8447582
+      ],
+      "yMin": 0,
+      "yBase": 270,
+      "yawDegrees": -45,
+      "optionalLocalOffset": [
+        0.020032,
+        0,
+        0
+      ]
+    }
+  ],
+  "engines": [
+    {
+      "file": "RD marsh stage1.STL",
+      "count": 6,
+      "sourceAxisXZ": [
+        4.0685716,
+        4.0685716
+      ],
+      "yBase": -5,
+      "parentYawDegrees": 0,
+      "mountAxesXZ": [
+        [
+          -7.28379191627937e-07,
+          -8.500000702682057
+        ],
+        [
+          -7.361216451521701,
+          -4.250000599578927
+        ],
+        [
+          7.361215158273083,
+          -4.250000724280564
+        ],
+        [
+          -7.283792697876379e-07,
+          8.499999770904498
+        ],
+        [
+          -7.361216442022288,
+          4.249999228593822
+        ],
+        [
+          7.361215154947114,
+          4.249999071719479
+        ]
+      ],
+      "pinSourceY": [
+        12,
+        15
+      ],
+      "pocketShellY": [
+        7,
+        10
+      ],
+      "pinRadius": 1.5,
+      "pocketRadius": 1.65
+    },
+    {
+      "file": "R16  RD marsh stage2.STL",
+      "count": 2,
+      "sourceAxisXZ": [
+        5,
+        5
+      ],
+      "yBase": 150.5,
+      "parentYawDegrees": 90,
+      "mountAxesXZ": [
+        [
+          -3.092889144795663e-07,
+          -6.000000375756882
+        ],
+        [
+          -3.0928888428150003e-07,
+          6.146398488383227
+        ]
+      ],
+      "pinSourceY": [
+        10,
+        13
+      ],
+      "pocketShellY": [
+        7.5,
+        11
+      ],
+      "pinRadius": 2,
+      "pocketRadius": 2.15,
+      "note": "Positive-Z wide socket is centered at +6.00024, narrower mounting pocket at +6.1464; use narrow-pocket axis."
+    }
+  ],
+  "heightMetres": 30.3,
+  "sourceYBoundsWithoutOptionalFrame": [
+    -5,
+    298
+  ],
+  "maximumSourceRadius": 19.1775113650213,
+  "omitted": [
+    {
+      "file": "stage 1 part center.STL",
+      "reason": "internal print assembly sleeve, outer radius12.5, inner12, length5.5; intended three joins atY30/70/90, centered over each seam"
+    },
+    {
+      "file": "stage 2 part center.STL",
+      "reason": "internal print assembly sleeve, outer radius11, inner10.25, length5.5; seamY180"
+    },
+    {
+      "file": "stage 2 part center2.STL",
+      "reason": "internal print assembly sleeve, outer radius5, inner4.25, length5.5; seamY270"
+    },
+    {
+      "file": "RD marsh stage0.STL",
+      "reason": "inferred assembly/protection frame; thin annulus and four tabs, not a nozzle; attachment not keyed, historical identity unconfirmed",
+      "axisXZ": [
+        13.5,
+        13.5
+      ],
+      "sourceYBounds": [
+        0,
+        6
+      ],
+      "maxRadiusApprox": 13.73
+    },
+    {
+      "file": "R16 stage 2 pr3 heavy.STL",
+      "reason": "alternate nose, mutually exclusive with light; length23 instead of28",
+      "axisXZ": [
+        7.8544784,
+        7.8544784
+      ]
+    }
+  ],
+  "confirmed": [
+    "Source +Y axis and socket centers",
+    "Shell axial butt joins, including adapter above rim rather than dome",
+    "Relative source yaw45 degrees on stage1pr2/pr3/pr4, -135 degrees between stage2pr1 and stage2pr2, established from complete section contours"
+  ],
+  "museumChoices": [
+    "LIGHT nose chosen by root",
+    "90-degree total stage2 yaw aligns its cable channel with stage1 channel, but round interstage adapter does not uniquely key relative stage yaw",
+    "Omit unconfirmed stage0 support/frame"
+  ],
+  "sourceUnchanged": true,
+  "maximumMetricRadius": 1.91775113650213,
+  "lightAssemblyTriangleCount": 58674,
+  "all15SourceHashesMatch": true
+}
