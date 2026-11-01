@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-a320-v1';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-a320-tail-v2';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -21,7 +21,7 @@ export async function createInspectionModel(id,{signal}={}){
  if(spec.asset){root=await gltf(spec.asset,signal);root.rotation.y=spec.yaw||0;if(id==='n1'||id==='mig25')root.userData.inspectionPrecise=true;}
  else if(id.startsWith('zenit-')){const {createZenitRocket}=await import('./zenit-rocket.js?v=20261101-source-exhibits-v2');const model=createZenitRocket({variant:id==='zenit-land'?'land':'sea'});root=model.root;setExploded=model.setExploded;}
  else if(id==='aircraft'){
-  const {buildAlrosaAircraft}=await import('./a320-aircraft.js?v=20261101-a320-v1');root=new THREE.Group();const aircraft=buildAlrosaAircraft(root,{fallback:false});if(!await aircraft.ready)throw Error('Не удалось загрузить Airbus A320');aircraft.model.scale.setScalar(1);aircraft.setEvening(true);aircraft.setGear(1);setGear=aircraft.setGear;update=time=>aircraft.updateDetails(time/1000);
+  const {buildAlrosaAircraft}=await import('./a320-aircraft.js?v=20261101-a320-tail-v2');root=new THREE.Group();const aircraft=buildAlrosaAircraft(root,{fallback:false});if(!await aircraft.ready)throw Error('Не удалось загрузить Airbus A320');aircraft.model.scale.setScalar(1);aircraft.setEvening(true);aircraft.setGear(1);setGear=aircraft.setGear;update=time=>aircraft.updateDetails(time/1000);
  }else if(id==='train'||id==='coach'){
   const {buildRailVehicle}=await import('./rail-vehicles.js?v=20261031-facilities-rails-lighting-v1');root=new THREE.Group();const vehicle=buildRailVehicle(root,{wagon:id==='coach',gauge:1.52,last:id==='coach'});vehicle.setEvening(false);for(const part of [...vehicle.axles,...vehicle.bogies])part.root.position.z=part.offset;
  }else if(id==='proton'){

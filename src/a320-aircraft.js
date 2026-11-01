@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import {buildAlrosaAircraft as buildFallback,titleTexture,diamondTexture,AIRCRAFT_SCALE,AIRCRAFT_LIGHT_FADE} from './aircraft-livery.js?v=20261101-a320-v1';
+import {buildAlrosaAircraft as buildFallback,titleTexture,diamondTexture,AIRCRAFT_SCALE,AIRCRAFT_LIGHT_FADE} from './aircraft-livery.js?v=20261101-a320-tail-v2';
 import {createLightField} from './light-field.js?v=20261101-museum-view-v1';
-import {A320_PROFILE,a320Support} from './a320-profile.js?v=20261101-a320-v1';
+import {A320_PROFILE,a320Support} from './a320-profile.js?v=20261101-a320-tail-v2';
 export {AIRCRAFT_SCALE,AIRCRAFT_LIGHT_FADE,A320_PROFILE,a320Support};
 export const AIRCRAFT_APPEARANCE_VERSION='a320-alrosa-v1';
 const V=(...p)=>new THREE.Vector3(...p),ASSET=new URL('../assets/models/a320-alrosa/model-v1.glb',import.meta.url).href;
@@ -66,7 +66,7 @@ export function buildAlrosaAircraft(parent,{fallback=true}={}){
    const tail=loaded.getObjectByName('tail'),word=titleTexture('АЛРОСА','#173f82','italic 900 128px Arial'),emblem=diamondTexture(),engineWord=titleTexture('alrosa.aero','#f1f7fb','700 118px Arial');
    for(const side of [-1,1]){
     decal(loaded,body,side,{z:6.6,y:1.85,w:7.7,h:.64,map:word,name:'АЛРОСА · надпись на борту'});
-    decal(loaded,tail,side,{z:-18.5,y:5.85,w:3.55,h:3.55,map:emblem,name:'АЛРОСА · алмаз на киле'});
+    decal(loaded,tail,side,{z:-18.85,y:5.65,w:2.45,h:2.45,map:emblem,name:'АЛРОСА · алмаз на киле'});
    }
    const nacelles=[];loaded.traverse(mesh=>{if(mesh.isMesh&&mesh.name.startsWith('nacelle'))nacelles.push(mesh);});
    for(const side of [-1,1])for(const nacelle of nacelles)decal(loaded,nacelle,side,{z:.9,y:-1.4,w:2.2,h:.35,map:engineWord,name:'alrosa.aero · двигатель'});

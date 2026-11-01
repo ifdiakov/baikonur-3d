@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261101-museum-view-v1';
-import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION,AIRCRAFT_LIGHT_FADE,a320Support} from './a320-aircraft.js?v=20261101-a320-v1';
+import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION,AIRCRAFT_LIGHT_FADE,a320Support} from './a320-aircraft.js?v=20261101-a320-tail-v2';
 
-import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261101-a320-v1';
+import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261101-a320-tail-v2';
 import {arrivalStatus,createArrivalStatusTimeline,ARRIVAL_STATUS_VERSION} from './arrival-status.js?v=moscow-krayniy-status-v1';
 export {FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION};
 // Airport transforms and the complex centre define the complete two-sortie circuit.

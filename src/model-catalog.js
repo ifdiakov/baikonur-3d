@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-export const MODEL_VIEWER_VERSION='a320-v1';
+export const MODEL_VIEWER_VERSION='a320-v2';
 export const MODEL_CATALOG=Object.freeze({
  'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',description:'Ферменный портал, две направляющие, выносная траверса, восемь рабочих люлек и полиспасты. Музейная реконструкция по семи фотографиям; размеры оценены по пропорциям.',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
  'cyclone-2':{title:'Циклон-2',subtitle:'Площадка №90 · Байконур',description:'Двухступенчатая ракета: шесть основных сопел первой ступени, наружные каналы и узкая головная часть по фотографиям КБ «Южное».',kind:'rocket',asset:'rockets/cyclone-2.glb'},

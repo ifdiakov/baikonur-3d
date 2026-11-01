@@ -47,7 +47,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum7-a320-20261101-v1
+  RELEASE_TAG: museum7-a320-20261101-v2
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
