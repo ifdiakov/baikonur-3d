@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-source-exhibits-v2';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-source-exhibits-v2';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-proton-launch-v1';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-proton-launch-v1';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);
@@ -15,7 +15,7 @@ try{
  const darkBackground=getComputedStyle(document.documentElement).backgroundColor;
  const scene=new THREE.Scene();scene.background=new THREE.Color(darkBackground);const camera=new THREE.PerspectiveCamera(35,1,.01,5000),controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.10;controls.autoRotateSpeed=.65;
  scene.add(new THREE.HemisphereLight('#e9f4ff','#6c7782',2.1));for(const [color,power,position]of [['#fff7eb',3.2,[30,60,65]],['#b9daff',2.3,[-40,20,-45]],['#fff',.8,[0,-20,20]]]){const light=new THREE.DirectionalLight(color,power);light.position.set(...position);scene.add(light);}
- let view='full',dark=true,exploded=false,gear=true;
+ let view='full',dark=true,exploded=false,gear=true,vehicleVisible=true;
  const box=()=>inspectionBounds(model.root);
  function fit(direction){
   const bounds=box(),center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
@@ -43,14 +43,15 @@ try{
   const token=++generation;request?.abort();request=new AbortController();const controller=request,timer=setTimeout(()=>controller.abort(),45000);
   current=id;select.value=id;status.hidden=false;statusText.textContent='Загружаем модель…';document.getElementById('retry').hidden=true;model?.root.removeFromParent();model?.dispose();model=null;
   const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;document.getElementById('modelDescription').textContent=spec.description;
+  document.getElementById('siteRocket').hidden=true;document.getElementById('siteRocket').setAttribute('aria-pressed','true');document.getElementById('siteRocket').textContent='Убрать ракету';vehicleVisible=true;
   document.getElementById('gear').hidden=true;document.getElementById('gear').setAttribute('aria-pressed','true');document.getElementById('gear').textContent='Убрать шасси';gear=true;
-  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.credit||'Об этой модификации ↗';
+  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.sourceLabel||spec.credit||'Об этой модификации ↗';
   document.getElementById('explode').hidden=true;document.getElementById('explode').setAttribute('aria-pressed','false');document.getElementById('explode').textContent='Разнести ступени';exploded=false;
   try{
    const result=await createInspectionModel(id,{signal:request.signal});if(token!==generation||disposed){result.dispose();return;}
-   model=result;if(model.spec.kind==='rocket')model.root.rotation.z=innerWidth<=700?-Math.PI/10:-Math.PI/3;scene.add(model.root);model.root.updateMatrixWorld(true);document.getElementById('explode').hidden=!model.setExploded;document.getElementById('gear').hidden=!model.setGear;gear=model.initialGear>0;document.getElementById('gear').setAttribute('aria-pressed',String(gear));document.getElementById('gear').textContent=gear?'Убрать шасси':'Выпустить шасси';for(const button of document.querySelectorAll('[data-mig-view]'))button.hidden=id!=='mig25';
-   for(const [key,label]of [['front',(id.startsWith('zenit-')||id==='proton')?'Двигатели':'Спереди'],['side',(id.startsWith('zenit-')||id==='proton')?'Ферма':'Сбоку'],['top',(id.startsWith('zenit-')||id==='proton')?'Обтекатель':'Сверху']])document.querySelector(`[data-view="${key}"]`).textContent=label;
-   inspect('full');renderFrame();status.hidden=true;if(embedded)parent.postMessage({type:'museum-model-ready',model:id},location.origin);
+   model=result;document.getElementById('siteRocket').hidden=!model.setVehicleVisible;if(model.spec.kind==='rocket')model.root.rotation.z=innerWidth<=700?-Math.PI/10:-Math.PI/3;scene.add(model.root);model.root.updateMatrixWorld(true);document.getElementById('explode').hidden=!model.setExploded;document.getElementById('gear').hidden=!model.setGear;gear=model.initialGear>0;document.getElementById('gear').setAttribute('aria-pressed',String(gear));document.getElementById('gear').textContent=gear?'Убрать шасси':'Выпустить шасси';for(const button of document.querySelectorAll('[data-proton-view]'))button.hidden=id!=='proton-pad';for(const button of document.querySelectorAll('[data-mig-view]'))button.hidden=id!=='mig25';
+   for(const [key,label]of [['front',(id.startsWith('zenit-')||id==='proton')?'Двигатели':'Спереди'],['side',(id.startsWith('zenit-')||id==='proton')?'Ферма':'Сбоку'],['top',(id.startsWith('zenit-')||id==='proton')?'Обтекатель':'Сверху']])document.querySelector(`[data-view="${key}"]`).textContent=spec.viewLabels?.[key]||label;
+   inspect('full');if(spec.initialView)inspect(spec.initialView);renderFrame();status.hidden=true;if(embedded)parent.postMessage({type:'museum-model-ready',model:id},location.origin);
   }catch(error){if(token!==generation||disposed)return;statusText.textContent='Не удалось загрузить модель. Попробуйте ещё раз.';document.getElementById('retry').hidden=false;console.error('Model viewer:',error.message);}
   finally{clearTimeout(timer);}
  }
@@ -59,10 +60,11 @@ try{
  for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>inspect(b.dataset.view);
  document.getElementById('rotate').onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.setAttribute('aria-pressed',String(controls.autoRotate));};
  document.getElementById('light').onclick=e=>{dark=!dark;scene.background.set(dark?darkBackground:'#dce1e3');document.body.classList.toggle('dark-stage',dark);e.currentTarget.setAttribute('aria-pressed',String(dark));e.currentTarget.textContent=dark?'Светлый фон':'Тёмный фон';};
+ document.getElementById('siteRocket').onclick=e=>{if(!model?.setVehicleVisible)return;vehicleVisible=!vehicleVisible;model.setVehicleVisible(vehicleVisible);e.currentTarget.setAttribute('aria-pressed',String(vehicleVisible));e.currentTarget.textContent=vehicleVisible?'Убрать ракету':'Показать ракету';renderFrame();};
  document.getElementById('gear').onclick=e=>{if(!model?.setGear)return;gear=!gear;model.setGear(gear?1:0);e.currentTarget.setAttribute('aria-pressed',String(gear));e.currentTarget.textContent=gear?'Убрать шасси':'Выпустить шасси';inspect(view);renderFrame();};
  document.getElementById('explode').onclick=e=>{if(!model?.setExploded)return;exploded=!exploded;model.setExploded(exploded?1:0);e.currentTarget.setAttribute('aria-pressed',String(exploded));e.currentTarget.textContent=exploded?'Собрать ракету':'Разнести ступени';inspect('full');};
  renderer.domElement.addEventListener('keydown',e=>{if(e.key==='Home'){e.preventDefault();inspect('full');}});
- window.__MODEL_VIEWER_QA={version:MODEL_VIEWER_VERSION,load,inspect,frame:renderFrame,stats:()=>({modelId:current,ready:!!model,choices,view,dark,exploded,gear,autoRotate:controls.autoRotate,camera:camera.position.toArray(),target:controls.target.toArray(),size:model?box().getSize(new THREE.Vector3()).toArray():null,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,viewport:[container.clientWidth,container.clientHeight]})};
+ window.__MODEL_VIEWER_QA={version:MODEL_VIEWER_VERSION,load,inspect,frame:renderFrame,stats:()=>({modelId:current,ready:!!model,choices,view,dark,exploded,gear,vehicleVisible,autoRotate:controls.autoRotate,camera:camera.position.toArray(),target:controls.target.toArray(),size:model?box().getSize(new THREE.Vector3()).toArray():null,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,viewport:[container.clientWidth,container.clientHeight]})};
  function animateModel(time){raf=requestAnimationFrame(animateModel);renderFrame(time);}raf=requestAnimationFrame(animateModel);load(current);
  window.addEventListener('pagehide',()=>{disposed=true;generation++;request?.abort();cancelAnimationFrame(raf);observer.disconnect();controls.dispose();model?.dispose();renderer.dispose();renderer.forceContextLoss();},{once:true});
 }catch(error){status.hidden=false;statusText.textContent='Для просмотра модели нужен WebGL. Обновите страницу или включите аппаратное ускорение.';console.error(error);}

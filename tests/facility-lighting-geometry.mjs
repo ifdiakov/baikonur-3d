@@ -46,7 +46,7 @@ function sourceFingerprint(){
 const sourceBefore=sourceFingerprint(),lighting=buildFacilityTowerLighting({scene,objects}),records=lighting.records(),stats=lighting.stats();
 assert.deepEqual(sourceFingerprint(),sourceBefore,'Lighting does not reshape, duplicate or move any source geometry');
 assert.equal(stats.version,'facility-tower-lighting-v1');assert.equal(stats.dynamicLights,0);assert.equal(stats.drawCalls,6);
-assert.equal(stats.fixtures,987);assert.equal(stats.boards,30);assert.equal(stats.beacons,81);
+assert.equal(stats.fixtures,1179);assert.equal(stats.boards,38);assert.equal(stats.beacons,81);
 assert.equal(stats.rendered.visibilityLeaks,0);assert(stats.rendered.maximumError<.002);
 assert.equal(stats.rendered.activeLenses,0);assert.equal(stats.rendered.activeBeacons,0);
 assert.equal(stats.importedUkss.lensComponents,735,'All source-preserved UKSS lens components are enabled');

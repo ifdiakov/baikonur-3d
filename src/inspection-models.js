@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-source-exhibits-v2';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-proton-launch-v1';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -17,7 +17,7 @@ async function gltf(path,signal){
  return (await new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes,new URL('.',url).href)).scene;
 }
 export async function createInspectionModel(id,{signal}={}){
- id=resolveModelId(id);const spec=MODEL_CATALOG[id];if(!spec)throw new Error('Модель не найдена');let root,setExploded=null,setGear=null,initialGear=1,update=null;const owned=[];
+ id=resolveModelId(id);const spec=MODEL_CATALOG[id];if(!spec)throw new Error('Модель не найдена');let root,setExploded=null,setVehicleVisible=null,setGear=null,initialGear=1,update=null;const owned=[];
  if(spec.asset){root=await gltf(spec.asset,signal);root.rotation.y=spec.yaw||0;if(id==='n1'||id==='mig25')root.userData.inspectionPrecise=true;}
  else if(id.startsWith('zenit-')){const {createZenitRocket}=await import('./zenit-rocket.js?v=20261101-source-exhibits-v2');const model=createZenitRocket({variant:id==='zenit-land'?'land':'sea'});root=model.root;setExploded=model.setExploded;}
  else if(id==='aircraft'){
@@ -30,10 +30,12 @@ export async function createInspectionModel(id,{signal}={}){
   const [{buildLandingAircraft},source]=await Promise.all([import('./buran-landing-aircraft.js?v=20261031-facilities-rails-lighting-v5'),gltf('rockets/energia-buran.glb',signal)]);const actors=buildLandingAircraft({sourceBuran:source});actors.update({gear:1,airbrake:0});root=id==='buran'?actors.buran:actors.mig;owned.push(source,id==='buran'?actors.mig:actors.buran);
  }else if(id==='silo'){
   const {buildSiloPad,siloController}=await import('./silo-pad.js?v=20261031-facilities-rails-lighting-v1');root=new THREE.Group();buildSiloPad(root);const controller=siloController(root);update=(time,camera,target)=>controller.update(time,camera,target);
+ }else if(id==='proton-pad'){
+  const {buildProtonPosition,protonPositionController}=await import('./proton-launch.js?v=20261101-proton-launch-v1');root=new THREE.Group();buildProtonPosition(root);setVehicleVisible=protonPositionController(root).setRocketVisible;
  }else if(id==='site45'){
   const {buildSite45}=await import('./site45.js?v=20261101-source-exhibits-v2');root=new THREE.Group();buildSite45(root);
  }
  if(!root)throw new Error('Не удалось собрать модель');root.updateMatrixWorld(true);
  const bounds=inspectionBounds(root),size=bounds.getSize(new THREE.Vector3());if(bounds.isEmpty()||![...size.toArray()].every(Number.isFinite)){disposeInspectionModel(root);throw new Error('В модели нет геометрии');}
- return {root,spec,size:id.startsWith('zenit-')?new THREE.Vector3(4.24,id==='zenit-land'?58.7:59.6,4.24):size,setExploded,setGear,initialGear,update,dispose:()=>{disposeInspectionModel(root);for(const extra of owned)disposeInspectionModel(extra);}};
+ return {root,spec,size:id.startsWith('zenit-')?new THREE.Vector3(4.24,id==='zenit-land'?58.7:59.6,4.24):size,setExploded,setGear,setVehicleVisible,initialGear,update,dispose:()=>{disposeInspectionModel(root);for(const extra of owned)disposeInspectionModel(extra);}};
 }

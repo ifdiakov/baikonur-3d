@@ -13,7 +13,7 @@ const frame=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.frame());
 const load=async id=>{await page.evaluate(id=>window.__MODEL_VIEWER_QA.load(id),id);await page.waitForFunction(id=>window.__MODEL_VIEWER_QA.stats().ready&&window.__MODEL_VIEWER_QA.stats().modelId===id,id);await frame();};
 try{
  await page.goto(new URL('workshop/model.html?model=zenit-land',base).href);await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);
- const choices=(await stats()).choices;assert.equal(choices.length,19);
+ const choices=(await stats()).choices;assert.equal(choices.length,20);
  for(const id of choices){await load(id);const s=await stats();assert(s.drawCalls>0&&s.triangles>0);assert(s.size.every(n=>Number.isFinite(n)&&n>0));assert(s.camera.every(Number.isFinite));evidence.models[id]=s;if(['buran','mig'].includes(id))await page.screenshot({path:`${out}/${prefix}-${id}.png`});}
  await load('proton');const proton=await stats();await page.locator('#explode').click();await frame();assert((await stats()).size[0]>proton.size[0]+10);await page.locator('#explode').click();await frame();assert.deepEqual((await stats()).size,proton.size);
  await load('train');assert((await stats()).size[2]<20,'Hidden headlight pool must not shrink the vehicle framing');await page.screenshot({path:`${out}/${prefix}-train.png`});

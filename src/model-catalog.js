@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-export const MODEL_VIEWER_VERSION='source-exhibits-v2';
+export const MODEL_VIEWER_VERSION='proton-launch-v1';
 export const MODEL_CATALOG=Object.freeze({
  soyuz:{title:'Союз',subtitle:'Ракета-экспонат',description:'Подробная модель из коллекции музея. Доступна на Гагаринском старте и площадке №31.',kind:'rocket',asset:'rockets/soyuz.glb'},
  'energia-polyus':{title:'Энергия — Полюс',subtitle:'Ракета и полезная нагрузка',description:'Компоновка «Энергии» с аппаратом «Полюс», представленная на УКСС.',kind:'rocket',asset:'rockets/energia-polyus.glb'},
@@ -19,11 +19,12 @@ export const MODEL_CATALOG=Object.freeze({
  train:{title:'Мотовоз',subtitle:'Железнодорожная техника',description:'Маневровый тепловоз из состава, курсирующего между площадкой №1 и городом. Модель по фотографиям.',kind:'vehicle'},
  coach:{title:'Пассажирский вагон',subtitle:'Железнодорожная техника',description:'Вагон музейного состава: тележки, колёсные пары, тамбуры и окна.',kind:'vehicle'},
  silo:{title:'Шахтная установка',subtitle:'Музейная модель ШПУ',description:'Крышка шахты, видимый носовой отсек и белый пар. При приближении к центру крышка открывается.',kind:'site'},
+ 'proton-pad':{title:'Старт Протона',subtitle:'Площадки №81 и №200',description:'Стартовая позиция по фотографиям: шесть опор, два боковых газохода, передвижная башня с кольцевыми площадками, лифтами и кранами. Уберите ракету, чтобы рассмотреть проём и отражатель.',kind:'site',initialView:'front',viewLabels:{front:'Стартовая позиция',side:'Газоходы',top:'Башня'},source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/proton-launch-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,23,0],offset:[100,77,-125]},side:{target:[25,-3,0],offset:[48,34,40]},top:{target:[0,32,303],offset:[70,35,-113]},interface:{target:[0,-1,0],offset:[18,22,-23]}}},
  site45:{title:'Старт Зенита',subtitle:'Историческая площадка №45/1',description:'Реконструкция по десяти фотографиям: открытый газоход, стартовый стол, откидная стрела, удалённая башня и мачты. Размеры сооружений оценены по фото.',kind:'site'}
 });
 const siteModels={
  'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-45':['zenit-land','site45','zenit-sea'],
- 'pad-81':['proton'],'pad-200':['proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
+ 'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
  'pad-110':['energia-buran','energia','n1'],'pad-112':['tua','energia-buran','energia-polyus','energia','energia-m','n1'],
  'pad-112a':['buran','energia-buran'],'pad-251':['mriya','buran','mig25','mig'],'airfield':['aircraft'],'city':['train','coach'],
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,['silo']]))

@@ -69,7 +69,7 @@ function checkMode(state,evening){
 function checkRecords(records,state){
  const f=state.evening.facilityLighting,boards=new Map(records.boards.map(b=>[b.id,b])),ids=new Set(),bySite=new Map();
  assert.equal(records.floodlights.length,f.fixtures);assert.equal(records.beacons.length,f.beacons);assert.equal(boards.size,f.boards);
- assert.equal(f.fixtures,987);assert.equal(f.boards,30);assert.equal(f.beacons,81,'Only the audited existing high structures receive beacons');
+ assert.equal(f.fixtures,1179);assert.equal(f.boards,38);assert.equal(f.beacons,81,'Only the audited existing high structures receive beacons');
  assert.equal(state.ukss.status,'ready','The real imported UKSS is required for this release check');
  assert.equal(f.importedUkss.source,'preserved-imported-geometry');assert.equal(f.importedUkss.lensComponents,735);assert.equal(f.importedUkss.boards,7);
  for(const r of [...records.floodlights,...records.beacons]){

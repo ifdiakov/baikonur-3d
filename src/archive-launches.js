@@ -1,6 +1,5 @@
 import * as THREE from 'three';
-import {createProtonRocket} from './proton-rocket.js?v=20261101-source-exhibits-v2';
-let protonTemplate;
+import {buildProtonPosition} from './proton-launch.js?v=20261101-proton-launch-v1';
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {flamePetal} from './flame-petals.js';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
@@ -16,23 +15,14 @@ export const PROTON_METRIC_REFERENCE=Object.freeze({
   imageAnchors:[[425,434],[779,715]],osmNodeIds:[12191898608,12191898607],
   osmAnchorsLonLat:[[63.0293723,46.0376892],[63.0354975,46.034368]]}
 });
-function protonPosition(parent,x,z,yaw,serviceZ=92){
- const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;parent.add(g);const k=archiveKit(g);
- protonTemplate??=createProtonRocket({detail:'map'});const rocket=protonTemplate.root.clone(true);rocket.position.y=2.8;g.add(rocket);g.userData.protonExhibit={version:protonTemplate.stats().version,heightMetres:58.2};k.pit(0,0,13,13,24);
- for(const s of [-1,1]){k.box(23,1,64,s*26,.5,0,'concrete','launch-apron-side');k.box(32,1,19,0,.5,s*24,'concrete','launch-apron-end');}
- ring(k,0,2,0,12,.6,'steel','proton-launch-ring');
- for(let i=0;i<6;i++){const a=i*Math.PI/3,x=Math.cos(a)*13,z=Math.sin(a)*13;k.rod([x,1,z],[x*3.55/13,6,z*3.55/13],.8,'steel','proton-launch-support');k.box(1.2,.4,1.2,x*3.55/13,5.8,z*3.55/13,'steel','proton-tank-seat');k.box(4,2,4,x,2,z,'yellow','support-base');}
- for(const s of [-1,1]){k.hall({x:s*32,z:56,w:19,d:69,h:7,gates:0,windows:false,roof:'concrete',tag:'proton-flanking-service-block'});k.path([[s*44,-32],[s*48,35],[s*46,99],[s*13,115]],5,.15);k.rod([s*20,2,4],[s*20,2,100],.8,'light','long-process-pipe');for(let zz=15;zz<96;zz+=10)k.box(2,2,2,s*20,1,zz,'concrete','pipe-support');}
- k.lattice(0,serviceZ,58,13,14,{levels:10,deck:true,tag:'proton-service-tower'});
- for(let y=12;y<56;y+=8){k.box(12,.6,9,0,y,serviceZ-8,'steel','service-tower-platform');for(const x of [-5,5])k.rod([x,y+1,serviceZ-12],[x,y+1.5,serviceZ-12],.09,'yellow','tower-guardrail');}
- k.box(12,11,1,0,46,serviceZ+7,'light','service-tower-cladding');for(const [mx,mz] of [[-50,-43],[50,-43],[-53,95],[53,95]])k.lattice(mx,mz,78,4,4,{levels:13,tag:'lightning-mast'});k.rail([[0,serviceZ+38],[0,serviceZ],[0,0]],{gauge:1.52});g.userData.archivePart=k.finish();
- g.userData.physicalUnits={units:'metres',localScale:1,railGauge:1.52,serviceGantryHeight:58,serviceGantryParkDistance:serviceZ,heightsSurveyed:false};
- return g;
+function protonPosition(parent,x,z,yaw,serviceZ){
+ const g=new THREE.Group();g.name='Стартовая позиция Протона';g.position.set(x,0,z);g.rotation.y=yaw;parent.add(g);
+ g.userData.archivePart=buildProtonPosition(g,{serviceZ,sharedVehicle:true});return g;
 }
 export function protonComplex(root,id){
  const k=archiveKit(root),is81=id==='pad-81',reference=PROTON_METRIC_REFERENCE[id]||PROTON_METRIC_REFERENCE['pad-200'],origin=is81?[650,475]:[710,484],m=reference.metresPerPixel,P=imageFrame(origin,m);
  const pads=is81?[[508,238,416,447],[892,504,754,700]]:[[565,261,425,434],[913,556,779,715]];
- for(const [x,z,ex,ez] of pads){const [px,pz]=P([x,z]);protonPosition(root,px,pz,imageAxisYaw([x,z],[ex,ez]),Math.hypot(ex-x,ez-z)*m);}
+ const positions=[];for(const [x,z,ex,ez] of pads){const [px,pz]=P([x,z]);positions.push(protonPosition(root,px,pz,imageAxisYaw([x,z],[ex,ez]),Math.hypot(ex-x,ez-z)*m));}root.userData.protonPositions=positions.map((p,i)=>({index:i,localPosition:p.position.toArray(),yaw:p.rotation.y,...p.userData.protonLaunch}));
  const buildings=is81?[[779,322,46,95,-.8],[708,429,31,87,-.6],[544,539,31,89,-.6],[223,697,49,96,.9],[223,783,67,113,.9],[351,490,25,65,-.4],[308,487,17,39,-.4],[326,548,20,46,-.4],[341,603,22,45,-.4],[638,588,23,48,-.6],[482,830,27,45,-.4]]:[[779,390,52,83,-.88],[675,470,31,60,-.6],[540,515,35,99,.86],[629,617,28,57,.84],[1000,649,27,52,-.6],[422,588,22,45,-.6],[197,256,24,48,-.6],[156,274,19,38,-.6],[214,223,18,38,-.6]];
  for(const [ix,iz,w,d,yaw] of buildings){const [x,z]=P([ix,iz]);k.hall({x,z,w:w*m,d:d*m,h:5,yaw,gates:1,windows:false,roof:'concrete',tag:'satellite-service-building'});}
  const routes=is81?[[[150,902],[295,868],[423,715],[451,525],[416,447]],[[295,868],[469,735],[622,716],[754,700]],[[294,868],[511,766],[695,762],[807,731],[892,640]],[[140,927],[177,646],[221,416],[279,128],[721,31],[1110,293],[1190,552],[1005,790],[479,974]]]:[[[45,406],[188,464],[330,476],[425,434]],[[49,406],[234,570],[428,690],[593,751],[779,715]],[[49,406],[255,633],[430,774],[640,839],[795,800],[889,733]]];
