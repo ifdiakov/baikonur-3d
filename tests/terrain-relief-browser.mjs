@@ -70,6 +70,9 @@ async function checkChrome(){
    result.items.push({id,x:rect.x,y:rect.y,width:rect.width,height:rect.height,right:rect.right,bottom:rect.bottom,
     opacity:Number(css.opacity),visible:css.display!=='none'&&css.visibility!=='hidden',inert:!!el.closest('[inert]')});
   }
+  const attribution=document.getElementById('mapAttribution')?.getBoundingClientRect();
+  result.attribution=attribution?{x:attribution.x,y:attribution.y,width:attribution.width,height:attribution.height,
+   right:attribution.right,bottom:attribution.bottom}:null;
   return result;
  });
  assert(chrome.scrollWidth<=chrome.width+1,'Relief does not introduce horizontal page overflow');
@@ -77,6 +80,14 @@ async function checkChrome(){
   assert(el.visible&&el.opacity>.95&&!el.inert,`${el.id} stays visible and interactive`);
   assert(el.width>100&&el.height>40,`${el.id} retains its visible layout`);
   assert(el.x>=-1&&el.y>=-1&&el.right<=chrome.width+1&&el.bottom<=chrome.height+1,`${el.id} stays inside the viewport`);
+ }
+ const attribution=chrome.attribution;
+ assert(attribution&&attribution.width>0&&attribution.height>0,'Map attribution has a visible layout');
+ assert(attribution.x>=-1&&attribution.y>=-1&&attribution.right<=chrome.width+1&&attribution.bottom<=chrome.height+1,
+  'Map attribution stays completely inside the viewport');
+ for(const dock of chrome.items.filter(el=>['timeDock','nextLaunchPanel'].includes(el.id))){
+  const overlaps=attribution.x<dock.right&&attribution.right>dock.x&&attribution.y<dock.bottom&&attribution.bottom>dock.y;
+  assert(!overlaps,`Map attribution must not overlap ${dock.id}`);
  }
  return chrome;
 }

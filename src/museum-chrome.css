@@ -45,8 +45,8 @@ body:not(.museum-ready) #museumLeftStack,body:not(.museum-ready) #museumRightSta
 .next-launch__site:focus-visible,.next-launch__schedule:focus-visible{outline:2px solid var(--museum-accent);outline-offset:1px}
 .next-launch__site:disabled{cursor:default;opacity:.6}
 .next-launch[data-state="elapsed"] .next-launch__status{color:#c6d4dc}
-#osmAttribution{right:var(--museum-edge);bottom:var(--museum-dock-reserve);padding:3px 6px;font-size:8px;line-height:1.3;background:#081d2abf}
-.pua-loading-active #osmAttribution,.buran-landing-active #osmAttribution{bottom:9px}
+#mapAttribution{right:var(--museum-edge);bottom:var(--museum-dock-reserve);padding:3px 6px;font-size:8px;line-height:1.3;background:#081d2abf}
+.pua-loading-active #osmAttribution,.buran-landing-active #mapAttribution{bottom:9px}
 body.buran-landing-active #museumRightStack{display:none!important}
 .hud{bottom:var(--museum-dock-reserve)}
 
