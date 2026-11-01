@@ -1,17 +1,26 @@
 import * as THREE from 'three';
 
 export const MRIYA_VERSION='mriya-buran-reference-v2';
+const installations=new WeakMap();
+export const getMriyaInstallation=root=>installations.get(root);
 const ASSETS={far:new URL('../assets/models/mriya-buran/far-v2.glb',import.meta.url).href,near:new URL('../assets/models/mriya-buran/near-v2.glb',import.meta.url).href};
 const APRON_Y=1.75;
 
 // The OBJ is in metres, +Y up, with the nose along -X. Airport aircraft face +Z.
 function prepareModel(model){
  const bounds=new THREE.Box3().setFromObject(model),center=bounds.getCenter(new THREE.Vector3());
- const pivot=new THREE.Group();pivot.rotation.y=Math.PI/2;
- model.position.set(-center.x,1.6-bounds.min.y,-center.z);pivot.add(model);
- model.traverse(m=>{if(m.isMesh){m.castShadow=true;m.receiveShadow=true;m.userData.museumComponent='mriya-imported-model';}});
- pivot.userData.dimensions=bounds.getSize(new THREE.Vector3()).toArray();
- return pivot;
+ const aircraft=new THREE.Group(),orbiter=new THREE.Group();
+ const frame=new THREE.Group();frame.rotation.y=Math.PI/2;
+ model.position.set(-center.x,1.6-bounds.min.y,-center.z);frame.add(model);frame.updateWorldMatrix(true,true);
+ const meshes=[];model.traverse(m=>{if(m.isMesh)meshes.push(m);});
+ for(const mesh of meshes){
+  const materials=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  const isBuran=materials.every(m=>m.name.startsWith('Buran'));
+  (isBuran?orbiter:aircraft).attach(mesh);
+  mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.museumComponent=isBuran?'mriya-buran-orbiter':'mriya-imported-model';
+ }
+ if(!orbiter.children.length)throw Error('Buran meshes missing from the carrier model');
+ return {aircraft,orbiter,dimensions:bounds.getSize(new THREE.Vector3()).toArray()};
 }
 
 function parkedGear(){
@@ -38,23 +47,24 @@ function parkedGear(){
 
 export function installMriyaExhibit(root,fallback,cx,cz,{eventTarget=root}={}){
  const holder=new THREE.Group();holder.name='Ан-225 «Мрия» с «Бураном» · импортированная модель';holder.position.set(cx,APRON_Y,cz);root.add(holder);
- const lod=new THREE.LOD();holder.add(lod);
- const gear=parkedGear();gear.visible=false;holder.add(gear);
+ const movingAircraft=new THREE.Group(),movingOrbiter=new THREE.Group();holder.add(movingAircraft,movingOrbiter);
+ const lod=new THREE.LOD(),orbiterLod=new THREE.LOD();movingAircraft.add(lod);movingOrbiter.add(orbiterLod);
+ const gear=parkedGear();gear.visible=false;movingAircraft.add(gear);
  const state=root.userData.airport.mriya={version:MRIYA_VERSION,status:'loading',loaded:[],errors:[],wheels:32,apronY:APRON_Y,modelScale:1,
   physicalUnits:'metres',physicalToAirportLocal:root.userData.airport.physicalToLocal??1,
   nearBytes:2176700,farBytes:1188432};
  let replaced=false;
  function attach(gltf,detail){
-  const model=prepareModel(gltf.scene);model.name='Мрия · '+detail;
+  const prepared=prepareModel(gltf.scene),model=prepared.aircraft;model.name='Мрия · '+detail;prepared.orbiter.name='Буран · '+detail;
   // LOD distances are world distances; the root uses the airport's common scale.
   const distance=detail==='near'?0:360*root.getWorldScale(new THREE.Vector3()).x;
-  lod.addLevel(model,distance,.15);
+  lod.addLevel(model,distance,.15);orbiterLod.addLevel(prepared.orbiter,distance,.15);
   const removed=[];
   if(!replaced){fallback.traverse(m=>{if(m.isMesh)removed.push(m);});fallback.removeFromParent();gear.visible=true;replaced=true;}
-  const added=[];model.traverse(m=>{if(m.isMesh)added.push(m);});
+  const added=[];for(const part of [model,prepared.orbiter])part.traverse(m=>{if(m.isMesh)added.push(m);});
   eventTarget.dispatchEvent({type:'museum-exhibit-loaded',added,removed});
   state.loaded.push(detail);state.status=state.loaded.includes('near')&&state.loaded.includes('far')?'ready':'partial';
-  state.dimensions=model.userData.dimensions;let draws=0,triangles=0;model.traverse(m=>{if(m.isMesh){draws+=m.geometry.groups.length||1;triangles+=(m.geometry.index?.count||m.geometry.attributes.position.count)/3;}});state.drawCallsPerLevel=draws;state.triangles=triangles;state.paint='reference-white-red-mriya-thermal-buran';
+  state.dimensions=prepared.dimensions;state.orbiterMeshCount=prepared.orbiter.children.length;let draws=0,triangles=0;for(const part of [model,prepared.orbiter])part.traverse(m=>{if(m.isMesh){draws+=m.geometry.groups.length||1;triangles+=(m.geometry.index?.count||m.geometry.attributes.position.count)/3;}});state.drawCallsPerLevel=draws;state.triangles=triangles;state.paint='reference-white-red-mriya-thermal-buran';
   holder.updateWorldMatrix(true,true);
  }
  // Dynamic imports keep initial map construction synchronous and retain a fallback
@@ -69,5 +79,10 @@ export function installMriyaExhibit(root,fallback,cx,cz,{eventTarget=root}={}){
    if(!replaced)state.status='fallback';
   })().catch(error=>{state.status='fallback';state.errors.push({detail:'loader',message:String(error.message||error)});});
  }
- return holder;
+ const controller={holder,state,setPose({aircraftZ=0,lift=0,orbiterZ=0}={}){
+  movingAircraft.position.z=aircraftZ;movingOrbiter.position.set(0,lift,orbiterZ);
+  state.loadingPose={aircraftZ,lift,orbiterZ};holder.updateWorldMatrix(true,true);
+ },bounds(){holder.updateWorldMatrix(true,true);return {aircraft:new THREE.Box3().setFromObject(movingAircraft),orbiter:new THREE.Box3().setFromObject(movingOrbiter)};}};
+ installations.set(eventTarget,controller);controller.setPose({});
+ return controller;
 }

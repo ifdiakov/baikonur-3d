@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-cyclone-v1';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-pua-v1';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -34,6 +34,8 @@ export async function createInspectionModel(id,{signal}={}){
   const {buildProtonPosition,protonPositionController}=await import('./proton-launch.js?v=20261101-proton-launch-v1');root=new THREE.Group();buildProtonPosition(root);setVehicleVisible=protonPositionController(root).setRocketVisible;
  }else if(id==='cyclone-pad'){
   const {buildCyclonePosition}=await import('./cyclone-launch.js?v=20261101-cyclone-v1');root=new THREE.Group();buildCyclonePosition(root);const rocket=await gltf('rockets/cyclone-2.glb',signal);rocket.position.y=1.38;root.add(rocket);setVehicleVisible=visible=>rocket.visible=!!visible;
+ }else if(id==='pua-100'){
+  const {buildPua100}=await import('./pua-100.js?v=20261101-pua-v1');root=new THREE.Group();buildPua100(root);
  }else if(id==='site45'){
   const {buildSite45}=await import('./site45.js?v=20261101-source-exhibits-v2');root=new THREE.Group();buildSite45(root);
  }

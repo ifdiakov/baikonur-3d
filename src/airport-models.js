@@ -1,5 +1,6 @@
+import {buildPua100} from './pua-100.js?v=20261101-pua-v1';
 import * as THREE from 'three';
-import {installMriyaExhibit} from './mriya-exhibit.js?v=20261031-rocket-exhibits-v1';
+import {installMriyaExhibit} from './mriya-exhibit.js?v=20261101-pua-v1';
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildKrayniyTerminal,KRAYNIY_AIRPORT_DISPLAY} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
 import {buildYubileinyAirport,yubileinyDisplaySpec} from './yubileiny-airport.js?v=20261031-facilities-rails-lighting-v5';
@@ -77,9 +78,7 @@ function buildMriyaRamp(k,cx,cz,options={}){
  aircraftKit.quad([0,17,-7],[0,25,-13],[0,25,-17],[0,17,-17],'white','buran-fin',plane);for(const x of [-1.6,0,1.6])aircraftKit.cyl(.7,2,x,16,-18,'dark','buran-engine',Math.PI/2,plane);
  const fallback=aircraftKit.finish();
  k.root.userData.airport.fallbackFeatures=fallback.features;
- installMriyaExhibit(k.root,plane,cx,cz,options);
- // Loading device: paired braced portal frames, overhead bridge and hoists.
- for(const z of [-18,18]){for(const side of [-1,1]){const x=side*24;for(const foot of [-11,11]){k.rod([cx+x+side*9,1.8,cz+z+foot],[cx+x,47,cz+z],.8,'steel','loading-ramp-raked-leg');k.rod([cx+x,1.8,cz+z+foot],[cx+x,47,cz+z],.65,'steel','loading-ramp-column');}for(let y=6;y<46;y+=6){k.rod([cx+x-2,y,cz+z],[cx+x+2,y,cz+z],.25,'steel','loading-ramp-level');k.rod([cx+x-2,y,cz+z],[cx+x+2,y+6,cz+z],.18,'steel','loading-ramp-brace');}}
-  k.box(52,3,4,cx,47,cz+z,'steel','loading-ramp-crosshead');for(const x of [-4,4]){k.box(3,2,3,cx+x,45,cz+z,'yellow','loading-hoist');k.rod([cx+x,44,cz+z],[cx+x,29,cz+z],.07,'dark','loading-cable');}}
+ const aircraft=installMriyaExhibit(k.root,plane,cx,cz,options);
+ buildPua100(k.root,{cx,cz,...options,aircraft});
  k.path([[cx-45,cz-65],[cx-45,cz+60],[cx+45,cz+60]],5,1.8,'concrete','ramp-service-road');
 }

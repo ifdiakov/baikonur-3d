@@ -1,6 +1,7 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-export const MODEL_VIEWER_VERSION='cyclone-v1';
+export const MODEL_VIEWER_VERSION='pua-v1';
 export const MODEL_CATALOG=Object.freeze({
+ 'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',description:'Ферменный портал, две направляющие, выносная траверса, восемь рабочих люлек и полиспасты. Музейная реконструкция по семи фотографиям; размеры оценены по пропорциям.',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
  'cyclone-2':{title:'Циклон-2',subtitle:'Площадка №90 · Байконур',description:'Двухступенчатая ракета: шесть основных сопел первой ступени, наружные каналы и узкая головная часть по фотографиям КБ «Южное».',kind:'rocket',asset:'rockets/cyclone-2.glb'},
  'cyclone-3':{title:'Циклон-3',subtitle:'Коллекция моделей · Плесецк',description:'Трёхступенчатый носитель космодрома Плесецк. Третья ступень и «Коронас-Фотон» находятся под обтекателем — разнесите детали, чтобы их рассмотреть.',kind:'rocket',asset:'rockets/cyclone-3.glb'},
  'cyclone-pad':{title:'Старт Циклона',subtitle:'Площадка №90 · историческая реконструкция',description:'Низкая пусковая установка, откидной транспортёр-установщик, мачты молниезащиты и прожекторы. Габариты сооружений оценены по фото.',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/cyclone-reference.md',sourceLabel:'Источники реконструкции ↗',viewLabels:{front:'Стартовый стол',side:'Установщик',top:'Сверху'},views:{front:{target:[0,1.5,0],offset:[-11,7,-13]},side:{target:[0,18,4],offset:[26,12,-35]}}},
@@ -30,7 +31,7 @@ const siteModels={
  'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','site45','zenit-sea'],
  'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
  'pad-110':['energia-buran','energia','n1'],'pad-112':['tua','energia-buran','energia-polyus','energia','energia-m','n1'],
- 'pad-112a':['buran','energia-buran'],'pad-251':['mriya','buran','mig25'],'airfield':['aircraft'],'city':['train','coach'],
+ 'pad-112a':['buran','energia-buran'],'pad-251':['pua-100','mriya','buran','mig25'],'airfield':['aircraft'],'city':['train','coach'],
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,['silo']]))
 };
 export function resolveModelId(id){return id==='mig25ru'?'mig25':id;}
