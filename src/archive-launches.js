@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createProtonRocket} from './proton-rocket.js?v=20261101-source-exhibits-v1';
+import {createProtonRocket} from './proton-rocket.js?v=20261101-source-exhibits-v2';
 let protonTemplate;
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {flamePetal} from './flame-petals.js';

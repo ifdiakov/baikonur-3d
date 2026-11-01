@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-export const MODEL_VIEWER_VERSION='source-exhibits-v1';
+export const MODEL_VIEWER_VERSION='source-exhibits-v2';
 export const MODEL_CATALOG=Object.freeze({
  soyuz:{title:'Союз',subtitle:'Ракета-экспонат',description:'Подробная модель из коллекции музея. Доступна на Гагаринском старте и площадке №31.',kind:'rocket',asset:'rockets/soyuz.glb'},
  'energia-polyus':{title:'Энергия — Полюс',subtitle:'Ракета и полезная нагрузка',description:'Компоновка «Энергии» с аппаратом «Полюс», представленная на УКСС.',kind:'rocket',asset:'rockets/energia-polyus.glb'},

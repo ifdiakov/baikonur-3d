@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-export const PROTON_VERSION='proton-reference-v1';
+export const PROTON_VERSION='proton-reference-v2';
 export const PROTON_DIMENSIONS=Object.freeze({height:58.2,coreDiameter:4.1,fairingDiameter:4.1,tankCount:6,nozzleCount:6,referenceImages:22});
 // Metres, Y up. Silhouette, fairing and markings follow the owner's 22 views.
 // Small surface fittings and engine plumbing are visual reconstructions.
@@ -15,7 +15,7 @@ function surface(){
  for(let i=0;i<16;i++){x.beginPath();x.moveTo(i*64,0);x.lineTo(i*64,2048);x.stroke();}
  for(const u of [100,612]){
   x.fillStyle='#bd2c26';x.font='bold 66px Arial';x.textAlign='center';
-  [...'ПРОТОН'].forEach((s,i)=>x.fillText(s,u,yy(33.6)+i*46));x.fillText('М',u,yy(25.0));
+  [...'ПРОТОН'].forEach((s,i)=>x.fillText(s,u,yy(34.2)+i*58));x.fillText('М',u,yy(24.2));
   x.fillStyle='#164393';x.font='bold 13px Arial';x.save();x.translate(u-48,yy(23.65));x.rotate(-Math.PI/2);x.fillText('ЦЕНТР ХРУНИЧЕВА',0,0);x.restore();
   const fy=yy(38.5);x.fillStyle='#fff';x.fillRect(u-24,fy,48,10);x.fillStyle='#215ca0';x.fillRect(u-24,fy+10,48,10);x.fillStyle='#cb3b32';x.fillRect(u-24,fy+20,48,10);
   x.strokeStyle='#aeb5b5';x.lineWidth=1.5;x.beginPath();x.ellipse(u,yy(40.6),27,17,0,0,Math.PI*2);x.stroke();x.fillStyle='#b5362f';x.beginPath();x.moveTo(u-16,yy(40.6)+6);x.lineTo(u+19,yy(40.6)-10);x.lineTo(u-3,yy(40.6)+2);x.closePath();x.fill();x.fillStyle='#526067';x.font='9px Arial';x.fillText('РОСКОСМОС',u,yy(39.9));
