@@ -1,4 +1,4 @@
-import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=20261101-hotel-v2';
+import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import {CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';

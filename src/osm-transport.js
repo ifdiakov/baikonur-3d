@@ -5,7 +5,7 @@ import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectan
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-hotel-v2';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-hotel-v3';
 import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';

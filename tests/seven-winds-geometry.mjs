@@ -33,3 +33,10 @@ const entrance=toWorld([2,0,10.2]),gazebo=toWorld([2,0,31]);assert(Math.abs(entr
 const corners=[[-33,0,-10],[34,0,-10],[34,0,42],[-33,0,42]].map(toWorld),footprint=new THREE.Box3().setFromPoints(corners);
 for(const [actual,expected]of [[footprint.min.x,-33],[footprint.max.x,34],[footprint.min.z,-10],[footprint.max.z,42]])assert(Math.abs(actual-expected)<1e-8,'The rotated plot moved from its existing footprint');
 console.log('HOTEL_COURTYARD_PASS',JSON.stringify({surfaceProbes:12,blueLetters:5,rotation:180,footprint:[footprint.min.toArray(),footprint.max.toArray()]}));
+// Glows follow actual rendered lamp globes after scale, pivot and translation.
+root.scale.setScalar(entry.scale);root.position.set(73,-2.72,-84);root.updateMatrixWorld(true);
+const globeCentres=[],instance=new THREE.Matrix4();
+root.traverse(m=>{if(!m.isInstancedMesh||m.material.color?.getHex()!==0xece5cc||m.geometry.type!=='SphereGeometry')return;for(let i=0;i<m.count;i++){m.getMatrixAt(i,instance);globeCentres.push(new THREE.Vector3().setFromMatrixPosition(instance).applyMatrix4(m.matrixWorld));}});
+const lamps=root.userData.courtyardLightRecords();assert.equal(lamps.length,7);
+for(const lamp of lamps){const light=new THREE.Vector3(lamp.lightX,lamp.lightY,lamp.lightZ);assert(Math.min(...globeCentres.map(p=>p.distanceTo(light)))<1e-5,'Light halo must remain on its physical lamp globe');assert(lamp.height<1);}
+console.log('HOTEL_LAMP_ANCHORS_PASS',JSON.stringify({lamps:lamps.length}));

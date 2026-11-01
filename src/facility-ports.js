@@ -1,4 +1,4 @@
-import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v2';
+import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import {CYCLONE_PORTS} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';

@@ -21,7 +21,12 @@ try{
  await shot('all');await shot('front');await shot('garden');await shot('sign');await shot('access');await shot('top');
  await page.evaluate(()=>{window.__BAIKONUR_QA.evening.setEvening(true);window.__BAIKONUR_QA.hotel.inspect('all');window.__HOTEL_FRAME();});
  await page.screenshot({path:`${out}/${prefix}-evening.png`,timeout:120000});
- await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{window.__BAIKONUR_QA.hotel.inspect('front');window.__HOTEL_FRAME();});
+ const lamps=await page.evaluate(()=>window.__BAIKONUR_QA.stats().evening.courtyardLights);assert.equal(lamps.filter(l=>l.siteId==='pad-75').length,7);assert(lamps.every(l=>l.height<1),'Use the actual garden lamps instead of generic tall poles');
+ await page.setViewportSize({width:390,height:844});
+ // A viewport resize clears the WebGL buffer asynchronously. Wait for its
+ // browser frame before rendering the intentionally paused museum again.
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+ await page.evaluate(()=>{window.__BAIKONUR_QA.hotel.inspect('front');window.__HOTEL_FRAME();});
  await page.screenshot({path:`${out}/${prefix}-mobile.png`,timeout:120000});
  assert(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));assert.deepEqual(errors,[]);
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,stats,errors},null,2));console.log('SEVEN_WINDS_BROWSER_PASS',JSON.stringify({prefix,floors:stats.floors,gazebos:stats.gazebos,errors}));

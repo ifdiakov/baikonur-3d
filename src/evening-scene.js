@@ -44,13 +44,16 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  const roadLights=roadLayout.records;
  excludedByBank.road=roadLayout.excludedByBank;excludedByClearance.road=roadLayout.excludedByClearance;
  const roadField=createRoadLightField(layers.roads,roadLights,{name:'Дороги · современные и винтажные фонари',minPixels:2.8});fields.push(roadField);
- const siteLights=[],cityLights=[];
+ const siteLights=[],cityLights=[],courtyardLights=[];
  scene.updateMatrixWorld(true);
  const groundQuery=createVerticalGroundQuery(groundMeshes);
  const down=new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,-1,0));
  function baseAt(x,z,meshes,ceiling){down.ray.origin.set(x,1000,z);return groundQuery.intersections(down,meshes).find(h=>h.point.y<=ceiling)?.point.y??-2.755;}
  for(const o of objects){
   if(o.type==='air')continue;
+  // Photo-built courtyards provide existing lamp heads. A generic ring of
+  // additional poles can otherwise land on the building after a site turn.
+  if(o.g.userData.courtyardLightRecords){courtyardLights.push(...o.g.userData.courtyardLightRecords());continue;}
   const center=o.g.getWorldPosition(new THREE.Vector3()),id=o.record.id;
   const radius=id==='pad-1'?19:id==='pad-250'?36:id==='pad-112'?25:id==='pad-23'?53:o.type==='city'?23:10;
   const height=id==='pad-1'?2:1.2;
@@ -70,7 +73,9 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   }
  }
  filterBank(siteLights,'site');filterBank(cityLights,'city');
+ filterBank(courtyardLights,'site');
  fields.push(createLightField(layers.sites,siteLights,{poles:true,pools:true,name:'Вечер · свет площадок'}));
+ fields.push(createLightField(layers.sites,courtyardLights,{pools:true,name:'Вечер · фонари двора гостиницы'}));
  fields.push(createLightField(layers.city,cityLights,{poles:true,pools:true,name:'Вечер · город'}));
  // Airport lights use the same displayed length and transform as the runway.
  const runway=[],apron=[];
@@ -99,7 +104,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   if(button)button.title=evening?'Переключить на дневной свет':'Включить вечерний свет';onModeChange?.(evening);
  }
  button?.addEventListener('click',()=>setEvening(!evening));setEvening(true);
- const stationaryLights=[...roadLights,...siteLights,...cityLights,...runway,...apron];
+ const stationaryLights=[...roadLights,...siteLights,...courtyardLights,...cityLights,...runway,...apron];
  const outsideBankCount=stationaryLights.filter(l=>!permitted(l)).length;
  return {setEvening,lightPositions:({poweredOnly=false}={})=>stationaryLights.filter(l=>!poweredOnly||l.powered!==false).map(l=>[l.x,l.y,l.z]),
   airportLightPositions:key=>[...runway,...apron].filter(l=>!key||l.airport===key).map(l=>({airport:l.airport,kind:l.kind,position:[l.x,l.y,l.z],radius:l.radius||0,local:l.local})),
@@ -107,7 +112,8 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   roadLightRecords:()=>roadLights.map(r=>({style:r.style,roadId:r.roadId,stationId:r.stationId,side:r.side,position:[r.x,r.y,r.z],center:r.center,color:r.color,height:r.height,powered:r.powered,brightness:r.brightness,poolRadiusX:r.poolRadiusX,poolRadiusY:r.poolRadiusY})),
   facilityLightRecords:()=>facilityLighting.records(),
   stats:()=>({version:'evening-road-lighting-v4',evening,roadLights:roadLights.length,roadLighting:roadLightLayoutStats(roadLights),roadFixtures:roadField.stats(),facilityLighting:facilityLighting.stats(),siteLights:siteLights.length,runwayLights:runway.length,
-   powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered===false).length,litSiteIds:[...new Set(siteLights.filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
+   courtyardLights:courtyardLights.map(l=>({siteId:objects.find(o=>o.g===l.owner)?.record.id,position:[l.lightX,l.lightY,l.lightZ],base:[l.x,l.y,l.z],height:l.height})),
+   powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered!==false).length,litSiteIds:[...new Set([...siteLights,...courtyardLights].filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
    airportLighting:{version:AIRPORT_LIGHT_LAYOUT_VERSION,airports:objects.filter(o=>o.g.userData.airport).map(o=>({key:o.g.userData.airport.key,length:o.g.userData.airport.length,approachLength:o.g.userData.airport.approachLength??480,
     runwayLights:runway.filter(l=>l.owner===o.g).length,apronLights:apron.filter(l=>l.owner===o.g).length}))},
    bankFilter:{rule:bankRule,excludedByBank:{...excludedByBank},remaining:stationaryLights.length,outsideBankCount},clearanceFilter:{...excludedByClearance},

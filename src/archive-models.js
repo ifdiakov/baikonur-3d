@@ -1,13 +1,13 @@
-import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v2';
+import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import * as THREE from 'three';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261101-cyclone-v1';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261101-hotel-v2';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261101-hotel-v3';
 import * as buildings from './archive-buildings.js?v=20261031-facilities-rails-lighting-v5';
 import * as launches from './archive-launches.js?v=20261101-proton-launch-v1';
 import {photoCity} from './archive-city.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSite31Pad} from './site31-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSiloPad,siloController} from './silo-pad.js?v=20261031-facilities-rails-lighting-v1';
-import {buildSevenWinds} from './seven-winds.js?v=20261101-hotel-v2';
+import {buildSevenWinds} from './seven-winds.js?v=20261101-hotel-v3';
 import {buildSite110,SITE110_VIEWS} from './site110.js?v=20261031-facilities-rails-lighting-v5';
 import {buildSite41} from './site41.js?v=20261101-r16-exhibit-v1';
 import {SITE45_VIEWS} from './site45.js?v=20261101-model-inspector-v1';

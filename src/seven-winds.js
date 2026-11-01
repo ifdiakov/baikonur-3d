@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
-import {SEVEN_WINDS_VERSION,SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v2';
+import {SEVEN_WINDS_VERSION,SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
 export {SEVEN_WINDS_VERSION};
 export const SEVEN_WINDS_REFERENCE=Object.freeze({
  folder:'1P7P9qFCcGwdm4-FG0s_WsdAcrHIfByRf',
@@ -132,7 +132,7 @@ export function buildSevenWinds(root){
  }
  function bench(x,z,yaw=0){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;root.add(g);for(let i=0;i<5;i++){k.box(2.5,.08,.11,0,.55,-.25+i*.12,'wood','bench-seat',0,g);k.box(2.5,.11,.06,0,.75+i*.12,-.36,'ivory','bench-back',0,g);}for(const side of [-1,1])k.box(.10,.55,.6,side*.95,.275,0,'dark','bench-frame',0,g);}
  for(const [x,z]of [[-23,10.8],[-10,10.8],[14,10.8],[24,26]])bench(x,z);
- for(const [x,z]of [[-27,12],[-10,12],[10,12],[27,12],[-27,26],[8,27],[27,39]]){
+ for(const [x,z]of SEVEN_WINDS_LAYOUT.lamps){
   k.rod([x,0,z],[x,3.5,z],.055,'dark','garden-lamp-pole');
   const pts=Array.from({length:11},(_,i)=>{const a=Math.PI*i/10;return [x+.36-.36*Math.cos(a),3.5+.36*Math.sin(a),z];});for(let i=1;i<pts.length;i++)k.rod(pts[i-1],pts[i],.03,'dark','garden-lamp-crook');k.sphere(.22,x+.72,3.35,z,'lampGlobe','garden-lamp-globe');
  }
@@ -143,5 +143,9 @@ export function buildSevenWinds(root){
  // R(v - 2*pivot) rotates this asymmetric compound about its own centre.
  // The geographic root and the occupied ground rectangle remain in place.
  const offset=new THREE.Vector3(...SEVEN_WINDS_LAYOUT.modelOffset);for(const child of root.children)child.position.add(offset);root.updateWorldMatrix(true,true);
+ root.userData.courtyardLightRecords=()=>SEVEN_WINDS_LAYOUT.lamps.map(([x,z])=>{
+  const base=root.localToWorld(new THREE.Vector3(x+.72,.13,z).add(offset)),bulb=root.localToWorld(new THREE.Vector3(x+.72,3.35,z).add(offset));
+  return {x:base.x,y:base.y,z:base.z,lightX:bulb.x,lightY:bulb.y,lightZ:bulb.z,height:bulb.y-base.y,radius:1.25,size:.28,brightness:.60,owner:root,color:0xffdfaa};
+ });
  root.userData.setHotelEvening=value=>{glow.emissiveIntensity=value?.65:0;bulb.emissiveIntensity=value?1.15:0;};root.userData.sevenWinds={version:SEVEN_WINDS_VERSION,floors:4,windowBays:16,gazebos:2,reference:SEVEN_WINDS_REFERENCE,layout:SEVEN_WINDS_LAYOUT,lettering:{text:'ЦЭНКИ',side:'west-end',normal:[-1,0,0],blueLetters:5},surfacePolicy:'disjoint-road-paving-beds'};return {...result,version:SEVEN_WINDS_VERSION};
 }
