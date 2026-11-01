@@ -7,19 +7,26 @@
   // A cinematic launch sequence accompanies loading. Its clock never changes
   // real scene progress or readiness, and never delays an already ready museum.
   var launchStatuses = [
-    'выбор места для строительства космодрома',
-    'разметка местности',
-    'загрузка стартовых комплексов',
-    'доставка средств выведения',
-    'загрузка циклограмм',
-    'расчёт траекторий и целевых орбит',
-    'вывоз и вертикализация',
-    'подъём боковых пневмоколонн',
-    'заправка компонентами топлива',
-    'ключ на дренаж',
-    'продувка',
-    'ключ на старт',
-    'зажигание/кислород!'
+    'ВЫБОР МЕСТА ДЛЯ СТРОИТЕЛЬСТВА КОСМОДРОМА',
+    'РАЗМЕТКА МЕСТНОСТИ',
+    'ЗАГРУЗКА СТАРТОВЫХ КОМПЛЕКСОВ',
+    'СТРОИТЕЛЬСТВО ИНФРАСТРУКТУРЫ',
+    'ПРОКЛАДКА Ж/Д ПУТЕЙ',
+    'ОРГАНИЗАЦИЯ ЭНЕРГОСНАБЖЕНИЯ',
+    'ДОСТАВКА СРЕДСТВ ВЫВЕДЕНИЯ',
+    'ОГНЕВЫЕ ИСПЫТАНИЯ',
+    'НАСТРОЙКА ТЕЛЕМЕТРИИ',
+    'ЗАГРУЗКА ЦИКЛОГРАММ',
+    'РАСЧЁТ ТРАЕКТОРИЙ И ЦЕЛЕВЫХ ОРБИТ',
+    'ЗАСЕДАНИЕ ГОСКОМИССИИ',
+    'ВЫВОЗ И ВЕРТИКАЛИЗАЦИЯ',
+    'КОНТРОЛЬНЫЕ МЕРОПРИЯТИЯ',
+    'ПОДЪЁМ БОКОВЫХ ПНЕВМОКОЛОНН',
+    'ЗАПРАВКА КОМПОНЕНТАМИ ТОПЛИВА',
+    'КЛЮЧ НА ДРЕНАЖ',
+    'ПРОДУВКА',
+    'КЛЮЧ НА СТАРТ',
+    'ЗАЖИГАНИЕ/КИСЛОРОД!'
   ];
   var byId = function (id) { return document.getElementById(id); };
   var status = byId('museumLaunchStatus');
@@ -84,7 +91,7 @@
     launchStep = Math.max(0, Math.min(launchStatuses.length - 1, index));
     root.dataset.launchStep = String(launchStep);
     if (status) status.textContent = launchStatuses[launchStep];
-    text('museumLaunchStep', String(launchStep + 1).padStart(2, '0') + ' / 13');
+    text('museumLaunchStep', String(launchStep + 1).padStart(2, '0') + ' / ' + String(launchStatuses.length).padStart(2, '0'));
     cancelStatusAnimation();
     if (animate && !motionPaused() && status && typeof status.animate === 'function') {
       statusAnimation = status.animate([

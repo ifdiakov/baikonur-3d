@@ -8,7 +8,10 @@ const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
 const revision='20261101-satellite-surface-v1';
 const welcome='Добро пожаловать на космодром Байконур первый в истории и крупнейший на планете космическая гавань человечества';
-const firstLaunchStatus='выбор места для строительства космодрома';
+const slogan='КОСМОС НАЧИНАЕТСЯ С НАЗЕМКИ';
+const launchStatusCount=20,finalLaunchStep=launchStatusCount-1,lastLoadingLaunchStep=finalLaunchStep-1;
+const firstLaunchStatus='ВЫБОР МЕСТА ДЛЯ СТРОИТЕЛЬСТВА КОСМОДРОМА';
+const finalLaunchStatus='ЗАЖИГАНИЕ/КИСЛОРОД!';
 const evidence={base,prefix,revision,cases:{}};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -60,7 +63,7 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
   record.consoleErrors.push(message.text());
   if(/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/.test(message.text()))record.shaderErrors.push(message.text());
  });
- await page.addInitScript(({stalledBody})=>{
+ await page.addInitScript(({stalledBody,finalLaunchStep})=>{
   const state=window.__STARTUP_TEST={feedback:[],launch:[],ready:[],stalled:[],animateRequests:0};
   const nativeFrame=window.requestAnimationFrame.bind(window);let pendingFrame;
   window.requestAnimationFrame=fn=>{
@@ -77,18 +80,19 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    const total=progress?Number(progress.getAttribute('aria-valuemax')):null;
    const launchStep=loading.hasAttribute('data-launch-step')?Number(loading.dataset.launchStep):null;
    const launchStatus=document.getElementById('museumLaunchStatus')?.textContent.trim()||'';
+   const launchCounter=document.getElementById('museumLaunchStep')?.textContent.trim()||'';
    const fill=document.getElementById('museumProgressFill')?.style.transform.match(/^scaleX\(([^)]+)\)$/);
    const fillScale=fill?Number(fill[1]):null;
    const introReady=Boolean(window.__MUSEUM_PRELOADER);
-   const signature=[loading.hidden,loading.dataset.state||'',message,stage,total,launchStep,launchStatus,fillScale,introReady].join('|');
+   const signature=[loading.hidden,loading.dataset.state||'',message,stage,total,launchStep,launchStatus,launchCounter,fillScale,introReady].join('|');
    if(signature===lastFeedback)return;lastFeedback=signature;
-   const render=(stage===total&&total>0||launchStep===12)?window.__BAIKONUR_QA?.stats().render||null:null;
+   const render=(stage===total&&total>0||launchStep===finalLaunchStep)?window.__BAIKONUR_QA?.stats().render||null:null;
    if(introReady&&launchStatus&&Number.isInteger(launchStep)&&launchStep!==lastLaunchStep){
-    state.launch.push({at:performance.now(),step:launchStep,text:launchStatus,stage,fillScale,render});
+    state.launch.push({at:performance.now(),step:launchStep,text:launchStatus,counter:launchCounter,stage,fillScale,render});
     lastLaunchStep=launchStep;
    }
    const feedback={at:performance.now(),hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total,
-    launchStep,launchStatus,fillScale,render};
+    launchStep,launchStatus,launchCounter,fillScale,render};
    state.feedback.push(feedback);
    if(loading.dataset.state==='ready'){
     const stats=window.__BAIKONUR_QA?.stats();
@@ -120,7 +124,7 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    item.headersAt=performance.now();
    return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':isCatalog?'application/json':'model/gltf-binary'}}));
   };
- },{stalledBody});
+ },{stalledBody,finalLaunchStep});
  const url=new URL(base);url.searchParams.set('startup-check',name);
  return {page,record,releaseCatalog,navigate:()=>page.goto(url.href,{waitUntil:'commit',timeout:90000}),
   close:async()=>{releaseCatalog();await context.close();activePage=null;}};
@@ -161,7 +165,7 @@ async function waitError(page){
  assert.equal(state.qaAvailable,false);assert.deepEqual(state.test.ready,[],'A failed required request never reports ready');
  const intro=await preloaderState(page);
  assert.equal(intro.paused,true);assert.equal(intro.motion,'paused');assert.equal(intro.running,0);
- assert.ok(intro.launchStep<12&&intro.stage<intro.total,'Failed loading never claims ignition or completed progress');
+ assert.ok(intro.launchStep<finalLaunchStep&&intro.stage<intro.total,'Failed loading never claims ignition or completed progress');
  assert.ok(intro.toggle.disabled||!await page.locator('#museumMotionToggle').isVisible(),
   'A failed loader cannot restart the launch animation');
  return state;
@@ -176,7 +180,9 @@ async function preloaderState(page){
   const message=document.getElementById('museumLoadingMessage'),toggle=document.getElementById('museumMotionToggle');
   const fill=document.getElementById('museumProgressFill')?.style.transform.match(/^scaleX\(([^)]+)\)$/);
   return {launchStep:Number(loader?.dataset.launchStep),status:document.getElementById('museumLaunchStatus')?.textContent.trim(),
+   launchCounter:document.getElementById('museumLaunchStep')?.textContent.trim(),
    welcome:document.getElementById('museumWelcome')?.textContent.replace(/\s+/g,' ').trim(),
+   slogan:document.getElementById('museumPreloaderSlogan')?.textContent.replace(/\s+/g,' ').trim(),
    stage:Number(progress?.getAttribute('aria-valuenow')),total:Number(progress?.getAttribute('aria-valuemax')),
    role:progress?.getAttribute('role'),fillScale:fill?Number(fill[1]):null,
    paused:loader?.classList.contains('is-paused'),motion:loader?.dataset.motion,
@@ -248,6 +254,10 @@ async function assertReducedMotion(page){
 async function exercisePreloader(page){
  const initial=await preloaderState(page);
  assert.equal(initial.welcome,welcome,'The welcome preserves the requested wording and letter case');
+ assert.equal(initial.slogan,slogan,'The separate slogan preserves its exact uppercase wording');
+ assert.equal(await page.locator('#museumPreloaderSlogan').isVisible(),true,'The new slogan is visible during loading');
+ assert.equal(initial.launchCounter,String(initial.launchStep+1).padStart(2,'0')+' / '+launchStatusCount,
+  'The narrative counter names all twenty launch phrases');
  assert.equal(initial.role,'progressbar');assert.equal(initial.total,9);
  assert.equal(initial.stage,0,'No scene phase is complete while the required catalog is held');
  assert.equal(initial.fillScale,0,'The visible bar starts at the same real progress');
@@ -258,14 +268,17 @@ async function exercisePreloader(page){
  assert.equal(initial.toggle.pressed,'false');assert.equal(initial.toggle.disabled,false);
  assert.equal(await page.locator('[data-preloader-story],#museumStoryPrev,#museumStoryNext,#museumMapGagarin,#museumMapBuran').count(),0);
  assert.equal(initial.launch[0]?.step,0);assert.equal(initial.launch[0]?.text,firstLaunchStatus);
+ assert.equal(initial.launch[0]?.counter,'01 / '+launchStatusCount);
  // Imports may take longer than one narrative interval on the public host.
  // Observe the first transition from document start instead of requiring the
  // current phrase still to be zero when the catalog request reaches its gate.
  await page.waitForFunction(()=>window.__STARTUP_TEST.launch.some(item=>item.step===1),null,{timeout:5000});
  const advancing=await preloaderState(page);
  assert.equal(advancing.launch[1]?.step,1,'Launch phrases advance in order');
- assert.ok(advancing.launch.every((item,index)=>item.step===index&&item.step<12),
+ assert.ok(advancing.launch.every((item,index)=>item.step===index&&item.step<finalLaunchStep),
   'Loading phrases remain sequential and cannot reach ignition while catalog data is held');
+ assert.ok(advancing.launch.every(item=>item.text===item.text.toLocaleUpperCase('ru-RU')),
+  'The cycling launch phrases are uppercase');
  assert.ok(advancing.launch[1]?.text&&advancing.launch[1].text!==firstLaunchStatus);
  assert.equal(advancing.stage,initial.stage);assert.equal(advancing.fillScale,initial.fillScale,
   'The narrative cannot advance real scene progress');
@@ -296,12 +309,12 @@ async function exercisePreloader(page){
  await page.locator('#museumMotionToggle').focus();await page.keyboard.press('Space');
  const resumed=await preloaderState(page);
  assert.equal(resumed.paused,false);assert.equal(resumed.motion,'running');assert.equal(resumed.toggle.pressed,'false');
- if(paused.launchStep<11)
+ if(paused.launchStep<lastLoadingLaunchStep)
   await page.waitForFunction(previous=>Number(document.getElementById('museumLoading').dataset.launchStep)>previous,
    paused.launchStep,{timeout:5000});
  else await page.waitForTimeout(2400);
  const next=await preloaderState(page);
- assert.equal(next.launchStep,Math.min(paused.launchStep+1,11),
+ assert.equal(next.launchStep,Math.min(paused.launchStep+1,lastLoadingLaunchStep),
   'Resuming advances to the next phrase, or holds at the last phrase before ignition');
  assert.equal(next.stage,initial.stage);assert.equal(next.fillScale,initial.fillScale);
  // Keep the presentation paused as the real scene finishes: presentation
@@ -317,7 +330,7 @@ function assertStageProgress(feedback){
   assert.ok(stages[i].stage>=0&&stages[i].stage<=stages[i].total,'Stages stay within their declared range');
   assert.ok(Math.abs(stages[i].fillScale-stages[i].stage/stages[i].total)<1e-6,
    'The visible progress bar matches completed scene phases');
-  if(stages[i].stage===stages[i].total||stages[i].launchStep===12)
+  if(stages[i].stage===stages[i].total||stages[i].launchStep===finalLaunchStep)
    assert.ok(stages[i].render?.drawCalls>0&&stages[i].render?.triangles>0,
     'Complete progress and ignition require an actual rendered frame, including during the exit fade');
   if(i)assert.ok(stages[i].stage>=stages[i-1].stage,'Real loading stages never move backwards');
@@ -326,8 +339,9 @@ function assertStageProgress(feedback){
  assert.equal(firstView?.stage,8,'Starting the ninth phase still leaves the first render incomplete');
  const ready=stages.find(item=>item.state==='ready');
  assert.ok(ready&&ready.stage===ready.total,'All stages finish only with a rendered, ready museum');
- assert.equal(ready.launchStep,12,'The final launch phrase belongs to the completed museum');
- assert.equal(ready.launchStatus,'зажигание/кислород!');
+ assert.equal(ready.launchStep,finalLaunchStep,'The final launch phrase belongs to the completed museum');
+ assert.equal(ready.launchStatus,finalLaunchStatus);
+ assert.equal(ready.launchCounter,launchStatusCount+' / '+launchStatusCount,'The completed narrative displays 20 / 20');
 }
 
 try{
@@ -394,6 +408,7 @@ try{
   const beforeTimeout=await assertReducedMotion(run.page);
   assert.equal(beforeTimeout.launchStep,0,'Reduced motion begins with a stable first launch phrase');
   const intro=await preloaderState(run.page);assert.equal(intro.status,firstLaunchStatus);assert.equal(intro.welcome,welcome);
+  assert.equal(intro.slogan,slogan);assert.equal(intro.launchCounter,'01 / '+launchStatusCount);
   run.record.mobileLoading=await assertPreloaderFits(run.page,{width:320,height:568});
   assert.equal(run.record.mobileLoading.status.text,firstLaunchStatus,'The complete first launch phrase remains present at 320px');
   assert.ok(run.record.mobileLoading.status.lines>=1,'The launch phrase has visible text at 320px');

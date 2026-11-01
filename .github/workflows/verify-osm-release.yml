@@ -1,4 +1,4 @@
-name: Museum Tu-204 CPK exhibit
+name: Museum strict preloader
 on:
   push:
     branches: [main]
@@ -55,7 +55,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-tu204-cpk-20261101-v1
+  RELEASE_TAG: museum-preloader-strict-20261101-v4
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -353,12 +353,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/tu204-cpk-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/preloader-strict-20261101-v4.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — Ту-204 ЦПК на Крайнем',
+                name: 'Байконур — строгая сетка прелоадера',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }
