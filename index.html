@@ -325,6 +325,7 @@ body.following-arrival #labelLayer{display:none!important}
 #ukssMockupToggle{display:block;margin:8px 0 12px;background:#526c61;border:1px solid #8da6988c;color:#e0f2e6}#ukssMockupToggle:hover{filter:brightness(1.16)}#ukssViews[hidden],#ukssMockupToggle[hidden]{display:none!important}
 #airportViews{display:flex;gap:8px;margin:12px 0}#airportViews[hidden]{display:none!important}
 #airportViews.terminal-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+#airportViews.terminal-views button:last-child{grid-column:1/-1}
 #airportViews.terminal-views button{min-width:0;padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}
 #airportViews.terminal-views button[aria-pressed="true"]{background:#3b5969;border-color:#b4cad7}#airportViews.terminal-views button:hover{filter:brightness(1.16)}
 #energiaViews:not([hidden]),#site41Views:not([hidden]){display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -499,8 +500,8 @@ import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261101-saturn-terrain-v5';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainSample,saturnTerrainMeshHeight} from './src/saturn-access.js?v=20261101-saturn-terrain-v5';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
-import {buildAirport} from './src/airport-models.js?v=20261101-pua-v1';
-import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261030-krayniy-terminal-v1';
+import {buildAirport} from './src/airport-models.js?v=20261101-tu204-cpk-v1';
+import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261101-tu204-cpk-v1';
 import {buildEveningScene} from './src/evening-scene.js?v=20261101-highway-fog-v1';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261101-a320-tail-v2';
 import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT} from './src/camera-navigation.js?v=20261101-museum-view-v1';
@@ -512,8 +513,8 @@ import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261031-
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
 import {adaptTuaRails} from './src/tua-rails.js?v=20261031-facilities-rails-lighting-v1';
 import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-exhibits-v1';
-import {installModelInspector} from './src/model-inspector.js?v=20261101-model-facts-v1';
-import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261101-model-facts-v1';
+import {installModelInspector} from './src/model-inspector.js?v=20261101-tu204-cpk-v1';
+import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261101-tu204-cpk-v1';
 import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261101-bottom-docks-v1';
 import {MUSEUM_METRE} from './src/museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {CYCLONE_MOUNTS} from './src/cyclone-launch.js?v=20261101-cyclone-v1';
@@ -1556,6 +1557,7 @@ startup.stage('Загружаем ракетные экспонаты…',7);
 // Failed placements retain their visible retry action.
 const initialRocketModels=rocketExhibits.whenReady();
 await initialRocketModels;
+await objects.find(o=>o.record.id==='airfield')?.g.userData.tu204Ready;
 startup.stage('Включаем огни и готовим управление…',8);
 await startup.paint();
 tuaRocketControls=createTuaRocketControls({container:document.getElementById('description').parentElement,exhibits:rocketExhibits,keys:['tua-0','tua-1'],onSelect:id=>{
@@ -1691,8 +1693,8 @@ function focus(i){
  }else if(o.archive){portalArchive.focus(i,camera,ctl);}else camera.position.copy(ctl.target).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  let airportViews=document.getElementById('airportViews');if(!airportViews){airportViews=document.createElement('div');airportViews.id='airportViews';document.getElementById('description').after(airportViews);}
  airportViews.replaceChildren();airportViews.hidden=!o.g.userData.airport;
- airportViews.style.display=airportViews.hidden?'none':'flex';
  const terminalViews=i===krayniyIndex&&Boolean(o.g.userData.airport?.terminal?.camera);
+ airportViews.style.display=airportViews.hidden?'none':terminalViews?'grid':'flex';
  airportViews.classList.toggle('terminal-views',terminalViews);airportViews.setAttribute('role','group');airportViews.setAttribute('aria-label',terminalViews?'Ракурсы аэропорта Крайний':'Ракурсы аэродрома');
  if(terminalViews){
   for(const [view,label]of KRAYNIY_TERMINAL_VIEWS){const b=document.createElement('button');b.type='button';b.textContent=label;b.className='detail-button';b.dataset.airportView=view;b.onclick=()=>setKrayniyTerminalView(view);airportViews.append(b);}
@@ -1894,6 +1896,8 @@ function setMuseumYear(year){
  document.getElementById('year').value=String(val);
  document.getElementById('yearVal').textContent=String(val);
  mik112Exhibit?.setYear(val);
+ const parkedTu204=objects.find(o=>o.record?.id==='airfield')?.g?.userData?.tu204Holder;
+ if(parkedTu204){parkedTu204.visible=val>=2019;parkedTu204.parent.userData.airport.tu204.visible=parkedTu204.visible;}
  if(mik112Rail?.group)mik112Rail.group.visible=val>=1967;
  for(let i=0;i<objects.length;i++){
   const o=objects[i];

@@ -15,7 +15,7 @@ const load=async id=>{await page.evaluate(id=>window.__MODEL_VIEWER_QA.load(id),
 try{
  await page.goto(new URL('workshop/model.html?model=zenit-land',base).href);await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);
  assert.equal(await page.evaluate(()=>__MODEL_VIEWER_QA.version),MODEL_VIEWER_VERSION);
- const choices=(await stats()).choices;assert.equal(choices.length,24);assert(choices.includes('r16'));assert(!choices.includes('mig'));assert(choices.includes('mig25'));
+ const choices=(await stats()).choices;assert.equal(choices.length,Object.keys(MODEL_CATALOG).length);assert(choices.includes('r16'));assert(!choices.includes('mig'));assert(choices.includes('mig25'));
  for(const id of choices){await load(id);const s=await stats();assert(s.drawCalls>0&&s.triangles>0);assert(s.size.every(n=>Number.isFinite(n)&&n>0));assert(s.camera.every(Number.isFinite));evidence.models[id]=s;
   // Every switch renders that model's complete factual record, including unknowns.
   const spec=MODEL_CATALOG[id],facts=spec.facts,text=await page.locator('#modelFacts').innerText();

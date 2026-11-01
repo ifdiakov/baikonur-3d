@@ -56,7 +56,7 @@ try{
  assert.equal(airport.length,1380);assert.equal(airport.referenceLength,3100);assert.equal(airport.osmRunwayId,37591623);
  assert.ok(terminal.drawCalls<=24&&terminal.triangles<8000,'The photo reconstruction remains lightweight');
  assert.deepEqual(terminal.signTexts,['БАЙКОНУР','АЭРОПОРТ']);assert.equal(terminal.externalTextures,0);
- assert.equal(await page.locator('#airportViews [data-airport-view]').count(),4);
+ assert.equal(await page.locator('#airportViews [data-airport-view]').count(),5);
  assert.equal(initial.ukss.status,'ready');assert.equal(initial.mik112.tua.status,'ready');
  evidence.terminal=terminal;evidence.airport={length:airport.length,referenceLength:airport.referenceLength,apron:airport.apron,taxiX:airport.taxiX};
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));

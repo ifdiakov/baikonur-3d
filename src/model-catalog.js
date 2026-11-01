@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261101-model-facts-v1';
+import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261101-tu204-cpk-v1';
 export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION;
 const definitions={
  'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
@@ -21,6 +21,7 @@ const definitions={
  proton:{title:'Протон-М',subtitle:'Площадки №81 и №200',kind:'rocket',source:'https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/',views:{front:{target:[0,1.6,0],offset:[8,-7,11]},side:{target:[0,22.2,0],offset:[8,2,11]},top:{target:[0,49,0],offset:[12,4,16]}}},
  mriya:{title:'Мрия и Буран',subtitle:'Ан-225 · аэродром Юбилейный',kind:'aircraft',asset:'mriya-buran/near-v2.glb',yaw:Math.PI/2},
  aircraft:{title:'Airbus A320 · Алроса',subtitle:'A320-214 · рейс на Крайний',kind:'aircraft',source:'https://sketchfab.com/3d-models/bulgaria-air-airbus-a320-214-ab1d295a30c1477eb8a81b072b5fbf06',credit:'Dave Love SketchFab · CC BY 4.0 · адаптация RocketTrip'},
+ tu204:{title:'Ту-204-300 · ЦПК',subtitle:'«Юрий Гагарин» · RA-64044 · Крайний',kind:'aircraft',asset:'tu204-cpk/model-v1.glb',assetRevision:'20261101-tu204-cpk-v1',source:'https://sketchfab.com/3d-models/tupolev-tu-204-3acbd21815b14758a3e0d48e1ff82233',credit:'mamont nikita · CC BY 4.0 · ливрея и адаптация RocketTrip'},
  train:{title:'Мотовоз',subtitle:'Железнодорожная техника',kind:'vehicle'},
  coach:{title:'Пассажирский вагон',subtitle:'Железнодорожная техника',kind:'vehicle'},
  silo:{title:'Шахтная установка',subtitle:'Музейная модель ШПУ',kind:'site'},
@@ -33,7 +34,7 @@ const siteModels={
  'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','site45','zenit-sea'],
  'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
  'pad-110':['energia-buran','energia','n1'],'pad-112':['tua','energia-buran','energia-polyus','energia','energia-m','n1'],
- 'pad-112a':['buran','energia-buran'],'pad-251':['pua-100','mriya','buran','mig25'],'airfield':['aircraft'],'city':['train','coach'],
+ 'pad-112a':['buran','energia-buran'],'pad-251':['pua-100','mriya','buran','mig25'],'airfield':['tu204','aircraft'],'city':['train','coach'],
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,['silo']]))
 };
 export function resolveModelId(id){return id==='mig25ru'?'mig25':id;}

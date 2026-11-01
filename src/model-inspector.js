@@ -1,4 +1,4 @@
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-model-facts-v1';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-tu204-cpk-v1';
 export function installModelInspector({onOpen=()=>{},onClose=()=>{}}={}){
  const dialog=document.createElement('dialog');dialog.id='modelInspector';dialog.className='model-inspector';dialog.setAttribute('aria-label','Просмотр техники в 3D');
  const close=document.createElement('button');close.type='button';close.className='model-inspector-close';close.setAttribute('aria-label','Закрыть просмотр и вернуться к объекту');close.textContent='×';

@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {NodeIO} from '@gltf-transform/core';
+import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
+import {getBounds} from '@gltf-transform/functions';
+import {MeshoptDecoder} from 'meshoptimizer';
+import * as THREE from 'three';
+import {TU204_PARKING} from '../src/tu204-cpk.js';
+import {MODEL_CATALOG,modelsForObject} from '../src/model-catalog.js';
+import {KRAYNIY_AIRPORT_DISPLAY} from '../src/krayniy-terminal.js';
+const bytes=await readFile('assets/models/tu204-cpk/model-v1.glb'),manifest=JSON.parse(await readFile('assets/models/tu204-cpk/manifest-v1.json'));
+assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.sha256);assert.equal(bytes.length,manifest.bytes);assert(bytes.length<manifest.source.bytes*.2);
+await MeshoptDecoder.ready;const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.decoder':MeshoptDecoder}),doc=await io.readBinary(bytes),root=doc.getRoot(),bounds=getBounds(root.listScenes()[0]);
+assert(Math.abs(bounds.max[2]-bounds.min[2]-40.19)<.002);assert(Math.abs(bounds.max[0]-bounds.min[0]-41.8)<.002);assert(Math.abs(bounds.min[1])<.002);assert.match(root.getAsset().copyright,/mamont nikita.*CC BY 4.0/);
+let triangles=0;for(const mesh of root.listMeshes())for(const p of mesh.listPrimitives()){assert.equal(p.getMode(),4);triangles+=p.getIndices().getCount()/3;for(const attribute of p.listAttributes())assert([...attribute.getArray()].every(Number.isFinite));if(p.getMaterial().getBaseColorTexture())assert(p.getAttribute('TEXCOORD_0'));}
+assert.equal(triangles,manifest.triangles);assert.equal(root.listMeshes().length,10);assert.equal(root.listTextures().length,2);
+const m=new THREE.Matrix4().compose(new THREE.Vector3(...TU204_PARKING.position),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),TU204_PARKING.yaw),new THREE.Vector3(1,1,1));
+const box=new THREE.Box3(new THREE.Vector3(...bounds.min),new THREE.Vector3(...bounds.max)).applyMatrix4(m),ap=KRAYNIY_AIRPORT_DISPLAY;
+assert(box.min.x>ap.apronX-ap.apronWidth/2+20);assert(box.max.x<ap.taxiX-9-25);assert(box.min.z>-200+40&&box.max.z<200-40);assert(box.min.x>ap.terminalX+20+40);assert(Math.abs(box.min.y-1.75)<.002);
+assert(modelsForObject({id:'airfield'}).includes('tu204'));assert(MODEL_CATALOG.tu204.facts.sources.length>=3);assert.match(MODEL_CATALOG.tu204.facts.specs.flat().join(' '),/RA-64044 «Юрий Гагарин»/);
+console.log('TU204_GEOMETRY_PASS',JSON.stringify({bytes:bytes.length,sourceBytes:manifest.source.bytes,triangles,drawCalls:10,dimensions:box.getSize(new THREE.Vector3()).toArray(),taxiwayClearance:ap.taxiX-9-box.max.x,terminalClearance:box.min.x-(ap.terminalX+20)}));

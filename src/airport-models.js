@@ -1,3 +1,4 @@
+import {installTu204Cpk} from './tu204-cpk.js?v=20261101-tu204-cpk-v1';
 import {buildPua100} from './pua-100.js?v=20261101-pua-v1';
 import * as THREE from 'three';
 import {installMriyaExhibit} from './mriya-exhibit.js?v=20261101-pua-v1';
@@ -47,6 +48,9 @@ export function buildAirport(root,key){
   const tx=apronX-164;k.box(12,30,12,tx,15,apronZ-90,'concrete','control-tower');k.box(18,5,18,tx,32,apronZ-90,'glass','control-room');k.box(20,.8,20,tx,35,apronZ-90,'light','control-room-roof');
  }else{
   buildKrayniyTerminal(root,apronZ);
+  installTu204Cpk(root);
+  k.path([[apronX,-80],[-198,-80]],.3,1.84,'yellow','tu204-stand-centre');
+  k.path([[-198,-83],[-198,-77]],.3,1.84,'yellow','tu204-stand-stop');
   // Keep the service hangar on the terminal side, clear of the glazed hall.
   k.hall({x:apronX-145,z:apronZ+150,w:65,d:70,h:20,gates:2,tag:'maintenance-hangar'});
  }

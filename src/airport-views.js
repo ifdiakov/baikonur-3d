@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export const KRAYNIY_TERMINAL_VIEWS=Object.freeze([
- ['all','Весь аэродром'],['airside','Аэровокзал'],['landside','Вход'],['top','Сверху']
+ ['all','Весь аэродром'],['airside','Аэровокзал'],['landside','Вход'],['top','Сверху'],['tu204','Ту-204 · ЦПК']
 ]);
 const validVector=value=>Array.isArray(value)&&value.length===3&&value.every(Number.isFinite);
 
@@ -21,7 +21,7 @@ export function krayniyViewPose(airport,view='airside',{aspect=1,fov=52,minEleva
   const distance=radius/Math.sin(Math.min(vertical,horizontal)/2)*1.08;
   eye=target.clone().add(new THREE.Vector3(1,1.1,1.25).normalize().multiplyScalar(distance));
  }else{
-  const preset=terminal.camera[view];
+  const preset=view==='tu204'?{target:[-182,6,-80],eye:[-240,45,-135]}:terminal.camera[view];
   if(!validVector(preset?.target)||!validVector(preset?.eye))return null;
   target=new THREE.Vector3(...preset.target);eye=new THREE.Vector3(...preset.eye);
   const offset=eye.clone().sub(target);
@@ -29,6 +29,12 @@ export function krayniyViewPose(airport,view='airside',{aspect=1,fov=52,minEleva
   offset.y=Math.max(offset.y,Math.hypot(offset.x,offset.z)*Math.tan(minElevation));
   if(aspect<1)offset.multiplyScalar(1/Math.max(.1,aspect));
   eye.copy(target).add(offset);
+  if(view==='tu204'&&aspect<1){
+   // Leave the aircraft in the open space above the compact object card.
+   const direction=offset.clone().normalize(),right=new THREE.Vector3(0,1,0).cross(direction).normalize(),up=direction.clone().cross(right);
+   const shift=up.multiplyScalar(-offset.length()*Math.tan(THREE.MathUtils.degToRad(fov/2))*.38);
+   eye.add(shift);target.add(shift);
+  }
  }
  return {view,target:target.toArray(),eye:eye.toArray()};
 }

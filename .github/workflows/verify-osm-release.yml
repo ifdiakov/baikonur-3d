@@ -1,4 +1,4 @@
-name: Museum launch poster preloader
+name: Museum Tu-204 CPK exhibit
 on:
   push:
     branches: [main]
@@ -55,7 +55,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-preloader-poster-20261101-v3
+  RELEASE_TAG: museum-tu204-cpk-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -73,6 +73,7 @@ jobs:
         run: |
           node tests/saturn-geometry.mjs
           node tests/a320-geometry.mjs
+          node tests/tu204-geometry.mjs
           node tests/pua-geometry.mjs
           node tests/cyclone-geometry.mjs
           node tests/mig25-geometry.mjs
@@ -205,6 +206,7 @@ jobs:
         run: |
           node tests/r16-browser.mjs
           node tests/a320-browser.mjs
+          node tests/tu204-browser.mjs
           node tests/pua-browser.mjs
           node tests/cyclone-browser.mjs
           node tests/proton-launch-browser.mjs
@@ -306,6 +308,7 @@ jobs:
             qa-flanks/
             qa-mriya/
             qa-train/
+            qa-tu204/
             qa-silo/
             qa-hotel/
           retention-days: 14
@@ -350,12 +353,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/preloader-poster-20261101-v3.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/tu204-cpk-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — прелоадер «Перед стартом»',
+                name: 'Байконур — Ту-204 ЦПК на Крайнем',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

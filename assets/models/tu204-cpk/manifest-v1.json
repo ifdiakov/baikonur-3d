@@ -1,0 +1,46 @@
+{
+  "id": "tu204-cpk",
+  "version": "tu204-cpk-v1",
+  "registration": "RA-64044",
+  "name": "Юрий Гагарин",
+  "variant": "Ту-204-300",
+  "source": {
+    "author": "mamont nikita (https://sketchfab.com/mamontnikita62)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/tupolev-tu-204-3acbd21815b14758a3e0d48e1ff82233",
+    "title": "Tupolev Tu 204",
+    "driveFileId": "1dk5mjXZuRpYuT7K4elGpc-p1DVP48g7m",
+    "bytes": 6218780,
+    "sha256": "03f5ae897692f3c82c11057b36a8ecf64a1136a73aa4cee325b75fe8a9e33fca"
+  },
+  "bytes": 1125708,
+  "sha256": "5a2e28d5cc6719ed89966b566b4c015305c792fc28efca568050e0a25bc9bda5",
+  "sourceTriangles": 150392,
+  "triangles": 132909,
+  "removedLineSegments": 63746,
+  "primitives": 10,
+  "bounds": {
+    "min": [
+      -20.899999618530273,
+      0.00015916252517955698,
+      -20.09526726955584
+    ],
+    "max": [
+      20.899999618530273,
+      13.900833088336054,
+      20.094999313354492
+    ]
+  },
+  "dimensions": {
+    "length": 40.19,
+    "wingspan": 41.8,
+    "height": 13.901
+  },
+  "scale": 0.28,
+  "reference": "https://www.gctc.ru/main.php?id=4611",
+  "notes": [
+    "Source already has the short fuselage proportions; no six-metre shortening applied.",
+    "Static parked aircraft; landing gear retained.",
+    "Illustrative livery projection; not a certified engineering model."
+  ]
+}
