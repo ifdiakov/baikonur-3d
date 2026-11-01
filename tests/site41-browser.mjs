@@ -18,7 +18,7 @@ try{
  await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(v=>window.__BAIKONUR_QA?.stats().museumRevision===v&&document.getElementById('museumLoading')?.dataset.state==='ready',revision,{timeout:180000});
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));await step();
- assert.equal(await page.locator('#error').isVisible(),false);assert.equal(await page.locator('#site41Views button').count(),6);
+ assert.equal(await page.locator('#error').isVisible(),false);assert.equal(await page.locator('#site41Views button').count(),7);
  await page.locator('#site41Views button[data-site41-view="memorial"]').click();await step();
  const initial=await state();evidence.initial=initial;assert.equal(initial.site.version,'site41-photo-plan-v2');
  assert.equal(initial.site.reference.photographs.length,7);assert.equal(initial.site.reference.satellite,'1zGG6SWGEht9G7_PzKEl1qqRxX2cwdNY8');
@@ -29,7 +29,7 @@ try{
  assert(Math.abs(initial.site.roadWidthWorld-.84)<1e-8);assert(!initial.power.litSiteIds.includes('pad-41'));
  await page.screenshot({path:`${out}/${prefix}-memorial-card-day.png`,timeout:90000});
  await page.evaluate(()=>{document.getElementById('close')?.click();window.__BAIKONUR_QA.setLabelsVisible(false);});
- for(const view of ['all','top','memorial','command','ruins','access']){
+ for(const view of ['all','rocket','top','memorial','command','ruins','access']){
   const ok=await page.evaluate(view=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);return q.site41.inspect(view);},view);assert(ok);await step();
   const s=await state();assert.equal(s.revision,revision);assert(s.render.drawCalls>0&&s.render.triangles>0);assert.equal(s.shadersValid,true);assert(elevation(s.camera)>=29.99);
   if(view==='top')assert(elevation(s.camera)>89);

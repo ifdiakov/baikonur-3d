@@ -10,7 +10,7 @@ const destinations={
  'mzk-through':'6336523428','mzk-side':'1834612260','sdi-west':'2529010043','sdi-east':'2529010042',
  'site110-left-west':'1834613559','site110-left-east':'1834613553','site110-right-west':'1834613467','site110-right-east':'1834613464'
 };
-const initialRocketModels={gagarin:'soyuz',site31:'soyuz',ukss:'energia-polyus',site110:'energia-buran','mik112-hall':'energia-buran','tua-0':'energia-buran','tua-1':'energia-buran'};
+const initialRocketModels={gagarin:'soyuz',site31:'soyuz',site41:'r16',ukss:'energia-polyus',site110:'energia-buran','mik112-hall':'energia-buran','tua-0':'energia-buran','tua-1':'energia-buran'};
 const views=[['mik112-gates','top'],['mik112-gates','oblique'],['mik112-fanout','top'],
  ['mzk','top'],['mzk','oblique'],['sdi','top'],['sdi','oblique'],['site110-left','oblique'],['site110-right','oblique']];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],views:[]};
@@ -132,7 +132,7 @@ try{
  evidence.rocketReadiness=readiness;
  const failed=readiness.placements.filter(p=>p.status!=='ready'||p.error).map(({key,modelId,status,error})=>({key,modelId,status,error}));
  console.log('FACILITY_ACCESS_ROCKET_READINESS',JSON.stringify({results:readiness.results,placements:readiness.placements.map(({key,modelId,status,error})=>({key,modelId,status,error}))}));
- assert.deepEqual(Object.fromEntries(readiness.placements.map(p=>[p.key,p.modelId])),initialRocketModels,'All seven initial rocket placements are registered for this museum view');
+ assert.deepEqual(Object.fromEntries(readiness.placements.map(p=>[p.key,p.modelId])),initialRocketModels,'All initial rocket placements are registered for this museum view');
  assert.deepEqual(readiness.results,Array(Object.keys(initialRocketModels).length).fill(true),'Every requested source rocket loads successfully: '+JSON.stringify(failed));
  assert.deepEqual(failed,[],'No failed or incomplete rocket asset may enter the inspection');
  await step();assert.equal(await page.locator('#error').isVisible(),false);
