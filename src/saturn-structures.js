@@ -1,84 +1,36 @@
 import * as THREE from 'three';
+import {createSurfacePalette} from './surface-materials.js?v=20261031-facilities-rails-lighting-v1';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import { SATURN_ACCESS, saturnTerrainSample } from './saturn-access.js?v=20261030-river-roads-signs-v1';
-
-/**
- * Baikonur Site 23: IP-5 Saturn-MS measuring station — museum reconstruction.
- *
- * Grounded in RocketTrip Drive: "пл. №23 ИП Сатурн":
- *   IMG_6181.JPG — front view; the tall concrete/brick tower with a black
- *                  25m P-200 mesh dish, second dish and white radome
- *   IMG_5342.JPG — aerial view of the site, access road and building layout
- *   IMG_3645.JPG — distance/silhouette of the full antenna field
- *   ajU0...jpg — near view of the umbrella-like receiver/transmitter truss
- *   IMG_7396.jpeg, IMG_7403.jpeg, IMG_5711.jpeg, IMG_2352.jpeg,
- *   IMG_5528.jpeg, IMG_5863.jpeg, IMG_5861.jpeg — October 27, 2026
- *   additional views for shape, truss density, tower features and material study.
- *   IMG_6657.MOV — supplementary walkthrough reference (not yet frame-verified).
- *
- * NOT a survey; all relative footprints, building heights and azimuths are
- * visual reconstructions. Both giant dishes are ~25m diameter, per public
- * Roscosmos/Saturn-MS documentation. Do not use this geometry for navigation.
- */
-export function buildSaturnIP5(root,terrain={}) {
-  root.name='Пл. №23 · ИП-5 «Сатурн-МС»';
-  const mat={
-    steppe:new THREE.MeshStandardMaterial({color:0x9d8e76,roughness:1}),
-    berm:new THREE.MeshStandardMaterial({color:0x837560,roughness:1}),
-    asphalt:new THREE.MeshStandardMaterial({color:0x4e4f4c,roughness:.99}),
-    roadEdge:new THREE.MeshStandardMaterial({color:0xb3ab97,roughness:1}),
-    concrete:new THREE.MeshStandardMaterial({color:0xa6a399,roughness:.99}),
-    brick:new THREE.MeshStandardMaterial({color:0xa98775,roughness:.96}),
-    brickDark:new THREE.MeshStandardMaterial({color:0x86665a,roughness:.99}),
-    shadow:new THREE.MeshStandardMaterial({color:0x444c4d,metalness:.28,roughness:.73}),
-    window:new THREE.MeshStandardMaterial({color:0x3e6570,metalness:.18,roughness:.40}),
-    roof:new THREE.MeshStandardMaterial({color:0x7d8b8d,metalness:.16,roughness:.74}),
-    railing:new THREE.MeshStandardMaterial({color:0xc0c5c1,metalness:.35,roughness:.58}),
-    steel:new THREE.MeshStandardMaterial({color:0x4e5758,metalness:.58,roughness:.62}),
-    steelDark:new THREE.MeshStandardMaterial({color:0x292e31,metalness:.60,roughness:.63,side:THREE.DoubleSide}),
-    dish:new THREE.MeshStandardMaterial({color:0x353839,metalness:.36,roughness:.82,side:THREE.DoubleSide}),
-    dishRim:new THREE.MeshStandardMaterial({color:0x616466,metalness:.49,roughness:.58}),
-    light:new THREE.MeshStandardMaterial({color:0xe1e2de,roughness:.68}),
-    radome:new THREE.MeshStandardMaterial({color:0xd9ddd9,metalness:0,roughness:.86}),
-    trim:new THREE.MeshStandardMaterial({color:0xc3b3a1,roughness:.94}),
-    gravel:new THREE.MeshStandardMaterial({color:0x8a8273,roughness:1}),
-    vegetation:new THREE.MeshStandardMaterial({color:0x797d59,roughness:1,flatShading:true}),
-    signal:new THREE.MeshStandardMaterial({color:0xcab56e,roughness:.88}),
-    oxidized:new THREE.MeshStandardMaterial({color:0x747a79,metalness:.38,roughness:.86}),
-    railPaint:new THREE.MeshStandardMaterial({color:0xc1c9c7,metalness:.31,roughness:.68})
-  };
-  const features={},objects=[];
-  let primitives=0;
-  function add(mesh,label,parent=root) {
-    if(label){features[label]=(features[label]||0)+1;mesh.userData.museumComponent=label;}
-    mesh.castShadow=false;mesh.receiveShadow=true;parent.add(mesh);objects.push(mesh);
-    primitives++;return mesh;
-  }
-  function box(w,h,d,x,y,z,m,label,parent=root) {
-    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat[m]);mesh.position.set(x,y,z);
-    return add(mesh,label,parent);
-  }
-  // Instanced antenna-frame beams: hundreds of real open-truss components
-  // cost only one GPU draw call per material and dish subassembly.
-  const rodGeometry=new THREE.CylinderGeometry(1,1,1,6,1);
-  const rodBatches=new Map();
-  function rod(a,b,r,m,label,parent=root,n=6) {
-    const p=new THREE.Vector3(...a),q=new THREE.Vector3(...b),dir=q.clone().sub(p);
-    const length=dir.length();if(length<.001)return null;
-    const key=m+':'+parent.uuid;
-    let batch=rodBatches.get(key);
-    if(!batch){batch={material:m,parent,matrices:[]};rodBatches.set(key,batch);}
-    const matrix=new THREE.Matrix4(),orient=new THREE.Quaternion();
-    orient.setFromUnitVectors(new THREE.Vector3(0,1,0),dir.normalize());
-    matrix.compose(p.add(q).multiplyScalar(.5),orient,new THREE.Vector3(r,length,r));
-    batch.matrices.push(matrix);
-    if(label)features[label]=(features[label]||0)+1;
-    primitives++;return null;
-  }
-  function cylinder(radTop,radBottom,h,x,y,z,m,label,sides=12,parent=root){
-    const mesh=new THREE.Mesh(new THREE.CylinderGeometry(radTop,radBottom,h,sides),mat[m]);
-    mesh.position.set(x,y,z);return add(mesh,label,parent);
-  }
+import {SATURN_ACCESS,saturnTerrainSample} from './saturn-access.js?v=20261030-river-roads-signs-v1';
+export const SATURN_MODEL_VERSION='saturn-photo-20261101-v2';
+// Two P-200 installations, the spherical radome and the service antenna field.
+// Eight new owner-supplied photographs, including two aerial/archival views.
+// The 25 m mirrors are the scale anchor; all other dimensions are photo estimates.
+export function buildSaturnIP5(root,terrain={}){
+ root.name='Пл. №23 · ИП-5 «Сатурн-МС»';
+ const colors={concrete:0xc6b99f,trim:0xd2c7b0,brick:0xbba58c,roof:0x666863,asphalt:0x555751,glass:0x2f695e,frame:0x414846,edge:0x727b75,metal:0x929a91,dish:0x8c8b62,radome:0xe3e5dc,black:0x343d3b,vegetation:0x777e50,trunk:0x655342,lamp:0xe5e2cb};
+ const mat=createSurfacePalette(root,colors,{concrete:'concrete',trim:'concrete',brick:'concrete',roof:'sheet',frame:'metal',edge:'metal',metal:'metal'},{glass:{roughness:.35,metalness:.12},radome:{roughness:.86},dish:{roughness:.89,metalness:.18}});
+ // Pale masonry and grey roofs in the references have fine wear, not coarse pits.
+ for(const key of ['concrete','trim','brick','roof']){const m=mat[key],compile=m.onBeforeCompile;m.onBeforeCompile=shader=>{compile(shader);shader.uniforms.museumRelief.value=key==='roof'?.012:.018;shader.uniforms.museumWear.value=key==='roof'?.12:.22;if(key==='roof')shader.uniforms.museumStain.value.setHex(0x535750);};}
+ const features={},objects=[],bins=new Map(),geometry=new Map();let primitives=0;
+ const V=(x,y,z)=>new THREE.Vector3(x,y,z),identity=new THREE.Quaternion(),up=V(0,1,0);
+ const shared=(key,create)=>{if(!geometry.has(key))geometry.set(key,create());return geometry.get(key)};
+ const count=label=>{if(label)features[label]=(features[label]||0)+1;primitives++;};
+ function add(mesh,label,parent=root){count(label);mesh.userData.museumComponent=label;mesh.name=label;mesh.receiveShadow=true;parent.add(mesh);objects.push(mesh);return mesh;}
+ function instance(geo,material,p,scale,label,parent=root,q=identity){
+  count(label);const key=geo.uuid+':'+material+':'+parent.uuid;
+  if(!bins.has(key))bins.set(key,{geo,material,parent,matrices:[],labels:new Set()});
+  const b=bins.get(key);b.labels.add(label);b.matrices.push(new THREE.Matrix4().compose(p,q,scale));
+ }
+ function box(w,h,d,x,y,z,m,label,parent=root,yaw=0){instance(shared('box',()=>new THREE.BoxGeometry(1,1,1)),m,V(x,y,z),V(w,h,d),label,parent,new THREE.Quaternion().setFromAxisAngle(up,yaw));}
+ function rod(a,b,r,m,label,parent=root){const p=new THREE.Vector3(...a),q=new THREE.Vector3(...b),delta=q.clone().sub(p),length=delta.length();if(length<1e-5)return;instance(shared('rod',()=>new THREE.CylinderGeometry(1,1,1,6,1)),m,p.add(q).multiplyScalar(.5),V(r,length,r),label,parent,new THREE.Quaternion().setFromUnitVectors(up,delta.normalize()));}
+ function cylinder(rt,rb,h,x,y,z,m,label,n=24,parent=root,rotation=null){
+  const key=`cyl-${rt/rb}-${n}`,g=shared(key,()=>new THREE.CylinderGeometry(rt/rb,1,1,n));
+  instance(g,m,V(x,y,z),V(rb,h,rb),label,parent,rotation?new THREE.Quaternion().setFromEuler(new THREE.Euler(...rotation)):identity);
+ }
+ function ring(radius,y,tube,m,label,parent=root,segments=64){const g=shared(`ring-${radius}-${tube}-${segments}`,()=>new THREE.TorusGeometry(radius,tube,5,segments));instance(g,m,V(0,y,0),V(1,1,1),label,parent,new THREE.Quaternion().setFromAxisAngle(V(1,0,0),Math.PI/2));}
+ function rail(a,b,height=1.1,parent=root){for(const y of [.18,height])rod([a[0],a[1]+y,a[2]],[b[0],b[1]+y,b[2]],.035,'metal','guardrail',parent);const length=Math.hypot(b[0]-a[0],b[2]-a[2]),steps=Math.max(1,Math.ceil(length/1.6));for(let i=0;i<=steps;i++){const t=i/steps,x=THREE.MathUtils.lerp(a[0],b[0],t),z=THREE.MathUtils.lerp(a[2],b[2],t);rod([x,a[1],z],[x,a[1]+height,z],.045,'metal','guardrail-post',parent);}}
+ function rectangularRail(x,y,z,w,d,parent=root){rail([x-w/2,y,z-d/2],[x+w/2,y,z-d/2],1.05,parent);rail([x-w/2,y,z+d/2],[x+w/2,y,z+d/2],1.05,parent);rail([x-w/2,y,z-d/2],[x-w/2,y,z+d/2],1.05,parent);rail([x+w/2,y,z-d/2],[x+w/2,y,z+d/2],1.05,parent);}
   function groundPatch(){
     // A low, broad hill uses the same height field as its graded access road.
     const N=128,extent=600,vertices=[],colors=[],uv=[],indices=[];
@@ -124,286 +76,183 @@ export function buildSaturnIP5(root,terrain={}) {
   }
   groundPatch();
 
-  // Engineering area and curved approach. North edge connects to highway
-  // as seen in the aerial photograph; internal service loop faces the radomes.
-  // Preserve natural hill soil between separately modelled buildings and roads;
-  // a single 170×126m rectangle used to look like a container depot.
-  // Stop the paved entrance at its junction with the internal north-south service lane.
-  // The former 147m strip continued past the junction into empty steppe.
-  box(90,.23,10,-35,7.42,74,'asphalt','internal-access-road');
-  box(9,.25,106,10,7.48,14,'asphalt','service-lane');
-  box(7,.24,86,-92,7.47,9,'asphalt','antenna-service-access');
-  // The external approach is now drawn in the shared road network,
-  // from the real schematic trunk route to the western edge of this apron.
-  // This avoids disconnected or duplicated road meshes on the site model.
-
-    // Main long flat-roof control/processing buildings in the aerial centre.
-  function offices({x,z,w,d,h,levels=2,brick=false}){
-    const baseY=7.6,base=brick?'brick':'concrete',countW=Math.max(4,Math.floor(w/5));
-    box(w,h,d,x,baseY+h/2,z,base,'control-building');
-    box(w+1,.7,d+1,x,baseY+h+.35,z,'roof','control-building-roof');
-    for(let row=0;row<levels;row++){
-      const windowY=baseY+2.6+row*(h-3.5)/Math.max(1,levels);
-      for(let j=0;j<countW;j++){
-        const xx=x-w/2+(j+.5)*w/countW;
-        for(const side of [-1,1])
-          box(Math.min(2.6,w/countW*.56),1.8,.2,xx,windowY,z+side*(d/2+.15),'window','control-building-windows');
-      }
-    }
-    for(let k=0;k<Math.max(3,Math.floor(w/7));k++){
-      const xx=x-w/2+(k+.5)*w/Math.floor(w/7);
-      box(.42,h+.1,.55,xx,baseY+h/2,z+d/2+.3,'trim','building-buttress');
-    }
-    box(Math.min(5,w*.15),3.3,.32,x,baseY+1.65,z+d/2+.28,'shadow','main-entrance');
-    const ventilator=cylinder(1.2,1.2,1.4,x-w*.31,baseY+h+1.6,z,'steel','roof-fan');
-    return ventilator;
+ const floor=7.72;
+ // Connected internal perimeter lane keeps the approved northwest gate port.
+ box(7,.23,90.5,-92,7.475,16.25,'asphalt','antenna-service-access');
+ box(194,.23,7,1.5,7.475,65,'asphalt','internal-access-road');
+ box(7,.23,121.5,95,7.475,.75,'asphalt','service-lane');
+ box(194,.23,6,1.5,7.475,-63,'asphalt','internal-access-road');
+ box(6,.23,87,22,7.475,-16.5,'asphalt','service-lane');
+ box(75,.23,6,-51,7.475,-1,'asphalt','internal-access-road');
+ box(66.5,.23,6,58.25,7.475,24,'asphalt','internal-access-road');
+ function building({x,z,w,d,h,levels=2,raised=false,hip=false,windowRatio=.69}){
+  box(w+.6,.46,d+.6,x,7.48,z,'trim','building-foundation');
+  box(w,h,d,x,floor+h/2,z,'concrete','control-building');
+  box(w+.65,.38,d+.65,x,floor+h+.19,z,'trim','control-building-roof');
+  box(w-.2,.12,d-.2,x,floor+h+.44,z,'roof','roof-surface');
+  for(const [edge,length,depth]of [['front',w,d],['side',d,w]]){
+   const n=Math.max(2,Math.floor(length/3.35)),step=length/n;
+   for(const sign of [-1,1])for(let row=0;row<levels;row++)for(let i=0;i<n;i++){
+    const t=-length/2+(i+.5)*step,yy=floor+1.25+(row+.5)*(h-1.5)/levels,wh=(h-1.5)/levels*.58,ww=step*windowRatio;
+    const px=edge==='front'?x+t:x+sign*(depth/2+.035),pz=edge==='front'?z+sign*(depth/2+.035):z+t;
+    box(edge==='front'?ww:.09,wh,edge==='front'?.09:ww,px,yy,pz,'black','window-recess');
+    box(edge==='front'?ww-.22:.12,wh-.18,edge==='front'?.12:ww-.22,px,yy,pz,'glass','control-building-windows');
+    box(edge==='front'?.075:.14,wh,edge==='front'?.14:.075,px,yy,pz,'trim','window-mullion');
+   }
+   for(const sign of [-1,1])for(let i=0;i<=n;i++){
+    const t=-length/2+i*step;
+    box(edge==='front'?.2:.16,h,edge==='front'?.16:.2,edge==='front'?x+t:x+sign*(depth/2+.09),floor+h/2,edge==='front'?z+sign*(depth/2+.09):z+t,'trim','facade-pier');
+   }
   }
-  // A sequence of separated low technical blocks, rather than two enormous
-  // generic office slabs. Positions remain approximate pending a scaled plan.
-  offices({x:-44,z:39,w:43,d:14,h:8,levels:2,brick:false});
-  offices({x:31,z:45,w:33,d:13,h:7,levels:1,brick:false});
-  offices({x:-46,z:-16,w:30,d:12,h:7,levels:1,brick:true});
-  offices({x:53,z:-43,w:21,d:11,h:6,levels:1,brick:true});
-  offices({x:-11,z:54,w:22,d:10,h:5,levels:1});
-  for(const [x,z,w,d,h] of [[-78,41,15,12,6],[-72,-46,13,11,6],[-15,-55,13,12,7],[66,57,18,14,6]]){
-    box(w,h,d,x,7.6+h/2,z,'brick','service-annex');
-    box(w+.6,.5,d+.8,x,7.9+h,z,'roof','service-annex-roof');
+  for(let row=1;row<levels;row++)box(w+.15,.22,d+.15,x,floor+row*h/levels,z,'trim','facade-horizontal-band');
+  box(2.3,2.8,.19,x-w*.28,floor+1.4,z+d/2+.16,'black','main-entrance');
+  box(3.5,.18,2.5,x-w*.28,floor+3.1,z+d/2+.9,'trim','entrance-canopy');
+  for(let i=0;i<3;i++)box(3.3,.18*(i+1),.45,x-w*.28,7.25+.09*(i+1),z+d/2+1.8-i*.45,'concrete','entrance-step');
+  for(let i=0;i<Math.max(1,Math.floor(w/18));i++)box(1.4,.9,1.6,x-w*.25+i*13,floor+h+.8,z-d*.25,'metal','roof-vent');
+  if(raised)rectangularRail(x,floor+h+.5,z,w+.2,d+.2);
+  if(hip){const cap=new THREE.Mesh(new THREE.CylinderGeometry(2.9,Math.min(w,d)*.59,3.8,4),mat.roof);cap.position.set(x,floor+h+2.4,z);cap.rotation.y=Math.PI/4;add(cap,'hipped-antenna-roof');rectangularRail(x,floor+h+.5,z,w+.3,d+.3);}
+  return floor+h+.5;
+ }
+ // Main processing block with a taller end bay, and a separate L-shaped block.
+ building({x:-4,z:-11,w:19,d:45,h:10.8,levels:3,raised:true});
+ building({x:-21,z:11,w:53,d:13,h:9.6,levels:3});
+ building({x:-4,z:8,w:19.6,d:14,h:12.2,levels:3});
+ building({x:-29,z:52,w:54,d:13,h:8.3,levels:2});
+ building({x:-56,z:36,w:14,d:32,h:8.3,levels:2});
+ for(const b of [{x:-72,z:-14,w:23,d:10,h:3.7},{x:-69,z:-53,w:21,d:9,h:4.1},{x:9,z:-52,w:35,d:9,h:3.6},{x:54,z:-57,w:17,d:7,h:3.3}])building({...b,levels:1});
+ function tower(x,z){
+  box(18,.48,18,x,7.49,z,'concrete','antenna-foundation');
+  const base=building({x,z,w:14.8,d:14.8,h:3.8,levels:1});
+  box(17,.55,17,x,base+.1,z,'trim','pavilion-cantilever-roof');
+  // Six belts frame five identical storeys; pale faceted masonry and green slots.
+  const start=base+.35,storey=3.55,r=4.75,sides=12;
+  cylinder(r,r,5*storey,x,start+2.5*storey,z,'concrete','antenna-pedestal',sides);
+  for(let i=0;i<=5;i++)cylinder(r+.43,r+.34,.33,x,start+i*storey,z,'trim','tower-horizontal-cornice',sides);
+  for(let level=0;level<5;level++)for(let k=0;k<sides;k++){
+   const a=(k+.5)*Math.PI*2/sides,rr=r*Math.cos(Math.PI/sides)+.025,xx=x+Math.sin(a)*rr,zz=z+Math.cos(a)*rr;
+   if(k%2===0){box(.58,2.68,.10,xx,start+(level+.5)*storey,zz,'black','tower-window-recess',root,a);box(.40,2.5,.14,xx,start+(level+.5)*storey,zz,'glass','vertical-glass-block-window',root,a);
+    for(let j=1;j<8;j++)box(.43,.035,.16,xx,start+level*storey+.58+j*.29,zz,'edge','glass-block-seam',root,a);}
+   box(.10,3.15,.12,x+Math.sin(k*Math.PI/6)*r,start+(level+.5)*storey,z+Math.cos(k*Math.PI/6)*r,'trim','tower-pilaster',root,k*Math.PI/6);
   }
-
-  // Octagonal, five/seven-section cylindrical masonry support, with
-  // turquoise shafts and little horizontal cornices clearly seen in IMG_6181.
-  function tallPedestal(cx,cz,baseRadius,height,secondary=false){
-    const floor=7.7,n=secondary?4:6;
-    // Photographs: pale sand concrete, a 12-sided tapered vertical cylinder,
-    // strong stepped cornices at each storey, and narrow turquoise glazing.
-    cylinder(baseRadius*.88,baseRadius+1.1,height*.84,cx,floor+height*.42,cz,
-      'concrete','antenna-pedestal',12);
-    for(let i=0;i<n;i++){
-      const y=floor+2+(i+1)*height*.78/(n+1);
-      cylinder(baseRadius+.85,baseRadius+.65,.70,cx,y,cz,'trim','tower-horizontal-cornice',12);
-      const levelHeight=height*.78/(n+1);
-      for(let j=0;j<8;j++){
-        const a=j*Math.PI/4;
-        const xx=cx+Math.cos(a)*(baseRadius+.08),zz=cz+Math.sin(a)*(baseRadius+.08);
-        const pilaster=box(.7,levelHeight*.82,.42,xx,y-levelHeight*.5,zz,'trim','tower-pilaster');
-        pilaster.rotation.y=-a;
-        if(j%2===0){
-          const win=box(1.25,levelHeight*.38,.18,cx+Math.cos(a)*(baseRadius+.52),
-            y+levelHeight*.04,cz+Math.sin(a)*(baseRadius+.52),'window','tower-narrow-window');
-          win.rotation.y=-a;
-        }
-      }
-    }
-    const crownY=floor+height*.85;
-    cylinder(baseRadius+1.4,baseRadius+1.4,.8,cx,crownY,cz,'trim','antenna-tower-crown',12);
-    cylinder(baseRadius*.8,baseRadius*.9,height*.16,cx,crownY+height*.08,cz,'steel','antenna-yoke-base',12);
-    box(baseRadius*2+4,1.0,baseRadius*2+3,cx,floor+height+2,cz,'shadow','yoke-platform');
-    // Top bearing machinery is set on a massive rectangular cantilever deck.
-    // The older model lacked this characteristic silhouette.
-    box(baseRadius*2+8,1.25,baseRadius*2+9,cx,floor+height+1.3,cz,'concrete','cantilever-bearing-deck');
-    for(const side of [-1,1]){
-      box(baseRadius*2+7,.2,.18,cx,floor+height+2.2,cz+side*(baseRadius+4),'railing','upper-deck-guardrail');
-      for(let j=-3;j<=3;j++)
-        rod([cx+j*2.3,floor+height+2,cz+side*(baseRadius+4)],
-            [cx+j*2.3,floor+height+3.4,cz+side*(baseRadius+4)],.07,'railPaint','upper-deck-railing-post');
-    }
-    // Narrow vertical window strips run down the photograph-facing sides.
-    for(let k=0;k<n;k++){
-      const yy=floor+4+k*(height*.77/n);
-      for(const a of [0,Math.PI/2,Math.PI,3*Math.PI/2]){
-        const radius=baseRadius*.94;
-        const glass=box(1.05,Math.max(1.9,height*.77/n*.55),.13,
-          cx+Math.cos(a)*radius,yy,cz+Math.sin(a)*radius,
-          'window','vertical-glass-block-window');
-        glass.rotation.y=-a;
-      }
-    }
-    // Visible balcony rails on top of the pedestal.
-    for(const side of [-1,1])for(let k=-2;k<=2;k++){
-      const z=cz+k*baseRadius*.42;
-      rod([cx+side*(baseRadius+1.3),floor+height+2,z],
-          [cx+side*(baseRadius+1.3),floor+height+4,z],.12,'railing','crown-handrail');
-    }
-    return floor+height+4;
+  const crown=start+5*storey;
+  cylinder(2.65,r+.20,2.4,x,crown+1.3,z,'roof','tapered-tower-crown',12);
+  cylinder(2.45,2.8,1.7,x,crown+3.3,z,'concrete','azimuth-pedestal',24);
+  cylinder(2.75,2.75,.30,x,crown+4.2,z,'metal','azimuth-bearing-ring',48);
+  const axis=crown+6.4;
+  box(11.6,.65,7.1,x,axis-1.55,z,'metal','cantilever-bearing-deck');
+  box(8.5,1.45,4.8,x,axis-.65,z,'edge','bearing-machinery-housing');
+  rectangularRail(x,axis-1.15,z,12.1,7.6);
+  for(const side of [-1,1]){
+   // Visible half-ring elevation sectors replace the old generic torus.
+   const g=new THREE.TorusGeometry(2.75,.25,5,40,Math.PI),m=new THREE.Mesh(g,mat.edge);m.position.set(x+side*3.2,axis-.25,z);m.rotation.set(0,Math.PI/2,Math.PI);add(m,'elevation-gear-sector');
+   for(let i=0;i<=18;i++){const a=i*Math.PI/18,yy=axis-.25-Math.sin(a)*2.75,zz=z+Math.cos(a)*2.75;rod([x+side*3.2,axis-.25,z],[x+side*3.2,yy,zz],.04,'frame','sector-spoke');box(.42,.21,.23,x+side*3.2,yy,zz,'metal','sector-tooth');}
+   cylinder(.9,.9,.50,x+side*3.65,axis+.2,z,'metal','elevation-trunnion',24,root,[0,0,Math.PI/2]);
   }
-
-  // The reflector is a real paraboloid with 25m mouth, faceted dark concave
-  // panel, radial ribs and circumferential structural hoops. Focus supports
-  // are above the rim; a solid cone is visually incorrect.
-  function parabolicAntenna({x,z,baseHeight,azimuth=0,tilt=.22,name}){
-    const group=new THREE.Group();group.name=name;group.position.set(x,baseHeight,z);
-    group.rotation.y=azimuth;group.rotation.x=tilt;root.add(group);
-    // Dish shape: bottom at y=0 and R=12.5 at dish edge y=5.6.
-    const R=12.5,depth=5.6,segments=56,rings=13,vertices=[],normals=[],indices=[];
-    for(let row=0;row<=rings;row++){
-      const r=R*row/rings,y=depth*(r/R)**2;
-      for(let col=0;col<=segments;col++){
-        const a=col*2*Math.PI/segments;
-        vertices.push(Math.cos(a)*r,y,Math.sin(a)*r);
-      }
-    }
-    for(let row=0;row<rings;row++)for(let col=0;col<segments;col++){
-      const a=row*(segments+1)+col,b=a+1,c=a+segments+1,d=c+1;
-      indices.push(a,c,b,b,c,d);
-    }
-    const geo=new THREE.BufferGeometry();
-    geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));
-    geo.setIndex(indices);geo.computeVertexNormals();
-    add(new THREE.Mesh(geo,mat.dish),'25m-parabolic-reflector',group);
-    for(let ring=1;ring<=7;ring++){
-      const r=R*ring/7,yy=depth*(r/R)**2,pts=[];
-      for(let i=0;i<=56;i++){
-        const a=i*Math.PI*2/56;pts.push(new THREE.Vector3(Math.cos(a)*r,yy-.14,Math.sin(a)*r));
-      }
-      add(new THREE.LineLoop(
-        new THREE.BufferGeometry().setFromPoints(pts.slice(0,-1)),
-        new THREE.LineBasicMaterial({color:0x939695,transparent:true,opacity:.67,depthTest:true})
-      ),'dish-concentric-truss',group);
-    }
-    for(let k=0;k<36;k++){
-      const a=k*Math.PI/18,c=Math.cos(a),s=Math.sin(a);
-      for(let row=0;row<7;row++){
-        const ra=R*row/7,rb=R*(row+1)/7;
-        const ya=depth*(ra/R)**2-.26,yb=depth*(rb/R)**2-.26;
-        rod([ra*c,ya,ra*s],[rb*c,yb,rb*s],row%3===0?.14:.08,
-            row%2===0?'steel':'dishRim','dish-radial-rib',group);
-      }
-    }
-    // Fine open-grid reflector: real P-200 surface reads as a metal mesh,
-    // not an opaque satellite television dish. Added from the new close-ups.
-    // Segments are batched into instanced rods for browser performance.
-    for(let ring=2;ring<=13;ring++){
-      const r=R*ring/13, yy=depth*(r/R)**2+.035;
-      for(let k=0;k<72;k++){
-        const a=k*2*Math.PI/72,b=(k+1)*2*Math.PI/72;
-        rod([r*Math.cos(a),yy,r*Math.sin(a)],
-            [r*Math.cos(b),yy,r*Math.sin(b)],.018,'oxidized','reflector-mesh-rings',group);
-      }
-    }
-    for(let k=0;k<72;k++){
-      const a=k*2*Math.PI/72,c=Math.cos(a),ss=Math.sin(a);
-      for(let j=0;j<12;j++){
-        const r0=R*j/13,r1=R*(j+1)/13;
-        rod([r0*c,depth*(r0/R)**2+.04,r0*ss],
-            [r1*c,depth*(r1/R)**2+.04,r1*ss],.018,'oxidized','reflector-mesh-spokes',group);
-      }
-    }
-    // Cross-braces under bowl: triangular lattice narrowing at the mounting.
-    for(let k=0;k<24;k++){
-      const a=2*Math.PI*k/24,c=Math.cos(a),s=Math.sin(a);
-      rod([R*c,depth-.24,R*s],[c*2,-1.4,s*2],.10,'steel','dish-support-web',group);
-      if(k%2===0)rod([R*c,depth-.24,R*s],
-        [R*Math.cos(a+Math.PI/12),depth-.24,R*Math.sin(a+Math.PI/12)],
-        .12,'dishRim','dish-rim-strut',group);
-    }
-    // Stiff continuous circle at mouth rim.
-    const torus=new THREE.Mesh(new THREE.TorusGeometry(R,.16,6,64),mat.dishRim);
-    torus.rotation.x=Math.PI/2;torus.position.y=depth;
-    add(torus,'dish-outer-rim',group);
-    const collar=new THREE.Mesh(new THREE.CylinderGeometry(3.2,3.7,3.5,16),mat.steel);
-    collar.position.y=-1.9;add(collar,'antenna-central-hub',group);
-    // Focus: quadrupod reaching above dish, feed platform and central aerial.
-    for(const a of [Math.PI/4,3*Math.PI/4,5*Math.PI/4,7*Math.PI/4]){
-      rod([Math.cos(a)*R*.9,depth-.25,Math.sin(a)*R*.9],[0,depth+10,0],
-        .18,'steel','feed-support-truss',group);
-      rod([Math.cos(a)*R*.9,depth-.25,Math.sin(a)*R*.9],
-          [Math.cos(a+Math.PI/2)*R*.9,depth-.25,Math.sin(a+Math.PI/2)*R*.9],
-        .09,'steel','feed-upper-crossbracing',group);
-    }
-    box(2.6,.85,2.9,0,depth+10,0,'steel','antenna-feed-platform',group);
-    cylinder(.7,.7,1.6,0,depth+11.2,0,'light','antenna-feed',10,group);
-    const mast=rod([0,depth+11.7,0],[0,depth+15.2,0],.09,'railing','antenna-feed-mast',group);
-    // The dish moves around this historical two-axis gimbal.
-    const yoke=new THREE.Mesh(new THREE.TorusGeometry(4.2,.57,8,32),mat.steel);
-    yoke.rotation.z=Math.PI/2;yoke.position.y=-2.5;
-    add(yoke,'antenna-azimuth-elevation-yoke',group);
-    return group;
+  // Service ladder and cable trunk on the rear face.
+  for(const dx of [-.48,.48])rod([x+dx,floor,z-7.55],[x+dx,base+1,z-7.55],.045,'metal','tower-ladder');
+  for(let y=floor+.35;y<base+1;y+=.30)rod([x-.48,y,z-7.55],[x+.48,y,z-7.55],.035,'metal','tower-ladder-rung');
+  rod([x+4.7,base,z],[x+4.7,crown,z],.16,'edge','tower-cable-trunk');
+  return axis;
+ }
+ function antenna({x,z,axis,r=12.5,azimuth=0,tilt=0,main=false,name}){
+  const group=new THREE.Group();group.name=name;group.userData.antenna={diameter:r*2,main,axis,azimuth,tilt};group.position.set(x,axis,z);group.rotation.set(tilt,azimuth,0,'YXZ');root.add(group);
+  const s=r/12.5,back=9*s,depth=2.7*s,ribs=main?48:24,rings=main?10:6;
+  const front=rr=>back-depth+depth*(rr/r)**2;
+  const lower=rr=>.25*s+(back-.45*s)*(rr/r);
+  const ps=[],cs=[],ids=[],segments=96,rows=20;
+  for(let j=0;j<=rows;j++)for(let k=0;k<=segments;k++){const rr=r*j/rows,a=k*Math.PI*2/segments,tone=1+(Math.floor(k/4)%3-1)*.022;ps.push(Math.sin(a)*rr,front(rr),Math.cos(a)*rr);cs.push(tone,tone,tone);if(j<rows&&k<segments){const i=j*(segments+1)+k;ids.push(i,i+1,i+segments+1,i+1,i+segments+2,i+segments+1);}}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(ps,3));geo.setAttribute('color',new THREE.Float32BufferAttribute(cs,3));geo.setIndex(ids);geo.computeVertexNormals();
+  const surface=mat.dish.clone();surface.vertexColors=true;surface.side=THREE.DoubleSide;const dish=add(new THREE.Mesh(geo,surface),main?'25m-parabolic-reflector':'auxiliary-reflector',group);dish.userData.diameter=r*2;
+  const at=(rr,y,a)=>[Math.sin(a)*rr,y,Math.cos(a)*rr];
+  for(let k=0;k<ribs;k++){
+   const a=k*2*Math.PI/ribs,next=(k+1)*2*Math.PI/ribs;
+   for(let j=1;j<=rings;j++){
+    const r0=r*(j-1)/rings,r1=r*j/rings;
+    rod(at(r0,lower(r0),a),at(r1,lower(r1),a),.065*s,'frame','dish-radial-rib',group);
+    rod(at(r0,lower(r0),a),at(r1,lower(r1),next),.038*s,'edge','dish-diagonal-web',group);
+    rod(at(r1,lower(r1),a),at(r1,lower(r1),next),.055*s,'frame','dish-concentric-truss',group);
+    if(j%2===0)rod(at(r1,lower(r1),a),at(r1,front(r1)-.10*s,a),.045*s,'edge','dish-depth-brace',group);
+    rod(at(r0,front(r0)+.018*s,a),at(r1,front(r1)+.018*s,a),.018*s,'edge','reflector-panel-seam',group);
+   }
   }
-
-  // Ground-floor wing is physically integrated with the main tower, with
-  // broad flat canopies and large green glass-block/service openings.
-  box(33,5,14,43,10.1,-16,'concrete','main-tower-base-pavilion');
-  box(37,.9,16,43,13.1,-16,'concrete','pavilion-cantilever-roof');
-  for(let i=0;i<8;i++)
-    box(2.8,2.6,.12,29+i*4,10,-8.85,'window','green-glass-block-facade');
-  box(2.9,3.4,.2,53,9.6,-8.8,'steelDark','pavilion-service-door');
-  const mainHeight=tallPedestal(43,-16,7.2,34,false);
-  parabolicAntenna({x:43,z:-16,baseHeight:mainHeight,azimuth:.15,tilt:.18,
-    name:'П-200 · основная башенная антенна Ø25 м'});
-  // The distant second 25m dish stands farther west: photographic perspective
-  // makes it appear smaller, but its mouth diameter is kept exactly the same.
-  const secondHeight=tallPedestal(-68,-37,5.8,23,true);
-  parabolicAntenna({x:-68,z:-37,baseHeight:secondHeight,azimuth:-.52,tilt:-.14,
-    name:'П-200 · вторая антенна Ø25 м'});
-
-  // White protective radome behind the principal pedestal.
-  cylinder(11,11,1.5,65,8.5,16,'concrete','radome-base',24);
-  const radome=new THREE.Mesh(new THREE.SphereGeometry(10.6,28,16,0,2*Math.PI,0,Math.PI/2),mat.radome);
-  radome.position.set(65,10.0,16);add(radome,'white-radome');
-  for(let a=0;a<8;a++){
-    const angle=a*2*Math.PI/8;
-    rod([65+Math.cos(angle)*10.8,10.0,16+Math.sin(angle)*10.8],
-        [65+Math.cos(angle)*10.8,13,16+Math.sin(angle)*10.8],
-        .10,'railing','radome-service-rail');
+  for(const rr of [r*.25,r*.5,r*.75])ring(rr,front(rr)+.025*s,.021*s,'edge','reflector-panel-ring',group);
+  for(const yy of [back-.30*s,back+.10*s])ring(r,yy,.08*s,'edge','dish-outer-rim',group,96);
+  cylinder(1.8*s,2.5*s,1.2*s,0,.15*s,0,'metal','antenna-central-hub',32,group);
+  // Four paired, cross-braced legs carry a secondary reflector and the feed cage.
+  const height=back+9.4*s;
+  for(let k=0;k<4;k++){
+   const a=Math.PI/4+k*Math.PI/2,radial=V(Math.sin(a),0,Math.cos(a)),tangent=V(Math.cos(a),0,-Math.sin(a));
+   const start=radial.clone().multiplyScalar(r*.65).setY(front(r*.65)),end=radial.clone().multiplyScalar(.75*s).setY(height);
+   for(const side of [-1,1])rod(start.clone().addScaledVector(tangent,side*.28*s).toArray(),end.clone().addScaledVector(tangent,side*.28*s).toArray(),.075*s,'edge','feed-support-truss',group);
+   for(let j=0;j<12;j++){
+    const p=start.clone().lerp(end,j/12),q=start.clone().lerp(end,(j+1)/12);
+    rod(p.clone().addScaledVector(tangent,-.28*s).toArray(),p.clone().addScaledVector(tangent,.28*s).toArray(),.031*s,'edge','feed-lattice-rung',group);
+    rod(p.clone().addScaledVector(tangent,(j%2?1:-1)*.28*s).toArray(),q.clone().addScaledVector(tangent,(j%2?-1:1)*.28*s).toArray(),.031*s,'edge','feed-lattice-diagonal',group);
+   }
   }
-
-  // Additional small radar/optical aerials and sparse instrumentation posts,
-  // visible in distance panorama. Avoid implausible forest of giant antennas.
-  function auxiliaryDish(x,z,r,height,az=0){
-    const pole=cylinder(.55,.85,height,x,7.4+height/2,z,'steel','auxiliary-antenna-pole',12);
-    const b=new THREE.Mesh(new THREE.SphereGeometry(r,24,12,0,2*Math.PI,0,Math.PI*.42),mat.dishRim);
-    b.position.set(x,8.1+height,z);b.rotation.x=Math.PI/2-.3;b.rotation.y=az;
-    add(b,'auxiliary-antenna');
-    const support=rod([x,8.1+height,z],[x,8.1+height+r*.45,z],.12,'steel','auxiliary-receiver');
-    return {pole,support};
-  }
-  auxiliaryDish(-26,56,3.5,10,.1);
-  auxiliaryDish(48,57,2.8,6,.15);
-  auxiliaryDish(-87,13,4.0,12,-.45);
-  for(const [x,z] of [[-96,-29],[-36,-63],[10,-65],[85,-46],[95,49]]){
-    rod([x,7.8,z],[x,24,z],.18,'steel','telemetry-mast');
-    rod([x,24,z],[x+2.6,19,z],.09,'railing','antenna-guy');
-  }
-
-  // Sparse service lighting, repair yards and realistic low steppe growth.
-  for(const [x,z] of [[-88,38],[-15,69],[87,24],[-52,-57]]){
-    const lamp=rod([x,7.5,z],[x,19,z],.16,'steel','streetlight');
-    rod([x,19,z],[x+3,20,z],.11,'steel','streetlight-arm');
-    box(2,.4,.95,x+3,20,z,'light','streetlight-head');
-    registerFacilityFloodlights(root,{id:`saturn-service-lamp-${x}-${z}`,target:[x+3,7.5,z],
-      lamps:[{position:[x+3,19.8,z],normal:[0,-1,0],size:[2,.95]}]});
-  }
-  const fenceCoords=[];
-  for(let x=-101;x<=102;x+=10){fenceCoords.push([x,-79],[x,75]);}
-  for(let z=-68;z<=70;z+=9){fenceCoords.push([-103,z],[104,z]);}
-  for(const [x,z] of fenceCoords){
-    if(z>49&&x>10&&x<37)continue;
-    rod([x,6.9,z],[x,9.3,z],.075,'steel','perimeter-fence-post');
-  }
-  // A few isolated dry scrub tufts around, not over the antennas or roads.
-  for(let i=0;i<105;i++){
-    const a=i*2.39996,r=70+((i*47)%51),x=Math.cos(a)*r,z=Math.sin(a)*r;
-    if(x>19&&x<54&&z>25)continue;
-    const shrub=new THREE.Mesh(new THREE.IcosahedronGeometry(.8+(i%4)*.28,0),mat.vegetation);
-    shrub.position.set(x,.4+((i%7)*.06),z);
-    add(shrub,'semi-desert-scrub');
-  }
-  for(const batch of rodBatches.values()){
-    const mesh=new THREE.InstancedMesh(rodGeometry,mat[batch.material],batch.matrices.length);
-    for(let i=0;i<batch.matrices.length;i++)mesh.setMatrixAt(i,batch.matrices[i]);
-    mesh.instanceMatrix.needsUpdate=true;
-    mesh.frustumCulled=false;mesh.name='Сатурн-МС · ферменные элементы';
-    add(mesh,'instanced-antenna-steel',batch.parent);
-  }
-  root.userData.saturnModel={
-    version:'1.4-visible-hill-connected-access',siteNumber:23,siteName:'Сатурн-МС / ИП-5',
-    sourceFolder:'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk',
-    photosUsed:['IMG_6181.JPG','IMG_5342.JPG','IMG_3645.JPG','ajU0...jpg','IMG_7396.jpeg','IMG_7403.jpeg','IMG_5711.jpeg','IMG_2352.jpeg','IMG_5528.jpeg','IMG_5863.jpeg','IMG_5861.jpeg'],
-    antennaType:'П-200',largeAntennaCount:2,dishDiameterMetres:25,
-    profile:'two 25m open-grid dishes, concrete ring-storey towers with turquoise window strips and cantilever bearing decks; integrated ground-floor pavilion; separated service blocks',
-    modelReliability:'photo-informed, structure dimensions and footprint illustrative',
-    featureCounts:features,primitiveCount:primitives,meshCount:objects.length,instancedFrameBatches:rodBatches.size,
-    confidence:'relative layout from aerial photograph, approximate 3-anchor external geolocation'
-  };
-  return root.userData.saturnModel;
+  cylinder(1.32*s,1.42*s,.18*s,0,height-3.05*s,0,'dish','cassegrain-secondary-reflector',32,group);
+  for(const x of [-.7,.7])rod([x*s,height-3*s,0],[x*s,height-.1*s,0],.04*s,'metal','secondary-suspension',group);
+  cylinder(.58*s,1.05*s,1.45*s,0,front(0)+.73*s,0,'metal','primary-feed-horn',24,group);
+  box(2.65*s,.22*s,2.65*s,0,height,0,'metal','antenna-feed-platform',group);
+  rectangularRail(0,height+.13*s,0,2.7*s,2.7*s,group);
+  box(1.35*s,.80*s,1.35*s,0,height+.52*s,0,'concrete','antenna-feed-housing',group);
+  return group;
+ }
+ const primary=[{x:38,z:38},{x:-50,z:-39}];
+ for(const [i,p]of primary.entries())antenna({...p,axis:tower(p.x,p.z),main:true,name:`П-200 · башня ${i+1} · Ø25 м`});
+ // A full sphere on a small collar, not the previous hemispherical cap.
+ const dome={x:51,z:-3,r:9.2};cylinder(5.8,6.3,1.1,dome.x,7.80,dome.z,'concrete','radome-base',32);
+ const sphere=new THREE.Mesh(new THREE.SphereGeometry(dome.r,48,32),mat.radome);sphere.position.set(dome.x,8.35+dome.r*.94,dome.z);add(sphere,'white-radome');
+ const seamMaterial=new THREE.LineBasicMaterial({color:0xb6bdb9,transparent:true,opacity:.48});
+ for(let k=0;k<12;k++){
+  const a=k*Math.PI/6,pts=[];for(let i=0;i<=48;i++){const t=.08+(Math.PI-.24)*i/48;pts.push(V(dome.x+Math.sin(t)*Math.sin(a)*(dome.r+.015),sphere.position.y+Math.cos(t)*(dome.r+.015),dome.z+Math.sin(t)*Math.cos(a)*(dome.r+.015)));}
+  add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),seamMaterial),'radome-panel-seam');
+ }
+ box(1.9,2.25,1.2,dome.x,8.8,dome.z+dome.r*.54,'trim','radome-service-door');
+ // Smaller antennas visible on the new ЦЭСС photographs and site panoramas.
+ const auxRoofA=building({x:73,z:-38,w:20,d:15,h:7.6,levels:2,hip:true,windowRatio:.40});
+ const auxRoofB=building({x:74,z:48,w:18,d:15,h:5.8,levels:1,hip:true,windowRatio:.45});
+ for(const p of [{x:73,z:-38,roof:auxRoofA},{x:74,z:48,roof:auxRoofB}]){
+  cylinder(1.35,1.8,2.3,p.x,p.roof+4.6,p.z,'metal','auxiliary-roof-pedestal',24);
+  antenna({x:p.x,z:p.z,axis:p.roof+6,r:6,tilt:.03,name:'ЦЭСС · антенна на павильоне'});
+ }
+ function mastDish(x,z,r,h,tilt,az){
+  box(5,.4,5,x,7.45,z,'concrete','auxiliary-foundation');cylinder(1.0,1.45,h,x,floor+h/2,z,'frame','auxiliary-antenna-pole',12);
+  for(let y=floor+3;y<floor+h;y+=3){box(3.6,.18,3.6,x,y,z,'metal','mast-balcony');rectangularRail(x,y+.1,z,3.6,3.6);}
+  for(let y=floor+.3;y<floor+h;y+=.35)rod([x-.45,y,z+1.55],[x+.45,y,z+1.55],.035,'metal','mast-ladder-rung');
+  antenna({x,z,axis:floor+h+.7,r,tilt,azimuth:az,name:'Малая антенна на металлической опоре'});
+ }
+ mastDish(82,2,4.5,10,.9,-.8);mastDish(-73,23,4.5,10,1.12,-.8);mastDish(-32,-51,3.3,7,.04,0);
+ function offsetDish(x,y,z,r){const geometry=new THREE.SphereGeometry(r,24,12,0,2*Math.PI,0,.42*Math.PI),mesh=new THREE.Mesh(geometry,mat.metal);mesh.position.set(x,y,z);mesh.rotation.set(1.08,-.65,0);add(mesh,'small-offset-dish');rod([x,y-3,z],[x,y,z],.12,'metal','offset-dish-support');rod([x,y,z],[x-1.3,y+.3,z+1.5],.045,'frame','offset-feed');}
+ offsetDish(62,13,-41,2.3);offsetDish(60,16.5,-35,2.3);
+ // Label and facade from the ЦЭСС photo, kept as one local canvas texture.
+ let signMap=null;if(typeof document!=='undefined'){const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');if(ctx){ctx.fillStyle='#193970';ctx.fillRect(0,0,512,128);ctx.fillStyle='#f1f2e9';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 105px Arial';ctx.fillText('ЦЭСС',256,68);signMap=new THREE.CanvasTexture(c);signMap.colorSpace=THREE.SRGBColorSpace;}}
+ const sign=new THREE.Mesh(new THREE.PlaneGeometry(6.1,1.52),new THREE.MeshStandardMaterial({map:signMap,color:signMap?0xffffff:0x193970,roughness:.75}));sign.position.set(73,14.25,-30.42);add(sign,'cess-facade-sign');
+ // Four existing powered fixtures keep their established lighting anchors.
+ for(const [x,z]of [[-88,38],[-15,69],[87,24],[-52,-57]]){
+  rod([x,7.5,z],[x,19,z],.16,'frame','streetlight');rod([x,19,z],[x+3,20,z],.11,'frame','streetlight-arm');box(2,.4,.95,x+3,20,z,'lamp','streetlight-head');
+  registerFacilityFloodlights(root,{id:`saturn-service-lamp-${x}-${z}`,target:[x+3,7.5,z],lamps:[{position:[x+3,19.8,z],normal:[0,-1,0],size:[2,.95]}]});
+ }
+ for(const [x,z]of [[-82,-43],[10,-48],[88,-14]]){
+  for(const dx of [-.45,.45])rod([x+dx,floor,z],[x+dx,28,z],.055,'metal','telemetry-mast');
+  for(let y=8;y<28;y+=1.5)rod([x-.45,y,z],[x+.45,y+1.5,z],.028,'edge','mast-diagonal');
+  for(const a of [0,2.1,4.2])rod([x,26,z],[x+Math.sin(a)*7,7.4,z+Math.cos(a)*7],.018,'edge','mast-guy');
+ }
+ // Perimeter and sparse courtyard tree rows, based on the wider views.
+ for(const z of [-79,75])for(let x=-103;x<104;x+=9){if(z===-79&&x<-87)continue;rod([x,7.25,z],[x,9.55,z],.055,'frame','perimeter-fence-post');rod([x,8.25,z],[Math.min(x+9,104),8.25,z],.022,'edge','fence-wire');rod([x,9.35,z],[Math.min(x+9,104),9.35,z],.022,'edge','fence-wire');}
+ for(const x of [-103,104])for(let z=-79;z<75;z+=9){rod([x,7.25,z],[x,9.55,z],.055,'frame','perimeter-fence-post');rod([x,9.35,z],[x,9.35,Math.min(z+9,75)],.022,'edge','fence-wire');}
+ const foliage=shared('foliage',()=>new THREE.IcosahedronGeometry(1,1));
+ for(let i=0;i<13;i++){const x=i<6?-21:33,z=i<6?-40+i*6:-56+(i-6)*5.1;rod([x,7.3,z],[x,10.6,z],.18,'trunk','courtyard-tree-trunk');instance(foliage,'vegetation',V(x,11.6,z),V(1.9,2.6,1.8),'courtyard-tree');}
+ for(let i=0;i<65;i++){const a=i*2.39996,r=112+(i*17)%55,x=Math.cos(a)*r,z=Math.sin(a)*r*.82,y=saturnTerrainSample(x,z).height;instance(foliage,'vegetation',V(x,y+.30,z),V(.45+(i%3)*.2,.4,.5),'semi-desert-scrub');}
+ // Matrices for every repeated bolt, pane and truss share a few GPU batches.
+ for(const b of bins.values()){
+  const mesh=new THREE.InstancedMesh(b.geo,mat[b.material],b.matrices.length);b.matrices.forEach((m,i)=>mesh.setMatrixAt(i,m));mesh.instanceMatrix.needsUpdate=true;mesh.computeBoundingSphere();mesh.computeBoundingBox();mesh.name='Сатурн · '+b.material;mesh.userData.museumComponent=b.material==='asphalt'?'internal-access-road':'saturn-structure-batch';mesh.userData.components=[...b.labels];mesh.receiveShadow=true;b.parent.add(mesh);objects.push(mesh);
+ }
+ root.updateMatrixWorld(true);
+ root.userData.saturnModel={version:SATURN_MODEL_VERSION,siteNumber:23,siteName:'Сатурн-МС / ИП-5',sourceFolder:'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk',
+  photosUsed:['96fee43a9dd117a0fab4162faab61b70.jpg','image-7-5.jpg','1718114126-3321-large.webp','e187e8es-1920.jpg','saturn-ms3.jpg','704FAC587F000101075B9C7632F8CA94.jpg','id3hck0ijps5eyyq6t.jpg.webp','xgbfnhhio4tnwiidsm.jpg.webp','IMG_5342.JPG','IMG_6181.JPG'],
+  antennaType:'П-200',largeAntennaCount:2,dishDiameterMetres:25,primaryPositions:primary,auxiliaryAntennaCount:7,radome:{radius:dome.r,shape:'sphere',center:sphere.position.toArray()},towerStoreys:5,
+  profile:'paired belt-storey towers; deep open reflector backing; four lattice feed legs; secondary reflector; spherical radome; L-shaped buildings and CESS antenna field',
+  modelReliability:'photo reconstruction; non-survey dimensions and relative layout',featureCounts:features,primitiveCount:primitives,meshCount:objects.length,instancedFrameBatches:bins.size,confidence:'eight new Drive images plus two earlier site references'};
+ return root.userData.saturnModel;
 }

@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 // Verify the deployed bytes, including modules loaded through relative imports.
 // A stale CDN module must not be mistaken for a tested publication.
 const base=process.env.BAIKONUR_PUBLIC_URL||'https://ifdiakov.github.io/baikonur-3d/';
-const files=['assets/models/a320-alrosa/model-v1.glb','assets/models/a320-alrosa/manifest-v1.json','index.html','workshop/zenit.html','workshop/model.html','assets/models/zenit-3sl/model-v1.glb','assets/models/zenit-3sl/manifest-v1.json','data/catalog.json','data/transport-network.json','data/buran-knowledge.json','data/buran-source-index.json','data/next-launch.json','data/terrain/baikonur-dem.json',
+const files=['assets/models/a320-alrosa/model-v1.glb','assets/models/a320-alrosa/manifest-v1.json','index.html','workshop/zenit.html','workshop/model.html','workshop/saturn.html','assets/models/zenit-3sl/model-v1.glb','assets/models/zenit-3sl/manifest-v1.json','data/catalog.json','data/transport-network.json','data/buran-knowledge.json','data/buran-source-index.json','data/next-launch.json','data/terrain/baikonur-dem.json',
  'assets/models/ukss/model-v2.glb','assets/models/ukss/manifest-v2.json',
  'assets/models/mig25/model-v1.glb','assets/models/mig25/manifest-v1.json','assets/models/rockets/n1.glb','assets/models/rockets/n1.json',
  'assets/models/tua/model-v2.glb','assets/models/tua/manifest-v2.json',

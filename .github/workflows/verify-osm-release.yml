@@ -6,6 +6,7 @@ on:
       - 'index.html'
       - 'workshop/zenit.html'
       - 'workshop/model.html'
+      - 'workshop/saturn.html'
       - 'docs/site45-reference-model.md'
       - 'scripts/build-zenit-asset.mjs'
       - 'docs/zenit-reference-model.md'
@@ -47,7 +48,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum7-terrain-relief-20261101-v2
+  RELEASE_TAG: museum7-saturn-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -63,6 +64,7 @@ jobs:
           npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 @gltf-transform/functions@4.5.1 meshoptimizer@1.3.0
       - name: Verify the photo-based Site 45 and both Zenit variants
         run: |
+          node tests/saturn-geometry.mjs
           node tests/a320-geometry.mjs
           node tests/pua-geometry.mjs
           node tests/cyclone-geometry.mjs
@@ -225,7 +227,9 @@ jobs:
         run: node tests/facility-access-browser.mjs
       - name: Verify existing mast floodlights and tower beacons by day and evening
         if: matrix.suite == 'facility-lighting'
-        run: node tests/facility-lighting-browser.mjs
+        run: |
+          node tests/saturn-browser.mjs
+          node tests/facility-lighting-browser.mjs
       - name: Verify the relocated photo-based Site 41 and its entrance
         if: matrix.suite == 'site41'
         run: node tests/site41-browser.mjs
@@ -283,6 +287,7 @@ jobs:
             qa-road-markings/
             qa-facility-access/
             qa-facility-lighting/
+            qa-saturn-photo/
             qa-site41/
             qa-krayniy/
             qa-osm-release/
@@ -333,12 +338,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/terrain-relief-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/saturn-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей — рельеф местности',
+                name: 'Интерактивный музей — Сатурн по новым фотографиям',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

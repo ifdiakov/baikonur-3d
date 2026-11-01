@@ -389,7 +389,7 @@ import {buildExtendedTerrain, sampleSteppe, LARGE_TERRAIN_SEGMENTS} from './src/
 import {buildMuseumTerrainRelief} from './src/museum-terrain.js?v=20261101-relief-v1';
 import {createSteppeSurface} from './src/steppe-surface.js?v=20261101-steppe-v7';
 import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-signs-v1';
-import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261031-facilities-rails-lighting-v1';
+import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261101-saturn-photo-v2';
 import {SATURN_ACCESS} from './src/saturn-access.js?v=20261030-river-roads-signs-v1';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
@@ -1708,8 +1708,11 @@ document.getElementById("detailMore").onclick=()=>{
       a.textContent=entry.label+" ↗";el.append(a);
     }
   }
+  if(r.id==='pad-23'){
+    const link=document.createElement('a');link.href='./workshop/saturn.html';link.target='_blank';link.rel='noopener';link.style.display='block';link.style.marginTop='10px';link.textContent='Рассмотреть «Сатурн-МС» в 3D ↗';el.append(link);
+  }
   if(r.photoArchive?.length){
-    const heading=document.createElement("div");heading.textContent=r.id==='pad-250'?"Фотоархив RocketTrip · УКСС, площадка №250:":r.id==='airfield'?"Фотоархив RocketTrip · аэровокзал Крайнего:":"Фотоархив RocketTrip · референсы архитектуры Р-7 (атрибуция площадки уточняется):";
+    const heading=document.createElement("div");heading.textContent=r.id==='pad-23'?"Фотоархив RocketTrip · ИП-5 «Сатурн-МС»:":r.id==='pad-250'?"Фотоархив RocketTrip · УКСС, площадка №250:":r.id==='airfield'?"Фотоархив RocketTrip · аэровокзал Крайнего:":"Фотоархив RocketTrip · референсы архитектуры Р-7 (атрибуция площадки уточняется):";
     heading.style.marginTop="10px";el.append(heading);
     for(const photo of r.photoArchive){
       const a=document.createElement("a");a.href="https://drive.google.com/file/d/"+photo.driveId+"/view";a.target="_blank";a.rel="noopener noreferrer";a.style.display="block";

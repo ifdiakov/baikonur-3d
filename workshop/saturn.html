@@ -28,10 +28,10 @@ button:hover,button:focus-visible,a.btn:hover{background:#8d3938;border-color:#f
 #loading{position:fixed;inset:0;display:grid;place-items:center;color:white;background:#132532;z-index:9;font-weight:700}
 #loading[hidden]{display:none}
 #error{display:none;position:fixed;bottom:20px;right:20px;max-width:350px;z-index:10;padding:15px;background:#71282be9;border-radius:10px}
-@media(max-width:710px){#header{padding:11px;max-width:235px}h1{font-size:15px}.logo{width:110px;height:35px}#footer{flex-direction:column;align-items:flex-start}.notice{max-width:65vw}.refs{max-width:100%}.refs a{font-size:8px}}
+@media(max-width:710px){#header{padding:11px;max-width:calc(100vw - 32px)}#header p,.meta,.logo{display:none}#header nav{gap:5px}#header nav button,#header nav a{padding:7px;font-size:9px}h1{font-size:15px}.logo{width:110px;height:35px}#footer{flex-direction:column;align-items:flex-start}.notice{max-width:65vw}.refs{max-width:100%}.refs a{font-size:8px}}
 </style>
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.1/examples/jsm/"}}
+{"imports":{"three":"../src/vendor/three-r160/build/three.module.js","three/addons/":"../src/vendor/three-r160/examples/jsm/"}}
 </script>
 </head>
 <body>
@@ -42,16 +42,20 @@ button:hover,button:focus-visible,a.btn:hover{background:#8d3938;border-color:#f
 <div class="kicker">3D-МАСТЕРСКАЯ · БАЙКОНУР</div>
 <h1>пл. №23 — <span>«САТУРН-МС»</span></h1>
 <p>Измерительный пункт ИП-5. Две параболические антенны П-200 с зеркалами диаметром 25 м, радиопрозрачный купол и технический комплекс.</p>
-<div class="meta"><span>2 × П-200 · Ø25 м</span><span>С 1966 года</span><span>Реконструкция v1</span></div>
+<div class="meta"><span>2 × П-200 · Ø25 м</span><span>С 1966 года</span><span>По новым фотографиям</span></div>
 <nav>
 <button id="reset" type="button">ОБЩИЙ ВИД</button>
+<button data-view="antenna" type="button">АНТЕННА</button>
+<button data-view="lattice" type="button">ОПОРА ЗЕРКАЛА</button>
+<button data-view="auxiliary" type="button">МАЛЫЕ АНТЕННЫ</button>
+<button data-view="plan" type="button">СВЕРХУ</button>
 <button id="grid" type="button" aria-pressed="false">СЕТКА</button>
 <button id="wireframe" type="button" aria-pressed="false">КАРКАС</button>
 <a class="btn" href="../?site=23" rel="noopener">НА КАРТУ ↗</a>
 </nav>
 </aside>
 <footer id="footer">
-<div class="notice">ЛКМ — вращение · ПКМ — перемещение · колёсико — масштаб. Положение и размеры вспомогательных сооружений предварительные; точная геопривязка проверяется отдельно.</div>
+<div class="notice">Вращайте модель перетаскиванием. Масштаб — колёсико или жест двумя пальцами. Положение и размеры вспомогательных сооружений предварительные; точная геопривязка проверяется отдельно.</div>
 <div class="refs">
 <a href="https://drive.google.com/drive/folders/1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk" target="_blank" rel="noopener">Фото RocketTrip ↗</a>
 <a href="https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/" target="_blank" rel="noopener">Исторические сведения ↗</a>
@@ -61,34 +65,37 @@ button:hover,button:focus-visible,a.btn:hover{background:#8d3938;border-color:#f
 <script type="module">
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {buildSaturnIP5} from '../src/saturn-ip5.js';
+import {buildSaturnIP5} from '../src/saturn-ip5.js?v=20261101-saturn-photo-v2';
 try{
  const scene=new THREE.Scene();scene.background=new THREE.Color(0xa6b4b5);
  scene.fog=new THREE.Fog(0xa6b4b5,600,1450);
  const camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,.1,5000);
- camera.position.set(210,150,270);
+ camera.position.set(190,135,205);
  const renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});
  renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  document.getElementById('view').append(renderer.domElement);
  const controls=new OrbitControls(camera,renderer.domElement);
  controls.enableDamping=true;controls.dampingFactor=.07;
- controls.target.set(0,27,0);controls.maxPolarAngle=Math.PI/3;
- controls.maxDistance=650;controls.minDistance=24;
+ controls.target.set(0,27,0);controls.maxPolarAngle=Math.PI/2-.02;
+ controls.maxDistance=1200;controls.minDistance=24;
  controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.PAN};
  scene.add(new THREE.HemisphereLight(0xd5e9fa,0x77664e,2));
  const sun=new THREE.DirectionalLight(0xffe2b5,2.5);sun.position.set(-120,210,170);scene.add(sun);
  const ground=new THREE.Mesh(new THREE.PlaneGeometry(2400,2400),
    new THREE.MeshStandardMaterial({color:0x9c8f76,roughness:1}));
- ground.rotation.x=-Math.PI/2;ground.position.y=-.9;scene.add(ground);
+ ground.rotation.x=-Math.PI/2;ground.position.y=-38.4;scene.add(ground);
  const grid=new THREE.GridHelper(440,22,0xffe2bd,0x655d50);
- grid.position.y=-.54;grid.material.transparent=true;grid.material.opacity=.4;grid.visible=false;scene.add(grid);
+ grid.position.y=7.27;grid.material.transparent=true;grid.material.opacity=.4;grid.visible=false;scene.add(grid);
  const station=new THREE.Group();scene.add(station);
  const metadata=buildSaturnIP5(station);
  const modelMaterials=[...new Set(station.children.flatMap(o=>{
    const arr=[];o.traverse(c=>{if(c.isMesh){const m=c.material;Array.isArray(m)?arr.push(...m):arr.push(m)}});return arr
  }))].filter(Boolean);
- const reset=()=>{camera.position.set(210,150,270);controls.target.set(0,27,0);controls.update()};
+ const views={full:{eye:[190,135,205],target:[0,25,0]},antenna:{eye:[98,56,108],target:[38,33,38]},lattice:{eye:[104,36,68],target:[38,41,38]},auxiliary:{eye:[118,49,16],target:[71,21,-30]},plan:{eye:[0,300,1],target:[0,7,0]}};
+ const view=(name='full')=>{const v=views[name]||views.full;controls.enableDamping=false;controls.update();controls.target.fromArray(v.target);camera.position.fromArray(v.eye);if(name==='full')camera.position.sub(controls.target).multiplyScalar(Math.max(1,.83/camera.aspect)).add(controls.target);controls.update();controls.enableDamping=true;renderer.render(scene,camera)};
+ const reset=()=>view('full');
+ document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>view(b.dataset.view));
  document.getElementById('reset').onclick=reset;
  document.getElementById('grid').onclick=e=>{
    grid.visible=!grid.visible;e.currentTarget.setAttribute('aria-pressed',String(grid.visible));
@@ -105,9 +112,9 @@ try{
  function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera)}
  animate();
  document.getElementById('loading').hidden=true;
- window.__SATURN_PREVIEW__={model:metadata,rendererReady:true,reset,grid,station,
+ window.__SATURN_PREVIEW__={model:metadata,rendererReady:true,reset,view,grid,station,frame:()=>renderer.render(scene,camera),
    stats:()=>({antennas:metadata.largeAntennaCount,diameter:metadata.dishDiameterMetres,
-     meshCount:metadata.meshCount,primitiveCount:metadata.primitiveCount,gridVisible:grid.visible})};
+     meshCount:metadata.meshCount,primitiveCount:metadata.primitiveCount,gridVisible:grid.visible,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,camera:camera.position.toArray(),target:controls.target.toArray(),shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false)})};
 }catch(err){
  document.getElementById('loading').hidden=true;
  document.getElementById('error').style.display='block';

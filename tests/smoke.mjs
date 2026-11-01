@@ -249,12 +249,12 @@ assert.ok(transport.facilityDriveways>=12,'Pads must connect to the main road ne
 assert.ok(transport.renderedRailLength>14000,'Render long continuously curved rail networks');
 const saturn=overviewScale.saturn;
 console.log('SATURN SITE 23',JSON.stringify(saturn));
-assert.equal(saturn.version,'1.7-readable-relief-lighting','The Saturn IP-5 photo model must be integrated');
+assert.equal(saturn.version,'saturn-photo-20261101-v2','The Saturn IP-5 photo model must be integrated');
 assert.equal(saturn.sourceFolder,'1nweD3hi2MRaeVuNOY2GflKtEMQ1RoDXk','Saturn must reference dedicated user Drive folder');
 assert.equal(saturn.dishDiameterMetres,25);
 assert.equal(saturn.largeAntennaCount,2,'Saturn must have two 25m P-200 parabolic antennas');
 for(const [key,min] of [
- ['25m-parabolic-reflector',2],['dish-radial-rib',400],['dish-support-web',40],
+ ['25m-parabolic-reflector',2],['dish-radial-rib',400],['dish-depth-brace',40],
  ['tower-horizontal-cornice',8],['control-building',4],['white-radome',1],
  ['northwest-gate-pavement',1],['murguduk-hill',1],['feed-support-truss',8]
 ]) assert.ok((saturn.featureCounts[key]||0)>=min,'Saturn model lacks photoreferenced architectural element '+key);

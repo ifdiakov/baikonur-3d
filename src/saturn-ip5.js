@@ -1,13 +1,11 @@
-import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261031-facilities-rails-lighting-v1';
+import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261101-saturn-photo-v2';
 import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261030-river-roads-signs-v1';
 
-// Antennas, buildings and their instancedFrameBatches remain in the unchanged
-// structure module. Access and terrain share one northwest-entry definition.
+// Photo-based structures retain the shared northwest entrance and hill datum.
 export function buildSaturnIP5(root,terrain={}) {
   const info=buildStructures(root,terrain);
   info.access=addSaturnNorthwestGate(root);
   info.access.preservedVerticalRaise=SATURN_ACCESS.verticalRaise;
-  info.version='1.7-readable-relief-lighting';
   root.traverse(mesh=>{
     if(mesh.userData.museumComponent==='murguduk-hill')
       info.terrain={style:mesh.userData.surfaceStyle,material:mesh.material.type,
