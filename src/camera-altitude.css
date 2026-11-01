@@ -1,0 +1,32 @@
+.camera-altitude{position:fixed;z-index:7;top:15px;left:50%;transform:translateX(-50%);width:208px;padding:11px 13px 10px;border:1px solid #e7f1f12e;border-radius:13px;background:var(--museum-glass,#10202bed);box-shadow:0 8px 24px #0002,inset 0 1px #ffffff0d;color:#e8efed;font-family:Montserrat,Arial,sans-serif;pointer-events:none;user-select:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.camera-altitude__heading{font-size:8px;font-weight:650;letter-spacing:.12em;line-height:1.3;text-transform:uppercase;color:#b2c0c7}
+.camera-altitude__reading{display:flex;align-items:baseline;gap:6px;margin-top:5px;white-space:nowrap}
+.camera-altitude__symbol{font-size:11px;font-weight:650;color:var(--museum-accent,#ff8b77)}
+.camera-altitude__value{font:600 23px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums;letter-spacing:-.055em}
+.camera-altitude__units{font-size:8px;color:#b2c0c7}
+.camera-altitude__ruler{position:relative;height:28px;margin:5px 0 6px;overflow:hidden;border-top:1px solid #d3e3e52e;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.camera-altitude__tick{position:absolute;top:0;height:6px;border-left:1px solid #b0c4cf80}
+.camera-altitude__tick[hidden]{display:none}
+.camera-altitude__tick>span{position:absolute;top:9px;left:0;transform:translateX(-50%);font:9px/1 ui-monospace,SFMono-Regular,Consolas,monospace;color:#b2c0c7;white-space:nowrap}
+.camera-altitude__needle{position:absolute;z-index:1;top:0;left:50%;height:9px;border-left:2px solid var(--museum-accent,#ff8b77);transform:translateX(-1px)}
+.camera-altitude__meta{display:flex;align-items:baseline;justify-content:space-between;gap:5px;font-size:8px;line-height:1.5;color:#9fb1bd;white-space:nowrap}
+.camera-altitude__level{font-size:9px;font-weight:600;color:#edf2ef}
+.camera-altitude__world{margin-top:2px}
+.camera-altitude__y{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-variant-numeric:tabular-nums;color:#c5d1d7}
+.camera-altitude__description{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+body:not(.museum-ready) .camera-altitude,body:has(#modelInspector[open]) .camera-altitude{visibility:hidden}
+@media(min-width:851px) and (max-width:1100px){.camera-altitude{left:calc(50% + 25px);width:min(208px,calc(100vw - 644px))}}
+@media(min-width:641px) and (max-width:850px){.camera-altitude{top:9px;left:calc(50% - 20px);width:min(208px,calc(100vw - 522px));padding:10px 8px}.camera-altitude__value{font-size:20px}.camera-altitude__reading{gap:4px}.camera-altitude__heading{font-size:7px;letter-spacing:.07em}.camera-altitude__meta{font-size:7px}.camera-altitude__level{font-size:8px}}
+@media(min-width:641px) and (max-width:720px){.camera-altitude__reading{flex-wrap:wrap;row-gap:0}.camera-altitude__units{flex-basis:100%;padding-left:12px}.camera-altitude__tick>span{font-size:8px}}
+/* A tablet's open site card occupies the middle gap. Reserve a separate slot
+   under navigation so the technical readout and the card both stay readable. */
+@media(min-width:641px) and (max-width:1008px){
+ body:has(#info[style*="display: block"]:not(.ukss-active,.tua-active,.terminal-active,.bridge-active)) .camera-altitude{top:auto;bottom:var(--museum-dock-reserve);left:var(--museum-edge);transform:none;width:320px}
+ body:has(#info[style*="display: block"]:not(.ukss-active,.tua-active,.terminal-active,.bridge-active)) #museumLeftStack{max-height:calc(100dvh - var(--museum-dock-reserve) - var(--museum-edge) - 146px)}
+ body:has(#info[style*="display: block"]:not(.ukss-active,.tua-active,.terminal-active,.bridge-active)) .camera-altitude__reading{flex-wrap:nowrap}
+ body:has(#info[style*="display: block"]:not(.ukss-active,.tua-active,.terminal-active,.bridge-active)) .camera-altitude__units{flex-basis:auto;padding-left:0}
+}
+@media(min-width:641px) and (max-width:850px){body:has(#info[style*="display: block"]:not(.ukss-active,.tua-active,.terminal-active,.bridge-active)) .camera-altitude{width:220px}}
+@media(max-width:640px){.camera-altitude{top:156px;right:9px;left:auto;transform:none;width:164px;padding:9px 10px}.camera-altitude__value{font-size:21px}.camera-altitude__ruler{height:25px;margin:4px 0}.camera-altitude__meta{font-size:7px}.camera-altitude__level{font-size:8px}body.mobile-menu-open .camera-altitude{visibility:hidden}}
+@media(max-width:720px){.camera-altitude__tick:not(.camera-altitude__tick--major)>span{visibility:hidden}}
+@media(prefers-reduced-transparency:reduce){.camera-altitude{background:#10202b;backdrop-filter:none;-webkit-backdrop-filter:none}}

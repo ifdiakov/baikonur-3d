@@ -360,7 +360,7 @@ body.following-arrival #labelLayer{display:none!important}
  #info.terminal-active.terminal-details-open .orgrow{margin:10px 0}#info.terminal-active.terminal-details-open #infoExtra{margin-top:10px}
 }
 #cycloneViews .detail-button{padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#cycloneViews .detail-button:hover{background:#3b5969}#cycloneViews .detail-button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
-</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261101-proton-launch-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-poster-v3"></head><body><div id="view"></div>
+</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261101-proton-launch-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/camera-altitude.css?v=20261101-altitude-v1"><link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-poster-v3"></head><body><div id="view"></div>
 <!-- MUSEUM_PRELOADER_START -->
 <section id="museumLoading" class="museum-loading preloader preloader--poster" data-state="loading" data-launch-step="0" data-motion="running" aria-label="Подготовка интерактивного музея Байконура">
   <div class="preloader__frame">
@@ -505,6 +505,7 @@ import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.j
 import {buildEveningScene} from './src/evening-scene.js?v=20261101-highway-fog-v1';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261101-a320-tail-v2';
 import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT} from './src/camera-navigation.js?v=20261101-museum-view-v1';
+import {createCameraAltitude} from './src/camera-altitude.js?v=20261101-altitude-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261101-pua-v1';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261031-facilities-rails-lighting-v1';
@@ -581,6 +582,7 @@ for(const [id,wayId] of [['airfield',37591623],['pad-251',24949215]]){
 // Common display scale for structures on the schematic; geometry stays fully detailed.
 const MODEL_SCALE=0.28;
 const SCENE_SCALE=3.40/1.45;
+const cameraAltitude=createCameraAltitude();
 const GAGARIN_SCALE=MUSEUM_METRE;
 const SATURN_SCALE=0.525;
 const UKSS_SCALE=MUSEUM_METRE;
@@ -1381,6 +1383,7 @@ function updateLabels(){
  mapHierarchy={level:y>=1040?'overview':y>=560?'flanks':'sites',altitude:y,
   overviewAlpha:show?overviewAlpha:0,flankAlpha:show?flankAlpha:0,siteAlpha:show?siteAlpha:0,detailAlpha:show?detailAlpha:0};
  document.body.dataset.mapLevel=mapHierarchy.level;
+ cameraAltitude.update(y,camera.position.y,mapHierarchy.level);
  const hero=document.getElementById("hero");
  hero.style.opacity=heroAlpha.toFixed(3);hero.style.pointerEvents=heroAlpha>.7?"auto":"none";
  // Overview, districts, then sites: each level fades before the next appears.
