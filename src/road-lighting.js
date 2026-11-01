@@ -1,10 +1,13 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {createLightField} from './light-field.js?v=20261101-museum-view-v1';
+import {createLightField} from './light-field.js?v=20261101-highway-fog-v1';
 import {HIGHWAY_DISPLAY,applyHighwayDisplayFade} from './highway-display.js?v=20261101-museum-view-v1';
 
 export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v3';
 export const ROAD_LIGHT_LENS_EMISSION=1.65;
+// Light must disappear before the road itself: screen-sized halos otherwise
+// accumulate into a bright line. Ground distance keeps the high map view lit.
+export const ROAD_LIGHT_FADE=Object.freeze({start:8000,end:24000,exponent:2,metric:'ground'});
 export const ROAD_LIGHT_STYLES=Object.freeze({
  highway:Object.freeze({id:'highway',fixture:'modern-led',height:3.2,spacing:58/1.5,brightness:1.5,density:1.5,poolScale:1.5,color:0xd8e8ff,colorTemperature:4800,
   poleColor:0x344552,armReach:.72,headLength:.62,headWidth:.22,headThickness:.075}),
@@ -176,7 +179,7 @@ export function createRoadLightField(parent,records,{name='Фонари доро
   head.y*=heightScale;head.applyAxisAngle(V(0,1,0),r.yaw||0);
   return {...r,brightness:r.brightness??style.brightness,lightX:r.x+head.x,lightY:r.y+head.y+.07,lightZ:r.z+head.z};
  });
- const field=createLightField(parent,withHeads,{pools:true,name,minPixels,fog:true,distanceFade:[HIGHWAY_DISPLAY.fadeStart,HIGHWAY_DISPLAY.fadeEnd]}),fixtures=[],dummy=new THREE.Object3D(),color=new THREE.Color();
+ const field=createLightField(parent,withHeads,{pools:true,name,minPixels,fog:true,distanceFade:[ROAD_LIGHT_FADE.start,ROAD_LIGHT_FADE.end],distanceFadeExponent:ROAD_LIGHT_FADE.exponent,distanceFadeMetric:ROAD_LIGHT_FADE.metric}),fixtures=[],dummy=new THREE.Object3D(),color=new THREE.Color();
  field.root.userData.roadLightingVersion=ROAD_LIGHTING_VERSION;
  const families=[...Object.keys(ROAD_LIGHT_STYLES).map(id=>({id,detail:'full'})),{id:'highway',detail:'distant'}];
  for(const {id,detail} of families){

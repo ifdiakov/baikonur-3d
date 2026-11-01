@@ -5,7 +5,7 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {HIGHWAY_DISPLAY} from '../src/highway-display.js';
 import {HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from '../src/highway-surface.js';
-import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,ROAD_LIGHT_STYLES} from '../src/road-lighting.js';
+import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,ROAD_LIGHT_STYLES,ROAD_LIGHT_FADE} from '../src/road-lighting.js';
 import {createNorthBankMask} from '../src/river-bank.js';
 import {createRiverWaterModel} from '../src/river-surface.js';
 import {createEastLightingZone} from '../src/east-lighting-zone.js';
@@ -142,7 +142,8 @@ for(const mesh of field.root.children.filter(o=>o.userData.fixtureDetail==='dist
 for(const object of field.root.children.filter(o=>o.material?.isShaderMaterial)){
  if(object.isInstancedMesh)assert.equal(object.material.forceSinglePass,true,'Flat light pools need a single transparent pass');
  assert.equal(object.material.fog,true);assert(object.material.uniforms.fogDensity&&object.material.uniforms.fogColor);
- assert.deepEqual(object.material.uniforms.distanceFade.value.toArray(),[HIGHWAY_DISPLAY.fadeStart,HIGHWAY_DISPLAY.fadeEnd]);
+ assert.deepEqual(object.material.uniforms.distanceFade.value.toArray(),[ROAD_LIGHT_FADE.start,ROAD_LIGHT_FADE.end]);
+ assert.equal(object.material.uniforms.distanceFadeExponent.value,ROAD_LIGHT_FADE.exponent);
  assert(object.material.fragmentShader.includes('distancePower*=exp('));assert(object.material.fragmentShader.includes('*distancePower)'));
 }
 const clearFogDensity=.000055;assert(Math.exp(-((clearFogDensity*minFollowEndpointDistance)**2))<1e-9,'Even the clearest historical weather hides the last section');

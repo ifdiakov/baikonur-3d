@@ -1,12 +1,16 @@
 import * as THREE from 'three';
 
 // Emissive lenses and soft ground spill, batched rather than hundreds of lights.
-export function createLightField(parent, records, {poles=false,pools=false,name='Огни',minPixels=2.8,maxCount=records.length,fog=false,distanceFade=null}={}) {
+export function createLightField(parent, records, {poles=false,pools=false,name='Огни',minPixels=2.8,maxCount=records.length,fog=false,distanceFade=null,distanceFadeExponent=1,distanceFadeMetric='radial'}={}) {
  if(distanceFade&&(!(distanceFade[0]>=0)||!(distanceFade[1]>distanceFade[0])))throw new Error('Light distance fade needs an increasing nonnegative range');
+ if(!Number.isFinite(distanceFadeExponent)||distanceFadeExponent<1)throw new Error('Light distance fade exponent must be at least one');
+ if(!['radial','ground'].includes(distanceFadeMetric))throw new Error('Unknown light distance fade metric');
  const fadeRange=distanceFade||[0,0];
+ const fadeDistance=position=>distanceFadeMetric==='ground'?`length((${position}).xz-cameraPosition.xz)`:'lightDistance';
  // Additive lights must lose alpha in fog, rather than add fog-coloured light.
- // Radial distance also covers wide viewports: far is a plane, not a radius.
- const atmosphere=`float distancePower=distanceFade.y>distanceFade.x?1.-smoothstep(distanceFade.x,distanceFade.y,lightDistance):1.;
+ // Fog remains radial; an optional ground-distance envelope preserves a high
+ // overview while the long highway rows gradually dissolve towards the horizon.
+ const atmosphere=`float distancePower=distanceFade.y>distanceFade.x?pow(1.-smoothstep(distanceFade.x,distanceFade.y,lightFadeDistance),distanceFadeExponent):1.;
     #ifdef USE_FOG
      #ifdef FOG_EXP2
       distancePower*=exp(-fogDensity*fogDensity*vFogDepth*vFogDepth);
@@ -23,19 +27,19 @@ export function createLightField(parent, records, {poles=false,pools=false,name=
  g.setAttribute('lightSize',new THREE.BufferAttribute(sizes,1));g.setAttribute('enabled',new THREE.BufferAttribute(visibility,1));
  g.setAttribute('lightIntensity',new THREE.BufferAttribute(brightness,1));
  const material=new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,vertexColors:true,fog,
-  uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{strength:{value:1},pixelRatio:{value:Math.min(globalThis.devicePixelRatio||1,2)},minPixels:{value:minPixels},distanceFade:{value:new THREE.Vector2(...fadeRange)}}]),
-  vertexShader:`attribute float lightSize;attribute float enabled;attribute float lightIntensity;uniform float pixelRatio;uniform float minPixels;varying vec3 lightColor;varying float power;varying float intensity;varying float lightDistance;
+  uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{strength:{value:1},pixelRatio:{value:Math.min(globalThis.devicePixelRatio||1,2)},minPixels:{value:minPixels},distanceFade:{value:new THREE.Vector2(...fadeRange)},distanceFadeExponent:{value:distanceFadeExponent}}]),
+  vertexShader:`attribute float lightSize;attribute float enabled;attribute float lightIntensity;uniform float pixelRatio;uniform float minPixels;varying vec3 lightColor;varying float power;varying float intensity;varying float lightDistance;varying float lightFadeDistance;
    #include <common>
    #include <logdepthbuf_pars_vertex>
    #include <fog_pars_vertex>
-   void main(){lightColor=color;power=enabled;intensity=lightIntensity;vec4 mvPosition=modelViewMatrix*vec4(position,1.);lightDistance=length(mvPosition.xyz);gl_Position=projectionMatrix*mvPosition;
+   void main(){lightColor=color;power=enabled;intensity=lightIntensity;vec4 mvPosition=modelViewMatrix*vec4(position,1.);lightDistance=length(mvPosition.xyz);lightFadeDistance=${fadeDistance('modelMatrix*vec4(position,1.)')};gl_Position=projectionMatrix*mvPosition;
     #ifdef USE_FOG
      vFogDepth=lightDistance;
     #endif
     gl_PointSize=clamp(lightSize*700./max(1.,-mvPosition.z),minPixels,34.)*pixelRatio;
     #include <logdepthbuf_vertex>
    }`,
-  fragmentShader:`uniform float strength;uniform vec2 distanceFade;varying vec3 lightColor;varying float power;varying float intensity;varying float lightDistance;
+  fragmentShader:`uniform float strength;uniform vec2 distanceFade;uniform float distanceFadeExponent;varying vec3 lightColor;varying float power;varying float intensity;varying float lightDistance;varying float lightFadeDistance;
    #include <common>
    #include <logdepthbuf_pars_fragment>
    #include <fog_pars_fragment>
@@ -54,18 +58,18 @@ export function createLightField(parent, records, {poles=false,pools=false,name=
  const headMesh=poles?new THREE.InstancedMesh(new THREE.BoxGeometry(.58,.10,.24),metal,capacity):null;
  if(poles){root.add(poleMesh,headMesh);poleMesh.frustumCulled=headMesh.frustumCulled=false;}
  const poolMat=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,forceSinglePass:true,blending:THREE.AdditiveBlending,fog,
-  uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{strength:{value:1},distanceFade:{value:new THREE.Vector2(...fadeRange)}}]),vertexColors:true,
-  vertexShader:`attribute float lightIntensity;varying vec2 vUv;varying vec3 tint;varying float intensity;varying float lightDistance;
+  uniforms:THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{strength:{value:1},distanceFade:{value:new THREE.Vector2(...fadeRange)},distanceFadeExponent:{value:distanceFadeExponent}}]),vertexColors:true,
+  vertexShader:`attribute float lightIntensity;varying vec2 vUv;varying vec3 tint;varying float intensity;varying float lightDistance;varying float lightFadeDistance;
    #include <common>
    #include <logdepthbuf_pars_vertex>
    #include <fog_pars_vertex>
-   void main(){vUv=uv;tint=instanceColor;intensity=lightIntensity;vec4 mvPosition=modelViewMatrix*instanceMatrix*vec4(position,1.);lightDistance=length(mvPosition.xyz);gl_Position=projectionMatrix*mvPosition;
+   void main(){vUv=uv;tint=instanceColor;intensity=lightIntensity;vec4 mvPosition=modelViewMatrix*instanceMatrix*vec4(position,1.);lightDistance=length(mvPosition.xyz);lightFadeDistance=${fadeDistance('modelMatrix*instanceMatrix*vec4(position,1.)')};gl_Position=projectionMatrix*mvPosition;
     #ifdef USE_FOG
      vFogDepth=lightDistance;
     #endif
     #include <logdepthbuf_vertex>
    }`,
-  fragmentShader:`uniform float strength;uniform vec2 distanceFade;varying vec2 vUv;varying vec3 tint;varying float intensity;varying float lightDistance;
+  fragmentShader:`uniform float strength;uniform vec2 distanceFade;uniform float distanceFadeExponent;varying vec2 vUv;varying vec3 tint;varying float intensity;varying float lightDistance;varying float lightFadeDistance;
    #include <common>
    #include <logdepthbuf_pars_fragment>
    #include <fog_pars_fragment>
@@ -109,5 +113,5 @@ export function createLightField(parent, records, {poles=false,pools=false,name=
   });
  }
  refresh();
- return {root,records,refresh,sync,setStrength(n){material.uniforms.strength.value=n;poolMat.uniforms.strength.value=n;},stats:()=>({count:records.length,drawCalls:1+(poles?2:0)+(pools?1:0),fog:!!fog,distanceFade:distanceFade?[...distanceFade]:null})};
+ return {root,records,refresh,sync,setStrength(n){material.uniforms.strength.value=n;poolMat.uniforms.strength.value=n;},stats:()=>({count:records.length,drawCalls:1+(poles?2:0)+(pools?1:0),fog:!!fog,distanceFade:distanceFade?[...distanceFade]:null,distanceFadeExponent,distanceFadeMetric})};
 }
