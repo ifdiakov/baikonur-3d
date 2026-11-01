@@ -1,0 +1,544 @@
+{
+  "version": "satellite-expansion-v1",
+  "asset": "satellite-expansion-v1.jpg",
+  "width": 1330,
+  "height": 1182,
+  "bytes": 1110479,
+  "sha256": "7f650386742095a864ff89fbaa7d02f477ff27efe0abc629494cf0bc082f234e",
+  "source": {
+    "baseAsset": "satellite-single-pass-v1.jpg",
+    "baseGeneratedPngSha256": "7620857eda00802e1c8efde6abe74c397b0be27825fd0d51fd6a398bf5a448b2",
+    "owner": "RocketTrip",
+    "reference": "Google Drive / Поверхность земли / подложка.jpg"
+  },
+  "treatment": {
+    "tool": "image_gen.imagegen",
+    "kind": "two successive outpainting passes",
+    "passes": [
+      {
+        "prompt": "Expand this exact already harmonized satellite image of Baikonur into a larger continuous ground background by OUTPAINTING on all four sides. This is for a zoomable 3D museum terrain; a high-resolution original center will be overlaid at runtime, so the expanded image must align faithfully with it and blend perfectly along all four original edges.\n\nComposition and registration: keep north up, no rotation, no perspective, strictly nadir satellite view. Treat the entire supplied image as a protected central rectangle. Expand the geographic footprint to 2.6 times the original width and 2.4 times the original height, with equal new area on left/right and equal new area on top/bottom. Thus the original view should occupy the central 38.46% of output width and 41.67% of output height. Keep the original rectangular view spatially intact within that center, including the exact locations and proportions of the large reddish salt lake in the upper third, both airport runways, cosmodrome roads, city, and meandering Syr Darya river near the bottom. Preserve their recognizable geometry; do not redesign, duplicate or move the cosmodrome. The final output aspect ratio should be approximately 1.125:1. Use the highest available pixel resolution.\n\nNew land outside the original area: extend the Kazakh desert steppe naturally in every direction with the SAME scale of fine ground texture, sandy beige and muted warm gray-olive mineral tones, scattered pale irregular salt crusts, occasional subdued rusty clay depressions, sparse vegetation and delicate dry drainage patterns. Continue landforms seamlessly across the old boundaries. Avoid conspicuous giant repeated salt lakes, mirrored copies, regular dunes, or cloud-like blur. The outer region should be varied and quietly realistic, with gentle organic transitions. Do not invent new prominent cities, airports, launch pads or dense road networks outside the source. Keep dry terrain dominant; do not add unrelated large rivers or lakes. Where the existing river approaches the source edge, continue its natural floodplain subtly without introducing a second parallel main channel.\n\nRadiometry: one satellite, one pass, one sun angle, one season, one neutral-warm color grade, consistent contrast and grain across the entire enlarged image. No rectangular tiles, no seam, no edge halo, no border, no visible central pasted rectangle, no haze band, no vignette, no map labels, no arrows, no coordinate grid, no text, no watermark, no clouds, no horizon. Deliver only the expanded satellite-style image.",
+        "generatedPngSha256": "cd890e6d7e2ba0b453fe99eb8ae334225453960b5118d771af68d44ec84808ba"
+      },
+      {
+        "prompt": "OUTPAINT this already enlarged Baikonur satellite-style image a second time, providing a generous outer belt of the same Kazakh desert-steppe terrain in ALL four directions. Treat the entire supplied image as the protected center. Do not recompose it or zoom into it. Add approximately half of its width as new ground to the left AND to the right, and half its height as new ground above AND below. The supplied view should therefore occupy roughly the central half of final width and half of final height. Retain the same overall aspect ratio, north-up orientation, straight-down satellite orthography, scale of landforms, illumination and warm dusty beige/gray-olive color grade. Use the highest available resolution.\n\nPreserve the exact relationships of the supplied scene: recognizable Baikonur cosmodrome near the center, reddish salt pans, the existing road network and runways, Baikonur city, and the meandering Syr Darya in the southern portion. Do not move, duplicate, enlarge or invent launch complexes, cities, airports, or large lakes. Preserve the entire previous image at a single uniform scale within the larger footprint, so it can be registered back onto a 3D map. The detailed original center will be overlaid in the museum, so central geography alignment is essential.\n\nOnly extend the outer geographic surroundings with plausible understated desert steppe: scattered pale salt crusts, muted mineral and clay zones, delicate dry alluvial traces, low organic ridges, sparse vegetation, unpatterned natural variation. Continue terrain features naturally where they meet the old edges. Where existing river branches leave the source, their surrounding floodplain may continue softly, but do not create new unrelated main rivers, dense roads, or conspicuous giant red/white landforms competing with the central cosmodrome. Avoid repeated or mirrored patches, circular/radial composition, uniform blur, tiled textures, straight seams and rectangular pasted areas.\n\nFinal image must read as a SINGLE continuous wide satellite acquisition under one sun angle and one season, same fine photographic texture everywhere. No clouds, horizon, labels, text, border, watermark, grid, markers, or vignette. This is a seamless enlarged terrain background, not a poster or a new map design.",
+        "generatedPngSha256": "04d09e7b89707108e7644fc44dfcb40e1b2f22fec864257db0a1ceef110f6389"
+      }
+    ],
+    "encoding": {
+      "format": "JPEG",
+      "quality": 95,
+      "chromaSubsampling": "4:4:4",
+      "mozjpeg": true,
+      "resized": false
+    }
+  },
+  "interpretation": "Artistic continuation of the supplied satellite mosaic outside its original footprint. Not an actual extended satellite acquisition or geographic survey. The separately retained original center and existing museum geometry remain authoritative.",
+  "registration": {
+    "version": "satellite-outpaint-registration-final-v1",
+    "originalSha256": "7620857eda00802e1c8efde6abe74c397b0be27825fd0d51fd6a398bf5a448b2",
+    "extensionSha256": "04d09e7b89707108e7644fc44dfcb40e1b2f22fec864257db0a1ceef110f6389",
+    "originalSize": [
+      1278,
+      1231
+    ],
+    "extensionSize": [
+      1330,
+      1182
+    ],
+    "coordinateConvention": "Pixel coordinates measured from top-left image edge; texel centers at i+0.5,j+0.5. UVs use bottom-left origin.",
+    "originalPixelToExtensionPixel": [
+      [
+        0.40090779093936074,
+        0.00690908632908438,
+        410.48948260578624
+      ],
+      [
+        0.0009486833380398921,
+        0.3968670634952093,
+        346.6124080458504
+      ]
+    ],
+    "originalUvToExtensionUv": [
+      [
+        0.3852332006169196,
+        -0.006394800955716445,
+        0.3150335096818715
+      ],
+      [
+        -0.0010257337614339949,
+        0.4133192514066012,
+        0.29343844060198565
+      ]
+    ],
+    "uvOffsetLinearTransform": [
+      [
+        0.3852332006169196,
+        -0.006394800955716445
+      ],
+      [
+        -0.0010257337614339949,
+        0.4133192514066012
+      ]
+    ],
+    "worldToUv": [
+      9.728812509120913e-05,
+      1.8595158552411593e-06,
+      0.5355685531981587,
+      -5.714155248860683e-07,
+      -0.00010922020714511084,
+      0.4986371647063046
+    ],
+    "worldToUvRows": [
+      [
+        9.728812509120913e-05,
+        1.8595158552411593e-06,
+        0.5355685531981587
+      ],
+      [
+        -5.714155248860683e-07,
+        -0.00010922020714511084,
+        0.4986371647063046
+      ]
+    ],
+    "sourceCornersInExtensionPixels": [
+      [
+        410.48948260578624,
+        346.6124080458504
+      ],
+      [
+        922.8496394262893,
+        347.82482535186534
+      ],
+      [
+        931.3547246973922,
+        836.368180514468
+      ],
+      [
+        418.9945678768891,
+        835.155763208453
+      ]
+    ],
+    "sourceFractionOfWidth": 0.3852342791827543,
+    "sourceFractionOfHeight": 0.4133818801732418,
+    "footprintExpansionX": 2.5958229940529307,
+    "footprintExpansionY": 2.419070713938685,
+    "footprintAreaExpansion": 6.280707212396295,
+    "extensionWorldCorners": [
+      {
+        "corner": "TL",
+        "uv": [
+          0,
+          1
+        ],
+        "worldXZ": [
+          -5417.7769962828015,
+          -4562.040728833697
+        ],
+        "mapXY": [
+          -943.4638224361181,
+          -819.2766849510874
+        ],
+        "approxLonLat": [
+          62.01089233010724,
+          46.634346612625755
+        ]
+      },
+      {
+        "corner": "TR",
+        "uv": [
+          1,
+          1
+        ],
+        "worldXZ": [
+          4861.997709532241,
+          -4615.822194853346
+        ],
+        "mapXY": [
+          2079.999326333012,
+          -835.0947631921608
+        ],
+        "approxLonLat": [
+          64.5517361416505,
+          46.64359320054593
+        ]
+      },
+      {
+        "corner": "BR",
+        "uv": [
+          1,
+          0
+        ],
+        "worldXZ": [
+          4686.9806082702635,
+          4540.9083555661455
+        ],
+        "mapXY": [
+          2028.5237083147833,
+          1858.0612810488662
+        ],
+        "approxLonLat": [
+          64.50847730267961,
+          45.069286652917974
+        ]
+      },
+      {
+        "corner": "BL",
+        "uv": [
+          0,
+          0
+        ],
+        "worldXZ": [
+          -5592.79409754478,
+          4594.689821585795
+        ],
+        "mapXY": [
+          -994.939440454347,
+          1873.8793592899397
+        ],
+        "approxLonLat": [
+          61.96763349113637,
+          45.0600400649978
+        ]
+      }
+    ],
+    "worldFootprintUnits": [
+      10279.915391111055,
+      9158.402991718578
+    ],
+    "approxFootprintKm": [
+      196.52779424182899,
+      175.08711601814932
+    ],
+    "fitMethod": "Direct high-pass normalized patch correlation, affine prewarp refinement, subpixel peak interpolation; robust correlation-weighted affine fit. No chaining through first outpaint.",
+    "matches": [
+      {
+        "name": "Yub SW",
+        "originalPixel": [
+          574.5134776643996,
+          250.22399929764958
+        ],
+        "extensionPixel": [
+          642.7704546329212,
+          446.3630294389119
+        ],
+        "correlation": 0.6751093197595922,
+        "errorPx": 0.2464557599598598,
+        "leaveOneOutErrorPx": 0.2728577623612202
+      },
+      {
+        "name": "Yub NE",
+        "originalPixel": [
+          644.9275783941199,
+          219.960012138794
+        ],
+        "extensionPixel": [
+          670.481178598984,
+          434.53251889361655
+        ],
+        "correlation": 0.7052215096221925,
+        "errorPx": 0.08557233143982758,
+        "leaveOneOutErrorPx": 0.10557047052628746
+      },
+      {
+        "name": "Kray SW",
+        "originalPixel": [
+          537.8432996116254,
+          1059.368249575154
+        ],
+        "extensionPixel": [
+          633.252731465537,
+          766.6682038558971
+        ],
+        "correlation": 0.7621465820111061,
+        "errorPx": 0.9012954893664694,
+        "leaveOneOutErrorPx": 1.092495195041912
+      },
+      {
+        "name": "Kray NE",
+        "originalPixel": [
+          580.7591160786673,
+          1031.6311498875402
+        ],
+        "extensionPixel": [
+          649.746345349571,
+          755.6596113709106
+        ],
+        "correlation": 0.6570126606858631,
+        "errorPx": 1.160334588035435,
+        "leaveOneOutErrorPx": 1.3107523049205423
+      },
+      {
+        "name": "River W crest",
+        "originalPixel": [
+          107.50980171065669,
+          835.1256286533054
+        ],
+        "extensionPixel": [
+          460.3761070853057,
+          679.4851791252341
+        ],
+        "correlation": 0.8551368696787428,
+        "errorPx": 1.6786589252298947,
+        "leaveOneOutErrorPx": 2.043300296431298
+      },
+      {
+        "name": "River W cusp",
+        "originalPixel": [
+          234.17698200043276,
+          870.3864204459827
+        ],
+        "extensionPixel": [
+          511.20476004594036,
+          692.4752766323613
+        ],
+        "correlation": 0.8325230835854106,
+        "errorPx": 0.8455938520716412,
+        "leaveOneOutErrorPx": 0.9468114540078676
+      },
+      {
+        "name": "River W south spur",
+        "originalPixel": [
+          97.27815604790305,
+          991.4096534586087
+        ],
+        "extensionPixel": [
+          455.8501887511907,
+          741.9816113573872
+        ],
+        "correlation": 0.5695965680931655,
+        "errorPx": 1.8835548046821002,
+        "leaveOneOutErrorPx": 2.004084811714715
+      },
+      {
+        "name": "River SW turn",
+        "originalPixel": [
+          479.55421198514307,
+          1109.7948786949792
+        ],
+        "extensionPixel": [
+          610.493677745865,
+          787.1724592754044
+        ],
+        "correlation": 0.8937296797681978,
+        "errorPx": 0.3452089914607779,
+        "leaveOneOutErrorPx": 0.5246123379282874
+      },
+      {
+        "name": "River S city",
+        "originalPixel": [
+          669.5906425762929,
+          1089.5865476745876
+        ],
+        "extensionPixel": [
+          685.642709296183,
+          779.3513419188129
+        ],
+        "correlation": 0.8428656636952967,
+        "errorPx": 0.8782512303747895,
+        "leaveOneOutErrorPx": 1.046569575432634
+      },
+      {
+        "name": "River city NE",
+        "originalPixel": [
+          725.7822593145528,
+          1016.4743375597847
+        ],
+        "extensionPixel": [
+          708.0538431597253,
+          750.3798718075382
+        ],
+        "correlation": 0.8264628286179245,
+        "errorPx": 0.5400114568512944,
+        "leaveOneOutErrorPx": 0.6330001998878771
+      },
+      {
+        "name": "River E middle",
+        "originalPixel": [
+          904.446114566144,
+          933.2517572477042
+        ],
+        "extensionPixel": [
+          779.1635465658647,
+          718.515383373438
+        ],
+        "correlation": 0.8670617865508731,
+        "errorPx": 0.7653033976453664,
+        "leaveOneOutErrorPx": 0.8997204974021377
+      },
+      {
+        "name": "River E elbow",
+        "originalPixel": [
+          1085.2517017508799,
+          870.1940751464414
+        ],
+        "extensionPixel": [
+          852.077711521651,
+          693.3569894928402
+        ],
+        "correlation": 0.8671629258433875,
+        "errorPx": 0.6102969567847194,
+        "leaveOneOutErrorPx": 0.8477154607557092
+      },
+      {
+        "name": "River E crest",
+        "originalPixel": [
+          1229.5937275360575,
+          751.6898327305895
+        ],
+        "extensionPixel": [
+          909.0971449353622,
+          647.1694145901622
+        ],
+        "correlation": 0.7568371181938941,
+        "errorPx": 1.16448297349621,
+        "leaveOneOutErrorPx": 1.680179081634566
+      },
+      {
+        "name": "NW sites",
+        "originalPixel": [
+          167.8718141627902,
+          240.2332103423156
+        ],
+        "extensionPixel": [
+          478.45080823364947,
+          442.27365296652135
+        ],
+        "correlation": 0.6859176801164054,
+        "errorPx": 1.0125213665373525,
+        "leaveOneOutErrorPx": 1.2892827092005326
+      },
+      {
+        "name": "N-central site",
+        "originalPixel": [
+          467.8300614916833,
+          356.1163668557716
+        ],
+        "extensionPixel": [
+          600.7503013411884,
+          488.1864318092311
+        ],
+        "correlation": 0.706841798205332,
+        "errorPx": 0.31564946179417414,
+        "leaveOneOutErrorPx": 0.36522836994383745
+      },
+      {
+        "name": "Central hub",
+        "originalPixel": [
+          705.1001759699112,
+          630.8160762703932
+        ],
+        "extensionPixel": [
+          697.751008248556,
+          597.2863037305685
+        ],
+        "correlation": 0.7891200151873244,
+        "errorPx": 0.4109233555614378,
+        "leaveOneOutErrorPx": 0.4416174906546427
+      },
+      {
+        "name": "SE hub",
+        "originalPixel": [
+          706.2411056467162,
+          850.1143503673853
+        ],
+        "extensionPixel": [
+          699.5490412769788,
+          684.2711101304582
+        ],
+        "correlation": 0.8149317612094299,
+        "errorPx": 0.39665720030534246,
+        "leaveOneOutErrorPx": 0.450083948916596
+      },
+      {
+        "name": "East sites",
+        "originalPixel": [
+          1050.4356565046228,
+          436.6462253327826
+        ],
+        "extensionPixel": [
+          834.7775720377165,
+          520.6282897648566
+        ],
+        "correlation": 0.5786873218534961,
+        "errorPx": 0.3067494445081996,
+        "leaveOneOutErrorPx": 0.2833027842647964
+      },
+      {
+        "name": "NE red pond",
+        "originalPixel": [
+          747.007845894915,
+          376.2186541333075
+        ],
+        "extensionPixel": [
+          712.6260468525148,
+          496.56355260108444
+        ],
+        "correlation": 0.8717295588804528,
+        "errorPx": 0.08678378855000568,
+        "leaveOneOutErrorPx": 0.08624380362766862
+      },
+      {
+        "name": "Central red pond",
+        "originalPixel": [
+          500.1158828916706,
+          507.3494370309014
+        ],
+        "extensionPixel": [
+          614.7929244284353,
+          548.0425708116308
+        ],
+        "correlation": 0.8184596748820274,
+        "errorPx": 0.4943184177046222,
+        "leaveOneOutErrorPx": 0.5668233673673816
+      },
+      {
+        "name": "North lake",
+        "originalPixel": [
+          489.99247430111234,
+          88.92004329758231
+        ],
+        "extensionPixel": [
+          607.0045532644883,
+          382.194208502219
+        ],
+        "correlation": 0.7791336704703615,
+        "errorPx": 0.5679126155287588,
+        "leaveOneOutErrorPx": 0.7647454431386448
+      }
+    ],
+    "fitRmsPx": 0.8429903310526289,
+    "fitMaxPx": 1.8835548046821002,
+    "leaveOneOutRmsPx": 1.0093491367770397,
+    "leaveOneOutMaxPx": 2.043300296431298,
+    "correlationRange": [
+      0.5695965680931655,
+      0.8937296797681978
+    ],
+    "overlapColorLowPass": {
+      "sigmaExtensionPixels": 2.5,
+      "coreInsetOriginalPixels": 60,
+      "medianExtensionMinusOriginalRgb": [
+        -2.581710595983992,
+        -5.804677308628996,
+        -5.328474649748344
+      ],
+      "medianAbsoluteRgbDifference": [
+        5.190623332605213,
+        6.522179726227307,
+        6.240378094831186
+      ],
+      "p90AbsoluteRgbDifference": [
+        12.899826487117288,
+        13.684340010060895,
+        13.773106826601222
+      ]
+    },
+    "composition": "Apply original UV displacement through uvOffsetLinearTransform to the extension; retain original confidence exclusions in overlap. Original high-resolution photograph stays the detailed core.",
+    "limitations": [
+      "Generated outer geography is illustrative, not surveyed source data.",
+      "Subpixel fit residual is in lower-resolution extension pixels; some small feature details change across generations.",
+      "Use only original plus final expansion in runtime; intermediate outpaint is provenance."
+    ],
+    "featherWorld": 1000
+  }
+}

@@ -1,4 +1,4 @@
-name: Museum model facts and history
+name: Museum 8 unified satellite surface
 on:
   push:
     branches: [main]
@@ -20,6 +20,7 @@ on:
       - 'scripts/verify-mik112-osm.mjs'
       - 'scripts/build_river_water.py'
       - 'scripts/build-steppe-textures.py'
+      - 'scripts/build-satellite-registration.py'
       - 'docs/steppe-surface.md'
       - 'scripts/prepare-ukss-asset.mjs'
       - 'scripts/ukss-detail-policy.json'
@@ -54,7 +55,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-model-facts-20261101-v1
+  RELEASE_TAG: museum8-satellite-surface-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -94,6 +95,7 @@ jobs:
           node tests/road-lighting-geometry.mjs
           node tests/saturn-natural-terrain.mjs
           node tests/steppe-surface.mjs
+          node tests/satellite-reference.mjs
           node tests/terrain-relief.mjs
           node tests/exhibit-road-filter.mjs
           node tests/industrial-road-continuity.mjs
@@ -348,12 +350,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/model-facts-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/satellite-surface-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — ТТХ и история моделей',
+                name: 'Интерактивный музей 8 — единая спутниковая поверхность',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

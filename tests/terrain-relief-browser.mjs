@@ -4,7 +4,7 @@ import {chromium} from 'playwright';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',prefix=process.env.QA_PREFIX||'local',out='qa-terrain-relief';
 const revision=process.env.BAIKONUR_EXPECTED_REVISION||null,origin=new URL(base).origin;
-const evidence={base,prefix,revision,views:[],errors:[],shaderErrors:[],failedResources:[],failedRequests:[]};
+const evidence={base,prefix,revision,views:[],errors:[],shaderErrors:[],failedResources:[],failedRequests:[],satelliteRequests:[],extensionRequests:[],correctionRequests:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
  ...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),
@@ -12,6 +12,12 @@ const browser=await chromium.launch({headless:true,
 const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
 page.setDefaultTimeout(60000);
 page.on('pageerror',error=>evidence.errors.push(error.message));
+page.on('request',request=>{
+ const path=new URL(request.url()).pathname;
+ if(path.endsWith('/assets/terrain/satellite-single-pass-v1.jpg'))evidence.satelliteRequests.push(request.url());
+ if(path.endsWith('/assets/terrain/satellite-expansion-v1.jpg'))evidence.extensionRequests.push(request.url());
+ if(path.endsWith('/assets/terrain/satellite-uv-correction-v1.bin'))evidence.correctionRequests.push(request.url());
+});
 page.on('console',message=>{
  if(message.type()==='error'&&/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/i.test(message.text()))evidence.shaderErrors.push(message.text());
 });
@@ -38,7 +44,7 @@ const elevation=c=>Math.atan2(c.position[1]-c.target[1],Math.hypot(c.position[0]
 const state=()=>page.evaluate(()=>{
  const q=window.__BAIKONUR_QA,s=q.stats(),terrain=q.terrainRelief.stats();
  const source=typeof terrain.source==='object'?{name:terrain.source.name,zoom:terrain.source.zoom,tiles:terrain.source.tiles?.length}:terrain.source;
- return {revision:s.museumRevision,terrain:{...terrain,source},render:s.render,shadersValid:s.shadersValid,
+ return {revision:s.museumRevision,terrain:{...terrain,source},surface:s.terrain.surface,render:s.render,shadersValid:s.shadersValid,
   evening:s.evening.evening,camera:q.cameraState(),visibility:q.terrainVisibility(),
   reportedTerrainTriangles:s.terrainRelief?.triangles,following:q.arrival.stats().following};
 });
@@ -56,6 +62,17 @@ function checkFrame(s){
  assert(s.terrain.flatChecks.protectedVertices>0&&s.terrain.flatChecks.gridMarginSafe);
  assert(s.terrain.protection.corridors>0&&s.terrain.protection.polygons>0,'Roads and area footprints are included in the scene protection');
  assert.equal(s.following,false);
+ assert.equal(s.surface.surfaceVersion,'baikonur-steppe-surface-v10-extended-satellite');
+ assert.equal(s.surface.extraGeometry,0,'The photograph does not alter the approved terrain');
+ assert.equal(s.surface.satellite.sharedTexture,true);
+ assert.equal(s.surface.satellite.repeat,false,'One photograph spans the museum without repeated tiles');
+ assert.equal(s.surface.satellite.colorSpace,'srgb');
+ assert.deepEqual(s.surface.satellite.resolution,[1278,1231]);
+ assert.deepEqual(s.surface.satellite.uvCorrection.resolution,[256,256]);
+ const extension=s.surface.satellite.extension;
+ assert.equal(extension.sharedTexture,true);assert.equal(extension.repeat,false);
+ assert.equal(extension.primaryCorePreserved,true);assert.equal(extension.colorSpace,'srgb');
+ assert.deepEqual(extension.resolution,[1330,1182]);
 }
 async function shot(name){
  evidence.lastView=name;await step();const s=await state();checkFrame(s);
@@ -119,6 +136,51 @@ try{
  const wide=await shot('wide-day');evidence.chrome=await checkChrome();
  assert(elevation(wide.camera)>=29.99&&elevation(wide.camera)<70,'Relief is examined obliquely rather than hidden in a vertical map view');
  assert.equal(wide.visibility.visible.relief,true);
+
+ // These independently observed image landmarks catch a flipped, mirrored,
+ // or schematic-plan-stretched photograph. They are approximate controls,
+ // not a claim that the source mosaic is survey-accurate.
+ const imageControls=await page.evaluate(async()=>{
+  const q=window.__BAIKONUR_QA,{projectOsm}=await import('./src/osm-geography.js');
+  const controls=[
+   {name:'Yubileiny SW',lonLat:[63.2224604,46.0443881],sourcePixel:[1796,779]},
+   {name:'Yubileiny NE',lonLat:[63.2758234,46.0604768],sourcePixel:[2014,686]},
+   {name:'Krayniy SW',lonLat:[63.1941252,45.6143654],sourcePixel:[1680,3330]},
+   {name:'Western rail crossing',lonLat:[62.86694005,45.74724365],sourcePixel:[343,2539]}
+  ];
+  return controls.map(control=>{
+   const [x,y]=projectOsm(control.lonLat),world=[(x-650)*3.4,(y-522.5)*3.4];
+   return {...control,world,...q.satelliteSurface.sample(...world)};
+  });
+ });
+ for(const control of imageControls){
+  near(control.uv[0],control.sourcePixel[0]/4000,.004,control.name+' image east/west position');
+  near(control.uv[1],1-control.sourcePixel[1]/3855,.004,control.name+' image north/south position');
+  assert(control.coverage>.1,control.name+' remains inside the softly feathered image');
+  assert(control.confidence>.99,control.name+' retains its pinned image registration');
+ }
+ evidence.imageControls=imageControls;
+ const registration=await page.evaluate(async()=>{
+  const q=window.__BAIKONUR_QA,{projectOsm}=await import('./src/osm-geography.js');
+  const metadata=await fetch('./assets/terrain/satellite-uv-correction-v1.json').then(response=>response.json());
+  const river=metadata.controls.map(control=>{
+   const [x,y]=projectOsm(control.lonLat),sample=q.satelliteSurface.sample((x-650)*3.4,(y-522.5)*3.4);
+   return {index:control.index,residualPixels:Math.hypot(sample.uv[0]*1278-control.source[0],(1-sample.uv[1])*1231-control.source[1])};
+  });
+  const [a,b,c,d,e,f]=q.satelliteSurface.stats().satellite.worldToUv,det=a*e-b*d;
+  const outside=[[-.2,.5],[1.2,.5],[.5,-.2],[.5,1.2]].map(([u,v])=>{
+   const world=[(e*(u-c)-b*(v-f))/det,(a*(v-f)-d*(u-c))/det];
+   return {world,...q.satelliteSurface.sample(...world)};
+  });
+  return {river,outside};
+ });
+ assert.equal(registration.river.length,38);
+ for(const probe of registration.river)assert(probe.residualPixels<1,'The real loaded grid aligns river control '+probe.index);
+ for(const probe of registration.outside){
+  assert.equal(probe.coverage,0,'The outer belt lies beyond the original photo');
+  assert(probe.extension.contributionWeight>.95,'Generated terrain fills all four sides of the original footprint');
+ }
+ evidence.satelliteRegistration=registration;
 
  // Reproduce the user's scale: continuous flank tint must span both the
  // raised terrain and the flat engineering corridors without a depth seam.
@@ -184,6 +246,15 @@ try{
  assert(saturnAfter.camera.terrainClearance>=saturnAttempt.minimumClearance-1e-6);
  evidence.saturn={flanks:saturnFlanks,attempt:saturnAttempt,before:saturnBefore,after:saturnAfter};
 
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.showOverview(true);q.setLabelsVisible(false);});
+ await shot('satellite-overview-day');
+ await page.evaluate(()=>window.__BAIKONUR_QA.inspectRiver('islands'));
+ await shot('satellite-islands-day');
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
+ await shot('satellite-islands-evening');
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.inspectRiver('west');});
+ await shot('satellite-west-shore-day');
+
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.setLabelsVisible(false);q.inspectTerrainRelief('ridge');});
  const ridge=await shot('ridge-day');
  assert(elevation(ridge.camera)>=29.99&&elevation(ridge.camera)<70);
@@ -217,6 +288,9 @@ try{
  await shot('ridge-camera-clearance');await checkChrome();
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);
  assert.deepEqual(evidence.failedResources,[]);assert.deepEqual(evidence.failedRequests,[]);
+ assert.equal(evidence.satelliteRequests.length,1,'All soil materials share a single image load');
+ assert.equal(evidence.extensionRequests.length,1,'The generated outer belt uses one shared image load');
+ assert.equal(evidence.correctionRequests.length,1,'All soil materials share one numerical registration grid');
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,checkedAt:new Date().toISOString()},null,2));
  console.log('TERRAIN_RELIEF_BROWSER_PASS',JSON.stringify({prefix,views:evidence.views.length,
   vertices:wide.terrain.vertices,triangles:wide.terrain.triangles,maxOffset:wide.terrain.maxOffset,maxSlope:wide.terrain.maxSlope,

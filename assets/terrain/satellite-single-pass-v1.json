@@ -1,0 +1,306 @@
+{
+  "version": "baikonur-satellite-single-pass-v1",
+  "asset": "satellite-single-pass-v1.jpg",
+  "width": 1278,
+  "height": 1231,
+  "bytes": 961146,
+  "sha256": "6d4803958bc3c4f5521408f61aef51bd2384cf56aefbeb13f69fe8effed247fb",
+  "source": {
+    "provider": "RocketTrip / Google Drive",
+    "name": "подложка.jpg",
+    "url": "https://drive.google.com/file/d/1520CHK0NYme3EeKcuoo3DcR4NBhGlpja/view",
+    "folder": "Поверхность земли",
+    "width": 4000,
+    "height": 3855,
+    "bytes": 9288022,
+    "sha256": "5d48dfbec49aba2af28351894e01aa69752eeb1196b11aa5c6f83a813646601d"
+  },
+  "treatment": {
+    "kind": "photographic-mosaic-harmonization",
+    "tool": "image_gen.imagegen",
+    "appearance": "one satellite, one pass; consistent daylight, white balance, exposure and detail",
+    "generatedSha256": "7620857eda00802e1c8efde6abe74c397b0be27825fd0d51fd6a398bf5a448b2",
+    "prompt": "Use case: lighting-weather / precise photographic color harmonization.\nAsset type: continuous satellite ground image for an interactive 3D museum of Baikonur.\nImage 1 is the EXACT edit target, a north-up satellite mosaic (original 4000x3855). Edit this image, retaining the complete original framing, aspect ratio, geographic layout and all visible physical details. Make it look like a single, seamless natural-color photograph from ONE satellite during ONE pass, under the same daylight and atmospheric conditions.\nRemove all visible straight/rectangular/diagonal tile boundaries, banding, seams and exposure/color/sharpness changes caused by the different source acquisitions. Match those mismatched regions into one realistic, lightly warm sandy-beige / muted gray-olive arid steppe palette, keeping bright cream salt pans and natural soil variations. Smooth only the artificial photographic discontinuities, not the real landforms. Consistent neutral daylight white balance, exposure, haze, saturation, grain and spatial detail across the whole image. The finished image must have no remaining recognizable mosaic polygons or rectangular pale strips.\nCRITICAL INVARIANTS: preserve exactly the meandering river and banks in the lower part, every road/rail line, runways, settlements, launch facilities, salt pans, erosion patterns and their relative positions and shapes. Do not relocate, redraw, invent or remove real geographic features. Do not add vegetation, clouds, cloud shadows, hills, buildings, roads, labels, logos, borders or text. No painterly blur or repeating synthetic terrain texture. Do not crop, rotate, reframe or change camera/projection. A careful photographic harmonization of the supplied image, not a new landscape composition. Maximum available resolution, ideally about 2928x2816 or higher supported while keeping the full original near-square aspect ratio; retain crisp original small features.",
+    "encoding": {
+      "format": "JPEG",
+      "quality": 95,
+      "chromaSubsampling": "4:4:4",
+      "resize": false
+    }
+  },
+  "interpretation": "Visually harmonized museum imagery; original source was a photographic mosaic. Landmark registration and fine image detail are illustrative, not survey measurements.",
+  "registration": {
+    "kind": "approximate-affine-manual-geographic-controls",
+    "sourceImagePixels": [
+      4000,
+      3855
+    ],
+    "generatedImagePixels": [
+      1278,
+      1231
+    ],
+    "geoOrigin": [
+      63.35,
+      45.85
+    ],
+    "controls": [
+      {
+        "name": "Yub SW",
+        "lonLat": [
+          63.2224604,
+          46.0443881
+        ],
+        "sourcePixel": [
+          1796,
+          779
+        ]
+      },
+      {
+        "name": "Yub NE",
+        "lonLat": [
+          63.2758234,
+          46.0604768
+        ],
+        "sourcePixel": [
+          2014,
+          686
+        ]
+      },
+      {
+        "name": "Kray SW",
+        "lonLat": [
+          63.1941252,
+          45.6143654
+        ],
+        "sourcePixel": [
+          1680,
+          3330
+        ]
+      },
+      {
+        "name": "W rail crossing",
+        "lonLat": [
+          62.86694005,
+          45.74724365
+        ],
+        "sourcePixel": [
+          343,
+          2539
+        ]
+      }
+    ],
+    "holdouts": [
+      {
+        "name": "Kray NE",
+        "lonLat": [
+          63.2272132,
+          45.6294972
+        ],
+        "sourcePixel": [
+          1818,
+          3242
+        ],
+        "sourceErrorPx": 3.096965573149034
+      },
+      {
+        "name": "W river crest",
+        "lonLat": [
+          62.8768372,
+          45.7349425
+        ],
+        "sourcePixel": [
+          365,
+          2618
+        ],
+        "sourceErrorPx": 19.425583825015316
+      },
+      {
+        "name": "SW river bend",
+        "lonLat": [
+          63.1629028,
+          45.5873903
+        ],
+        "sourcePixel": [
+          1540,
+          3485
+        ],
+        "sourceErrorPx": 13.273595537995279
+      }
+    ],
+    "geoDeltaToSourcePixel": [
+      [
+        4086.5085533677075,
+        0.39895154352052487,
+        2317.0751944216877
+      ],
+      [
+        9.604617890349184,
+        -5930.720993116284,
+        1934.0781454785601
+      ]
+    ],
+    "sourceResizedToGeneratedPixel": [
+      [
+        1.0000596920337967,
+        0.0017961977043164695,
+        0.7224542637202345
+      ],
+      [
+        0.0005362223595011913,
+        0.9990416694655162,
+        0.6712365751273388
+      ]
+    ],
+    "generatedTransferRmsPx": 0.7820918815051539,
+    "mapXYToUvTop": [
+      [
+        0.0008586051045616873,
+        1.497631715450253e-06,
+        0.021860868954769463
+      ],
+      [
+        2.5697146636881305e-06,
+        0.0008984511775297221,
+        0.030982291591968414
+      ]
+    ],
+    "worldXZToUvTop": [
+      [
+        0.00025253091310637864,
+        4.40479916308898e-07,
+        0.580736699491189
+      ],
+      [
+        7.55798430496509e-07,
+        0.00026425034633227124,
+        0.5020933463826456
+      ]
+    ],
+    "corners": [
+      {
+        "uv": [
+          0,
+          0
+        ],
+        "lonLat": [
+          62.78240976139594,
+          46.175547182069145
+        ],
+        "mapXY": [
+          -25.400889351848498,
+          -34.411461999678295
+        ]
+      },
+      {
+        "uv": [
+          1,
+          0
+        ],
+        "lonLat": [
+          63.76118278313283,
+          46.17749445535167
+        ],
+        "mapXY": [
+          1139.2846961165017,
+          -37.742649828707776
+        ]
+      },
+      {
+        "uv": [
+          1,
+          1
+        ],
+        "lonLat": [
+          63.75955126262705,
+          45.52686238169084
+        ],
+        "mapXY": [
+          1137.3432772448375,
+          1075.2894368363034
+        ]
+      },
+      {
+        "uv": [
+          0,
+          1
+        ],
+        "lonLat": [
+          62.780778240890164,
+          45.524915108408315
+        ],
+        "mapXY": [
+          -27.342308223512724,
+          1078.6206246653328
+        ]
+      }
+    ],
+    "note": "These are manually matched approximate basemap controls, not survey-grade. Source Photoshop mosaic includes local geographic differences, notably river branches and some eastern facility positions. UVtop y points down; use texture v=1-UVtop.y if needed.",
+    "worldToTextureUv": [
+      0.00025253091310637864,
+      4.40479916308898e-07,
+      0.580736699491189,
+      -7.55798430496509e-07,
+      -0.00026425034633227124,
+      0.4979066536173544
+    ],
+    "featherWorld": 720,
+    "modelPlacement": "Existing OSM geometry, adapted exhibit locations and terrain heights are unchanged.",
+    "localCorrection": {
+      "asset": "satellite-uv-correction-v1.bin",
+      "metadata": "satellite-uv-correction-v1.json",
+      "sha256": "c85c5b03f5b90c23733559dab8e44139b0e60fdde69b0cfa8b6079647b730db4",
+      "method": "thin-plate-spline inverse UV registration; OSM geometry is unchanged",
+      "grid": [
+        256,
+        256
+      ],
+      "riverControls": 38,
+      "statistics": {
+        "maxDisplacementPixels": 66.8086127277185,
+        "maxComponentPixels": [
+          28.98141732283465,
+          66.6872440944882
+        ],
+        "minJacobian": 0.33418731477462954,
+        "maxJacobian": 2.9974380556761133,
+        "nonPositiveJacobianSamples": 0,
+        "riverResidualRmsPx": 0.3047708651483138,
+        "riverResidualMaxPx": 0.6610532857517115,
+        "positiveCoverageOutOfBoundsProbeCount": 0,
+        "uvDomainProbeCount": 1050625,
+        "confidenceWeightedPhotoAreaReductionPct": 5.376682655484069,
+        "confidenceFullyExcludedAreaPct": 3.167724609375,
+        "boundaryMaxEncodedOffsetDeviation": 5
+      },
+      "confidenceExceptions": "Supplied image downstream channel exits bottom edge while OSM exits west; far-east photo U meander differs topologically from OSM inside the footprint. Boundary-preserving warp is unsafe there."
+    },
+    "surrounding": {
+      "color": [
+        161,
+        136,
+        109
+      ],
+      "darkColor": [
+        139,
+        118,
+        94
+      ],
+      "lightColor": [
+        190,
+        166,
+        134
+      ],
+      "featherWorld": 720,
+      "edgeIrregularity": 0.3
+    },
+    "extension": {
+      "asset": "satellite-expansion-v1.jpg",
+      "metadata": "satellite-expansion-v1.json",
+      "originalCenterPreserved": true,
+      "footprintExpansion": [
+        2.5958229940529307,
+        2.419070713938685
+      ]
+    }
+  }
+}
