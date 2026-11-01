@@ -14,9 +14,10 @@ const browser=await chromium.launch({headless:true,
  args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 let activePage=null,activeCase=null;
 
-async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=null}={}){
+async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=null,reducedMotion=false}={}){
  console.log('STARTUP_CASE',name);
- const context=await browser.newContext({viewport:{width:1280,height:800},deviceScaleFactor:1,serviceWorkers:'block'});
+ const context=await browser.newContext({viewport:{width:1280,height:800},deviceScaleFactor:1,serviceWorkers:'block',
+  reducedMotion:reducedMotion?'reduce':'no-preference'});
  const page=await context.newPage();activePage=page;activeCase=name;page.setDefaultTimeout(60000);
  const record={externalBlocked:[],fontStylesheetsPending:[],pageErrors:[],shaderErrors:[],catalogRequests:0};
  evidence.cases[name]=record;
@@ -56,9 +57,12 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
   new MutationObserver(()=>{
    const loading=document.getElementById('museumLoading');if(!loading)return;
    const message=document.getElementById('museumLoadingMessage')?.textContent||'';
-   const signature=[loading.hidden,loading.dataset.state||'',message].join('|');
+   const progress=document.getElementById('museumStageProgress');
+   const stage=progress?Number(progress.getAttribute('aria-valuenow')):null;
+   const total=progress?Number(progress.getAttribute('aria-valuemax')):null;
+   const signature=[loading.hidden,loading.dataset.state||'',message,stage,total].join('|');
    if(signature===lastFeedback)return;lastFeedback=signature;
-   const feedback={at:performance.now(),hidden:loading.hidden,state:loading.dataset.state||'loading',message};
+   const feedback={at:performance.now(),hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total};
    state.feedback.push(feedback);
    if(loading.dataset.state==='ready'){
     const stats=window.__BAIKONUR_QA?.stats();
@@ -66,7 +70,7 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
     state.ready.push({...feedback,render:stats?.render||null,animateRequests:state.animateRequests,menus,
      chromeReady:document.body.classList.contains('museum-ready')});
    }
-  }).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','data-state']});
+  }).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','data-state','aria-valuenow']});
   if(!stalledBody)return;
   const originalFetch=window.fetch.bind(window);
   window.fetch=(input,init)=>{
@@ -135,6 +139,105 @@ const step=page=>page.evaluate(()=>window.__STARTUP_FRAME());
 const camera=page=>page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
 function assertNoRuntimeErrors(record){assert.deepEqual(record.pageErrors,[]);assert.deepEqual(record.shaderErrors,[]);}
 
+async function preloaderState(page){
+ return page.evaluate(()=>{
+  const loader=document.getElementById('museumLoading'),progress=document.getElementById('museumStageProgress');
+  const message=document.getElementById('museumLoadingMessage');
+  return {story:loader?.dataset.story,year:document.getElementById('museumStoryYear')?.textContent.trim(),
+   title:document.getElementById('museumStoryTitle')?.textContent.trim(),
+   stage:Number(progress?.getAttribute('aria-valuenow')),total:Number(progress?.getAttribute('aria-valuemax')),
+   role:progress?.getAttribute('role'),stageText:Number(document.getElementById('museumStageCurrent')?.textContent),
+   buttons:[...document.querySelectorAll('[data-preloader-story]')].map(button=>({
+    story:button.dataset.preloaderStory,pressed:button.getAttribute('aria-pressed'),tag:button.tagName,
+    label:button.getAttribute('aria-label')||button.textContent.trim()})),
+   live:message?.getAttribute('aria-live'),messageRole:message?.getAttribute('role'),
+   outerLive:loader?.getAttribute('aria-live'),outerRole:loader?.getAttribute('role')};
+ });
+}
+
+async function assertPreloaderFits(page,viewport,{error=false}={}){
+ await page.setViewportSize(viewport);
+ const layout=await page.evaluate(()=>{
+  const loader=document.getElementById('museumLoading');
+  const box=loader.getBoundingClientRect();
+  return {viewport:{width:innerWidth,height:innerHeight},left:box.left,right:box.right,
+   clientWidth:loader.clientWidth,scrollWidth:loader.scrollWidth,
+   documentWidth:document.documentElement.scrollWidth};
+ });
+ assert.ok(layout.left>=-1&&layout.right<=viewport.width+1,'The preloader fits the viewport horizontally');
+ assert.ok(layout.scrollWidth<=layout.clientWidth+1,'Preloader content has no horizontal overflow at '+viewport.width);
+ assert.ok(layout.documentWidth<=viewport.width+1,'The loading page does not create horizontal overflow');
+ // A short viewport may scroll vertically. The status and recovery action
+ // must still be reachable, rather than clipped below a fixed-height card.
+ const controls=['#museumLoadingMessage',...(error?['#museumRetry']:[])];
+ for(const selector of controls){
+  const control=page.locator(selector);await control.scrollIntoViewIfNeeded({timeout:2000});
+  const box=await control.boundingBox();
+  assert.ok(box&&box.width>0&&box.height>0,'Loading feedback remains visible: '+selector);
+  assert.ok(box.x>=-1&&box.x+box.width<=viewport.width+1,'Loading feedback fits horizontally: '+selector);
+  assert.ok(box.y>=-1&&box.y+box.height<=viewport.height+1,'Loading feedback is reachable by scrolling: '+selector);
+ }
+ return layout;
+}
+
+async function assertReducedMotion(page){
+ const motion=await page.evaluate(()=>{
+  const loader=document.getElementById('museumLoading');
+  // Flush styles after emulating the preference before examining animations.
+  loader.getBoundingClientRect();
+  return {reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,
+   running:loader.getAnimations({subtree:true}).filter(animation=>animation.playState==='running').length,
+   story:loader.dataset.story};
+ });
+ assert.equal(motion.reduced,true);assert.equal(motion.running,0,'Reduced motion removes decorative preloader animation');
+ return motion;
+}
+
+async function exercisePreloader(page){
+ const initial=await preloaderState(page),interactions=[];
+ assert.equal(initial.role,'progressbar');assert.ok(initial.total>1&&initial.stage<initial.total);
+ assert.equal(initial.stageText,initial.stage,'The visible stage and accessible stage agree');
+ assert.equal(initial.live,'polite');assert.equal(initial.messageRole,'status');
+ assert.notEqual(initial.outerLive,'polite','Changing a story must not announce the entire loading screen');
+ assert.notEqual(initial.outerRole,'status');
+ assert.equal(initial.buttons.length,3,'Three short stories are available before map data has arrived');
+ assert.ok(initial.buttons.every(button=>button.tag==='BUTTON'&&button.label),'Story points are named native buttons');
+ for(const [story,year,keyboard] of [['1','1961',false],['2','1988',true],['0','1957',false]]){
+  const button=page.locator('[data-preloader-story="'+story+'"]');
+  if(keyboard){await button.focus();await page.keyboard.press('Enter');}
+  else await button.click({timeout:2000});
+  const state=await preloaderState(page);
+  assert.equal(state.story,story);assert.equal(state.year,year);assert.ok(state.title);
+  assert.equal(state.buttons.filter(item=>item.pressed==='true').length,1);
+  assert.equal(state.buttons.find(item=>item.story===story).pressed,'true');
+  assert.equal(state.stage,initial.stage,'Exploring stories cannot advance real scene loading');
+  interactions.push({story:state.story,year:state.year,title:state.title});
+ }
+ await page.locator('#museumStoryPrev').click({timeout:2000});
+ assert.equal((await preloaderState(page)).story,'2','Previous wraps to the last story');
+ await page.locator('#museumStoryNext').click({timeout:2000});
+ assert.equal((await preloaderState(page)).story,'0','Next wraps to the first story');
+ const layouts=[];
+ for(const viewport of [{width:1280,height:800},{width:390,height:720},{width:320,height:568}])
+  layouts.push(await assertPreloaderFits(page,viewport));
+ await page.emulateMedia({reducedMotion:'reduce'});const motion=await assertReducedMotion(page);
+ await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.setViewportSize({width:1280,height:800});
+ await page.locator('[data-preloader-story="0"]').focus();
+ return {initial,interactions,layouts,motion};
+}
+
+function assertStageProgress(feedback){
+ const stages=feedback.filter(item=>Number.isFinite(item.stage)&&Number.isFinite(item.total)&&item.total>0);
+ assert.ok(new Set(stages.map(item=>item.stage)).size>1,'The real boot advances the displayed stages');
+ for(let i=0;i<stages.length;i++){
+  assert.ok(stages[i].stage>=0&&stages[i].stage<=stages[i].total,'Stages stay within their declared range');
+  if(i)assert.ok(stages[i].stage>=stages[i-1].stage,'Real loading stages never move backwards');
+ }
+ const ready=stages.find(item=>item.state==='ready');
+ assert.ok(ready&&ready.stage===ready.total,'All stages finish only with a rendered, ready museum');
+}
+
 try{
  // No third-party response can help this successful launch. Hold the catalog
  // until the test has observed usable startup feedback and inert controls.
@@ -146,8 +249,14 @@ try{
   assert.equal(loading.hidden,false);assert.match(loading.message,/Загружаем|Готовим|Открываем/);
   assert.ok(loading.inert.every(item=>item.inert===true));assert.equal(loading.qaAvailable,false);
   assert.equal(loading.chromeReady,false,'Both menus wait for the same successful scene startup');
-  run.record.beforeReady={message:loading.message,inert:loading.inert};run.releaseCatalog();
+  run.record.beforeReady={message:loading.message,inert:loading.inert};
+  // These interactions are intentionally short: preserve the real 15-second
+  // catalog deadline and release the request immediately after the checks.
+  run.record.preloader=await exercisePreloader(run.page);run.releaseCatalog();
   const ready=await waitReady(run.page);console.log('STARTUP_OFFLINE_READY');
+  assertStageProgress(ready.state.test.feedback);
+  assert.equal(await run.page.evaluate(()=>document.getElementById('museumLoading').contains(document.activeElement)),false,
+   'Focus does not remain inside the hidden preloader');
   assert.equal(ready.stats.ukss.status,'ready');assert.equal(ready.stats.mik112.tua.status,'ready');
   assert.ok(run.record.fontStylesheetsPending.length>0,'A genuinely pending font stylesheet does not block startup');
   assert.deepEqual(run.record.externalBlocked.filter(item=>item.type==='script'),[],'All executable engine modules come from the museum origin');
@@ -173,6 +282,8 @@ try{
   const run=await newCase('required-http-error',{httpFailure:true});await run.navigate();
   run.record.error=await waitError(run.page);
   assert.match(await run.page.locator('#error').textContent(),/HTTP 500/);
+  run.record.mobileRecovery=await assertPreloaderFits(run.page,{width:320,height:568},{error:true});
+  assert.equal(await run.page.getByRole('button',{name:'Повторить загрузку',exact:true}).isEnabled(),true);
   // A real click must reload and issue a new request, rather than leave a
   // decorative retry control on the failed page. Keep the server failing.
   const requestsBefore=run.record.catalogRequests;
@@ -185,13 +296,20 @@ try{
   assertNoRuntimeErrors(run.record);await run.close();
  }
  {
-  const run=await newCase('required-body-timeout',{stalledBody:'catalog'});await run.navigate();
+  const run=await newCase('required-body-timeout',{stalledBody:'catalog',reducedMotion:true});await run.navigate();
+  await run.page.waitForFunction(()=>window.__MUSEUM_PRELOADER&&document.getElementById('museumLoading')?.dataset.story,
+   null,{timeout:45000});
+  const beforeTimeout=await assertReducedMotion(run.page);
+  assert.equal(beforeTimeout.story,'0','Reduced motion begins with a stable first story');
   const state=await waitError(run.page),request=state.test.stalled[0];
   assert.equal(state.test.stalled.length,1);assert.ok(request.headersAt>=request.startedAt);
   assert.ok(request.abortedAt!==null,'The timeout aborts the body request');
   const elapsed=request.abortedAt-request.startedAt;
   assert.ok(elapsed>=14000&&elapsed<23000,'The unchanged 15-second deadline includes the response body: '+elapsed);
   assert.match(state.message,/не ответил вовремя/i);assert.equal(state.test.animateRequests,0);
+  const afterTimeout=await assertReducedMotion(run.page);
+  assert.equal(afterTimeout.story,beforeTimeout.story,'Reduced motion keeps the story stable through the full network deadline');
+  run.record.reducedMotion={beforeTimeout,afterTimeout};
   run.record.error=state;run.record.bodyTimeoutMs=elapsed;
   await run.page.screenshot({path:`${out}/${prefix}-required-body-timeout.png`,timeout:90000});
   assertNoRuntimeErrors(run.record);await run.close();

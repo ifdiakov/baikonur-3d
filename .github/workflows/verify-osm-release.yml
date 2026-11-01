@@ -1,9 +1,11 @@
-name: Museum 8 natural terrain transitions
+name: Museum cinematic preloader
 on:
   push:
     branches: [main]
     paths:
       - 'index.html'
+      - 'preloader.html'
+      - 'scripts/build-preloader-preview.mjs'
       - 'workshop/zenit.html'
       - 'workshop/model.html'
       - 'workshop/saturn.html'
@@ -52,7 +54,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum8-r16-reference-20261101-v1
+  RELEASE_TAG: museum-preloader-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -346,12 +348,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/r16-reference-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/preloader-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей — Р-16 по новым референсам',
+                name: 'Байконур — интерактивный прелоадер',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

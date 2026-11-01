@@ -3,6 +3,8 @@
 
   var finished = false;
   var failed = false;
+  var step = 0;
+  var totalSteps = 9;
   var controls = ['museumLeftStack', 'museumRightStack', 'labelLayer', 'timeDock', 'hero'];
   var element = function (id) { return document.getElementById(id); };
   var setMessage = function (text) {
@@ -14,26 +16,81 @@
     if (retry) retry.hidden = false;
   };
 
-  function stage(text) {
-    if (!finished && !failed) setMessage(text);
+  function preloader(method) {
+    var view = window.__MUSEUM_PRELOADER;
+    if (view && typeof view[method] === 'function') {
+      // The introduction is optional presentation. A visual enhancement must
+      // never keep a successfully rendered museum behind its loading screen.
+      try { view[method].apply(view, Array.prototype.slice.call(arguments, 1)); }
+      catch (error) { console.warn('Museum introduction:', error); }
+    }
+  }
+
+  function stage(text, index) {
+    if (finished || failed) return;
+    setMessage(text);
+    if (Number.isInteger(index) && index >= 0 && index <= totalSteps) {
+      step = Math.max(step, index);
+      preloader('stage', step, totalSteps);
+    }
+  }
+
+  // Give the browser an opportunity to paint the status and handle a visitor's
+  // interaction before the next synchronous geometry batch. Background tabs
+  // must still start even when animation frames are suspended.
+  function paint() {
+    return new Promise(function (resolve) {
+      var frame;
+      var fallback = setTimeout(function () {
+        if (frame) cancelAnimationFrame(frame);
+        resolve();
+      }, 120);
+      frame = requestAnimationFrame(function () {
+        clearTimeout(fallback);
+        setTimeout(resolve, 0);
+      });
+    });
   }
 
   function ready() {
+    if (finished || failed) return;
     finished = true;
-    failed = false;
     clearTimeout(watchdog);
     var loading = element('museumLoading');
-    if (loading) { loading.hidden = true; loading.dataset.state = 'ready'; }
-    controls.forEach(function (id) {
-      var control = element(id);
-      if (control) {
-        control.inert = false;
-        control.removeAttribute('inert');
+    var focusWasInside = loading && loading.contains(document.activeElement);
+    var revealed = false;
+    function reveal() {
+      if (revealed) return;
+      revealed = true;
+      if (loading) { loading.hidden = true; loading.dataset.state = 'ready'; }
+      controls.forEach(function (id) {
+        var control = element(id);
+        if (control) {
+          control.inert = false;
+          control.removeAttribute('inert');
+        }
+      });
+      document.body.classList.add('museum-ready');
+      preloader('destroy');
+      if (focusWasInside) {
+        var target = document.querySelector('#sitesAccordion > summary');
+        // A collapsed mobile menu is not a valid focus destination.
+        if (target && target.getClientRects().length && getComputedStyle(target).visibility !== 'hidden') {
+          target.focus({ preventScroll: true });
+        } else {
+          var view = element('view');
+          if (view) { view.tabIndex = -1; view.focus({ preventScroll: true }); }
+        }
       }
-    });
-    document.body.classList.add('museum-ready');
+    }
     window.removeEventListener('error', onError, true);
     window.removeEventListener('unhandledrejection', onRejection);
+    setMessage('Космодром готов. Отправляемся…');
+    preloader('stage', totalSteps, totalSteps);
+    preloader('finish');
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!loading || !window.__MUSEUM_PRELOADER || reduced || document.hidden) reveal();
+    else setTimeout(reveal, 460);
   }
 
   function fail(error) {
@@ -46,6 +103,7 @@
     if (error && error.name === 'TimeoutError') message += ' Сервер не ответил вовремя.';
     setMessage(message);
     showRetry();
+    preloader('fail');
   }
 
   async function fetchJSON(path, options) {
@@ -104,7 +162,8 @@
     if (finished || failed) return;
     setMessage('Загрузка занимает больше времени… Можно подождать или повторить попытку.');
     showRetry();
+    preloader('slow');
   }, 30000);
 
-  window.__MUSEUM_STARTUP = Object.freeze({ stage: stage, ready: ready, fail: fail, fetchJSON: fetchJSON });
+  window.__MUSEUM_STARTUP = Object.freeze({ stage: stage, ready: ready, fail: fail, fetchJSON: fetchJSON, paint: paint });
 })();

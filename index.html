@@ -2,17 +2,8 @@
 /* Bounded © Vlad Churkin, SIL Open Font License 1.1 — https://github.com/churkinvlad/Bounded */
 @font-face{font-family:'Bounded';src:url('https://cdn.jsdelivr.net/gh/churkinvlad/Bounded@main/Variable/Bounded-Variable.ttf') format('truetype');font-style:normal;font-weight:200 900;font-display:swap;}*{box-sizing:border-box}body{margin:0;background:#09121b;color:white;font-family:Montserrat,Arial,sans-serif;overflow:hidden}#view{position:absolute;inset:0}#ui{position:absolute;z-index:5;top:15px;left:15px;width:320px;max-height:calc(100vh - 30px);overflow:auto;background:#071623ec;border:1px solid #ffffff31;border-radius:16px;padding:18px;backdrop-filter:blur(14px)}.brand{font-weight:900;font-size:20px;letter-spacing:.08em}.brand span{color:#ed4742}.label{color:#f08078;font-weight:800;font-size:10px;letter-spacing:.1em;margin:14px 0 8px}.small{color:#b7c8d6;font-size:11px;line-height:1.6}.buttons{display:flex;gap:6px;flex-wrap:wrap}.buttons button,.entry{background:#1d3447;border:1px solid #ffffff2d;color:white;border-radius:8px;padding:10px;font:600 11px Montserrat;cursor:pointer}.buttons button:hover,.entry:hover{background:#b73d38}.entry{display:block;text-align:left;width:100%;margin:5px 0}.entry small{display:block;color:#a7b9c8;margin-top:5px;font-size:10px;font-weight:400}.filter{display:block;margin:9px 0;font-size:11px;color:#c6d5e1}.filter input{accent-color:#ed4742}.search{width:100%;background:#182a3b;color:#fff;border:1px solid #ffffff36;border-radius:8px;padding:10px;font:11px Montserrat}.year{width:100%;accent-color:#ed4742}.hud{position:absolute;right:15px;bottom:15px;background:#071623e8;border:1px solid #ffffff36;border-radius:12px;padding:13px;z-index:5;color:#c7d8e5;font-size:10px;line-height:1.8}.info{position:absolute;right:15px;top:15px;z-index:5;display:none;max-width:310px;background:#081724ed;border:1px solid #ffffff36;border-radius:14px;padding:16px;font-size:12px}.info p{color:#b6c7d6;line-height:1.6}.close{float:right;background:transparent;color:white;border:0;font-size:20px;cursor:pointer}#labelLayer{position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden}
 /* Ground cards must not cover the aircraft or intercept orbit gestures while following. */
-.museum-loading{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;background:#09121bf2;padding:24px;font-family:Montserrat,Arial,sans-serif}
-.museum-loading[hidden]{display:none!important}
-.museum-loading-card{max-width:420px;width:100%;text-align:center;color:#e9eef2}
-.museum-loading-brand{display:block;font-size:12px;font-weight:800;letter-spacing:.14em;color:#aebecb}
-.museum-loading-spinner{display:block;width:32px;height:32px;margin:28px auto 22px;border:3px solid #ffffff20;border-top-color:#ed4742;border-radius:50%;animation:museum-loading-spin 1s linear infinite}
-.museum-loading-card p{font-size:15px;line-height:1.6;margin:12px 0}
-.museum-loading-card button{margin-top:14px;padding:12px 18px;border:1px solid #ed4742;border-radius:8px;background:#bf3f3a;color:white;font:600 13px Montserrat,Arial,sans-serif;cursor:pointer}
-.museum-loading-card button:focus-visible{outline:2px solid white;outline-offset:4px}
-.museum-loading[data-state="error"] .museum-loading-spinner{animation:none;border-color:#ed4742}
-@keyframes museum-loading-spin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.museum-loading-spinner{animation:none}}
+.museum-loading{position:fixed;inset:0;z-index:1000;background:#09121b;color:#f4f3ed;overflow:auto}.museum-loading[hidden]{display:none!important}
+
 body.following-arrival #labelLayer{display:none!important}
 .site-label{position:absolute;display:flex;gap:6px;align-items:center;pointer-events:auto;transform:translate(-50%,-112%);border:1px solid #e7eef52b;border-radius:6px;background:rgba(10,23,35,var(--card-background-alpha,.6));padding:4px 7px;white-space:nowrap;color:#d7e0e6;box-shadow:0 2px 12px #0005;cursor:pointer;font:600 10px Montserrat,Arial;transition:opacity .18s ease,background-color .22s ease,border-color .18s ease,box-shadow .18s ease;opacity:var(--level-alpha,1);max-width:225px}
 .site-label.is-provisional{border-style:dashed}
@@ -368,7 +359,96 @@ body.following-arrival #labelLayer{display:none!important}
  #info.terminal-active.terminal-details-open .orgrow{margin:10px 0}#info.terminal-active.terminal-details-open #infoExtra{margin-top:10px}
 }
 #cycloneViews .detail-button{padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#cycloneViews .detail-button:hover{background:#3b5969}#cycloneViews .detail-button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
-</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261101-proton-launch-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"></head><body><div id="view"></div><section id="museumLoading" class="museum-loading" role="status" aria-live="polite" aria-atomic="true"><div class="museum-loading-card"><span class="museum-loading-brand">БАЙКОНУР</span><span class="museum-loading-spinner" aria-hidden="true"></span><p id="museumLoadingMessage">Загружаем музей…</p><button id="museumRetry" type="button" hidden>Повторить загрузку</button></div></section><section id="hero" inert aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" inert aria-label="Подписи площадок"></div><div id="error"></div><div id="museumLeftStack" inert><aside id="ui" aria-label="Меню музея"><div id="museumIdentity"><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-dimension">3D</span></div></div><div class="buttons" id="menuControls"></div><section id="arrivalPanel" class="arrival-panel" aria-label="Полёты аэродрома Крайний"></section><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><details id="sitesAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">СТАРТОВЫЕ КОМПЛЕКСЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="search" type="search" aria-label="Поиск стартовых комплексов" placeholder="Номер или название старта…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><details id="equipmentAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">РАКЕТЫ И ТЕХНИКА</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="infrastructureAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">ИНФРАСТРУКТУРА</span><span class="sites-accordion-count" id="infrastructureCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="infrastructureSearch" type="search" aria-label="Поиск инфраструктуры" placeholder="Аэродром, станция, гостиница…" autocomplete="off"><div id="infrastructureList" class="sites-list"></div></div></details><details id="mythsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">МИФЫ И ЛЕГЕНДЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="graveyardAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">КОСМИЧЕСКОЕ КЛАДБИЩЕ</span><span class="sites-accordion-count" id="graveyardCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"><div data-menu-items></div><input class="search" id="graveyardSearch" type="search" aria-label="Поиск полевых находок" placeholder="Номер или название находки…" autocomplete="off"><div id="graveyardList" class="sites-list"></div></div></details></aside><details id="navigationGuide" class="navigation-guide" aria-label="Как управлять виртуальным музеем"><summary><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4.5" y="2" width="15" height="20" rx="7"/><path d="M12 2v7m-7.5 0h15"/></svg><span>КАК УПРАВЛЯТЬ КАРТОЙ</span><span class="guide-chevron" aria-hidden="true">⌄</span></summary><div class="navigation-guide-content"><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M17 10h7v7h-7z" fill="#e56f65" stroke="none"/><path d="M4 30l6-6m0 6l-6-6M44 30l-6-6m0 6l6-6" stroke="#efa99b"/></svg><span><b>Левая кнопка мыши</b><small>Перемещение над картой</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M25 10h8v7h-8z" fill="#e56f65" stroke="none"/><path d="M39 29a16 16 0 0 1-21 15l-1-6m1 6l6-3" stroke="#efa99b"/></svg><span><b>Правая кнопка мыши</b><small>Вращение камеры · не ниже 30°</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="15" y="5" width="18" height="34" rx="9"/><path d="M24 5v9m-9 0h18"/><rect x="21" y="10" width="6" height="11" rx="3" fill="#e56f65" stroke="none"/><path d="m7 17 5-5 5 5M7 32l5 5 5-5M12 12v25" stroke="#efa99b"/></svg><span><b>Колёсико</b><small>Приближение и отдаление</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="#dce8ee" stroke-width="1.4" aria-hidden="true"><rect x="18" y="2" width="12" height="12" rx="2" fill="#e56f65"/><rect x="3" y="18" width="12" height="12" rx="2"/><rect x="18" y="18" width="12" height="12" rx="2"/><rect x="33" y="18" width="12" height="12" rx="2"/><path d="m24 6 0 5M9 21l0 6M24 21l0 6M39 21l0 6" stroke="#fff" stroke-width="2"/></svg><span><b>WASD или стрелки</b><small>Полёт по территории · Shift быстрее</small></span></div><div class="guide-note">Нажмите на площадку или выберите её в списке слева, чтобы открыть карточку.</div></div></details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261101-chrome-v1"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
+</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261101-proton-launch-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-v1"></head><body><div id="view"></div>
+<!-- MUSEUM_PRELOADER_START -->
+<section id="museumLoading" class="museum-loading preloader" data-story="0" aria-label="Подготовка интерактивного музея Байконура">
+  <div class="preloader__atmosphere" aria-hidden="true"></div>
+  <div class="preloader__frame">
+    <header class="preloader__header">
+      <div class="preloader__identity"><span>ИНТЕРАКТИВНЫЙ МУЗЕЙ</span><span class="preloader__dimension">3D</span></div>
+      <div class="preloader__connection"><span class="preloader__signal" aria-hidden="true"></span><span id="museumPreloaderState">ПОДГОТОВКА К СТАРТУ</span></div>
+    </header>
+
+    <div class="preloader__title-block">
+      <h1 class="preloader__title">БАЙКОНУР<span class="preloader__title-mark" aria-hidden="true">✦</span></h1>
+      <div class="preloader__title-caption"><p id="museumPreloaderIntro">Космос начинается здесь.</p><span class="preloader__edition" aria-hidden="true"><span></span>1955 — ∞</span></div>
+    </div>
+
+    <div class="preloader__experience">
+      <article class="preloader__story" aria-labelledby="museumStoryTitle">
+        <div class="preloader__story-overline"><span>ПОКА КОСМОДРОМ ПРОСЫПАЕТСЯ</span><span id="museumStoryCounter">01 / 03</span></div>
+        <div class="preloader__story-copy">
+          <div class="preloader__story-date"><span id="museumStoryYear" class="preloader__story-year">1957</span><span id="museumStoryDate" class="preloader__story-day">04 ОКТЯБРЯ</span></div>
+          <h2 id="museumStoryTitle" class="preloader__story-title">Первый сигнал</h2>
+          <p id="museumStoryText" class="preloader__story-text">С Гагаринского старта на орбиту отправился первый искусственный спутник Земли. Космическая эра началась здесь.</p>
+        </div>
+        <div class="preloader__story-controls" role="group" aria-label="Истории космодрома">
+          <div class="preloader__years">
+            <button type="button" class="preloader__year-button" data-preloader-story="0" aria-pressed="true" aria-label="1957 — первый спутник Земли">1957</button>
+            <button type="button" class="preloader__year-button" data-preloader-story="1" aria-pressed="false" aria-label="1961 — первый полёт человека в космос">1961</button>
+            <button type="button" class="preloader__year-button" data-preloader-story="2" aria-pressed="false" aria-label="1988 — полёт Бурана">1988</button>
+          </div>
+          <div class="preloader__arrows">
+            <button id="museumStoryPrev" type="button" class="preloader__arrow" aria-label="Предыдущая история"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></button>
+            <button id="museumStoryNext" type="button" class="preloader__arrow" aria-label="Следующая история"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+      <div class="preloader__map" aria-label="Условная схема космодрома: выберите старт, чтобы прочитать историю">
+        <div class="preloader__map-caption"><span>СХЕМА КОСМОДРОМА</span><span class="preloader__map-invitation">ВЫБЕРИТЕ СТАРТ <span aria-hidden="true">↗</span></span></div>
+        <div class="preloader__map-plane">
+          <svg class="preloader__map-drawing" viewBox="0 0 620 300" fill="none" aria-hidden="true">
+            <defs><linearGradient id="museumPreloaderRoute" x1="85" y1="260" x2="460" y2="65" gradientUnits="userSpaceOnUse"><stop stop-color="#ff8b77" stop-opacity=".1"/><stop offset="1" stop-color="#ffc5b2"/></linearGradient></defs>
+            <g class="preloader__map-grid" stroke="currentColor" stroke-width=".75">
+              <path d="M26 70h568M26 150h568M26 230h568M105 24v252M240 24v252M375 24v252M510 24v252"/>
+              <path d="M26 24h9m-9 0v9M594 24h-9m9 0v9M26 276h9m-9 0v-9M594 276h-9m9 0v-9" stroke-width="1.5"/>
+            </g>
+            <g class="preloader__map-terrain" stroke="currentColor" stroke-width=".8">
+              <path d="M25 218c58-21 95-13 130 2s63 14 104 36 78 16 110-1 62-9 94 5 88 7 130-12"/>
+              <path d="M25 228c60-23 93-16 125-1s66 14 107 36 83 18 114 2 59-14 90 1 89 9 132-7"/>
+              <path d="M42 95c24-33 81-46 117-29s52 35 93 16 67-30 95-16M387 158c40 26 79 1 95-15s59-30 99-12"/>
+            </g>
+            <g class="preloader__map-track" stroke="currentColor" stroke-width="1">
+              <path d="m144 286 38-47 21-5 33-48 30-10 24-60 42-18 28-48"/>
+              <path d="m149 290 38-47 20-5 33-48 30-10 24-60 42-18 28-48"/>
+              <path d="m205 235 91-16 39-34 91-11 30-26M290 116l-46-14-49-37-67-5M331 99l64 5 57-26"/>
+              <path d="m176 245 11 9m1-24 12 9m19-37 13 8m11-34 8 14m19-49 13 5m-2-33 12 4m25-26 7 12m18-33 11 7"/>
+            </g>
+            <g class="preloader__map-buildings" stroke="currentColor" stroke-width="1">
+              <path d="m273 153 23-8 12 29-23 8zm29-2 18-6 8 19-18 6zM372 112h36v13h-36zm4 18h27v8h-27z"/>
+              <path d="m419 171 13-12 16 17-13 12zm-96 19 11-10 12 13-11 10zM167 236h20v9h-20zm-10 18h24v8h-24z"/>
+              <path d="m101 60 60-26 4 9-60 26zm17 20 36-15 4 8-36 15z"/>
+              <path d="M445 65h30v27h-30zM449 69h22v19h-22zM440 133h29v27h-29zM444 137h21v19h-21z"/>
+              <path d="m346 47 14-10 16 20-14 10zm-12 20 10-7 8 10-10 7z"/>
+            </g>
+            <path class="preloader__route preloader__route--gagarin" d="m146 286 38-45 21-5 91-17 39-34 91-11 29-27" stroke="url(#museumPreloaderRoute)" stroke-width="2"/>
+            <path class="preloader__route preloader__route--buran" d="m146 286 38-45 21-5 33-48 30-10 24-60 40-18 63 4 60-26" stroke="url(#museumPreloaderRoute)" stroke-width="2"/>
+            <path class="preloader__orbit" d="M78 193C62 127 169 27 349 27c147 0 238 75 189 147" stroke="currentColor" stroke-width=".8" stroke-dasharray="3 8"/>
+            <g class="preloader__map-lights" fill="#ffd2c3"><circle cx="292" cy="118" r="2"/><circle cx="238" cy="188" r="2"/><circle cx="335" cy="185" r="2"/><circle cx="395" cy="104" r="2"/><circle cx="184" cy="241" r="2"/></g>
+            <g class="preloader__map-small-labels" fill="currentColor" font-family="Montserrat,Arial,sans-serif" font-size="8" letter-spacing="1.5"><text x="88" y="101">ЮБИЛЕЙНЫЙ</text><text x="260" y="208">МИК</text><text x="116" y="276">К КОСМОДРОМУ</text></g>
+          </svg>
+          <button id="museumMapGagarin" type="button" class="preloader__map-point preloader__map-point--gagarin is-active" aria-label="Истории Гагаринского старта: первый спутник и полёт Гагарина" aria-pressed="true"><span class="preloader__map-dot" aria-hidden="true"></span><span class="preloader__map-point-copy"><small>ПЛОЩАДКА 01</small><strong>ГАГАРИНСКИЙ СТАРТ</strong></span></button>
+          <button id="museumMapBuran" type="button" class="preloader__map-point preloader__map-point--buran" aria-label="Площадка 110: история полёта Бурана" aria-pressed="false"><span class="preloader__map-dot" aria-hidden="true"></span><span class="preloader__map-point-copy"><small>ПЛОЩАДКА 110</small><strong>ЭНЕРГИЯ — БУРАН</strong></span></button>
+          <span class="preloader__map-north" aria-hidden="true">С<span>↑</span></span>
+        </div>
+        <div class="preloader__map-footnote" aria-hidden="true"><span class="preloader__map-legend"><i></i> ИСТОРИЯ НАЧИНАЕТСЯ ЗДЕСЬ</span><span>УСЛОВНАЯ СХЕМА</span></div>
+      </div>
+    </div>
+
+    <div class="preloader__loading">
+      <div class="preloader__loading-main">
+        <div class="preloader__loading-copy"><p id="museumLoadingMessage" role="status" aria-live="polite" aria-atomic="true">Загружаем музей…</p><p id="museumPreloaderHint" class="preloader__loading-hint">Макет откроется автоматически</p></div>
+        <button id="museumRetry" class="preloader__retry" type="button" hidden>Повторить загрузку <span aria-hidden="true">↗</span></button>
+        <div class="preloader__stage" aria-hidden="true"><span class="preloader__stage-label">ЭТАП</span><span id="museumStageCurrent" class="preloader__stage-current">00</span><span class="preloader__stage-divider">/</span><span id="museumStageTotal" class="preloader__stage-total">09</span></div>
+      </div>
+      <div id="museumStageProgress" class="preloader__progress" role="progressbar" aria-label="Подготовка музея" aria-valuemin="0" aria-valuenow="0" aria-valuemax="9" aria-valuetext="Подготовка запуска"><span class="is-current"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <noscript><p class="preloader__noscript">Для интерактивного музея нужен JavaScript. Включите его в настройках браузера и обновите страницу.</p></noscript>
+    </div>
+  </div>
+</section>
+<!-- MUSEUM_PRELOADER_END -->
+<section id="hero" inert aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" inert aria-label="Подписи площадок"></div><div id="error"></div><div id="museumLeftStack" inert><aside id="ui" aria-label="Меню музея"><div id="museumIdentity"><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-dimension">3D</span></div></div><div class="buttons" id="menuControls"></div><section id="arrivalPanel" class="arrival-panel" aria-label="Полёты аэродрома Крайний"></section><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><details id="sitesAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">СТАРТОВЫЕ КОМПЛЕКСЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="search" type="search" aria-label="Поиск стартовых комплексов" placeholder="Номер или название старта…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><details id="equipmentAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">РАКЕТЫ И ТЕХНИКА</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="infrastructureAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">ИНФРАСТРУКТУРА</span><span class="sites-accordion-count" id="infrastructureCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="infrastructureSearch" type="search" aria-label="Поиск инфраструктуры" placeholder="Аэродром, станция, гостиница…" autocomplete="off"><div id="infrastructureList" class="sites-list"></div></div></details><details id="mythsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">МИФЫ И ЛЕГЕНДЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="graveyardAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">КОСМИЧЕСКОЕ КЛАДБИЩЕ</span><span class="sites-accordion-count" id="graveyardCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"><div data-menu-items></div><input class="search" id="graveyardSearch" type="search" aria-label="Поиск полевых находок" placeholder="Номер или название находки…" autocomplete="off"><div id="graveyardList" class="sites-list"></div></div></details></aside><details id="navigationGuide" class="navigation-guide" aria-label="Как управлять виртуальным музеем"><summary><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4.5" y="2" width="15" height="20" rx="7"/><path d="M12 2v7m-7.5 0h15"/></svg><span>КАК УПРАВЛЯТЬ КАРТОЙ</span><span class="guide-chevron" aria-hidden="true">⌄</span></summary><div class="navigation-guide-content"><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M17 10h7v7h-7z" fill="#e56f65" stroke="none"/><path d="M4 30l6-6m0 6l-6-6M44 30l-6-6m0 6l6-6" stroke="#efa99b"/></svg><span><b>Левая кнопка мыши</b><small>Перемещение над картой</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M25 10h8v7h-8z" fill="#e56f65" stroke="none"/><path d="M39 29a16 16 0 0 1-21 15l-1-6m1 6l6-3" stroke="#efa99b"/></svg><span><b>Правая кнопка мыши</b><small>Вращение камеры · не ниже 30°</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="15" y="5" width="18" height="34" rx="9"/><path d="M24 5v9m-9 0h18"/><rect x="21" y="10" width="6" height="11" rx="3" fill="#e56f65" stroke="none"/><path d="m7 17 5-5 5 5M7 32l5 5 5-5M12 12v25" stroke="#efa99b"/></svg><span><b>Колёсико</b><small>Приближение и отдаление</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="#dce8ee" stroke-width="1.4" aria-hidden="true"><rect x="18" y="2" width="12" height="12" rx="2" fill="#e56f65"/><rect x="3" y="18" width="12" height="12" rx="2"/><rect x="18" y="18" width="12" height="12" rx="2"/><rect x="33" y="18" width="12" height="12" rx="2"/><path d="m24 6 0 5M9 21l0 6M24 21l0 6M39 21l0 6" stroke="#fff" stroke-width="2"/></svg><span><b>WASD или стрелки</b><small>Полёт по территории · Shift быстрее</small></span></div><div class="guide-note">Нажмите на площадку или выберите её в списке слева, чтобы открыть карточку.</div></div></details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-preloader.js?v=20261101-preloader-v1"></script><script src="./src/museum-startup.js?v=20261101-preloader-v1"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
@@ -433,7 +513,7 @@ let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
 const nextLaunchDataReady=startup.fetchJSON('./data/next-launch.json?v=20261101-bottom-docks-v1',{optional:true});
-startup.stage('Загружаем карту космодрома…');
+startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,knowledgeData]=await Promise.all([
  './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson','./data/osm/railways.geojson',
@@ -450,8 +530,8 @@ function museumDockTop(){
  return Math.min(innerHeight,...tops);
 }
 
-startup.stage('Создаём ландшафт…');
-await new Promise(resolve=>setTimeout(resolve,0));
+startup.stage('Создаём ландшафт…',2);
+await startup.paint();
 const geography=createMuseumGeography({catalog,matches:osmMatches});
 const siteRecords=geography.sites.filter(record=>!record.aliasOf&&record.render!==false);
 const site110Record=siteRecords.find(record=>record.id==='pad-110');
@@ -673,8 +753,16 @@ const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSit
  g.traverse(m=>{if(m.isMesh){m.userData.idx=i;clickable.push(m)}});
  objects.push({g,name,from,type,x,y,record:siteRecords[i]});
 }
-sites.forEach(makeSite);
-startup.stage('Загружаем модели УКСС и Кузнечиков…');
+// Keep the introduction responsive while preserving the original site order.
+let siteBatchStarted=performance.now();
+for(let i=0;i<sites.length;i++){
+ makeSite(sites[i],i);
+ if(i<sites.length-1&&performance.now()-siteBatchStarted>32){
+  await startup.paint();siteBatchStarted=performance.now();
+ }
+}
+startup.stage('Загружаем модели УКСС и Кузнечиков…',3);
+await startup.paint();
 // Prepare both source-model parents, then load them together before the
 // synchronous road build. Their existing deadlines measure the network/body
 // work and cannot be consumed by unrelated scene construction.
@@ -705,14 +793,8 @@ if(mik112Exhibit){
  if(tuaExhibit.metadata.status==='ready')adaptTuaRails(mik112Exhibit,tuaExhibit.metadata);
  group.traverse(o=>{if(o.isMesh){o.userData.idx=mik112Index;clickable.push(o);}});
 }
-startup.stage('Создаём дороги и железнодорожные подходы…');
-// Paint the completed loading stage before the next synchronous build. A
-// frame followed by a task also lets pending network/body aborts settle.
-await new Promise(resolve=>{
- const backgroundFallback=setTimeout(resolve,120);
- requestAnimationFrame(()=>{clearTimeout(backgroundFallback);resolve();});
-});
-await new Promise(resolve=>setTimeout(resolve,0));
+startup.stage('Прокладываем дороги и железнодорожные пути…',4);
+await startup.paint();
 const transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords});
 if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
 const roadSignData=await loadMuseumData('./data/road-signs.json');
@@ -1349,8 +1431,8 @@ padGroup.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=0;clickable.push(mesh
 // Site 250's imported asset is normalized to the existing launch origin/axes.
 // Both source models finished loading before roads; integrate the prepared
 // exhibit before selection, terrain clipping and evening light placement.
-startup.stage('Готовим освещение и управление…');
-await new Promise(resolve=>setTimeout(resolve,0));
+startup.stage('Собираем стартовые и технические комплексы…',5);
+await startup.paint();
 if(ukssExhibit.metadata.status==='ready')ukssGroup.userData.ukssConnections=buildUkssConnections(ukssGroup,ukssExhibit.metadata.connections);
 ukssGroup.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=ukssIndex;clickable.push(mesh)}});
 ukssCutout={origin:ukssGroup.position.clone(),scale:UKSS_SCALE,enabled:{value:1},polygon:ukssExhibit.terrainCutout.polygon};
@@ -1387,8 +1469,8 @@ for(const o of objects.filter(o=>o.g.userData.airport)){
  o.g.userData.airport.osmRunwayId=o.record.runwaySource?.osmId;o.g.updateWorldMatrix(true,true);
 }
 const exhibitClearance=createExhibitClearance(cardObjects);
-startup.stage('Формируем рельеф степи…');
-await new Promise(resolve=>setTimeout(resolve,0));
+startup.stage('Формируем рельеф степи…',6);
+await startup.paint();
 const terrainRelief=buildMuseumTerrainRelief({dem:await terrainDemReady,objects:cardObjects,transport,riverWater,riverCorePts,point,geography,places:osmPlaces,
  satelliteCanvas,renderer,steppeSurface,scene,registerGroundSurface});
 flankDistricts.addTerrainRelief(terrainRelief);
@@ -1440,15 +1522,15 @@ if(mik112Exhibit){
  rocketExhibits.add('mik112-hall',{parent,...mounts.hall,modelId:'energia-buran',siteId:'pad-112'});
  mounts.tua.forEach((mount,index)=>rocketExhibits.add('tua-'+index,{parent:mik112Exhibit.transportersGroup,...mount,modelId:'energia-buran',siteId:'pad-112'}));
 }
-startup.stage('Загружаем ракетные экспонаты…');
+startup.stage('Загружаем ракетные экспонаты…',7);
 // Let the initial placements finish while the event loop can handle their
 // responses. Building lighting and traffic below is synchronous and must not
 // consume the models' existing fetch deadlines before their bodies settle.
 // Failed placements retain their visible retry action.
 const initialRocketModels=rocketExhibits.whenReady();
 await initialRocketModels;
-startup.stage('Готовим освещение и управление…');
-await new Promise(resolve=>setTimeout(resolve,0));
+startup.stage('Включаем огни и готовим управление…',8);
+await startup.paint();
 tuaRocketControls=createTuaRocketControls({container:document.getElementById('description').parentElement,exhibits:rocketExhibits,keys:['tua-0','tua-1'],onSelect:id=>{
  if(activeKnowledge?.kind==='rocket'&&activeKnowledge.id!=='tua')showRocketKnowledge(id,'pad-112',false);
 }});
@@ -1969,7 +2051,7 @@ if(requestedPad){
 document.getElementById('mik112All').onclick=()=>focusMik112('all');
 document.getElementById('mik112Tua').onclick=()=>focusMik112('tua');
 document.getElementById('mik112Top').onclick=()=>focusMik112('top');
-document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(isCameraTextEntry(e.target)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=museumMovementSpeed(distance,keys.has('shift'))*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}// SCENE_SELECTION_NO_TERRAIN_JUMP_V1: do not interpret navigation as a click.
+document.getElementById('close').onclick=()=>{setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set();window.addEventListener('keydown',e=>{if(!document.body.classList.contains('museum-ready')||isCameraTextEntry(e.target)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>keys.clear());let lastFrame=performance.now();function moveCamera(dt){let dx=0,dz=0;if(keys.has('w')||keys.has('arrowup'))dz-=1;if(keys.has('s')||keys.has('arrowdown'))dz+=1;if(keys.has('a')||keys.has('arrowleft'))dx-=1;if(keys.has('d')||keys.has('arrowright'))dx+=1;if(!dx&&!dz)return;const yaw=Math.atan2(camera.position.x-ctl.target.x,camera.position.z-ctl.target.z);const distance=camera.position.distanceTo(ctl.target);const speed=museumMovementSpeed(distance,keys.has('shift'))*Math.min(dt,.06);const mx=(Math.cos(yaw)*dx+Math.sin(yaw)*dz)*speed,mz=(-Math.sin(yaw)*dx+Math.cos(yaw)*dz)*speed;camera.position.x+=mx;camera.position.z+=mz;ctl.target.x+=mx;ctl.target.z+=mz}// SCENE_SELECTION_NO_TERRAIN_JUMP_V1: do not interpret navigation as a click.
 const museumCameraBounds={minX:(Math.min(geography.bounds.minX,...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,maxX:(Math.max(geography.bounds.maxX,...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,minZ:(Math.min(geography.bounds.minY,...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S,maxZ:(Math.max(geography.bounds.maxY,...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S};
 const saturnCameraSample=new THREE.Vector3();
 function museumTerrainHeightAt(x,z){
@@ -1998,8 +2080,8 @@ const sceneSelection=installSceneSelection({element:renderer.domElement,camera,c
   },blocked:()=>Boolean(lightingEditor?.active),
  onNavigate:()=>{if(fly){fly=false;}}
 });
-startup.stage('Открываем 3D-карту…');
-await new Promise(resolve=>setTimeout(resolve,0));
+startup.stage('Готовим первый вид космодрома…',9);
+await startup.paint();
 window.__MUSEUM_ROCKETS_READY=initialRocketModels;
 window.__BAIKONUR_QA={terrainVisibility(visibility=null){
  const sources={main:ground,regional:outerTerrain.planes[0],intermediate:outerTerrain.planes[1],satellite:satelliteGround,relief:terrainRelief.mesh};

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#09121b">
+<title>БАЙКОНУР — прелоадер</title>
+<meta name="description" content="Интерактивный прелоадер музея Байконура: выберите историю и откройте космодром.">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<style>@font-face{font-family:'Bounded';src:url('https://cdn.jsdelivr.net/gh/churkinvlad/Bounded@main/Variable/Bounded-Variable.ttf') format('truetype');font-style:normal;font-weight:200 900;font-display:swap;}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#09121b;color:#f4f3ed;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
+</style>
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-v1">
+<style>
+.preloader__preview-link{display:inline-flex;align-items:center;gap:15px;min-height:44px;padding:0 13px;border:1px solid #ffd0b745;border-radius:5px;color:#ffcab6;text-decoration:none;font:600 10px/1.3 Montserrat,Arial,sans-serif;letter-spacing:.02em;white-space:nowrap}
+.preloader__preview-link:hover{background:#ff8b7715;border-color:#ffc1a88c}.preloader__preview-link:focus-visible{outline:2px solid #ffd2c3;outline-offset:3px}
+@media(max-width:700px){.preloader__preview-link{gap:6px;padding:0 9px;font-size:8px}.preloader__header{display:flex;min-height:44px}}
+@media(min-width:701px) and (max-height:540px){.preloader__header{display:flex;min-height:44px}.preloader__frame{height:auto;min-height:100%;grid-template-rows:auto auto minmax(155px,1fr) auto}}
+</style>
+</head><body>
+<section id="museumLoading" class="museum-loading preloader" data-story="0" aria-label="Предпросмотр прелоадера Байконура">
+  <div class="preloader__atmosphere" aria-hidden="true"></div>
+  <div class="preloader__frame">
+    <header class="preloader__header">
+      <div class="preloader__identity"><span>ИНТЕРАКТИВНЫЙ МУЗЕЙ</span><span class="preloader__dimension">3D</span></div>
+      <div class="preloader__connection"><a class="preloader__preview-link" href="./">Открыть музей <span aria-hidden="true">↗</span></a></div>
+    </header>
+
+    <div class="preloader__title-block">
+      <h1 class="preloader__title">БАЙКОНУР<span class="preloader__title-mark" aria-hidden="true">✦</span></h1>
+      <div class="preloader__title-caption"><p id="museumPreloaderIntro">Космос начинается здесь.</p><span class="preloader__edition" aria-hidden="true"><span></span>1955 — ∞</span></div>
+    </div>
+
+    <div class="preloader__experience">
+      <article class="preloader__story" aria-labelledby="museumStoryTitle">
+        <div class="preloader__story-overline"><span>ПОКА КОСМОДРОМ ПРОСЫПАЕТСЯ</span><span id="museumStoryCounter">01 / 03</span></div>
+        <div class="preloader__story-copy">
+          <div class="preloader__story-date"><span id="museumStoryYear" class="preloader__story-year">1957</span><span id="museumStoryDate" class="preloader__story-day">04 ОКТЯБРЯ</span></div>
+          <h2 id="museumStoryTitle" class="preloader__story-title">Первый сигнал</h2>
+          <p id="museumStoryText" class="preloader__story-text">С Гагаринского старта на орбиту отправился первый искусственный спутник Земли. Космическая эра началась здесь.</p>
+        </div>
+        <div class="preloader__story-controls" role="group" aria-label="Истории космодрома">
+          <div class="preloader__years">
+            <button type="button" class="preloader__year-button" data-preloader-story="0" aria-pressed="true" aria-label="1957 — первый спутник Земли">1957</button>
+            <button type="button" class="preloader__year-button" data-preloader-story="1" aria-pressed="false" aria-label="1961 — первый полёт человека в космос">1961</button>
+            <button type="button" class="preloader__year-button" data-preloader-story="2" aria-pressed="false" aria-label="1988 — полёт Бурана">1988</button>
+          </div>
+          <div class="preloader__arrows">
+            <button id="museumStoryPrev" type="button" class="preloader__arrow" aria-label="Предыдущая история"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M19 12H5m6-6-6 6 6 6"/></svg></button>
+            <button id="museumStoryNext" type="button" class="preloader__arrow" aria-label="Следующая история"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+      <div class="preloader__map" aria-label="Условная схема космодрома: выберите старт, чтобы прочитать историю">
+        <div class="preloader__map-caption"><span>СХЕМА КОСМОДРОМА</span><span class="preloader__map-invitation">ВЫБЕРИТЕ СТАРТ <span aria-hidden="true">↗</span></span></div>
+        <div class="preloader__map-plane">
+          <svg class="preloader__map-drawing" viewBox="0 0 620 300" fill="none" aria-hidden="true">
+            <defs><linearGradient id="museumPreloaderRoute" x1="85" y1="260" x2="460" y2="65" gradientUnits="userSpaceOnUse"><stop stop-color="#ff8b77" stop-opacity=".1"/><stop offset="1" stop-color="#ffc5b2"/></linearGradient></defs>
+            <g class="preloader__map-grid" stroke="currentColor" stroke-width=".75">
+              <path d="M26 70h568M26 150h568M26 230h568M105 24v252M240 24v252M375 24v252M510 24v252"/>
+              <path d="M26 24h9m-9 0v9M594 24h-9m9 0v9M26 276h9m-9 0v-9M594 276h-9m9 0v-9" stroke-width="1.5"/>
+            </g>
+            <g class="preloader__map-terrain" stroke="currentColor" stroke-width=".8">
+              <path d="M25 218c58-21 95-13 130 2s63 14 104 36 78 16 110-1 62-9 94 5 88 7 130-12"/>
+              <path d="M25 228c60-23 93-16 125-1s66 14 107 36 83 18 114 2 59-14 90 1 89 9 132-7"/>
+              <path d="M42 95c24-33 81-46 117-29s52 35 93 16 67-30 95-16M387 158c40 26 79 1 95-15s59-30 99-12"/>
+            </g>
+            <g class="preloader__map-track" stroke="currentColor" stroke-width="1">
+              <path d="m144 286 38-47 21-5 33-48 30-10 24-60 42-18 28-48"/>
+              <path d="m149 290 38-47 20-5 33-48 30-10 24-60 42-18 28-48"/>
+              <path d="m205 235 91-16 39-34 91-11 30-26M290 116l-46-14-49-37-67-5M331 99l64 5 57-26"/>
+              <path d="m176 245 11 9m1-24 12 9m19-37 13 8m11-34 8 14m19-49 13 5m-2-33 12 4m25-26 7 12m18-33 11 7"/>
+            </g>
+            <g class="preloader__map-buildings" stroke="currentColor" stroke-width="1">
+              <path d="m273 153 23-8 12 29-23 8zm29-2 18-6 8 19-18 6zM372 112h36v13h-36zm4 18h27v8h-27z"/>
+              <path d="m419 171 13-12 16 17-13 12zm-96 19 11-10 12 13-11 10zM167 236h20v9h-20zm-10 18h24v8h-24z"/>
+              <path d="m101 60 60-26 4 9-60 26zm17 20 36-15 4 8-36 15z"/>
+              <path d="M445 65h30v27h-30zM449 69h22v19h-22zM440 133h29v27h-29zM444 137h21v19h-21z"/>
+              <path d="m346 47 14-10 16 20-14 10zm-12 20 10-7 8 10-10 7z"/>
+            </g>
+            <path class="preloader__route preloader__route--gagarin" d="m146 286 38-45 21-5 91-17 39-34 91-11 29-27" stroke="url(#museumPreloaderRoute)" stroke-width="2"/>
+            <path class="preloader__route preloader__route--buran" d="m146 286 38-45 21-5 33-48 30-10 24-60 40-18 63 4 60-26" stroke="url(#museumPreloaderRoute)" stroke-width="2"/>
+            <path class="preloader__orbit" d="M78 193C62 127 169 27 349 27c147 0 238 75 189 147" stroke="currentColor" stroke-width=".8" stroke-dasharray="3 8"/>
+            <g class="preloader__map-lights" fill="#ffd2c3"><circle cx="292" cy="118" r="2"/><circle cx="238" cy="188" r="2"/><circle cx="335" cy="185" r="2"/><circle cx="395" cy="104" r="2"/><circle cx="184" cy="241" r="2"/></g>
+            <g class="preloader__map-small-labels" fill="currentColor" font-family="Montserrat,Arial,sans-serif" font-size="8" letter-spacing="1.5"><text x="88" y="101">ЮБИЛЕЙНЫЙ</text><text x="260" y="208">МИК</text><text x="116" y="276">К КОСМОДРОМУ</text></g>
+          </svg>
+          <button id="museumMapGagarin" type="button" class="preloader__map-point preloader__map-point--gagarin is-active" aria-label="Истории Гагаринского старта: первый спутник и полёт Гагарина" aria-pressed="true"><span class="preloader__map-dot" aria-hidden="true"></span><span class="preloader__map-point-copy"><small>ПЛОЩАДКА 01</small><strong>ГАГАРИНСКИЙ СТАРТ</strong></span></button>
+          <button id="museumMapBuran" type="button" class="preloader__map-point preloader__map-point--buran" aria-label="Площадка 110: история полёта Бурана" aria-pressed="false"><span class="preloader__map-dot" aria-hidden="true"></span><span class="preloader__map-point-copy"><small>ПЛОЩАДКА 110</small><strong>ЭНЕРГИЯ — БУРАН</strong></span></button>
+          <span class="preloader__map-north" aria-hidden="true">С<span>↑</span></span>
+        </div>
+        <div class="preloader__map-footnote" aria-hidden="true"><span class="preloader__map-legend"><i></i> ИСТОРИЯ НАЧИНАЕТСЯ ЗДЕСЬ</span><span>УСЛОВНАЯ СХЕМА</span></div>
+      </div>
+    </div>
+
+    <div class="preloader__loading">
+      <div class="preloader__loading-main">
+        <div class="preloader__loading-copy"><p id="museumLoadingMessage" role="status" aria-live="polite" aria-atomic="true">Предпросмотр экрана загрузки</p><p id="museumPreloaderHint" class="preloader__loading-hint">В музее экран исчезает после готовности сцены</p></div>
+        <button id="museumRetry" class="preloader__retry" type="button" hidden>Повторить загрузку <span aria-hidden="true">↗</span></button>
+        <div class="preloader__stage" aria-hidden="true"><span class="preloader__stage-label">ДЕМО</span><span id="museumStageCurrent" class="preloader__stage-current">00</span><span class="preloader__stage-divider">/</span><span id="museumStageTotal" class="preloader__stage-total">09</span></div>
+      </div>
+      <div id="museumStageProgress" class="preloader__progress" role="progressbar" aria-label="Подготовка музея" aria-valuemin="0" aria-valuenow="0" aria-valuemax="9" aria-valuetext="Подготовка запуска"><span class="is-current"></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <noscript><p class="preloader__noscript">Для интерактивного музея нужен JavaScript. Включите его в настройках браузера и обновите страницу.</p></noscript>
+    </div>
+  </div>
+</section>
+<script src="./src/museum-preloader.js?v=20261101-preloader-v1"></script>
+</body></html>
