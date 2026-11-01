@@ -21,7 +21,7 @@ try{
  const c=await page.locator('#modelView canvas').boundingBox();await page.mouse.move(c.x+c.width*.5,c.y+c.height*.5);await page.mouse.down();await page.mouse.move(c.x+c.width*.65,c.y+c.height*.6,{steps:5});await page.mouse.up();await frame();assert.notDeepEqual((await stats()).camera,assembled.camera);
  await page.locator('#explode').click();assert.equal((await stats()).exploded,true);assert((await stats()).size[0]>assembled.size[0]+10);await page.locator('#explode').click();assert.deepEqual((await stats()).size,assembled.size);
  await page.locator('#rotate').click();const before=(await stats()).camera;await frame();await frame();assert.notDeepEqual((await stats()).camera,before);await page.locator('#rotate').click();
- await page.locator('#light').click();assert.equal((await stats()).dark,true);await page.locator('#light').click();await frame();await page.screenshot({path:`${out}/${prefix}-zenit-land.png`});
+ assert.equal((await stats()).dark,true);await page.locator('#light').click();assert.equal((await stats()).dark,false);await page.locator('#light').click();assert.equal((await stats()).dark,true);await frame();await page.screenshot({path:`${out}/${prefix}-zenit-land.png`});
  // A failed asset is recoverable in-place; switching while loading cannot
  // replace the latest requested model with an earlier result.
  await page.route('**/assets/models/rockets/soyuz.glb*',route=>route.fulfill({status:503,body:'unavailable'}));

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-mig25-single-v2';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-mig25-single-v2';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-model-viewer-dark-v1';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-model-viewer-dark-v1';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);
@@ -12,9 +12,10 @@ if(!choices.length)choices.push('soyuz');for(const id of choices){const option=d
 let current=choices.includes(resolveModelId(params.get('model')))?resolveModelId(params.get('model')):choices[0],model=null,renderer=null,observer=null,request=null,generation=0,raf=0,disposed=false;
 try{
  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','Вращайте модель мышью или касанием');
- const scene=new THREE.Scene();scene.background=new THREE.Color('#dce1e3');const camera=new THREE.PerspectiveCamera(35,1,.01,5000),controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.10;controls.autoRotateSpeed=.65;
+ const darkBackground=getComputedStyle(document.documentElement).backgroundColor;
+ const scene=new THREE.Scene();scene.background=new THREE.Color(darkBackground);const camera=new THREE.PerspectiveCamera(35,1,.01,5000),controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.10;controls.autoRotateSpeed=.65;
  scene.add(new THREE.HemisphereLight('#e9f4ff','#6c7782',2.1));for(const [color,power,position]of [['#fff7eb',3.2,[30,60,65]],['#b9daff',2.3,[-40,20,-45]],['#fff',.8,[0,-20,20]]]){const light=new THREE.DirectionalLight(color,power);light.position.set(...position);scene.add(light);}
- let view='full',dark=false,exploded=false,gear=true;
+ let view='full',dark=true,exploded=false,gear=true;
  const box=()=>inspectionBounds(model.root);
  function fit(direction){
   const bounds=box(),center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
@@ -56,7 +57,7 @@ try{
  select.addEventListener('change',()=>load(select.value));document.getElementById('retry').onclick=()=>load(current);
  for(const b of document.querySelectorAll('[data-view]'))b.onclick=()=>inspect(b.dataset.view);
  document.getElementById('rotate').onclick=e=>{controls.autoRotate=!controls.autoRotate;e.currentTarget.setAttribute('aria-pressed',String(controls.autoRotate));};
- document.getElementById('light').onclick=e=>{dark=!dark;scene.background.set(dark?'#0e1923':'#dce1e3');document.body.classList.toggle('dark-stage',dark);e.currentTarget.setAttribute('aria-pressed',String(dark));e.currentTarget.textContent=dark?'Светлый фон':'Тёмный фон';};
+ document.getElementById('light').onclick=e=>{dark=!dark;scene.background.set(dark?darkBackground:'#dce1e3');document.body.classList.toggle('dark-stage',dark);e.currentTarget.setAttribute('aria-pressed',String(dark));e.currentTarget.textContent=dark?'Светлый фон':'Тёмный фон';};
  document.getElementById('gear').onclick=e=>{if(!model?.setGear)return;gear=!gear;model.setGear(gear?1:0);e.currentTarget.setAttribute('aria-pressed',String(gear));e.currentTarget.textContent=gear?'Убрать шасси':'Выпустить шасси';inspect(view);renderFrame();};
  document.getElementById('explode').onclick=e=>{if(!model?.setExploded)return;exploded=!exploded;model.setExploded(exploded?1:0);e.currentTarget.setAttribute('aria-pressed',String(exploded));e.currentTarget.textContent=exploded?'Собрать ракету':'Разнести ступени';inspect('full');};
  renderer.domElement.addEventListener('keydown',e=>{if(e.key==='Home'){e.preventDefault();inspect('full');}});
