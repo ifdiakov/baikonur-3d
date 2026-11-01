@@ -1,3 +1,5 @@
+import {a320Support} from '../src/a320-profile.js';
+import {a320TyreProbes} from './a320-test-profile.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
@@ -86,12 +88,12 @@ let groundStates=0,tyreProbes=0,maxWheelHeightError=0;
 for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){
  const state=path.sample(t);if(!state.onGround)continue;
  const pose=arrivalPose(path,t);groundStates++;
- for(const [x,z] of [[0,12],[-3,-3],[3,-3]])for(const side of [-1,1])for(const dx of [-.135,.135])for(const dz of [-.46,.46]){
-  const p=new THREE.Vector3(x+side*.26+dx,-2.72,z+dz).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition),local=airport.worldToLocal(p.clone());
+ for(const [x,y,z] of a320TyreProbes){
+  const p=new THREE.Vector3(x,y,z).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition),local=airport.worldToLocal(p.clone());
   assert(Math.abs(local.x)<airport.userData.airport.width/2&&Math.abs(local.z)<length/2,'A tyre leaves the shortened asphalt');
   assert(!water.isWater(p.x,p.z),'A ground tyre reaches water');tyreProbes++;
  }
- const bottom=new THREE.Vector3(3,-2.72,-3).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition).y-.46*.28;
+ const bottom=pose.bodyPosition.y+a320Support(pose.pitchDeg*Math.PI/180)*.28;
  maxWheelHeightError=Math.max(maxWheelHeightError,Math.abs(bottom-state.runwayY));
 }
 assert(maxWheelHeightError<1e-7);assert(groundStates>1000&&tyreProbes>20000);

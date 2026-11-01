@@ -29,7 +29,7 @@ try{
  assert.equal(night.livery,'АЛРОСА');assert.equal(night.night,true);
  assert.equal(night.fuselageTitles,2);assert.equal(night.tailEmblems,2);
  assert.equal(night.engineCount,2);assert.ok(night.fanBladesPerEngine>=12);
- assert.equal(night.cabinWindows,60);assert.equal(night.cockpitPanels,6);
+ assert.equal(night.cabinWindows,82);assert.equal(night.cockpitPanels,6);
  assert.ok(night.cabinLightIntensity>night.cockpitLightIntensity&&night.cockpitLightIntensity>0);
  assert.equal(night.pointLights,0,'Window lighting stays batched');
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));

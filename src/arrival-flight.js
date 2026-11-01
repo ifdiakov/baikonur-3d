@@ -1,15 +1,15 @@
 import * as THREE from 'three';
 import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261101-museum-view-v1';
-import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION,AIRCRAFT_LIGHT_FADE} from './aircraft-livery.js?v=20261101-museum-view-v1';
+import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION,AIRCRAFT_LIGHT_FADE,a320Support} from './a320-aircraft.js?v=20261101-a320-v1';
 
-import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261101-museum-view-v1';
+import {createFlightCircuit,flightPose,FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION,FLIGHT_CIRCUIT_VERSION} from './flight-circuit.js?v=20261101-a320-v1';
 import {arrivalStatus,createArrivalStatusTimeline,ARRIVAL_STATUS_VERSION} from './arrival-status.js?v=moscow-krayniy-status-v1';
 export {FLIGHT_DURATION,TOUCHDOWN_TIME,FLIGHT_CYCLE_DURATION,FLIGHT_LEG_DURATION};
 // Airport transforms and the complex centre define the complete two-sortie circuit.
 const V=(x,y,z)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,t)=>{const u=clamp((t-a)/(b-a),0,1);return u*u*(3-2*u);};
 export const createArrivalPath=(airfield,options={})=>createFlightCircuit(airfield,{...options,aircraftScale:AIRCRAFT_SCALE});
-export const arrivalPose=(path,seconds)=>flightPose(path,seconds,{aircraftScale:AIRCRAFT_SCALE});
+export const arrivalPose=(path,seconds)=>flightPose(path,seconds,{aircraftScale:AIRCRAFT_SCALE,contactSupport:a320Support});
 
 function buildContrails(parent,path){
  const count=144,geometry=new THREE.BufferGeometry(),positions=new Float32Array(count*4*3),alphas=new Float32Array(count*4),uvs=new Float32Array(count*4*2),indices=[];
@@ -56,7 +56,7 @@ function buildContrails(parent,path){
    const age=i/(count-1)*38,emitted=time-age,state=path.sample(Math.max(0,emitted)),p=state.position.clone();
    const enabled=emitted>=0&&(state.visible||following)&&!state.onGround&&state.position.y-state.runwayY>90;
    const right=new THREE.Vector3().crossVectors(state.heading,V(0,1,0)).normalize();
-   p.addScaledVector(right,(lane?6:-6)*AIRCRAFT_SCALE).addScaledVector(state.heading,-4*AIRCRAFT_SCALE);p.y-=1.65*AIRCRAFT_SCALE;
+   p.addScaledVector(right,(lane?6.12:-6.14)*AIRCRAFT_SCALE).addScaledVector(state.heading,-1.9*AIRCRAFT_SCALE);p.y-=1.48*AIRCRAFT_SCALE;
    p.x+=Math.sin(emitted*.4+lane)*age*.055;p.y+=age*.07;
    // Close the public-view trail while the return arc is outside the museum.
    // Following mode keeps the physically continuous aircraft and trail visible.
@@ -141,8 +141,8 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
   stats:()=>({appearanceVersion:AIRCRAFT_APPEARANCE_VERSION,appearance:craft.stats(),aircraft:craft.stats(),cameraOffset:camera.position.clone().sub(controls.target).toArray(),lastRelease,version:FLIGHT_CIRCUIT_VERSION,statusVersion:ARRIVAL_STATUS_VERSION,status:{...status},statusTimeline,duration:FLIGHT_CYCLE_DURATION,arrivalDuration:FLIGHT_DURATION,cycleDuration:FLIGHT_CYCLE_DURATION,legDuration:FLIGHT_LEG_DURATION,elapsed:state.cycleTime,totalElapsed:elapsed,phase:state.phase,segment:state.segment,phaseTime:state.phaseTime,phaseRemaining:state.phaseRemaining,leg:state.leg,direction:state.direction,visible:state.visible,suppressed,renderedVisible:root.visible,following,position:state.position.toArray(),velocity:state.velocity.toArray(),
    attitudeVersion:'positive-approach-v2',pitchDeg:state.pitchDeg,bodyPosition:craft.model.position.toArray(),
    renderedPitchDeg:Math.asin(V(0,0,1).applyQuaternion(craft.model.quaternion).y)*180/Math.PI,
-   mainWheelBottom:craft.model.localToWorld(V(3,-2.72,-3)).y-.46*AIRCRAFT_SCALE,
-   noseWheelBottom:craft.model.localToWorld(V(0,-2.72,12)).y-.46*AIRCRAFT_SCALE,
+   mainWheelBottom:craft.model.position.y+a320Support(state.pitchDeg*Math.PI/180)*AIRCRAFT_SCALE,
+   noseWheelBottom:craft.model.position.y+a320Support(state.pitchDeg*Math.PI/180,true)*AIRCRAFT_SCALE,
    gear:state.gear,onGround:state.onGround,airport:state.airport,runwayY:state.runwayY,touchdown:state.touchdown.toArray(),axis:state.axis.toArray(),stop:state.stop.toArray(),stopFraction:path.stopFraction,runwayProgress:state.runwayProgress,timeline:path.phases,
    complexCenter:path.complexCenter.toArray(),arrivalEntryPoints:path.arrivalEntryPoints.map(p=>p.toArray()),entryDistance:path.entryDistance,returnHideTime:path.returnHideTime,airports:path.runways.map(r=>({key:r.key,center:r.center.toArray(),length:r.length,width:r.width,touchdown:r.touchdown.toArray(),stop:r.stop.toArray()})),
    strobeVisible:craft.strobes.root.visible,beaconVisible:craft.beacon.root.visible,trail:trail.stats()})};

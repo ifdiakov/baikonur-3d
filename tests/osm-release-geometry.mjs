@@ -1,3 +1,5 @@
+import {a320Support} from '../src/a320-profile.js';
+import {a320TyreProbes} from './a320-test-profile.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
@@ -49,7 +51,7 @@ assert(AIRPORT_DIMENSIONS.krayniy.length<1550,'Krayniy remains shortened to keep
 assert.equal(circuit.phases.length,18);
 let probes=0,maxWheelError=0,maxLateral=0,minFlightHeight=Infinity;
 for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){
- const s=circuit.sample(t),pose=flightPose(circuit,t),r=circuit.runways[s.leg-1];probes++;
+ const s=circuit.sample(t),pose=flightPose(circuit,t,{contactSupport:a320Support}),r=circuit.runways[s.leg-1];probes++;
  assert.equal(s.airport,'krayniy','Every flight phase returns to Krayniy');
  assert.ok([...s.position.toArray(),...s.velocity.toArray(),...pose.bodyPosition.toArray(),...pose.attitude.toArray()].every(Number.isFinite));
  const height=s.position.y-s.runwayY-r.clearance;minFlightHeight=Math.min(minFlightHeight,height);
@@ -61,10 +63,10 @@ for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){
  if(s.onGround){
   const local=r.airfield.worldToLocal(s.position.clone());
   assert.ok(Math.abs(local.x)<r.width/2&&Math.abs(local.z)<r.length/2,'Ground manoeuvre remains on '+r.key);
-  const bottom=new THREE.Vector3(3,-2.72,-3).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition).y-.46*.28;
+  const bottom=pose.bodyPosition.y+a320Support(pose.pitchDeg*Math.PI/180)*.28;
   maxWheelError=Math.max(maxWheelError,Math.abs(bottom-s.runwayY));
-  for(const [x,z]of [[0,12],[-3,-3],[3,-3]])for(const side of [-1,1])for(const dx of [-.135,.135])for(const dz of [-.46,.46]){
-   const tyre=new THREE.Vector3(x+side*.26+dx,-2.72,z+dz).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition);
+  for(const [x,y,z] of a320TyreProbes){
+   const tyre=new THREE.Vector3(x,y,z).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition);
    const wheel=r.airfield.worldToLocal(tyre);
    assert.ok(Math.abs(wheel.x)<r.width/2&&Math.abs(wheel.z)<r.length/2,'All tyres stay on the shortened '+r.key+' runway');
   }

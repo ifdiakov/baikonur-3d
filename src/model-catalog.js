@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-export const MODEL_VIEWER_VERSION='pua-v1';
+export const MODEL_VIEWER_VERSION='a320-v1';
 export const MODEL_CATALOG=Object.freeze({
  'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',description:'Ферменный портал, две направляющие, выносная траверса, восемь рабочих люлек и полиспасты. Музейная реконструкция по семи фотографиям; размеры оценены по пропорциям.',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
  'cyclone-2':{title:'Циклон-2',subtitle:'Площадка №90 · Байконур',description:'Двухступенчатая ракета: шесть основных сопел первой ступени, наружные каналы и узкая головная часть по фотографиям КБ «Южное».',kind:'rocket',asset:'rockets/cyclone-2.glb'},
@@ -19,7 +19,7 @@ export const MODEL_CATALOG=Object.freeze({
  r16:{title:'Р-16',subtitle:'8К64 · площадка №41',description:'Двухступенчатая Р-16 в оливковой музейной окраске. На макете экспонат установлен на восточном основании площадки №41.',kind:'rocket',asset:'rockets/r16.glb',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/r16-source-model.md',sourceLabel:'Источники модели ↗'},
  proton:{title:'Протон-М',subtitle:'Площадки №81 и №200',description:'Шесть боковых баков, открытая межступенчатая ферма, двигатели и обтекатель в окраске по референсам. Ступени можно разнести для осмотра.',kind:'rocket',source:'https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/',views:{front:{target:[0,1.6,0],offset:[8,-7,11]},side:{target:[0,22.2,0],offset:[8,2,11]},top:{target:[0,49,0],offset:[12,4,16]}}},
  mriya:{title:'Мрия и Буран',subtitle:'Ан-225 · аэродром Юбилейный',description:'Транспортный самолёт с орбитальным кораблём в музейной окраске по референсам.',kind:'aircraft',asset:'mriya-buran/near-v2.glb',yaw:Math.PI/2},
- aircraft:{title:'Самолёт Алросы',subtitle:'Рейс на Крайний',description:'Музейная модель семейства Boeing 737: окраска Алросы, освещённые окна, кабина и выпущенное шасси.',kind:'aircraft'},
+ aircraft:{title:'Airbus A320 · Алроса',subtitle:'A320-214 · рейс на Крайний',description:'Airbus A320-214 из коллекции «Техника 3D»: музейная адаптация ливреи «Алроса», освещённые иллюминаторы и кабина, убирающееся шасси.',kind:'aircraft',source:'https://sketchfab.com/3d-models/bulgaria-air-airbus-a320-214-ab1d295a30c1477eb8a81b072b5fbf06',credit:'Dave Love SketchFab · CC BY 4.0 · адаптация RocketTrip'},
  train:{title:'Мотовоз',subtitle:'Железнодорожная техника',description:'Маневровый тепловоз из состава, курсирующего между площадкой №1 и городом. Модель по фотографиям.',kind:'vehicle'},
  coach:{title:'Пассажирский вагон',subtitle:'Железнодорожная техника',description:'Вагон музейного состава: тележки, колёсные пары, тамбуры и окна.',kind:'vehicle'},
  silo:{title:'Шахтная установка',subtitle:'Музейная модель ШПУ',description:'Крышка шахты, видимый носовой отсек и белый пар. При приближении к центру крышка открывается.',kind:'site'},

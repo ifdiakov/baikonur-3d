@@ -8,7 +8,7 @@ const browser=await chromium.launch(opts),page=await browser.newPage({viewport:{
 await page.addInitScript(()=>{const native=requestAnimationFrame;window.requestAnimationFrame=f=>['animate','animateModel'].includes(f.name)?(window.__CYCLONE_FRAME=f,0):native(f);});
 const frame=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.frame()),stats=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.stats());
 try{
- await page.goto(new URL('workshop/model.html?model=cyclone-2',base).href);await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);assert.equal(await page.evaluate(()=>window.__MODEL_VIEWER_QA.version),'pua-v1');
+ await page.goto(new URL('workshop/model.html?model=cyclone-2',base).href);await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);assert.equal(await page.evaluate(()=>window.__MODEL_VIEWER_QA.version),'a320-v1');
  for(const id of ['cyclone-2','cyclone-3','cyclone-pad']){
   await page.evaluate(id=>window.__MODEL_VIEWER_QA.load(id),id);await page.waitForFunction(id=>window.__MODEL_VIEWER_QA.stats().ready&&window.__MODEL_VIEWER_QA.stats().modelId===id,id);await frame();evidence.models[id]=await stats();assert((await stats()).triangles>50000);assert((await stats()).drawCalls<80);await page.screenshot({path:`qa-cyclone/${prefix}-${id}.png`});
   if(id!=='cyclone-pad'){const before=(await stats()).size;await page.locator('#explode').click();await frame();assert((await stats()).size[0]>before[0]+5);await page.screenshot({path:`qa-cyclone/${prefix}-${id}-exploded.png`});await page.locator('#explode').click();assert.deepEqual((await stats()).size,before);}

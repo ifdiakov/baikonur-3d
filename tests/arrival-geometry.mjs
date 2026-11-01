@@ -1,3 +1,5 @@
+import {a320Support} from '../src/a320-profile.js';
+import {a320TyreProbes} from './a320-test-profile.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
@@ -57,10 +59,10 @@ for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){
  if(s.onGround){
   const local=airport.worldToLocal(s.position.clone());
   assert.ok(Math.abs(local.x)<halfWidth&&Math.abs(local.z)<halfLength,'Ground manoeuvres stay inside the shortened runway');
-  const bottom=new THREE.Vector3(3,-2.72,-3).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition).y-.46*.28;
+  const bottom=pose.bodyPosition.y+a320Support(pose.pitchDeg*Math.PI/180)*.28;
   maxContactError=Math.max(maxContactError,Math.abs(bottom-path.runwayY));
-  for(const [x,z] of [[0,12],[-3,-3],[3,-3]])for(const side of [-1,1])for(const dx of [-.135,.135])for(const dz of [-.46,.46]){
-   const tyre=new THREE.Vector3(x+side*.26+dx,-2.72,z+dz).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition);
+  for(const [x,y,z] of a320TyreProbes){
+   const tyre=new THREE.Vector3(x,y,z).multiplyScalar(.28).applyQuaternion(pose.attitude).add(pose.bodyPosition);
    const wheel=airport.worldToLocal(tyre);assert.ok(Math.abs(wheel.x)<halfWidth&&Math.abs(wheel.z)<halfLength,'All six tyres stay on asphalt during both turns');
   }
  }

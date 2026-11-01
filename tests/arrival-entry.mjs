@@ -59,8 +59,9 @@ const controls={target:new THREE.Vector3(),enableDamping:false,minDistance:2.1,m
  enablePan:true,mouseButtons:{},touches:{},update(){camera.lookAt(this.target);camera.updateMatrixWorld(true);}};
 const flight=createArrivalFlight({scene,camera,controls,airfield:airport,complexCenter:hub,getNavigationBounds:()=>bounds,container:{innerHTML:'',dataset:{},querySelector:element}});
 assert.equal(element('#arrivalPhase').textContent,'На подлёте');
-let atmosphericFields=0;scene.traverse(object=>{if(object.userData.lightFieldAtmosphere){assert.deepEqual(object.userData.lightFieldAtmosphere,{fog:true,distanceFade:[...AIRCRAFT_LIGHT_FADE]});atmosphericFields++;}});
-assert.equal(atmosphericFields,5,'Cabin, navigation lights, strobes, beacon and landing lights all fade into the atmosphere');
+let atmosphericFields=0,a320Fields=0;scene.traverse(object=>{if(object.userData.lightFieldAtmosphere){assert.deepEqual(object.userData.lightFieldAtmosphere,{fog:true,distanceFade:[...AIRCRAFT_LIGHT_FADE]});atmosphericFields++;if(object.name.startsWith('A320 ·'))a320Fields++;}});
+assert.equal(a320Fields,4,'A320 navigation lights, strobes, beacons and landing lights fade into the atmosphere');
+assert.equal(atmosphericFields,9,'The loading fallback also retains its five atmospheric light fields');
 assert.equal(flight.stats().trail.fog,true);assert.deepEqual(flight.stats().trail.distanceFade,[...AIRCRAFT_LIGHT_FADE]);
 flight.seek(345.99);flight.setFollowing(true);const offset=camera.position.clone().sub(controls.target);
 for(const t of [346,354,365.99,366,380,392,405.99,406,410,444,751.99,752,772,800,811.99,812,816]){

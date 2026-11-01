@@ -41,10 +41,10 @@ function bodySkin(){
  x.strokeStyle='rgba(30,44,63,.23)';x.lineWidth=1.3;const nose=(20-17.6)/40*c.height;x.beginPath();x.moveTo(0,nose);x.lineTo(c.width,nose);x.stroke();
  return texture(c);
 }
-function titleTexture(text,color='#163b79',font='italic 900 128px Arial'){
+export function titleTexture(text,color='#163b79',font='italic 900 128px Arial'){
  const [c,x]=canvas(1024,192);x.fillStyle=color;x.font=font;x.textAlign='center';x.textBaseline='middle';x.fillText(text,512,101,1000);return texture(c);
 }
-function diamondTexture(){
+export function diamondTexture(){
  const [c,x]=canvas(512,512);x.translate(256,256);
  // Diamond with the orbital ring used on ALROSA aircraft tails.
  x.strokeStyle='#f4fbff';x.lineWidth=13;x.beginPath();x.arc(0,0,205,-1.34,Math.PI*1.71);x.stroke();

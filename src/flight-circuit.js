@@ -156,13 +156,13 @@ export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=ai
   entryDistance:FLIGHT_ENTRY_DISTANCE,returnHideTime:FLIGHT_RETURN_HIDE_TIME};
 }
 
-export function flightPose(path,seconds,{aircraftScale=.28}={}){
+export function flightPose(path,seconds,{aircraftScale=.28,contactSupport=null}={}){
  const state=path.sample(seconds),pitch=state.pitchDeg*Math.PI/180;
  const horizontal=state.heading.clone().setY(0).normalize();
  const airframeHeading=horizontal.multiplyScalar(Math.cos(pitch)).setY(Math.sin(pitch));
  // During flare and rotation, the main wheels define the contact point.
  const pivot=state.onGround||state.segment==='takeoff'?1:state.segment==='approach'?smooth(108,120,state.phaseTime):state.segment==='departure'?1-smooth(0,12,state.phaseTime):0;
- const bodyPosition=state.position.clone();bodyPosition.y+=aircraftScale*(2.72*(Math.cos(pitch)-1)+3*Math.sin(pitch))*pivot;
+ const bodyPosition=state.position.clone();bodyPosition.y+=aircraftScale*(contactSupport?(-3.18-contactSupport(pitch)):(2.72*(Math.cos(pitch)-1)+3*Math.sin(pitch)))*pivot;
  const attitude=new THREE.Quaternion().setFromEuler(new THREE.Euler(-pitch,Math.atan2(state.heading.x,state.heading.z),0,'YXZ'));
  return {...state,airframeHeading,bodyPosition,attitude};
 }

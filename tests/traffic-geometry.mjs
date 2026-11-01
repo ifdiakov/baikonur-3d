@@ -1,3 +1,4 @@
+import {a320Support} from '../src/a320-profile.js';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
@@ -13,12 +14,12 @@ for(let t=76;t<=120;t+=.25){const p=arrivalPose(flight,t);assert.ok(p.pitchDeg>=
 let noseGap;
 for(const t of [120,121,122,124,126,127,128,148]){
  const p=arrivalPose(flight,t),q=p.attitude;
- const bottom=z=>new THREE.Vector3(3,-2.72,z).multiplyScalar(AIRCRAFT_SCALE).applyQuaternion(q).add(p.bodyPosition).y-.46*AIRCRAFT_SCALE;
+ const bottom=z=>p.bodyPosition.y+a320Support(p.pitchDeg*Math.PI/180,z===12)*AIRCRAFT_SCALE;
  assert.ok(Math.abs(bottom(-3)-flight.runwayY)<1e-6,'Main wheels stay on the runway while nose is lowered');
  assert.ok(bottom(12)>=bottom(-3)-1e-9);if(t===120)noseGap=bottom(12)-bottom(-3);
  if(t>=127)assert.equal(p.pitchDeg,0);
 }
-assert.ok(noseGap>.4,'Touch the main gear first');
+assert.ok(noseGap>.3,'Touch the main gear first');
 const data=JSON.parse(fs.readFileSync('data/transport-network.json')),siteRecords=JSON.parse(fs.readFileSync('data/catalog.json')).sites;
 const layers={roads:new THREE.Group(),rails:new THREE.Group()},point=(x,y,z=0)=>new THREE.Vector3((x-650)*3.4,z,(y-522.5)*3.4);
 const network=buildTransportNetwork({data,siteRecords,point,layers}),plan=network.trainPath(),highway=buildHighwayPath(network.roadPaths());
