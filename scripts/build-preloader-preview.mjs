@@ -18,22 +18,18 @@ const markup = match[1]
 const html = `<!doctype html>
 <html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><meta name="theme-color" content="#09121b">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#f3f0e7">
 <title>Байконур — анимация загрузки</title>
 <meta name="description" content="Динамичный флэт-прелоадер музея Байконура: от выбора места для космодрома до зажигания.">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <style>${font}
-*{box-sizing:border-box}html,body{margin:0;height:100%;background:#09121b;color:#f4f3ed;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
 </style>
-<link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-flat-v2">
-<style>
-.preloader__preview-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid #6b8590;border-radius:0;color:#f4f3ed;text-decoration:none;font:600 10px/1.2 Montserrat,Arial,sans-serif;white-space:nowrap}
-.preloader__preview-link:hover{background:#20343f}.preloader__preview-link:focus-visible{outline:2px solid #ff8b77;outline-offset:3px}
-@media(max-width:560px){.preloader__preview-link{padding:0 8px;font-size:9px}}
-</style>
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-poster-v3">
+
 </head><body>
 ${markup}
-<script src="./src/museum-preloader.js?v=20261101-preloader-flat-v2"></script>
+<script src="./src/museum-preloader.js?v=20261101-preloader-poster-v3"></script>
 </body></html>
 `;
 await writeFile(new URL('../preloader.html', import.meta.url), html);

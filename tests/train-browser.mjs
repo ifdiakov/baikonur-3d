@@ -3,20 +3,33 @@ import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 const origin=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local';await mkdir('qa-train',{recursive:true});
+const startedAt=new Date().toISOString(),monotonicStart=performance.now(),elapsed=()=>Math.round(performance.now()-monotonicStart);
+const timing={navigationStartMs:null,domContentLoadedMs:null,qaAndFrameReadyMs:null};
+const diagnostics={networkFailures:[],badHTTPResponses:[],consoleErrors:[],
+ counts:{networkFailures:0,badHTTPResponses:0,consoleErrors:0}};
+const diagnostic=(kind,item)=>{diagnostics.counts[kind]++;if(diagnostics[kind].length<80)diagnostics[kind].push({elapsedMs:elapsed(),...item});};
+const resource=request=>{const url=new URL(request.url());return{url:request.url(),path:url.pathname,type:request.resourceType(),sameOrigin:url.origin===new URL(origin).origin};};
 const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1400,height:900},deviceScaleFactor:1});page.setDefaultTimeout(90000);
 // Render deliberate static frames for screenshot QA; continuous SwiftShader frames
 // otherwise saturate the shared renderer. This only instruments the test page.
+// Remember the continuation immediately; readiness below requires the real
+// first render, without depending on delivery of another native browser frame.
 await page.addInitScript(()=>{
  const raf=requestAnimationFrame.bind(window);window.__TRAIN_PENDING=null;
- window.requestAnimationFrame=callback=>raf(time=>{if(callback.name==='animate')window.__TRAIN_PENDING=callback;else callback(time);});
+ window.requestAnimationFrame=callback=>{if(callback.name==='animate'){window.__TRAIN_PENDING=callback;return 0;}return raf(callback);};
  window.__TRAIN_FRAME=()=>{const callback=window.__TRAIN_PENDING;window.__TRAIN_PENDING=null;callback?.(performance.now());};
 });
 async function snapshot(name){console.log('SNAPSHOT',name);await page.evaluate(()=>window.__TRAIN_FRAME());await page.waitForFunction(()=>window.__TRAIN_PENDING,null,{polling:100});await page.screenshot({path:`qa-train/${prefix}-${name}.png`,timeout:90000});}
 const errors=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|compile shader|VALIDATE_STATUS|mergeGeometries/.test(m.text()))errors.push(m.text());});
+page.on('requestfailed',request=>diagnostic('networkFailures',{...resource(request),error:request.failure()?.errorText||'Unknown request failure'}));
+page.on('response',response=>{if(response.status()>=400)diagnostic('badHTTPResponses',{...resource(response.request()),status:response.status(),statusText:response.statusText()});});
+page.on('console',message=>{if(message.type()==='error')diagnostic('consoleErrors',{text:message.text().slice(0,2000),location:message.location()});});
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',r=>r.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(r.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 try{
- await page.goto(origin,{waitUntil:'domcontentloaded',timeout:90000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic&&window.__TRAIN_PENDING,null,{polling:100});
+ timing.navigationStartMs=elapsed();
+ await page.goto(origin,{waitUntil:'domcontentloaded',timeout:90000});timing.domContentLoadedMs=elapsed();
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic&&window.__TRAIN_PENDING&&document.getElementById('museumLoading')?.dataset.state==='ready',null,{polling:100});timing.qaAndFrameReadyMs=elapsed();
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train);
  assert.equal(initial.coachCount,4);assert.equal(initial.version,'motovoz-photo-shunter-v3');
@@ -44,5 +57,36 @@ try{
  assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  const final=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats());
  await writeFile(`qa-train/${prefix}-result.json`,JSON.stringify({passed:true,errors,initial,final},null,2));console.log('TRAIN_BROWSER_PASS',JSON.stringify({coachCount:final.train.coachCount,axles:final.train.wheelContacts.length,errors}));
-}catch(e){await page.screenshot({path:`qa-train/${prefix}-failure.png`,timeout:30000}).catch(()=>{});console.error(JSON.stringify({message:e.message,errors}));throw e;}
+}catch(e){
+ const failure={passed:false,base:origin,prefix,startedAt,message:e.message,stack:e.stack,errors,timing,
+  caughtElapsedMs:elapsed(),domSnapshot:{beforeElapsedMs:null,afterElapsedMs:null,timeoutMs:3000,state:null,error:null},diagnostics};
+ const saveFailure=()=>writeFile(`qa-train/${prefix}-failure.json`,JSON.stringify(failure,null,2))
+  .catch(error=>console.error('TRAIN_DIAGNOSTIC_WRITE_FAILED',error.message));
+ // Persist the failure even when a stalled renderer cannot answer an evaluate
+ // or screenshot request. These reads do not alter the hook or startup state.
+ await saveFailure();
+ let diagnosticTimer;
+ failure.domSnapshot.beforeElapsedMs=elapsed();
+ try{
+  failure.domSnapshot.state=await Promise.race([
+   page.evaluate(()=>{
+    const loader=document.getElementById('museumLoading');
+    return {url:location.href,readyState:document.readyState,pageElapsedMs:performance.now(),wallTimeMs:Date.now(),
+     documentHidden:document.hidden,visibilityState:document.visibilityState,
+     qaAvailable:Boolean(window.__BAIKONUR_QA),qaTraffic:Boolean(window.__BAIKONUR_QA?.traffic),trainPending:Boolean(window.__TRAIN_PENDING),
+     bodyMuseumReady:document.body?.classList.contains('museum-ready')||false,
+     loader:loader?{state:loader.dataset.state||null,hidden:loader.hidden,loadStage:loader.dataset.loadStage||null,
+      launchStep:loader.dataset.launchStep||null,motion:loader.dataset.motion||null,classes:loader.className,
+      message:document.getElementById('museumLoadingMessage')?.textContent||''}:null,
+     sceneError:document.getElementById('error')?.textContent||''};
+   }),
+   new Promise((_,reject)=>{diagnosticTimer=setTimeout(()=>reject(new Error('DOM diagnostic did not answer within 3000ms')),3000);})
+  ]);
+ }catch(error){failure.domSnapshot.error=error.message;}
+ finally{clearTimeout(diagnosticTimer);failure.domSnapshot.afterElapsedMs=elapsed();}
+ await saveFailure();
+ await page.screenshot({path:`qa-train/${prefix}-failure.png`,timeout:30000}).catch(error=>{failure.screenshotError=error.message;});
+ failure.afterScreenshotElapsedMs=elapsed();await saveFailure();
+ console.error(JSON.stringify({message:e.message,errors}));throw e;
+}
 finally{await browser.close();}

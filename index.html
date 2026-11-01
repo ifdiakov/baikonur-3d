@@ -359,9 +359,9 @@ body.following-arrival #labelLayer{display:none!important}
  #info.terminal-active.terminal-details-open .orgrow{margin:10px 0}#info.terminal-active.terminal-details-open #infoExtra{margin-top:10px}
 }
 #cycloneViews .detail-button{padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#cycloneViews .detail-button:hover{background:#3b5969}#cycloneViews .detail-button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
-</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261101-proton-launch-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-flat-v2"></head><body><div id="view"></div>
+</style><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261101-proton-launch-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-poster-v3"></head><body><div id="view"></div>
 <!-- MUSEUM_PRELOADER_START -->
-<section id="museumLoading" class="museum-loading preloader preloader--flat" data-state="loading" data-launch-step="0" data-motion="running" aria-label="Подготовка интерактивного музея Байконура">
+<section id="museumLoading" class="museum-loading preloader preloader--poster" data-state="loading" data-launch-step="0" data-motion="running" aria-label="Подготовка интерактивного музея Байконура">
   <div class="preloader__frame">
     <header class="preloader__header">
       <div class="preloader__identity"><span class="preloader__identity-mark" aria-hidden="true"></span><span id="museumPreloaderMode">ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D</span></div>
@@ -374,152 +374,95 @@ body.following-arrival #labelLayer{display:none!important}
         </button>
       </div>
     </header>
-    <div id="museumWelcome" class="preloader__welcome">
-      <div class="preloader__welcome-main">
+    <div class="preloader__main">
+      <div id="museumWelcome" class="preloader__welcome">
         <p class="preloader__greeting">Добро пожаловать</p>
         <h1 class="preloader__destination"><span>на космодром</span> <strong>Байконур</strong></h1>
-      </div>
-      <div class="preloader__welcome-aside">
         <p class="preloader__scale"><span>первый в истории и</span> <span>крупнейший на планете</span></p>
         <p class="preloader__tagline">космическая гавань человечества</p>
       </div>
-    </div>
-    <div class="preloader__scene" aria-hidden="true">
-      <svg class="preloader__cosmodrome" viewBox="0 0 1200 360" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g class="preloader__sky">
-          <path class="preloader__sky-line" d="M88 86h102m-70 20h118M805 55h76m-13 16h70M1027 214h95"/>
-          <g fill="#d9c5a4"><path d="M330 35h3v15h-3zM324 41h15v3h-15z"/><circle cx="784" cy="116" r="2"/><circle cx="1119" cy="43" r="2"/><circle cx="60" cy="181" r="2"/></g>
-          <g class="preloader__cloud preloader__cloud--left" fill="#213744"><path d="M68 154a17 17 0 0 1 17-17h9a25 25 0 0 1 49-6h4a16 16 0 0 1 16 16v7zM215 81a11 11 0 0 1 11-11h5a18 18 0 0 1 35-4h7a12 12 0 0 1 12 12v3z"/></g>
-          <g class="preloader__cloud preloader__cloud--right" fill="#213744"><path d="M763 175a14 14 0 0 1 14-14h8a22 22 0 0 1 43-6h5a16 16 0 0 1 16 16v4zM1082 151a14 14 0 0 1 14-14h10a21 21 0 0 1 41 4h3a10 10 0 0 1 10 10z"/></g>
-          <g class="preloader__planet">
-            <circle cx="997" cy="104" r="46" fill="#8ca8b0"/>
-            <path d="M966 87h30v10h-30zm28 17h38v11h-38zm-20 18h19v7h-19z" fill="#6b8994"/>
-            <circle cx="997" cy="104" r="83" stroke="#36505d" stroke-width="1.5" stroke-dasharray="4 8"/>
-            <g class="preloader__orbital-satellite">
-              <path d="M1061 94h14v20h-14zm30 0h14v20h-14z" fill="#ff8b77"/>
-              <path d="M1068 94v20m30-20v20m-37-10h14m16 0h14" stroke="#10202b" stroke-width="1.5"/>
-              <path d="M1075 102h16v4h-16z" fill="#8ca8b0"/>
-              <rect x="1078" y="96" width="10" height="16" fill="#f4f3ed"/>
-              <path d="m1083 95 6-7m-6 7-6-7" stroke="#f4f3ed" stroke-width="1.5"/>
-            </g>
-          </g>
-        </g>
-        <g class="preloader__steppe">
-          <path d="M12 285h94l23-9h81l18 9h116l29-11h88l22 11h171l31-13h107l29 13h117l27-10h67l25 10h106v35H12z" fill="#203540"/>
-          <path d="M12 310h1176v5H12z" fill="#8fa6a9"/>
-          <path d="M12 356h1176M20 337h1160" stroke="#405761" stroke-width="2"/>
-          <path d="M70 337v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19" stroke="#253d49" stroke-width="3"/>
-        </g>
-        <g class="preloader__survey">
-          <path d="m47 309 15-24 15 24m-15-24v24" stroke="#8ca8b0" stroke-width="3"/>
-          <rect x="52" y="275" width="21" height="10" fill="#d9c5a4"/>
-          <path class="preloader__survey-sweep" d="m73 279 160-24v48z" fill="#6f9991" fill-opacity=".12"/>
-          <path d="M116 304v-12m-6 6h12M257 304v-12m-6 6h12M772 304v-12m-6 6h12" stroke="#d9c5a4" stroke-width="2"/>
-        </g>
-        <g class="preloader__control-center">
-          <rect x="161" y="258" width="184" height="52" fill="#526e7b"/>
-          <path d="M152 252h202v8H152zM178 229h83v23h-83z" fill="#8ca8b0"/>
-          <path d="M188 236h12v9h-12zm18 0h12v9h-12zm18 0h12v9h-12zm18 0h9v9h-9z" fill="#10202b"/>
-          <path class="preloader__control-windows" d="M178 272h18v11h-18zm27 0h18v11h-18zm27 0h18v11h-18zm27 0h18v11h-18zm27 0h18v11h-18zm27 0h16v11h-16z" fill="#d9c5a4"/>
-          <path d="M276 290h28v20h-28zM174 301h73v3h-73z" fill="#263f4c"/>
-          <path d="M288 251v-39m-6 8h12m-10 9h8" stroke="#8ca8b0" stroke-width="2"/>
-          <circle class="preloader__beacon" cx="288" cy="209" r="3" fill="#ff8b77"/>
-          <path d="M111 309h32m-16 0v-32" stroke="#8ca8b0" stroke-width="5"/>
-          <g class="preloader__dish">
-            <path d="M108 254c-2 20 16 35 34 28z" fill="#d9c5a4"/>
-            <path d="m108 254 34 28m-17-14 18-21" stroke="#10202b" stroke-width="2"/>
-            <circle cx="144" cy="246" r="3" fill="#ff8b77"/>
-            <path class="preloader__radio-waves" d="M151 236a16 16 0 0 1 8 15m-1-25a29 29 0 0 1 13 29" stroke="#6f9991" stroke-width="2"/>
-          </g>
-        </g>
-        <g class="preloader__construction">
-          <path d="M917 307v-121h11v121m-14-121h132v8H914z" fill="#6f9991"/>
-          <path d="m920 193 75-33 39 33m-112-33v33m0 12 6 10-6 10 6 10-6 10 6 10-6 10 6 10-6 10" stroke="#6f9991" stroke-width="3"/>
-          <path d="M914 161h88v5h-88zM904 307h35v5h-35z" fill="#6f9991"/>
-          <g class="preloader__crane-trolley">
-            <rect x="1000" y="190" width="18" height="9" fill="#d9c5a4"/>
-            <path d="M1009 199v34" stroke="#8ca8b0" stroke-width="2"/>
-            <path d="M1004 233h10v13h-10z" fill="#ff8b77"/>
-            <path d="m1009 246-16 12m16-12 16 12" stroke="#8ca8b0" stroke-width="2"/>
-            <rect x="990" y="257" width="38" height="17" fill="#d9c5a4"/>
-          </g>
-          <path d="M946 273h132v37H946zM938 266h148v9H938z" fill="#526e7b"/>
-          <path d="M963 282h50v28h-50zm67 0h31v9h-31z" fill="#263f4c"/>
-          <path d="M965 285h46m-46 6h46m-46 6h46m-46 6h46" stroke="#6f8994" stroke-width="2"/>
-        </g>
-        <g class="preloader__launch-pad">
-          <path d="M427 294h344v16H427zM459 285h280v9H459z" fill="#8ca8b0"/>
-          <path d="M480 294h240v16H480z" fill="#526e7b"/>
-          <path d="M547 294h106v16H547z" fill="#10202b"/>
-          <path d="M480 301h45m151 0h25" stroke="#d9c5a4" stroke-width="2"/>
-          <path class="preloader__fuel-line" d="M764 302h-20v-27h-54v-34h-45" stroke="#6f9991" stroke-width="4"/>
-          <g class="preloader__fuel-flow" fill="#f4f3ed"><circle cx="744" cy="290" r="3"/><circle cx="715" cy="275" r="3"/><circle cx="690" cy="254" r="3"/></g>
-          <path d="M756 279h32v31h-32zM760 273h24v6h-24z" fill="#6f9991"/>
-          <path d="M760 286h24m-24 8h24" stroke="#10202b" stroke-width="2"/>
-          <g class="preloader__tower">
-            <path d="M527 288V114h14v174m-17-174h20v8h-20z" fill="#365563"/>
-            <path d="m529 125 10 16-10 16 10 16-10 16 10 16-10 16 10 16-10 16 10 16m-10-144h10m-10 32h10m-10 32h10m-10 32h10m-10 32h10" stroke="#6f8994" stroke-width="2"/>
-            <path d="M534 115V92m-5 8h10" stroke="#6f8994" stroke-width="2"/>
-          </g>
-          <g class="preloader__rocket">
-            <g class="preloader__exhaust">
-              <path class="preloader__flame-outer" d="M579 274h42l-7 37-14 37-14-37z" fill="#ff8b77"/>
-              <path class="preloader__flame-inner" d="M589 274h22l-3 28-8 22-8-22z" fill="#f4f3ed"/>
-              <path d="m553 276 19 41 9-41zm66 0 9 41 19-41z" fill="#d9c5a4"/>
-            </g>
-            <g class="preloader__rocket-body">
-              <path d="M600 45 614 88v47h-28V88z" fill="#f4f3ed"/>
-              <path d="m600 45 14 43h-28z" fill="#ff8b77"/>
-              <path d="M586 129h28v138h-28z" fill="#f4f3ed"/>
-              <path d="M586 143h28v10h-28zM586 235h28v13h-28z" fill="#ff8b77"/>
-              <path d="M590 267h20l4 11h-28z" fill="#526e7b"/>
-              <path d="m571 169 17 45-5 58h-32l5-58zm58 0 15 45 5 58h-32l-5-58z" fill="#8ca8b0"/>
-              <path d="m571 169 8 22h-16zm58 0 8 22h-16z" fill="#f4f3ed"/>
-              <path d="M553 249h31l-1 13h-31zm63 0h31l1 13h-31z" fill="#ff8b77"/>
-              <path d="M554 272h25l2 7h-29zm67 0h25l2 7h-29z" fill="#526e7b"/>
-              <path d="m552 252-10 23h10zm96 0 10 23h-10z" fill="#d9c5a4"/>
-              <path d="M597 106h6v18h-6zm0 60h6v22h-6z" fill="#526e7b"/>
-              <circle cx="600" cy="207" r="5" fill="#ff8b77"/>
-            </g>
-          </g>
-          <g class="preloader__gantry-arm preloader__gantry-arm--left">
-            <path d="M506 286v-99l47-67 11 7-44 64v95z" fill="#ff8b77"/>
-            <path d="m511 187 37-53m-35 65 38-49m-38 66 14-23m-14 44 14-24m-14 46 14-24m-14 42 14-22" stroke="#10202b" stroke-width="4"/>
-            <path d="M543 126h43v9h-43zM526 172h60v8h-60zM508 218h47v8h-47z" fill="#d9c5a4"/>
-            <circle cx="513" cy="285" r="8" fill="#d9c5a4"/>
-          </g>
-          <g class="preloader__gantry-arm preloader__gantry-arm--right">
-            <path d="M694 286v-99l-47-67-11 7 44 64v95z" fill="#ff8b77"/>
-            <path d="m689 187-37-53m35 65-38-49m38 66-14-23m14 44-14-24m14 46-14-24m14 42-14-22" stroke="#10202b" stroke-width="4"/>
-            <path d="M614 126h43v9h-43zM614 172h60v8h-60zM645 218h47v8h-47z" fill="#d9c5a4"/>
-            <circle cx="687" cy="285" r="8" fill="#d9c5a4"/>
-          </g>
-          <g class="preloader__vent preloader__vent--left" fill="#8ca8b0"><path d="M551 235c-9-8-20-1-18 6-12-4-20 7-12 15-13 0-17 14-6 18h41z"/><circle cx="512" cy="263" r="10"/></g>
-          <g class="preloader__vent preloader__vent--right" fill="#8ca8b0"><path d="M649 235c9-8 20-1 18 6 12-4 20 7 12 15 13 0 17 14 6 18h-41z"/><circle cx="688" cy="263" r="10"/></g>
-          <g class="preloader__launch-smoke preloader__launch-smoke--left" fill="#d9c5a4"><path d="M597 307H445c-10-13 4-24 17-20-3-20 21-30 35-17 6-20 35-23 44-2 18-8 37 2 40 18h16z"/></g>
-          <g class="preloader__launch-smoke preloader__launch-smoke--right" fill="#d9c5a4"><path d="M603 307h152c10-13-4-24-17-20 3-20-21-30-35-17-6-20-35-23-44-2-18-8-37 2-40 18h-16z"/></g>
-        </g>
-        <g class="preloader__transport">
-          <g class="preloader__train">
-            <path d="M0 319h52v25H0zm30-20h30v45H30z" fill="#ff8b77"/>
-            <path d="M36 305h18v13H36zM7 324h17v4H7zm0 9h17v4H7z" fill="#10202b"/>
-            <path d="M-3 342h67v5H-3zM2 315h15v4H2z" fill="#8ca8b0"/>
-            <path d="M-82 334h67v10h-67zm-81 0h67v10h-67z" fill="#8ca8b0"/>
-            <path d="M-14 340H0m-96 0h14" stroke="#8ca8b0" stroke-width="3"/>
-            <path d="M-73 315h49v19h-49zM-155 319h50v15h-50z" fill="#6f9991"/>
-            <path d="M-64 319v11m12-11v11m12-11v11m-105-7v7m13-7v7m13-7v7" stroke="#10202b" stroke-width="2"/>
-            <g fill="#10202b" stroke="#d9c5a4" stroke-width="2"><circle cx="10" cy="346" r="7"/><circle cx="48" cy="346" r="7"/><circle cx="-69" cy="346" r="6"/><circle cx="-28" cy="346" r="6"/><circle cx="-150" cy="346" r="6"/><circle cx="-109" cy="346" r="6"/></g>
-            <g class="preloader__wheel preloader__wheel--front" stroke="#d9c5a4" stroke-width="1.5"><path d="M5 346h10m-5-5v10"/></g>
-            <g class="preloader__wheel preloader__wheel--rear" stroke="#d9c5a4" stroke-width="1.5"><path d="M43 346h10m-5-5v10"/></g>
-          </g>
-          <g class="preloader__service-car"><path d="M0 297h26l8 9v9H-6v-11z" fill="#d9c5a4"/><path d="M6 300h15l5 6H6z" fill="#263f4c"/><circle cx="3" cy="314" r="5" fill="#10202b"/><circle cx="25" cy="314" r="5" fill="#10202b"/></g>
-        </g>
-      </svg>
+      <div class="preloader__scene" aria-hidden="true">
+<svg class="preloader__illustration" viewBox="0 0 1200 640" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g class="poster__field">
+    <path d="M580 0h600L890 640H290z" fill="#F14E36"/>
+  </g>
+  <g class="poster__umbilical">
+    <path d="M100 567h242V466h352" stroke="#10242D" stroke-width="12"/>
+    <path class="poster__cable-pulse" d="M100 567h242V466h352" pathLength="100" stroke="#F14E36" stroke-width="6" stroke-dasharray="5 95"/>
+    <path d="M92 548h26v38H92zM678 452h18v28h-18z" fill="#10242D"/>
+  </g>
+  <g class="poster__frame-back" fill="#10242D">
+    <path d="M445 609h550v16H445zM481 592h477v17H481z"/>
+    <path d="M510 592V301l110-104h36v16h-27l-99 96v283z"/>
+    <path d="M511 312h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18z" fill="#F3F0E7"/>
+  </g>
+  <g class="poster__vehicle">
+    <g class="poster__ignition">
+      <path class="poster__flame-outer" d="M668 566h104l-15 79-37 103-37-103z" fill="#10242D"/>
+      <path class="poster__flame-core" d="M691 566h58l-9 71-20 62-20-62z" fill="#F3F0E7"/>
+      <path d="M710 567h20l-3 62-7 30-7-30z" fill="#F14E36"/>
+      <path d="m610 572 25 75 16-75zm179 0 16 75 25-75z" fill="#F3F0E7"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--core">
+      <path d="M691 238h58v330h-58z" fill="#10242D"/>
+      <path d="M698 244h44v315h-44z" fill="#F3F0E7"/>
+      <path d="M698 276h44v13h-44zm0 151h44v15h-44zm0 96h44v14h-44z" fill="#10242D"/>
+      <path d="M712 318h16v4h-16zm0 12h16v4h-16zm0 12h16v4h-16z" fill="#10242D"/>
+      <path d="M703 555h34l10 23h-54z" fill="#10242D"/>
+      <path d="M680 365 696 403v148h-27V409zm80 0 11 44v142h-27V403z" fill="#10242D"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--head">
+      <path d="M720 80c-8 6-22 29-30 52v88l10 25h40l10-25v-88c-8-23-22-46-30-52z" fill="#10242D"/>
+      <path d="M720 94c-7 8-17 26-23 41v83l8 20h30l8-20v-83c-6-15-16-33-23-41z" fill="#F3F0E7"/>
+      <path d="M697 184h46v8h-46zm0 27h46v5h-46z" fill="#10242D"/>
+      <path d="M716 28h8v39h-8zm-6 32h20v25h-20z" fill="#10242D"/>
+      <path d="M713 63h14v19h-14z" fill="#F3F0E7"/>
+      <path d="m716 80-14 27m22-27 14 27" stroke="#10242D" stroke-width="4"/>
+      <path d="M706 108h28v6h-28z" fill="#10242D"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--left">
+      <path d="m648 331 29 77 6 157h-77l14-154z" fill="#10242D"/>
+      <path d="m648 350 22 61 6 146h-62l13-144z" fill="#F3F0E7"/>
+      <path d="M622 471h51l1 12h-53zm-4 54h57l1 12h-59z" fill="#10242D"/>
+      <path d="M617 556h54l10 22h-73zm-4-38-21 40h19z" fill="#10242D"/>
+      <path d="M636 411h6v40h-6z" fill="#10242D"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--right">
+      <path d="m792 331 28 80 14 154h-77l6-157z" fill="#10242D"/>
+      <path d="m792 350 21 63 13 144h-62l6-146z" fill="#F3F0E7"/>
+      <path d="M767 471h51l1 12h-53zm-2 54h57l1 12h-59z" fill="#10242D"/>
+      <path d="M769 556h54l9 22h-73zm58-38 21 40h-19z" fill="#10242D"/>
+      <path d="M798 411h6v40h-6z" fill="#10242D"/>
+    </g>
+  </g>
+  <g class="poster__arm poster__arm--left">
+    <path d="M466 596V329l137-115h86v20h-79L490 338v258z" fill="#10242D"/>
+    <path d="m480 346 26-22m-26 59 26-22m-26 59 26-22m-26 59 26-22m-26 59 26-22m-26 59 26-22" stroke="#F3F0E7" stroke-width="5"/>
+    <g class="poster__clamp poster__clamp--left"><path d="M485 380h206v16H485z" fill="#10242D"/><path d="M673 366h18v44h-18z" fill="#10242D"/></g>
+    <circle cx="478" cy="594" r="13" fill="#10242D"/><circle cx="478" cy="594" r="5" fill="#F3F0E7"/>
+  </g>
+  <g class="poster__arm poster__arm--right">
+    <path d="M974 596V329L837 214h-86v20h79l120 104v258z" fill="#10242D"/>
+    <path d="m960 346-26-22m26 59-26-22m26 59-26-22m26 59-26-22m26 59-26-22m26 59-26-22" stroke="#F3F0E7" stroke-width="5"/>
+    <g class="poster__clamp poster__clamp--right"><path d="M749 380h206v16H749z" fill="#10242D"/><path d="M749 366h18v44h-18z" fill="#10242D"/></g>
+    <circle cx="962" cy="594" r="13" fill="#10242D"/><circle cx="962" cy="594" r="5" fill="#F3F0E7"/>
+  </g>
+  <g class="poster__purge poster__purge--left" fill="#F3F0E7">
+    <path d="M694 445c-61-23-101-4-133-15-41-15-63-6-97-4l-81 2 83 24c46 14 77 0 109 9 40 11 80 6 119-4z"/>
+    <path d="M672 476c-51-7-75 8-105 3l-98-5 87 21c45 10 81 0 116-8z"/>
+  </g>
+  <g class="poster__purge poster__purge--right" fill="#F3F0E7">
+    <path d="M746 445c61-23 101-4 133-15 41-15 63-6 97-4l81 2-83 24c-46 14-77 0-109 9-40 11-80 6-119-4z"/>
+    <path d="M768 476c51-7 75 8 105 3l98-5-87 21c-45 10-81 0-116-8z"/>
+  </g>
+  <g class="poster__blast poster__blast--left" fill="#F3F0E7"><path d="M715 595c-66-41-96-18-130-31-43-16-79-4-98 10-32-6-65 3-83 18-45-8-95 9-121 30h432z"/></g>
+  <g class="poster__blast poster__blast--right" fill="#F3F0E7"><path d="M725 595c66-41 96-18 130-31 43-16 79-4 98 10 32-6 65 3 83 18 45-8 95 9 121 30H725z"/></g>
+</svg>
+      </div>
     </div>
     <div class="preloader__loading">
       <div id="museumStageProgress" class="preloader__progress" role="progressbar" aria-label="Подготовка музея" aria-valuemin="0" aria-valuenow="0" aria-valuemax="9" aria-valuetext="Подготовка запуска"><span id="museumProgressFill" class="preloader__progress-fill"></span></div>
       <div class="preloader__status-row">
-        <span class="preloader__status-mark" aria-hidden="true"></span>
         <p id="museumLaunchStatus" class="preloader__launch-status" aria-live="off">выбор места для строительства космодрома</p>
         <span id="museumLaunchStep" class="preloader__launch-step" aria-hidden="true">01 / 13</span>
       </div>
@@ -530,7 +473,7 @@ body.following-arrival #labelLayer{display:none!important}
   </div>
 </section>
 <!-- MUSEUM_PRELOADER_END -->
-<section id="hero" inert aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" inert aria-label="Подписи площадок"></div><div id="error"></div><div id="museumLeftStack" inert><aside id="ui" aria-label="Меню музея"><div id="museumIdentity"><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-dimension">3D</span></div></div><div class="buttons" id="menuControls"></div><section id="arrivalPanel" class="arrival-panel" aria-label="Полёты аэродрома Крайний"></section><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><details id="sitesAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">СТАРТОВЫЕ КОМПЛЕКСЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="search" type="search" aria-label="Поиск стартовых комплексов" placeholder="Номер или название старта…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><details id="equipmentAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">РАКЕТЫ И ТЕХНИКА</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="infrastructureAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">ИНФРАСТРУКТУРА</span><span class="sites-accordion-count" id="infrastructureCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="infrastructureSearch" type="search" aria-label="Поиск инфраструктуры" placeholder="Аэродром, станция, гостиница…" autocomplete="off"><div id="infrastructureList" class="sites-list"></div></div></details><details id="mythsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">МИФЫ И ЛЕГЕНДЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="graveyardAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">КОСМИЧЕСКОЕ КЛАДБИЩЕ</span><span class="sites-accordion-count" id="graveyardCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"><div data-menu-items></div><input class="search" id="graveyardSearch" type="search" aria-label="Поиск полевых находок" placeholder="Номер или название находки…" autocomplete="off"><div id="graveyardList" class="sites-list"></div></div></details></aside><details id="navigationGuide" class="navigation-guide" aria-label="Как управлять виртуальным музеем"><summary><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4.5" y="2" width="15" height="20" rx="7"/><path d="M12 2v7m-7.5 0h15"/></svg><span>КАК УПРАВЛЯТЬ КАРТОЙ</span><span class="guide-chevron" aria-hidden="true">⌄</span></summary><div class="navigation-guide-content"><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M17 10h7v7h-7z" fill="#e56f65" stroke="none"/><path d="M4 30l6-6m0 6l-6-6M44 30l-6-6m0 6l6-6" stroke="#efa99b"/></svg><span><b>Левая кнопка мыши</b><small>Перемещение над картой</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M25 10h8v7h-8z" fill="#e56f65" stroke="none"/><path d="M39 29a16 16 0 0 1-21 15l-1-6m1 6l6-3" stroke="#efa99b"/></svg><span><b>Правая кнопка мыши</b><small>Вращение камеры · не ниже 30°</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="15" y="5" width="18" height="34" rx="9"/><path d="M24 5v9m-9 0h18"/><rect x="21" y="10" width="6" height="11" rx="3" fill="#e56f65" stroke="none"/><path d="m7 17 5-5 5 5M7 32l5 5 5-5M12 12v25" stroke="#efa99b"/></svg><span><b>Колёсико</b><small>Приближение и отдаление</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="#dce8ee" stroke-width="1.4" aria-hidden="true"><rect x="18" y="2" width="12" height="12" rx="2" fill="#e56f65"/><rect x="3" y="18" width="12" height="12" rx="2"/><rect x="18" y="18" width="12" height="12" rx="2"/><rect x="33" y="18" width="12" height="12" rx="2"/><path d="m24 6 0 5M9 21l0 6M24 21l0 6M39 21l0 6" stroke="#fff" stroke-width="2"/></svg><span><b>WASD или стрелки</b><small>Полёт по территории · Shift быстрее</small></span></div><div class="guide-note">Нажмите на площадку или выберите её в списке слева, чтобы открыть карточку.</div></div></details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-preloader.js?v=20261101-preloader-flat-v2"></script><script src="./src/museum-startup.js?v=20261101-preloader-flat-v2"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
+<section id="hero" inert aria-label="Паспорт космодрома"><div class="hero-top"><div class="hero-copy"><div class="hero-overline">ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D</div><h1>КОСМОДРОМ<br>БАЙКОНУР</h1><p class="hero-sub">1955 — ∞ &nbsp;·&nbsp; СССР / КАЗАХСТАН<br>РЕСПУБЛИКА КАЗАХСТАН · АРЕНДА РОССИИ</p></div><div class="hero-emblem" title="Герб города Байконура"><img src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png" alt="Герб города Байконура" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><span class="emblem-fallback">ГЕРБ<br>БАЙКОНУРА</span></div></div><div class="hero-stats"><div class="hero-metric"><strong>6 717</strong><small>км² территории</small></div><div class="hero-metric"><strong>1955</strong><small>год основания</small></div><div class="hero-metric"><strong>1 565</strong><small>орбитальных попыток*</small></div><div class="hero-metric"><strong>8</strong><small>стартовых комплексов</small></div><div class="hero-metric"><strong>13</strong><small>пусковых установок</small></div><div class="hero-metric"><strong>2</strong><small>аэродрома</small></div></div><div class="hero-note">* Историческая статистика, требует периодической сверки. <a href="https://www.gov.kz/org/kazcosmos/activities/801" target="_blank" rel="noopener">Казкосмос</a> · <a href="https://nextliftoff.com/stats?site=baikonur-cosmodrome" target="_blank" rel="noopener">Статистика пусков</a>. Герб: <a href="https://commons.wikimedia.org/wiki/File:Baikonur_seal.png" target="_blank" rel="noopener">Wikimedia Commons</a>. Шрифт: Bounded, SIL OFL.</div></section><div id="labelLayer" inert aria-label="Подписи площадок"></div><div id="error"></div><div id="museumLeftStack" inert><aside id="ui" aria-label="Меню музея"><div id="museumIdentity"><div class="museum-name">БАЙКОНУР</div><div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ <span class="museum-dimension">3D</span></div></div><div class="buttons" id="menuControls"></div><section id="arrivalPanel" class="arrival-panel" aria-label="Полёты аэродрома Крайний"></section><div id="roadStatus" hidden aria-hidden="true" style="display:none"></div><details id="sitesAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">СТАРТОВЫЕ КОМПЛЕКСЫ</span><span class="sites-accordion-count" id="count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="search" type="search" aria-label="Поиск стартовых комплексов" placeholder="Номер или название старта…" autocomplete="off"><div id="list" class="sites-list"></div></div></details><details id="equipmentAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">РАКЕТЫ И ТЕХНИКА</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="infrastructureAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">ИНФРАСТРУКТУРА</span><span class="sites-accordion-count" id="infrastructureCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body "><input class="search" id="infrastructureSearch" type="search" aria-label="Поиск инфраструктуры" placeholder="Аэродром, станция, гостиница…" autocomplete="off"><div id="infrastructureList" class="sites-list"></div></div></details><details id="mythsAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">МИФЫ И ЛЕГЕНДЫ</span><span class="sites-accordion-count" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"></div></details><details id="graveyardAccordion" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">КОСМИЧЕСКОЕ КЛАДБИЩЕ</span><span class="sites-accordion-count" id="graveyardCount" aria-label="Количество материалов" hidden></span><svg class="sites-chevron" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="sites-accordion-body museum-section-body"><div data-menu-items></div><input class="search" id="graveyardSearch" type="search" aria-label="Поиск полевых находок" placeholder="Номер или название находки…" autocomplete="off"><div id="graveyardList" class="sites-list"></div></div></details></aside><details id="navigationGuide" class="navigation-guide" aria-label="Как управлять виртуальным музеем"><summary><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="4.5" y="2" width="15" height="20" rx="7"/><path d="M12 2v7m-7.5 0h15"/></svg><span>КАК УПРАВЛЯТЬ КАРТОЙ</span><span class="guide-chevron" aria-hidden="true">⌄</span></summary><div class="navigation-guide-content"><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M17 10h7v7h-7z" fill="#e56f65" stroke="none"/><path d="M4 30l6-6m0 6l-6-6M44 30l-6-6m0 6l6-6" stroke="#efa99b"/></svg><span><b>Левая кнопка мыши</b><small>Перемещение над картой</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="11" y="4" width="26" height="39" rx="12"/><path d="M24 4v13M11 17h26"/><path d="M25 10h8v7h-8z" fill="#e56f65" stroke="none"/><path d="M39 29a16 16 0 0 1-21 15l-1-6m1 6l6-3" stroke="#efa99b"/></svg><span><b>Правая кнопка мыши</b><small>Вращение камеры · не ниже 30°</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="15" y="5" width="18" height="34" rx="9"/><path d="M24 5v9m-9 0h18"/><rect x="21" y="10" width="6" height="11" rx="3" fill="#e56f65" stroke="none"/><path d="m7 17 5-5 5 5M7 32l5 5 5-5M12 12v25" stroke="#efa99b"/></svg><span><b>Колёсико</b><small>Приближение и отдаление</small></span></div><div class="guide-item"><svg viewBox="0 0 48 48" width="42" height="42" fill="none" stroke="#dce8ee" stroke-width="1.4" aria-hidden="true"><rect x="18" y="2" width="12" height="12" rx="2" fill="#e56f65"/><rect x="3" y="18" width="12" height="12" rx="2"/><rect x="18" y="18" width="12" height="12" rx="2"/><rect x="33" y="18" width="12" height="12" rx="2"/><path d="m24 6 0 5M9 21l0 6M24 21l0 6M39 21l0 6" stroke="#fff" stroke-width="2"/></svg><span><b>WASD или стрелки</b><small>Полёт по территории · Shift быстрее</small></span></div><div class="guide-note">Нажмите на площадку или выберите её в списке слева, чтобы открыть карточку.</div></div></details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-preloader.js?v=20261101-preloader-poster-v3"></script><script src="./src/museum-startup.js?v=20261101-preloader-poster-v3"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';

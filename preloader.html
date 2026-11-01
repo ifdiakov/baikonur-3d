@@ -1,21 +1,17 @@
 <!doctype html>
 <html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex"><meta name="theme-color" content="#09121b">
+<meta name="robots" content="noindex"><meta name="theme-color" content="#f3f0e7">
 <title>Байконур — анимация загрузки</title>
 <meta name="description" content="Динамичный флэт-прелоадер музея Байконура: от выбора места для космодрома до зажигания.">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <style>@font-face{font-family:'Bounded';src:url('https://cdn.jsdelivr.net/gh/churkinvlad/Bounded@main/Variable/Bounded-Variable.ttf') format('truetype');font-style:normal;font-weight:200 900;font-display:swap;}
-*{box-sizing:border-box}html,body{margin:0;height:100%;background:#09121b;color:#f4f3ed;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
 </style>
-<link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-flat-v2">
-<style>
-.preloader__preview-link{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid #6b8590;border-radius:0;color:#f4f3ed;text-decoration:none;font:600 10px/1.2 Montserrat,Arial,sans-serif;white-space:nowrap}
-.preloader__preview-link:hover{background:#20343f}.preloader__preview-link:focus-visible{outline:2px solid #ff8b77;outline-offset:3px}
-@media(max-width:560px){.preloader__preview-link{padding:0 8px;font-size:9px}}
-</style>
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-poster-v3">
+
 </head><body>
-<section id="museumLoading" data-preview="true" class="museum-loading preloader preloader--flat" data-state="loading" data-launch-step="0" data-motion="running" aria-label="Предпросмотр прелоадера Байконура">
+<section id="museumLoading" data-preview="true" class="museum-loading preloader preloader--poster" data-state="loading" data-launch-step="0" data-motion="running" aria-label="Предпросмотр прелоадера Байконура">
   <div class="preloader__frame">
     <header class="preloader__header">
       <div class="preloader__identity"><span class="preloader__identity-mark" aria-hidden="true"></span><span id="museumPreloaderMode">Предпросмотр анимации</span></div>
@@ -28,152 +24,95 @@
         </button>
       </div>
     </header>
-    <div id="museumWelcome" class="preloader__welcome">
-      <div class="preloader__welcome-main">
+    <div class="preloader__main">
+      <div id="museumWelcome" class="preloader__welcome">
         <p class="preloader__greeting">Добро пожаловать</p>
         <h1 class="preloader__destination"><span>на космодром</span> <strong>Байконур</strong></h1>
-      </div>
-      <div class="preloader__welcome-aside">
         <p class="preloader__scale"><span>первый в истории и</span> <span>крупнейший на планете</span></p>
         <p class="preloader__tagline">космическая гавань человечества</p>
       </div>
-    </div>
-    <div class="preloader__scene" aria-hidden="true">
-      <svg class="preloader__cosmodrome" viewBox="0 0 1200 360" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g class="preloader__sky">
-          <path class="preloader__sky-line" d="M88 86h102m-70 20h118M805 55h76m-13 16h70M1027 214h95"/>
-          <g fill="#d9c5a4"><path d="M330 35h3v15h-3zM324 41h15v3h-15z"/><circle cx="784" cy="116" r="2"/><circle cx="1119" cy="43" r="2"/><circle cx="60" cy="181" r="2"/></g>
-          <g class="preloader__cloud preloader__cloud--left" fill="#213744"><path d="M68 154a17 17 0 0 1 17-17h9a25 25 0 0 1 49-6h4a16 16 0 0 1 16 16v7zM215 81a11 11 0 0 1 11-11h5a18 18 0 0 1 35-4h7a12 12 0 0 1 12 12v3z"/></g>
-          <g class="preloader__cloud preloader__cloud--right" fill="#213744"><path d="M763 175a14 14 0 0 1 14-14h8a22 22 0 0 1 43-6h5a16 16 0 0 1 16 16v4zM1082 151a14 14 0 0 1 14-14h10a21 21 0 0 1 41 4h3a10 10 0 0 1 10 10z"/></g>
-          <g class="preloader__planet">
-            <circle cx="997" cy="104" r="46" fill="#8ca8b0"/>
-            <path d="M966 87h30v10h-30zm28 17h38v11h-38zm-20 18h19v7h-19z" fill="#6b8994"/>
-            <circle cx="997" cy="104" r="83" stroke="#36505d" stroke-width="1.5" stroke-dasharray="4 8"/>
-            <g class="preloader__orbital-satellite">
-              <path d="M1061 94h14v20h-14zm30 0h14v20h-14z" fill="#ff8b77"/>
-              <path d="M1068 94v20m30-20v20m-37-10h14m16 0h14" stroke="#10202b" stroke-width="1.5"/>
-              <path d="M1075 102h16v4h-16z" fill="#8ca8b0"/>
-              <rect x="1078" y="96" width="10" height="16" fill="#f4f3ed"/>
-              <path d="m1083 95 6-7m-6 7-6-7" stroke="#f4f3ed" stroke-width="1.5"/>
-            </g>
-          </g>
-        </g>
-        <g class="preloader__steppe">
-          <path d="M12 285h94l23-9h81l18 9h116l29-11h88l22 11h171l31-13h107l29 13h117l27-10h67l25 10h106v35H12z" fill="#203540"/>
-          <path d="M12 310h1176v5H12z" fill="#8fa6a9"/>
-          <path d="M12 356h1176M20 337h1160" stroke="#405761" stroke-width="2"/>
-          <path d="M70 337v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19m51-19v19" stroke="#253d49" stroke-width="3"/>
-        </g>
-        <g class="preloader__survey">
-          <path d="m47 309 15-24 15 24m-15-24v24" stroke="#8ca8b0" stroke-width="3"/>
-          <rect x="52" y="275" width="21" height="10" fill="#d9c5a4"/>
-          <path class="preloader__survey-sweep" d="m73 279 160-24v48z" fill="#6f9991" fill-opacity=".12"/>
-          <path d="M116 304v-12m-6 6h12M257 304v-12m-6 6h12M772 304v-12m-6 6h12" stroke="#d9c5a4" stroke-width="2"/>
-        </g>
-        <g class="preloader__control-center">
-          <rect x="161" y="258" width="184" height="52" fill="#526e7b"/>
-          <path d="M152 252h202v8H152zM178 229h83v23h-83z" fill="#8ca8b0"/>
-          <path d="M188 236h12v9h-12zm18 0h12v9h-12zm18 0h12v9h-12zm18 0h9v9h-9z" fill="#10202b"/>
-          <path class="preloader__control-windows" d="M178 272h18v11h-18zm27 0h18v11h-18zm27 0h18v11h-18zm27 0h18v11h-18zm27 0h18v11h-18zm27 0h16v11h-16z" fill="#d9c5a4"/>
-          <path d="M276 290h28v20h-28zM174 301h73v3h-73z" fill="#263f4c"/>
-          <path d="M288 251v-39m-6 8h12m-10 9h8" stroke="#8ca8b0" stroke-width="2"/>
-          <circle class="preloader__beacon" cx="288" cy="209" r="3" fill="#ff8b77"/>
-          <path d="M111 309h32m-16 0v-32" stroke="#8ca8b0" stroke-width="5"/>
-          <g class="preloader__dish">
-            <path d="M108 254c-2 20 16 35 34 28z" fill="#d9c5a4"/>
-            <path d="m108 254 34 28m-17-14 18-21" stroke="#10202b" stroke-width="2"/>
-            <circle cx="144" cy="246" r="3" fill="#ff8b77"/>
-            <path class="preloader__radio-waves" d="M151 236a16 16 0 0 1 8 15m-1-25a29 29 0 0 1 13 29" stroke="#6f9991" stroke-width="2"/>
-          </g>
-        </g>
-        <g class="preloader__construction">
-          <path d="M917 307v-121h11v121m-14-121h132v8H914z" fill="#6f9991"/>
-          <path d="m920 193 75-33 39 33m-112-33v33m0 12 6 10-6 10 6 10-6 10 6 10-6 10 6 10-6 10" stroke="#6f9991" stroke-width="3"/>
-          <path d="M914 161h88v5h-88zM904 307h35v5h-35z" fill="#6f9991"/>
-          <g class="preloader__crane-trolley">
-            <rect x="1000" y="190" width="18" height="9" fill="#d9c5a4"/>
-            <path d="M1009 199v34" stroke="#8ca8b0" stroke-width="2"/>
-            <path d="M1004 233h10v13h-10z" fill="#ff8b77"/>
-            <path d="m1009 246-16 12m16-12 16 12" stroke="#8ca8b0" stroke-width="2"/>
-            <rect x="990" y="257" width="38" height="17" fill="#d9c5a4"/>
-          </g>
-          <path d="M946 273h132v37H946zM938 266h148v9H938z" fill="#526e7b"/>
-          <path d="M963 282h50v28h-50zm67 0h31v9h-31z" fill="#263f4c"/>
-          <path d="M965 285h46m-46 6h46m-46 6h46m-46 6h46" stroke="#6f8994" stroke-width="2"/>
-        </g>
-        <g class="preloader__launch-pad">
-          <path d="M427 294h344v16H427zM459 285h280v9H459z" fill="#8ca8b0"/>
-          <path d="M480 294h240v16H480z" fill="#526e7b"/>
-          <path d="M547 294h106v16H547z" fill="#10202b"/>
-          <path d="M480 301h45m151 0h25" stroke="#d9c5a4" stroke-width="2"/>
-          <path class="preloader__fuel-line" d="M764 302h-20v-27h-54v-34h-45" stroke="#6f9991" stroke-width="4"/>
-          <g class="preloader__fuel-flow" fill="#f4f3ed"><circle cx="744" cy="290" r="3"/><circle cx="715" cy="275" r="3"/><circle cx="690" cy="254" r="3"/></g>
-          <path d="M756 279h32v31h-32zM760 273h24v6h-24z" fill="#6f9991"/>
-          <path d="M760 286h24m-24 8h24" stroke="#10202b" stroke-width="2"/>
-          <g class="preloader__tower">
-            <path d="M527 288V114h14v174m-17-174h20v8h-20z" fill="#365563"/>
-            <path d="m529 125 10 16-10 16 10 16-10 16 10 16-10 16 10 16-10 16 10 16m-10-144h10m-10 32h10m-10 32h10m-10 32h10m-10 32h10" stroke="#6f8994" stroke-width="2"/>
-            <path d="M534 115V92m-5 8h10" stroke="#6f8994" stroke-width="2"/>
-          </g>
-          <g class="preloader__rocket">
-            <g class="preloader__exhaust">
-              <path class="preloader__flame-outer" d="M579 274h42l-7 37-14 37-14-37z" fill="#ff8b77"/>
-              <path class="preloader__flame-inner" d="M589 274h22l-3 28-8 22-8-22z" fill="#f4f3ed"/>
-              <path d="m553 276 19 41 9-41zm66 0 9 41 19-41z" fill="#d9c5a4"/>
-            </g>
-            <g class="preloader__rocket-body">
-              <path d="M600 45 614 88v47h-28V88z" fill="#f4f3ed"/>
-              <path d="m600 45 14 43h-28z" fill="#ff8b77"/>
-              <path d="M586 129h28v138h-28z" fill="#f4f3ed"/>
-              <path d="M586 143h28v10h-28zM586 235h28v13h-28z" fill="#ff8b77"/>
-              <path d="M590 267h20l4 11h-28z" fill="#526e7b"/>
-              <path d="m571 169 17 45-5 58h-32l5-58zm58 0 15 45 5 58h-32l-5-58z" fill="#8ca8b0"/>
-              <path d="m571 169 8 22h-16zm58 0 8 22h-16z" fill="#f4f3ed"/>
-              <path d="M553 249h31l-1 13h-31zm63 0h31l1 13h-31z" fill="#ff8b77"/>
-              <path d="M554 272h25l2 7h-29zm67 0h25l2 7h-29z" fill="#526e7b"/>
-              <path d="m552 252-10 23h10zm96 0 10 23h-10z" fill="#d9c5a4"/>
-              <path d="M597 106h6v18h-6zm0 60h6v22h-6z" fill="#526e7b"/>
-              <circle cx="600" cy="207" r="5" fill="#ff8b77"/>
-            </g>
-          </g>
-          <g class="preloader__gantry-arm preloader__gantry-arm--left">
-            <path d="M506 286v-99l47-67 11 7-44 64v95z" fill="#ff8b77"/>
-            <path d="m511 187 37-53m-35 65 38-49m-38 66 14-23m-14 44 14-24m-14 46 14-24m-14 42 14-22" stroke="#10202b" stroke-width="4"/>
-            <path d="M543 126h43v9h-43zM526 172h60v8h-60zM508 218h47v8h-47z" fill="#d9c5a4"/>
-            <circle cx="513" cy="285" r="8" fill="#d9c5a4"/>
-          </g>
-          <g class="preloader__gantry-arm preloader__gantry-arm--right">
-            <path d="M694 286v-99l-47-67-11 7 44 64v95z" fill="#ff8b77"/>
-            <path d="m689 187-37-53m35 65-38-49m38 66-14-23m14 44-14-24m14 46-14-24m14 42-14-22" stroke="#10202b" stroke-width="4"/>
-            <path d="M614 126h43v9h-43zM614 172h60v8h-60zM645 218h47v8h-47z" fill="#d9c5a4"/>
-            <circle cx="687" cy="285" r="8" fill="#d9c5a4"/>
-          </g>
-          <g class="preloader__vent preloader__vent--left" fill="#8ca8b0"><path d="M551 235c-9-8-20-1-18 6-12-4-20 7-12 15-13 0-17 14-6 18h41z"/><circle cx="512" cy="263" r="10"/></g>
-          <g class="preloader__vent preloader__vent--right" fill="#8ca8b0"><path d="M649 235c9-8 20-1 18 6 12-4 20 7 12 15 13 0 17 14 6 18h-41z"/><circle cx="688" cy="263" r="10"/></g>
-          <g class="preloader__launch-smoke preloader__launch-smoke--left" fill="#d9c5a4"><path d="M597 307H445c-10-13 4-24 17-20-3-20 21-30 35-17 6-20 35-23 44-2 18-8 37 2 40 18h16z"/></g>
-          <g class="preloader__launch-smoke preloader__launch-smoke--right" fill="#d9c5a4"><path d="M603 307h152c10-13-4-24-17-20 3-20-21-30-35-17-6-20-35-23-44-2-18-8-37 2-40 18h-16z"/></g>
-        </g>
-        <g class="preloader__transport">
-          <g class="preloader__train">
-            <path d="M0 319h52v25H0zm30-20h30v45H30z" fill="#ff8b77"/>
-            <path d="M36 305h18v13H36zM7 324h17v4H7zm0 9h17v4H7z" fill="#10202b"/>
-            <path d="M-3 342h67v5H-3zM2 315h15v4H2z" fill="#8ca8b0"/>
-            <path d="M-82 334h67v10h-67zm-81 0h67v10h-67z" fill="#8ca8b0"/>
-            <path d="M-14 340H0m-96 0h14" stroke="#8ca8b0" stroke-width="3"/>
-            <path d="M-73 315h49v19h-49zM-155 319h50v15h-50z" fill="#6f9991"/>
-            <path d="M-64 319v11m12-11v11m12-11v11m-105-7v7m13-7v7m13-7v7" stroke="#10202b" stroke-width="2"/>
-            <g fill="#10202b" stroke="#d9c5a4" stroke-width="2"><circle cx="10" cy="346" r="7"/><circle cx="48" cy="346" r="7"/><circle cx="-69" cy="346" r="6"/><circle cx="-28" cy="346" r="6"/><circle cx="-150" cy="346" r="6"/><circle cx="-109" cy="346" r="6"/></g>
-            <g class="preloader__wheel preloader__wheel--front" stroke="#d9c5a4" stroke-width="1.5"><path d="M5 346h10m-5-5v10"/></g>
-            <g class="preloader__wheel preloader__wheel--rear" stroke="#d9c5a4" stroke-width="1.5"><path d="M43 346h10m-5-5v10"/></g>
-          </g>
-          <g class="preloader__service-car"><path d="M0 297h26l8 9v9H-6v-11z" fill="#d9c5a4"/><path d="M6 300h15l5 6H6z" fill="#263f4c"/><circle cx="3" cy="314" r="5" fill="#10202b"/><circle cx="25" cy="314" r="5" fill="#10202b"/></g>
-        </g>
-      </svg>
+      <div class="preloader__scene" aria-hidden="true">
+<svg class="preloader__illustration" viewBox="0 0 1200 640" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <g class="poster__field">
+    <path d="M580 0h600L890 640H290z" fill="#F14E36"/>
+  </g>
+  <g class="poster__umbilical">
+    <path d="M100 567h242V466h352" stroke="#10242D" stroke-width="12"/>
+    <path class="poster__cable-pulse" d="M100 567h242V466h352" pathLength="100" stroke="#F14E36" stroke-width="6" stroke-dasharray="5 95"/>
+    <path d="M92 548h26v38H92zM678 452h18v28h-18z" fill="#10242D"/>
+  </g>
+  <g class="poster__frame-back" fill="#10242D">
+    <path d="M445 609h550v16H445zM481 592h477v17H481z"/>
+    <path d="M510 592V301l110-104h36v16h-27l-99 96v283z"/>
+    <path d="M511 312h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18zm0 48h18v4h-18z" fill="#F3F0E7"/>
+  </g>
+  <g class="poster__vehicle">
+    <g class="poster__ignition">
+      <path class="poster__flame-outer" d="M668 566h104l-15 79-37 103-37-103z" fill="#10242D"/>
+      <path class="poster__flame-core" d="M691 566h58l-9 71-20 62-20-62z" fill="#F3F0E7"/>
+      <path d="M710 567h20l-3 62-7 30-7-30z" fill="#F14E36"/>
+      <path d="m610 572 25 75 16-75zm179 0 16 75 25-75z" fill="#F3F0E7"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--core">
+      <path d="M691 238h58v330h-58z" fill="#10242D"/>
+      <path d="M698 244h44v315h-44z" fill="#F3F0E7"/>
+      <path d="M698 276h44v13h-44zm0 151h44v15h-44zm0 96h44v14h-44z" fill="#10242D"/>
+      <path d="M712 318h16v4h-16zm0 12h16v4h-16zm0 12h16v4h-16z" fill="#10242D"/>
+      <path d="M703 555h34l10 23h-54z" fill="#10242D"/>
+      <path d="M680 365 696 403v148h-27V409zm80 0 11 44v142h-27V403z" fill="#10242D"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--head">
+      <path d="M720 80c-8 6-22 29-30 52v88l10 25h40l10-25v-88c-8-23-22-46-30-52z" fill="#10242D"/>
+      <path d="M720 94c-7 8-17 26-23 41v83l8 20h30l8-20v-83c-6-15-16-33-23-41z" fill="#F3F0E7"/>
+      <path d="M697 184h46v8h-46zm0 27h46v5h-46z" fill="#10242D"/>
+      <path d="M716 28h8v39h-8zm-6 32h20v25h-20z" fill="#10242D"/>
+      <path d="M713 63h14v19h-14z" fill="#F3F0E7"/>
+      <path d="m716 80-14 27m22-27 14 27" stroke="#10242D" stroke-width="4"/>
+      <path d="M706 108h28v6h-28z" fill="#10242D"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--left">
+      <path d="m648 331 29 77 6 157h-77l14-154z" fill="#10242D"/>
+      <path d="m648 350 22 61 6 146h-62l13-144z" fill="#F3F0E7"/>
+      <path d="M622 471h51l1 12h-53zm-4 54h57l1 12h-59z" fill="#10242D"/>
+      <path d="M617 556h54l10 22h-73zm-4-38-21 40h19z" fill="#10242D"/>
+      <path d="M636 411h6v40h-6z" fill="#10242D"/>
+    </g>
+    <g class="poster__rocket-section poster__rocket-section--right">
+      <path d="m792 331 28 80 14 154h-77l6-157z" fill="#10242D"/>
+      <path d="m792 350 21 63 13 144h-62l6-146z" fill="#F3F0E7"/>
+      <path d="M767 471h51l1 12h-53zm-2 54h57l1 12h-59z" fill="#10242D"/>
+      <path d="M769 556h54l9 22h-73zm58-38 21 40h-19z" fill="#10242D"/>
+      <path d="M798 411h6v40h-6z" fill="#10242D"/>
+    </g>
+  </g>
+  <g class="poster__arm poster__arm--left">
+    <path d="M466 596V329l137-115h86v20h-79L490 338v258z" fill="#10242D"/>
+    <path d="m480 346 26-22m-26 59 26-22m-26 59 26-22m-26 59 26-22m-26 59 26-22m-26 59 26-22" stroke="#F3F0E7" stroke-width="5"/>
+    <g class="poster__clamp poster__clamp--left"><path d="M485 380h206v16H485z" fill="#10242D"/><path d="M673 366h18v44h-18z" fill="#10242D"/></g>
+    <circle cx="478" cy="594" r="13" fill="#10242D"/><circle cx="478" cy="594" r="5" fill="#F3F0E7"/>
+  </g>
+  <g class="poster__arm poster__arm--right">
+    <path d="M974 596V329L837 214h-86v20h79l120 104v258z" fill="#10242D"/>
+    <path d="m960 346-26-22m26 59-26-22m26 59-26-22m26 59-26-22m26 59-26-22m26 59-26-22" stroke="#F3F0E7" stroke-width="5"/>
+    <g class="poster__clamp poster__clamp--right"><path d="M749 380h206v16H749z" fill="#10242D"/><path d="M749 366h18v44h-18z" fill="#10242D"/></g>
+    <circle cx="962" cy="594" r="13" fill="#10242D"/><circle cx="962" cy="594" r="5" fill="#F3F0E7"/>
+  </g>
+  <g class="poster__purge poster__purge--left" fill="#F3F0E7">
+    <path d="M694 445c-61-23-101-4-133-15-41-15-63-6-97-4l-81 2 83 24c46 14 77 0 109 9 40 11 80 6 119-4z"/>
+    <path d="M672 476c-51-7-75 8-105 3l-98-5 87 21c45 10 81 0 116-8z"/>
+  </g>
+  <g class="poster__purge poster__purge--right" fill="#F3F0E7">
+    <path d="M746 445c61-23 101-4 133-15 41-15 63-6 97-4l81 2-83 24c-46 14-77 0-109 9-40 11-80 6-119-4z"/>
+    <path d="M768 476c51-7 75 8 105 3l98-5-87 21c-45 10-81 0-116-8z"/>
+  </g>
+  <g class="poster__blast poster__blast--left" fill="#F3F0E7"><path d="M715 595c-66-41-96-18-130-31-43-16-79-4-98 10-32-6-65 3-83 18-45-8-95 9-121 30h432z"/></g>
+  <g class="poster__blast poster__blast--right" fill="#F3F0E7"><path d="M725 595c66-41 96-18 130-31 43-16 79-4 98 10 32-6 65 3 83 18 45-8 95 9 121 30H725z"/></g>
+</svg>
+      </div>
     </div>
     <div class="preloader__loading">
       <div id="museumStageProgress" class="preloader__progress" role="progressbar" aria-label="Подготовка музея" aria-valuemin="0" aria-valuenow="0" aria-valuemax="9" aria-valuetext="Подготовка запуска"><span id="museumProgressFill" class="preloader__progress-fill"></span></div>
       <div class="preloader__status-row">
-        <span class="preloader__status-mark" aria-hidden="true"></span>
         <p id="museumLaunchStatus" class="preloader__launch-status" aria-live="off">выбор места для строительства космодрома</p>
         <span id="museumLaunchStep" class="preloader__launch-step" aria-hidden="true">01 / 13</span>
       </div>
@@ -183,5 +122,5 @@
     </div>
   </div>
 </section>
-<script src="./src/museum-preloader.js?v=20261101-preloader-flat-v2"></script>
+<script src="./src/museum-preloader.js?v=20261101-preloader-poster-v3"></script>
 </body></html>
