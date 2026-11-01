@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-buran-landing';
-const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261031-facilities-rails-lighting-v6';
+const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261101-natural-relief-v2';
 const origin=new URL(base).origin;
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],views:[],contacts:[],controls:[]};
 await mkdir(out,{recursive:true});

@@ -131,7 +131,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
  const overviewLineGeometry=new THREE.BufferGeometry();overviewLineGeometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));overviewLineGeometry.setIndex(indices);overviewLineGeometry.computeVertexNormals();
  const overviewBoundary=new THREE.Mesh(overviewLineGeometry,overviewBoundaryMaterial);overviewBoundary.name='Космодром · единая обзорная граница';overviewBoundary.renderOrder=5;
  overviewBoundary.userData={pickable:false,museumComponent:'cosmodrome-overview-boundary',continuous:true};overviewRoot.add(overviewBoundary);
- let alpha=0,overviewAlpha=0,overviewRequestedAlpha=0;
+ let alpha=0,overviewAlpha=0,overviewRequestedAlpha=0,continuousReliefFill=false;
  // A flat map polygon sits below relief. Drape the same district colour over
  // the actual hill mesh, retaining its feathered footprint and depth shading.
  function liftedGeometry(source){
@@ -148,16 +148,59 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   geometry.computeBoundingBox();geometry.computeBoundingSphere();
   return geometry;
  }
+ // Regional tint is one continuous sheet, including engineered flat areas.
+ // Reusing the soil's sparse triangles and feathered alpha would switch from
+ // the old flat fill to the raised fill at a depth-test threshold, drawing a
+ // false contour even when the underlying slope is smooth.
+ function continuousReliefGeometry(terrain){
+  const source=terrain.mesh,{columns,rows}=terrain.stats().grid;
+  const positions=source.geometry.attributes.position,stride=columns+1;
+  if(!Number.isInteger(columns)||!Number.isInteger(rows)||columns<1||rows<1||positions.count!==stride*(rows+1))
+   throw new Error('Regional district fill requires the complete terrain grid');
+  const geometry=new THREE.BufferGeometry();
+  for(const [name,attribute]of Object.entries(source.geometry.attributes))
+   geometry.setAttribute(name,name==='position'?attribute.clone():attribute);
+  const position=geometry.attributes.position,colors=new Float32Array(position.count*4);colors.fill(1);
+  geometry.setAttribute('color',new THREE.BufferAttribute(colors,4));
+  source.updateWorldMatrix(true,false);
+  const inverse=source.matrixWorld.clone().invert(),vertex=new THREE.Vector3();
+  const flatHeight=Math.max(zones[0].getWorldPosition(new THREE.Vector3()).y,overviewFill.getWorldPosition(new THREE.Vector3()).y);
+  for(let i=0;i<position.count;i++){
+   vertex.fromBufferAttribute(positions,i).applyMatrix4(source.matrixWorld);
+   vertex.y=Math.max(flatHeight,vertex.y+.08);
+   vertex.applyMatrix4(inverse);position.setXYZ(i,vertex.x,vertex.y,vertex.z);
+  }
+  const indices=new (position.count>65535?Uint32Array:Uint16Array)(columns*rows*6);
+  let k=0;
+  for(let z=0;z<rows;z++)for(let x=0;x<columns;x++){
+   const a=z*stride+x,b=a+1,c=a+stride,d=c+1;
+   indices[k++]=a;indices[k++]=c;indices[k++]=b;indices[k++]=b;indices[k++]=c;indices[k++]=d;
+  }
+  geometry.setIndex(new THREE.BufferAttribute(indices,1));
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
+ }
  // Share lifted vertex attributes; restrict each district's index to its
  // bounding rectangle. The existing exact polygon shader clips the rim.
- function boundedGeometry(geometry,polygon){
+ function boundedGeometry(geometry,polygon,source=null){
   const world=polygon.map(p=>point(...p)),xs=world.map(p=>p.x),zs=world.map(p=>p.z);
   const minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
   const p=geometry.attributes.position,index=geometry.index,indices=[];
+  // Selection takes place in world X/Z, but the overlay remains a child of
+  // its terrain mesh and retains local vertices, including parent transforms.
+  let worldXZ=null;
+  if(source){
+   source.updateWorldMatrix(true,false);worldXZ=new Float64Array(p.count*2);
+   const vertex=new THREE.Vector3();
+   for(let i=0;i<p.count;i++){
+    vertex.fromBufferAttribute(p,i).applyMatrix4(source.matrixWorld);
+    worldXZ[i*2]=vertex.x;worldXZ[i*2+1]=vertex.z;
+   }
+  }
+  const x=i=>worldXZ?worldXZ[i*2]:p.getX(i),z=i=>worldXZ?worldXZ[i*2+1]:p.getZ(i);
   for(let i=0;i<index.count;i+=3){
    const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
-   if(Math.max(p.getX(a),p.getX(b),p.getX(c))<minX||Math.min(p.getX(a),p.getX(b),p.getX(c))>maxX||
-      Math.max(p.getZ(a),p.getZ(b),p.getZ(c))<minZ||Math.min(p.getZ(a),p.getZ(b),p.getZ(c))>maxZ)continue;
+   if(Math.max(x(a),x(b),x(c))<minX||Math.min(x(a),x(b),x(c))>maxX||
+      Math.max(z(a),z(b),z(c))<minZ||Math.min(z(a),z(b),z(c))>maxZ)continue;
    indices.push(a,b,c);
   }
   const result=new THREE.BufferGeometry();
@@ -168,8 +211,8 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   const district=FLANK_DISTRICTS.find(d=>d.key===key);
   if(!district||!source?.isMesh)throw new Error('A terrain mesh and known flank are required');
   const clipPolygon=polygons[FLANK_DISTRICTS.indexOf(district)];
-  const geometry=sharedGeometry?boundedGeometry(sharedGeometry,clipPolygon):liftedGeometry(source);
-  const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,true,clipPolygon));
+  const geometry=sharedGeometry?boundedGeometry(sharedGeometry,clipPolygon,source):liftedGeometry(source);
+  const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,!sharedGeometry,clipPolygon));
   overlay.name='Цвет фланга на рельефе · '+key;overlay.renderOrder=4;
   overlay.userData={pickable:false,groundSurface:false,museumComponent:'flank-relief-overlay',flank:key,clipToDistrict:true};
   overlay.visible=alpha>.035;source.add(overlay);reliefSurfaces.push(overlay);
@@ -177,12 +220,16 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   return overlay;
  }
  function addTerrainRelief(terrain){
-  const {mesh:source,heightAt}=terrain,geometry=liftedGeometry(source);
+  const {mesh:source,heightAt}=terrain,geometry=continuousReliefGeometry(terrain);
   for(const district of FLANK_DISTRICTS)addTerrainSurface(source,district.key,geometry);
-  const overlay=new THREE.Mesh(boundedGeometry(geometry,outline),ink(0xa8bcc1,.025,false,true,outline,overviewMaterials));
+  const overlay=new THREE.Mesh(boundedGeometry(geometry,outline,source),ink(0xa8bcc1,.025,false,false,outline,overviewMaterials));
   overlay.name='Космодром · обзорная заливка на рельефе';overlay.renderOrder=4;
   overlay.userData={pickable:false,museumComponent:'overview-relief-overlay',clipToDistrict:true};
   source.add(overlay);overviewReliefSurfaces.push(overlay);
+  // Each place receives exactly one tint. The original flat fills remain a
+  // fallback for scenes without regional relief; Saturn keeps its own drape.
+  for(const zone of zones)zone.visible=false;
+  overviewFill.visible=false;continuousReliefFill=true;
   // Refine each side of the continuous mitered ring before draping it.
   const old=overviewBoundary.geometry,positions=old.attributes.position,vertices=[],indices=[];
   for(let i=0;i<ring.length;i++){
@@ -231,5 +278,6 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   reference:FLANK_REFERENCE,outline,outerBoundary:outline,polygons,reliefClipped:true,coordinateSystem:geographicBoundary||mapTransform?'osm-map':'original-schematic',
   reliefCount:reliefSurfaces.length,reliefFlanks:reliefSurfaces.map(m=>m.userData.flank),visibleReliefSurfaces:reliefSurfaces.filter(m=>m.visible&&m.parent.visible).length,
   overviewReliefCount:overviewReliefSurfaces.length,terrainDraped:overviewBoundary.userData.terrainDraped===true,
+  continuousReliefFill,flatFillMeshesVisible:root.visible?zones.filter(mesh=>mesh.visible).length:0,
   thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
 }

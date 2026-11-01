@@ -19,7 +19,7 @@ const protection={
  corridors:[{points:[{x:-730.3,z:357.7},{x:-130.7,z:182.3},{x:470.9,z:407.1}],width:2.2}],
  polygons:[[{x:181.3,z:-305.7},{x:322.7,z:-331.3},{x:365.9,z:-217.1},{x:218.1,z:-171.9}]],
 };
-const options={dem,protection,step:16,baseY,verticalExaggeration:2.5,baseElevationMetres:68,transitionWidth:120,edgeFadeWidth:96};
+const options={dem,protection,step:16,baseY,verticalExaggeration:2.25,baseElevationMetres:68,transitionWidth:320,edgeFadeWidth:220};
 const map=new THREE.Texture(),material=new THREE.MeshBasicMaterial({map,side:THREE.FrontSide});
 const originalCompile=()=>{},originalCache=()=>'shared-steppe-fixture';
 material.onBeforeCompile=originalCompile;material.customProgramCacheKey=originalCache;
@@ -59,7 +59,7 @@ function inspectGeometry(terrain,label){
   assert(cross.y>0,`${label}: no degenerate or inverted terrain triangles`);
   maxSlope=Math.max(maxSlope,Math.hypot(cross.x,cross.z)/cross.y);
  }
- assert(maxSlope<.65,`${label}: engineering transitions and steppe slopes do not form cliffs (${maxSlope})`);
+ assert(maxSlope<.15,`${label}: engineering transitions remain gently sloped, including the actual triangle diagonals (${maxSlope})`);
  near(maxSlope,s.maxSlope,1e-7,`${label}: the reported slope is the actual triangle gradient`);
  return {vertices:p.count,triangles:index.count/3,minHeight,maxHeight,minNormalY,maxNormalError,maxSlope};
 }
@@ -178,11 +178,17 @@ assert.equal(actualDem.values.length,actualDem.width*actualDem.height);
 assert(actualDem.values.every(Number.isFinite),'The saved elevation asset contains no missing samples');
 assert(actualDem.source,'The saved elevation grid retains its provenance');
 const actual=buildTerrainRelief({dem:actualDem,material:new THREE.MeshBasicMaterial(),step:16,baseY,
- verticalExaggeration:2.5,baseElevationMetres:68,transitionWidth:120,edgeFadeWidth:240});
+ verticalExaggeration:2.25,baseElevationMetres:68,transitionWidth:320,edgeFadeWidth:480});
 actual.mesh.updateMatrixWorld(true);
 const actualGeometry=inspectGeometry(actual,'Baikonur DEM'),actualStats=actual.stats(),actualFloor=makeFloor(actualDem.bounds);
 assert(actualStats.nonZeroVertices>actualStats.vertices*.15,'The elevation asset supplies useful relief across a substantial part of the map');
 assert(actualStats.triangles>10000,'The regional surface has enough geometric resolution for oblique views');
+const heightBands=new Set();
+for(let i=0;i<actual.mesh.geometry.attributes.position.count;i++){
+ const rise=actual.mesh.geometry.attributes.position.getY(i)-baseY;
+ if(rise>.1)heightBands.add(Math.floor(rise*4));
+}
+assert(heightBands.size>24,'The steppe retains a continuous range of distinct elevations instead of one raised plateau');
 for(let i=0;i<36;i++){
  const u=((i*617+193)%1000)/1000,v=((i*331+71)%1000)/1000,b=actualDem.bounds;
  checkRay(actual,actualFloor,b.minX+(b.maxX-b.minX)*u,b.minZ+(b.maxZ-b.minZ)*v);

@@ -239,11 +239,16 @@ for(const mesh of [...demOverlays,overviewOverlay]){
  assert.notStrictEqual(mesh.geometry.index,reliefSource.index,'Each geographic clip owns only its triangle selection');
  assert.ok(mesh.geometry.index.count>0&&mesh.geometry.index.count<reliefSource.index.count,'Geographic bounds remove unrelated relief triangles');
  assert.equal(mesh.geometry.attributes.color.itemSize,4);
- assert.deepEqual(Array.from(mesh.geometry.attributes.color.array),Array.from(reliefSource.attributes.color.array),'The fill retains the real ground feathering');
+ assert.ok(mesh.geometry.attributes.color.array.every(value=>value===1),'Regional tint has uniform strength across flat ground and feathered soil');
+ assert.ok(!mesh.material.vertexShader.includes('vSurfaceOpacity'),'Regional tint is independent of the soil opacity ramp');
  assert.equal(mesh.material.depthWrite,false);assert.equal(mesh.material.depthTest,true);
  assert.equal(mesh.renderOrder,4);assert.equal(mesh.userData.pickable,false);
  assert.ok(mesh.material.fragmentShader.includes('if(!insideFlank(vFlankWorld))discard;'),'Bounding rectangles require the complete polygon clip as well');
 }
+assert.ok(zones.every(mesh=>!mesh.visible),'The continuous drape replaces all flat district fills instead of double-painting their toes');
+assert.equal(scene.getObjectByName('Космодром · почти прозрачная заливка').visible,false,'The overview also uses only one continuous fill');
+assert.equal(districts.state().continuousReliefFill,true);
+assert.equal(districts.state().flatFillMeshesVisible,0);
 
 // Evaluate the generated scalar polygon predicate at independent source-map
 // points. This catches a wrong district, truncated outline, or plan/world mix
@@ -270,6 +275,22 @@ for(let x=Math.min(...xs)-25;x<Math.max(...xs)+25;x+=71.3)for(let y=Math.min(...
  raisedOverlayProbes++;
 }
 assert.ok(reliefClipProbes>250&&raisedOverlayProbes>=30);
+
+// A protected road lies between DEM samples and removes triangles from the
+// soil mesh. The district sheet must still cover this flat gap, at the same
+// strength as the adjoining slopes, without depending on the old flat fill.
+let flatDrapeProbes=0;
+for(let t=.1;t<.9;t+=.07){
+ const x=reliefBounds.minX+(reliefBounds.maxX-reliefBounds.minX)*t,z=37+16*t;
+ const district=clips.slice(0,3).findIndex(clip=>clip(x,z));if(district<0)continue;
+ assert.ok(Math.abs(broadRelief.heightAt(x,z)+2.755)<1e-6,'The independent probe follows the protected road centreline');
+ ray.set(new THREE.Vector3(x,100,z),down);
+ const fillHit=ray.intersectObject(demOverlays[district],false)[0];
+ assert.ok(fillHit,'The continuous district sheet spans omitted flat soil triangles');
+ assert.ok(Math.abs(fillHit.point.y+2.55)<1e-5,'The flat part retains the original visible fill level');
+ flatDrapeProbes++;
+}
+assert.ok(flatDrapeProbes>=3,'Several districts and cells are checked through the road gap');
 
 // The real ring is long: two endpoints cannot follow its intervening hills.
 // Check every draped vertex and sample the physical ground beneath selected
@@ -320,4 +341,4 @@ districts.setOpacity(.6);demOverlays.forEach(mesh=>assert.ok(Math.abs(mesh.mater
 districts.setOpacity(0);
 assert.ok(!overviewOverlay.visible&&demOverlays.every(mesh=>!mesh.visible));
 assert.equal(districts.state().overviewReliefCount,1);assert.equal(districts.state().terrainDraped,true);
-console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false,reliefClipProbes,raisedOverlayProbes,drapedBoundaryVertices,physicalBoundaryProbes,reliefAttributesShared:true,overviewReliefVisibility:true}));
+console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false,reliefClipProbes,raisedOverlayProbes,flatDrapeProbes,drapedBoundaryVertices,physicalBoundaryProbes,reliefAttributesShared:true,overviewReliefVisibility:true,continuousReliefFill:true}));

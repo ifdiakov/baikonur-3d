@@ -2,12 +2,42 @@ import * as THREE from 'three';
 
 // Geographic spacing is independent of the enlarged exhibit/model scale.
 export const RELIEF_WORLD_UNITS_PER_METRE=3.4/65;
-export const TERRAIN_RELIEF_VERSION='baikonur-dem-relief-v1';
+export const TERRAIN_RELIEF_VERSION='baikonur-dem-relief-v2';
 const MAX_TRIANGLES=350000;
 const clamp01=x=>Math.max(0,Math.min(1,x));
-const smoothstep=(a,b,x)=>{const t=b>a?clamp01((x-a)/(b-a)):(x>a?1:0);return t*t*(3-2*t);};
+const smootherstep=(a,b,x)=>{const t=b>a?clamp01((x-a)/(b-a)):(x>a?1:0);return t*t*t*(t*(t*6-15)+10);};
 const finite=n=>Number.isFinite(n);
 const pointOK=p=>p&&finite(p.x)&&finite(p.z);
+
+// Smooth, seeded geographic variation, independent of mesh density and camera.
+// Broad wavelengths change the shoulders of hills without adding noisy peaks.
+function landNoise(x,z,scale,seed){
+ const px=x/scale,pz=z/scale,ix=Math.floor(px),iz=Math.floor(pz);
+ const u=smootherstep(0,1,px-ix),v=smootherstep(0,1,pz-iz);
+ const hash=(a,b)=>{let n=Math.imul(a,374761393)^Math.imul(b,668265263)^seed;n=Math.imul(n^(n>>>13),1274126177);return ((n^(n>>>16))>>>0)/2147483647.5-1;};
+ const a=hash(ix,iz),b=hash(ix+1,iz),c=hash(ix,iz+1),d=hash(ix+1,iz+1);
+ return (a+(b-a)*u)*(1-v)+(c+(d-c)*u)*v;
+}
+const shoulderVariation=(x,z)=>.6*landNoise(x,z,360,31)+.4*landNoise(x,z,780,83);
+
+// A small separable binomial filter rounds DEM sampling ridges and the medial
+// axes of neighbouring engineering masks. Hard-clearance guards are reapplied
+// afterwards, so smoothing can never lift a road, runway or site footprint.
+function smoothGrid(values,columns,rows,passes){
+ const stride=columns+1,current=values.slice(),horizontal=new Float32Array(values.length);
+ const kernel=[1,4,6,4,1];
+ for(let pass=0;pass<passes;pass++){
+  for(let z=0;z<=rows;z++)for(let x=0;x<=columns;x++){
+   let sum=0;for(let k=-2;k<=2;k++)sum+=current[z*stride+Math.max(0,Math.min(columns,x+k))]*kernel[k+2];
+   horizontal[z*stride+x]=sum/16;
+  }
+  for(let z=0;z<=rows;z++)for(let x=0;x<=columns;x++){
+   let sum=0;for(let k=-2;k<=2;k++)sum+=horizontal[Math.max(0,Math.min(rows,z+k))*stride+x]*kernel[k+2];
+   current[z*stride+x]=sum/16;
+  }
+ }
+ return current;
+}
 
 function pointSegmentDistance(x,z,a,b){
  const dx=b.x-a.x,dz=b.z-a.z,length2=dx*dx+dz*dz;
@@ -28,8 +58,9 @@ function upperBound(values,value){
  */
 export function createReliefProtection(protection={},options={}){
  const margin=Math.max(0,options.margin??0),transitionWidth=Math.max(0,options.transitionWidth??120);
- const cellSize=Math.max(16,options.cellSize??Math.max(96,margin+transitionWidth));
- const bounds=options.bounds,reach=margin+transitionWidth;
+ const transitionVariation=clamp01(options.transitionVariation??0),maxTransitionWidth=transitionWidth*(1+transitionVariation);
+ const cellSize=Math.max(16,options.cellSize??Math.max(96,margin+maxTransitionWidth));
+ const bounds=options.bounds,reach=margin+Math.max(maxTransitionWidth,options.minimumReach??0);
  const cells=new Map(),polygonCells=new Map(),counts={circles:0,rectangles:0,corridors:0,segments:0,polygons:0};
  let primitiveCount=0;
  const key=(x,z)=>x+','+z;
@@ -109,9 +140,12 @@ export function createReliefProtection(protection={},options={}){
   }
   return nearest;
  }
- function sample(x,z){const distance=distanceAt(x,z);return {distance,protected:distance<=margin,weight:smoothstep(margin,margin+transitionWidth,distance)};}
+ function sample(x,z){
+  const distance=distanceAt(x,z),width=transitionWidth*(1+transitionVariation*shoulderVariation(x,z));
+  return {distance,protected:distance<=margin,weight:smootherstep(margin,margin+width,distance)};
+ }
  return {distanceAt,sample,weightAt:(x,z)=>sample(x,z).weight,
-  stats:()=>({...counts,primitives:primitiveCount,hashCells:cells.size,polygonHashCells:polygonCells.size,cellSize,margin,transitionWidth})};
+  stats:()=>({...counts,primitives:primitiveCount,hashCells:cells.size,polygonHashCells:polygonCells.size,cellSize,margin,transitionWidth,maxTransitionWidth,transitionVariation})};
 }
 
 function createDemSampler(dem){
@@ -133,11 +167,13 @@ function createDemSampler(dem){
 }
 
 /** Build deterministic CPU terrain data; no renderer, textures or DOM needed. */
-export function createTerrainReliefField({dem,protection={},step=16,baseY=-2.755,verticalExaggeration=2.5,
- baseElevationMetres=68,transitionWidth=120,edgeFadeWidth=240}={}){
+export function createTerrainReliefField({dem,protection={},step=16,baseY=-2.755,verticalExaggeration=2.25,
+ baseElevationMetres=68,transitionWidth=320,edgeFadeWidth=480,transitionVariation=.3,heightVariation=.28}={}){
  const sampleDem=createDemSampler(dem),bounds={...dem.bounds};
  if(!finite(step)||step<=0||!finite(baseY)||!finite(verticalExaggeration)||verticalExaggeration<0||!finite(baseElevationMetres)||
-    !finite(transitionWidth)||transitionWidth<0||!finite(edgeFadeWidth)||edgeFadeWidth<0)throw new Error('Invalid terrain relief options');
+    !finite(transitionWidth)||transitionWidth<0||!finite(edgeFadeWidth)||edgeFadeWidth<0||
+    !finite(transitionVariation)||transitionVariation<0||transitionVariation>1||!finite(heightVariation)||heightVariation<0||heightVariation>1)
+  throw new Error('Invalid terrain relief options');
  const spanX=bounds.maxX-bounds.minX,spanZ=bounds.maxZ-bounds.minZ;
  let columns=Math.max(1,Math.ceil(spanX/step)),rows=Math.max(1,Math.ceil(spanZ/step));
  if(columns*rows*2>MAX_TRIANGLES){
@@ -149,22 +185,37 @@ export function createTerrainReliefField({dem,protection={},step=16,baseY=-2.755
   }
  }
  const stepX=spanX/columns,stepZ=spanZ/rows,gridDiagonal=Math.hypot(stepX,stepZ),margin=gridDiagonal+.05;
- const protectedGround=createReliefProtection(protection,{margin,transitionWidth,bounds});
+ const protectedGround=createReliefProtection(protection,{margin,transitionWidth,transitionVariation,bounds,minimumReach:gridDiagonal*2.5});
  const xAxis=new Float32Array(columns+1),zAxis=new Float32Array(rows+1),stride=columns+1,vertices=stride*(rows+1);
  for(let x=0;x<=columns;x++)xAxis[x]=bounds.minX+x*stepX;
  for(let z=0;z<=rows;z++)zAxis[z]=bounds.minZ+z*stepZ;
- const positions=new Float32Array(vertices*3),uv=new Float32Array(vertices*2),colors=new Float32Array(vertices*4),offsets=new Float32Array(vertices);
- let minOffset=Infinity,maxOffset=0,nonZeroVertices=0,protectedVertices=0,maxProtectedOffset=0;
+ const positions=new Float32Array(vertices*3),uv=new Float32Array(vertices*2),colors=new Float32Array(vertices*4);
+ const rawHeights=new Float32Array(vertices),weights=new Float32Array(vertices),guards=new Float32Array(vertices),protectedMask=new Uint8Array(vertices);
+ const guardWidth=gridDiagonal*2.5;
  for(let z=0;z<=rows;z++)for(let x=0;x<=columns;x++){
   const i=z*stride+x,wx=xAxis[x],wz=zAxis[z],protectedSample=protectedGround.sample(wx,wz);
-  const edgeDistance=Math.max(0,Math.min(wx-bounds.minX,bounds.maxX-wx,wz-bounds.minZ,bounds.maxZ-wz));
-  const edgeWeight=edgeFadeWidth?(x===0||x===columns||z===0||z===rows?0:smoothstep(0,edgeFadeWidth,edgeDistance)):1;
-  const offset=Math.max(0,sampleDem(wx,wz)-baseElevationMetres)*RELIEF_WORLD_UNITS_PER_METRE*verticalExaggeration*protectedSample.weight*edgeWeight;
-  offsets[i]=offset;positions[i*3]=wx;positions[i*3+1]=baseY+offset;positions[i*3+2]=wz;
+  const sides=[wx-bounds.minX,bounds.maxX-wx,wz-bounds.minZ,bounds.maxZ-wz];
+  const edgeDistance=Math.max(0,Math.min(...sides));
+  const edgeWidth=edgeFadeWidth*(1+.18*landNoise(wx,wz,920,113));
+  // Multiplying the four C2 fades avoids a diagonal crease at rectangular
+  // coverage corners (the old minimum-distance fade changed gradient there).
+  const edgeWeight=edgeFadeWidth?sides.reduce((weight,d)=>weight*smootherstep(0,edgeWidth,d),1):1;
+  const variation=.7*landNoise(wx,wz,620,7)+.3*landNoise(wx,wz,280,53);
+  rawHeights[i]=Math.max(0,sampleDem(wx,wz)-baseElevationMetres)*RELIEF_WORLD_UNITS_PER_METRE*verticalExaggeration*(1+heightVariation*variation);
+  weights[i]=protectedSample.weight*edgeWeight;protectedMask[i]=protectedSample.protected?1:0;
+  guards[i]=smootherstep(margin,margin+guardWidth,protectedSample.distance)*(edgeFadeWidth?smootherstep(0,guardWidth,edgeDistance):1);
+  positions[i*3]=wx;positions[i*3+2]=wz;
   uv[i*2]=x/columns;uv[i*2+1]=1-z/rows;
+ }
+ const naturalHeights=smoothGrid(rawHeights,columns,rows,2);
+ for(let i=0;i<vertices;i++)naturalHeights[i]*=weights[i];
+ const offsets=smoothGrid(naturalHeights,columns,rows,2);
+ let minOffset=Infinity,maxOffset=0,nonZeroVertices=0,protectedVertices=0,maxProtectedOffset=0;
+ for(let i=0;i<vertices;i++){
+  const offset=offsets[i]*guards[i];offsets[i]=offset;positions[i*3+1]=baseY+offset;
   const storedOffset=offset>0?Math.max(0,positions[i*3+1]-baseY):0;
   minOffset=Math.min(minOffset,storedOffset);maxOffset=Math.max(maxOffset,storedOffset);if(offset>0)nonZeroVertices++;
-  if(protectedSample.protected){protectedVertices++;maxProtectedOffset=Math.max(maxProtectedOffset,offset);}
+  if(protectedMask[i]){protectedVertices++;maxProtectedOffset=Math.max(maxProtectedOffset,offset);}
  }
  const indices=[];let maxSlope=0,omittedTriangles=0;
  function triangle(a,b,c){
@@ -180,7 +231,7 @@ export function createTerrainReliefField({dem,protection={},step=16,baseY=-2.755
   const i=z*stride+x,l=z*stride+Math.max(0,x-1),r=z*stride+Math.min(columns,x+1),t=Math.max(0,z-1)*stride+x,b=Math.min(rows,z+1)*stride+x;
   const dx=(positions[r*3+1]-positions[l*3+1])/(positions[r*3]-positions[l*3]);
   const dz=(positions[b*3+1]-positions[t*3+1])/(positions[b*3+2]-positions[t*3+2]);
-  const alpha=smoothstep(0,.35,offsets[i]),diffuse=(-dx*.7+dz*.5)/Math.sqrt(1+dx*dx+dz*dz);
+  const alpha=smootherstep(0,.6,offsets[i]),diffuse=(-dx*.7+dz*.5)/Math.sqrt(1+dx*dx+dz*dz);
   const shade=1+Math.max(-.045,Math.min(.035,diffuse*.12))*alpha;
   colors[i*4]=shade;colors[i*4+1]=shade;colors[i*4+2]=shade;colors[i*4+3]=alpha;
  }
@@ -205,7 +256,8 @@ export function createTerrainReliefField({dem,protection={},step=16,baseY=-2.755
    protected:inside&&protectedGround.sample(x,z).protected,inBounds:inside};
  }
  const summary={version:TERRAIN_RELIEF_VERSION,source:dem.source??'DEM elevation grid',bounds,baseY,baseElevationMetres,
-  verticalExaggeration,worldUnitsPerMetre:RELIEF_WORLD_UNITS_PER_METRE,requestedStep:step,edgeFadeWidth,
+  verticalExaggeration,worldUnitsPerMetre:RELIEF_WORLD_UNITS_PER_METRE,requestedStep:step,edgeFadeWidth,heightVariation,
+  shaping:{transition:'broad-irregular-c2',demSmoothingPasses:2,shoulderSmoothingPasses:2,guardWidth},
   grid:{columns,rows,stepX,stepZ},minOffset,maxOffset,minHeight:baseY+minOffset,maxHeight:baseY+maxOffset,maxSlope,
   vertices,triangles:indices.length/3,omittedTriangles,nonZeroVertices,protection:protectedGround.stats(),
   flatChecks:{verticesChecked:vertices,protectedVertices,maxProtectedOffset,violations:maxProtectedOffset>0?1:0,gridMarginSafe:margin>=gridDiagonal}};

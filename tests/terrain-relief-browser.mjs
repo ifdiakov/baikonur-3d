@@ -44,14 +44,14 @@ const state=()=>page.evaluate(()=>{
 });
 function checkFrame(s){
  if(revision)assert.equal(s.revision,revision);
- assert.equal(s.terrain.version,'baikonur-dem-relief-v1');
+ assert.equal(s.terrain.version,'baikonur-dem-relief-v2');
  assert.equal(s.shadersValid,true,'The shared soil/void shaders compile on the relief');
  assert(s.render.drawCalls>0&&s.render.triangles>0,'The evidence comes from a rendered museum');
  assert([...s.camera.position,...s.camera.target].every(Number.isFinite));
  assert(s.terrain.triangles>10000&&s.terrain.triangles<=350000,'Regional relief has useful resolution within the geometry budget');
  assert.equal(s.reportedTerrainTriangles,s.terrain.triangles);
  assert(s.terrain.maxOffset>1&&s.terrain.maxOffset<80,'The real scene contains nonzero elevation at museum scale');
- assert(s.terrain.maxSlope<.65,'The real protected terrain has no steep artificial cliffs');
+ assert(s.terrain.maxSlope<.15,'The real protected terrain has broad gentle slopes');
  assert.equal(s.terrain.flatChecks.violations,0);
  assert(s.terrain.flatChecks.protectedVertices>0&&s.terrain.flatChecks.gridMarginSafe);
  assert(s.terrain.protection.corridors>0&&s.terrain.protection.polygons>0,'Roads and area footprints are included in the scene protection');
@@ -119,6 +119,20 @@ try{
  const wide=await shot('wide-day');evidence.chrome=await checkChrome();
  assert(elevation(wide.camera)>=29.99&&elevation(wide.camera)<70,'Relief is examined obliquely rather than hidden in a vertical map view');
  assert.equal(wide.visibility.visible.relief,true);
+
+ // Reproduce the user's scale: continuous flank tint must span both the
+ // raised terrain and the flat engineering corridors without a depth seam.
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.setLabelsVisible(true);q.showFlanks();});
+ await shot('flanks-day');
+ const flanks=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
+ assert(flanks.alpha>.9&&flanks.visibleZones===3,'All three flanks are visible at the regression camera');
+ assert.equal(flanks.continuousReliefFill,true);
+ assert.equal(flanks.flatFillMeshesVisible,0,'A flat tint layer cannot intersect the raised fill');
+ evidence.flanks=flanks;
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
+ await shot('flanks-evening');
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.inspectFlankBoundaries();});
+ await shot('flank-boundaries-day');
 
  // Check real scene placements in addition to the independent geometry test.
  // Runway edge/approach light coordinates give us probes along the complete

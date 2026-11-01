@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {buildTerrainRelief} from './terrain-relief.js?v=20261101-relief-v1';
+import {buildTerrainRelief} from './terrain-relief.js?v=20261101-natural-relief-v2';
 import {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v7';
 
 const xz=p=>({x:p.x,z:p.z});
@@ -110,7 +110,8 @@ export function buildMuseumTerrainRelief(options){
   color:0xffffff,vertexColors:true,transparent:true,depthWrite:true,alphaTest:.001,side:THREE.DoubleSide,forceSinglePass:true});
  material.name='Пологий рельеф Байконура · Mapzen / SRTM';steppeSurface.apply(material);
  const terrain=buildTerrainRelief({dem,material,protection,step:16,baseY:-2.755,
-  verticalExaggeration:2.5,baseElevationMetres:68,transitionWidth:120,edgeFadeWidth:240});
+  verticalExaggeration:2.25,baseElevationMetres:68,transitionWidth:320,edgeFadeWidth:480,
+  transitionVariation:.3,heightVariation:.28});
  scene.add(terrain.mesh);registerGroundSurface(terrain.mesh);
  const report=terrain.stats;
  return {...terrain,stats:()=>({...report(),protectedSites,airports,textureResolution:[1024,808],
