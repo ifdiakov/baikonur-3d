@@ -3,6 +3,7 @@ import {Group,Box3,Vector3,Raycaster} from 'three';
 import {buildSite45} from '../src/site45.js';
 import {createZenitRocket} from '../src/zenit-rocket.js';
 import {modelsForObject,MODEL_CATALOG} from '../src/model-catalog.js';
+import {FACILITY_PORTS} from '../src/facility-ports.js';
 const root=new Group(),built=buildSite45(root,{rocket:false}),meta=root.userData.site45Model;
 root.updateMatrixWorld(true);
 assert.equal(meta.referenceImageCount,10);assert.equal(meta.physical.planSurveyed,false);
@@ -15,6 +16,17 @@ assert(Math.abs(hit(4,0)-4.2)<1e-5,'Surrounding deck is solid');
 assert(Math.abs(hit(0,-25)+16)<1e-5,'Open channel reaches its recessed floor');
 assert(hit(0,-65)>hit(0,-40),'Outlet rises along the long ramp');
 assert(Math.abs(hit(.76,144.95)-.65)<.02,'Museum rail port connects at the established head height');
+// Check the declared incoming direction against the actual model pavement.
+// Matching a connection to its own port metadata would miss a sideways join.
+const roadSpec=FACILITY_PORTS['pad-45'],roadGate=new Vector3(...meta.roadPort);
+const roadInward=new Vector3(...(roadSpec.roadOutward??[0,0,1])).negate();
+const roadAcross=new Vector3(-roadInward.z,0,roadInward.x);
+for(const distance of [.1,.5,1])for(const side of [-1,0,1]){
+ const p=roadGate.clone().addScaledVector(roadInward,distance).addScaledVector(roadAcross,side*(roadSpec.roadWidth/2-.1));
+ assert(Math.abs(hit(p.x,p.z)-roadGate.y)<1e-5,'Site 45 driveway must continue straight into the visible road across its full width: '+p.toArray());
+}
+const roadInside=roadGate.clone().addScaledVector(roadInward,12);
+assert(Math.abs(hit(roadInside.x,roadInside.z)-roadGate.y)<1e-5,'The driveway continues into the model beyond the seam');
 const lights=root.userData.facilityLighting;
 assert.equal(lights.boards.length,4);assert.equal(lights.boards.reduce((n,b)=>n+b.lamps.length,0),80);assert.equal(lights.beacons.length,9);
 assert.equal(meta.components['curved-steel-deflector'],24);assert.equal(meta.components['folded-white-erector-arm'],1);

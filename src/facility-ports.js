@@ -17,7 +17,10 @@ export const FACILITY_PORTS={
  'pad-31':{scale:MUSEUM_METRE,yaw:SITE31_YAW,road:[60,.1,133],roadOutward:[3/Math.hypot(3,177),0,177/Math.hypot(3,177)],roadWidth:6,rail:[[0,.65,174]],physicalRailGauge:1.52},
  'pad-41':{...SITE41_ACCESS,roadWidth:SITE41_ACCESS.roadWidthMetres},
  'pad-42':{scale:.28,yaw:0,road:[78,.1,32],roadOutward:[1,0,0],roadWidth:7},
- 'pad-45':{scale:MUSEUM_METRE,yaw:0,road:[78,.1,128],roadWidth:9,rail:[[0,.65,145]],physicalRailGauge:1.52},
+ // Enter the visible east-facing road end after passing south of the incoming
+ // railway. A direct curve cuts through the service building and the tracks.
+ 'pad-45':{scale:MUSEUM_METRE,yaw:0,road:[78,.1,128],roadOutward:[1,0,0],
+  roadApproach:[[-100,.1,185],[110,.1,185],[120,.1,128]],roadWidth:9,rail:[[0,.65,145]],physicalRailGauge:1.52},
  'pad-92':{scale:.14,yaw:0,road:[184.2,.16,184.8],roadOutward:[150.6/Math.hypot(150.6,43.8),0,43.8/Math.hypot(150.6,43.8)],roadWidth:7},
 };
 export function portWorld(spec,local,site,point){return new THREE.Vector3(...local).multiplyScalar(spec.scale).applyAxisAngle(new THREE.Vector3(0,1,0),spec.yaw).add(point(site.x,site.y,spec.elevation??-2.72));}

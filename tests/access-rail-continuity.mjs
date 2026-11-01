@@ -9,6 +9,8 @@ import {RAIL_PROFILE,RAIL_METRES} from '../src/rail-profile.js';
 import {buildRailVehicle,TRAIN_METRIC_SCALE,COACH_OFFSETS} from '../src/rail-vehicles.js';
 import {buildMik112,MIK112} from '../src/mik112.js';
 import {SITE110_REFERENCE} from '../src/site110.js';
+import {buildSite45} from '../src/site45.js';
+import {MUSEUM_METRE} from '../src/museum-scale.js';
 import {distancePath} from '../src/traffic-paths.js';
 
 const V=(...p)=>new THREE.Vector3(...p),near=(a,b,e,message)=>assert(Math.abs(a-b)<=e,`${message}: ${a} != ${b}`);
@@ -101,6 +103,31 @@ for(const [label,position]of [
 ]){
  const p=V(...position);assert(asphaltAt(p).some(y=>Math.abs(y-p.y)<.035),'A foreign junction tangent removed actual lane pavement: '+label);
 }
+// The external Site 45 drive must clear the actual buildings and the incoming
+// railway, then continue into the road tested by site45-geometry.mjs.
+const site45=siteRecords.find(site=>site.id==='pad-45'),site45Root=new THREE.Group();
+site45Root.position.copy(point(site45.x,site45.y,-2.72));site45Root.scale.setScalar(MUSEUM_METRE);
+buildSite45(site45Root,{rocket:false});site45Root.updateMatrixWorld(true);
+const site45Road=paths.find(path=>path.id==='osm-access-pad-45');
+const site45Rail=stats.facilityRailPorts.find(port=>port.id==='pad-45').points;
+let site45RailClearance=Infinity;
+for(const p of site45Road.points){
+ let distance=Infinity;
+ for(let i=1;i<site45Rail.length;i++){
+  const a=site45Rail[i-1],b=site45Rail[i],dx=b[0]-a[0],dz=b[2]-a[2];
+  const t=THREE.MathUtils.clamp(((p.x-a[0])*dx+(p.z-a[2])*dz)/(dx*dx+dz*dz||1),0,1);
+  distance=Math.min(distance,Math.hypot(p.x-a[0]-t*dx,p.z-a[2]-t*dz));
+ }
+ const halfWidth=site45Road.widthAt(p)/2+.3;
+ site45RailClearance=Math.min(site45RailClearance,distance-halfWidth-RAIL_PROFILE.ballastWidth/2);
+ const direction=tangent(site45Road.points,site45Road.points.indexOf(p)),across=normal(direction);
+ for(const side of [-1,0,1]){
+  const q=p.clone().addScaledVector(across,side*halfWidth);
+  const obstruction=new THREE.Raycaster(V(q.x,30,q.z),V(0,-1,0)).intersectObject(site45Root,true)[0];
+  assert(!obstruction||obstruction.point.y<=p.y+.035,'Site 45 approach passes through a model structure: '+q.toArray());
+ }
+}
+assert(site45RailClearance>.5,'Site 45 road and shoulders must clear the incoming railway: '+site45RailClearance);
 let accessProbes=0,minSourceDot=1,minGateDot=1;
 for(const report of stats.facilityPorts){
  const path=paths.find(p=>p.id==='osm-access-'+report.id);assert(path&&path.points.length>3,'Every model gate has its actual rendered approach');

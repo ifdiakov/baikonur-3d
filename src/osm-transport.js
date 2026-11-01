@@ -4,7 +4,7 @@ import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectan
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261031-facilities-rails-lighting-v1';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-site45-road-v1';
 import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
@@ -668,7 +668,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    tangent:(site41Replacement.attachmentEdge.surfaceTangents?.[1]??site41Replacement.attachmentEdge.b.position.clone().sub(site41Replacement.attachmentEdge.a.position).normalize()).clone()
   }:nearestSegment(roadGraph,target,e=>e.tags.highway!=='track'&&airportPortSourceAllowed(id,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));if(!near||near.distance>300**2)continue;
   const tangent=near.tangent.clone();if(tangent.dot(gate.clone().sub(near.point))<0)tangent.negate();
-  let anchors=[];
+  let anchors=(spec.roadApproach??[]).map(local=>portWorld(spec,local,site,point));
   if(id==='pad-251'&&airportClearance){
    const start=airportLocal(near.point),end=airportLocal(gate),laneX=airportClearance.rectangle.maxX;
    anchors=simplifyPath([[Math.max(start[0],laneX),start[1],end[2]],[laneX,end[1],end[2]]].map(airportWorld));
