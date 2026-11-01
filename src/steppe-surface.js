@@ -32,9 +32,9 @@ export const STEPPE_FRAGMENT=/* glsl */`
   vec3 a=texture2D(steppeMeso,p/64.0).rgb;
   vec2 rotated=mat2(.8,-.6,.6,.8)*p;
   vec3 b=texture2D(steppeMeso,rotated/37.0+vec2(.317,.691)).rgb;
-  float patch=(a.r-.5)*.30+(b.g-.5)*.18;
+  float soilVariation=(a.r-.5)*.30+(b.g-.5)*.18;
   float gravel=(a.g-.5)*.22*(1.0-salt*.85)*(1.0-sand*.6);
-  vec3 tone=vec3(1.0)+(patch+gravel)*mediumDetail;
+  vec3 tone=vec3(1.0)+(soilVariation+gravel)*mediumDetail;
   // Sparse low plants are a ground texture: no giant billboards or extra
   // geometry across launch pads, roads and airfield pavements.
   float plantDetail=1.0-smoothstep(.12,.9,pixelSize);
