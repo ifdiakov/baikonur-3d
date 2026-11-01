@@ -3,7 +3,7 @@
 
   var finished = false;
   var failed = false;
-  var controls = ['museumLeftStack', 'labelLayer', 'timeDock', 'hero'];
+  var controls = ['museumLeftStack', 'museumRightStack', 'labelLayer', 'timeDock', 'hero'];
   var element = function (id) { return document.getElementById(id); };
   var setMessage = function (text) {
     var message = element('museumLoadingMessage');
@@ -31,6 +31,7 @@
         control.removeAttribute('inert');
       }
     });
+    document.body.classList.add('museum-ready');
     window.removeEventListener('error', onError, true);
     window.removeEventListener('unhandledrejection', onRejection);
   }

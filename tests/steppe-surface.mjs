@@ -5,7 +5,7 @@ import {createSteppeSurface,installSteppeSurface,STEPPE_BIOME_EXTENT,STEPPE_BIOM
 import {maskUkssTerrain} from '../src/ukss-pad.js';
 import {createTerrainVoids} from '../src/terrain-voids.js';
 
-assert.equal(STEPPE_VERSION,'baikonur-steppe-v5');
+assert.equal(STEPPE_VERSION,'baikonur-steppe-v6');
 const fieldNames=['salt','sand','scrub','stone','tone'],samples=[],cohorts={soil:[],sand:[],salt:[]};
 const ranges=Object.fromEntries(fieldNames.map(key=>[key,[Infinity,-Infinity]]));
 function checkSample(x,z){
@@ -49,7 +49,10 @@ for(const [a,b]of [['soil','sand'],['soil','salt'],['sand','salt']])
  assert.ok(distance(meanColours[a],meanColours[b])>25,`${a} and ${b} must remain visibly distinct`);
 assert.ok(luminance(meanColours.salt)>luminance(meanColours.sand)+12,'Salt crust must read lighter than sand');
 assert.ok(luminance(meanColours.sand)>luminance(meanColours.soil)+10,'Sand deposits must stand out from the steppe soil');
-assert.ok(meanColours.sand[0]-meanColours.sand[2]>meanColours.salt[0]-meanColours.salt[2]+15,'Salt crust must not become another yellow sand patch');
+// The supplied reference has warm cream salt, so compare saturation relative
+// to brightness rather than requiring the former almost-neutral white salt.
+const warmChroma=colour=>(colour[0]-colour[2])/luminance(colour);
+assert.ok(warmChroma(meanColours.sand)>warmChroma(meanColours.salt)+.15,'Cream salt crust must remain less saturated than ochre sand');
 let maxBoundaryJump=0;
 for(const {x,z,fields}of samples.filter((_,i)=>i%137===0))for(const [dx,dz]of [[.0001,0],[0,.0001]]){
  const next=sampleSteppeFields(x+dx,z+dz);
@@ -97,8 +100,8 @@ assert.equal(biomeTexture.minFilter,THREE.LinearMipmapLinearFilter);
 assert.equal(biomeTexture.wrapS,THREE.ClampToEdgeWrapping);assert.equal(biomeTexture.wrapT,THREE.ClampToEdgeWrapping);
 const textures={biomeTexture,microTexture:loaded.find(item=>item.url.includes('micro')).texture,mesoTexture:loaded.find(item=>item.url.includes('meso')).texture};
 let biomeProbes=0;
-for(const [ix,iz]of [[0,0],[1,17],[63,171],[128,255],[255,128],[310,7],[510,511],[511,0],[511,511]]){
- const size=STEPPE_BIOME_RESOLUTION,x=((ix+.5)/size-.5)*STEPPE_BIOME_EXTENT,z=((iz+.5)/size-.5)*STEPPE_BIOME_EXTENT;
+for(const [u,v]of [[0,0],[1,17],[63,171],[128,255],[255,128],[310,7],[510,511],[511,0],[511,511]]){
+ const size=STEPPE_BIOME_RESOLUTION,ix=Math.round(u/511*(size-1)),iz=Math.round(v/511*(size-1)),x=((ix+.5)/size-.5)*STEPPE_BIOME_EXTENT,z=((iz+.5)/size-.5)*STEPPE_BIOME_EXTENT;
  const expected=sampleSteppeFields(x,z),pixel=4*(iz*size+ix);
  for(const [channel,key]of ['salt','sand','scrub'].entries())assert.ok(Math.abs(biomeTexture.image.data[pixel+channel]/255-expected[key])<=.5/255+1e-10,`Biome ${key} must address world X/Z without a flipped or transposed axis`);
  assert.equal(biomeTexture.image.data[pixel+3],255);biomeProbes++;

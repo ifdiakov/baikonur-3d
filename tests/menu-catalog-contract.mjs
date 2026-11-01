@@ -9,15 +9,17 @@ const [html,catalogue,field,history,railPoints]=await Promise.all([
   readFile(new URL('../index.html',import.meta.url),'utf8'),
   ...['catalog.json','field-research.json','history.json','osm/rail-points.geojson'].map(file=>readFile(new URL('../data/'+file,import.meta.url),'utf8').then(JSON.parse))
 ]);
-const ids=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ','ПУСКОВЫЕ ТУРЫ'];
+const ids=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.id),ids);
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.title),titles);
-const aside=html.slice(html.indexOf('<aside id="ui"'),html.indexOf('</aside>'));
-assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the six requested sections in order');
+const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html.indexOf('</aside>',asideStart));
+assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the five requested sections in order');
 assert.deepEqual([...aside.matchAll(/<span class="sites-accordion-title">([^<]+)<\/span>/g)].map(match=>match[1]),titles);
-assert.match(aside,/<div class="museum-name">Байконур<\/div>/);
-assert.match(aside,/<div class="museum-subtitle">интерактивный музей 3d<\/div>/);
+assert.match(aside,/<div class="museum-name">БАЙКОНУР<\/div>/);
+assert.match(aside,/<div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ\s+<span class="museum-dimension">3D<\/span><\/div>/);
+assert.doesNotMatch(html,/id="toursAccordion"/,'The removed tours section must not remain hidden in the document');
+for(const id of ['museumRightStack','nextLaunchPanel'])assert.equal([...html.matchAll(new RegExp('id="'+id+'"','g'))].length,1,'One shared next-launch panel: '+id);
 assert.doesNotMatch(aside,/rockettrip-logo|RocketTrip|ЦИКЛОГРАММЫ|ПЛОЩАДКИ И ОБЪЕКТЫ/);
 const dock=html.slice(html.indexOf('<footer id="timeDock"'),html.indexOf('</footer>'));
 assert.match(dock,/id="year"[^>]+type="range"[^>]+min="1955"[^>]+max="2026"/);
@@ -48,7 +50,7 @@ assert.deepEqual(modelsForObject({id:'pad-41'}),['r16']);assert.deepEqual(models
 assert(MUSEUM_SECTIONS.find(section=>section.id==='graveyardAccordion').items.some(item=>item.action==='r16-memorial'),'The memorial entry remains separate from the rocket exhibit');
 assert.equal(actions[0],'zenit-3sl','The independently added source model is preserved as the first equipment item');
 assert.ok(html.includes("case 'zenit-3sl':openMenuSite('pad-45');portalArchive.inspectSite45('rocket',camera,ctl);break;"),'Zenit opens its site card and the universal model inspector');
-const tours=MUSEUM_SECTIONS.find(section=>section.id==='toursAccordion');assert.deepEqual(tours.items,[]);assert.equal(tours.empty,'Программы пусковых туров в музее не опубликованы.');
+assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='toursAccordion'),undefined,'The menu data no longer publishes a tours section');
 
 // Run the actual extracted year setter, not a duplicate of its logic. Removing
 // the event DOM must not leave null accesses or change historical visibility.

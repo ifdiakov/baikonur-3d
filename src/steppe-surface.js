@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {STEPPE_VERSION,sampleSteppeFields} from './steppe-field.js?v=20261101-steppe-v5';
+import {STEPPE_VERSION,sampleSteppeFields} from './steppe-field.js?v=20261101-steppe-v6';
 
 export const STEPPE_BIOME_EXTENT=18000;
-export const STEPPE_BIOME_RESOLUTION=512;
+export const STEPPE_BIOME_RESOLUTION=1024;
 const installed=new WeakMap();
 
 export function createSteppeBiomeTexture(){
@@ -25,16 +25,25 @@ export const STEPPE_FRAGMENT=/* glsl */`
   float pixelSize=max(length(dFdx(p)),length(dFdy(p)));
   // Mipmaps average subpixel grains; derivative fades remove their residual
   // contrast before a moving camera can turn them into moire or sparkles.
-  float mediumDetail=1.0-smoothstep(.6,4.0,pixelSize);
-  if(mediumDetail<.001)return vec3(1.0);
+  float landscapeDetail=1.0-smoothstep(18.0,70.0,pixelSize);
+  float mediumDetail=1.0-smoothstep(.6,5.0,pixelSize);
+  if(landscapeDetail<.001)return vec3(1.0);
   vec3 biome=texture2D(steppeBiomes,p/${STEPPE_BIOME_EXTENT.toFixed(1)}+vec2(.5)).rgb;
   float salt=biome.r,sand=biome.g,scrub=biome.b;
-  vec3 a=texture2D(steppeMeso,p/64.0).rgb;
   vec2 rotated=mat2(.8,-.6,.6,.8)*p;
-  vec3 b=texture2D(steppeMeso,rotated/37.0+vec2(.317,.691)).rgb;
-  float soilVariation=(a.r-.5)*.30+(b.g-.5)*.18;
-  float gravel=(a.g-.5)*.22*(1.0-salt*.85)*(1.0-sand*.6);
-  vec3 tone=vec3(1.0)+(soilVariation+gravel)*mediumDetail;
+  // Dense soil mosaics remain visible from the overview. Two unrelated
+  // periods suppress a recognisable tiled repeat, with no directional dunes.
+  vec3 broad=texture2D(steppeMeso,p/213.0).rgb;
+  vec3 broken=texture2D(steppeMeso,rotated/79.0+vec2(.317,.691)).rgb;
+  float mottles=(broad.r-.5)*1.10+(broken.r-.5)*1.80;
+  float darkGrains=smoothstep(.53,.70,broken.g)*.28*(1.0-salt*.75);
+  vec3 tone=vec3(1.0)+(mottles-darkGrains)*landscapeDetail;
+  if(mediumDetail>.001){
+   vec3 a=texture2D(steppeMeso,p/41.0).rgb;
+   float soilVariation=(a.r-.5)*.40;
+   float gravel=(a.g-.5)*.24*(1.0-salt*.85)*(1.0-sand*.6);
+   tone+=vec3((soilVariation+gravel)*mediumDetail);
+  }
   // Sparse low plants are a ground texture: no giant billboards or extra
   // geometry across launch pads, roads and airfield pavements.
   float plantDetail=1.0-smoothstep(.12,.9,pixelSize);
@@ -46,15 +55,15 @@ export const STEPPE_FRAGMENT=/* glsl */`
   float closeDetail=1.0-smoothstep(.045,.25,pixelSize);
   if(closeDetail>.001){
    vec3 micro=texture2D(steppeMicro,p/2.0).rgb;
-   float soil=(micro.r-.5)*.38;
-   float aeolian=(micro.g-.5)*.24;
+   float soil=(micro.r-.5)*.48;
+   float aeolian=(micro.g-.5)*.27;
    // Salt crust appears only in the salt-pan field, with narrow dark seams
    // and pale plates. The rest of the steppe keeps its own granular surface.
-   float crust=(micro.b-.78)*.47;
+   float crust=(micro.b-.85)*.40;
    float detail=mix(mix(soil,aeolian,sand),crust,salt);
    tone*=1.0+detail*closeDetail;
   }
-  return clamp(tone,vec3(.50),vec3(1.28));
+  return clamp(tone,vec3(.45),vec3(1.34));
  }
 `;
 

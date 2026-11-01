@@ -1,6 +1,6 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 
-export const MUSEUM_MENU_VERSION='museum-six-sections-v4';
+export const MUSEUM_MENU_VERSION='museum-five-sections-v5';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -41,8 +41,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
  {id:'graveyardAccordion',title:'КОСМИЧЕСКОЕ КЛАДБИЩЕ',items:[
   {action:'r16-memorial',title:'Катастрофа Р-16',description:'Площадка №41'},
   {action:'mik-ruins',title:'Разрушенные пролёты МИК',description:'Площадка №112'}
- ]},
- {id:'toursAccordion',title:'ПУСКОВЫЕ ТУРЫ',items:[],empty:'Программы пусковых туров в музее не опубликованы.'}
+ ]}
 ]);
 
 export function installMuseumMenu({container,onAction,stories=[]}){

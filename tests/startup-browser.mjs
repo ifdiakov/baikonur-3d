@@ -62,7 +62,9 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    state.feedback.push(feedback);
    if(loading.dataset.state==='ready'){
     const stats=window.__BAIKONUR_QA?.stats();
-    state.ready.push({...feedback,render:stats?.render||null,animateRequests:state.animateRequests});
+    const menus=['museumLeftStack','museumRightStack'].map(id=>({id,inert:document.getElementById(id)?.inert}));
+    state.ready.push({...feedback,render:stats?.render||null,animateRequests:state.animateRequests,menus,
+     chromeReady:document.body.classList.contains('museum-ready')});
    }
   }).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','data-state']});
   if(!stalledBody)return;
@@ -99,7 +101,8 @@ async function loaderState(page){
   const loading=document.getElementById('museumLoading');
   return {hidden:loading?.hidden,state:loading?.dataset.state||'loading',message:document.getElementById('museumLoadingMessage')?.textContent,
    retryHidden:document.getElementById('museumRetry')?.hidden,
-   inert:['museumLeftStack','labelLayer','timeDock','hero'].map(id=>({id,inert:document.getElementById(id)?.inert})),
+   inert:['museumLeftStack','museumRightStack','labelLayer','timeDock','hero'].map(id=>({id,inert:document.getElementById(id)?.inert})),
+   chromeReady:document.body.classList.contains('museum-ready'),
    qaAvailable:Boolean(window.__BAIKONUR_QA),test:window.__STARTUP_TEST};
  });
 }
@@ -108,6 +111,9 @@ async function waitReady(page){
  const state=await loaderState(page);
  assert.equal(state.hidden,true);assert.ok(state.inert.every(item=>item.inert===false),'Controls become interactive after startup');
  assert.equal(state.test.ready.length,1,'Ready is reached once');
+ assert.equal(state.chromeReady,true);
+ assert.equal(state.test.ready[0].chromeReady,true,'The shared appearance state is set in the same ready transaction');
+ assert.ok(state.test.ready[0].menus.every(item=>item.inert===false),'Both side menus become interactive together at ready');
  assert.ok(state.test.ready[0].render?.drawCalls>0&&state.test.ready[0].render?.triangles>0,'Ready follows the first actual renderer pass');
  assert.ok(state.test.ready[0].animateRequests>=1,'The initial frame has scheduled its continuation');
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
@@ -121,6 +127,7 @@ async function waitError(page){
  assert.equal(state.hidden,false);assert.equal(state.retryHidden,false);
  assert.match(state.message,/Не удалось загрузить музей/);assert.match(state.message,/повторите/i);
  assert.ok(state.inert.every(item=>item.inert===true),'Incomplete scene controls remain inert');
+ assert.equal(state.chromeReady,false,'Failed startup must not reveal either side menu');
  assert.equal(state.qaAvailable,false);assert.deepEqual(state.test.ready,[],'A failed required request never reports ready');
  return state;
 }
@@ -138,6 +145,7 @@ try{
   const loading=await loaderState(run.page);
   assert.equal(loading.hidden,false);assert.match(loading.message,/Загружаем|Готовим|Открываем/);
   assert.ok(loading.inert.every(item=>item.inert===true));assert.equal(loading.qaAvailable,false);
+  assert.equal(loading.chromeReady,false,'Both menus wait for the same successful scene startup');
   run.record.beforeReady={message:loading.message,inert:loading.inert};run.releaseCatalog();
   const ready=await waitReady(run.page);console.log('STARTUP_OFFLINE_READY');
   assert.equal(ready.stats.ukss.status,'ready');assert.equal(ready.stats.mik112.tua.status,'ready');

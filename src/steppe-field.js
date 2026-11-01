@@ -1,10 +1,11 @@
-// An illustrative land-cover field, guided by photographs of Baikonur.
+// An illustrative land-cover field, guided by the owner's satellite reference.
 // Coordinates describe the shared museum world, never a model's local UVs.
 // Salt pans and sand deposits are material variation, not surveyed polygons.
-export const STEPPE_VERSION='baikonur-steppe-v5';
+export const STEPPE_VERSION='baikonur-steppe-v6';
 export const STEPPE_PALETTE=Object.freeze({
- soil:Object.freeze([166,153,129]),sand:Object.freeze([202,181,145]),
- salt:Object.freeze([228,224,207]),scrub:Object.freeze([112,111,86])
+ soil:Object.freeze([105,103,88]),sand:Object.freeze([155,132,94]),
+ salt:Object.freeze([195,189,149]),scrub:Object.freeze([78,84,68]),
+ dark:Object.freeze([70,73,63]),ochre:Object.freeze([151,102,65])
 });
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t);};
@@ -17,32 +18,44 @@ export function steppeNoise(x,z,cell,seed){
  const u=x/cell,v=z/cell,ix=Math.floor(u),iz=Math.floor(v),fx=smooth(0,1,u-ix),fz=smooth(0,1,v-iz);
  return mix(mix(hash(ix,iz,seed),hash(ix+1,iz,seed),fx),mix(hash(ix,iz+1,seed),hash(ix+1,iz+1,seed),fx),fz);
 }
+function landscape(x,z){
+ // Two scales of isotropic distortion form lobes and broken margins rather
+ // than the old kilometre-wide diagonal sand bands.
+ const wx=x+(steppeNoise(x,z,183,101)-.5)*74+(steppeNoise(x,z,39,103)-.5)*21;
+ const wz=z+(steppeNoise(x+137,z-81,171,107)-.5)*69+(steppeNoise(x,z,33,109)-.5)*18;
+ const edge=steppeNoise(wx,wz,13,43),fineEdge=steppeNoise(wx,wz,4.5,47);
+ const basin=steppeNoise(wx,wz,164,37)*.54+steppeNoise(wx,wz,49,41)*.28+edge*.13+fineEdge*.05;
+ // Cream crust remains local. The high-frequency edge contribution breaks
+ // its outline and cuts darker islands into the wider shallow depressions.
+ const salt=smooth(.66,.77,basin)*(1-smooth(.69,.88,steppeNoise(wx,wz,19,45))*.54);
+ const deposit=steppeNoise(wx+83,wz-31,112,59)*.66+steppeNoise(wx,wz,28,53)*.25+edge*.09;
+ const sand=smooth(.62,.80,deposit)*(1-salt*.94);
+ const mottling=steppeNoise(wx,wz,31,71)*.56+steppeNoise(wx,wz,9.5,73)*.29+fineEdge*.15;
+ const stone=smooth(.35,.72,mottling)*(1-salt*.82)*(1-sand*.48);
+ const scrub=smooth(.30,.73,steppeNoise(wx,wz,29,67)*.68+steppeNoise(wx,wz,8,69)*.32)*(1-salt*.94)*(1-sand*.64);
+ const tone=clamp(.5+(steppeNoise(x,z,470,11)-.5)*.23+(steppeNoise(wx,wz,72,79)-.5)*.58+(mottling-.5)*.72);
+ const oxide=steppeNoise(wx+193,wz-71,78,97)*.70+steppeNoise(wx,wz,18,99)*.30;
+ const ochre=clamp(smooth(.72,.86,oxide)*(1-salt*.86)+4*salt*(1-salt)*smooth(.60,.78,oxide)*.26);
+ return {salt,sand,scrub,stone,tone,ochre};
+}
+
 export function sampleSteppeFields(x,z){
- const u=x*.83867+z*.54464,v=-x*.54464+z*.83867;
- const warpX=(steppeNoise(x,z,820,101)-.5)*250,warpZ=(steppeNoise(x+137,z-81,710,103)-.5)*210;
- const wx=u+warpX,wz=v+warpZ;
- const basin=steppeNoise(wx,wz,640,37)*.56+steppeNoise(wx,wz,205,41)*.29+steppeNoise(wx,wz,67,43)*.15;
- const salt=smooth(.60,.735,basin);
- // Stretched, broken deposits; domain warping avoids parallel dune stripes.
- const dune=steppeNoise(wx*.62,wz*2.4,370,51)*.64+steppeNoise(wx*.8,wz*2.1,118,53)*.36;
- const sand=smooth(.48,.70,dune)*(1-salt);
- const scrub=smooth(.31,.72,steppeNoise(wx,wz,145,67))*(1-salt*.96)*(1-sand*.72);
- const stone=smooth(.45,.75,steppeNoise(wx,wz,315,71))*(1-salt)*(1-sand*.55);
- const tone=clamp(.5+(steppeNoise(x,z,2350,11)-.5)*.55+(steppeNoise(wx,wz,255,79)-.5)*.3);
+ const {salt,sand,scrub,stone,tone}=landscape(x,z);
  return {salt,sand,scrub,stone,tone};
 }
 
 /** sRGB 0–255, retaining the existing terrain renderer's public API. */
 export function sampleSteppe(x,z,detail=1){
- const f=sampleSteppeFields(x,z),p=STEPPE_PALETTE;
- const grain=detail>0?(steppeNoise(x,z,38,83)-.5)*8:0;
- const fine=detail>1?(steppeNoise(x,z,12,89)-.5)*5:0;
- const tone=(f.tone-.5)*42+grain+fine-f.stone*13;
- const soil=p.soil.map((c,i)=>c+tone*[1,.94,.83][i]-f.scrub*[8,5,8][i]);
- const sand=p.sand.map((c,i)=>c+tone*[.45,.40,.34][i]);
- const salt=p.salt.map((c,i)=>c+tone*[.14,.13,.12][i]);
- // A narrow weathered margin makes a salt pan read as an irregular shallow
- // depression, without adding a geometric crater or a painted white circle.
+ const f=landscape(x,z),p=STEPPE_PALETTE;
+ const grain=detail>0?(steppeNoise(x,z,8,83)-.5)*17:0;
+ const fine=detail>1?(steppeNoise(x,z,2.7,89)-.5)*8:0;
+ const tone=(f.tone-.5)*84+grain+fine;
+ const soil=p.soil.map((c,i)=>mix(mix(c,p.dark[i],f.stone*.48),p.scrub[i],f.scrub*.12)+tone*[1,.96,.83][i]);
+ const sand=p.sand.map((c,i)=>c+tone*[.62,.55,.42][i]);
+ const salt=p.salt.map((c,i)=>c+tone*[.42,.40,.31][i]);
  const rim=4*f.salt*(1-f.salt);
- return soil.map((c,i)=>clamp(Math.round(mix(mix(c,sand[i],f.sand),salt[i],f.salt)-rim*[4,6,7][i]),0,255));
+ return soil.map((c,i)=>{
+  const earth=mix(mix(c,sand[i],f.sand),p.ochre[i]+tone*.28,f.ochre*.76);
+  return clamp(Math.round(mix(earth,salt[i],f.salt)-rim*[5,6,5][i]),0,255);
+ });
 }

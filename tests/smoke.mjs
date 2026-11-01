@@ -52,7 +52,7 @@ console.log('REVIEWED CATALOG: descriptions, notes, sources and organisation rol
 // Sidebar cleanup must preserve navigation while removing temporary implementation notes.
 const sidebarCleanup=await page.evaluate(()=>{
  const sidebar=document.querySelector('#ui');const text=sidebar?.innerText||'';
- return {noPrototypeNote:!text.includes('Трёхмерная модель планировки'),noLayerToggles:!sidebar.querySelector('[data-layer]'),noRoadDiagnostics:!text.includes('цветных пикселей'),noSatelliteDisclaimer:!text.includes('Спутниковая съёмка доступна'),noOverviewButtons:!sidebar.querySelector('#all,#top,#fly'),noLabelsToggle:!sidebar.querySelector('#showLabels'),themedSections:['equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'].every(id=>sidebar.querySelector('#'+id)),noYandexButton:!sidebar.querySelector('#satellite'),statusHidden:!document.getElementById('roadStatus')||getComputedStyle(document.getElementById('roadStatus')).display==='none'};
+ return {noPrototypeNote:!text.includes('Трёхмерная модель планировки'),noLayerToggles:!sidebar.querySelector('[data-layer]'),noRoadDiagnostics:!text.includes('цветных пикселей'),noSatelliteDisclaimer:!text.includes('Спутниковая съёмка доступна'),noOverviewButtons:!sidebar.querySelector('#all,#top,#fly'),noLabelsToggle:!sidebar.querySelector('#showLabels'),themedSections:['equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'].every(id=>sidebar.querySelector('#'+id)),noTours:!document.getElementById('toursAccordion'),noYandexButton:!sidebar.querySelector('#satellite'),statusHidden:!document.getElementById('roadStatus')||getComputedStyle(document.getElementById('roadStatus')).display==='none'};
 });
 console.log('SIDEBAR',JSON.stringify(sidebarCleanup));
 assert.ok(Object.values(sidebarCleanup).every(Boolean),'Sidebar must hide implementation diagnostics without losing working navigation');
@@ -119,8 +119,9 @@ await page.locator('#graveyardSearch').fill('');
 await page.locator('#graveyardAccordion > summary').click();
 assert.equal(await page.locator('#timelineEvents,#timelineEventPanel,.timeline-chip,.rockettrip-logo').count(),0,'Removed event strip and logo are absent from the DOM');
 assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().historyEvents),18,'Historical source data remains intact');
-assert.equal(await page.locator('#museumIdentity .museum-name').textContent(),'Байконур');
-assert.equal(await page.locator('#museumIdentity .museum-subtitle').textContent(),'интерактивный музей 3d');
+assert.equal(await page.locator('#museumIdentity .museum-name').textContent(),'БАЙКОНУР');
+assert.equal(await page.locator('#museumIdentity .museum-subtitle').textContent(),'ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D');
+assert.equal(await page.locator('#museumIdentity .museum-dimension').textContent(),'3D');
 const layout=await page.evaluate(()=>{
  const dock=document.querySelector('#timeDock'),name=document.querySelector('#museumIdentity .museum-name'),slider=document.querySelector('#year'),sidebar=document.querySelector('#ui');
  const d=dock.getBoundingClientRect(),n=name.getBoundingClientRect(),s=slider.getBoundingClientRect(),m=sidebar.getBoundingClientRect();
@@ -141,8 +142,8 @@ const yandexControl=await page.evaluate(()=>document.querySelector('#ui #satelli
 assert.equal(yandexControl,null,'Yandex external link must be removed from the museum sidebar');
 const terrainInfo=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
-assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v5','Museum must load the unified v5 earth textures');
-assert.equal(terrainInfo.outerTerrain.edition,5,'Shared-coordinate terrain generator must be active');
+assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v6','Museum must load the unified v6 earth textures');
+assert.equal(terrainInfo.outerTerrain.edition,6,'Shared-coordinate terrain generator must be active');
 assert.equal(terrainInfo.outerTerrain.continuousWorldCoordinates,true,'Near/far terrain must sample shared coordinates');
 assert.deepEqual(terrainInfo.outerTerrain.textureResolutions,[512,768],'Two world-scale texture bands must be present');
 assert.ok(terrainInfo.outerTerrain.mediumExtent>17000,'Intermediate terrain must cover territory beyond site map');

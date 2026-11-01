@@ -1,0 +1,108 @@
+/* One navigation layer: dark glass, precise type and a restrained warm accent. */
+:root{--museum-accent:#ff8b77;--launch-panel-height:265px;--museum-glass:linear-gradient(135deg,rgba(28,40,48,.96),rgba(9,22,31,.94) 65%)}
+#museumLeftStack,#museumRightStack{transition:opacity .42s ease,transform .42s cubic-bezier(.2,.7,.2,1),visibility .42s;transform:translateY(0);opacity:1}
+body:not(.museum-ready) #museumLeftStack,body:not(.museum-ready) #museumRightStack{opacity:0;transform:translateY(8px);visibility:hidden;pointer-events:none}
+#museumLeftStack #ui{padding:19px 18px 16px;background:var(--museum-glass);border:1px solid #e7f1f126;border-radius:20px;box-shadow:0 14px 40px #0003,inset 0 1px #ffffff0d;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+#museumIdentity{position:relative;padding:7px 0 18px;margin:0 0 13px;border-bottom:1px solid #d4e3e51f;isolation:isolate}
+#museumIdentity::before{content:'';position:absolute;left:0;bottom:-1px;width:34px;height:2px;border-radius:2px;background:var(--museum-accent)}
+#museumIdentity .museum-name{font:650 31px/1.12 Bounded,Montserrat,Arial,sans-serif;letter-spacing:-.035em;color:#f4f3ed;white-space:nowrap}
+#museumIdentity .museum-subtitle{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-top:12px;font:600 9px/1.25 Montserrat,Arial,sans-serif;letter-spacing:.14em;color:#b2c0c7;white-space:nowrap}
+.museum-dimension{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:40px;height:27px;padding:0 7px;border:1px solid #ffd4b56b;border-radius:7px;background:linear-gradient(135deg,#ffc39b,#ff8b77);box-shadow:0 3px 14px #ef785326,inset 0 1px #fff5;color:#1c252a;font:750 14px/1 Bounded,Montserrat,Arial,sans-serif;letter-spacing:-.06em}
+#museumRightStack{position:fixed;z-index:8;right:15px;top:15px;width:320px;pointer-events:none}
+#museumRightStack>*{pointer-events:auto}
+#nextLaunchPanel{min-width:0}
+.next-launch{position:relative;overflow:hidden;padding:21px 19px 16px;border:1px solid #e7f1f12e;border-radius:20px;background:radial-gradient(ellipse at 95% 0%,#b8654320,transparent 64%),var(--museum-glass);box-shadow:0 14px 40px #0003,inset 0 1px #ffffff10;backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);color:#f4f3ed}
+.next-launch::before{content:'';position:absolute;top:0;left:20px;right:20px;height:1px;background:linear-gradient(90deg,transparent,#ffc2a3a6,transparent);pointer-events:none}
+.next-launch p,.next-launch h2{margin:0}
+.next-launch__eyebrow{display:flex;align-items:center;gap:8px;font:650 9px/1.4 Montserrat,Arial,sans-serif;letter-spacing:.14em;color:#bdcbd1}
+.next-launch__eyebrow::before{content:'';width:5px;height:5px;flex:0 0 auto;border-radius:50%;background:var(--museum-accent);box-shadow:0 0 10px #ff8b7755}
+.next-launch__name{margin-top:12px!important;font:650 23px/1.2 Bounded,Montserrat,Arial,sans-serif;letter-spacing:-.04em;text-wrap:balance;color:#f4f3ed}
+.next-launch__countdown-label{margin-top:22px!important;font:600 8px/1.4 Montserrat,Arial,sans-serif;letter-spacing:.18em;color:#94a6b0}
+.next-launch__countdown{display:grid;grid-template-columns:1.22fr 1fr 1fr 1fr;gap:0;margin:8px -3px 16px}
+.next-launch__unit{display:flex;flex-direction:column;align-items:center;min-width:0;gap:7px;padding:2px 5px}
+.next-launch__unit+.next-launch__unit{border-left:1px solid #dee9ed1c}
+.next-launch__value{display:block;font:600 30px/1.1 Bounded,Montserrat,Arial,sans-serif;letter-spacing:-.07em;font-variant-numeric:tabular-nums;color:#f4f3ed}
+.next-launch__unit:last-child .next-launch__value{color:var(--museum-accent)}
+.next-launch__unit-label{font:600 8px/1 Montserrat,Arial,sans-serif;letter-spacing:.12em;color:#95a9b3}
+.next-launch__meta{display:flex;flex-direction:column;gap:6px;padding:12px 0 13px;border-top:1px solid #e0e9ee1b}
+.next-launch__time{font:600 9px/1.5 Montserrat,Arial,sans-serif;letter-spacing:.065em;color:#c7d3d8}
+.next-launch__status{font:500 9px/1.45 Montserrat,Arial,sans-serif;color:#d3ad91}
+.next-launch__footer{display:flex;align-items:center;gap:12px}
+.next-launch__site{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:1;min-height:41px;padding:11px 13px;border:1px solid #d5e3e72c;border-radius:9px;background:#e5eff106;color:#e9eeed;font:700 10px/1 Montserrat,Arial,sans-serif;letter-spacing:.13em;cursor:pointer;transition:background .18s,border-color .18s,color .18s}
+.next-launch__site-arrow{font:400 18px/1 Arial,sans-serif;letter-spacing:0;color:var(--museum-accent)}
+.next-launch__site:hover{background:#ff987414;border-color:#ffb28b73;color:#fff}
+.next-launch__site:focus-visible{outline:2px solid var(--museum-accent);outline-offset:3px}
+.next-launch__site:disabled{cursor:default;opacity:.6}
+.next-launch__source{font:500 9px/1.4 Montserrat,Arial,sans-serif;color:#a5b7c2;text-underline-offset:3px}
+.next-launch[data-state="elapsed"] .next-launch__status{color:#c6d4dc}
+/* Keep the existing passport and selected-object card below the new panel. */
+@media(min-width:641px){
+ #hero{right:15px;top:calc(27px + var(--launch-panel-height));width:320px;padding:17px;border-radius:18px;max-height:calc(100dvh - var(--launch-panel-height) - 160px)}
+ #hero .hero-top{gap:8px}
+ #hero .hero-overline{font-size:7px;letter-spacing:.1em;margin-bottom:9px}
+ #hero h1{font-size:22px;line-height:1.13;letter-spacing:-.045em;margin-bottom:8px}
+ #hero .hero-sub{font-size:8px;line-height:1.5}
+ #hero .hero-emblem{width:42px;height:57px;flex-basis:42px;padding:4px}
+ #hero .hero-emblem img{width:31px;height:44px}
+ #hero .hero-stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:13px}
+ #hero .hero-metric{min-height:62px;padding:9px 7px 7px;border-radius:8px}
+ #hero .hero-metric::before{left:7px;width:24px}
+ #hero .hero-metric strong{font-size:17px}
+ #hero .hero-metric small{font-size:7px;line-height:1.45;margin-top:5px}
+ #hero .hero-note{font-size:8px;line-height:1.5;margin-top:11px}
+ #info{top:calc(27px + var(--launch-panel-height));max-height:calc(100dvh - var(--launch-panel-height) - 160px)}
+}
+@media(min-width:641px) and (max-width:1100px){
+ #museumRightStack{width:270px}
+ #museumIdentity .museum-name{font-size:28px}
+ .next-launch{padding:17px 15px 13px}
+ .next-launch__name{font-size:20px}
+ .next-launch__value{font-size:25px}
+ #hero{width:270px;padding:14px}
+ #hero h1{font-size:19px}
+ #hero .hero-metric strong{font-size:14px}
+ #hero .hero-note{display:none}
+}
+@media(min-width:641px) and (max-width:850px){
+ #museumRightStack{right:9px;top:9px;width:260px}
+ #museumLeftStack #ui{padding:13px 12px}
+ #museumIdentity{padding:3px 0 13px;margin-bottom:10px}
+ #museumIdentity .museum-name{font-size:22px}
+ #museumIdentity .museum-subtitle{font-size:7px;letter-spacing:.035em;gap:5px;margin-top:9px}
+ .museum-dimension{min-width:30px;height:23px;padding:0 5px;font-size:11px}
+ #hero{right:9px;width:260px;top:calc(21px + var(--launch-panel-height))}
+ #info:not(.ukss-active):not(.tua-active):not(.terminal-active):not(.bridge-active){top:calc(21px + var(--launch-panel-height));max-height:calc(100dvh - var(--launch-panel-height) - 185px)}
+}
+/* A phone uses the same panel in the expanded navigation, leaving the map
+   clear when its menu is closed. There is still only one real timer. */
+@media(max-width:640px){
+ #museumRightStack{display:none}
+ #museumLeftStack #ui{padding:12px!important;border-radius:16px}
+ #museumIdentity{padding:2px 0 12px;margin:0 0 7px}
+ #museumIdentity .museum-name{font-size:27px;letter-spacing:-.035em}
+ #museumIdentity .museum-subtitle{max-width:290px;margin-top:8px;font-size:8px;letter-spacing:.11em;justify-content:flex-start;gap:10px}
+ .museum-dimension{min-width:33px;height:23px;font-size:12px}
+ #ui>#nextLaunchPanel{display:none;margin-top:10px}
+ body.mobile-menu-open #ui>#nextLaunchPanel{display:block}
+ .next-launch{padding:12px;border-radius:12px;background:#e0e9ec04;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:12px;row-gap:0}
+ .next-launch::before{left:12px;right:12px}
+ .next-launch__head{grid-column:1}
+ .next-launch__eyebrow{font-size:7px;letter-spacing:.1em;gap:5px}
+ .next-launch__eyebrow::before{width:4px;height:4px}
+ .next-launch__name{font-size:15px;line-height:1.25;margin-top:6px!important;letter-spacing:-.04em}
+ .next-launch__countdown-label{grid-column:1/-1;grid-row:2;font-size:7px;margin-top:10px!important}
+ .next-launch__countdown{grid-column:1/-1;grid-row:3;margin:5px 0 9px;grid-template-columns:1.22fr 1fr 1fr 1fr}
+ .next-launch__unit{gap:4px;padding:0 5px}
+ .next-launch__value{font-size:24px}
+ .next-launch__unit-label{font-size:7px}
+ .next-launch__meta{grid-column:1/-1;grid-row:4;flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:3px 8px;padding:8px 0 0}
+ .next-launch__time{font-size:7px;letter-spacing:.02em}
+ .next-launch__status{font-size:7px}
+ .next-launch__footer{grid-column:2;grid-row:1;align-self:center}
+ .next-launch__site{min-height:36px;padding:8px;gap:8px;border-radius:7px;font-size:8px;letter-spacing:.07em}
+ .next-launch__site-arrow{font-size:14px}
+ .next-launch__source{display:none}
+ #ui .museum-section>summary{min-height:44px;padding-top:11px;padding-bottom:11px}
+}
+@media(prefers-reduced-motion:reduce){#museumLeftStack,#museumRightStack,.next-launch__site{transition:none}body:not(.museum-ready) #museumLeftStack,body:not(.museum-ready) #museumRightStack{transform:none}}
+@media(prefers-reduced-transparency:reduce){#museumLeftStack #ui,.next-launch{background:#10202b;backdrop-filter:none;-webkit-backdrop-filter:none}}

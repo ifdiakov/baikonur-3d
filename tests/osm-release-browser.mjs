@@ -157,7 +157,8 @@ try{
  evidence.lighting={bankFilter:initial.evening.bankFilter,editor:initial.lighting,checkedPositions:lightPositions.scene.length+lightPositions.editor.length};
  assert.equal(await page.locator('#flanksView,#eveningToggle,#lightingToggle,#trainFollow,#carsFocus,#ui a[href*="archive.html"]').count(),0);
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0,'Removed sidebar controls must not remain hidden in the DOM');
- for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'])assert.equal(await page.locator('#'+id).count(),1);
+ for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','museumRightStack','nextLaunchPanel'])assert.equal(await page.locator('#'+id).count(),1);
+ assert.equal(await page.locator('#toursAccordion').count(),0);
  assert.ok(await page.locator('a[href="https://www.openstreetmap.org/copyright"]').count()>0,'Visible OSM attribution is part of the live map');
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));
  const overview=await shot('overview-day');
@@ -533,15 +534,18 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());await step();evidence.hierarchy.push({mobile:true,...await hierarchy('overview')});
  const mobileMenu=page.locator('#mobileMenuToggle');
  assert.equal(await mobileMenu.isVisible(),true);assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
- const menuSections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'];
+ const menuSections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),false);
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false);
  await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),true);
+ assert.equal(await page.locator('#ui #nextLaunchPanel').isVisible(),true,'The launch panel appears with the expanded phone menu');
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),1);
  await mobileMenu.click();await step();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),false);
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false);
  assert.equal(await page.locator('#hero').isVisible(),false);
  const mobileMap=await page.evaluate(()=>{
   const q=window.__BAIKONUR_QA,ui=document.getElementById('ui').getBoundingClientRect(),dock=document.getElementById('timeDock').getBoundingClientRect(),top=ui.bottom+12,bottom=dock.top-12;

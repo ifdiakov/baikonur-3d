@@ -5,8 +5,8 @@ import {MUSEUM_SECTIONS} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-facilities-rails-lighting-v6';
-const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','toursAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ','ПУСКОВЫЕ ТУРЫ'];
+const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -44,6 +44,16 @@ async function menuBounds(){
    headers:[...document.querySelectorAll('.museum-section > summary')].map(element=>({id:element.parentElement.id,...rect(element)}))};
  });
 }
+async function nextLaunchState(){
+ return page.evaluate(()=>{
+  const host=document.getElementById('nextLaunchPanel'),panel=host.querySelector('.next-launch');
+  const digits=['days','hours','minutes','seconds'].map(unit=>panel.querySelector('[data-countdown-unit="'+unit+'"]').textContent);
+  const numbers=digits.map(Number),time=panel.querySelector('time');
+  return {digits,totalSeconds:numbers[0]*86400+numbers[1]*3600+numbers[2]*60+numbers[3],
+   deadline:Date.parse(time.dateTime),now:Date.now(),mode:panel.dataset.state,status:panel.querySelector('.next-launch__status').textContent,
+   inLeftMenu:document.getElementById('ui').contains(host),inRightMenu:document.getElementById('museumRightStack').contains(host)};
+ });
+}
 try{
  const url=new URL(base);url.searchParams.delete('view');url.searchParams.delete('detail');
  await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:90000});
@@ -53,8 +63,25 @@ try{
  assert.ok(!(await page.locator('#ui').innerText()).includes('СЛОИ СЦЕНЫ'));
  assert.deepEqual(await page.locator('.museum-section > summary .sites-accordion-title').allTextContents(),titles);
  assert.deepEqual(await page.locator('#ui > .museum-section').evaluateAll(elements=>elements.map(element=>element.id)),sections);
- assert.equal(await page.locator('#museumIdentity .museum-name').textContent(),'Байконур');
- assert.equal(await page.locator('#museumIdentity .museum-subtitle').textContent(),'интерактивный музей 3d');
+ assert.equal(await page.locator('#museumIdentity .museum-name').textContent(),'БАЙКОНУР');
+ assert.equal(await page.locator('#museumIdentity .museum-subtitle').textContent(),'ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D');
+ assert.equal(await page.locator('#museumIdentity .museum-dimension').textContent(),'3D');
+ assert.equal(await page.locator('#toursAccordion').count(),0,'Tours are removed rather than visually hidden');
+ assert.equal(await page.locator('#museumRightStack').isVisible(),true);
+ assert.equal(await page.locator('#nextLaunchPanel .next-launch__eyebrow').textContent(),'СЛЕДУЮЩИЙ ЗАПУСК');
+ assert.equal(await page.locator('#nextLaunchPanel .next-launch__name').textContent(),'ПРОГРЕСС МС-37');
+ assert.equal(await page.locator('#nextLaunchPanel [role="timer"]').getAttribute('aria-live'),'off','Second-by-second updates must not continually announce over the screen reader');
+ const countdownBefore=await nextLaunchState();assert.equal(countdownBefore.inRightMenu,true);assert.equal(countdownBefore.inLeftMenu,false);
+ assert.ok(countdownBefore.digits.every((value,index)=>(index===0?/^\d{3,}$/:/^\d{2}$/).test(value)),'All four countdown groups contain stable-width digits');
+ assert.ok(Math.abs(countdownBefore.totalSeconds-Math.max(0,Math.ceil((countdownBefore.deadline-countdownBefore.now)/1000)))<=1,'The visible countdown uses the real launch instant and wall clock');
+ if(countdownBefore.deadline>countdownBefore.now+2000){
+  assert.match(countdownBefore.status,/предварительное/i,'A provisional launch time is visibly identified');
+  await page.waitForFunction(previous=>{
+   const panel=document.getElementById('nextLaunchPanel'),values=['days','hours','minutes','seconds'].map(unit=>Number(panel.querySelector('[data-countdown-unit="'+unit+'"]').textContent));
+   return values[0]*86400+values[1]*3600+values[2]*60+values[3]<previous;
+  },countdownBefore.totalSeconds,{timeout:5000});
+ }else if(countdownBefore.deadline<=countdownBefore.now)assert.equal(countdownBefore.totalSeconds,0,'An elapsed launch must not produce a negative counter');
+ evidence.nextLaunch={before:countdownBefore,after:await nextLaunchState()};
  assert.equal(await page.locator('#museumIdentity img,.rockettrip-logo,#cyclogramsAccordion,#timelineEvents,#timelineEventPanel').count(),0,'Removed branding and event UI do not remain hidden in the page');
  const catalogue=await page.evaluate(()=>{
   const q=window.__BAIKONUR_QA,s=q.stats();return{sections:q.menu.stats().sections,sites:s.sites,stations:s.stations,research:s.researchObjects,history:s.historyEvents};
@@ -75,6 +102,13 @@ try{
  await shot('desktop-menu');evidence.desktop=await menuBounds();
  assert.ok(evidence.desktop.stack.bottom<evidence.desktop.dock.y,'Sidebar and time dock do not overlap');
  assert.ok(evidence.desktop.dock.height<=90&&evidence.desktop.dock.height>=70,'The desktop time dock is compact');
+ await page.locator('#nextLaunchPanel .next-launch__site').click();await selectedSite('pad-31');
+ const launchCardLayout=await page.evaluate(()=>{
+  const panel=document.getElementById('nextLaunchPanel').getBoundingClientRect(),info=document.getElementById('info').getBoundingClientRect();
+  return {overlap:Math.max(0,Math.min(panel.right,info.right)-Math.max(panel.left,info.left))*Math.max(0,Math.min(panel.bottom,info.bottom)-Math.max(panel.top,info.top))};
+ });
+ assert.equal(launchCardLayout.overlap,0,'The launch panel must not cover the opened Site 31 card');evidence.nextLaunch.siteCard=launchCardLayout;
+ await page.locator('#close').click();await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());
  await page.locator('#year').focus();await page.keyboard.press('ArrowLeft');
  assert.equal(await page.locator('#yearVal').textContent(),'2025','The compact year control remains keyboard-accessible');
  await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#yearVal').textContent(),'2026');
@@ -90,8 +124,6 @@ try{
  assert.equal(await page.locator('#graveyardList [data-research-id="BAI-001"]').count(),1);
  await page.locator('#graveyardList [data-research-id="BAI-001"]').click();assert.ok((await page.locator('#title').textContent()).startsWith('BAI-001'));
  await page.locator('#graveyardSearch').fill('');
- await openSection('toursAccordion');assert.equal(await page.locator('#toursAccordion a,#toursAccordion button').count(),0,'No invented booking service is presented');
- assert.equal(await page.locator('#toursAccordion .museum-menu-empty').textContent(),'Программы пусковых туров в музее не опубликованы.');
 
  // Native details controls must work from the keyboard as well as the mouse.
  await page.locator('#mythsAccordion > summary').focus();await page.keyboard.press('Enter');
@@ -149,8 +181,12 @@ try{
  for(const id of sections)if(await page.locator('#'+id).evaluate(element=>element.open))await page.locator('#'+id+' > summary').click();
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());
  const toggle=page.locator('#mobileMenuToggle');assert.equal(await toggle.isVisible(),true);assert.equal(await toggle.getAttribute('aria-expanded'),'false');
+ assert.equal(await page.locator('#museumRightStack').isVisible(),false);
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false,'The launch panel collapses with the phone menu');
+ assert.equal((await nextLaunchState()).inLeftMenu,true,'The one launch panel moves into the phone menu rather than duplicating its clock');
  for(const id of sections)assert.equal(await page.locator('#'+id).isVisible(),false);
  await toggle.click();for(const id of sections)assert.equal(await page.locator('#'+id).isVisible(),true);
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),true,'Opening the phone menu reveals the launch panel in the same state change');
  evidence.mobile=await menuBounds();assert.ok(evidence.mobile.stack.bottom<evidence.mobile.dock.y,'The expanded mobile menu stays above the time dock');
  assert.ok(evidence.mobile.dock.height<=80,'The phone time dock is compact');
  assert.equal(await page.locator('#museumIdentity .museum-name').isVisible(),true);assert.equal(await page.locator('#museumIdentity .museum-subtitle').isVisible(),true);
@@ -158,6 +194,7 @@ try{
  await shot('mobile-menu');
  await openSection('equipmentAccordion');await page.locator('[data-museum-action="tua"]').click();
  assert.equal(await toggle.getAttribute('aria-expanded'),'false');await selectedSite('pad-112');
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false);
  assert.equal(await page.locator('#mik112Tua').getAttribute('aria-pressed'),'true');
  await shot('mobile-tua');
  await toggle.click();await openSection('equipmentAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();
@@ -181,7 +218,7 @@ try{
  await toggle.click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().following),false);
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);assert.deepEqual(evidence.failedResources,[]);
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,checkedAt:new Date().toISOString()},null,2));
- console.log('LEFT_MENU_BROWSER_PASS',JSON.stringify({prefix,revision,sections:6,actions:evidence.actions.length,statusCases:evidence.statuses.length,desktopDock:evidence.desktop.dock.height,mobileDock:evidence.mobile.dock.height,mobile:true}));
+ console.log('LEFT_MENU_BROWSER_PASS',JSON.stringify({prefix,revision,sections:sections.length,actions:evidence.actions.length,statusCases:evidence.statuses.length,desktopDock:evidence.desktop.dock.height,mobileDock:evidence.mobile.dock.height,mobile:true,nextLaunch:true}));
 }catch(error){
  await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(()=>{});
  await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({...evidence,passed:false,message:error.message,stack:error.stack},null,2));throw error;
