@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261101-model-inspector-v1';
 import * as buildings from './archive-buildings.js?v=20261031-facilities-rails-lighting-v5';
-import * as launches from './archive-launches.js?v=20261101-model-inspector-v1';
+import * as launches from './archive-launches.js?v=20261101-source-exhibits-v1';
 import {photoCity} from './archive-city.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSite31Pad} from './site31-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSiloPad,siloController} from './silo-pad.js?v=20261031-facilities-rails-lighting-v1';

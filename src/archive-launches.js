@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {createProtonRocket} from './proton-rocket.js?v=20261101-source-exhibits-v1';
+let protonTemplate;
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {flamePetal} from './flame-petals.js';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
@@ -15,10 +17,11 @@ export const PROTON_METRIC_REFERENCE=Object.freeze({
   osmAnchorsLonLat:[[63.0293723,46.0376892],[63.0354975,46.034368]]}
 });
 function protonPosition(parent,x,z,yaw,serviceZ=92){
- const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;parent.add(g);const k=archiveKit(g);k.pit(0,0,13,13,24);
+ const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;parent.add(g);const k=archiveKit(g);
+ protonTemplate??=createProtonRocket({detail:'map'});const rocket=protonTemplate.root.clone(true);rocket.position.y=2.8;g.add(rocket);g.userData.protonExhibit={version:protonTemplate.stats().version,heightMetres:58.2};k.pit(0,0,13,13,24);
  for(const s of [-1,1]){k.box(23,1,64,s*26,.5,0,'concrete','launch-apron-side');k.box(32,1,19,0,.5,s*24,'concrete','launch-apron-end');}
  ring(k,0,2,0,12,.6,'steel','proton-launch-ring');
- for(let i=0;i<6;i++){const a=i*Math.PI/3,x=Math.cos(a)*13,z=Math.sin(a)*13;k.rod([x,1,z],[x*.67,6,z*.67],.8,'steel','proton-launch-support');k.box(4,2,4,x,2,z,'yellow','support-base');}
+ for(let i=0;i<6;i++){const a=i*Math.PI/3,x=Math.cos(a)*13,z=Math.sin(a)*13;k.rod([x,1,z],[x*3.55/13,6,z*3.55/13],.8,'steel','proton-launch-support');k.box(1.2,.4,1.2,x*3.55/13,5.8,z*3.55/13,'steel','proton-tank-seat');k.box(4,2,4,x,2,z,'yellow','support-base');}
  for(const s of [-1,1]){k.hall({x:s*32,z:56,w:19,d:69,h:7,gates:0,windows:false,roof:'concrete',tag:'proton-flanking-service-block'});k.path([[s*44,-32],[s*48,35],[s*46,99],[s*13,115]],5,.15);k.rod([s*20,2,4],[s*20,2,100],.8,'light','long-process-pipe');for(let zz=15;zz<96;zz+=10)k.box(2,2,2,s*20,1,zz,'concrete','pipe-support');}
  k.lattice(0,serviceZ,58,13,14,{levels:10,deck:true,tag:'proton-service-tower'});
  for(let y=12;y<56;y+=8){k.box(12,.6,9,0,y,serviceZ-8,'steel','service-tower-platform');for(const x of [-5,5])k.rod([x,y+1,serviceZ-12],[x,y+1.5,serviceZ-12],.09,'yellow','tower-guardrail');}

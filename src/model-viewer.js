@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-model-viewer-dark-v1';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-model-viewer-dark-v1';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-source-exhibits-v1';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-source-exhibits-v1';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);
@@ -21,15 +21,16 @@ try{
   const bounds=box(),center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
   const dir=new THREE.Vector3(...direction).normalize(),right=new THREE.Vector3(0,1,0).cross(dir).normalize(),up=dir.clone().cross(right),tan=Math.tan(THREE.MathUtils.degToRad(camera.fov*.5));let distance=0;
   for(const x of [-.5,.5])for(const y of [-.5,.5])for(const z of [-.5,.5]){const v=new THREE.Vector3(size.x*x,size.y*y,size.z*z);distance=Math.max(distance,v.dot(dir)+Math.abs(v.dot(up))/tan,v.dot(dir)+Math.abs(v.dot(right))/(tan*camera.aspect));}
-  if(current==='mig25'){
+  if(['mig25','n1','proton'].includes(current)){
    distance=0;const point=new THREE.Vector3();model.root.traverseVisible(o=>{if(!o.isMesh)return;const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld).sub(center);distance=Math.max(distance,point.dot(dir)+Math.abs(point.dot(up))/tan,point.dot(dir)+Math.abs(point.dot(right))/(tan*camera.aspect));}});
   }distance*=1.17;
   controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...direction).normalize().multiplyScalar(distance));controls.minDistance=Math.max(.2,size.length()*.015);controls.maxDistance=Math.max(300,size.length()*8);camera.near=Math.max(.02,size.length()/300);camera.far=Math.max(300,distance*8);camera.updateProjectionMatrix();
  }
  function inspect(id){if(!model)return false;view=id;controls.enableDamping=false;controls.update();
   const rocket=model.spec.kind==='rocket';
-  if(current==='mig25'&&['cockpit','exhaust'].includes(id)){
-   const target=id==='cockpit'?[0,.65,4.9]:[0,.05,-9.8],offset=id==='cockpit'?[3.6,1.6,4.4]:[3.1,1.2,-5.3];controls.target.set(...target);camera.position.copy(controls.target).add(new THREE.Vector3(...offset).multiplyScalar(Math.max(1,.9/camera.aspect)));
+  const preset=model.spec.views?.[id];
+  if(preset){
+   const target=new THREE.Vector3(...preset.target);if(exploded&&current==='proton')target.y+=id==='top'?15:id==='side'?5:0;model.root.localToWorld(target);controls.target.copy(target);camera.position.copy(target).add(new THREE.Vector3(...preset.offset).multiplyScalar(Math.max(1,.9/camera.aspect)).applyQuaternion(model.root.quaternion));
   }else if(rocket&&['front','side','top'].includes(id)&&current.startsWith('zenit-')){
    const y={front:1.7,side:31.8+(exploded?6:0),top:54.2+(exploded?18:0)}[id],target=new THREE.Vector3(0,y,0);model.root.localToWorld(target);controls.target.copy(target);
    const offset=({front:[5.6,-4.4,7.4],side:[6.3,1,7.1],top:[9,3.5,14]})[id];camera.position.copy(target).add(new THREE.Vector3(...offset).multiplyScalar(Math.max(1,.85/camera.aspect)).applyQuaternion(model.root.quaternion));
@@ -43,12 +44,12 @@ try{
   current=id;select.value=id;status.hidden=false;statusText.textContent='Загружаем модель…';document.getElementById('retry').hidden=true;model?.root.removeFromParent();model?.dispose();model=null;
   const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;document.getElementById('modelDescription').textContent=spec.description;
   document.getElementById('gear').hidden=true;document.getElementById('gear').setAttribute('aria-pressed','true');document.getElementById('gear').textContent='Убрать шасси';gear=true;
-  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;
+  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.credit||'Об этой модификации ↗';
   document.getElementById('explode').hidden=true;document.getElementById('explode').setAttribute('aria-pressed','false');document.getElementById('explode').textContent='Разнести ступени';exploded=false;
   try{
    const result=await createInspectionModel(id,{signal:request.signal});if(token!==generation||disposed){result.dispose();return;}
    model=result;if(model.spec.kind==='rocket')model.root.rotation.z=innerWidth<=700?-Math.PI/10:-Math.PI/3;scene.add(model.root);model.root.updateMatrixWorld(true);document.getElementById('explode').hidden=!model.setExploded;document.getElementById('gear').hidden=!model.setGear;gear=model.initialGear>0;document.getElementById('gear').setAttribute('aria-pressed',String(gear));document.getElementById('gear').textContent=gear?'Убрать шасси':'Выпустить шасси';for(const button of document.querySelectorAll('[data-mig-view]'))button.hidden=id!=='mig25';
-   for(const [key,label]of [['front',id.startsWith('zenit-')?'Двигатель':'Спереди'],['side',id.startsWith('zenit-')?'Ферма':'Сбоку'],['top',id.startsWith('zenit-')?'Обтекатель':'Сверху']])document.querySelector(`[data-view="${key}"]`).textContent=label;
+   for(const [key,label]of [['front',(id.startsWith('zenit-')||id==='proton')?'Двигатели':'Спереди'],['side',(id.startsWith('zenit-')||id==='proton')?'Ферма':'Сбоку'],['top',(id.startsWith('zenit-')||id==='proton')?'Обтекатель':'Сверху']])document.querySelector(`[data-view="${key}"]`).textContent=label;
    inspect('full');renderFrame();status.hidden=true;if(embedded)parent.postMessage({type:'museum-model-ready',model:id},location.origin);
   }catch(error){if(token!==generation||disposed)return;statusText.textContent='Не удалось загрузить модель. Попробуйте ещё раз.';document.getElementById('retry').hidden=false;console.error('Model viewer:',error.message);}
   finally{clearTimeout(timer);}

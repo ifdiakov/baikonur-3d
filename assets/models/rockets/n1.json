@@ -1,0 +1,45 @@
+{
+  "id": "n1",
+  "version": "rocket-exhibits-v1",
+  "source": {
+    "author": "Scilence (https://sketchfab.com/Scilence)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/n1-rocket-7e9fbb8d9b794060bd8331934571c4dc",
+    "title": "N1 rocket",
+    "driveFileId": "1ygFx7bshgupWeXT_9R4B28vfYlJ6DltX",
+    "bytes": 5954724,
+    "sha256": "ff61505ad1ceef88f8afd2af00f5c99e407df2515c2823a8fc7e213542a80491"
+  },
+  "normalization": {
+    "unit": "metre",
+    "upAxis": "+Y",
+    "forwardAxis": "+Z",
+    "calibration": "105 m overall height; source proportions preserved"
+  },
+  "bounds": {
+    "min": [
+      -10.007907090640641,
+      -6.4140230904286e-8,
+      -10.00790759551872
+    ],
+    "max": [
+      10.007907643238381,
+      104.99999708779751,
+      10.007907163906687
+    ],
+    "size": [
+      20.015814733879022,
+      104.99999715193775,
+      20.015814759425407
+    ]
+  },
+  "assetStats": {
+    "triangles": 126920,
+    "primitives": 8,
+    "textures": 0,
+    "bytes": 716652
+  },
+  "sha256": "60d371f5270413882bceae56b195173f32351e0d321229012f358234aa77eb33",
+  "inspectionTargets": {},
+  "changes": "Presentation transforms removed, grounded and uniformly scaled; duplicate resources removed, draw calls merged and meshopt-compressed. Original geometry, normals, colors, texture pixels and static pose preserved."
+}

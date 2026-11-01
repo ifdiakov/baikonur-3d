@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 const base=process.env.BAIKONUR_PUBLIC_URL||'https://ifdiakov.github.io/baikonur-3d/';
 const files=['index.html','workshop/zenit.html','workshop/model.html','assets/models/zenit-3sl/model-v1.glb','assets/models/zenit-3sl/manifest-v1.json','data/catalog.json','data/transport-network.json','data/buran-knowledge.json','data/buran-source-index.json',
  'assets/models/ukss/model-v2.glb','assets/models/ukss/manifest-v2.json',
+ 'assets/models/mig25/model-v1.glb','assets/models/mig25/manifest-v1.json','assets/models/rockets/n1.glb','assets/models/rockets/n1.json',
  'assets/models/tua/model-v2.glb','assets/models/tua/manifest-v2.json',
  ...['soyuz','energia-polyus','energia-buran','energia','energia-m'].flatMap(id=>['assets/models/rockets/'+id+'.glb','assets/models/rockets/'+id+'.json']),
  'assets/models/mriya-buran/near-v2.glb','assets/models/mriya-buran/far-v2.glb','src/vendor/meshopt_decoder-v1.mjs',

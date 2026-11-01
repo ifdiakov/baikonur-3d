@@ -1,0 +1,56 @@
+{
+  "id": "mig25",
+  "version": "rocket-exhibits-v1",
+  "source": {
+    "author": "manilov.ap (https://sketchfab.com/manilov.ap)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/mig25-afe67617c5294dce9056106a22f640ff",
+    "title": "Mig25",
+    "driveFileId": "1kj28-o1I69LNMPkpJnYxgPbXot8C5CZ6",
+    "bytes": 2167972,
+    "sha256": "3605f950eb28a92b3b2154d5baa742cf384ea1fc09261036cd32068bf3db541d"
+  },
+  "normalization": {
+    "unit": "metre",
+    "upAxis": "+Y",
+    "forwardAxis": "+Z",
+    "calibration": "14.01 m span; source proportions preserved"
+  },
+  "bounds": {
+    "min": [
+      -7.005,
+      2.220446049250313e-16,
+      -11.501677495164229
+    ],
+    "max": [
+      7.005,
+      6.162275148348024,
+      11.501677104376947
+    ],
+    "size": [
+      14.01,
+      6.162275148348024,
+      23.003354599541176
+    ]
+  },
+  "assetStats": {
+    "triangles": 25523,
+    "primitives": 40,
+    "textures": 32,
+    "bytes": 954000
+  },
+  "sha256": "6bc8a9fa303b761e3016173f0f6d3bf8a2608b9661a274544874e0548dffffca",
+  "inspectionTargets": {
+    "cockpit": [
+      0,
+      3.2724308559858573,
+      4.071703106483202
+    ],
+    "exhaust": [
+      0,
+      2.3542545498625485,
+      -9.105912313153112
+    ]
+  },
+  "changes": "Presentation transforms removed, grounded and uniformly scaled; duplicate resources removed, draw calls merged and meshopt-compressed. Original geometry, normals, colors, texture pixels and static pose preserved."
+}
