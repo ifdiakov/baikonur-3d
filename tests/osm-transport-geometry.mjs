@@ -43,9 +43,14 @@ for(const region of Object.values(settlements)){
  for(const id of region.preservedTrafficWayIds)assert(region.keptWayIds.includes(id));
 }
 let meshCount=0,vertices=0,upwardTriangles=0;
+const displayMeshParts=[];
 const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3(),normal=new THREE.Vector3();
 for(const layer of Object.values(layers))layer.traverse(m=>{
  if(!m.isMesh)return;meshCount++;const p=m.geometry.attributes.position;
+ if(m.userData.highwayDisplay){
+  assert.equal(m.userData.source,'museum-display-extension');
+  displayMeshParts.push(m.userData.part);
+ }
  if(p){vertices+=p.count;for(const v of p.array)assert(Number.isFinite(v),'non-finite mesh vertex');}
  if(!m.userData.osmSource)return;
  const ns=m.geometry.attributes.normal,index=m.geometry.index;
@@ -62,7 +67,12 @@ for(const layer of Object.values(layers))layer.traverse(m=>{
  }
 });
 assert(upwardTriangles>100000);
-assert(meshCount<100,`Unexpected draw-call growth: ${meshCount}`);
+// Keep the original OSM/rail budget; the separate scenery adds four batches.
+const sourceMeshCount=meshCount-displayMeshParts.length;
+assert(sourceMeshCount<100,`Unexpected OSM/rail mesh growth: ${sourceMeshCount}`);
+assert.equal(displayMeshParts.length,4,'Highway display extensions must stay in four batches');
+assert.deepEqual(displayMeshParts.sort(),['asphalt','shoulder','white','yellow'],'Each display surface must use one batched mesh');
+assert(meshCount<100+4,`Unexpected total mesh growth: ${meshCount}`);
 // Probe the actual rendered surface, including road edges. Sampling only
 // source nodes missed long wedges where the nonlinear hill hid the pavement.
 const saturn=geography.sites.find(s=>s.id==='pad-23'),saturnCenter=point(saturn.x,saturn.y),surfaceCells=new Map(),surfaceCell=16;
@@ -200,6 +210,6 @@ for(const p of stats.facilityRailPorts){assert(p.headCenterGap<1e-7);assert(p.ne
 // A drawn crossing without a common source node must never form a junction.
 const fixture=(id,ids,coordinates)=>({id:'way/'+id,properties:{osmId:id,sourceNodeIds:ids,tags:{highway:'secondary'}},geometry:{type:'LineString',coordinates}});
 const graph=buildOsmGraph([fixture(1,[1,2],[[63.3,45.9],[63.5,45.9]]),fixture(2,[3,4],[[63.4,45.8],[63.4,46]])],{geography,point});assert.equal(graph.components.length,2);
-console.log('OSM_TRANSPORT_GEOMETRY_PASS',JSON.stringify({stats,meshCount,vertices,upwardTriangles,terrainSamples,minTerrainClearance,
+console.log('OSM_TRANSPORT_GEOMETRY_PASS',JSON.stringify({stats,meshCount,sourceMeshCount,displayMeshCount:displayMeshParts.length,vertices,upwardTriangles,terrainSamples,minTerrainClearance,
  saturnRoadClearance:{corridorSamples,renderedArterialSamples,checkedWays:[...checkedWays],kinds:[...corridorKinds],maxCorridorRelief,maxCorridorOpacity,maxArterialHeightError,externalApproaches:approaches.length},
  paintVertices,trainLength:train.path.length,trainHorizontalLength,routeLengths:plan.routes.map(r=>r.length)}));
