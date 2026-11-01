@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-r16-reference-v2';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-r16-reference-v2';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261101-model-facts-v1';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261101-model-facts-v1';
+import {renderModelFacts} from './model-facts-view.js?v=20261101-model-facts-v1';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);
@@ -42,10 +43,10 @@ try{
   id=resolveModelId(id);if(!MODEL_CATALOG[id])return;
   const token=++generation;request?.abort();request=new AbortController();const controller=request,timer=setTimeout(()=>controller.abort(),45000);
   current=id;select.value=id;status.hidden=false;statusText.textContent='Загружаем модель…';document.getElementById('retry').hidden=true;model?.root.removeFromParent();model?.dispose();model=null;
-  const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;document.getElementById('modelDescription').textContent=spec.description;
+  const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;renderModelFacts(spec,document.getElementById('modelFacts'),document.getElementById('modelFactSources'));document.querySelector('.intro').scrollTop=0;document.getElementById('modelSources').open=false;
   document.getElementById('siteRocket').hidden=true;document.getElementById('siteRocket').setAttribute('aria-pressed','true');document.getElementById('siteRocket').textContent='Убрать ракету';vehicleVisible=true;
   document.getElementById('gear').hidden=true;document.getElementById('gear').setAttribute('aria-pressed','true');document.getElementById('gear').textContent='Убрать шасси';gear=true;
-  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.sourceLabel||spec.credit||'Об этой модификации ↗';
+  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.credit?'3D-модель: '+spec.credit+' ↗':(spec.sourceLabel||'Материалы модели ↗');
   document.getElementById('explode').hidden=true;document.getElementById('explode').setAttribute('aria-pressed','false');document.getElementById('explode').textContent='Разнести ступени';exploded=false;
   try{
    const result=await createInspectionModel(id,{signal:request.signal});if(token!==generation||disposed){result.dispose();return;}

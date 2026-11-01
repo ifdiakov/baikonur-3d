@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {MODEL_VIEWER_VERSION} from '../src/model-catalog.js';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',prefix=process.env.QA_PREFIX||'local',out='qa-r16';
@@ -12,7 +13,7 @@ const shot=async name=>{await page.screenshot({path:`${out}/${prefix}-${name}.pn
 try{
  await page.goto(new URL('workshop/model.html?model=r16',base).href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);await page.evaluate(()=>__MODEL_VIEWER_QA.frame());
- evidence.viewer=await page.evaluate(()=>({version:__MODEL_VIEWER_QA.version,...__MODEL_VIEWER_QA.stats()}));assert.equal(evidence.viewer.modelId,'r16');assert.equal(evidence.viewer.version,'r16-reference-v2');assert(evidence.viewer.drawCalls<=40);
+ evidence.viewer=await page.evaluate(()=>({version:__MODEL_VIEWER_QA.version,...__MODEL_VIEWER_QA.stats()}));assert.equal(evidence.viewer.modelId,'r16');assert.equal(evidence.viewer.version,MODEL_VIEWER_VERSION);assert(evidence.viewer.drawCalls<=40);
  for(const view of ['full','front','side','top']){await page.locator(`[data-view="${view}"]`).click();await page.evaluate(()=>__MODEL_VIEWER_QA.frame());await shot(view);}
  await page.locator('[data-view="full"]').click();await page.locator('#light').click();await page.evaluate(()=>__MODEL_VIEWER_QA.frame());await shot('light-background');
  const before=await page.evaluate(()=>__MODEL_VIEWER_QA.stats().camera);await page.mouse.move(900,400);await page.mouse.down();await page.mouse.move(1050,470,{steps:8});await page.mouse.up();await page.evaluate(()=>__MODEL_VIEWER_QA.frame());assert.notDeepEqual(await page.evaluate(()=>__MODEL_VIEWER_QA.stats().camera),before);

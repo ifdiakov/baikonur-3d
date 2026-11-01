@@ -1,4 +1,4 @@
-name: Museum cinematic preloader
+name: Museum model facts and history
 on:
   push:
     branches: [main]
@@ -54,7 +54,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-preloader-20261101-v1
+  RELEASE_TAG: museum-model-facts-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -348,12 +348,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/preloader-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/model-facts-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — интерактивный прелоадер',
+                name: 'Байконур — ТТХ и история моделей',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }
