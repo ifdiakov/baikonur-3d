@@ -207,10 +207,10 @@ try{
  for(const [i,expected]of [23.918848037719727,14.160736030016942,36.3599739074707].entries())near(source.bounds.size[i],expected,1e-6,'The existing source Buran geometry retains its dimensions');
  assert.equal(b.aircraft.version,'buran-landing-aircraft-v1');assert.equal(b.aircraft.gearStruts,3);assert.equal(b.aircraft.gearWheels,6);
  assert.equal(b.aircraft.parachuteCount,3);assert.equal(b.aircraft.deployedParachutes,0);
- assert.equal(b.aircraft.escort.count,1);assert.equal(b.aircraft.escort.boardNumber,'22');assert.equal(b.aircraft.escort.schematic,true);
- assert.equal(b.escort.count,1);assert.equal(b.escort.visible,false,'The escort is absent before its documented rendezvous stage');
+ assert.equal(b.aircraft.escort.count,0);
+ assert.equal(b.escort.count,0);assert.equal(b.escort.visible,false,'The removed escort is not rendered');
  assert(b.aircraft.budget.buran.triangles>=33853&&b.aircraft.budget.buran.triangles<41000&&b.aircraft.budget.buran.draws<=80);
- assert(b.aircraft.budget.mig.triangles<5000&&b.aircraft.budget.mig.draws<=6);
+ assert.equal(b.aircraft.budget.mig,undefined);
  evidence.initialEvent=s;
 
  // Range and playback controls receive real pointer/keyboard events. QA seek
@@ -260,16 +260,7 @@ try{
  await page.locator('#buranLandingPanel .buran-event-note > summary').click();
 
  await seek(b.path.escortJoinElapsed+10);await followFresh();
- // Fit the real companion as well as Buran. Zoom changes go through the
- // canvas input handler; no test camera or artificial render is substituted.
- for(let i=0;i<5;i++){
-  s=await state();const p=s.projected.mig;
-  if(p&&p.x>24&&p.x<s.width-24&&p.y>24&&p.y<s.ui.panel.y-20)break;
-  await wheel(900);
- }
- s=await shot('mig25-escort',{craft:true});assert.equal(s.landing.escort.visible,true);assert.equal(s.landing.escort.count,1);
- assert(s.projected.mig&&s.projected.mig.y<s.ui.panel.y-12,'The sole MiG-25 is visible in the escort review frame');
- assert(distance([s.projected.buran.x,s.projected.buran.y],[s.projected.mig.x,s.projected.mig.y])>20,'The two aircraft can be distinguished in the image');
+ s=await shot('buran-approach',{craft:true});assert.equal(s.landing.escort.visible,false);assert.equal(s.landing.escort.count,0);assert.equal(s.projected.mig,null);
 
  await seek(b.times.touchdown-9);await followFresh();await wheel(-900);
  s=await shot('final-flare',{craft:true});assert.equal(s.landing.state.onGround,false);near(s.landing.state.gear,1,1e-8,'Landing gear is fully extended before touchdown');
@@ -296,7 +287,7 @@ try{
  assert.equal(stopped.ui.source,stopped.landing.sources.chronology.url);assert.match(stopped.ui.factText,/1620/);
  await shot('rollout-stop',{craft:true});
  const flyby=await seek(b.times.stop+10);assert(distance(flyby.landing.mainWheel,stopped.landing.mainWheel)<1e-8,'Buran remains stopped during the escort flyby');
- assert.equal(flyby.landing.escort.visible,true);assert.equal(flyby.ui.source,flyby.landing.sources.flight.url);
+ assert.equal(flyby.landing.escort.visible,false);assert.equal(flyby.ui.source,flyby.landing.sources.flight.url);
  assert.match(flyby.ui.factText,/09:35/);evidence.flyby=flyby;
 
  await page.locator('#buranLandingClose').click();await step();s=await state();checkClosed(s,evidence.baseline);evidence.closed=s;
@@ -332,7 +323,7 @@ try{
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);
  assert.deepEqual(evidence.failedResources,[]);assert.deepEqual(evidence.failedRequests,[]);
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,checkedAt:new Date().toISOString()},null,2));
- console.log('BURAN_LANDING_BROWSER_PASS',JSON.stringify({prefix,revision,views:evidence.views.length,physicalContactStates:evidence.contacts.length,sourceTriangles:33853,escortCount:1,parachutes:3,runway:'24',rolloutM:1620,widths:[1600,375]}));
+ console.log('BURAN_LANDING_BROWSER_PASS',JSON.stringify({prefix,revision,views:evidence.views.length,physicalContactStates:evidence.contacts.length,sourceTriangles:33853,escortCount:0,parachutes:3,runway:'24',rolloutM:1620,widths:[1600,375]}));
 }catch(error){
  evidence.failureState=await state().catch(()=>null);
  evidence.inputEvents=await page.evaluate(()=>window.__BURAN_INPUT||[]).catch(()=>[]);

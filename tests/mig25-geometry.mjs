@@ -15,4 +15,4 @@ for(const [id,path,manifestPath]of [['mig25','assets/models/mig25/model-v1.glb',
  assert.equal(MODEL_CATALOG[id].asset,path.replace('assets/models/',''));assert(MODEL_CATALOG[id].credit.includes('CC BY 4.0'));
  console.log('SOURCE_EXHIBIT_GEOMETRY_OK',id,{bytes:bytes.length,primitives:primitives.length,bounds});
 }
-assert(modelsForObject({id:'pad-251'}).includes('mig25'));assert(modelsForObject({id:'pad-110'}).includes('n1'));assert.equal(MODEL_CATALOG.mig.title,'МиГ-25 ЛЛ22');assert.equal(resolveModelId('mig25ru'),'mig25');assert.deepEqual(modelsForKnowledge('mig25ru'),['mig25']);
+assert(modelsForObject({id:'pad-251'}).includes('mig25'));assert(modelsForObject({id:'pad-110'}).includes('n1'));assert.equal(MODEL_CATALOG.mig,undefined);assert(!modelsForObject({id:'pad-251'}).includes('mig'));assert.equal(resolveModelId('mig25ru'),'mig25');assert.deepEqual(modelsForKnowledge('mig25ru'),['mig25']);

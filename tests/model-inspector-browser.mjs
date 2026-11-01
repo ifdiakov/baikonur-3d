@@ -13,8 +13,8 @@ const frame=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.frame());
 const load=async id=>{await page.evaluate(id=>window.__MODEL_VIEWER_QA.load(id),id);await page.waitForFunction(id=>window.__MODEL_VIEWER_QA.stats().ready&&window.__MODEL_VIEWER_QA.stats().modelId===id,id);await frame();};
 try{
  await page.goto(new URL('workshop/model.html?model=zenit-land',base).href);await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);
- const choices=(await stats()).choices;assert.equal(choices.length,20);
- for(const id of choices){await load(id);const s=await stats();assert(s.drawCalls>0&&s.triangles>0);assert(s.size.every(n=>Number.isFinite(n)&&n>0));assert(s.camera.every(Number.isFinite));evidence.models[id]=s;if(['buran','mig'].includes(id))await page.screenshot({path:`${out}/${prefix}-${id}.png`});}
+ const choices=(await stats()).choices;assert.equal(choices.length,19);assert(!choices.includes('mig'));assert(choices.includes('mig25'));
+ for(const id of choices){await load(id);const s=await stats();assert(s.drawCalls>0&&s.triangles>0);assert(s.size.every(n=>Number.isFinite(n)&&n>0));assert(s.camera.every(Number.isFinite));evidence.models[id]=s;if(id==='buran')await page.screenshot({path:`${out}/${prefix}-${id}.png`});}
  await load('proton');const proton=await stats();await page.locator('#explode').click();await frame();assert((await stats()).size[0]>proton.size[0]+10);await page.locator('#explode').click();await frame();assert.deepEqual((await stats()).size,proton.size);
  await load('train');assert((await stats()).size[2]<20,'Hidden headlight pool must not shrink the vehicle framing');await page.screenshot({path:`${out}/${prefix}-train.png`});
  await load('zenit-land');const assembled=await stats();
@@ -45,5 +45,15 @@ try{
  for(const [id,model]of [['pad-81','proton'],['pad-200','proton'],['pad-110','n1'],['pad-31','soyuz'],['pad-112','tua'],['pad-251','mriya'],['airfield','aircraft'],['city','train']]){await page.evaluate(id=>window.__BAIKONUR_QA.openObject(id),id);assert.equal(await page.locator('#modelCardButton').isVisible(),true);assert((await page.locator('#modelCardButton').getAttribute('data-models')).includes(model));}
  const station=await page.locator('[data-station-id]').first().getAttribute('data-station-id');assert(station);await page.evaluate(id=>window.__BAIKONUR_QA.focusStation(id),station);assert.equal(await page.locator('#modelCardButton').getAttribute('data-models'),'train,coach');
  await page.evaluate(()=>window.__BAIKONUR_QA.openObject('pad-45'));await page.setViewportSize({width:390,height:844});await page.locator('#modelCardButton').click();await page.waitForFunction(()=>window.__BAIKONUR_QA.modelInspector.stats().ready);child=page.frames().find(f=>f.url().includes('/workshop/model.html'));await child.evaluate(()=>window.__MODEL_VIEWER_QA.frame());assert(await child.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`${out}/${prefix}-dialog-mobile.png`});await page.locator('.model-inspector-close').click();assert.equal(await page.locator('#modelInspector iframe').count(),0);
- assert.deepEqual(evidence.errors,[]);evidence.passed=true;console.log('MODEL_INSPECTOR_BROWSER_OK',JSON.stringify({models:choices.length,orbit:true,retry:true,switchRace:true,cardIntegration:true,cameraRestored:true,mobile:true,base}));
+ // The removed LL22 must never be constructed, including during the landing event.
+ await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>window.__BAIKONUR_QA.openObject('pad-251'));
+ const models=(await page.locator('#modelCardButton').getAttribute('data-models')).split(',');assert(!models.includes('mig'));assert(models.includes('mig25'));
+ await page.locator('#buranLandingStart').click();await page.evaluate(()=>window.__BAIKONUR_QA.buranLanding.pause());
+ const times=await page.evaluate(()=>window.__BAIKONUR_QA.buranLanding.stats().times);
+ for(const t of [0,200,times.touchdown,times.stop,times.end]){
+  const b=await page.evaluate(t=>{const q=window.__BAIKONUR_QA;q.buranLanding.seek(t);window.__INSPECTOR_FRAME();return q.buranLanding.stats();},t);
+  assert.equal(b.escort.count,0);assert.equal(b.escort.visible,false);assert.equal(b.aircraft.escort.count,0);assert.equal(b.aircraft.budget.mig,undefined);assert(b.position.every(Number.isFinite));assert.equal(b.aircraft.source.retainedTriangles,33853);
+ }
+ await page.screenshot({path:`${out}/${prefix}-buran-without-ll22.png`});await page.locator('#buranLandingClose').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.buranLanding.stats().active),false);
+ assert.deepEqual(evidence.errors,[]);evidence.passed=true;console.log('MODEL_INSPECTOR_BROWSER_OK',JSON.stringify({models:choices.length,orbit:true,retry:true,switchRace:true,cardIntegration:true,cameraRestored:true,mobile:true,removedLL22:true,buranLanding:true,base}));
 }finally{await writeFile(`${out}/${prefix}-report.json`,JSON.stringify(evidence,null,2)+'\n');await browser.close();}

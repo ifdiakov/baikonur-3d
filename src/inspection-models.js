@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-proton-launch-v1';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261101-without-ll22-v1';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -26,8 +26,8 @@ export async function createInspectionModel(id,{signal}={}){
   const {buildRailVehicle}=await import('./rail-vehicles.js?v=20261031-facilities-rails-lighting-v1');root=new THREE.Group();const vehicle=buildRailVehicle(root,{wagon:id==='coach',gauge:1.52,last:id==='coach'});vehicle.setEvening(false);for(const part of [...vehicle.axles,...vehicle.bogies])part.root.position.z=part.offset;
  }else if(id==='proton'){
   const {createProtonRocket}=await import('./proton-rocket.js?v=20261101-source-exhibits-v2');const rocket=createProtonRocket();root=rocket.root;setExploded=rocket.setExploded;
- }else if(id==='buran'||id==='mig'){
-  const [{buildLandingAircraft},source]=await Promise.all([import('./buran-landing-aircraft.js?v=20261031-facilities-rails-lighting-v5'),gltf('rockets/energia-buran.glb',signal)]);const actors=buildLandingAircraft({sourceBuran:source});actors.update({gear:1,airbrake:0});root=id==='buran'?actors.buran:actors.mig;owned.push(source,id==='buran'?actors.mig:actors.buran);
+ }else if(id==='buran'){
+  const [{buildLandingAircraft},source]=await Promise.all([import('./buran-landing-aircraft.js?v=20261101-without-ll22-v1'),gltf('rockets/energia-buran.glb',signal)]);const actors=buildLandingAircraft({sourceBuran:source});actors.update({gear:1,airbrake:0});root=actors.buran;owned.push(source);
  }else if(id==='silo'){
   const {buildSiloPad,siloController}=await import('./silo-pad.js?v=20261031-facilities-rails-lighting-v1');root=new THREE.Group();buildSiloPad(root);const controller=siloController(root);update=(time,camera,target)=>controller.update(time,camera,target);
  }else if(id==='proton-pad'){

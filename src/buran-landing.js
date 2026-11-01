@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {buildLandingAircraft} from './buran-landing-aircraft.js?v=20261031-facilities-rails-lighting-v5';
-import {createBuranLandingPath,BURAN_LANDING_TIMES,landingClock} from './buran-landing-path.js?v=20261031-facilities-rails-lighting-v5';
+import {buildLandingAircraft} from './buran-landing-aircraft.js?v=20261101-without-ll22-v1';
+import {createBuranLandingPath,BURAN_LANDING_TIMES,landingClock} from './buran-landing-path.js?v=20261101-without-ll22-v1';
 import {BURAN_LANDING_PARAMETERS as HISTORY,BURAN_LANDING_SOURCES as SOURCES,BURAN_LANDING_RECONSTRUCTION_NOTICE,BURAN_LANDING_DISCREPANCIES} from './buran-landing-history.js?v=20261031-facilities-rails-lighting-v5';
 import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261101-museum-view-v1';
 
@@ -35,7 +35,7 @@ export function fitBuranOverviewCamera({points,width,height,rect,fov=52,near=.1,
   distance,rect:{...rect},width,height,pointCount:vectors.length,padding};
 }
 
-const titles={manoeuvre:'Предпосадочный манёвр',escort:'Встреча с МиГ-25',final:'Заход на ВПП 24',flare:'Шасси и выравнивание',rollout:'Касание и пробег',parachutes:'Тормозные парашюты',stop:'Посадка завершена'};
+const titles={manoeuvre:'Предпосадочный манёвр',approach:'Подход к Юбилейному',final:'Заход на ВПП 24',flare:'Шасси и выравнивание',rollout:'Касание и пробег',parachutes:'Тормозные парашюты',stop:'Посадка завершена'};
 const beforeFacts=[
  ['Два витка вокруг Земли','15 ноября 1988 года «Буран» возвращается из своего первого орбитального полёта. На борту нет экипажа.','chronology'],
  ['ВПП длиной 4,5 километра','Бетонная полоса «Юбилейного» — 4500 × 84 м. Посадочный комплекс строили для возвращения орбитального корабля.','pk'],
@@ -80,7 +80,7 @@ export function createBuranLanding({scene,camera,controls,airfield,getSourceBura
  const sourceList=document.createElement('ul');
  for(const id of ['pk','radar','chronology','eyewitness','algorithms']){const li=document.createElement('li'),a=document.createElement('a');a.href=SOURCES[id].url;a.textContent=SOURCES[id].title;a.target='_blank';a.rel='noopener noreferrer';li.append(a);sourceList.append(li);}
  $('buranSources').append(sourceList);
- const precision=document.createElement('p');precision.textContent='Касание — 09:24:42, остановка — 09:25:24. Дальний маршрут вписан в макет; ВПП, корабль и пробег сохраняют единый масштаб. Точка касания, позы и траектория сопровождения восстановлены. Разные редакции архива расходятся в длине пробега, боковом отклонении и времени выпуска парашютов.';$('buranSources').append(precision);
+ const precision=document.createElement('p');precision.textContent='Касание — 09:24:42, остановка — 09:25:24. Дальний маршрут вписан в макет; ВПП, корабль и пробег сохраняют единый масштаб. Точка касания и позы корабля восстановлены. Разные редакции архива расходятся в длине пробега, боковом отклонении и времени выпуска парашютов.';$('buranSources').append(precision);
  let actors=null,path=null,active=false,following=false,paused=false,elapsed=0,speed=3,lastNow=null,savedControls=null,lastTarget=V(0,0,0),restoreScene=null,guide=null,mode='craft',state=null,lastFact='',lastRelease=null;
  let overviewControls=null,overviewFit=null;const labelPoint=V(0,0,0);
  const modelRoot=new THREE.Group();modelRoot.name='15.11.1988 · посадка «Бурана»';modelRoot.visible=false;modelRoot.userData.pickable=false;scene.add(modelRoot);
@@ -88,7 +88,7 @@ export function createBuranLanding({scene,camera,controls,airfield,getSourceBura
   if(actors)return;
   const sourceBuran=getSourceBuran();if(!sourceBuran)throw new Error('Модель «Бурана» ещё загружается. Попробуйте ещё раз.');
   actors=buildLandingAircraft({sourceBuran});path=createBuranLandingPath({airfield,bounds:getNavigationBounds?.()});
-  for(const model of [actors.buran,actors.mig]){model.scale.setScalar(path.metre);model.traverse(o=>{o.userData.pickable=false;});modelRoot.add(model);}
+  for(const model of [actors.buran]){model.scale.setScalar(path.metre);model.traverse(o=>{o.userData.pickable=false;});modelRoot.add(model);}
   const geometry=new THREE.BufferGeometry().setFromPoints(path.points),material=new THREE.LineBasicMaterial({color:0x075b68,transparent:true,opacity:.95,depthWrite:false,depthTest:false,fog:false,toneMapped:false});
   guide=new THREE.Line(geometry,material);guide.name='Восстановленная предпосадочная траектория';guide.userData.pickable=false;guide.visible=false;guide.renderOrder=40;modelRoot.add(guide);
  }
@@ -111,7 +111,6 @@ export function createBuranLanding({scene,camera,controls,airfield,getSourceBura
   if(!actors||!active)return;state=path.sample(elapsed);
   pose(actors.buran,state.position,state.heading,state.pitchDeg,state.bankDeg);
   const contact=V(...actors.mainContact).multiplyScalar(path.metre).applyQuaternion(actors.buran.quaternion);actors.buran.position.sub(contact);
-  pose(actors.mig,state.mig.position,state.mig.heading,state.mig.pitchDeg,state.mig.bankDeg);actors.mig.visible=state.mig.visible;
   actors.update({gear:state.gear,pitchDeg:state.pitchDeg,chute:state.chute,airbrake:state.airbrake,time:elapsed});
   if(state.gear>.999){
    const mains=actors.worldGearContacts().filter(contact=>contact.id.startsWith('main-'));
@@ -233,7 +232,7 @@ export function createBuranLanding({scene,camera,controls,airfield,getSourceBura
     path:path?.stats(),aircraft:actors?.stats(),times:BURAN_LANDING_TIMES,
     position:actors?.buran.position.toArray(),mainWheel:actors?wheel(actors.mainContact):null,noseWheel:actors?wheel(actors.noseContact):null,actualGearContacts:actors?.worldGearContacts(),
     state:state?{position:state.position.toArray(),heading:state.heading.toArray(),sourcePose:state.sourcePose,pitchDeg:state.pitchDeg,bankDeg:state.bankDeg,gear:state.gear,chute:state.chute,onGround:state.onGround}:null,
-    escort:state?{count:1,visible:actors.mig.visible,position:actors.mig.position.toArray(),type:HISTORY.escort.type,crew:[HISTORY.escort.pilot,HISTORY.escort.cameraOperator]}:null,
+    escort:state?{count:0,visible:false}:null,
     sources:SOURCES,sourceDiscrepancies:BURAN_LANDING_DISCREPANCIES.length,notice:BURAN_LANDING_RECONSTRUCTION_NOTICE};
   }
  };

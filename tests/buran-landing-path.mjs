@@ -26,7 +26,7 @@ const bounds={
 };
 const path=createBuranLandingPath({airfield:airport,bounds}),stats=path.stats(),times=BURAN_LANDING_TIMES;
 const near=(actual,expected,tolerance=1e-8,message='Unexpected landing coordinate')=>assert(Math.abs(actual-expected)<=tolerance,`${message}: ${actual} != ${expected}`);
-assert.equal(stats.runwayDesignator,'24');near(path.metre,.14);
+assert.equal(stats.escortCount,0);assert.equal(stats.escortPath,null);assert.equal(stats.runwayDesignator,'24');near(path.metre,.14);
 near(path.centre.distanceTo(airport.localToWorld(V(0,airport.userData.airport.runwayY,0))),0);
 assert.equal(HISTORY.date,'1988-11-15');assert.equal(HISTORY.timeZone,'Europe/Moscow');
 assert.equal(landingClock(0),'09:18:23');assert.equal(landingClock(times.touchdown),'09:24:42');assert.equal(landingClock(times.stop),'09:25:24');
@@ -64,21 +64,19 @@ near(radial(radius),radius*.14);
 near((radial(radius)-radial(radius-dr))/dr,(radial(radius+dr)-radial(radius))/dr,1e-7,'Radial display compression has a velocity seam');
 assert(radial(1e9)<=stats.distantRadiusLimit+1e-7);
 
-let samples=0,groundSamples=0,minHeight=Infinity,minBuranBoundary=Infinity,minMigBoundary=Infinity,maxLateralM=0,previousHeight=Infinity;
+let samples=0,groundSamples=0,minHeight=Infinity,minBuranBoundary=Infinity,maxLateralM=0,previousHeight=Infinity;
 const boundaryDistance=p=>Math.min(p.x-bounds.minX,bounds.maxX-p.x,p.z-bounds.minZ,bounds.maxZ-p.z);
 for(let i=0;i<=Math.ceil(times.end/.05);i++){
  const t=Math.min(times.end,i*.05),s=path.sample(t);samples++;
- assert([...s.position.toArray(),...s.heading.toArray(),...s.mig.position.toArray(),...s.mig.heading.toArray(),s.pitchDeg,s.bankDeg,s.physicalSpeedMps].every(Number.isFinite),'A landing pose is not finite at '+t);
- near(s.heading.length(),1,1e-7);if(s.mig.visible)near(s.mig.heading.length(),1,1e-7);
+ assert([...s.position.toArray(),...s.heading.toArray(),s.pitchDeg,s.bankDeg,s.physicalSpeedMps].every(Number.isFinite),'A landing pose is not finite at '+t);
+ near(s.heading.length(),1,1e-7);assert.equal(s.mig,undefined,'No removed escort is animated');
  const height=s.position.y-path.centre.y;minHeight=Math.min(minHeight,height);
  assert(height>=-1e-9,'The flight goes below the runway plane');
  assert(s.sourcePose.heightM<=previousHeight+1e-8,'The reconstructed descent rises between final radar anchors');previousHeight=s.sourcePose.heightM;
  minBuranBoundary=Math.min(minBuranBoundary,boundaryDistance(s.position));
- if(s.mig.visible)minMigBoundary=Math.min(minMigBoundary,boundaryDistance(s.mig.position));
  // Twenty scene units cover the complete metric aircraft and its nearby
  // deployed surfaces; checking only the centre could permit clipped bodies.
  assert(boundaryDistance(s.position)>20,'The Buran body reaches the museum boundary');
- if(s.mig.visible)assert(boundaryDistance(s.mig.position)>20,'The escort body reaches the museum boundary');
  if(s.onGround){
   const local=airport.worldToLocal(s.position.clone()),metres=local.clone().divideScalar(airport.userData.airport.physicalToLocal);
   assert(Math.abs(metres.x)<HISTORY.runway.widthM/2&&Math.abs(metres.z)<HISTORY.runway.lengthM/2,'The rollout leaves runway 24');
@@ -98,17 +96,16 @@ near(path.sample(times.noseWheel).pitchDeg,0);
 assert(stop.position.distanceTo(path.sample(times.end).position)<1e-9,'Buran moves after its documented stop');
 
 // Numeric one-sided derivatives verify C1 motion independently of the
-// interpolation implementation, including both stages of the escort break.
+// interpolation implementation for the remaining Buran trajectory.
 const joins=[...coherent.slice(1).map(p=>({label:p.clock,time:p.secondsOfDay-times.start,actor:'buran'})),
- {label:'touchdown',time:times.touchdown,actor:'buran'},{label:'stop',time:times.stop,actor:'buran'},
- {label:'escort break',time:9*3600+24*60-times.start,actor:'mig'},{label:'escort flyby',time:times.stop+9,actor:'mig'}];
+ {label:'touchdown',time:times.touchdown,actor:'buran'},{label:'stop',time:times.stop,actor:'buran'}];
 let continuityChecks=0,maxVelocityGap=0;const dt=.0001;
 for(const join of joins){
- const get=t=>join.actor==='buran'?path.sample(t).position:path.sample(t).mig.position;
+ const get=t=>path.sample(t).position;
  const p=get(join.time),left=p.clone().sub(get(join.time-dt)).divideScalar(dt),right=get(join.time+dt).sub(p).divideScalar(dt);
  const gap=left.distanceTo(right);maxVelocityGap=Math.max(maxVelocityGap,gap);
  assert(gap<.001,'The landing trajectory has a C1 break: '+JSON.stringify({...join,gap,left:left.toArray(),right:right.toArray()}));continuityChecks++;
 }
 assert.equal(JSON.stringify([airports,HISTORY,BURAN_LANDING_RADAR_SAMPLES]),sourceBefore,'The animation mutated its source observations or source runway');
 assert.equal(JSON.stringify({position:airport.position,rotation:airport.rotation,scale:airport.scale,spec:airport.userData.airport}),transformBefore,'The landing path moved or rescaled the airport');
-console.log('BURAN_LANDING_PATH_PASS',JSON.stringify({sourceRunway:24949215,runwayDesignator:stats.runwayDesignator,metre:path.metre,sourceRecords:19,coherentRecords:16,anchorChecks,maxAnchorError,metricChecks,samples,groundSamples,rolloutM:1620,rolloutSeconds:42,minHeight,minBuranBoundary,minMigBoundary,maxLateralM,continuityChecks,maxVelocityGap}));
+console.log('BURAN_LANDING_PATH_PASS',JSON.stringify({sourceRunway:24949215,runwayDesignator:stats.runwayDesignator,metre:path.metre,sourceRecords:19,coherentRecords:16,anchorChecks,maxAnchorError,metricChecks,samples,groundSamples,rolloutM:1620,rolloutSeconds:42,minHeight,minBuranBoundary,maxLateralM,continuityChecks,maxVelocityGap}));

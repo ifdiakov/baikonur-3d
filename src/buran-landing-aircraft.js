@@ -218,49 +218,6 @@ function buildParachutes(root){
   });
 }
 
-function slab(points,thickness=.12,normal=V(0,1,0)){
-  points=points.map(p=>[...p]);
-  const winding=V();for(let i=0;i<points.length;i++)winding.add(V(...points[i]).cross(V(...points[(i+1)%points.length])));
-  if(winding.dot(normal)<0)points.reverse();
-  const positions=[],indices=[],n=points.length;
-  for(const offset of [-thickness/2,thickness/2])for(const point of points)positions.push(point[0]+normal.x*offset,point[1]+normal.y*offset,point[2]+normal.z*offset);
-  for(let i=1;i+1<n;i++){indices.push(0,i+1,i,n,n+i,n+i+1);}
-  for(let i=0;i<n;i++){const j=(i+1)%n;indices.push(i,j,n+i,j,n+j,n+i);}
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();return g;
-}
-
-function buildMig(){
-  const root=new THREE.Group();root.name='МиГ-25ПУ-СОТН · ЛЛ22 · схематическая модель';
-  root.userData.aircraft={type:'МиГ-25ПУ-СОТН',laboratory:'ЛЛ22',boardNumber:'22',schematic:true,unit:'metre',forward:'+Z',escortCount:1};
-  const gray=new THREE.MeshStandardMaterial({color:0x9da6ab,roughness:.64,metalness:.36});gray.name='серый планер';
-  const dark=new THREE.MeshStandardMaterial({color:0x252a2e,roughness:.83,metalness:.32});dark.name='воздухозаборники';
-  const metal=new THREE.MeshStandardMaterial({color:0x5c6265,roughness:.49,metalness:.64});metal.name='сопла';
-  const glass=new THREE.MeshStandardMaterial({color:0x29434d,roughness:.21,metalness:.16});glass.name='двухместная кабина';
-  const red=new THREE.MeshStandardMaterial({color:0xa72d28,roughness:.7});red.name='борт 22';
-  const b=batch(root),profile=[[-10.45,.62],[-9.7,1.18],[-3.5,1.38],[1.5,1.22],[5.5,.91],[8.2,.69],[10.8,.21],[11.25,0]].map(([z,r])=>new THREE.Vector2(r,z));
-  const fuselage=new THREE.LatheGeometry(profile,14);fuselage.rotateX(Math.PI/2);b.add(fuselage,gray);
-  for(const side of [-1,1]){
-    b.add(cylinder(.78,6.2,[side*.94,-.2,-7.2],'z',16),gray);
-    b.add(cylinder(.78,.58,[side*.94,-.2,-10.54],'z',16),metal);
-    b.add(cylinder(.635,.025,[side*.94,-.2,-10.85],'z',16),dark);
-    b.add(box(.78,1.48,4.65,[side*1.38,.12,1.12]),gray);
-    b.add(box(.73,1.17,.025,[side*1.38,.06,3.46]),dark);
-    b.add(slab([[side*1.05,.16,2.25],[side*6.97,.09,-2.2],[side*6.65,.09,-4.5],[side*1.15,.13,-5.1]],.2),gray);
-    b.add(slab([[side*1.07,.25,-6.15],[side*4.33,.05,-8.21],[side*4.05,.05,-9.84],[side*.95,.2,-9.2]],.14),gray);
-    b.add(slab([[side*1.4,.75,-6.1],[side*1.4,3.9,-8.1],[side*1.4,3.9,-9.45],[side*1.4,.75,-9.9]],.13,V(1,0,0)),gray);
-    // Vector strokes avoid a DOM/canvas texture and remain crisp in the small
-    // escort view. The aircraft is deliberately a schematic, not a new source asset.
-    for(let digit=0;digit<2;digit++){
-      const z=6.8-digit*.62,y=.05,width=.43,height=.76,stroke=.085;
-      for(const [cy,cz,h,w]of [[height/2,z,stroke,width],[height/4,z-side*width/2,height/2,stroke],[0,z,stroke,width],[-height/4,z+side*width/2,height/2,stroke],[-height/2,z,stroke,width]])b.add(box(.025,h,w,[side*.91,y+cy,cz]),red);
-    }
-  }
-  for(const [y,z,rx,ry,rz]of [[1.0,6.9,.69,.72,1.48],[1.45,4.45,.75,.79,1.46]]){
-    const canopy=new THREE.SphereGeometry(1,12,8);canopy.scale(rx,ry,rz);canopy.translate(0,y,z);b.add(canopy,glass);
-  }
-  b.finish('МиГ-25ПУ · ЛЛ22');return root;
-}
-
 function renderCounts(root){
   let draws=0,triangles=0,lines=0;root.traverse(object=>{
     if(object.isMesh){draws+=Array.isArray(object.material)?object.material.length:1;triangles+=(object.geometry.index?.count||object.geometry.attributes.position.count)/3;}
@@ -284,9 +241,9 @@ export function buildLandingAircraft({sourceBuran}={}){
   const extraction=extractOrbiter(sourceBuran,body,parts);
   const strut=new THREE.MeshStandardMaterial({color:0xb1b3af,roughness:.38,metalness:.68});strut.name='амортизаторы и диски';
   const tire=new THREE.MeshStandardMaterial({color:0x1f2223,roughness:.96,metalness:0});tire.name='шины';
-  const gear=buildGear(buran,{strut,tire}),parachutes=buildParachutes(buran),mig=buildMig();
+  const gear=buildGear(buran,{strut,tire}),parachutes=buildParachutes(buran);
   let current={gear:0,pitchDeg:0,chute:0,airbrake:0,time:0};
-  const budget={buran:renderCounts(buran),mig:renderCounts(mig)};
+  const budget={buran:renderCounts(buran)};
   function update({gear:extension=current.gear,pitchDeg=current.pitchDeg,chute=current.chute,airbrake,time=current.time}={}){
     const g=clamp(extension),c=clamp(chute),brake=clamp(airbrake??Math.max(g*.35,c));
     current={gear:g,pitchDeg:Number.isFinite(pitchDeg)?pitchDeg:0,chute:c,airbrake:brake,time:Number.isFinite(time)?time:0};
@@ -333,6 +290,6 @@ export function buildLandingAircraft({sourceBuran}={}){
     contacts:{main:[...BURAN_LANDING_CONTACTS.main],nose:[...BURAN_LANDING_CONTACTS.nose],mainTrack:BURAN_LANDING_CONTACTS.mainTrack},
     gearStruts:gear.length,gearWheels:gear.reduce((n,g)=>n+g.group.userData.wheels.length,0),
     rudderLeaves:2,parachuteCount:parachutes.length,deployedParachutes:current.chute>.001?parachutes.length:0,
-    escort:{count:1,type:'МиГ-25ПУ-СОТН',laboratory:'ЛЛ22',boardNumber:'22',schematic:true},budget,pose:{...current},worldGearContacts:worldGearContacts()};}
-  update();return {buran,mig,update,stats,worldGearContacts,mainContact:[...BURAN_LANDING_CONTACTS.main],noseContact:[...BURAN_LANDING_CONTACTS.nose]};
+    escort:{count:0},budget,pose:{...current},worldGearContacts:worldGearContacts()};}
+  update();return {buran,update,stats,worldGearContacts,mainContact:[...BURAN_LANDING_CONTACTS.main],noseContact:[...BURAN_LANDING_CONTACTS.nose]};
 }

@@ -86,27 +86,6 @@ export function createBuranLandingPath({airfield,bounds=null}){
   if(raw(middle).heightM>HISTORY.escort.approximateJoinAltitudeM)joinLower=middle;else joinUpper=middle;
  }
  const joinTime=(joinLower+joinUpper)/2;
- const breakTime=9*3600+24*60-START;
- function migClosePosition(t){
-   const p=display(raw(t-2)),heading=headingAt(Math.max(0,t-2)),right=new THREE.Vector3().crossVectors(heading,new THREE.Vector3(0,1,0));
-   const join=ease((t-(joinTime-24))/24);
-   return p.addScaledVector(right,lerp(110,38,join)).addScaledVector(heading,lerp(45,-24,join)).add(new THREE.Vector3(0,12,0));
- }
- const migBreakWorld=migClosePosition(breakTime),migBreakVelocity=migClosePosition(breakTime+.05).sub(migClosePosition(breakTime-.05)).multiplyScalar(10);
- const migTurnSpeed=900*Math.PI*.75/15;
- const migFlybyEnd=display(localToSource(440,stopLocal.z-900,145));
- const migFlybyVelocity=display(localToSource(440,stopLocal.z-900-migTurnSpeed*.05,145)).sub(display(localToSource(440,stopLocal.z-900+migTurnSpeed*.05,145))).multiplyScalar(10);
- function migPosition(t){
-  if(t<breakTime)return migClosePosition(t);
-  const until=BURAN_LANDING_TIMES.stop+9;
-  if(t<=until){
-   const dt=until-breakTime,u=(t-breakTime)/dt;
-   const p=new THREE.Vector3();for(const key of ['x','y','z'])p[key]=hermite(migBreakWorld[key],migFlybyEnd[key],migBreakVelocity[key],migFlybyVelocity[key],u,dt);
-   return p;
-  }
-  const u=clamp((t-until)/15,0,1),angle=u*Math.PI*.75;
-  return display(localToSource(440-900*(1-Math.cos(angle)),stopLocal.z-900-900*Math.sin(angle),145+u*u*160));
- }
  function sample(t){
   t=clamp(Number.isFinite(t)?t:0,0,BURAN_LANDING_TIMES.end);
   const p=raw(t),position=display(p),heading=headingAt(t),a=headingAt(Math.max(0,t-.3)),b=headingAt(Math.min(BURAN_LANDING_TIMES.stop,t+.3));
@@ -115,12 +94,10 @@ export function createBuranLandingPath({airfield,bounds=null}){
   const bankDeg=p.onGround?0:clamp(-Math.atan(physicalSpeed*turn/9.81)*180/Math.PI,-55,55)*(1-ease((t-(flareStart-15))/15));
   const remaining=flareEnd-t,gear=ease((500-p.heightM)/310);
   const pitchDeg=p.onGround?11*(1-ease((t-flareEnd)/(BURAN_LANDING_TIMES.noseWheel-flareEnd))):lerp(4,11,ease((t-flareStart)/(flareEnd-flareStart)));
-  const phase=t>=BURAN_LANDING_TIMES.stop?'stop':p.onGround?(t>=BURAN_LANDING_TIMES.parachutes?'parachutes':'rollout'):p.heightM<500?'flare':t>=9*3600+22*60+52.5-START?'final':t>=joinTime?'escort':'manoeuvre';
-  const migP=migPosition(t),migD=migPosition(t+.08).sub(migPosition(t-.08));
+  const phase=t>=BURAN_LANDING_TIMES.stop?'stop':p.onGround?(t>=BURAN_LANDING_TIMES.parachutes?'parachutes':'rollout'):p.heightM<500?'flare':t>=9*3600+22*60+52.5-START?'final':t>=joinTime?'approach':'manoeuvre';
   return {elapsed:t,clock:landingClock(t),secondsOfDay:START+t,position,heading,pitchDeg,bankDeg,gear:p.onGround?1:gear,
    chute:ease((t-BURAN_LANDING_TIMES.parachutes)/1.3),airbrake:p.onGround?.75:.35,
-   onGround:p.onGround,phase,remaining,sourcePose:{...p},physicalSpeedMps:physicalSpeed,
-   mig:{visible:t>=joinTime-24,position:migP,heading:migD.clone().setY(0).normalize(),pitchDeg:clamp(Math.atan2(migD.y,Math.hypot(migD.x,migD.z))*180/Math.PI,-15,15),bankDeg:t>BURAN_LANDING_TIMES.stop+9?-24:0}};
+   onGround:p.onGround,phase,remaining,sourcePose:{...p},physicalSpeedMps:physicalSpeed};
  }
  return {sample,raw,display,centre,metre,rotation,northEnd,times:BURAN_LANDING_TIMES,joinTime,flareStart,
   points:Array.from({length:560},(_,i)=>sample(i/559*BURAN_LANDING_TIMES.stop).position),
@@ -129,5 +106,5 @@ export function createBuranLandingPath({airfield,bounds=null}){
    sourceAirportHeadingPreserved:true,distantRadiusLimit:radiusLimit,metricRadiusM:metricRadius,
    distantScale:'continuous-radial-compression',verticalScale:'continuous-height-compression',
    reconstruction:{...HISTORY.reconstruction,touchdownFromThresholdM:810,touchdownPositionBasis:'approximate-archive-photographic-analysis',lateralPath:'illustrative-damped-correction',stopSide:'illustrative-sign',renderedContactVerticalTangentMps:0,reportedTouchdownVerticalSpeedMps:HISTORY.touchdown.reportedVerticalSpeedMps},
-   touchdownLocal,stopLocal,rolloutM:HISTORY.stop.rolloutM,rolloutSeconds:rolloutDuration,escortCount:1,escortJoinElapsed:joinTime,escortJoinAltitudeM:HISTORY.escort.approximateJoinAltitudeM,escortPath:'interpretive-preserving-documented-stages'})};
+   touchdownLocal,stopLocal,rolloutM:HISTORY.stop.rolloutM,rolloutSeconds:rolloutDuration,escortCount:0,escortJoinElapsed:joinTime,escortJoinAltitudeM:HISTORY.escort.approximateJoinAltitudeM,escortPath:null})};
 }

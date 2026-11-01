@@ -155,28 +155,9 @@ for(let i=0;i<canopyGeometry.index.count;i+=3){
 const midCanopy=canopies[1].position.clone().applyMatrix4(canopies[1].parent.matrixWorld);aircraft.update({time:21});aircraft.buran.updateMatrixWorld(true);
 assert.ok(midCanopy.distanceTo(canopies[1].position.clone().applyMatrix4(canopies[1].parent.matrixWorld))>.01,'Deployed fabric has small live motion');
 
-// Readable escort silhouette is checked on actual triangles, including both
-// mirrored wings. This catches a flipped winding / invisible left wing.
-aircraft.mig.updateMatrixWorld(true);const migMeshes=[];aircraft.mig.traverse(m=>{if(m.isMesh)migMeshes.push(m);});
-const migBounds=new THREE.Box3().setFromObject(aircraft.mig),migSize=migBounds.getSize(V());
-assert.ok(migSize.x>13.8&&migSize.x<14.2);assert.ok(migSize.z>21.8&&migSize.z<22.6);
-for(const side of [-1,1]){
-  caster.set(V(side*5.6,10,-3.2),V(0,-1,0));const wing=caster.intersectObjects(migMeshes,false)[0];assert.ok(wing&&wing.point.y>0,'Both swept wings expose their actual upper faces');
-  caster.set(V(side*8,2.7,-8.7),V(-side,0,0));const fin=caster.intersectObjects(migMeshes,false)[0];assert.ok(fin&&Math.abs(fin.point.x)>1.3&&Math.abs(fin.point.x)<1.5,'Two separate vertical fins');
-  caster.set(V(side*.94,-.2,-14),V(0,0,1));assert.ok(caster.intersectObjects(migMeshes,false).some(hit=>hit.object.material.name==='воздухозаборники'&&hit.point.z<-10.8),'Both engine nozzles have an actual dark throat');
-}
-const glass=migMeshes.find(m=>m.material.name==='двухместная кабина');
-for(const z of [6.9,4.45]){caster.set(V(0,8,z),V(0,-1,0));assert.ok(caster.intersectObject(glass,false).length,'Two tandem canopy sections');}
-assert.equal(aircraft.stats().escort.count,1);assert.equal(aircraft.stats().escort.boardNumber,'22');assert.equal(aircraft.stats().escort.schematic,true);
-assert.ok(migMeshes.some(m=>m.material.name==='борт 22'&&m.geometry.attributes.position.count>100),'The escort carries geometric number 22');
-const number=migMeshes.find(m=>m.material.name==='борт 22');
-for(const side of [-1,1])for(const digit of [0,1]){
-  const z=6.8-digit*.62;
-  caster.set(V(side*3,.05+.76/4,z-side*.43/2),V(-side,0,0));assert.ok(caster.intersectObject(number,false).length,'The upper right stroke of 2 reads correctly from either outside face');
-  caster.set(V(side*3,.05+.76/4,z+side*.43/2),V(-side,0,0));assert.equal(caster.intersectObject(number,false).filter(hit=>Math.sign(hit.point.x)===side).length,0,'Neither outside face mirrors 22 into 55');
-}
+assert.equal(aircraft.stats().escort.count,0);assert.equal(aircraft.mig,undefined,'Removed LL22 is not built, even as a hidden model');
 assert.ok(initial.budget.buran.draws<=80&&initial.budget.buran.triangles<41000,'Source detail and animations fit a bounded aircraft budget');
-assert.ok(initial.budget.mig.draws<=6&&initial.budget.mig.triangles<5000,'Schematic escort is lightweight');
+assert.equal(initial.budget.mig,undefined);
 assert.equal(fingerprint(holder),before,'All gear/rudder/chute updates leave the shared source unchanged');
 assert.equal(sha(await readFile(sourceUrl)),sha(bytes),'The source asset bytes remain unchanged');
 aircraft.update({gear:0,chute:0,airbrake:0});assert.ok(allGear.every(g=>!g.visible));assert.ok(canopies.every(c=>!c.parent.visible),'Reset clears deployed landing equipment');

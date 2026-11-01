@@ -38,7 +38,7 @@ function path(b,points,mat,r=.012){for(let i=1;i<points.length;i++)b.add(rod(poi
 function star(b,center,u,v,r,material,project=p=>p){const p=[center];const rim=[];for(let i=0;i<10;i++){const a=i*Math.PI/5,rr=r*(i%2?.39:1);rim.push(V(...center).addScaledVector(V(...u),Math.sin(a)*rr).addScaledVector(V(...v),Math.cos(a)*rr).toArray());}for(let i=0;i<10;i++)b.add(polygon([p[0],rim[i],rim[(i+1)%10]].map(project)),material);}
 
 /** Single-seat MiG-25, reconstructed anew from the 17 replacement views.
- * Metres, +Y up, +Z nose. The historical LL22 remains a separate aircraft. */
+ * Metres, +Y up, +Z nose. */
 export function createMig25(){
  const root=new THREE.Group();root.name='МиГ-25 · борт 46';
  const {map,detail}=createMig25Surface();
