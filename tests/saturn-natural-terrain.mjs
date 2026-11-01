@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {buildSaturnIP5} from '../src/saturn-structures.js';
-import {SATURN_ACCESS,saturnTerrainSample,addSaturnNorthwestGate} from '../src/saturn-access.js';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample,
+ saturnTerrainOuterRadius,saturnTerrainFootprint,saturnTerrainMeshHeight,addSaturnNorthwestGate} from '../src/saturn-access.js';
 
 const near=(actual,expected,tolerance,message)=>assert.ok(Math.abs(actual-expected)<=tolerance,
  `${message}: ${actual} differs from ${expected}`);
@@ -13,7 +14,7 @@ assert.equal(SATURN_ACCESS.verticalRaise,20);
 assert.equal(SATURN_ACCESS.scale,scale);assert.equal(SATURN_ACCESS.elevation,elevation);
 assert.deepEqual(SATURN_ACCESS.gate,{x:-96,y:7.59,z:-79});
 assert.deepEqual(SATURN_ACCESS.internalJoin,{x:-92,y:7.59,z:-29});
-assert.equal(SATURN_ACCESS.revision,'northwest-natural-hill20-v4');
+assert.equal(SATURN_ACCESS.revision,'northwest-asymmetric-hill20-v5');
 
 // A transformed root catches UVs accidentally tied to local X/Z, a model
 // origin, or an unscaled copy of the shared map. The material itself must be
@@ -37,11 +38,18 @@ assert.ok(material.alphaTest<=.001,'A hard alpha cutoff must not create a visibl
 assert.equal(sharedMaterial.vertexColors,false);assert.equal(sharedMaterial.depthWrite,false);
 assert.equal(sharedMaterial.alphaTest,0);
 assert.equal(hill.userData.surfaceStyle,'shared-steppe-world-uv');
-assert.equal(hill.userData.reliefStyle,'soft-irregular-steppe-v2');
+assert.equal(hill.userData.reliefStyle,'soft-irregular-steppe-v3');
 assert.equal(hill.userData.terrainElevationWorld,20);
 
 const geometry=hill.geometry,p=geometry.attributes.position,color=geometry.attributes.color;
 const uv=geometry.attributes.uv,index=geometry.index;
+const {minX,maxX,minZ,maxZ}=SATURN_TERRAIN_BOUNDS;
+assert.equal(p.count,(SATURN_TERRAIN_SEGMENTS+1)**2);
+assert.equal(index.count,6*SATURN_TERRAIN_SEGMENTS**2);
+near((maxX-minX)/SATURN_TERRAIN_SEGMENTS,5,1e-10,'Hill mesh needs five-unit sampling');
+near((maxZ-minZ)/SATURN_TERRAIN_SEGMENTS,5,1e-10,'Hill mesh needs five-unit sampling');
+assert.equal(p.getX(0),minX);assert.equal(p.getZ(0),minZ);
+assert.equal(p.getX(p.count-1),maxX);assert.equal(p.getZ(p.count-1),maxZ);
 assert.equal(color.itemSize,4,'Relief colour requires RGBA for a soft outer blend');
 assert.equal(color.count,p.count);assert.equal(uv.count,p.count);assert.ok(index);
 for(const attribute of Object.values(geometry.attributes))
@@ -60,6 +68,7 @@ for(let i=0;i<p.count;i++){
  near(color.getZ(i),shade,1e-7,'No blue tint in the relief');
  assert.ok(opacity>=0&&opacity<=1,'Invalid terrain opacity');
  near(opacity,expected.opacity,1e-6,'Rendered opacity follows the shared terrain profile');
+ if(expected.height>base+.6)near(opacity,1,1e-7,'Raised slopes must not show the flat tint beneath them');
  if(opacity===1)opaqueVertices++;if(opacity===0)clearVertices++;
  // Keep the central yard neutral; normals may softly vary at the very edge
  // of the plateau where the shading stencil reaches onto the slope.
@@ -107,6 +116,30 @@ for(const [x,z] of supports){
  maxSupportMeshError=Math.max(maxSupportMeshError,Math.abs(hit.point.y-expected.y));
 }
 assert.ok(maxSupportMeshError<1e-4,'The actual mesh must retain level ground under fixed structures');
+
+// Camera/transport queries must match the actual Float32 triangles, including
+// both sides of their diagonal. Analytic or bilinear interpolation can put the
+// camera beneath one triangle on a curved shoulder.
+const meshProbes=[];
+for(let i=0;i<64;i++)for(const [u,v] of [[.2,.35],[.8,.7]]){
+ const ix=(i*37+11)%SATURN_TERRAIN_SEGMENTS,iz=(i*53+19)%SATURN_TERRAIN_SEGMENTS;
+ meshProbes.push([minX+(ix+u)*5,minZ+(iz+v)*5]);
+}
+for(let i=0;i<24;i++){
+ const angle=(i+.23)*Math.PI/12,radius=saturnTerrainOuterRadius(angle);
+ for(const ratio of [.50,.72,.92])meshProbes.push([Math.cos(angle)*radius*ratio,Math.sin(angle)*radius*ratio]);
+}
+let maxSamplerMeshError=0;
+for(const [x,z] of meshProbes){
+ const expected=root.localToWorld(new THREE.Vector3(x,saturnTerrainMeshHeight(x,z),z));
+ down.ray.origin.copy(expected).setY(1000);
+ const hit=down.intersectObject(hill,false)[0];assert.ok(hit,'Missing terrain triangle at a height-query probe');
+ maxSamplerMeshError=Math.max(maxSamplerMeshError,Math.abs(hit.point.y-expected.y));
+}
+assert.ok(maxSamplerMeshError<1e-7,'The shared height query must follow the rendered triangles exactly');
+for(const [x,z] of [[minX-1,0],[maxX+1,0],[0,minZ-1],[0,maxZ+1]])
+ near(saturnTerrainMeshHeight(x,z),base,1e-10,'Height queries outside the mesh return the flat base');
+
 const pavement=root.getObjectByName('northwest-gate-pavement');assert.ok(pavement);
 const gateVertices=pavement.geometry.attributes.position;
 const gateCentre=new THREE.Vector3().fromBufferAttribute(gateVertices,0)
@@ -117,16 +150,27 @@ for(let i=0;i<gateVertices.count;i++){
  near(gateVertices.getY(i)-sample(x,z).height,.34,1e-5,'Gate pavement must retain its terrain clearance');
 }
 
-// Snapshot of the compact clearance envelope approved before this change
-// (de551ec): refining the interior must never enlarge it toward the roads.
-// The heavier OSM corridor/road-surface checks remain in their existing test.
-function approvedOuterRadius(angle){
- return (1+.045*Math.sin(3*angle+.45)+.025*Math.cos(5*angle-.8)) /
-  Math.hypot(Math.cos(angle)/235,Math.sin(angle)/190);
+// There is room for a broad foot north/east; the western primary road and
+// southeastern trunk define the two fixed limits below. Keep the road-side
+// caps and a flat mesh margin, rather than preserving the obsolete narrow
+// ellipse that caused the steep shoulders. The actual OSM corridor/surface
+// checks remain in osm-transport-geometry.mjs.
+const footprint=saturnTerrainFootprint();assert.equal(footprint.length,128);
+assert.equal(saturnTerrainFootprint(256).length,256);
+for(const invalid of [0,11,128.5,4097,NaN])assert.throws(()=>saturnTerrainFootprint(invalid));
+assert.ok(saturnTerrainOuterRadius(0)>500,'The eastern shoulder must have room for a gentle descent');
+assert.ok(saturnTerrainOuterRadius(-Math.PI/2)>500,'The northern shoulder must have room for a gentle descent');
+for(const {x,z} of footprint){
+ assert.ok(Number.isFinite(x)&&Number.isFinite(z),'Non-finite terrain footprint');
+ assert.ok(x>=-250-1e-9&&.297*x+.955*z<=198+1e-9,'Hill footprint entered a protected arterial corridor');
+ assert.ok(x>=minX+5&&x<=maxX-5&&z>=minZ+5&&z<=maxZ-5,'Hill needs a flat grid cell before every mesh edge');
+ near(sample(x,z).height,base,1e-9,'Footprint points must lie on the flat steppe');
+ near(sample(x,z).opacity,0,1e-10,'Footprint points must be transparent');
 }
 let outsideSamples=0,radialSamples=0,maxOutwardRise=0,maxEdgeSlope=0,maxJoinJump=0;
 for(let i=0;i<360;i++){
- const angle=i*Math.PI/180,dx=Math.cos(angle),dz=Math.sin(angle),outer=approvedOuterRadius(angle);
+ const angle=i*Math.PI/180,dx=Math.cos(angle),dz=Math.sin(angle),outer=saturnTerrainOuterRadius(angle);
+ assert.ok(dx*outer>=-250-1e-9&&(.297*dx+.955*dz)*outer<=198+1e-9,'Radial foot entered an arterial corridor');
  const at=radius=>sample(dx*radius,dz*radius);
  for(const extra of [0,.1,1,12,100]){
   const outside=at(outer+extra);near(outside.height,base,1e-9,'The terrain escaped its approved outer edge');
@@ -155,10 +199,12 @@ assert.ok(maxEdgeSlope<1e-4,'The outer foot must meet the flat steppe smoothly')
 near(sample(1e6,1e6).height,base,1e-10,'Far outside terrain stays flat');
 
 // Finite differences constrain cliffs and excessive steepness in every
-// direction, including between the radial sections above. The previous hill
-// reached gradient 1.154, with mean slope 0.662 across its narrow slope ring.
+// direction, including between the radial sections above. The compact v4
+// hill reached gradient 0.961, with mean 0.557 across its narrow slope ring.
+// Measure the complete expanded footprint so the broad north/east slopes
+// count as well as the road-constrained southern side.
 let maxGradient=0,totalGradient=0,slopeSamples=0;
-for(let z=-260;z<=260;z+=2)for(let x=-280;x<=280;x+=2){
+for(let z=minZ;z<=maxZ;z+=2)for(let x=minX;x<=maxX;x+=2){
  const height=sample(x,z).height,delta=.1;
  const gx=(sample(x+delta,z).height-sample(x-delta,z).height)/(2*delta);
  const gz=(sample(x,z+delta).height-sample(x,z-delta).height)/(2*delta);
@@ -168,11 +214,12 @@ for(let z=-260;z<=260;z+=2)for(let x=-280;x<=280;x+=2){
 }
 assert.ok(slopeSamples>1000);
 const meanGradient=totalGradient/slopeSamples;
-assert.ok(maxGradient<1.05,'A steep artificial shoulder returned');
-assert.ok(meanGradient<.60,'The broader slopes must remain gentler than the previous compact hill');
+assert.ok(maxGradient<.78,'The strongest shoulder must be materially gentler than the compact hill');
+assert.ok(meanGradient<.23,'Broad irregular slopes must substantially reduce the former mean steepness');
 
 console.log('SATURN_NATURAL_TERRAIN_PASS',JSON.stringify({revision:SATURN_ACCESS.revision,
  vertices:p.count,triangles:index.count/3,shade:[minShade,maxShade],maxHeightError,maxUVError,
  plateauSamples,supportMeshSamples:supports.length,maxSupportMeshError,lampBases:lampPoints.length,
+ meshSamplerProbes:meshProbes.length,maxSamplerMeshError,footprintVertices:footprint.length,
  outsideSamples,radialSamples,maxOutwardRise,maxJoinJump,maxEdgeSlope,maxGradient,meanGradient,
  worldSummit:elevation+scale*summit}));

@@ -341,4 +341,82 @@ districts.setOpacity(.6);demOverlays.forEach(mesh=>assert.ok(Math.abs(mesh.mater
 districts.setOpacity(0);
 assert.ok(!overviewOverlay.visible&&demOverlays.every(mesh=>!mesh.visible));
 assert.equal(districts.state().overviewReliefCount,1);assert.equal(districts.state().terrainDraped,true);
-console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false,reliefClipProbes,raisedOverlayProbes,flatDrapeProbes,drapedBoundaryVertices,physicalBoundaryProbes,reliefAttributesShared:true,overviewReliefVisibility:true,continuousReliefFill:true}));
+
+// Saturn's translucent soil toe must never produce a second colour layer.
+// Exercise an off-centre square under a translated, rotated, scaled parent;
+// the replacement patch and its regional cutout must agree in world space.
+const patchScene=new THREE.Scene(),patchDistricts=buildFlankDistricts(patchScene,point,1300,1045);
+const hillRoot=new THREE.Group();hillRoot.position.copy(point(638.091630,771.738127,17.45));
+hillRoot.rotation.y=.13;hillRoot.scale.setScalar(.525);patchScene.add(hillRoot);
+const hillGrid=184,hillBounds={minX:-280,maxX:640,minZ:-650,maxZ:270},hillPositions=[],hillColors=[],hillIndices=[];
+const hillBase=(-2.755-17.45)/.525;
+for(let z=0;z<=hillGrid;z++)for(let x=0;x<=hillGrid;x++){
+ const xx=hillBounds.minX+(hillBounds.maxX-hillBounds.minX)*x/hillGrid,zz=hillBounds.minZ+(hillBounds.maxZ-hillBounds.minZ)*z/hillGrid;
+ const bump=Math.sin(x/hillGrid*Math.PI)**4*Math.sin(z/hillGrid*Math.PI)**4;
+ hillPositions.push(xx,hillBase+bump*52,zz);hillColors.push(1,1,1,bump);
+ if(x<hillGrid&&z<hillGrid){const a=z*(hillGrid+1)+x,b=a+1,c=a+hillGrid+1,d=c+1;hillIndices.push(a,c,b,b,c,d);}
+}
+const hillGeometry=new THREE.BufferGeometry();hillGeometry.setAttribute('position',new THREE.Float32BufferAttribute(hillPositions,3));
+hillGeometry.setAttribute('color',new THREE.Float32BufferAttribute(hillColors,4));hillGeometry.setIndex(hillIndices);hillGeometry.computeVertexNormals();
+const hill=new THREE.Mesh(hillGeometry,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,depthWrite:true,alphaTest:.001}));
+hill.userData.museumComponent='murguduk-hill';hillRoot.add(hill);patchScene.updateMatrixWorld(true);
+const originalHillPositions=Array.from(hillGeometry.attributes.position.array),originalHillColors=Array.from(hillGeometry.attributes.color.array);
+const hillPatch=patchDistricts.addTerrainSurface(hill,'center');
+const hillFootprint=Array.from({length:32},(_,i)=>{
+ const angle=i*Math.PI/16,p=hill.localToWorld(new THREE.Vector3(180+220*Math.cos(angle),0,-190+200*Math.sin(angle)));
+ return {x:p.x,z:p.z};
+});
+const region=buildTerrainRelief({dem:{width:demWidth,height:demHeight,bounds:reliefBounds,metresPerUnit:.1,offsetMetres:0,values:demValues},
+ material:new THREE.MeshBasicMaterial(),step:48,transitionWidth:180,
+ protection:{polygons:[hillFootprint]}});
+patchScene.add(region.mesh);patchDistricts.addTerrainRelief(region);patchScene.updateMatrixWorld(true);
+const regionFill=region.mesh.children.find(m=>m.userData.museumComponent==='flank-relief-overlay'&&m.userData.flank==='center');
+const regionOverview=region.mesh.children.find(m=>m.userData.museumComponent==='overview-relief-overlay');
+const hillOverview=hill.children.find(m=>m.userData.museumComponent==='overview-relief-patch');
+assert.ok(hillOverview);assert.equal(patchDistricts.state().continuousTerrainPatches,1);
+assert.equal(hillPatch.geometry.index.count,hillGeometry.index.count,'The colour patch includes the full flat skirt, not only the opaque hill');
+assert.deepEqual(Array.from(hillGeometry.attributes.position.array),originalHillPositions,'Tint continuity does not change the hill shape');
+assert.deepEqual(Array.from(hillGeometry.attributes.color.array),originalHillColors,'The original soil retains its soft transparency');
+assert.ok(hillPatch.geometry.attributes.color.array.every(value=>value===1));
+assert.ok(!hillPatch.material.vertexShader.includes('vSurfaceOpacity'),'Hill colour never changes at the soil alpha cutoff');
+assert.strictEqual(hillOverview.geometry,hillPatch.geometry,'Overview and district reuse the same continuous patch');
+function patchMask(mesh,name='insideTerrainPatch0'){
+ const body=mesh.material.fragmentShader.match(new RegExp('bool '+name+'\\(vec2 p\\)\\{([\\s\\S]*?)return inside;\\}'))?.[1];
+ assert.ok(body,'The lower fill explicitly excludes the replacement patch');
+ return new Function('x','z',body.replace('bool inside=false;','let inside=false;').replaceAll('p.x','x').replaceAll('p.y','z')+'return inside;');
+}
+const rejectsPatch=patchMask(regionFill),rejectsOverviewPatch=patchMask(regionOverview),acceptsPatch=patchMask(hillPatch,'insideLocalTerrainPatch'),insideCenter=shaderContains(hillPatch);
+let patchCoverageProbes=0,patchEdgeProbes=0,raisedPatchRimProbes=0;
+for(let ix=0;ix<11;ix++)for(let iz=0;iz<11;iz++){
+ const x=hillBounds.minX-15+(hillBounds.maxX-hillBounds.minX+30)*ix/10,z=hillBounds.minZ-15+(hillBounds.maxZ-hillBounds.minZ+30)*iz/10;
+ const probe=hill.localToWorld(new THREE.Vector3(x,0,z));
+ const expected=x>hillBounds.minX&&x<hillBounds.maxX&&z>hillBounds.minZ&&z<hillBounds.maxZ;
+ assert.equal(rejectsPatch(probe.x,probe.z),expected,'The patch mask follows transformed off-centre bounds');
+ assert.equal(rejectsOverviewPatch(probe.x,probe.z),expected,'Overview excludes the identical patch');
+ assert.equal(acceptsPatch(probe.x,probe.z),rejectsPatch(probe.x,probe.z),'The replacement and underlying sheet use complementary clipping, even at their boundary');
+ if(!insideCenter(probe.x,probe.z))continue;
+ ray.set(new THREE.Vector3(probe.x,100,probe.z),down);
+ const patchHit=ray.intersectObject(hillPatch,false)[0],regionalHit=ray.intersectObject(regionFill,false)[0];
+ const coverage=Number(!!patchHit)+Number(!!regionalHit&&!rejectsPatch(probe.x,probe.z));
+ assert.equal(coverage,1,'Exactly one colour sheet covers each flat toe or raised hill probe');
+ if(patchHit)assert.ok(patchHit.point.y>region.heightAt(probe.x,probe.z)+.03,'Replacement tint stays above regional terrain in unprotected patch corners');
+ patchCoverageProbes++;
+}
+for(let i=0;i<hillGeometry.attributes.position.count;i++){
+ const x=i%(hillGrid+1),z=Math.floor(i/(hillGrid+1));if(x!==0&&x!==hillGrid&&z!==0&&z!==hillGrid)continue;
+ const v=new THREE.Vector3().fromBufferAttribute(hillPatch.geometry.attributes.position,i).applyMatrix4(hillPatch.matrixWorld);
+ const regionalHeight=region.heightAt(v.x,v.z);
+ assert.ok(Math.abs(v.y-Math.max(-2.55,regionalHeight+.08))<2e-5,'The patch rim follows the local regional surface, including raised corners');
+ if(regionalHeight>-.5)raisedPatchRimProbes++;
+ patchEdgeProbes++;
+}
+assert.ok(patchCoverageProbes>80&&patchEdgeProbes>700&&raisedPatchRimProbes>100,`The replacement is tested over substantial non-flat regional terrain: ${patchCoverageProbes} coverage, ${patchEdgeProbes} rim, ${raisedPatchRimProbes} raised rim`);
+patchDistricts.setOverviewOpacity(1);assert.ok(hillOverview.visible&&!hillPatch.visible);
+patchDistricts.setOpacity(1);assert.ok(!hillOverview.visible&&hillPatch.visible);
+assert.equal(hillPatch.material.uniforms.uOpacity.value,regionFill.material.uniforms.uOpacity.value,'The patch and surrounding district share identical tint strength');
+hillRoot.visible=false;patchDistricts.setOpacity(1);
+assert.equal(regionFill.material.uniforms.uTerrainPatchActive0.value,0,'Hiding Saturn restores the complete regional tint');
+assert.equal(regionOverview.material.uniforms.uTerrainPatchActive0.value,0,'Historic overview has no unpainted square before Saturn exists');
+hillRoot.visible=true;patchDistricts.setOpacity(1);
+assert.equal(regionFill.material.uniforms.uTerrainPatchActive0.value,1,'The complementary cutout follows Saturn when it reappears');
+console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false,reliefClipProbes,raisedOverlayProbes,flatDrapeProbes,drapedBoundaryVertices,physicalBoundaryProbes,reliefAttributesShared:true,overviewReliefVisibility:true,continuousReliefFill:true,patchCoverageProbes,patchEdgeProbes,raisedPatchRimProbes}));

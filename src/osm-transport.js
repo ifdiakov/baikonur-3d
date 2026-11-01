@@ -7,7 +7,7 @@ import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-hotel-v3';
 import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
-import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainHeight} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
 import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-facilities-rails-lighting-v2';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS,highwayRunsOutsideBridge} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
@@ -233,11 +233,15 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  function terrainAt(x,z){
   if(!saturnCenter)return -Infinity;
   const localX=(x-saturnCenter.x)/SATURN_ACCESS.scale,localZ=(z-saturnCenter.z)/SATURN_ACCESS.scale;
-  return Math.abs(localX)<480&&Math.abs(localZ)<510?SATURN_ACCESS.elevation+SATURN_ACCESS.scale*saturnTerrainHeight(localX,localZ):-Infinity;
+  const b=SATURN_TERRAIN_BOUNDS;
+  return localX>=b.minX&&localX<=b.maxX&&localZ>=b.minZ&&localZ<=b.maxZ?SATURN_ACCESS.elevation+SATURN_ACCESS.scale*saturnTerrainHeight(localX,localZ):-Infinity;
  }
  function terrainDatum(p,width){
-  if(!saturnCenter||Math.abs(p.x-saturnCenter.x)>250||Math.abs(p.z-saturnCenter.z)>270)return p.y;
-  const r=width/2+ROAD_STYLE.shoulderExtra/2;let top=terrainAt(p.x,p.z);
+  if(!saturnCenter)return p.y;
+  const r=width/2+ROAD_STYLE.shoulderExtra/2,b=SATURN_TERRAIN_BOUNDS,s=SATURN_ACCESS.scale;
+  if(p.x+r<saturnCenter.x+b.minX*s||p.x-r>saturnCenter.x+b.maxX*s||
+     p.z+r<saturnCenter.z+b.minZ*s||p.z-r>saturnCenter.z+b.maxZ*s)return p.y;
+  let top=terrainAt(p.x,p.z);
   for(let i=0;i<8;i++){const a=i*Math.PI/4;top=Math.max(top,terrainAt(p.x+r*Math.cos(a),p.z+r*Math.sin(a)));}
   return Math.max(p.y,top+.38);
  }

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {buildTerrainRelief} from './terrain-relief.js?v=20261101-natural-relief-v2';
 import {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v7';
+import {saturnTerrainFootprint} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 
 const xz=p=>({x:p.x,z:p.z});
 
@@ -34,10 +35,15 @@ export function collectTerrainProtection({objects,transport,riverWater,riverCore
   const root=object.geometryRoot||object.g;if(!root)continue;
   root.updateWorldMatrix(true,true);root.getWorldPosition(position);
   const margin=object.isStation?12:object.g.userData.airport?20:22;
-  box.setFromObject(root);
-  if(!box.isEmpty()){
-   protection.rectangles.push({minX:box.min.x-margin,maxX:box.max.x+margin,minZ:box.min.z-margin,maxZ:box.max.z+margin});
-  }else protection.circles.push({x:position.x,z:position.z,radius:margin});
+  if(object.record.id==='pad-23'){
+   // The transparent mesh skirt is deliberately larger than the real hill.
+   // Protect its organic footprint, not the rectangular rendering patch.
+   protection.polygons.push(saturnTerrainFootprint().map(p=>xz(root.localToWorld(new THREE.Vector3(p.x,0,p.z)))));
+  }else{
+   box.setFromObject(root);
+   if(!box.isEmpty())protection.rectangles.push({minX:box.min.x-margin,maxX:box.max.x+margin,minZ:box.min.z-margin,maxZ:box.max.z+margin});
+   else protection.circles.push({x:position.x,z:position.z,radius:margin});
+  }
   protectedSites.push({id:object.record.id,x:position.x,z:position.z});
   if(object.g.userData.airport){
    // The final approach and climb-out remain clear of the raised steppe.

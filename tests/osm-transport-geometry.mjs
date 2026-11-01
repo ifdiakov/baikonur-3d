@@ -6,7 +6,7 @@ import {buildOsmTransportNetwork,buildOsmGraph} from '../src/osm-transport.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from '../src/cyclone-profile.js';
-import {SATURN_ACCESS,saturnTerrainHeight,saturnTerrainSample} from '../src/saturn-access.js';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainHeight,saturnTerrainSample} from '../src/saturn-access.js';
 
 const read=name=>JSON.parse(fs.readFileSync(new URL('../'+name,import.meta.url),'utf8'));
 const catalog=read('data/catalog.json'),matches=read('data/osm/catalog-matches.json');
@@ -88,7 +88,9 @@ layers.roads.traverse(m=>{
   for(let x=Math.floor(Math.min(...triangle.map(v=>v.x))/surfaceCell);x<=Math.floor(Math.max(...triangle.map(v=>v.x))/surfaceCell);x++)for(let z=Math.floor(Math.min(...triangle.map(v=>v.z))/surfaceCell);z<=Math.floor(Math.max(...triangle.map(v=>v.z))/surfaceCell);z++){
    const key=x+':'+z;if(!surfaceCells.has(key))surfaceCells.set(key,[]);surfaceCells.get(key).push(triangle);
   }
-  for(const v of [...triangle,triangle[0].clone().add(triangle[1]).add(triangle[2]).multiplyScalar(1/3)])if(Math.abs(v.x-saturnCenter.x)<240&&Math.abs(v.z-saturnCenter.z)<250){
+  for(const v of [...triangle,triangle[0].clone().add(triangle[1]).add(triangle[2]).multiplyScalar(1/3)])if(
+    v.x>=saturnCenter.x+SATURN_TERRAIN_BOUNDS.minX*SATURN_ACCESS.scale&&v.x<=saturnCenter.x+SATURN_TERRAIN_BOUNDS.maxX*SATURN_ACCESS.scale&&
+    v.z>=saturnCenter.z+SATURN_TERRAIN_BOUNDS.minZ*SATURN_ACCESS.scale&&v.z<=saturnCenter.z+SATURN_TERRAIN_BOUNDS.maxZ*SATURN_ACCESS.scale){
    const height=SATURN_ACCESS.elevation+SATURN_ACCESS.scale*saturnTerrainHeight((v.x-saturnCenter.x)/SATURN_ACCESS.scale,(v.z-saturnCenter.z)/SATURN_ACCESS.scale);
    minTerrainClearance=Math.min(minTerrainClearance,v.y-height);terrainSamples++;
   }

@@ -34,6 +34,7 @@ export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const root=new THREE.Group();root.name='Фланги · тематические территории';scene.add(root);
  const overviewRoot=new THREE.Group();overviewRoot.name='Космодром · общий контур';scene.add(overviewRoot);
  const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[],overviewReliefSurfaces=[],boundaryMeshes=[];
+ const terrainPatches=[],regionalFills=[];
  const mapped=new Map();
  const geographicBoundary=FLANK_COORDINATE_SYSTEM==='osm-map';
  const transform=p=>{if(geographicBoundary||!mapTransform)return p;const key=p.join(',');if(!mapped.has(key))mapped.set(key,mapTransform(...p));return mapped.get(key);};
@@ -41,16 +42,18 @@ export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const borders=FLANK_BORDERS.map(p=>p.map(transform));
  const outline=FLANK_OUTLINE.map(transform);
  const outerFragments=FLANK_PERIMETER.map(p=>({...p,points:p.points.map(transform)}));
+ function polygonPredicate(name,polygon){
+  const f=n=>Number(n).toFixed(6);let shader=`bool ${name}(vec2 p){bool inside=false;`;
+  polygon.forEach((a,j)=>{const b=polygon[(j+1)%polygon.length];if(Math.abs(b[1]-a[1])<1e-9)return;
+   shader+=`if(p.y>${f(Math.min(a[1],b[1]))}&&p.y<=${f(Math.max(a[1],b[1]))}&&p.x<${f(a[0])}+(p.y-(${f(a[1])}))*${f((b[0]-a[0])/(b[1]-a[1]))})inside=!inside;`;
+  });return shader+'return inside;}';
+ }
  // Self-lit map graphics must retain their color when the evening scene tints
  // ordinary MeshBasicMaterials. Log-depth chunks match the museum renderer.
  function ink(color,strength,additive=false,surfaceAlpha=false,clipPolygon=null,collection=materials){
   let clipFunction='';
   if(clipPolygon){
-   const outline=clipPolygon.map(p=>{const v=point(...p);return [v.x,v.z];}),f=n=>Number(n).toFixed(6);
-   clipFunction='bool insideFlank(vec2 p){bool inside=false;';
-   outline.forEach((a,j)=>{const b=outline[(j+1)%outline.length];if(Math.abs(b[1]-a[1])<1e-9)return;
-    clipFunction+=`if(p.y>${f(Math.min(a[1],b[1]))}&&p.y<=${f(Math.max(a[1],b[1]))}&&p.x<${f(a[0])}+(p.y-(${f(a[1])}))*${f((b[0]-a[0])/(b[1]-a[1]))})inside=!inside;`;
-   });clipFunction+='return inside;}';
+   clipFunction=polygonPredicate('insideFlank',clipPolygon.map(p=>{const v=point(...p);return [v.x,v.z];}));
   }
   const mat=new THREE.ShaderMaterial({
    uniforms:{uColor:{value:new THREE.Color(color)},uOpacity:{value:0}},
@@ -131,7 +134,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
  const overviewLineGeometry=new THREE.BufferGeometry();overviewLineGeometry.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));overviewLineGeometry.setIndex(indices);overviewLineGeometry.computeVertexNormals();
  const overviewBoundary=new THREE.Mesh(overviewLineGeometry,overviewBoundaryMaterial);overviewBoundary.name='Космодром · единая обзорная граница';overviewBoundary.renderOrder=5;
  overviewBoundary.userData={pickable:false,museumComponent:'cosmodrome-overview-boundary',continuous:true};overviewRoot.add(overviewBoundary);
- let alpha=0,overviewAlpha=0,overviewRequestedAlpha=0,continuousReliefFill=false;
+ let alpha=0,overviewAlpha=0,overviewRequestedAlpha=0,continuousReliefFill=false,regionalTerrain=null;
  // A flat map polygon sits below relief. Drape the same district colour over
  // the actual hill mesh, retaining its feathered footprint and depth shading.
  function liftedGeometry(source){
@@ -147,6 +150,71 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   }
   geometry.computeBoundingBox();geometry.computeBoundingSphere();
   return geometry;
+ }
+ const flatFillHeight=()=>Math.max(zones[0].getWorldPosition(new THREE.Vector3()).y,overviewFill.getWorldPosition(new THREE.Vector3()).y);
+ // Saturn is a much denser mesh than the regional grid. Replace the tint
+ // below its full, flat-edged square with one equally coloured hill sheet.
+ // Feathering the colour by soil alpha would paint a halo around the toe.
+ function continuousHillGeometry(source){
+  const geometry=source.geometry.clone(),position=geometry.attributes.position;
+  source.updateWorldMatrix(true,false);
+  const inverse=source.matrixWorld.clone().invert(),vertex=new THREE.Vector3(),floor=flatFillHeight();
+  for(let i=0;i<position.count;i++){
+   vertex.fromBufferAttribute(source.geometry.attributes.position,i).applyMatrix4(source.matrixWorld);
+   vertex.y=Math.max(floor,vertex.y+.08);
+   vertex.applyMatrix4(inverse);position.setXYZ(i,vertex.x,vertex.y,vertex.z);
+  }
+  const colors=new Float32Array(position.count*4);colors.fill(1);geometry.setAttribute('color',new THREE.BufferAttribute(colors,4));
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  source.geometry.computeBoundingBox();const b=source.geometry.boundingBox;
+  const footprint=[[b.min.x,b.min.z],[b.max.x,b.min.z],[b.max.x,b.max.z],[b.min.x,b.max.z]].map(([x,z])=>{
+   const p=new THREE.Vector3(x,0,z).applyMatrix4(source.matrixWorld);return [p.x,p.z];
+  });
+  return {geometry,footprint};
+ }
+ function applyTerrainPatchMask(material,key){
+  const patches=terrainPatches.filter(patch=>key==='overview'||patch.key===key);if(!patches.length)return;
+  const saved=material.userData.terrainPatchShader??={vertex:material.vertexShader,fragment:material.fragmentShader};
+  let vertex=saved.vertex,fragment=saved.fragment;
+  if(!vertex.includes('varying vec2 vFlankWorld;'))vertex=vertex
+   .replace('#include <common>','#include <common>\nvarying vec2 vFlankWorld;')
+   .replace('void main(){','void main(){vFlankWorld=(modelMatrix*vec4(position,1.)).xz;');
+  if(!fragment.includes('varying vec2 vFlankWorld;'))fragment='varying vec2 vFlankWorld;\n'+fragment;
+  const predicates=patches.map((patch,i)=>{
+   material.uniforms['uTerrainPatchActive'+i]=patch.enabled;
+   return `uniform float uTerrainPatchActive${i};`+polygonPredicate('insideTerrainPatch'+i,patch.footprint);
+  }).join('\n');
+  const rejects=patches.map((_,i)=>`if(uTerrainPatchActive${i}>.5&&insideTerrainPatch${i}(vFlankWorld))discard;`).join('');
+  material.vertexShader=vertex;material.fragmentShader=fragment.replace('void main(){',predicates+'\nvoid main(){'+rejects);
+  material.needsUpdate=true;
+ }
+ function clipTerrainPatch(material,footprint){
+  material.fragmentShader=material.fragmentShader.replace('void main(){',
+   polygonPredicate('insideLocalTerrainPatch',footprint)+'\nvoid main(){if(!insideLocalTerrainPatch(vFlankWorld))discard;');
+  material.needsUpdate=true;
+ }
+ function adaptTerrainPatch(patch,terrain){
+  const source=patch.source,original=source.geometry.attributes.position,position=patch.geometry.attributes.position;
+  source.updateWorldMatrix(true,false);
+  const inverse=source.matrixWorld.clone().invert(),vertex=new THREE.Vector3(),floor=flatFillHeight();
+  for(let i=0;i<position.count;i++){
+   vertex.fromBufferAttribute(original,i).applyMatrix4(source.matrixWorld);
+   vertex.y=Math.max(floor,vertex.y+.08,terrain.heightAt(vertex.x,vertex.z)+.08);
+   vertex.applyMatrix4(inverse);position.setXYZ(i,vertex.x,vertex.y,vertex.z);
+  }
+  position.needsUpdate=true;patch.geometry.computeBoundingBox();patch.geometry.computeBoundingSphere();
+ }
+ function registerTerrainPatch(source,key,patch){
+  const record={...patch,key,source,enabled:{value:1}};terrainPatches.push(record);
+  if(regionalTerrain)adaptTerrainPatch(record,regionalTerrain);
+  const overview=new THREE.Mesh(patch.geometry,ink(0xa8bcc1,.025,false,false,outline,overviewMaterials));
+  overview.name='Космодром · непрерывная заливка холма Сатурна';overview.renderOrder=4;
+  overview.userData={pickable:false,groundSurface:false,museumComponent:'overview-relief-patch',clipToDistrict:true};
+  clipTerrainPatch(overview.material,patch.footprint);
+  source.add(overview);overviewReliefSurfaces.push(overview);
+  for(let i=0;i<zones.length;i++)applyTerrainPatchMask(zones[i].material,FLANK_DISTRICTS[i].key);
+  applyTerrainPatchMask(overviewFill.material,'overview');
+  for(const fill of regionalFills)applyTerrainPatchMask(fill.material,fill.key);
  }
  // Regional tint is one continuous sheet, including engineered flat areas.
  // Reusing the soil's sparse triangles and feathered alpha would switch from
@@ -164,7 +232,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   geometry.setAttribute('color',new THREE.BufferAttribute(colors,4));
   source.updateWorldMatrix(true,false);
   const inverse=source.matrixWorld.clone().invert(),vertex=new THREE.Vector3();
-  const flatHeight=Math.max(zones[0].getWorldPosition(new THREE.Vector3()).y,overviewFill.getWorldPosition(new THREE.Vector3()).y);
+  const flatHeight=flatFillHeight();
   for(let i=0;i<position.count;i++){
    vertex.fromBufferAttribute(positions,i).applyMatrix4(source.matrixWorld);
    vertex.y=Math.max(flatHeight,vertex.y+.08);
@@ -211,23 +279,28 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   const district=FLANK_DISTRICTS.find(d=>d.key===key);
   if(!district||!source?.isMesh)throw new Error('A terrain mesh and known flank are required');
   const clipPolygon=polygons[FLANK_DISTRICTS.indexOf(district)];
-  const geometry=sharedGeometry?boundedGeometry(sharedGeometry,clipPolygon,source):liftedGeometry(source);
-  const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,!sharedGeometry,clipPolygon));
+  const patch=!sharedGeometry&&source.userData.museumComponent==='murguduk-hill'?continuousHillGeometry(source):null;
+  const geometry=sharedGeometry?boundedGeometry(sharedGeometry,clipPolygon,source):patch?.geometry??liftedGeometry(source);
+  const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,!sharedGeometry&&!patch,clipPolygon));
   overlay.name='Цвет фланга на рельефе · '+key;overlay.renderOrder=4;
   overlay.userData={pickable:false,groundSurface:false,museumComponent:'flank-relief-overlay',flank:key,clipToDistrict:true};
   overlay.visible=alpha>.035;source.add(overlay);reliefSurfaces.push(overlay);
   overlay.material.uniforms.uOpacity.value=alpha*.19;
+  if(sharedGeometry){regionalFills.push({material:overlay.material,key});applyTerrainPatchMask(overlay.material,key);}
+  if(patch){overlay.userData.continuousTintPatch=true;clipTerrainPatch(overlay.material,patch.footprint);registerTerrainPatch(source,key,patch);syncOpacity();}
   return overlay;
  }
  function addTerrainRelief(terrain){
   const {mesh:source,heightAt}=terrain,geometry=continuousReliefGeometry(terrain);
+  regionalTerrain=terrain;for(const patch of terrainPatches)adaptTerrainPatch(patch,terrain);
   for(const district of FLANK_DISTRICTS)addTerrainSurface(source,district.key,geometry);
   const overlay=new THREE.Mesh(boundedGeometry(geometry,outline,source),ink(0xa8bcc1,.025,false,false,outline,overviewMaterials));
   overlay.name='Космодром · обзорная заливка на рельефе';overlay.renderOrder=4;
   overlay.userData={pickable:false,museumComponent:'overview-relief-overlay',clipToDistrict:true};
   source.add(overlay);overviewReliefSurfaces.push(overlay);
+  regionalFills.push({material:overlay.material,key:'overview'});applyTerrainPatchMask(overlay.material,'overview');
   // Each place receives exactly one tint. The original flat fills remain a
-  // fallback for scenes without regional relief; Saturn keeps its own drape.
+  // fallback for scenes without regional relief; Saturn replaces its footprint.
   for(const zone of zones)zone.visible=false;
   overviewFill.visible=false;continuousReliefFill=true;
   // Refine each side of the continuous mitered ring before draping it.
@@ -257,6 +330,12 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   syncOpacity();
  }
  function syncOpacity(){
+  // The time machine can hide Saturn before its construction. Restore the
+  // underlying regional tint whenever its replacement source is not visible.
+  for(const patch of terrainPatches){
+   let visible=true;for(let node=patch.source;node;node=node.parent)if(!node.visible){visible=false;break;}
+   patch.enabled.value=visible?1:0;
+  }
   root.visible=alpha>.035;
   // The overview perimeter never stacks on the bright district perimeter.
   // The camera LOD fades overview out before bringing the districts in.
@@ -279,5 +358,6 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   reliefCount:reliefSurfaces.length,reliefFlanks:reliefSurfaces.map(m=>m.userData.flank),visibleReliefSurfaces:reliefSurfaces.filter(m=>m.visible&&m.parent.visible).length,
   overviewReliefCount:overviewReliefSurfaces.length,terrainDraped:overviewBoundary.userData.terrainDraped===true,
   continuousReliefFill,flatFillMeshesVisible:root.visible?zones.filter(mesh=>mesh.visible).length:0,
+  continuousTerrainPatches:terrainPatches.length,
   thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
 }

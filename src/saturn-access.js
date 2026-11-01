@@ -3,48 +3,91 @@ import * as THREE from 'three';
 // Museum coordinates: east = +X, north = -Z. Dimensions are illustrative.
 // The entry corner was identified by RocketTrip, not inferred from a map.
 export const SATURN_ACCESS = Object.freeze({
-  revision: 'northwest-natural-hill20-v4', routeId: 'r-site23-saturn-access',
+  revision: 'northwest-asymmetric-hill20-v5', routeId: 'r-site23-saturn-access',
   scale: .525, elevation: 17.45, verticalRaise: 20,
   gate: Object.freeze({x: -96, y: 7.59, z: -79}),
   internalJoin: Object.freeze({x: -92, y: 7.59, z: -29})
 });
+export const SATURN_TERRAIN_BOUNDS=Object.freeze({minX:-280,maxX:640,minZ:-650,maxZ:270});
+export const SATURN_TERRAIN_SEGMENTS=184;
+const terrainBase=-SATURN_ACCESS.verticalRaise/SATURN_ACCESS.scale-.22;
 const smooth = (a,b,v) => {
   const t=Math.max(0,Math.min(1,(v-a)/(b-a)));
-  return t*t*(3-2*t);
+  return t*t*t*(t*(t*6-15)+10);
 };
 
+// The north/east shoulders have room to spread, whereas the western primary
+// road and southeastern trunk need a compact foot. An inverse-power blend of
+// the radial limits rounds their joins while staying inside both road limits.
+export function saturnTerrainOuterRadius(angle){
+  const cos=Math.cos(angle),sin=Math.sin(angle);
+  const ellipse=1/Math.hypot(cos/600,sin/560);
+  const west=Math.max(0,-cos)/250,southeast=Math.max(0,.297*cos+.955*sin)/198;
+  return (ellipse**-8+west**8+southeast**8)**(-1/8);
+}
+
+export function saturnTerrainFootprint(segments=128){
+  if(!Number.isInteger(segments)||segments<12||segments>4096)throw new Error('Saturn footprint needs 12–4096 samples');
+  return Array.from({length:segments},(_,i)=>{
+    const angle=i*Math.PI*2/segments,radius=saturnTerrainOuterRadius(angle);
+    return {x:Math.cos(angle)*radius,z:Math.sin(angle)*radius};
+  });
+}
+
 export function saturnTerrainSample(x,z) {
-  // Keep the proven compact outer boundary clear of primary/trunk roads.
-  // Only the interior profile changes: a smaller irregular summit gives the
-  // slopes more room without spreading the hill toward either arterial.
+  // The original level yard remains inside the same summit envelope. Only
+  // its slopes and the broad, asymmetric transition into the steppe change.
   const angle=Math.atan2(z,x);
-  const outline=1+.045*Math.sin(3*angle+.45)+.025*Math.cos(5*angle-.8);
   const cos=Math.cos(angle),sin=Math.sin(angle);
   // This rounded footprint still encloses the whole fence (-104..104,
   // -79..75), the northwest gate and every fixed building/light base. It
   // avoids the oversized, perfectly elliptical flat table of the old hill.
   const summit=1+.012*Math.sin(2*angle+.6)+.008*Math.sin(3*angle-1.1);
   const inner=summit/Math.pow((Math.abs(cos)/126)**4+(Math.abs(sin)/100)**4,.25);
-  const outer=outline/Math.hypot(cos/235,sin/190);
+  const outer=saturnTerrainOuterRadius(angle);
   const t=THREE.MathUtils.clamp((Math.hypot(x,z)-inner)/(outer-inner),0,1);
   // Broad uneven shoulders lead into a longer, zero-curvature foot. The
   // integrated cosine ramps have no sharp shoulder/rim, and their maximum
   // fall is gentler than a narrow smoothstep ring around a large plateau.
-  const warped=t+(.04*Math.sin(2*angle+.4)+.02*Math.sin(5*angle-1))*t*(1-t);
-  const shoulder=.18,foot=.35,area=1-(shoulder+foot)/2;
+  const warped=t+(.035*Math.sin(2*angle+.4)+.015*Math.sin(3*angle-1))*t*(1-t);
+  const shoulder=.10,foot=.22,area=1-(shoulder+foot)/2;
   const ramp=(v,width)=>(v-width/Math.PI*Math.sin(Math.PI*v/width))/2;
   const drop=warped<shoulder?ramp(warped,shoulder):
     warped>1-foot?area-ramp(1-warped,foot):warped-shoulder/2;
   const fade=1-drop/area;
-  const base=-SATURN_ACCESS.verticalRaise/SATURN_ACCESS.scale-.22;
   // Low, non-concentric undulations vanish smoothly at both the summit and
   // outer edge. They do not alter the approved 20-unit lift or level yard.
-  const relief=(Math.sin(x*.023+z*.011)+.55*Math.sin(x*.013-z*.031))*.8*Math.sin(Math.PI*t)**4;
+  const relief=(Math.sin(x*.013+z*.008)+.55*Math.sin(x*.009-z*.018))*.6*Math.sin(Math.PI*t)**4;
   // Retain level ground beneath the antennas, buildings and northwest gate.
-  const height=base+(7.25-base)*fade+relief;
-  return {height,opacity:1-smooth(.60,1,t)};
+  const height=terrainBase+(7.25-terrainBase)*fade+relief;
+  // A tall translucent slope revealed the underlying flat tint as a false
+  // contour. Blend only the very bottom of the physical foot instead.
+  return {height,opacity:smooth(0,.6,height-terrainBase)};
 }
 export const saturnTerrainHeight=(x,z)=>saturnTerrainSample(x,z).height;
+
+let meshHeights;
+function terrainMeshHeights(){
+  if(meshHeights)return meshHeights;
+  const {minX,maxX,minZ,maxZ}=SATURN_TERRAIN_BOUNDS,N=SATURN_TERRAIN_SEGMENTS,stride=N+1;
+  const stepX=(maxX-minX)/N,stepZ=(maxZ-minZ)/N;
+  meshHeights=new Float32Array(stride*stride);
+  for(let z=0;z<=N;z++)for(let x=0;x<=N;x++)meshHeights[z*stride+x]=saturnTerrainHeight(minX+x*stepX,minZ+z*stepZ);
+  return meshHeights;
+}
+
+// Use the same Float32 heights and the same cell diagonal as groundPatch().
+// Camera and road clearance must follow triangles, not a bilinear surface.
+export function saturnTerrainMeshHeight(x,z){
+  const {minX,maxX,minZ,maxZ}=SATURN_TERRAIN_BOUNDS,N=SATURN_TERRAIN_SEGMENTS;
+  if(!Number.isFinite(x)||!Number.isFinite(z)||x<minX||x>maxX||z<minZ||z>maxZ)return terrainBase;
+  const stepX=(maxX-minX)/N,stepZ=(maxZ-minZ)/N;
+  const ix=Math.min(N-1,Math.floor((x-minX)/stepX)),iz=Math.min(N-1,Math.floor((z-minZ)/stepZ));
+  const u=THREE.MathUtils.clamp((x-minX-ix*stepX)/stepX,0,1),v=THREE.MathUtils.clamp((z-minZ-iz*stepZ)/stepZ,0,1);
+  const heights=terrainMeshHeights(),stride=N+1,a=iz*stride+ix,b=a+1,c=a+stride,d=c+1;
+  return u+v<=1?heights[a]*(1-u-v)+heights[b]*u+heights[c]*v:
+    heights[b]*(1-v)+heights[c]*(1-u)+heights[d]*(u+v-1);
+}
 
 function curve(points) {
   return new THREE.CatmullRomCurve3(points,false,'centripetal',.3);

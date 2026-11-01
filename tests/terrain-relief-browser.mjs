@@ -154,6 +154,36 @@ try{
  for(const p of protectedProbes)assert(p.offset<1e-6,`Relief must stay below the existing ${p.kind} ${p.id}: ${p.offset}`);
  evidence.protectedProbes=protectedProbes;
 
+ // Saturn has a separate high-resolution hill. Its tint patch must join the
+ // regional tint across both flat and raised ground, and free navigation
+ // must respect this second physical surface as well as the regional DEM.
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.inspectSaturnHill();});
+ await shot('saturn-hill-day');
+ await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));
+ await shot('saturn-hill-evening');
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.setLabelsVisible(true);q.inspectSaturnHill('flanks');});
+ const cardStyle=await page.addStyleTag({content:'.flank-label,.flank-portrait-credits{visibility:hidden!important}'});
+ try{await shot('saturn-flanks-day');}finally{await cardStyle.evaluate(el=>el.remove());}
+ const saturnFlanks=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
+ assert(saturnFlanks.alpha>.9&&saturnFlanks.continuousTerrainPatches===1,'The visible flank has one continuous Saturn replacement patch');
+ const saturnAttempt=await page.evaluate(()=>window.__BAIKONUR_QA.inspectSaturnHill('clearance'));
+ const saturnClearance=async()=>page.evaluate(async()=>{
+  const q=window.__BAIKONUR_QA,camera=q.cameraState(),site=q.siteState('pad-23');
+  const {saturnTerrainMeshHeight}=await import('./src/saturn-access.js?v=20261101-saturn-terrain-v5');
+  const x=(camera.position[0]-site.position[0])/site.scale[0],z=(camera.position[2]-site.position[2])/site.scale[2];
+  return {camera,expectedHeight:site.position[1]+site.scale[1]*saturnTerrainMeshHeight(x,z),regionalHeight:q.terrainRelief.heightAt(camera.position[0],camera.position[2])};
+ });
+ const saturnBefore=await saturnClearance();
+ assert(saturnBefore.expectedHeight>saturnBefore.regionalHeight+5,'The camera probe is on the real Saturn shoulder, above the flat regional exclusion');
+ near(saturnBefore.camera.terrainHeight,saturnBefore.expectedHeight,1e-6,'Camera clearance samples Saturn triangles');
+ near(saturnBefore.camera.terrainClearance,saturnAttempt.minimumClearance,1e-5,'The camera is lifted out of the Saturn hill');
+ await page.keyboard.down('a');await page.waitForTimeout(80);await step();await page.keyboard.up('a');
+ const saturnAfter=await saturnClearance();
+ assert(Math.hypot(saturnAfter.camera.position[0]-saturnBefore.camera.position[0],saturnAfter.camera.position[2]-saturnBefore.camera.position[2])>.1,'Keyboard navigation moves across the separate hill');
+ near(saturnAfter.camera.terrainHeight,saturnAfter.expectedHeight,1e-6,'Moving camera retains the physical Saturn height');
+ assert(saturnAfter.camera.terrainClearance>=saturnAttempt.minimumClearance-1e-6);
+ evidence.saturn={flanks:saturnFlanks,attempt:saturnAttempt,before:saturnBefore,after:saturnAfter};
+
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.setLabelsVisible(false);q.inspectTerrainRelief('ridge');});
  const ridge=await shot('ridge-day');
  assert(elevation(ridge.camera)>=29.99&&elevation(ridge.camera)<70);

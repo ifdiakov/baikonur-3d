@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createSurfacePalette} from './surface-materials.js?v=20261031-facilities-rails-lighting-v1';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {SATURN_ACCESS,saturnTerrainSample} from './saturn-access.js?v=20261030-river-roads-signs-v1';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 export const SATURN_MODEL_VERSION='saturn-photo-20261101-v2';
 // Two P-200 installations, the spherical radome and the service antenna field.
 // Eight new owner-supplied photographs, including two aerial/archival views.
@@ -33,9 +33,10 @@ export function buildSaturnIP5(root,terrain={}){
  function rectangularRail(x,y,z,w,d,parent=root){rail([x-w/2,y,z-d/2],[x+w/2,y,z-d/2],1.05,parent);rail([x-w/2,y,z+d/2],[x+w/2,y,z+d/2],1.05,parent);rail([x-w/2,y,z-d/2],[x-w/2,y,z+d/2],1.05,parent);rail([x+w/2,y,z-d/2],[x+w/2,y,z+d/2],1.05,parent);}
   function groundPatch(){
     // A low, broad hill uses the same height field as its graded access road.
-    const N=128,extent=600,vertices=[],colors=[],uv=[],indices=[];
+    const N=SATURN_TERRAIN_SEGMENTS,{minX,maxX,minZ,maxZ}=SATURN_TERRAIN_BOUNDS;
+    const stepX=(maxX-minX)/N,stepZ=(maxZ-minZ)/N,vertices=[],colors=[],uv=[],indices=[];
     for(let z=0;z<=N;z++)for(let x=0;x<=N;x++){
-      const xx=(x/N-.5)*extent,zz=(z/N-.5)*extent;
+      const xx=minX+x*stepX,zz=minZ+z*stepZ;
       const {height,opacity}=saturnTerrainSample(xx,zz);
       vertices.push(xx,height,zz);
       const world=root.localToWorld(new THREE.Vector3(xx,0,zz));
@@ -72,7 +73,7 @@ export function buildSaturnIP5(root,terrain={}){
     hill.renderOrder=3;
     hill.userData.terrainElevationWorld=SATURN_ACCESS.verticalRaise;
     hill.userData.surfaceStyle='shared-steppe-world-uv';
-    hill.userData.reliefStyle='soft-irregular-steppe-v2';
+    hill.userData.reliefStyle='soft-irregular-steppe-v3';
   }
   groundPatch();
 
