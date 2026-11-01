@@ -141,8 +141,8 @@ const yandexControl=await page.evaluate(()=>document.querySelector('#ui #satelli
 assert.equal(yandexControl,null,'Yandex external link must be removed from the museum sidebar');
 const terrainInfo=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
-assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v4','Museum must load the unified v4 earth textures');
-assert.equal(terrainInfo.outerTerrain.edition,4,'Shared-coordinate terrain generator must be active');
+assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v5','Museum must load the unified v5 earth textures');
+assert.equal(terrainInfo.outerTerrain.edition,5,'Shared-coordinate terrain generator must be active');
 assert.equal(terrainInfo.outerTerrain.continuousWorldCoordinates,true,'Near/far terrain must sample shared coordinates');
 assert.deepEqual(terrainInfo.outerTerrain.textureResolutions,[512,768],'Two world-scale texture bands must be present');
 assert.ok(terrainInfo.outerTerrain.mediumExtent>17000,'Intermediate terrain must cover territory beyond site map');

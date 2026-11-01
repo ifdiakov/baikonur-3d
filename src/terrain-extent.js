@@ -5,7 +5,7 @@ import * as THREE from 'three';
 export const LARGE_TERRAIN_SEGMENTS=16;
 
 /**
- * BAIKONUR STEPPES / terrain v4
+ * BAIKONUR STEPPES / terrain v5
  *
  * A deterministic, coordinate-continuous multi-scale earth material shared by
  * the wide and intermediate surfaces. This is a museum reconstruction; no
@@ -15,56 +15,9 @@ export const LARGE_TERRAIN_SEGMENTS=16;
  * alluvial deposits and dry, sinuous wash traces. Far and mid maps sample
  * the SAME world-coordinate terrain function, so transitions have no seams.
  */
-const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
-const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t)};
-const lerp=(a,b,t)=>a+(b-a)*t;
-function hash(ix,iy,salt){
-  let h=Math.imul(ix|0,374761393)^Math.imul(iy|0,668265263)^Math.imul(salt|0,1442695041);
-  h=Math.imul(h^(h>>>13),1274126177);
-  return((h^(h>>>16))>>>0)/4294967295;
-}
-function noise(x,z,cell,salt){
-  const u=x/cell,v=z/cell,ix=Math.floor(u),iz=Math.floor(v),
-    fx=smooth(0,1,u-ix),fz=smooth(0,1,v-iz);
-  return lerp(lerp(hash(ix,iz,salt),hash(ix+1,iz,salt),fx),
-              lerp(hash(ix,iz+1,salt),hash(ix+1,iz+1,salt),fx),fz);
-}
-
-/** Return an SRGB earth color, in 0–255 channels, at *world* map X/Z.
- * High-frequency contributions can be disabled for the very distant texture
- * to avoid moiré and keep it temporally stable during camera movements.
- */
-export function sampleSteppe(x,z,detail=1){
-  // Regional patterns measured in illustrative world units.
-  const lithic=noise(x,z,10800,7),
-        macro=noise(x,z,5300,11),
-        fans=noise(x,z,2410,13),
-        fineClay=noise(x,z,930,17),
-        lichen=noise(x,z,345,23),
-        grain=detail>0?noise(x,z,95,29):.5,
-        grit=detail>1?noise(x,z,26,31):.5;
-  const relief=(lithic-.5)*32+(macro-.5)*35+(fans-.5)*24+(fineClay-.5)*13;
-  const micros=(lichen-.5)*11+(grain-.5)*(detail>0?12:0)+(grit-.5)*(detail>1?7:0);
-  // Irregular salt-pan margins; pastel pale deposits, no white circles.
-  const saltSignal=macro*.24+fans*.50+fineClay*.26;
-  const salt=smooth(.51,.70,saltSignal)*(14+lichen*38);
-  const panDry=smooth(.46,.66,macro*.56+fans*.44)*smooth(.53,.76,lichen);
-  // Dark laminated pebble fields and stony hills interrupt the light loess.
-  const stone=smooth(.51,.74,fans*.48+macro*.32+fineClay*.20)*(9+grain*17);
-  // Nonperiodic erosion is represented by irregular low-contrast clay patches,
-  // not sinusoidal channels, wash bands or wave-like ridges.
-  const dryClay=noise(x,z,680,41)*.52+noise(x,z,225,43)*.31+noise(x,z,95,47)*.17;
-  const weathered=smooth(.62,.83,dryClay)*10;
-  const transition=smooth(.30,.58,dryClay)*5;
-  const loess=panDry*8;
-  const rr=171+relief+micros+salt+loess-stone*1.15-weathered+transition;
-  const gg=156+relief*.88+micros*.87+salt*.95+loess*.82-stone*1.25-weathered*.92+transition*.87;
-  const bb=132+relief*.69+micros*.69+salt*.86+loess*.67-stone*1.02-weathered*.81+transition*.68;
-  return [
-    clamp(Math.round(rr),0,255),clamp(Math.round(gg),0,255),
-    clamp(Math.round(bb),0,255)
-  ];
-}
+import {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v5';
+export {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v5';
+const smooth=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
 
 /**
  * Two detail grades around a huge already existing repeating base:
@@ -101,14 +54,14 @@ export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
     }
     ctx.putImageData(img,0,0);
     const texture=new THREE.CanvasTexture(cv);
-    texture.name='Baikonur steppe '+spec.id+' v4';
+    texture.name='Baikonur steppe '+spec.id+' v5';
     texture.colorSpace=THREE.SRGBColorSpace;
     texture.generateMipmaps=true;
     texture.minFilter=THREE.LinearMipmapLinearFilter;
     texture.magFilter=THREE.LinearFilter;
     texture.anisotropy=Math.min(renderer?.capabilities?.getMaxAnisotropy?.()||4,8);
     const material=new THREE.MeshBasicMaterial({
-      map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide,
+      map:texture,transparent:true,depthWrite:false,side:THREE.DoubleSide,forceSinglePass:true,
       polygonOffset:true,polygonOffsetFactor:-1
     });
     material.name='Earth / '+spec.id+' / no survey';
@@ -173,10 +126,10 @@ export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
     planes,addRiparian,
     sample:sampleSteppe,
     stats:()=>({
-      edition:4,extent:config[0].extent,mediumExtent:config[1].extent,
+      edition:5,extent:config[0].extent,mediumExtent:config[1].extent,
       textureResolution:config[0].resolution,
       textureResolutions:config.map(a=>a.resolution),
-      regions:regionInfo,terrainTypes:['loess','solonchak','clay','gravel','dry washes','alluvium'],
+      regions:regionInfo,terrainTypes:['dry steppe','sand','solonchak','clay','gravel','alluvium'],
       riparianShrubs:riparianCount,photographicClaim:false,
       detailBeyondHistoricMap:true,continuousWorldCoordinates:true
     })

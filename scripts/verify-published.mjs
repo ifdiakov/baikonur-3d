@@ -8,6 +8,7 @@ const files=['index.html','workshop/zenit.html','workshop/model.html','assets/mo
  'assets/models/ukss/model-v2.glb','assets/models/ukss/manifest-v2.json',
  'assets/models/mig25/model-v1.glb','assets/models/mig25/manifest-v1.json','assets/models/rockets/n1.glb','assets/models/rockets/n1.json',
  'assets/models/tua/model-v2.glb','assets/models/tua/manifest-v2.json',
+ 'assets/terrain/steppe-micro-v1.png','assets/terrain/steppe-meso-v1.png','assets/terrain/steppe-textures-v1.json',
  ...['soyuz','energia-polyus','energia-buran','energia','energia-m','r16'].flatMap(id=>['assets/models/rockets/'+id+'.glb','assets/models/rockets/'+id+'.json']),
  'assets/models/mriya-buran/near-v2.glb','assets/models/mriya-buran/far-v2.glb','src/vendor/meshopt_decoder-v1.mjs',
  ...(await readdir('src/vendor/three-r160',{recursive:true})).filter(file=>file.endsWith('.js')).map(file=>'src/vendor/three-r160/'+file),

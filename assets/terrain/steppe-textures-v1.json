@@ -1,0 +1,101 @@
+{
+  "version": "steppe-textures-v1",
+  "seed": 20261101,
+  "generator": "scripts/build-steppe-textures.py",
+  "generatorSha256": "a4c68b5f176dad66e4c02a5c162f124cfacdefe774d782ca9f6c872e7a2ba6f3",
+  "method": "Original deterministic toroidal noise, periodic stamps and warped distance fields; no photographs or external texture inputs.",
+  "colorSpace": "linear-data",
+  "sampling": {
+    "wrapS": "repeat",
+    "wrapT": "repeat",
+    "mipmaps": true
+  },
+  "suggestedWorldPeriods": {
+    "micro": 2,
+    "mesoColor": 64,
+    "mesoVegetation": 10
+  },
+  "vegetation": {
+    "tuftCount": 1550,
+    "coverageAt0_1": 0.076534,
+    "nonzeroCoverage": 0.08836
+  },
+  "dependencies": {
+    "numpy": "2.3.5",
+    "Pillow": "12.3.0",
+    "scipy": "1.17.0"
+  },
+  "totalPngBytes": 731159,
+  "files": [
+    {
+      "file": "steppe-micro-v1.png",
+      "sha256": "ef6103aac0dbd493914548e2e2da6c0e179807e6d8a29cda1660aa9a714fd9c3",
+      "bytes": 514892,
+      "mode": "RGB",
+      "opaque": true,
+      "size": [
+        512,
+        512
+      ],
+      "oppositeEdgesIdentical": true,
+      "channels": {
+        "R": {
+          "meaning": "fine soil grains and occasional small pebbles",
+          "min": 0.207843,
+          "max": 0.886275,
+          "mean": 0.500009,
+          "standardDeviation": 0.066193
+        },
+        "G": {
+          "meaning": "weak broken sand ripples and grain",
+          "min": 0.278431,
+          "max": 0.737255,
+          "mean": 0.499985,
+          "standardDeviation": 0.047229
+        },
+        "B": {
+          "meaning": "salt crust with thin irregular branching cracks",
+          "min": 0.156863,
+          "max": 0.94902,
+          "mean": 0.849204,
+          "standardDeviation": 0.077945
+        }
+      }
+    },
+    {
+      "file": "steppe-meso-v1.png",
+      "sha256": "8f4e012395d2bb2e760f1e5911ae769619c5e3f328094db386ce001fffd08e95",
+      "bytes": 216267,
+      "mode": "RGB",
+      "opaque": true,
+      "size": [
+        512,
+        512
+      ],
+      "oppositeEdgesIdentical": true,
+      "channels": {
+        "R": {
+          "meaning": "soil patchiness and fine erosion",
+          "min": 0.235294,
+          "max": 0.8,
+          "mean": 0.500115,
+          "standardDeviation": 0.085582
+        },
+        "G": {
+          "meaning": "sparse gravel-rich regions",
+          "min": 0.439216,
+          "max": 0.803922,
+          "mean": 0.500002,
+          "standardDeviation": 0.046345
+        },
+        "B": {
+          "meaning": "sparse needle-shaped dry vegetation tufts; zero background",
+          "min": 0.0,
+          "max": 0.980392,
+          "mean": 0.028256,
+          "standardDeviation": 0.107875
+        }
+      }
+    }
+  ]
+}

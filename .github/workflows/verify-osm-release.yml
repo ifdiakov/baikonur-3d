@@ -16,6 +16,8 @@ on:
       - 'scripts/verify-published.mjs'
       - 'scripts/verify-mik112-osm.mjs'
       - 'scripts/build_river_water.py'
+      - 'scripts/build-steppe-textures.py'
+      - 'docs/steppe-surface.md'
       - 'scripts/prepare-ukss-asset.mjs'
       - 'scripts/ukss-detail-policy.json'
       - 'scripts/prepare-rocket-assets.mjs'
@@ -77,6 +79,7 @@ jobs:
           node tests/road-marking-contours.mjs
           node tests/road-lighting-geometry.mjs
           node tests/saturn-natural-terrain.mjs
+          node tests/steppe-surface.mjs
           node tests/exhibit-road-filter.mjs
           node tests/industrial-road-continuity.mjs
           node tests/road-signs-geometry.mjs
