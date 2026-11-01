@@ -430,7 +430,7 @@ const phoneChrome=matchMedia('(max-width:640px)');
 function syncLaunchPanelHeight(){document.documentElement.style.setProperty('--launch-panel-height',nextLaunchHost.getBoundingClientRect().height+'px');}
 function syncLaunchPanelHost(){
  const controls=document.getElementById('menuControls'),rightStack=document.getElementById('museumRightStack');
- if(phoneChrome.matches){if(nextLaunchHost.previousElementSibling!==controls)controls.after(nextLaunchHost);}
+ if(innerWidth<=640){if(nextLaunchHost.previousElementSibling!==controls)controls.after(nextLaunchHost);}
  else if(nextLaunchHost.parentElement!==rightStack)rightStack.append(nextLaunchHost);
  syncLaunchPanelHeight();
 }
@@ -478,6 +478,9 @@ ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MUSEUM_METRE;ctl.maxDistance=3300
 const steppeSurfaceReady=createSteppeSurface({renderer});
 let overviewAltitudeLimit=1650,overviewTopDown=false;
 function applyOverviewFrame(topDown=false){
+ // Viewport events and media-query notifications can arrive in either order.
+ // Move the panel before measuring any camera obstacles.
+ syncLaunchPanelHost();
  const ui=document.getElementById('ui').getBoundingClientRect(),hero=document.getElementById('hero'),dock=document.getElementById('timeDock').getBoundingClientRect();
  const rightBoxes=[getComputedStyle(hero).display==='none'?null:hero.getBoundingClientRect(),
   innerWidth>640?nextLaunchHost.getBoundingClientRect():null].filter(r=>r&&r.width>0&&r.height>0);
