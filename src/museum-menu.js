@@ -1,13 +1,26 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 
-export const MUSEUM_MENU_VERSION='museum-five-sections-v5';
+export const MUSEUM_MENU_VERSION='museum-grouped-silos-v6';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
 // launch sites merely because they have a numbered cosmodrome address.
-const LAUNCH_SITE_IDS=new Set([...SILO_SITE_IDS,'pad-1','pad-41','pad-130','pad-175','pad-250']);
+export const MUSEUM_LAUNCH_ENTRIES=Object.freeze([
+ {id:'pad-1',label:'Гагаринский старт'},
+ {id:'pad-31',label:'Площадка 31'},
+ {id:'pad-45',label:'Зенит / Байтерек · пл. 45'},
+ {id:'pad-81',label:'Протон · пл. 81'},
+ {id:'pad-200',label:'Протон · пл. 200'},
+ {id:'pad-90',label:'Циклоны · пл. 90'},
+ {id:'pad-250',label:'УКСС'},
+ {id:'pad-110',label:'Энергия — Буран · пл. 110'},
+ {id:'pad-41',label:'Р-16 · пл. 41'}
+].map(entry=>Object.freeze(entry)));
+export const MUSEUM_SILO_GROUP=Object.freeze({id:'siloInstallations',title:'Шахтные установки',siteIds:SILO_SITE_IDS});
+const LAUNCH_SITE_IDS=new Set(MUSEUM_LAUNCH_ENTRIES.map(entry=>entry.id)),SILO_IDS=new Set(SILO_SITE_IDS);
+export function isMuseumSilo(record){return SILO_IDS.has(record?.id);}
 export function museumCatalogueSection(record){
- return record.category==='стартовый'||record.model==='launch'||LAUNCH_SITE_IDS.has(record.id)
+ return LAUNCH_SITE_IDS.has(record?.id)||isMuseumSilo(record)
   ?'sitesAccordion':'infrastructureAccordion';
 }
 
@@ -75,8 +88,11 @@ export function installMuseumMenu({container,onAction,stories=[]}){
   if(!section.items.length){const empty=document.createElement('p');empty.className='museum-menu-empty';empty.textContent=section.empty;body.append(empty);}
   const count=details.querySelectorAll('[data-museum-action],.entry').length;counter.textContent=String(count);counter.hidden=count===0;
  }
- return {stats:()=>({version:MUSEUM_MENU_VERSION,lastAction,sections:sections.map(section=>({id:section.id,open:section.open,
-  count:section.querySelectorAll('[data-museum-action],.entry').length,
-  siteIds:[...section.querySelectorAll('[data-site-id]')].map(entry=>entry.dataset.siteId),
-  researchIds:[...section.querySelectorAll('[data-research-id]')].map(entry=>entry.dataset.researchId)}))})};
+ return {stats:()=>({version:MUSEUM_MENU_VERSION,lastAction,sections:sections.map(section=>{
+  const siteIds=[...section.querySelectorAll('[data-site-id]')].map(entry=>entry.dataset.siteId);
+  return {id:section.id,open:section.open,
+   count:section.querySelectorAll(section.id==='sitesAccordion'?'#list > .entry,#list > .silo-group':'[data-museum-action],.entry').length,
+   siteIds,siteCount:siteIds.length,
+   researchIds:[...section.querySelectorAll('[data-research-id]')].map(entry=>entry.dataset.researchId)};
+ })})};
 }

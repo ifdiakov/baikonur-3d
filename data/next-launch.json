@@ -4,10 +4,11 @@
   "siteId": "pad-31",
   "siteLabel": "ПЛ 31",
   "launchAt": "2027-03-03T19:13:00+03:00",
-  "dateLabel": "3 МАРТА 2027 · 19:13 МСК",
+  "dateLabel": "03.03.2027 · 19:13 МСК",
   "precision": "instant",
   "status": "planned",
   "updatedAt": "2026-11-01",
+  "schedule": {"label": "Расписание запусков", "url": "https://rockettrip.space/raspisanie"},
   "references": [
     {"url": "https://rockettrip.space/raspisanie", "supports": "Planned mission date: 3 March 2027. No launch time is published here."},
     {"url": "https://cosmotravel.co/ru/blog/raspisanie-puskov-baikonur", "supports": "Preliminary schedule: 3 March 2027, 19:13 Moscow, site 31. Published 10 August 2026; not official confirmation."}

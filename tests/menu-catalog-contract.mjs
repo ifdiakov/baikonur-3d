@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
-import {MUSEUM_SECTIONS,museumCatalogueSection} from '../src/museum-menu.js';
+import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo,museumCatalogueSection} from '../src/museum-menu.js';
+import {SILO_SITE_IDS} from '../src/silo-sites.js';
 import {MODEL_CATALOG,modelsForObject,modelsForKnowledge} from '../src/model-catalog.js';
 import {ROCKET_MODELS} from '../src/rocket-exhibits.js';
 
@@ -31,10 +32,16 @@ for(const record of sites){
   const before=JSON.stringify(record),section=museumCatalogueSection(record);
   assert.ok(Object.hasOwn(groups,section));groups[section].push(record.id);assert.equal(JSON.stringify(record),before,'Grouping does not rewrite the source catalogue');
 }
-assert.equal(groups.sitesAccordion.length,42);assert.equal(groups.infrastructureAccordion.length,56);
+assert.equal(groups.sitesAccordion.length,40);assert.equal(groups.infrastructureAccordion.length,58);
 assert.equal(new Set(Object.values(groups).flat()).size,sites.length,'Every existing displayed site belongs to exactly one catalogue section');
-const expectedLaunch=['pad-1','pad-31','pad-41','pad-45','pad-70','pad-81','pad-90','pad-109','pad-110','pad-130','pad-131','pad-175','pad-200','pad-250'];
-const expectedInfrastructure=['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-182','pad-110a','pad-250а','city'];
+const expectedLaunch=['pad-1','pad-31','pad-45','pad-81','pad-200','pad-90','pad-250','pad-110','pad-41'];
+const expectedInfrastructure=['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-182','pad-110a','pad-250а','city','pad-130','pad-175'];
+assert.deepEqual(MUSEUM_LAUNCH_ENTRIES.map(entry=>entry.id),expectedLaunch,'The nine named launch complexes retain the requested order');
+assert.equal(MUSEUM_SILO_GROUP.id,'siloInstallations');assert.equal(MUSEUM_SILO_GROUP.title,'Шахтные установки');
+assert.deepEqual(MUSEUM_SILO_GROUP.siteIds,SILO_SITE_IDS,'The grouped menu uses the same silo roster as the existing models');
+assert.equal(new Set(MUSEUM_SILO_GROUP.siteIds).size,31,'All 31 silo installations remain individually reachable');
+assert.deepEqual(sites.filter(isMuseumSilo).map(record=>record.id).sort(),[...SILO_SITE_IDS].sort());
+assert.deepEqual([...groups.sitesAccordion].sort(),[...expectedLaunch,...SILO_SITE_IDS].sort(),'The launch section contains nine named complexes and 31 grouped silos');
 for(const id of expectedLaunch)assert.ok(groups.sitesAccordion.includes(id),id+' is a launch / silo / stand-start facility');
 for(const id of expectedInfrastructure)assert.ok(groups.infrastructureAccordion.includes(id),id+' is support, technical, transport or accommodation infrastructure');
 for(const record of sites.filter(record=>record.id.startsWith('sector-')))assert.ok(groups.infrastructureAccordion.includes(record.id),'An unidentified map sector is not promoted to a launch site');
@@ -67,4 +74,4 @@ for(const input of [1900,1955,1966,1967,1988,2026,2100]){
 }
 assert.equal(history.events.length,18,'Original historical records remain intact');
 assert.ok(history.events.every(event=>/^\d{4}-\d{2}-\d{2}$/.test(event.date)&&event.source?.startsWith('https://')));
-console.log('MENU_CATALOG_CONTRACT_PASS',JSON.stringify({sections:ids.length,launchComplexes:groups.sitesAccordion.length,infrastructureSites:groups.infrastructureAccordion.length,sourceStations:stations.length,fieldFinds:field.objects.length,equipmentActions:actions.length,historicalRecords:history.events.length,yearCases:calls.length}));
+console.log('MENU_CATALOG_CONTRACT_PASS',JSON.stringify({sections:ids.length,launchEntries:expectedLaunch.length+1,launchComplexes:groups.sitesAccordion.length,silos:MUSEUM_SILO_GROUP.siteIds.length,infrastructureSites:groups.infrastructureAccordion.length,sourceStations:stations.length,fieldFinds:field.objects.length,equipmentActions:actions.length,historicalRecords:history.events.length,yearCases:calls.length}));

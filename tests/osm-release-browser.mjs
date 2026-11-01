@@ -536,19 +536,30 @@ try{
  assert.equal(await mobileMenu.isVisible(),true);assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
  const menuSections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),false);
- assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false);
+ assert.equal(await page.locator('#museumRightStack #nextLaunchPanel').isVisible(),true,'The phone launch dock is visible while the menu is closed');
+ assert.equal(await page.locator('#ui #nextLaunchPanel').count(),0,'The launch dock keeps its separate host');
+ assert.equal(await page.locator('#nextLaunchPanel .next-launch__schedule').getAttribute('href'),'https://rockettrip.space/raspisanie');
  await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),true);
- assert.equal(await page.locator('#ui #nextLaunchPanel').isVisible(),true,'The launch panel appears with the expanded phone menu');
+ assert.equal(await page.locator('#museumRightStack #nextLaunchPanel').isVisible(),true,'The launch dock stays visible when the phone menu expands');
+ const mobileDocks=await page.evaluate(()=>{
+  const rect=id=>{const r=document.getElementById(id).getBoundingClientRect();return{left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+  return{timeline:rect('timeDock'),launch:rect('nextLaunchPanel'),menu:rect('museumLeftStack'),width:innerWidth,height:innerHeight};
+ });
+ assert.ok(mobileDocks.timeline.bottom<mobileDocks.launch.top,'The phone timeline and launch panel occupy two separate rows');
+ assert.ok(Math.abs(mobileDocks.timeline.left-mobileDocks.launch.left)<=1&&Math.abs(mobileDocks.timeline.width-mobileDocks.launch.width)<=1,'Both lower phone rows align');
+ assert.ok(mobileDocks.launch.bottom<=mobileDocks.height&&mobileDocks.launch.right<=mobileDocks.width,'The launch dock fits the phone viewport');
+ assert.ok(mobileDocks.menu.bottom<Math.min(mobileDocks.timeline.top,mobileDocks.launch.top),'The expanded phone menu clears both lower docks');
+ evidence.mobileDocks=mobileDocks;
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleOverviewBoundary),1);
  await mobileMenu.click();await step();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
  for(const id of menuSections)assert.equal(await page.locator('#'+id).isVisible(),false);
- assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false);
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),true,'Closing the phone menu preserves access to launch information');
  assert.equal(await page.locator('#hero').isVisible(),false);
  const mobileMap=await page.evaluate(()=>{
-  const q=window.__BAIKONUR_QA,ui=document.getElementById('ui').getBoundingClientRect(),dock=document.getElementById('timeDock').getBoundingClientRect(),top=ui.bottom+12,bottom=dock.top-12;
+  const q=window.__BAIKONUR_QA,ui=document.getElementById('ui').getBoundingClientRect(),dock=document.getElementById('timeDock').getBoundingClientRect(),launch=document.getElementById('nextLaunchPanel').getBoundingClientRect(),top=ui.bottom+12,bottom=Math.min(dock.top,launch.top)-12;
   const at=document.elementFromPoint(innerWidth/2,(top+bottom)/2),outline=q.stats().flankDistricts.outline,visibleEdges=new Set();let visibleSamples=0;
   outline.forEach((a,i)=>{const b=outline[(i+1)%outline.length];for(let k=0;k<=20;k++){
    const t=k/20,x=a[0]+(b[0]-a[0])*t,y=a[1]+(b[1]-a[1])*t,p=q.projectWorld((x-650)*3.4,-2.4,(y-522.5)*3.4);
@@ -567,10 +578,12 @@ try{
   const info=document.getElementById('info'),card=info.getBoundingClientRect(),menu=document.getElementById('mobileMenuToggle'),toggle=menu.getBoundingClientRect();
   const cardHit=document.elementFromPoint(card.left+Math.min(40,card.width/2),card.top+Math.min(40,card.height/2));
   const menuHit=document.elementFromPoint(toggle.left+toggle.width/2,toggle.top+toggle.height/2);
-  return {card:{top:card.top,bottom:card.bottom,width:card.width,height:card.height},cardAccessible:info.contains(cardHit),menuAccessible:menu.contains(menuHit)};
+  const lowerDockTop=Math.min(...['timeDock','nextLaunchPanel'].map(id=>document.getElementById(id).getBoundingClientRect().top));
+  return {card:{top:card.top,bottom:card.bottom,width:card.width,height:card.height},cardAccessible:info.contains(cardHit),menuAccessible:menu.contains(menuHit),lowerDockTop};
  });
  assert.ok(mobileSiteCard.card.width>0&&mobileSiteCard.card.height>0&&mobileSiteCard.cardAccessible,'The selected phone site card receives pointer input inside its actual bounds');
  assert.ok(mobileSiteCard.menuAccessible,'The selected site card leaves the phone menu reachable');
+ assert.ok(mobileSiteCard.card.bottom<mobileSiteCard.lowerDockTop,'The selected phone site card leaves both lower docks usable');
  await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'true');
  await mobileMenu.click();assert.equal(await mobileMenu.getAttribute('aria-expanded'),'false');
  evidence.mobileSiteCard=mobileSiteCard;
@@ -586,16 +599,16 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite('pad-112');q.evening.setEvening(false);});await step();
  await page.locator('#mik112Tua').click();await step();
  const tuaMobile=await page.evaluate(()=>{
-  const element=document.getElementById('info'),info=element.getBoundingClientRect(),style=getComputedStyle(element),dock=document.getElementById('timeDock').getBoundingClientRect();
+  const element=document.getElementById('info'),info=element.getBoundingClientRect(),style=getComputedStyle(element),lowerDockTop=Math.min(...['timeDock','nextLaunchPanel'].map(id=>document.getElementById(id).getBoundingClientRect().top));
   const decoration=['paddingTop','paddingBottom','borderTopWidth','borderBottomWidth'].reduce((sum,key)=>sum+(parseFloat(style[key])||0),0);
   const cssMaximum=/^\d+(?:\.\d+)?px$/.test(style.maxHeight)?parseFloat(style.maxHeight):Math.min(innerHeight*.38,330);
   const heightLimit=Math.min(cssMaximum,innerHeight*.38,330)+(style.boxSizing==='border-box'?0:decoration);
-  return {camera:window.__BAIKONUR_QA.cameraState(),card:{left:info.left,right:info.right,top:info.top,bottom:info.bottom,height:info.height},timelineTop:dock.top,
+  return {camera:window.__BAIKONUR_QA.cameraState(),card:{left:info.left,right:info.right,top:info.top,bottom:info.bottom,height:info.height},lowerDockTop,
    heightLimit,cssMaxHeight:style.maxHeight,boxSizing:style.boxSizing,mapAboveCard:info.top-document.getElementById('ui').getBoundingClientRect().bottom,
    controls:[...document.querySelectorAll('#mik112Controls button')].map(e=>{const b=e.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom,width:b.width};}),width:innerWidth};
  });
  assert.ok(tuaMobile.controls.every(b=>b.left>=0&&b.right<=tuaMobile.width&&b.width>0&&b.top>=tuaMobile.card.top&&b.bottom<=tuaMobile.card.bottom),'All three TUA view controls fit the phone card');
- assert.ok(tuaMobile.card.height<=tuaMobile.heightLimit+1&&tuaMobile.card.bottom<=tuaMobile.timelineTop-4,'The TUA selection card respects its 38vh/330px limit and leaves the timeline usable');
+ assert.ok(tuaMobile.card.height<=tuaMobile.heightLimit+1&&tuaMobile.card.bottom<=tuaMobile.lowerDockTop-4,'The TUA selection card respects its 38vh/330px limit and leaves both lower docks usable');
  assert.ok(tuaMobile.mapAboveCard>=120,'A separate area of the model remains visible between the phone menu and the TUA card');
  assert.ok(near(tuaMobile.camera.target,tuaCameraTarget,.001));
  for(const id of ['tuaRocketChoice','tuaPlaceRocket']){

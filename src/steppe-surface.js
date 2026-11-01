@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {STEPPE_VERSION,sampleSteppeFields} from './steppe-field.js?v=20261101-steppe-v6';
+import {STEPPE_VERSION,sampleSteppeFields} from './steppe-field.js?v=20261101-steppe-v7';
 
 export const STEPPE_BIOME_EXTENT=18000;
 export const STEPPE_BIOME_RESOLUTION=1024;
@@ -35,8 +35,8 @@ export const STEPPE_FRAGMENT=/* glsl */`
   // periods suppress a recognisable tiled repeat, with no directional dunes.
   vec3 broad=texture2D(steppeMeso,p/213.0).rgb;
   vec3 broken=texture2D(steppeMeso,rotated/79.0+vec2(.317,.691)).rgb;
-  float mottles=(broad.r-.5)*1.10+(broken.r-.5)*1.80;
-  float darkGrains=smoothstep(.53,.70,broken.g)*.28*(1.0-salt*.75);
+  float mottles=(broad.r-.5)*.85+(broken.r-.5)*1.35;
+  float darkGrains=smoothstep(.53,.70,broken.g)*.14*(1.0-salt*.75);
   vec3 tone=vec3(1.0)+(mottles-darkGrains)*landscapeDetail;
   if(mediumDetail>.001){
    vec3 a=texture2D(steppeMeso,p/41.0).rgb;
@@ -50,7 +50,7 @@ export const STEPPE_FRAGMENT=/* glsl */`
   if(plantDetail>.001){
    float plants=texture2D(steppeMeso,rotated/10.0+vec2(.17,.31)).b;
    float cover=plants*scrub*(1.0-salt)*(1.0-sand*.8)*plantDetail;
-   tone*=mix(vec3(1.0),vec3(.52,.59,.46),cover*.85);
+   tone*=mix(vec3(1.0),vec3(.62,.60,.48),cover*.70);
   }
   float closeDetail=1.0-smoothstep(.045,.25,pixelSize);
   if(closeDetail>.001){

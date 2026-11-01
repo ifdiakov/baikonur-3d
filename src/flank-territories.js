@@ -18,15 +18,24 @@ export function createFlankTerritories({flanks,camera,container}){
  }
 function arrangeFlankCards(visible){
  if(visible.length===0)return;
- const ui=document.getElementById('ui'),dock=document.getElementById('timeDock');
- const uiRect=ui.getBoundingClientRect(),dockRect=dock.getBoundingClientRect();
- const mobileToolbar=innerWidth<=640&&uiRect.width>innerWidth*.7;
+ const uiRect=document.getElementById('ui').getBoundingClientRect();
+ const dockRects=['timeDock','nextLaunchPanel'].map(id=>document.getElementById(id)?.getBoundingClientRect()).filter(rect=>rect?.width>0&&rect.height>0);
+ const dockTop=Math.min(innerHeight,...dockRects.map(rect=>rect.top));
+ const mobileToolbar=uiRect.width>innerWidth*.7;
  const leftLimit=mobileToolbar?12:Math.min(innerWidth-34,Math.max(15,uiRect.right+12));
  const rightLimit=innerWidth-12;
- const available=Math.max(54,rightLimit-leftLimit);
+ const available=Math.max(0,rightLimit-leftLimit);
  const horizontal=available>=visible.length*205+Math.max(0,visible.length-1)*12;
  layout=horizontal?'horizontal':'vertical';
  const gap=12;
+ const upper=mobileToolbar?uiRect.bottom+14:horizontal?25:45,lower=dockTop-(horizontal?20:15);
+ const availableHeight=lower-upper,minHeight=24;
+ // An expanded toolbar can leave no usable strip. Restore the cards on the
+ // next update when it closes instead of placing them across the bottom docks.
+ if(availableHeight<minHeight*(horizontal?1:visible.length)){
+  for(const {el}of visible){el.style.display='none';el.tabIndex=-1;el.setAttribute('aria-hidden','true');}
+  return;
+ }
  if(horizontal){
   const slot=available/visible.length;
   const width=Math.min(318,Math.floor(slot-gap));
@@ -34,19 +43,19 @@ function arrangeFlankCards(visible){
    const e=visible[j].el;
    e.style.width=width+'px';
    e.style.height='';
-   e.style.maxHeight='min(47vh,370px)';
+   e.style.maxHeight=Math.min(innerHeight*.47,370,availableHeight)+'px';
    e.style.overflowY='auto';
    e.classList.remove('is-stacked');
    const h=e.getBoundingClientRect().height||170;
    const x=leftLimit+slot*(j+.5);
-   const y=Math.max(25+h/2,Math.min(dockRect.top-20-h/2,visible[j].p?.y||275));
+   const y=Math.max(upper+h/2,Math.min(lower-h/2,visible[j].p?.y||275));
    e.style.left=x+'px';e.style.top=y+'px';
   }
  }else{
   const width=Math.min(mobileToolbar?318:244,available);
-  const upper=mobileToolbar?uiRect.bottom+14:45,lower=Math.max(upper+205,dockRect.top-15);
-  const height=Math.max(90,Math.min(190,(lower-upper-gap*(visible.length-1))/visible.length-1));
-  const total=visible.length*height+(visible.length-1)*gap;
+  const rowGap=Math.min(gap,Math.max(0,(availableHeight-visible.length*minHeight)/Math.max(1,visible.length-1)));
+  const height=Math.min(190,(availableHeight-rowGap*(visible.length-1))/visible.length);
+  const total=visible.length*height+(visible.length-1)*rowGap;
   const start=Math.max(upper,(upper+lower-total)*.50);
   for(let j=0;j<visible.length;j++){
    const e=visible[j].el;
@@ -56,7 +65,7 @@ function arrangeFlankCards(visible){
    e.style.maxHeight=height+'px';
    e.style.overflowY='auto';
    e.style.left=(mobileToolbar?innerWidth*.5:leftLimit+width*.5)+'px';
-   e.style.top=(start+height*(j+.5)+j*gap)+'px';
+   e.style.top=(start+height*(j+.5)+j*rowGap)+'px';
   }
  }
 }

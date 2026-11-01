@@ -5,7 +5,7 @@ import {createSteppeSurface,installSteppeSurface,STEPPE_BIOME_EXTENT,STEPPE_BIOM
 import {maskUkssTerrain} from '../src/ukss-pad.js';
 import {createTerrainVoids} from '../src/terrain-voids.js';
 
-assert.equal(STEPPE_VERSION,'baikonur-steppe-v6');
+assert.equal(STEPPE_VERSION,'baikonur-steppe-v7');
 const fieldNames=['salt','sand','scrub','stone','tone'],samples=[],cohorts={soil:[],sand:[],salt:[]};
 const ranges=Object.fromEntries(fieldNames.map(key=>[key,[Infinity,-Infinity]]));
 function checkSample(x,z){

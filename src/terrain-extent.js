@@ -5,7 +5,7 @@ import * as THREE from 'three';
 export const LARGE_TERRAIN_SEGMENTS=16;
 
 /**
- * BAIKONUR STEPPES / terrain v6
+ * BAIKONUR STEPPES / terrain v7
  *
  * A deterministic, coordinate-continuous multi-scale earth material shared by
  * the wide and intermediate surfaces. This is a museum reconstruction; no
@@ -15,8 +15,8 @@ export const LARGE_TERRAIN_SEGMENTS=16;
  * alluvial deposits and dry, sinuous wash traces. Far and mid maps sample
  * the SAME world-coordinate terrain function, so transitions have no seams.
  */
-import {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v6';
-export {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v6';
+import {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v7';
+export {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v7';
 const smooth=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3-2*t);};
 
 /**
@@ -126,7 +126,7 @@ export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
     planes,addRiparian,
     sample:sampleSteppe,
     stats:()=>({
-      edition:6,extent:config[0].extent,mediumExtent:config[1].extent,
+      edition:7,extent:config[0].extent,mediumExtent:config[1].extent,
       textureResolution:config[0].resolution,
       textureResolutions:config.map(a=>a.resolution),
       regions:regionInfo,terrainTypes:['dry steppe','sand','solonchak','clay','gravel','alluvium'],

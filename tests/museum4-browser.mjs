@@ -25,8 +25,9 @@ try{
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.equal(await page.locator('#flanksView,#eveningToggle,#lightingToggle,#trainFollow,#carsFocus,#ui a[href*="archive.html"]').count(),0,'Removed menu shortcuts must not remain in the DOM');
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
- for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'])assert.equal(await page.locator('#'+id).count(),1);
+ for(const id of ['arrivalPanel','sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion','museumRightStack','nextLaunchPanel'])assert.equal(await page.locator('#'+id).count(),1);
  assert.equal(await page.locator('#toursAccordion').count(),0);
+ assert.equal(await page.locator('#list > .entry').count(),9);assert.equal(await page.locator('#siloInstallations [data-site-id]').count(),31);
  await shot('overview-menu');
  const runways=s.airports.map(a=>({key:a.key,length:a.length,width:a.width,worldLength:a.worldLength}));
  assert.equal(runways.find(a=>a.key==='krayniy').length,1550);assert.equal(runways.find(a=>a.key==='yubileiny').length,2250);
@@ -124,8 +125,12 @@ try{
  }
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.seek(158);q.arrival.inspect('port');});await shot('alrosa-stop-at-four-fifths');evidence.flight=phases;
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.focusSite('pad-43'));await step();
- const mobileCard=await page.evaluate(()=>{const card=document.getElementById('info');return card.contains(document.elementFromPoint(100,50));});
- assert.ok(mobileCard,'The open site card must remain readable above the mobile menu');await shot('mobile-site43');
+ const mobileCard=await page.evaluate(()=>{
+  const card=document.getElementById('info'),rect=card.getBoundingClientRect(),lowerDockTop=Math.min(...['timeDock','nextLaunchPanel'].map(id=>document.getElementById(id).getBoundingClientRect().top));
+  return{accessible:card.contains(document.elementFromPoint(rect.left+Math.min(40,rect.width/2),rect.top+Math.min(40,rect.height/2))),bottom:rect.bottom,lowerDockTop};
+ });
+ assert.ok(mobileCard.accessible&&mobileCard.bottom<mobileCard.lowerDockTop,'The open phone site card remains readable without covering the two lower docks');
+ assert.equal(await page.locator('#museumRightStack #nextLaunchPanel').isVisible(),true);await shot('mobile-site43');
  await page.locator('#close').click();await shot('mobile-menu');
  assert.equal(await page.locator('#ui a[href*="archive.html"],#trainFollow,#flanksView').count(),0);
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));

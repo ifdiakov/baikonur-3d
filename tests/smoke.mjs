@@ -62,14 +62,18 @@ const initialSidebarHeight=await page.locator('#ui').evaluate(el=>el.getBounding
 assert.equal(await accordion.count(),1,'Site catalogue must exist as a collapsible section');
 assert.equal(await accordion.evaluate(el=>el.open),false,'Site catalogue must start collapsed');
 assert.equal(await page.locator('#search').isVisible(),false,'Search must be hidden when site catalogue is collapsed');
-assert.ok(Number(await page.locator('#count').textContent())===42,'The collapsed heading must display its launch-complex count');
+assert.equal(Number(await page.locator('#count').textContent()),10,'The launch heading counts nine named complexes and one silo group');
 await page.locator('#sitesAccordion > summary').click();
 assert.equal(await accordion.evaluate(el=>el.open),true,'Clicking the heading must expand the catalogue');
 const expandedSidebarHeight=await page.locator('#ui').evaluate(el=>el.getBoundingClientRect().height);
 assert.ok(expandedSidebarHeight>=initialSidebarHeight-2,'Expanded catalogue must not make sidebar smaller');
 assert.ok((await page.locator('#list').isVisible()),'Catalogue list must be visible after expansion');
 assert.equal(await page.locator('#search').isVisible(),true,'Search must appear inside expanded catalogue');
-assert.ok((await page.locator('#list .entry').count())===42,'Expanded launch catalogue must display every launch complex');
+assert.equal(await page.locator('#list > .entry').count(),9,'Named launch complexes remain separate buttons');
+assert.equal(await page.locator('#list > details.silo-group').count(),1,'All silo installations share one native disclosure');
+assert.equal(await page.locator('#siloInstallations [data-site-id]').count(),31,'Grouping preserves all individual silo entries');
+assert.equal(await page.locator('#siloInstallations').evaluate(element=>element.open),false,'The silo group starts collapsed');
+assert.equal(await page.locator('#list .entry').count(),40,'All physical launch facilities remain in the catalogue');
 await page.locator('#sitesAccordion > summary').click();
 assert.equal(await accordion.evaluate(el=>el.open),false,'Clicking the heading again must collapse the catalogue');
 console.log('ACCORDION: collapsed, expands with search and object list, then collapses');
@@ -78,17 +82,18 @@ async function verifyMenuAndGuideStack(page,where){
     const stack=document.getElementById('museumLeftStack').getBoundingClientRect(),
           ui=document.getElementById('ui').getBoundingClientRect(),
           guide=document.getElementById('navigationGuide').getBoundingClientRect(),
-          dock=document.getElementById('timeDock').getBoundingClientRect();
+          dock=document.getElementById('timeDock').getBoundingClientRect(),
+          launch=document.getElementById('nextLaunchPanel').getBoundingClientRect();
     return {stack:{x:stack.x,y:stack.y,right:stack.right,bottom:stack.bottom,h:stack.height},
       ui:{x:ui.x,y:ui.y,bottom:ui.bottom,h:ui.height},
       guide:{x:guide.x,y:guide.y,bottom:guide.bottom,h:guide.height},
-      dockTop:dock.top,open:document.getElementById('navigationGuide').open,
+      dockTop:Math.min(dock.top,launch.top),open:document.getElementById('navigationGuide').open,
       siteOpen:document.getElementById('sitesAccordion').open};
   });
   console.log('LEFT STACK '+where,JSON.stringify(layout));
   assert.ok(Math.abs(layout.ui.x-layout.guide.x)<=2,'Navigation hint must align with sidebar');
   assert.ok(layout.guide.y>=layout.ui.bottom+5,'Navigation hint must sit BELOW the sidebar without overlap');
-  assert.ok(layout.guide.bottom<=layout.dockTop-4,'The menu and navigation guide must stay above timeline');
+  assert.ok(layout.guide.bottom<=layout.dockTop-4,'The menu and navigation guide must stay above both lower docks');
   return layout;
 }
 assert.equal(await page.locator('#navigationGuide').count(),1,'Illustrated navigation guide must exist separately');
@@ -124,13 +129,15 @@ assert.equal(await page.locator('#museumIdentity .museum-subtitle').textContent(
 assert.equal(await page.locator('#museumIdentity .museum-dimension').textContent(),'3D');
 const layout=await page.evaluate(()=>{
  const dock=document.querySelector('#timeDock'),name=document.querySelector('#museumIdentity .museum-name'),slider=document.querySelector('#year'),sidebar=document.querySelector('#ui');
- const d=dock.getBoundingClientRect(),n=name.getBoundingClientRect(),s=slider.getBoundingClientRect(),m=sidebar.getBoundingClientRect();
- return {dockBottom:Math.round(innerHeight-d.bottom),dockWidth:d.width,dockHeight:d.height,nameVisible:n.width>100&&n.height>20,sliderOutsideSidebar:!sidebar.contains(slider),sliderBottom:s.bottom<=d.bottom&&s.top>=d.top,sidebarAboveDock:m.bottom<=d.top+1};
+ const d=dock.getBoundingClientRect(),launch=document.getElementById('nextLaunchPanel').getBoundingClientRect(),n=name.getBoundingClientRect(),s=slider.getBoundingClientRect(),m=sidebar.getBoundingClientRect();
+ return {dockBottom:Math.round(innerHeight-d.bottom),dockWidth:d.width,dockHeight:d.height,dockShare:d.width/(d.width+launch.width),dockGap:launch.left-d.right,topDifference:Math.abs(d.top-launch.top),heightDifference:Math.abs(d.height-launch.height),nameVisible:n.width>100&&n.height>20,sliderOutsideSidebar:!sidebar.contains(slider),sliderBottom:s.bottom<=d.bottom&&s.top>=d.top,sidebarAboveDock:m.bottom<=Math.min(d.top,launch.top)+1};
 });
 console.log('LAYOUT',JSON.stringify(layout));
-assert.ok(layout.dockWidth>1500&&Math.abs(layout.dockBottom-15)<=1&&layout.dockHeight<=90,'The year control remains an inset, compact floating card');
+assert.ok(Math.abs(layout.dockShare-.75)<=.02&&layout.dockGap>0&&layout.topDifference<=1&&layout.heightDifference<=1,'The lower desktop cards share a baseline and height with a 3:1 timeline/launch ratio');
+assert.ok(Math.abs(layout.dockBottom-15)<=1&&layout.dockHeight<=120,'The lower desktop cards remain compact and inset from the viewport');
 assert.ok(layout.nameVisible,'The museum name must be visible');
 assert.ok(layout.sliderOutsideSidebar&&layout.sliderBottom&&layout.sidebarAboveDock,'Time slider must live outside sidebar and remain inside bottom dock');
+assert.equal(await page.locator('#nextLaunchPanel .next-launch__schedule').getAttribute('href'),'https://rockettrip.space/raspisanie');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='1961';slider.dispatchEvent(new Event('input',{bubbles:true}))});assert.equal(await page.locator('#yearVal').textContent(),'1961','Year readout must follow timeline control');
 await page.evaluate(()=>{const slider=document.getElementById('year');slider.value='2026';slider.dispatchEvent(new Event('input',{bubbles:true}))});
 await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats()?.serviceReference?.loaded===true,null,{timeout:20000});
@@ -142,8 +149,8 @@ const yandexControl=await page.evaluate(()=>document.querySelector('#ui #satelli
 assert.equal(yandexControl,null,'Yandex external link must be removed from the museum sidebar');
 const terrainInfo=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
 console.log('TERRAIN STYLE',JSON.stringify(terrainInfo.terrain));
-assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v6','Museum must load the unified v6 earth textures');
-assert.equal(terrainInfo.outerTerrain.edition,6,'Shared-coordinate terrain generator must be active');
+assert.equal(terrainInfo.terrain?.name,'Baikonur Steppe v7','Museum must load the unified v7 earth textures');
+assert.equal(terrainInfo.outerTerrain.edition,7,'Shared-coordinate terrain generator must be active');
 assert.equal(terrainInfo.outerTerrain.continuousWorldCoordinates,true,'Near/far terrain must sample shared coordinates');
 assert.deepEqual(terrainInfo.outerTerrain.textureResolutions,[512,768],'Two world-scale texture bands must be present');
 assert.ok(terrainInfo.outerTerrain.mediumExtent>17000,'Intermediate terrain must cover territory beyond site map');
@@ -512,10 +519,10 @@ await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(1450));
 await page.waitForTimeout(300);
 if(await page.locator('#mobileMenuToggle').getAttribute('aria-expanded')==='false')await page.locator('#mobileMenuToggle').click();
 const mobile=await page.evaluate(()=>{
- const dock=document.querySelector('#timeDock').getBoundingClientRect();
+ const dock=document.querySelector('#timeDock').getBoundingClientRect(),launch=document.getElementById('nextLaunchPanel').getBoundingClientRect();
  const sidebar=document.querySelector('#ui').getBoundingClientRect();
  const name=document.querySelector('#museumIdentity .museum-name').getBoundingClientRect();
- return {dockFits:Math.abs(innerHeight-dock.bottom-9)<1,dockWidth:dock.width,sidebarEndsAboveDock:sidebar.bottom<=dock.top+2,nameVisible:name.width>100&&name.height>20,dockHeight:dock.height};
+ return {dockFits:Math.abs(innerHeight-launch.bottom-9)<1&&dock.bottom<launch.top&&Math.abs(dock.left-launch.left)<=1&&Math.abs(dock.width-launch.width)<=1,dockWidth:dock.width,sidebarEndsAboveDock:sidebar.bottom<=Math.min(dock.top,launch.top)+2,nameVisible:name.width>100&&name.height>20,dockHeight:dock.height,launchHeight:launch.height,launchInRightStack:document.getElementById('museumRightStack').contains(document.getElementById('nextLaunchPanel'))};
 });
 console.log('MOBILE',JSON.stringify(mobile));
 await verifyMenuAndGuideStack(page,'mobile-collapsed');
@@ -524,7 +531,8 @@ await page.locator('#navigationGuide > summary').click();
 await verifyMenuAndGuideStack(page,'mobile-expanded-both');
 await page.locator('#navigationGuide > summary').click();
 await page.locator('#sitesAccordion > summary').click();
-assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.nameVisible&&mobile.dockHeight<=80,'Floating timeline and expanding menu must fit mobile');
+assert.ok(mobile.dockFits&&mobile.dockWidth>=371&&mobile.sidebarEndsAboveDock&&mobile.nameVisible&&mobile.dockHeight<=110&&mobile.launchHeight<=110&&mobile.launchInRightStack,'Both lower dock rows and the expanding menu must fit the phone');
+assert.equal(await page.locator('#nextLaunchPanel .next-launch__schedule').isVisible(),true);
 await page.screenshot({path:'qa-mobile.png'});
 assert.deepEqual(errors,[],'No uncaught runtime exceptions in browser');
 await browser.close();console.log('BAIKONUR 3D smoke checks PASSED: unified steppe v4, salt flats, alluvial scrub and edge-free multi-resolution earth; archival portraits and designer names restored; expanded schematic territory, natural road curves, steel tracks, six station yards and switches; 3 enterprise districts with rockets, purposes, features and fade, eye-collapse site badges and cards, пл. №, Gagarin v3 and 104 catalogue entries.');

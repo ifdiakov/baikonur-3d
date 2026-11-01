@@ -1,11 +1,11 @@
 // An illustrative land-cover field, guided by the owner's satellite reference.
 // Coordinates describe the shared museum world, never a model's local UVs.
 // Salt pans and sand deposits are material variation, not surveyed polygons.
-export const STEPPE_VERSION='baikonur-steppe-v6';
+export const STEPPE_VERSION='baikonur-steppe-v7';
 export const STEPPE_PALETTE=Object.freeze({
- soil:Object.freeze([105,103,88]),sand:Object.freeze([155,132,94]),
- salt:Object.freeze([195,189,149]),scrub:Object.freeze([78,84,68]),
- dark:Object.freeze([70,73,63]),ochre:Object.freeze([151,102,65])
+ soil:Object.freeze([140,127,101]),sand:Object.freeze([175,153,119]),
+ salt:Object.freeze([207,198,170]),scrub:Object.freeze([118,113,91]),
+ dark:Object.freeze([104,96,78]),ochre:Object.freeze([168,139,104])
 });
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
 const smooth=(a,b,v)=>{const t=clamp((v-a)/(b-a));return t*t*(3-2*t);};
@@ -29,7 +29,7 @@ function landscape(x,z){
  // its outline and cuts darker islands into the wider shallow depressions.
  const salt=smooth(.66,.77,basin)*(1-smooth(.69,.88,steppeNoise(wx,wz,19,45))*.54);
  const deposit=steppeNoise(wx+83,wz-31,112,59)*.66+steppeNoise(wx,wz,28,53)*.25+edge*.09;
- const sand=smooth(.62,.80,deposit)*(1-salt*.94);
+ const sand=smooth(.59,.78,deposit)*(1-salt*.94);
  const mottling=steppeNoise(wx,wz,31,71)*.56+steppeNoise(wx,wz,9.5,73)*.29+fineEdge*.15;
  const stone=smooth(.35,.72,mottling)*(1-salt*.82)*(1-sand*.48);
  const scrub=smooth(.30,.73,steppeNoise(wx,wz,29,67)*.68+steppeNoise(wx,wz,8,69)*.32)*(1-salt*.94)*(1-sand*.64);
@@ -49,8 +49,8 @@ export function sampleSteppe(x,z,detail=1){
  const f=landscape(x,z),p=STEPPE_PALETTE;
  const grain=detail>0?(steppeNoise(x,z,8,83)-.5)*17:0;
  const fine=detail>1?(steppeNoise(x,z,2.7,89)-.5)*8:0;
- const tone=(f.tone-.5)*84+grain+fine;
- const soil=p.soil.map((c,i)=>mix(mix(c,p.dark[i],f.stone*.48),p.scrub[i],f.scrub*.12)+tone*[1,.96,.83][i]);
+ const tone=(f.tone-.5)*76+grain+fine;
+ const soil=p.soil.map((c,i)=>mix(mix(c,p.dark[i],f.stone*.38),p.scrub[i],f.scrub*.10)+tone*[1,.96,.83][i]);
  const sand=p.sand.map((c,i)=>c+tone*[.62,.55,.42][i]);
  const salt=p.salt.map((c,i)=>c+tone*[.42,.40,.31][i]);
  const rim=4*f.salt*(1-f.salt);

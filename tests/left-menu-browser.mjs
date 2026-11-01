@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
-import {MUSEUM_SECTIONS} from '../src/museum-menu.js';
+import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261031-facilities-rails-lighting-v6';
@@ -40,8 +40,34 @@ async function selectedSite(id){
 async function menuBounds(){
  return page.evaluate(()=>{
   const rect=element=>{const r=element.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom};};
-  return {width:innerWidth,height:innerHeight,stack:rect(document.getElementById('museumLeftStack')),dock:rect(document.getElementById('timeDock')),
-   headers:[...document.querySelectorAll('.museum-section > summary')].map(element=>({id:element.parentElement.id,...rect(element)}))};
+  const dock=rect(document.getElementById('timeDock')),launch=rect(document.getElementById('nextLaunchPanel'));
+  const launchActions=[...document.querySelectorAll('#nextLaunchPanel .next-launch__site,#nextLaunchPanel .next-launch__schedule')].map(element=>{const r=rect(element);return{label:element.textContent,...r,accessible:element.contains(document.elementFromPoint(r.x+r.width/2,r.y+r.height/2))};});
+  return {width:innerWidth,height:innerHeight,stack:rect(document.getElementById('museumLeftStack')),dock,launch,lowerDockTop:Math.min(dock.y,launch.y),
+   launchActions,headers:[...document.querySelectorAll('.museum-section > summary')].map(element=>({id:element.parentElement.id,...rect(element)}))};
+ });
+}
+function checkLowerDocks(layout,{stacked=false}={}){
+ const {dock,launch,width,height}=layout;
+ for(const r of [dock,launch])assert.ok(r.width>0&&r.height>0&&r.x>=0&&r.right<=width&&r.y>=0&&r.bottom<=height,'Both lower panels fit inside the viewport');
+ const overlap=Math.max(0,Math.min(dock.right,launch.right)-Math.max(dock.x,launch.x))*Math.max(0,Math.min(dock.bottom,launch.bottom)-Math.max(dock.y,launch.y));
+ assert.equal(overlap,0,'The timeline and launch panel never overlap');
+ assert.equal(layout.launchActions.length,2,'Both the site and schedule actions remain present');
+ for(const action of layout.launchActions)assert.ok(action.accessible&&action.x>=launch.x-1&&action.right<=launch.right+1&&action.y>=launch.y-1&&action.bottom<=launch.bottom+1,action.label+' fits inside the launch dock and receives pointer input');
+ if(stacked){
+  assert.ok(Math.abs(dock.x-launch.x)<=1&&Math.abs(dock.width-launch.width)<=1&&dock.width>=width*.9,'Narrow screens use two aligned full-width dock rows');
+  assert.ok(dock.bottom<launch.y,'The timeline sits above the launch panel with a visible gap');
+  assert.ok(dock.height<=110&&launch.height<=110,'Both narrow-screen dock rows remain compact');
+ }else{
+  assert.ok(Math.abs(dock.y-launch.y)<=1&&Math.abs(dock.height-launch.height)<=1,'Desktop timeline and launch panels share a top edge and height');
+  assert.ok(dock.right<launch.x,'The launch panel continues to the right of the timeline with a gap');
+  assert.ok(Math.abs(dock.width/(dock.width+launch.width)-.75)<=.02,'The desktop timeline occupies three quarters of the two panel widths');
+ }
+}
+async function selectedCardDockOverlaps(){
+ return page.evaluate(()=>{
+  const info=document.getElementById('info').getBoundingClientRect();
+  const overlap=id=>{const r=document.getElementById(id).getBoundingClientRect();return Math.max(0,Math.min(r.right,info.right)-Math.max(r.left,info.left))*Math.max(0,Math.min(r.bottom,info.bottom)-Math.max(r.top,info.top));};
+  return {launch:overlap('nextLaunchPanel'),timeline:overlap('timeDock')};
  });
 }
 async function nextLaunchState(){
@@ -70,12 +96,16 @@ try{
  assert.equal(await page.locator('#museumRightStack').isVisible(),true);
  assert.equal(await page.locator('#nextLaunchPanel .next-launch__eyebrow').textContent(),'СЛЕДУЮЩИЙ ЗАПУСК');
  assert.equal(await page.locator('#nextLaunchPanel .next-launch__name').textContent(),'ПРОГРЕСС МС-37');
+ const schedule=page.locator('#nextLaunchPanel a.next-launch__schedule');
+ assert.equal(await schedule.isVisible(),true);assert.match(await schedule.textContent(),/Расписание запусков/);
+ assert.equal(await schedule.getAttribute('href'),'https://rockettrip.space/raspisanie');
+ assert.equal(await schedule.getAttribute('target'),'_blank');assert.match(await schedule.getAttribute('rel'),/\bnoopener\b/);
  assert.equal(await page.locator('#nextLaunchPanel [role="timer"]').getAttribute('aria-live'),'off','Second-by-second updates must not continually announce over the screen reader');
  const countdownBefore=await nextLaunchState();assert.equal(countdownBefore.inRightMenu,true);assert.equal(countdownBefore.inLeftMenu,false);
  assert.ok(countdownBefore.digits.every((value,index)=>(index===0?/^\d{3,}$/:/^\d{2}$/).test(value)),'All four countdown groups contain stable-width digits');
  assert.ok(Math.abs(countdownBefore.totalSeconds-Math.max(0,Math.ceil((countdownBefore.deadline-countdownBefore.now)/1000)))<=1,'The visible countdown uses the real launch instant and wall clock');
  if(countdownBefore.deadline>countdownBefore.now+2000){
-  assert.match(countdownBefore.status,/предварительное/i,'A provisional launch time is visibly identified');
+  assert.match(countdownBefore.status,/предварительн/i,'A provisional launch time is visibly identified');
   await page.waitForFunction(previous=>{
    const panel=document.getElementById('nextLaunchPanel'),values=['days','hours','minutes','seconds'].map(unit=>Number(panel.querySelector('[data-countdown-unit="'+unit+'"]').textContent));
    return values[0]*86400+values[1]*3600+values[2]*60+values[3]<previous;
@@ -91,7 +121,10 @@ try{
  assert.equal(siteIds.length,catalogue.sites+catalogue.stations,'Every existing rendered object remains reachable');
  assert.equal(new Set(siteIds).size,siteIds.length,'A site has one catalogue entry, with no duplicate category');
  for(const id of ['pad-1','pad-31','pad-41','pad-45','pad-81','pad-90','pad-109','pad-110','pad-200','pad-250'])assert.ok(launch.siteIds.includes(id),id+' is a launch or stand-start complex');
- for(const id of ['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254'])assert.ok(infrastructure.siteIds.includes(id),id+' is infrastructure');
+ for(const id of ['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-130','pad-175'])assert.ok(infrastructure.siteIds.includes(id),id+' is infrastructure');
+ assert.equal(launch.count,10,'Nine named launch complexes and one silo group form the top-level launch menu');
+ assert.equal(launch.siteCount,40,'Grouping keeps all 40 physical launch facilities reachable');
+ assert.equal(infrastructure.siteIds.length,58+catalogue.stations);
  assert.equal(graveyard.researchIds.length,catalogue.research);assert.equal(catalogue.history,18,'The historical data is preserved after removing its bottom strip');
  assert.equal(await page.locator('#infrastructureList .entry-station').count(),catalogue.stations,'Railway stations and depots stay in infrastructure');
  evidence.catalogue=catalogue;
@@ -100,14 +133,12 @@ try{
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().labelsVisible),true);
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));
  await shot('desktop-menu');evidence.desktop=await menuBounds();
- assert.ok(evidence.desktop.stack.bottom<evidence.desktop.dock.y,'Sidebar and time dock do not overlap');
- assert.ok(evidence.desktop.dock.height<=90&&evidence.desktop.dock.height>=70,'The desktop time dock is compact');
+ checkLowerDocks(evidence.desktop);
+ assert.ok(evidence.desktop.stack.bottom<evidence.desktop.lowerDockTop,'Sidebar remains above both lower panels');
+ assert.ok(evidence.desktop.dock.height<=120&&evidence.desktop.dock.height>=70,'The desktop dock stays compact');
  await page.locator('#nextLaunchPanel .next-launch__site').click();await selectedSite('pad-31');
- const launchCardLayout=await page.evaluate(()=>{
-  const panel=document.getElementById('nextLaunchPanel').getBoundingClientRect(),info=document.getElementById('info').getBoundingClientRect();
-  return {overlap:Math.max(0,Math.min(panel.right,info.right)-Math.max(panel.left,info.left))*Math.max(0,Math.min(panel.bottom,info.bottom)-Math.max(panel.top,info.top))};
- });
- assert.equal(launchCardLayout.overlap,0,'The launch panel must not cover the opened Site 31 card');evidence.nextLaunch.siteCard=launchCardLayout;
+ const launchCardLayout=await selectedCardDockOverlaps();
+ assert.deepEqual(launchCardLayout,{launch:0,timeline:0},'Both lower docks leave the opened Site 31 card usable');evidence.nextLaunch.siteCard=launchCardLayout;
  await page.locator('#close').click();await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());
  await page.locator('#year').focus();await page.keyboard.press('ArrowLeft');
  assert.equal(await page.locator('#yearVal').textContent(),'2025','The compact year control remains keyboard-accessible');
@@ -116,10 +147,38 @@ try{
  assert.equal(await page.locator('#infrastructureList [data-site-id="pad-251"]').count(),1);
  await page.locator('#infrastructureList [data-site-id="pad-251"]').click();await selectedSite('pad-251');
  await page.locator('#infrastructureSearch').fill('');await shot('desktop-infrastructure');
- await openSection('sitesAccordion');await page.locator('#search').fill('Протон');
+ await openSection('sitesAccordion');
+ assert.deepEqual(await page.locator('#list > .entry').evaluateAll(elements=>elements.map(element=>element.dataset.siteId)),MUSEUM_LAUNCH_ENTRIES.map(entry=>entry.id),'The nine named launch complexes remain separate top-level buttons');
+ const siloGroup=page.locator('#'+MUSEUM_SILO_GROUP.id),siloEntries=siloGroup.locator('[data-site-id]');
+ assert.equal(await page.locator('#list > details.silo-group').count(),1);
+ assert.match(await siloGroup.locator(':scope > summary').textContent(),/Шахтные установки/);
+ assert.equal(await siloGroup.evaluate(element=>element.open),false,'The 31 silos begin in one collapsed group');
+ assert.deepEqual((await siloEntries.evaluateAll(elements=>elements.map(element=>element.dataset.siteId))).sort(),[...MUSEUM_SILO_GROUP.siteIds].sort());
+ assert.equal(await page.locator('#count').textContent(),'10');
+ await siloGroup.locator(':scope > summary').focus();await page.keyboard.press('Enter');
+ await page.waitForFunction(id=>document.getElementById(id).open,MUSEUM_SILO_GROUP.id);
+ assert.equal(await page.locator('#sitesAccordion').evaluate(element=>element.open),true,'Opening the nested native details keeps the launch catalogue open');
+ assert.equal(await siloGroup.locator('[data-site-id="pad-109"]').isVisible(),true);
+ await page.locator('#search').fill('109');
+ assert.equal(await siloGroup.evaluate(element=>element.open),true,'Searching a silo number reveals its result inside the group');
+ assert.equal(await page.locator('#list > .entry').count(),0);
+ assert.deepEqual(await siloEntries.evaluateAll(elements=>elements.map(element=>element.dataset.siteId)),['pad-109']);
+ await shot('desktop-silo-search');
+ await siloGroup.locator('[data-site-id="pad-109"]').click();await selectedSite('pad-109');await page.locator('#close').click();
+ for(const query of ['ШПУ','Шахтные установки']){
+  await page.locator('#search').fill(query);
+  assert.equal(await siloGroup.evaluate(element=>element.open),true);
+  assert.equal(await siloEntries.count(),31,query+' finds every silo installation');
+  assert.equal(await page.locator('#list > .entry').count(),0);
+ }
+ await page.locator('#search').fill('Протон');
  for(const id of ['pad-81','pad-200'])assert.equal(await page.locator('#list [data-site-id="'+id+'"]').count(),1);
+ assert.equal(await siloGroup.isVisible(),false,'Unmatched silos do not appear in a Proton search');
  assert.equal(await page.locator('#list [data-site-id="pad-251"]').count(),0,'Airports no longer appear among launch complexes');
  await page.locator('#search').fill('');
+ assert.equal(await page.locator('#list > .entry').count(),9);assert.equal(await siloEntries.count(),31);
+ assert.equal(await page.locator('#count').textContent(),'10','Clearing search restores ten top-level launch entries');
+ evidence.silos={topLevel:10,installations:31,searches:['109','ШПУ','Шахтные установки','Протон'],selected:'pad-109'};
  await openSection('graveyardAccordion');await page.locator('#graveyardSearch').fill('BAI-001');
  assert.equal(await page.locator('#graveyardList [data-research-id="BAI-001"]').count(),1);
  await page.locator('#graveyardList [data-research-id="BAI-001"]').click();assert.ok((await page.locator('#title').textContent()).startsWith('BAI-001'));
@@ -179,22 +238,29 @@ try{
  assert.equal(await page.locator('#year').inputValue(),'2026','The ruins entry opens the existing damaged-roof state');
 
  for(const id of sections)if(await page.locator('#'+id).evaluate(element=>element.open))await page.locator('#'+id+' > summary').click();
+ await page.setViewportSize({width:960,height:900});await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());await step();
+ evidence.tablet=await menuBounds();checkLowerDocks(evidence.tablet,{stacked:true});
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.showOverview());
  const toggle=page.locator('#mobileMenuToggle');assert.equal(await toggle.isVisible(),true);assert.equal(await toggle.getAttribute('aria-expanded'),'false');
- assert.equal(await page.locator('#museumRightStack').isVisible(),false);
- assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false,'The launch panel collapses with the phone menu');
- assert.equal((await nextLaunchState()).inLeftMenu,true,'The one launch panel moves into the phone menu rather than duplicating its clock');
+ assert.equal(await page.locator('#museumRightStack').isVisible(),true);
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),true,'The launch dock stays visible while the phone menu is closed');
+ const phoneLaunch=await nextLaunchState();assert.equal(phoneLaunch.inRightMenu,true);assert.equal(phoneLaunch.inLeftMenu,false,'The launch dock retains its own host on the phone');
+ assert.equal(await page.locator('#nextLaunchPanel').count(),1,'There is one live countdown at every viewport size');
+ evidence.mobileClosed=await menuBounds();checkLowerDocks(evidence.mobileClosed,{stacked:true});
+ assert.equal(await schedule.isVisible(),true,'The schedule link remains available with the phone menu closed');
+ await shot('mobile-closed-menu');
  for(const id of sections)assert.equal(await page.locator('#'+id).isVisible(),false);
  await toggle.click();for(const id of sections)assert.equal(await page.locator('#'+id).isVisible(),true);
- assert.equal(await page.locator('#nextLaunchPanel').isVisible(),true,'Opening the phone menu reveals the launch panel in the same state change');
- evidence.mobile=await menuBounds();assert.ok(evidence.mobile.stack.bottom<evidence.mobile.dock.y,'The expanded mobile menu stays above the time dock');
- assert.ok(evidence.mobile.dock.height<=80,'The phone time dock is compact');
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),true,'Opening the phone menu leaves the launch dock visible');
+ evidence.mobile=await menuBounds();checkLowerDocks(evidence.mobile,{stacked:true});
+ assert.ok(evidence.mobile.stack.bottom<evidence.mobile.lowerDockTop,'The expanded mobile menu stays above both lower docks');
  assert.equal(await page.locator('#museumIdentity .museum-name').isVisible(),true);assert.equal(await page.locator('#museumIdentity .museum-subtitle').isVisible(),true);
- for(const h of evidence.mobile.headers){assert.ok(h.x>=0&&h.right<=390&&h.height>=40,h.id+' remains a full-width touch target');assert.ok(h.y>=0&&h.bottom<evidence.mobile.dock.y,h.id+' is visible before opening a section');}
+ for(const h of evidence.mobile.headers){assert.ok(h.x>=0&&h.right<=390&&h.height>=40,h.id+' remains a full-width touch target');assert.ok(h.y>=0&&h.bottom<evidence.mobile.lowerDockTop,h.id+' is visible above the lower docks');}
  await shot('mobile-menu');
  await openSection('equipmentAccordion');await page.locator('[data-museum-action="tua"]').click();
  assert.equal(await toggle.getAttribute('aria-expanded'),'false');await selectedSite('pad-112');
- assert.equal(await page.locator('#nextLaunchPanel').isVisible(),false);
+ assert.equal(await page.locator('#nextLaunchPanel').isVisible(),true,'Selecting a phone exhibit keeps the lower launch dock visible');
+ assert.deepEqual(await selectedCardDockOverlaps(),{launch:0,timeline:0},'The phone TUA card does not cover either lower dock');
  assert.equal(await page.locator('#mik112Tua').getAttribute('aria-pressed'),'true');
  await shot('mobile-tua');
  await toggle.click();await openSection('equipmentAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();

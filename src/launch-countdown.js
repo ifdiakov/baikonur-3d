@@ -1,4 +1,4 @@
-export const LAUNCH_COUNTDOWN_VERSION='next-launch-v1';
+export const LAUNCH_COUNTDOWN_VERSION='next-launch-dock-v2';
 
 // A date without an explicit zone is not an instant. In particular, do not
 // turn a published launch day into a fictitious midnight launch countdown.
@@ -54,6 +54,7 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
  const eyebrow=make('p','next-launch__eyebrow','СЛЕДУЮЩИЙ ЗАПУСК');
  const mission=make('h2','next-launch__name',launch.name||'ПРОГРЕСС МС-37');mission.id=headingId;
  head.append(eyebrow,mission);
+ const countdownClock=make('div','next-launch__clock');
  const countdownLabel=make('p','next-launch__countdown-label','ДО СТАРТА');
  const counter=make('div','next-launch__countdown');counter.setAttribute('role','timer');counter.setAttribute('aria-live','off');
  const values={};
@@ -74,19 +75,17 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
  site.disabled=typeof onOpenSite!=='function';
  const openSite=()=>{if(typeof onOpenSite==='function')onOpenSite(launch.siteId||'pad-31');};
  site.addEventListener('click',openSite);footer.append(site);
- const url=sourceUrl(launch.source);
- if(url){
-  const source=make('a','next-launch__source',launch.source.label||'Расписание');
-  source.href=url;source.target='_blank';source.rel='noopener noreferrer';
-  source.setAttribute('aria-label','Источник расписания: '+(launch.source.label||'расписание запусков'));
-  footer.append(source);
- }
- section.append(head,countdownLabel,counter,meta,footer);element.replaceChildren(section);
+ const scheduleUrl=sourceUrl(launch.schedule)||'https://rockettrip.space/raspisanie';
+ const schedule=make('a','next-launch__schedule','Расписание запусков');
+ schedule.href=scheduleUrl;schedule.target='_blank';schedule.rel='noopener noreferrer';
+ schedule.setAttribute('aria-label','Открыть расписание запусков в новой вкладке');
+ footer.append(schedule);countdownClock.append(countdownLabel,counter);
+ section.append(head,countdownClock,meta,footer);element.replaceChildren(section);
  let disposed=false,interval=null,lastParts=null,lastMode='unknown',lastStatus='';
  const stopTimer=()=>{if(interval!==null){clock.clearInterval(interval);interval=null;}};
  const stats=()=>({version:LAUNCH_COUNTDOWN_VERSION,id:launch.id||null,name:launch.name||'ПРОГРЕСС МС-37',
   siteId:launch.siteId||'pad-31',precision:launch.precision||'unknown',status:launch.status||'planned',
-  launchAt:launch.launchAt||null,updatedAt:launch.updatedAt||null,mode:lastMode,
+  launchAt:launch.launchAt||null,updatedAt:launch.updatedAt||null,scheduleUrl,mode:lastMode,
   countdown:lastParts?{...lastParts}:null,message:lastStatus,timerActive:interval!==null,disposed});
  function refresh(){
   if(disposed)return stats();
@@ -94,7 +93,7 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
   lastParts=precision==='instant'?countdownParts(launch.launchAt,now()):null;
   lastMode=lastParts?(lastParts.expired?'elapsed':'countdown'):precision==='date'?'date':'unknown';
   section.dataset.state=lastMode;section.dataset.launchStatus=launch.status||'planned';
-  lastStatus=lastParts?(lastParts.expired?'Ожидаем подтверждения старта':launch.status==='confirmed'?'Время старта подтверждено':'Время старта предварительное')
+  lastStatus=lastParts?(lastParts.expired?'Ожидаем подтверждения':launch.status==='confirmed'?'Подтверждено':'Предварительно')
    :precision==='date'||precision==='instant'?'Время старта уточняется':'Дата старта уточняется';
   for(const [key]of units){
    const text=lastParts?String(lastParts[key]).padStart(key==='days'?3:2,'0'):'—';

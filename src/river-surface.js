@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {sampleSteppe} from './terrain-extent.js?v=20261101-steppe-v6';
+import {sampleSteppe} from './terrain-extent.js?v=20261101-steppe-v7';
 
 export const RIVER_SURFACE_VERSION='syrdarya-water-polygons-v1';
 function ringArea(ring){
