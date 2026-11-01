@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {projectOsm} from '../src/osm-geography.js';
 import {FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_REFERENCE,FLANK_COORDINATE_SYSTEM,FLANK_CENTERS,FLANK_BOUNDS,FLANK_REFERENCE_OUTLINE,FLANK_REFERENCE_DIVIDERS,referenceToPlan,containsFlankPoint} from '../src/flank-boundaries.js';
 import {buildFlankDistricts,FLANK_DISTRICTS} from '../src/flank-districts.js';
+import {buildTerrainRelief} from '../src/terrain-relief.js';
 
 const keys=['left','center','right'],colors=[0xd45a91,0x39bad2,0xefb65d];
 const point=(x,y,h=0)=>new THREE.Vector3((x-650)*3.4,h,(y-522.5)*3.4);
@@ -204,4 +205,119 @@ for(let i=0;i<terrain.geometry.attributes.position.count;i++){
 assert.equal(districts.state().reliefClipped,true);assert.equal(districts.state().visibleReliefSurfaces,1);
 districts.setOpacity(0);assert.equal(root.visible,false);assert.equal(overlay.visible,false);
 assert.equal(districts.state().visibleZones,0);assert.equal(districts.state().visibleBoundaries,0);assert.equal(districts.state().visibleOuterBoundaries,0);
-console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false}));
+
+// A real DEM mesh must carry all three colours and the neutral overview
+// without copying its large attribute buffers or moving the source contour.
+// Include both rising ground and a narrow flat road between DEM vertices.
+const unchangedContours=JSON.stringify({outline:FLANK_OUTLINE,polygons:FLANK_POLYGONS,borders:FLANK_BORDERS});
+const worldOutline=FLANK_OUTLINE.map(p=>point(...p));
+const reliefBounds={minX:Math.min(...worldOutline.map(p=>p.x))-260,maxX:Math.max(...worldOutline.map(p=>p.x))+260,
+ minZ:Math.min(...worldOutline.map(p=>p.z))-260,maxZ:Math.max(...worldOutline.map(p=>p.z))+260};
+const demWidth=17,demHeight=15,demValues=[];
+for(let z=0;z<demHeight;z++)for(let x=0;x<demWidth;x++)
+ demValues.push(Math.round(980+160*Math.sin(x/(demWidth-1)*Math.PI)*Math.sin(z/(demHeight-1)*Math.PI)+75*x/(demWidth-1)));
+const broadRelief=buildTerrainRelief({dem:{width:demWidth,height:demHeight,bounds:reliefBounds,metresPerUnit:.1,offsetMetres:0,values:demValues},
+ material:new THREE.MeshBasicMaterial({color:0xe4d1a8}),step:48,
+ protection:{corridors:[{points:[{x:reliefBounds.minX,z:37},{x:reliefBounds.maxX,z:53}],width:6}]}});
+scene.add(broadRelief.mesh);scene.updateMatrixWorld(true);
+const reliefSource=broadRelief.mesh.geometry,sourcePositions=Array.from(reliefSource.attributes.position.array),sourceIndex=Array.from(reliefSource.index.array);
+const boundaryBefore=new Map(neon.map(mesh=>[mesh,Array.from({length:mesh.geometry.attributes.position.count},(_,i)=>
+ new THREE.Vector3().fromBufferAttribute(mesh.geometry.attributes.position,i).applyMatrix4(mesh.matrixWorld))]));
+districts.addTerrainRelief(broadRelief);scene.updateMatrixWorld(true);
+assert.equal(JSON.stringify({outline:FLANK_OUTLINE,polygons:FLANK_POLYGONS,borders:FLANK_BORDERS}),unchangedContours,'Draping must not change the surveyed contour or its district topology');
+assert.deepEqual(Array.from(reliefSource.attributes.position.array),sourcePositions,'District overlays must leave DEM vertices unchanged');
+assert.deepEqual(Array.from(reliefSource.index.array),sourceIndex,'District overlays must leave DEM triangles unchanged');
+const demOverlays=broadRelief.mesh.children.filter(mesh=>mesh.userData.museumComponent==='flank-relief-overlay');
+const overviewOverlay=broadRelief.mesh.children.find(mesh=>mesh.userData.museumComponent==='overview-relief-overlay');
+assert.equal(demOverlays.length,3);assert.ok(overviewOverlay);
+assert.deepEqual(demOverlays.map(mesh=>mesh.userData.flank),keys);
+const sharedPosition=demOverlays[0].geometry.attributes.position;
+assert.notStrictEqual(sharedPosition,reliefSource.attributes.position,'The lift has its own positions, never a mutation of the ground mesh');
+for(const mesh of [...demOverlays,overviewOverlay]){
+ for(const attribute of ['position','normal','uv','color'])
+  assert.strictEqual(mesh.geometry.attributes[attribute],demOverlays[0].geometry.attributes[attribute],'All relief graphics share the '+attribute+' buffer');
+ assert.notStrictEqual(mesh.geometry.index,reliefSource.index,'Each geographic clip owns only its triangle selection');
+ assert.ok(mesh.geometry.index.count>0&&mesh.geometry.index.count<reliefSource.index.count,'Geographic bounds remove unrelated relief triangles');
+ assert.equal(mesh.geometry.attributes.color.itemSize,4);
+ assert.deepEqual(Array.from(mesh.geometry.attributes.color.array),Array.from(reliefSource.attributes.color.array),'The fill retains the real ground feathering');
+ assert.equal(mesh.material.depthWrite,false);assert.equal(mesh.material.depthTest,true);
+ assert.equal(mesh.renderOrder,4);assert.equal(mesh.userData.pickable,false);
+ assert.ok(mesh.material.fragmentShader.includes('if(!insideFlank(vFlankWorld))discard;'),'Bounding rectangles require the complete polygon clip as well');
+}
+
+// Evaluate the generated scalar polygon predicate at independent source-map
+// points. This catches a wrong district, truncated outline, or plan/world mix
+// that a mere shader-string-presence assertion would miss.
+function shaderContains(mesh){
+ const body=mesh.material.fragmentShader.match(/bool insideFlank\(vec2 p\)\{([\s\S]*?)return inside;\}/)?.[1];
+ assert.ok(body,'Relief graphics contain a world-coordinate polygon predicate');
+ return new Function('x','z',body.replace('bool inside=false;','let inside=false;').replaceAll('p.x','x').replaceAll('p.y','z')+'return inside;');
+}
+const clips=[...demOverlays,overviewOverlay].map(shaderContains),clipPolygons=[...FLANK_POLYGONS,FLANK_OUTLINE];
+let reliefClipProbes=0,raisedOverlayProbes=0;
+for(let x=Math.min(...xs)-25;x<Math.max(...xs)+25;x+=71.3)for(let y=Math.min(...ys)-25;y<Math.max(...ys)+25;y+=67.9){
+ const p=[x,y];if(allEdges.some(([a,b])=>segmentDistance(p,a,b)<.01))continue;
+ const world=point(x,y,100);
+ clips.forEach((clip,i)=>assert.equal(clip(world.x,world.z),inside(p,clipPolygons[i]),'Relief clip agrees with geographic source at '+p));
+ reliefClipProbes++;
+ if(raisedOverlayProbes>=45)continue;
+ const district=FLANK_POLYGONS.findIndex(polygon=>inside(p,polygon));if(district<0)continue;
+ ray.set(world,down);const groundHit=ray.intersectObject(broadRelief.mesh,false)[0];
+ if(!groundHit||groundHit.point.y<=-2.4)continue;
+ const fillHit=ray.intersectObject(demOverlays[district],false)[0];
+ assert.ok(fillHit,'Each raised point keeps its correct clipped district geometry');
+ assert.ok(fillHit.point.y-groundHit.point.y>.06&&fillHit.point.y-groundHit.point.y<.10,'The district fill sits just above the actual DEM triangle');
+ raisedOverlayProbes++;
+}
+assert.ok(reliefClipProbes>250&&raisedOverlayProbes>=30);
+
+// The real ring is long: two endpoints cannot follow its intervening hills.
+// Check every draped vertex and sample the physical ground beneath selected
+// vertices, including the neutral overview ring and all neon widths.
+const overviewBoundary=scene.getObjectByName('Космодром · единая обзорная граница');
+assert.ok(overviewBoundary.geometry.attributes.position.count>FLANK_OUTLINE.length*20);
+let drapedBoundaryVertices=0,physicalBoundaryProbes=0;
+for(const mesh of [...neon,overviewBoundary]){
+ assert.equal(mesh.userData.terrainDraped,true);
+ const positions=mesh.geometry.attributes.position;
+ for(let i=0;i<positions.count;i++){
+  const world=new THREE.Vector3().fromBufferAttribute(positions,i).applyMatrix4(mesh.matrixWorld);
+  const sampled=broadRelief.heightAt(world.x,world.z);
+  assert.ok(world.y-sampled>.87,'A draped boundary vertex must remain above actual terrain');
+  if(boundaryBefore.has(mesh)){
+   const before=boundaryBefore.get(mesh)[i];
+   assert.ok(Math.hypot(world.x-before.x,world.z-before.z)<.001,'Draping changes height, never the geographic boundary');
+   assert.ok(Math.abs(world.y-before.y-Math.max(0,sampled+2.755))<.001,'Boundary height follows the same terrain triangles as the ground');
+  }
+  if(i===Math.floor(positions.count/2)){
+   ray.set(new THREE.Vector3(world.x,100,world.z),down);const hit=ray.intersectObject(broadRelief.mesh,false)[0];
+   if(hit){assert.ok(world.y-hit.point.y>.87,'A boundary is above the rendered triangle, not only its analytic DEM');physicalBoundaryProbes++;}
+  }
+  drapedBoundaryVertices++;
+ }
+}
+assert.ok(drapedBoundaryVertices>3000&&physicalBoundaryProbes>15);
+const overviewPositions=overviewBoundary.geometry.attributes.position;
+for(let i=0;i<overviewPositions.count;i+=2){
+ const j=(i+2)%overviewPositions.count;
+ const ax=(overviewPositions.getX(i)+overviewPositions.getX(i+1))/2,az=(overviewPositions.getZ(i)+overviewPositions.getZ(i+1))/2;
+ const bx=(overviewPositions.getX(j)+overviewPositions.getX(j+1))/2,bz=(overviewPositions.getZ(j)+overviewPositions.getZ(j+1))/2;
+ assert.ok(Math.hypot(bx-ax,bz-az)<=12.01,'The continuous overview ring has dense terrain samples between original corners');
+}
+
+assert.ok(demOverlays.every(mesh=>!mesh.visible)&&!overviewOverlay.visible,'No relief graphics appear when both map levels are hidden');
+districts.setOverviewOpacity(1);
+assert.ok(overviewOverlay.visible&&demOverlays.every(mesh=>!mesh.visible),'Overview shows only its neutral relief fill');
+assert.equal(overviewOverlay.material.uniforms.uOpacity.value,.025);
+districts.setOpacity(1);
+assert.ok(!overviewOverlay.visible&&demOverlays.every(mesh=>mesh.visible),'District appearance suppresses the overview relief fill');
+assert.equal(overviewOverlay.material.uniforms.uOpacity.value,0);
+demOverlays.forEach(mesh=>assert.equal(mesh.material.uniforms.uOpacity.value,.19));
+districts.setOpacity(.02);
+assert.ok(overviewOverlay.visible&&demOverlays.every(mesh=>!mesh.visible),'Crossing the district threshold restores the requested overview level');
+districts.setOverviewOpacity(0);assert.equal(overviewOverlay.visible,false);
+districts.setOpacity(.6);demOverlays.forEach(mesh=>assert.ok(Math.abs(mesh.material.uniforms.uOpacity.value-.114)<1e-12));
+districts.setOpacity(0);
+assert.ok(!overviewOverlay.visible&&demOverlays.every(mesh=>!mesh.visible));
+assert.equal(districts.state().overviewReliefCount,1);assert.equal(districts.state().terrainDraped,true);
+console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false,reliefClipProbes,raisedOverlayProbes,drapedBoundaryVertices,physicalBoundaryProbes,reliefAttributesShared:true,overviewReliefVisibility:true}));

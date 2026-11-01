@@ -293,7 +293,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const highwayYellow=geometryBatch(roadRoot,'Трасса · двойная жёлтая',createHighwayMarkingMaterial(HIGHWAY_MARKINGS.yellowColor));
  const highwayWhite=geometryBatch(roadRoot,'Трасса · белые кромки',createHighwayMarkingMaterial(HIGHWAY_MARKINGS.whiteColor));
  const ballast=geometryBatch(railRoot,'OSM · балласт',mat.ballast),ties=geometryBatch(railRoot,'OSM · шпалы',mat.ties,{solid:true}),steel=geometryBatch(railRoot,'OSM · рельсы',mat.steel,{solid:true}),abandoned=geometryBatch(railRoot,'OSM · бывшие пути',mat.abandoned);
- const batches=[shoulder,asphalt,highwayAsphalt,unpaved,paint,ballast,ties,steel,abandoned],roadPaths=[],railPaths=[],stationLabels=[];
+ const batches=[shoulder,asphalt,highwayAsphalt,unpaved,paint,ballast,ties,steel,abandoned],roadPaths=[],railPaths=[],terrainRailPaths=[],stationLabels=[];
  const markingRoads=[],highwayMarkedWays=new Set();let highwayMarkingRuns=0,rampMarkingRuns=0;
  let markingSegments=0,railTies=0,connections=0;const accessReports=[],railPortReports=[],renderedRoadWays=new Set(),renderedRailWays=new Set(),hiddenCityWays=new Set();
  let roadPruning=null,railPruning=null,exhibitRoadFilter=null;
@@ -613,6 +613,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     if(vb)run.push(b);else flush();
    }flush();renderedRuns.push(...runs);
    for(const ps of runs){
+    terrainRailPaths.push({points:ps,width:isAbandoned?.8:RAIL_PROFILE.ballastWidth});
     if(isAbandoned){abandoned.ribbon(ps,.8,.01);continue;}
     ballast.ribbon(ps,RAIL_PROFILE.ballastWidth,RAIL_PROFILE.ballastY,0,0,directionAt);
     for(const side of [-1,1])steel.ribbon(ps,RAIL_PROFILE.headWidth,RAIL_PROFILE.headY,side*RAIL_PROFILE.gauge/2,0,directionAt,null,RAIL_PROFILE.railHeight);
@@ -795,7 +796,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    railGauge:RAIL_PROFILE.gauge,railProfile:RAIL_PROFILE};
  }
  const buildMilliseconds=Date.now()-started;
- return {roadPaths:()=>roadPaths,trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,highwayDisplay,
+ return {roadPaths:()=>roadPaths,terrainPaths:()=>({roads:markingRoads,rails:terrainRailPaths}),trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,highwayDisplay,
   roadMarkingTarget(nodeId){const node=roadGraph.nodes.get(String(nodeId));return node?{nodeId:node.id,center:node.position.toArray(),sourceWayIds:[...new Set(node.edges.map(edge=>edge.wayId))]}:null;},
   bridgeObjects:()=>interchangeBridge?[interchangeBridge.root]:[],
   setBridgeEvening:value=>interchangeBridge?.setEvening(value),

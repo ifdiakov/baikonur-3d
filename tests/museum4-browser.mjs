@@ -101,7 +101,7 @@ try{
  assert.ok(roadPaint.filter(sample=>sample.contrast>8).length>=4,'Subpixel road dashes must remain visible: '+JSON.stringify(roadPaint));evidence.roadPaint=roadPaint;
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(true);q.showFlanks();});await step();
  const flanks=await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts);
- assert.equal(flanks.reliefCount,1);assert.equal(flanks.visibleReliefSurfaces,1);assert.deepEqual(flanks.reliefFlanks,['center']);await shot('saturn-flank-relief');
+ assert.equal(flanks.reliefCount,4);assert.equal(flanks.visibleReliefSurfaces,4);assert.deepEqual(flanks.reliefFlanks,['center','left','center','right']);await shot('saturn-flank-relief');
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleReliefSurfaces),0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(true));await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(180));await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().flankDistricts.visibleReliefSurfaces),0);evidence.flanks=flanks;
 

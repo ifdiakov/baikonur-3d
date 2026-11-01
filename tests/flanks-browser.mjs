@@ -37,7 +37,7 @@ try{
  assert.equal(state.flankDistricts.coordinateSystem,'osm-map');assert.equal(state.flankDistricts.reliefClipped,true);
  assert.ok(state.flankDistricts.alpha>.9);assert.equal(state.flankCards.panels,3);
  assert.equal(state.flankCards.plane,'screen');assert.equal(state.flankCards.groundPanels,0);
- assert.equal(state.flankDistricts.groundTextPanels,0);assert.equal(state.flankDistricts.reliefCount,1);assert.deepEqual(state.flankDistricts.reliefFlanks,['center']);assert.equal(state.flankDistricts.visibleReliefSurfaces,1);
+ assert.equal(state.flankDistricts.groundTextPanels,0);assert.equal(state.flankDistricts.reliefCount,4);assert.deepEqual(state.flankDistricts.reliefFlanks,['center','left','center','right']);assert.equal(state.flankDistricts.visibleReliefSurfaces,4);
  assert.equal(await page.locator('.flank-territory-layer,.flank-on-terrain').count(),0,'No text or portrait panels remain on the ground');
  assert.deepEqual(await page.locator('.flank-engineer').allTextContents(),['ЧЕЛОМЕЙ','КОРОЛЁВ','ЯНГЕЛЬ']);
  const rects=await page.locator('.flank-label').evaluateAll(es=>es.map(e=>{const r=e.getBoundingClientRect();return {id:e.dataset.district,x:r.x,y:r.y,w:r.width,h:r.height,transform:getComputedStyle(e).transform};}));

@@ -33,7 +33,7 @@ export const FLANK_DISTRICTS = [
 export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const root=new THREE.Group();root.name='Фланги · тематические территории';scene.add(root);
  const overviewRoot=new THREE.Group();overviewRoot.name='Космодром · общий контур';scene.add(overviewRoot);
- const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[];
+ const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[],overviewReliefSurfaces=[],boundaryMeshes=[];
  const mapped=new Map();
  const geographicBoundary=FLANK_COORDINATE_SYSTEM==='osm-map';
  const transform=p=>{if(geographicBoundary||!mapTransform)return p;const key=p.join(',');if(!mapped.has(key))mapped.set(key,mapTransform(...p));return mapped.get(key);};
@@ -87,9 +87,9 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   for(let j=1;j<points.length;j++){
    const a=point(...points[j-1],height),b=point(...points[j],height),delta=b.clone().sub(a);
    const side=new THREE.Vector3(-delta.z,0,delta.x).normalize().multiplyScalar(offset);
-   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,delta.length()+width*.6),material);
+   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(width,delta.length()+width*.6,1,Math.ceil(delta.length()/12)),material);
    mesh.rotation.set(-Math.PI/2,0,Math.atan2(delta.x,delta.z));mesh.position.copy(a).lerp(b,.5).add(side);
-   mesh.renderOrder=5;mesh.userData.pickable=false;parent.add(mesh);
+   mesh.renderOrder=5;mesh.userData.pickable=false;parent.add(mesh);boundaryMeshes.push(mesh);
   }
  }
  borders.forEach((points,i)=>{
@@ -134,9 +134,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
  let alpha=0,overviewAlpha=0,overviewRequestedAlpha=0;
  // A flat map polygon sits below relief. Drape the same district colour over
  // the actual hill mesh, retaining its feathered footprint and depth shading.
- function addTerrainSurface(source,key){
-  const district=FLANK_DISTRICTS.find(d=>d.key===key);
-  if(!district||!source?.isMesh)throw new Error('A terrain mesh and known flank are required');
+ function liftedGeometry(source){
   const geometry=source.geometry.clone(),position=geometry.attributes.position;
   if(!geometry.attributes.normal)geometry.computeVertexNormals();
   const normal=geometry.attributes.normal;
@@ -148,13 +146,68 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
    const colors=new Float32Array(position.count*4);colors.fill(1);geometry.setAttribute('color',new THREE.BufferAttribute(colors,4));
   }
   geometry.computeBoundingBox();geometry.computeBoundingSphere();
+  return geometry;
+ }
+ // Share lifted vertex attributes; restrict each district's index to its
+ // bounding rectangle. The existing exact polygon shader clips the rim.
+ function boundedGeometry(geometry,polygon){
+  const world=polygon.map(p=>point(...p)),xs=world.map(p=>p.x),zs=world.map(p=>p.z);
+  const minX=Math.min(...xs),maxX=Math.max(...xs),minZ=Math.min(...zs),maxZ=Math.max(...zs);
+  const p=geometry.attributes.position,index=geometry.index,indices=[];
+  for(let i=0;i<index.count;i+=3){
+   const a=index.getX(i),b=index.getX(i+1),c=index.getX(i+2);
+   if(Math.max(p.getX(a),p.getX(b),p.getX(c))<minX||Math.min(p.getX(a),p.getX(b),p.getX(c))>maxX||
+      Math.max(p.getZ(a),p.getZ(b),p.getZ(c))<minZ||Math.min(p.getZ(a),p.getZ(b),p.getZ(c))>maxZ)continue;
+   indices.push(a,b,c);
+  }
+  const result=new THREE.BufferGeometry();
+  for(const [name,attribute]of Object.entries(geometry.attributes))result.setAttribute(name,attribute);
+  result.setIndex(indices);result.computeBoundingBox();result.computeBoundingSphere();return result;
+ }
+ function addTerrainSurface(source,key,sharedGeometry=null){
+  const district=FLANK_DISTRICTS.find(d=>d.key===key);
+  if(!district||!source?.isMesh)throw new Error('A terrain mesh and known flank are required');
   const clipPolygon=polygons[FLANK_DISTRICTS.indexOf(district)];
+  const geometry=sharedGeometry?boundedGeometry(sharedGeometry,clipPolygon):liftedGeometry(source);
   const overlay=new THREE.Mesh(geometry,ink(district.color,.19,false,true,clipPolygon));
   overlay.name='Цвет фланга на рельефе · '+key;overlay.renderOrder=4;
   overlay.userData={pickable:false,groundSurface:false,museumComponent:'flank-relief-overlay',flank:key,clipToDistrict:true};
   overlay.visible=alpha>.035;source.add(overlay);reliefSurfaces.push(overlay);
   overlay.material.uniforms.uOpacity.value=alpha*.19;
   return overlay;
+ }
+ function addTerrainRelief(terrain){
+  const {mesh:source,heightAt}=terrain,geometry=liftedGeometry(source);
+  for(const district of FLANK_DISTRICTS)addTerrainSurface(source,district.key,geometry);
+  const overlay=new THREE.Mesh(boundedGeometry(geometry,outline),ink(0xa8bcc1,.025,false,true,outline,overviewMaterials));
+  overlay.name='Космодром · обзорная заливка на рельефе';overlay.renderOrder=4;
+  overlay.userData={pickable:false,museumComponent:'overview-relief-overlay',clipToDistrict:true};
+  source.add(overlay);overviewReliefSurfaces.push(overlay);
+  // Refine each side of the continuous mitered ring before draping it.
+  const old=overviewBoundary.geometry,positions=old.attributes.position,vertices=[],indices=[];
+  for(let i=0;i<ring.length;i++){
+   const next=(i+1)%ring.length,count=Math.max(1,Math.ceil(ring[i].distanceTo(ring[next])/12));
+   for(let j=0;j<count;j++)for(let side=0;side<2;side++){
+    const a=i*2+side,b=next*2+side,t=j/count;
+    vertices.push(THREE.MathUtils.lerp(positions.getX(a),positions.getX(b),t),positions.getY(a),THREE.MathUtils.lerp(positions.getZ(a),positions.getZ(b),t));
+   }
+  }
+  const pairCount=vertices.length/6;
+  for(let i=0;i<pairCount;i++){const a=i*2,b=((i+1)%pairCount)*2;indices.push(a,a+1,b,a+1,b+1,b);}
+  const refined=new THREE.BufferGeometry();refined.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));refined.setIndex(indices);
+  overviewBoundary.geometry=refined;old.dispose();
+  const vertex=new THREE.Vector3();
+  for(const mesh of [...boundaryMeshes,overviewBoundary]){
+   mesh.updateWorldMatrix(true,false);const inverse=mesh.matrixWorld.clone().invert(),p=mesh.geometry.attributes.position;
+   for(let i=0;i<p.count;i++){
+    vertex.fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld);
+    vertex.y+=Math.max(0,heightAt(vertex.x,vertex.z)+2.755);
+    vertex.applyMatrix4(inverse);p.setXYZ(i,vertex.x,vertex.y,vertex.z);
+   }
+   p.needsUpdate=true;mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
+   mesh.userData.terrainDraped=true;
+  }
+  syncOpacity();
  }
  function syncOpacity(){
   root.visible=alpha>.035;
@@ -164,11 +217,12 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   for(const{mat,strength}of materials)mat.uniforms.uOpacity.value=alpha*strength;
   for(const{mat,strength}of overviewMaterials)mat.uniforms.uOpacity.value=overviewAlpha*strength;
   for(const mesh of reliefSurfaces)mesh.visible=root.visible;
+  for(const mesh of overviewReliefSurfaces)mesh.visible=overviewRoot.visible;
  }
  function setOpacity(level){alpha=THREE.MathUtils.clamp(Number.isFinite(level)?level:0,0,1);syncOpacity();}
  function setOverviewOpacity(level){overviewRequestedAlpha=THREE.MathUtils.clamp(Number.isFinite(level)?level:0,0,1);syncOpacity();}
  syncOpacity();
- return {setOpacity,setOverviewOpacity,addTerrainSurface,state:()=>({version:FLANK_BOUNDARY_VERSION,alpha,zoneCount:zones.length,
+ return {setOpacity,setOverviewOpacity,addTerrainSurface,addTerrainRelief,state:()=>({version:FLANK_BOUNDARY_VERSION,alpha,zoneCount:zones.length,
   visibleZones:root.visible?zones.length:0,visibleBoundaries:root.visible?boundaries.length:0,
   visibleOuterBoundaries:root.visible?1:0,outerBoundarySegments:FLANK_PERIMETER.reduce((n,p)=>n+p.points.length-1,0),
   overviewAlpha,overviewRequestedAlpha,visibleOverviewBoundary:overviewRoot.visible?1:0,visibleOverviewFill:overviewRoot.visible?1:0,
@@ -176,5 +230,6 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   overviewBoundarySegments:ring.length,overviewLineWidth,overviewNeutral:true,overviewAdditive:false,
   reference:FLANK_REFERENCE,outline,outerBoundary:outline,polygons,reliefClipped:true,coordinateSystem:geographicBoundary||mapTransform?'osm-map':'original-schematic',
   reliefCount:reliefSurfaces.length,reliefFlanks:reliefSurfaces.map(m=>m.userData.flank),visibleReliefSurfaces:reliefSurfaces.filter(m=>m.visible&&m.parent.visible).length,
+  overviewReliefCount:overviewReliefSurfaces.length,terrainDraped:overviewBoundary.userData.terrainDraped===true,
   thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
 }

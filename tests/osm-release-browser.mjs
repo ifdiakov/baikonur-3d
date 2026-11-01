@@ -519,7 +519,7 @@ try{
  assert.equal(flank.coordinateSystem,'osm-map');assert.equal(flank.visibleZones,3);assert.equal(flank.visibleBoundaries,2);assert.equal(flank.visibleOuterBoundaries,1);
  assert.equal(flank.reference.version,'owner-osm-outline-20261028-v2');assert.equal(flank.visibleOverviewBoundary,0);
  assert.equal(flank.outerBoundarySegments,16);assert.deepEqual(flank.polygons.map(p=>p.length),[4,6,10]);
- assert.equal(flank.reliefCount,1);assert.equal(flank.visibleReliefSurfaces,1);assert.equal(flank.reliefClipped,true);assert.deepEqual(flank.reliefFlanks,['center']);
+ assert.equal(flank.reliefCount,4);assert.equal(flank.visibleReliefSurfaces,4);assert.equal(flank.reliefClipped,true);assert.deepEqual(flank.reliefFlanks,['center','left','center','right']);
  const saturn=await page.evaluate(()=>window.__BAIKONUR_QA.siteState('pad-23'));
  assert.ok(inside(saturn.map,flank.polygons[1]),'Saturn remains inside the central authored flank after registration');
  for(const id of ['city','airfield']){const site=await page.evaluate(id=>window.__BAIKONUR_QA.siteState(id),id);assert.ok(!flank.polygons.some(p=>inside(site.map,p)),id+' remains beyond the southern flank boundary');}

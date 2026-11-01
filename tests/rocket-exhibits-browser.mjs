@@ -187,7 +187,7 @@ try{
   // The first three pixels were covered by the two large terrain sheets;
   // the last two are nearby dark-floor controls. Compare actual rendering
   // with the terrain hidden, keeping the camera and source model fixed.
-  await page.evaluate(()=>window.__BAIKONUR_QA.terrainVisibility({main:false,regional:false,intermediate:false,satellite:false}));
+  await page.evaluate(()=>window.__BAIKONUR_QA.terrainVisibility({main:false,regional:false,intermediate:false,satellite:false,relief:false}));
   const gasFloorReference=await shot('site110-rectangular-duct-floor-reference');
   const referenceCamera=evidence.views.at(-1).camera;
   for(const key of ['position','target'])referenceCamera[key].forEach((value,i)=>near(value,gasFloorCamera[key][i],'Gas-floor comparison camera '+key));

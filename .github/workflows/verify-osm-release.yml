@@ -47,7 +47,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum7-docks-sandy-steppe-20261101-v2
+  RELEASE_TAG: museum7-terrain-relief-20261101-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -86,6 +86,7 @@ jobs:
           node tests/road-lighting-geometry.mjs
           node tests/saturn-natural-terrain.mjs
           node tests/steppe-surface.mjs
+          node tests/terrain-relief.mjs
           node tests/exhibit-road-filter.mjs
           node tests/industrial-road-continuity.mjs
           node tests/road-signs-geometry.mjs
@@ -168,7 +169,7 @@ jobs:
       max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector]
+        suite: [terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -198,6 +199,9 @@ jobs:
           node tests/proton-launch-browser.mjs
           node tests/model-inspector-browser.mjs
           node tests/mig25-browser.mjs
+      - name: Verify DEM relief, infrastructure clearances and terrain camera
+        if: matrix.suite == 'terrain-relief'
+        run: node tests/terrain-relief-browser.mjs
       - name: Verify startup and failure recovery
         if: matrix.suite == 'startup-menu'
         run: node tests/startup-browser.mjs
@@ -263,6 +267,7 @@ jobs:
         with:
           name: museum6-facilities-qa-${{ matrix.target }}-${{ matrix.suite }}-attempt-${{ github.run_attempt }}
           path: |
+            qa-terrain-relief/
             qa-startup/
             qa-menu/
             qa-camera-navigation/
@@ -328,12 +333,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/sandy-steppe-20261101-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/terrain-relief-20261101-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Интерактивный музей — нижние панели и песчаная степь',
+                name: 'Интерактивный музей — рельеф местности',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }
