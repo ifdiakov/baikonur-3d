@@ -5,7 +5,7 @@ import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectan
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-cyclone-v1';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-hotel-v2';
 import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261030-river-roads-signs-v1';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
@@ -359,7 +359,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-1':16})){
   const s=siteRecords.find(s=>s.id===id);if(s)masks.set(id,{center:point(s.x,s.y,0),radius});
  }
- const hotelSite=siteRecords.find(s=>s.id==='pad-75');if(hotelSite)masks.set('pad-75',{center:point(hotelSite.x,hotelSite.y,0),rectangle:{halfX:10.8,minZ:-3.4,maxZ:12.4}});
+ const hotelSite=siteRecords.find(s=>s.id==='pad-75');if(hotelSite)masks.set('pad-75',{center:portWorld(FACILITY_PORTS['pad-75'],FACILITY_PORTS['pad-75'].modelOffset,hotelSite,point),yaw:FACILITY_PORTS['pad-75'].yaw,rectangle:{halfX:10.8,minZ:-3.4,maxZ:12.4}});
  const site41=siteRecords.find(s=>s.id==='pad-41');if(site41){const s=FACILITY_PORTS['pad-41'],[minX,maxX,minZ,maxZ]=s.modelBoundsMetres;
   masks.set('pad-41',{center:point(site41.x,site41.y,0),rectangle:{halfX:Math.max(Math.abs(minX),Math.abs(maxX))*s.scale,minZ:minZ*s.scale,maxZ:maxZ*s.scale}});
  }

@@ -1,14 +1,16 @@
 import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
-export const SEVEN_WINDS_VERSION='seven-winds-photo-v1';
+import {SEVEN_WINDS_VERSION,SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v2';
+export {SEVEN_WINDS_VERSION};
 export const SEVEN_WINDS_REFERENCE=Object.freeze({
  folder:'1P7P9qFCcGwdm4-FG0s_WsdAcrHIfByRf',
  photos:['1j5GB2VX50kPwBZBljKfLtGOvEywBqTyB','1yw2nwUCYBpDNawiQmPgLrQ4_mWY-YL_e','1WwqGOQ1entD9x-R9bVsrAR7HPAUZqNgK'],
  interpretation:'Four-storey exterior, entrance and two garden gazebos from owner photos. Dimensions and courtyard spacing are interpretive; existing named-hotel geographic anchor retained.',
- floors:4,bays:16,scale:.28,yaw:0
+ floors:4,bays:16,scale:SEVEN_WINDS_LAYOUT.scale,yaw:SEVEN_WINDS_LAYOUT.yaw
 });
 export function buildSevenWinds(root){
  const k=archiveKit(root),M=(name,color,roughness=.8)=>k.mat[name]=new THREE.MeshStandardMaterial({color,roughness});
+ M('corporateBlue',0x2529b5,.48);
  M('roof',0x788581,.92);M('sage',0x86988b);M('deepSage',0x465b53);M('ivory',0xd1d3c4);M('reveal',0x8f9687);M('frame',0xe0dfcf);
  M('pane',0x46616d,.3);M('curtain',0x839da0);M('plinth',0x73483b);M('paver',0x9e9390);M('wood',0x879781);M('tile',0x544044);k.mat.tile.side=THREE.DoubleSide;k.mat.wood.side=THREE.DoubleSide;M('shrub',0x55634a);M('soilBed',0x7f775a);
  const glow=M('warmWindow',0xd6b67b,.4);glow.emissive.setHex(0xffc17a);glow.emissiveIntensity=.40;
@@ -39,7 +41,7 @@ export function buildSevenWinds(root){
  }
  // Both narrow ends have recessed access balconies, framed by tall piers.
  for(const end of [-1,1]){
-  const x=end*(W/2+.20);for(const z of [-5.1,5.1])k.box(.70,H+.45,1.05,x,(H+.45)/2,z,'sage','end-pier');
+  const x=end*(W/2+.20);for(const z of [-5.1,5.1].filter(z=>!(end===-1&&z>0)))k.box(.70,H+.45,1.05,x,(H+.45)/2,z,'sage','end-pier');
   k.box(.15,H,8.4,x-end*.22,H/2,0,'ivory','balcony-back');
   for(let f=0;f<4;f++){
    const y=.7+f*storey;
@@ -55,7 +57,7 @@ export function buildSevenWinds(root){
  // Broad white cantilever, with the characteristic outward leaning supports.
  k.box(8.6,2.7,.25,2,2.05,front+.16,'dark','entrance-recess');
  for(const x of [0,2,4]){k.box(1.88,2.45,.12,x,1.92,front+.34,'pane','entrance-glass');k.box(.07,2.5,.15,x-.94,1.92,front+.43,'frame','entrance-mullion');}
- for(let s=0;s<5;s++)k.box(10,.13,3.5-s*.45,2,.065+s*.13,front+1.65-s*.2,'ivory','entrance-step');
+ for(let s=0;s<5;s++)k.box(10,.13*(s+1),3.3-s*.45,2,.065*(s+1),front+1.65-s*.2,'ivory','entrance-step');
  k.box(12.0,.70,4.2,2,4.15,front+1.8,'ivory','entrance-canopy');
  for(const x of [-2.4,6.4])k.rod([x,.6,front+3.2],[x+.7,3.85,front+2.1],.18,'ivory','slanted-canopy-column');
  for(const x of [-.8,2,4.8])k.box(.75,.05,.42,x,3.785,front+2.2,'lampGlobe','canopy-downlight');
@@ -63,25 +65,50 @@ export function buildSevenWinds(root){
  function lettering(text,x,y,z,w,h,yaw=0){
   if(typeof document==='undefined')return;
   const cv=document.createElement('canvas');cv.width=1024;cv.height=192;const ctx=cv.getContext('2d');ctx.clearRect(0,0,1024,192);ctx.fillStyle='#353d99';ctx.font='900 140px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,102,1000);
-  const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;const mat=new THREE.MeshStandardMaterial({map:tx,transparent:true,roughness:.7,depthWrite:false});
+  const tx=new THREE.CanvasTexture(cv);tx.colorSpace=THREE.SRGBColorSpace;const mat=new THREE.MeshStandardMaterial({map:tx,alphaTest:.2,roughness:.7,depthWrite:true});
   const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);m.position.set(x,y,z);m.rotation.y=yaw;m.name='Гостиница · '+text;root.add(m);
  }
- lettering('ГОСТИНИЦА',2,4.20,front+3.915,9.6,.58);
- for(const [i,ch]of [...'ЦЭНКИ'].entries())lettering(ch,-W/2-.57,12.15-i*1.5,5.65,1.10,1.28);
- // Courtyard follows the ground photos: drive, white curbs, beds and two gazebos opposite the facade.
- k.box(64,.09,9,0,.04,14.7,'paver','front-walk');
- k.path([[-36,20],[28,20],[32,18]],4.8,.085,'asphalt','hotel-drive');
- for(const z of [17.45,22.55])k.path([[-36,z],[29,z]],.24,.18,'ivory','white-drive-curb');
- k.path([[2,10],[2,17.1]],3.2,.13,'paver','entrance-path');
- k.path([[-30,25],[28,25],[28,38]],2.0,.10,'paver','garden-path');
- for(const [x,z,w,d]of [[-19,13.8,10,4.2],[18,13.8,10,4.2],[-17,29,14,7],[3,34,11,5]]){
-  k.box(w,.12,d,x,.06,z,'soilBed','garden-bed');for(const s of [-1,1]){k.box(w+.15,.30,.13,x,.15,z+s*d/2,'plinth','garden-border');k.box(.13,.3,d,x+s*w/2,.15,z,'plinth','garden-border');}
+ lettering('ГОСТИНИЦА',2,4.20,front+3.94,9.6,.58);
+ // Vertical blue relief letters on the end wall, facing out along -X.
+ // The former flat labels faced the long facade and were buried in this pier.
+ k.box(.70,H+.45,2.5,-25,(H+.45)/2,5.65,'deepSage','corporate-sign-pier');
+ const glyphs={
+  'Ц':[[-.5,.65],[-.3,.65],[-.3,-.40],[.25,-.40],[.25,.65],[.45,.65],[.45,-.40],[.60,-.40],[.60,-.76],[.40,-.76],[.40,-.60],[-.5,-.60]],
+  'Н':[[-.5,-.65],[-.3,-.65],[-.3,-.10],[.3,-.10],[.3,-.65],[.5,-.65],[.5,.65],[.3,.65],[.3,.10],[-.3,.10],[-.3,.65],[-.5,.65]],
+  'К':[[-.5,-.65],[-.3,-.65],[-.3,-.10],[-.18,-.10],[.28,-.65],[.52,-.65],[.01,.03],[.50,.65],[.25,.65],[-.18,.12],[-.3,.12],[-.3,.65],[-.5,.65]],
+  'И':[[-.5,-.65],[-.3,-.65],[.3,.28],[.3,-.65],[.5,-.65],[.5,.65],[.3,.65],[-.3,-.28],[-.3,.65],[-.5,.65]]
+ };
+ for(const [i,ch]of [...'ЦЭНКИ'].entries()){
+  const shape=new THREE.Shape();
+  if(ch==='Э')shape.moveTo(-.47,.51).quadraticCurveTo(.55,.95,.52,0).quadraticCurveTo(.55,-.95,-.47,-.51).lineTo(-.39,-.33).quadraticCurveTo(.22,-.60,.30,-.10).lineTo(-.22,-.10).lineTo(-.22,.10).lineTo(.30,.10).quadraticCurveTo(.22,.60,-.39,.33).closePath();
+  else{glyphs[ch].forEach(([x,y],j)=>j?shape.lineTo(x,y):shape.moveTo(x,y));shape.closePath();}
+  for(const [material,scale,depth,x]of [['frame',1.055,.035,-25.39],['corporateBlue',1,.10,-25.44]]){
+   const geo=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:true,bevelThickness:.012,bevelSize:.012,bevelSegments:1,steps:1,curveSegments:10});
+   geo.scale(scale,scale,1);geo.rotateY(-Math.PI/2);geo.translate(x,12.15-i*1.55,5.65);k.direct(geo,material,material==='corporateBlue'?'corporate-blue-letter':'corporate-letter-outline');
+  }
+ }
+ const gazebos=SEVEN_WINDS_LAYOUT.gazebos;
+ const beds=[[-19,13.8,10,4.2],[18,13.8,10,4.2],[-18,31,14,10],[17,33,11,9]];
+ const gazeboVertices=p=>Array.from({length:8},(_,i)=>{const a=i*Math.PI/4+Math.PI/8;return [p.x+p.r*Math.cos(a),p.z+p.r*Math.sin(a)]});
+ // One paved courtyard with real holes for beds and gazebos. The road is a
+ // notch in its boundary, so asphalt and paving never occupy the same area.
+ const arc=Array.from({length:25},(_,i)=>{const a=Math.PI/2-i*Math.PI/24;return [28+2.4*Math.cos(a),20+2.4*Math.sin(a)]});
+ const walk=[[-32,10.2],[32,10.2],[32,40],[-32,40],[-32,22.4],...arc,[-32,17.6]];
+ const shape=new THREE.Shape(walk.map(([x,z])=>new THREE.Vector2(x,-z)));
+ for(const points of [...beds.map(([x,z,w,d])=>[[x-w/2,z-d/2],[x+w/2,z-d/2],[x+w/2,z+d/2],[x-w/2,z+d/2]]),...gazebos.map(gazeboVertices)])shape.holes.push(new THREE.Path(points.map(([x,z])=>new THREE.Vector2(x,-z))));
+ const pavement=k.direct(new THREE.ShapeGeometry(shape),'paver','courtyard-paving');pavement.rotation.x=-Math.PI/2;pavement.position.y=.13;
+ k.poly([[-36,17.6],...arc.toReversed(),[-36,22.4]],.085,'asphalt','hotel-drive');
+ // White curbs leave a clear crossing on the entrance/gazebo axis.
+ for(const z of [17.49,22.51])for(const [x0,x1]of [[-33,.4],[3.6,28]])k.box(x1-x0,.20,.18,(x0+x1)/2,.14,z,'ivory','white-drive-curb');
+ k.path(Array.from({length:25},(_,i)=>{const a=-Math.PI/2+i*Math.PI/24;return [28+2.51*Math.cos(a),20+2.51*Math.sin(a)]}),.18,.24,'ivory','round-drive-curb');
+ for(const [x,z,w,d]of beds){
+  k.box(w,.12,d,x,.06,z,'soilBed','garden-bed');for(const side of [-1,1]){k.box(w+.13,.30,.13,x,.15,z+side*d/2,'plinth','garden-border');k.box(.13,.3,d-.13,x+side*w/2,.15,z,'plinth','garden-border');}
   for(let i=0;i<4;i++)k.sphere(.65+(i%2)*.18,x-w*.34+i*w*.21,.60,z,'shrub','garden-shrub',[1,.75,.85]);
  }
- const gazebos=[{x:18,z:31,r:3.25},{x:28,z:35.5,r:2.65}];
  for(const [index,p]of gazebos.entries()){
   const n=8,h=2.5,verts=Array.from({length:n},(_,i)=>{const a=i*Math.PI*2/n+Math.PI/8;return [p.x+p.r*Math.cos(a),p.z+p.r*Math.sin(a)];});
-  k.poly(verts,.14,'paver','gazebo-floor');
+  k.poly(verts,.22,'paver','gazebo-floor');
+  for(let i=0;i<n;i++){const a=verts[i],b=verts[(i+1)%n];k.quad([b[0],.13,b[1]],[a[0],.13,a[1]],[a[0],.22,a[1]],[b[0],.22,b[1]],'paver','gazebo-plinth');}
   for(let i=0;i<n;i++){
    const a=verts[i],b=verts[(i+1)%n];k.rod([a[0],.15,a[1]],[a[0],h,a[1]],.065,'wood','gazebo-post');
    k.rod([a[0],h,a[1]],[b[0],h,b[1]],.075,'wood','gazebo-upper-rail');
@@ -96,7 +123,7 @@ export function buildSevenWinds(root){
     }
    }
    const roofR=p.r+.35,aa=i*Math.PI*2/n+Math.PI/8,bb=(i+1)*Math.PI*2/n+Math.PI/8,A=[p.x+roofR*Math.cos(aa),h,p.z+roofR*Math.sin(aa)],B=[p.x+roofR*Math.cos(bb),h,p.z+roofR*Math.sin(bb)],top=[p.x,h+1.20,p.z];
-   k.quad(B,A,top,top,'tile','gazebo-roof');k.rod(A,top,.025,'plinth','gazebo-hip-ridge');
+   const roofGeometry=new THREE.BufferGeometry();roofGeometry.setAttribute('position',new THREE.Float32BufferAttribute([...B,...A,...top],3));roofGeometry.computeVertexNormals();k.direct(roofGeometry,'tile','gazebo-roof');k.rod(A,top,.025,'plinth','gazebo-hip-ridge');
    for(let row=1;row<6;row++){const t=row/6,P=A.map((v,j)=>THREE.MathUtils.lerp(v,top[j],t)),Q=B.map((v,j)=>THREE.MathUtils.lerp(v,top[j],t));P[1]+=.015;Q[1]+=.015;k.rod(P,Q,.018,'roof','gazebo-tile-row');}
   }
   k.cyl(.63,.11,p.x,.85,p.z,'wood','gazebo-table');k.cyl(.09,.70,p.x,.45,p.z,'wood','gazebo-table-leg');
@@ -104,7 +131,7 @@ export function buildSevenWinds(root){
   k.sphere(.12,p.x,2.2,p.z,'lampGlobe','gazebo-pendant');
  }
  function bench(x,z,yaw=0){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=yaw;root.add(g);for(let i=0;i<5;i++){k.box(2.5,.08,.11,0,.55,-.25+i*.12,'wood','bench-seat',0,g);k.box(2.5,.11,.06,0,.75+i*.12,-.36,'ivory','bench-back',0,g);}for(const side of [-1,1])k.box(.10,.55,.6,side*.95,.275,0,'dark','bench-frame',0,g);}
- for(const [x,z]of [[-23,10.8],[-10,10.8],[14,10.8],[24,27.4]])bench(x,z);
+ for(const [x,z]of [[-23,10.8],[-10,10.8],[14,10.8],[24,26]])bench(x,z);
  for(const [x,z]of [[-27,12],[-10,12],[10,12],[27,12],[-27,26],[8,27],[27,39]]){
   k.rod([x,0,z],[x,3.5,z],.055,'dark','garden-lamp-pole');
   const pts=Array.from({length:11},(_,i)=>{const a=Math.PI*i/10;return [x+.36-.36*Math.cos(a),3.5+.36*Math.sin(a),z];});for(let i=1;i<pts.length;i++)k.rod(pts[i-1],pts[i],.03,'dark','garden-lamp-crook');k.sphere(.22,x+.72,3.35,z,'lampGlobe','garden-lamp-globe');
@@ -112,5 +139,9 @@ export function buildSevenWinds(root){
  for(const [a,b]of [[[-33,-10],[34,-10]],[[34,-10],[34,42]],[[-33,42],[34,42]],[[-33,-10],[-33,16]],[[-33,24],[-33,42]]]){
   const len=Math.hypot(b[0]-a[0],b[1]-a[1]);for(let t=0;t<=len;t+=1.1){const x=a[0]+(b[0]-a[0])*t/len,z=a[1]+(b[1]-a[1])*t/len;k.rod([x,.15,z],[x,2.1,z],.022,'dark','perimeter-picket');}for(const y of [.4,1.8])k.rod([a[0],y,a[1]],[b[0],y,b[1]],.032,'dark','perimeter-rail');
  }
- const result=k.finish();root.userData.setHotelEvening=value=>{glow.emissiveIntensity=value?.65:0;bulb.emissiveIntensity=value?1.15:0;};root.userData.sevenWinds={version:SEVEN_WINDS_VERSION,floors:4,windowBays:16,gazebos:2,reference:SEVEN_WINDS_REFERENCE};return {...result,version:SEVEN_WINDS_VERSION};
+ const result=k.finish();
+ // R(v - 2*pivot) rotates this asymmetric compound about its own centre.
+ // The geographic root and the occupied ground rectangle remain in place.
+ const offset=new THREE.Vector3(...SEVEN_WINDS_LAYOUT.modelOffset);for(const child of root.children)child.position.add(offset);root.updateWorldMatrix(true,true);
+ root.userData.setHotelEvening=value=>{glow.emissiveIntensity=value?.65:0;bulb.emissiveIntensity=value?1.15:0;};root.userData.sevenWinds={version:SEVEN_WINDS_VERSION,floors:4,windowBays:16,gazebos:2,reference:SEVEN_WINDS_REFERENCE,layout:SEVEN_WINDS_LAYOUT,lettering:{text:'ЦЭНКИ',side:'west-end',normal:[-1,0,0],blueLetters:5},surfacePolicy:'disjoint-road-paving-beds'};return {...result,version:SEVEN_WINDS_VERSION};
 }

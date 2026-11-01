@@ -1,3 +1,4 @@
+import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v2';
 import {CYCLONE_PORTS} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
@@ -10,7 +11,7 @@ import {SITE41_ACCESS} from './site41-profile.js?v=20261031-facilities-rails-lig
 // Site centres remain anchored to the user's historical plan.
 export const FACILITY_PORTS={
  'pad-90':CYCLONE_PORTS,
- 'pad-75':{scale:.28,elevation:-2.72,yaw:0,road:[-36,.085,20],roadOutward:[-1,0,0],roadWidth:4.8},
+ 'pad-75':{...SEVEN_WINDS_LAYOUT},
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,{scale:MUSEUM_METRE,yaw:0,elevation:-2.72,road:[0,.08,25],roadWidth:6.5,silo:true}])),
  'pad-110':{scale:MUSEUM_METRE,yaw:0,...SITE110_PORTS,railConnections:SITE110_RAIL_DESTINATIONS},
  'pad-250':{scale:MUSEUM_METRE,elevation:-2.755,yaw:-.56,road:[-40,.2,225].map(v=>v/.687885342706393),roadWidth:1.8/MUSEUM_METRE,rail:[[-18,1.55,227],[18,1.55,227]].map(p=>p.map(v=>v/.687885342706393)),physicalRailGauge:1.52},

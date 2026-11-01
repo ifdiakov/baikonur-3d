@@ -1,3 +1,4 @@
+import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=20261101-hotel-v2';
 import {CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
@@ -8,7 +9,7 @@ export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для �
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';
 export const ARCHIVE_MAP=[
  {id:'pad-90',kind:'cyclone',title:'Два старта «Циклона-2» · пл.90',scale:MUSEUM_METRE,yaw:CYCLONE_YAW,orientation:'rail-terminal-inferred-on-osm-compound',modelVersion:'cyclone-v1'},
- {id:'pad-75',kind:'seven-winds',title:'Гостиница «7 ветров»',scale:.28,yaw:0,folder:'1P7P9qFCcGwdm4-FG0s_WsdAcrHIfByRf',orientation:'schematic-access-axis-photo-interpreted',modelVersion:'seven-winds-photo-v1'},
+ {id:'pad-75',kind:'seven-winds',title:'Гостиница «7 ветров»',scale:SEVEN_WINDS_LAYOUT.scale,yaw:SEVEN_WINDS_LAYOUT.yaw,modelOffset:SEVEN_WINDS_LAYOUT.modelOffset,folder:'1P7P9qFCcGwdm4-FG0s_WsdAcrHIfByRf',orientation:'owner-rotation-180-in-place',modelVersion:SEVEN_WINDS_VERSION},
  ...SILO_SITE_IDS.map(id=>({id,kind:'silo',title:'Шахтная пусковая установка · пл.'+id.slice(4),scale:MUSEUM_METRE,yaw:0,orientation:'shared-museum-interpretation',references:['https://rvsn.ruzhany.info/kbu_002_03_2.html','https://habr.com/ru/articles/87341/'],modelVersion:'museum-silos-v2'})),
  {id:'pad-81',kind:'proton',title:'Два старта «Протона» · пл.81',scale:MUSEUM_METRE,yaw:0,satellite:'1vcxpuL94AAEsfmwW0hDPCc5vQH0qIcdZ',folder:'199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd',orientation:'image-traced',reviewImage:[1300,1000]},
  {id:'pad-200',kind:'proton',title:'Два старта «Протона» · пл.200',scale:MUSEUM_METRE,yaw:0,satellite:'1txB3LDU8wx-fP_hJngeWH3nIGvNlE0Zb',folder:'199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd',orientation:'image-traced',reviewImage:[1300,1000]},

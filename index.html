@@ -373,14 +373,14 @@ import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/O
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261031-rocket-exhibits-v1';
-import {installArchiveModels} from './src/archive-models.js?v=20261101-cyclone-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261101-hotel-v2';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-facilities-rails-lighting-v1';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261101-relief-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261101-relief-v1';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261101-hotel-v2';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261031-facilities-rails-lighting-v1';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
 import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261101-steppe-v7';
@@ -1597,7 +1597,7 @@ function focus(i){
  if(o.archive?.kind==='silo'){for(const [label,view] of [['Вся площадка','all'],['К шахте','close']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectSilo(view,camera,ctl,r.id);siloViews.append(b);}const hint=document.createElement('p');hint.style.cssText='flex-basis:100%;font-size:12px;line-height:1.5;margin:0';hint.textContent='Приблизьтесь к шахте — крышка откроется автоматически.';siloViews.append(hint);}
  let hotelViews=document.getElementById('hotelViews');if(!hotelViews){hotelViews=document.createElement('div');hotelViews.id='hotelViews';hotelViews.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';document.getElementById('description').after(hotelViews);}
  hotelViews.replaceChildren();hotelViews.hidden=o.archive?.kind!=='seven-winds';hotelViews.style.display=hotelViews.hidden?'none':'flex';
- if(o.archive?.kind==='seven-winds')for(const [label,view] of [['Весь комплекс','all'],['Фасад','front'],['Двор и беседки','garden']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectHotel(view,camera,ctl);hotelViews.append(b);}
+ if(o.archive?.kind==='seven-winds')for(const [label,view] of [['Весь комплекс','all'],['Фасад','front'],['Двор и беседки','garden'],['Торец · ЦЭНКИ','sign'],['Заезд','access']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectHotel(view,camera,ctl);hotelViews.append(b);}
  let mzkViews=document.getElementById('mzkViews');if(!mzkViews){mzkViews=document.createElement('div');mzkViews.id='mzkViews';mzkViews.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';document.getElementById('description').after(mzkViews);}
  mzkViews.replaceChildren();mzkViews.hidden=o.archive?.kind!=='mzk';mzkViews.style.display=mzkViews.hidden?'none':'flex';
  if(o.archive?.kind==='mzk')for(const [label,view] of [['Весь комплекс','all'],['МЗК','mzk'],['СДИ','sdi']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectMzkSdi(view,camera,ctl);mzkViews.append(b);}

@@ -1,12 +1,13 @@
+import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v2';
 import * as THREE from 'three';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261101-cyclone-v1';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261101-cyclone-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261101-hotel-v2';
 import * as buildings from './archive-buildings.js?v=20261031-facilities-rails-lighting-v5';
 import * as launches from './archive-launches.js?v=20261101-proton-launch-v1';
 import {photoCity} from './archive-city.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSite31Pad} from './site31-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSiloPad,siloController} from './silo-pad.js?v=20261031-facilities-rails-lighting-v1';
-import {buildSevenWinds} from './seven-winds.js?v=20261031-facilities-rails-lighting-v1';
+import {buildSevenWinds} from './seven-winds.js?v=20261101-hotel-v2';
 import {buildSite110,SITE110_VIEWS} from './site110.js?v=20261031-facilities-rails-lighting-v5';
 import {buildSite41} from './site41.js?v=20261101-r16-exhibit-v1';
 import {SITE45_VIEWS} from './site45.js?v=20261101-model-inspector-v1';
@@ -66,8 +67,8 @@ export function installArchiveModels({objects,clickable,voids}){
  function protonStats(siteId){const group=objects.find(o=>o.record.id===siteId)?.g;return group?.children.filter(g=>g.userData.protonLaunch).map(g=>({...g.userData.protonLaunch,rocketVisible:protonPositionController(g).rocketVisible()}));}
  function inspectHotel(view,camera,controls){
   const root=objects.find(o=>o.record.id==='pad-75')?.g;if(!root)return false;root.updateWorldMatrix(true,false);
-  const [target,eye]=view==='garden'?[[22,1.5,33],[44,23,60]]:view==='front'?[[0,6,4],[-40,48,62]]:[[0,3,13],[-64,61,92]];
-  controls.target.copy(root.localToWorld(new THREE.Vector3(...target)));camera.position.copy(root.localToWorld(new THREE.Vector3(...eye)));controls.update();return true;
+  const {target,eye}=SEVEN_WINDS_LAYOUT.views[view]||SEVEN_WINDS_LAYOUT.views.all;
+  controls.target.copy(root.localToWorld(new THREE.Vector3(...target).add(new THREE.Vector3(...SEVEN_WINDS_LAYOUT.modelOffset))));camera.position.copy(root.localToWorld(new THREE.Vector3(...eye).add(new THREE.Vector3(...SEVEN_WINDS_LAYOUT.modelOffset))));controls.update();return true;
  }
  function inspectSite110(view,camera,controls){
   const root=objects.find(o=>o.record.id==='pad-110')?.g;if(!root)return false;

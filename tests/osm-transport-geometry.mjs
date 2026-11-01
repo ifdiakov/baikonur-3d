@@ -188,7 +188,7 @@ for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route
   const nearestEdges=baselineRoads.edges.map(e=>({way:e.wayId,kind:e.tags.highway,width:e.width,a:e.a.position.toArray(),b:e.b.position.toArray(),distance:new THREE.Line3(e.a.position,e.b.position).closestPointToPoint(p,true,new THREE.Vector3()).distanceTo(p)})).sort((a,b)=>a.distance-b.distance).slice(0,3);
   assert.fail('A moving car leaves the rendered OSM pavement: '+JSON.stringify({route:route.id,direction,distance:d,position:p.toArray(),center:route.position(d).toArray(),laneOffset:pose.laneOffset,width:route.widthAt(d),heights,nearestTriangle,nearestEdges}));
  }
- const hotelLocal=p.clone().sub(hotelOrigin).applyAxisAngle(up,-hotelSpec.yaw).divideScalar(hotelSpec.scale);
+ const hotelLocal=p.clone().sub(hotelOrigin).applyAxisAngle(up,-hotelSpec.yaw).divideScalar(hotelSpec.scale).sub(new THREE.Vector3(...hotelSpec.modelOffset));
  assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }
 const train=transport.trainPath();assert.equal(train.source,'OpenStreetMap');assert(train.path.length>500);assert(train.osmWayIds.length>5);
