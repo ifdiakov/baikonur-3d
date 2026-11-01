@@ -21,7 +21,8 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
  const context=await browser.newContext({viewport:{width:1280,height:800},deviceScaleFactor:1,serviceWorkers:'block',
   reducedMotion:reducedMotion?'reduce':'no-preference'});
  const page=await context.newPage();activePage=page;activeCase=name;page.setDefaultTimeout(60000);
- const record={externalBlocked:[],fontStylesheetsPending:[],pageErrors:[],shaderErrors:[],catalogRequests:0};
+ const record={externalBlocked:[],fontStylesheetsPending:[],pageErrors:[],shaderErrors:[],
+  networkFailures:[],badHTTPResponses:[],consoleErrors:[],catalogRequests:0};
  evidence.cases[name]=record;
  let releaseCatalog;
  const catalogGate=new Promise(resolve=>{releaseCatalog=resolve;});
@@ -43,9 +44,21 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
   }
   await route.continue();
  });
+ page.on('requestfailed',request=>{
+  const url=new URL(request.url());
+  if(url.origin===origin)record.networkFailures.push({url:request.url(),path:url.pathname,
+   error:request.failure()?.errorText||'Unknown request failure',type:request.resourceType()});
+ });
+ page.on('response',response=>{
+  const url=new URL(response.url()),type=response.request().resourceType();
+  if(response.status()>=400&&(url.origin===origin||type==='script'||type==='stylesheet'))
+   record.badHTTPResponses.push({url:response.url(),path:url.pathname,status:response.status(),statusText:response.statusText(),type});
+ });
  page.on('pageerror',error=>record.pageErrors.push(error.message));
  page.on('console',message=>{
-  if(message.type()==='error'&&/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/.test(message.text()))record.shaderErrors.push(message.text());
+  if(message.type()!=='error')return;
+  record.consoleErrors.push(message.text());
+  if(/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/.test(message.text()))record.shaderErrors.push(message.text());
  });
  await page.addInitScript(({stalledBody})=>{
   const state=window.__STARTUP_TEST={feedback:[],launch:[],ready:[],stalled:[],animateRequests:0};
@@ -188,13 +201,19 @@ async function assertPreloaderFits(page,viewport,{error=false}={}){
   return {viewport:{width:innerWidth,height:innerHeight},left:box.left,right:box.right,
    clientWidth:loader.clientWidth,scrollWidth:loader.scrollWidth,
    documentWidth:document.documentElement.scrollWidth,
-   status:{top:statusBox.top,left:statusBox.left,right:statusBox.right,lines:lines.size},progressBottom:progressBox.bottom};
+   status:{top:statusBox.top,left:statusBox.left,right:statusBox.right,lines:lines.size,text:status.textContent.trim(),
+    scrollWidth:status.scrollWidth,clientWidth:status.clientWidth,scrollHeight:status.scrollHeight,clientHeight:status.clientHeight,
+    whiteSpace:getComputedStyle(status).whiteSpace},progressBottom:progressBox.bottom};
  },error);
  assert.ok(layout.left>=-1&&layout.right<=viewport.width+1,'The preloader fits the viewport horizontally');
  assert.ok(layout.scrollWidth<=layout.clientWidth+1,'Preloader content has no horizontal overflow at '+viewport.width);
  assert.ok(layout.documentWidth<=viewport.width+1,'The loading page does not create horizontal overflow');
  assert.ok(layout.status.top>=layout.progressBottom-1,'The visible loading feedback sits beneath the real progress bar');
  assert.ok(layout.status.left>=-1&&layout.status.right<=viewport.width+1,'The visible loading feedback fits horizontally');
+ assert.ok(layout.status.scrollWidth<=layout.status.clientWidth+1,'Loading feedback text is not clipped horizontally');
+ assert.ok(layout.status.scrollHeight<=layout.status.clientHeight+1,'Loading feedback text is not clipped vertically');
+ assert.ok(['normal','pre-wrap','pre-line','break-spaces'].includes(layout.status.whiteSpace),
+  'Loading feedback can wrap when the available font and width require it');
  // A short viewport may scroll vertically. The status and recovery action
  // must still be reachable, rather than clipped below a fixed-height card.
  const controls=error?['#museumLoadingMessage','#museumRetry']:['#museumLaunchStatus','#museumMotionToggle'];
@@ -376,7 +395,8 @@ try{
   assert.equal(beforeTimeout.launchStep,0,'Reduced motion begins with a stable first launch phrase');
   const intro=await preloaderState(run.page);assert.equal(intro.status,firstLaunchStatus);assert.equal(intro.welcome,welcome);
   run.record.mobileLoading=await assertPreloaderFits(run.page,{width:320,height:568});
-  assert.ok(run.record.mobileLoading.status.lines>1,'The long launch phrase wraps at 320px');
+  assert.equal(run.record.mobileLoading.status.text,firstLaunchStatus,'The complete first launch phrase remains present at 320px');
+  assert.ok(run.record.mobileLoading.status.lines>=1,'The launch phrase has visible text at 320px');
   const state=await waitError(run.page),request=state.test.stalled[0];
   assert.equal(state.test.stalled.length,1);assert.ok(request.headersAt>=request.startedAt);
   assert.ok(request.abortedAt!==null,'The timeout aborts the body request');
