@@ -305,7 +305,7 @@ function addEffectSystem(siteRoot,camera){
   billboardQ.copy(siteRoot.getWorldQuaternion(localWorldQ).invert()).multiply(cameraWorldQ);
   const pilot=smooth(-22,-20,t)*(1-smooth(-10,-8,t));
   const exhaustAtGround=fire*(1-smooth(23,74,t));
-  const water=smooth(-10,-7,t)*(1-smooth(32,85,t));
+  const water=(t>=-10?Math.max(.07,smooth(-10,-7,t)):0)*(1-smooth(32,85,t));
   const groundCloud=smooth(-3,9,t)*(1-smooth(55,200,t));
   const ductCloud=clamp(exhaustAtGround*.89+water*.28,0,1);
   const plume=smooth(0,6,t)*(1-smooth(55,110,t));

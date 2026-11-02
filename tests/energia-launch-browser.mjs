@@ -55,7 +55,7 @@ try{
   if(t===-50)assert.ok(e.mobileTowerArms.some(x=>x!==0),'Ground umbilicals begin to move');
   if(t===-10)assert.ok(e.water>0,'Water curtains begin before engine ignition');
   if(t===-3.2)assert.ok(e.flamePower>0,'Booster ignition produces exhaust');
-  if(t===0){assert.equal(e.smokeMode,undefined);assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
+  if(t===0){assert.equal(e.smokeMode,'soft-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
   if(t===6){assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
   if(t===480){assert.equal(s.telemetry.altitudeKm,110);assert.equal(s.telemetry.payloadSeparated,true);await shot('polyus-separation');}
   if(t===511)assert.equal(s.telemetry.payloadTurn,true);
