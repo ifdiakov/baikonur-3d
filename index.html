@@ -429,7 +429,7 @@ import {installArchiveModels} from './src/archive-models.js?v=20261102-sdi-energ
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-facilities-rails-lighting-v1';
-import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261101-natural-relief-v3';
+import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261102-city-flank-boundary-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
 import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261102-rail-scheme-v1';
@@ -1464,7 +1464,20 @@ buildSaturnIP5(saturnGroup,{terrainTexture:satelliteTexture,terrainMaterial:sate
 saturnSite.type='saturn-ms';
 let saturnHill;
 saturnGroup.traverse(mesh=>{if(mesh.userData.museumComponent==='murguduk-hill')saturnHill=mesh;});
-if(saturnHill){steppeSurface.apply(saturnHill.material);flankDistricts.addTerrainSurface(saturnHill,'center');}
+if(saturnHill){
+ steppeSurface.apply(saturnHill.material);
+ // The southern flank perimeter crosses Saturn's shoulder. Its regional DEM
+ // is deliberately flat here, so boundaries also need the local soil mesh.
+ saturnHill.updateWorldMatrix(true,false);
+ const world=saturnHill.matrixWorld.clone(),inverse=world.clone().invert(),sample=new THREE.Vector3();
+ flankDistricts.addTerrainSurface(saturnHill,'center',{heightAt(x,z){
+  sample.set(x,0,z).applyMatrix4(inverse);
+  const b=SATURN_TERRAIN_BOUNDS;
+  if(sample.x<b.minX||sample.x>b.maxX||sample.z<b.minZ||sample.z>b.maxZ||saturnTerrainSample(sample.x,sample.z).opacity<=.001)return -Infinity;
+  sample.y=saturnTerrainMeshHeight(sample.x,sample.z);
+  return sample.applyMatrix4(world).y;
+ }});
+}
 scene.userData.terrainStyle.surface=steppeSurface.stats();
 saturnGroup.traverse(o=>{
  if(o.isMesh){o.userData.idx=saturnIndex;if(o.userData.museumComponent==='murguduk-hill')o.userData.pickable=false;clickable.push(o)}

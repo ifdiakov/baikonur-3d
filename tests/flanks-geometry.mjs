@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {readFile} from 'node:fs/promises';
-import {projectOsm} from '../src/osm-geography.js';
+import {projectOsm,MUSEUM_DISPLAY_OFFSETS} from '../src/osm-geography.js';
 import {FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_REFERENCE,FLANK_COORDINATE_SYSTEM,FLANK_CENTERS,FLANK_BOUNDS,FLANK_REFERENCE_OUTLINE,FLANK_REFERENCE_DIVIDERS,referenceToPlan,containsFlankPoint} from '../src/flank-boundaries.js';
 import {buildFlankDistricts,FLANK_DISTRICTS} from '../src/flank-districts.js';
 import {buildTerrainRelief} from '../src/terrain-relief.js';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample,saturnTerrainMeshHeight} from '../src/saturn-access.js';
 
 const keys=['left','center','right'],colors=[0xd45a91,0x39bad2,0xefb65d];
 const point=(x,y,h=0)=>new THREE.Vector3((x-650)*3.4,h,(y-522.5)*3.4);
@@ -419,4 +420,102 @@ assert.equal(regionFill.material.uniforms.uTerrainPatchActive0.value,0,'Hiding S
 assert.equal(regionOverview.material.uniforms.uTerrainPatchActive0.value,0,'Historic overview has no unpainted square before Saturn exists');
 hillRoot.visible=true;patchDistricts.setOpacity(1);
 assert.equal(regionFill.material.uniforms.uTerrainPatchActive0.value,1,'The complementary cutout follows Saturn when it reappears');
-console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false,reliefClipProbes,raisedOverlayProbes,flatDrapeProbes,drapedBoundaryVertices,physicalBoundaryProbes,reliefAttributesShared:true,overviewReliefVisibility:true,continuousReliefFill:true,patchCoverageProbes,patchEdgeProbes,raisedPatchRimProbes}));
+
+// The city-facing perimeter crosses Saturn's real eastern shoulder and
+// southern toe. The regional DEM is deliberately flat under this exhibit:
+// checking only regional heights cannot catch a line buried in the local hill.
+const saturnMatches=JSON.parse(await readFile(new URL('../data/osm/catalog-matches.json',import.meta.url),'utf8'));
+const saturnMatch=saturnMatches.matches.find(m=>m.siteId==='pad-23');assert.ok(saturnMatch);
+const saturnMap=projectOsm(saturnMatch.representativeLonLat).map((v,i)=>v+MUSEUM_DISPLAY_OFFSETS['pad-23'][i]);
+const boundaryScene=new THREE.Scene(),boundaryDistricts=buildFlankDistricts(boundaryScene,point,1300,1045);
+const saturnRoot=new THREE.Group();saturnRoot.position.copy(point(...saturnMap,SATURN_ACCESS.elevation));
+saturnRoot.scale.setScalar(SATURN_ACCESS.scale);boundaryScene.add(saturnRoot);
+const localGrid=SATURN_TERRAIN_SEGMENTS,localBounds=SATURN_TERRAIN_BOUNDS,localPositions=[],localColors=[],localIndices=[];
+for(let z=0;z<=localGrid;z++)for(let x=0;x<=localGrid;x++){
+ const xx=localBounds.minX+(localBounds.maxX-localBounds.minX)*x/localGrid,zz=localBounds.minZ+(localBounds.maxZ-localBounds.minZ)*z/localGrid;
+ const sample=saturnTerrainSample(xx,zz);localPositions.push(xx,sample.height,zz);localColors.push(1,1,1,sample.opacity);
+ if(x<localGrid&&z<localGrid){const a=z*(localGrid+1)+x,b=a+1,c=a+localGrid+1,d=c+1;localIndices.push(a,c,b,b,c,d);}
+}
+const localGeometry=new THREE.BufferGeometry();localGeometry.setAttribute('position',new THREE.Float32BufferAttribute(localPositions,3));
+localGeometry.setAttribute('color',new THREE.Float32BufferAttribute(localColors,4));localGeometry.setIndex(localIndices);localGeometry.computeVertexNormals();
+const localHill=new THREE.Mesh(localGeometry,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,depthWrite:true,alphaTest:.001}));
+localHill.userData.museumComponent='murguduk-hill';saturnRoot.add(localHill);boundaryScene.updateMatrixWorld(true);
+const samplePoint=new THREE.Vector3();
+const localHeightAt=(x,z)=>{
+ localHill.worldToLocal(samplePoint.set(x,0,z));const {x:xx,z:zz}=samplePoint;
+ if(xx<localBounds.minX||xx>localBounds.maxX||zz<localBounds.minZ||zz>localBounds.maxZ||saturnTerrainSample(xx,zz).opacity<=.001)return -Infinity;
+ samplePoint.y=saturnTerrainMeshHeight(xx,zz);return localHill.localToWorld(samplePoint).y;
+};
+boundaryDistricts.addTerrainSurface(localHill,'center',{heightAt:localHeightAt});
+const flatRegion=buildTerrainRelief({dem:{width:3,height:3,bounds:reliefBounds,metresPerUnit:.1,offsetMetres:0,values:Array(9).fill(680)},
+ material:new THREE.MeshBasicMaterial(),step:96});
+boundaryScene.add(flatRegion.mesh);boundaryDistricts.addTerrainRelief(flatRegion);boundaryDistricts.setOpacity(1);boundaryScene.updateMatrixWorld(true);
+const cityPerimeter=boundaryScene.getObjectByName('Внешняя граница тематических флангов');
+const cityOverview=boundaryScene.getObjectByName('Космодром · единая обзорная граница');
+const cityBoundaries=[...cityPerimeter.children,cityOverview];
+const boundaryWorld=mesh=>Array.from({length:mesh.geometry.attributes.position.count},(_,i)=>
+ new THREE.Vector3().fromBufferAttribute(mesh.geometry.attributes.position,i).applyMatrix4(mesh.matrixWorld));
+const visibleBoundaryPositions=new Map(cityBoundaries.map(mesh=>[mesh,boundaryWorld(mesh)]));
+const localRay=new THREE.Raycaster(),probePoint=new THREE.Vector3();
+const actualHillHeight=(x,z)=>{
+ localRay.set(probePoint.set(x,100,z),down);return localRay.intersectObject(localHill,false)[0]?.point.y??-Infinity;
+};
+let localBoundaryProbes=0,localOverviewProbes=0,localInteriorProbes=0,oldBuriedProbes=0,minLocalBoundaryClearance=Infinity;
+const barycentric=[[1/3,1/3,1/3],[.6,.2,.2],[.2,.6,.2],[.2,.2,.6],[.1,.45,.45],[.45,.1,.45]];
+for(const mesh of cityBoundaries){
+ const p=visibleBoundaryPositions.get(mesh),index=mesh.geometry.index;
+ for(let i=0;i<index.count;i+=3){
+  const triangle=[p[index.getX(i)],p[index.getX(i+1)],p[index.getX(i+2)]];
+  // Strictly interior samples catch a lifted strip whose long triangles
+  // still cut through the shoulder between otherwise clear vertices.
+  for(const weights of barycentric){
+   const v=triangle.reduce((sum,a,j)=>sum.addScaledVector(a,weights[j]),new THREE.Vector3());
+   const local=localHill.worldToLocal(v.clone());
+   if(local.x<localBounds.minX||local.x>localBounds.maxX||local.z<localBounds.minZ||local.z>localBounds.maxZ||saturnTerrainSample(local.x,local.z).opacity<=.001)continue;
+   const ground=actualHillHeight(v.x,v.z);if(ground<-.5)continue;
+   const clearance=v.y-ground;
+   assert.ok(clearance>.25,`The ${mesh===cityOverview?'overview':'flank'} boundary remains above Saturn's rendered triangles: ${clearance}`);
+   minLocalBoundaryClearance=Math.min(minLocalBoundaryClearance,clearance);localInteriorProbes++;
+   if(mesh===cityOverview)localOverviewProbes++;else localBoundaryProbes++;
+  }
+ }
+}
+assert.ok(localBoundaryProbes>100&&localOverviewProbes>20,'Both map levels are checked across substantial raised parts of the real shoulder');
+const cityCoreMeshes=cityPerimeter.children.filter(mesh=>mesh.geometry.parameters.width===2.2);
+for(const [a,b]of [[FLANK_OUTLINE[12],FLANK_OUTLINE[11]],[FLANK_OUTLINE[11],FLANK_OUTLINE[10]]]){
+ let segmentBuried=0;
+ for(let i=1;i<160;i++){
+  const v=point(THREE.MathUtils.lerp(a[0],b[0],i/160),THREE.MathUtils.lerp(a[1],b[1],i/160));
+  const ground=actualHillHeight(v.x,v.z);if(ground<=-1.42)continue;
+  localRay.set(probePoint.set(v.x,100,v.z),down);const hit=localRay.intersectObjects(cityCoreMeshes,false)[0];
+  assert.ok(hit&&hit.point.y>ground+.25,'Every formerly buried centreline sample now has a visible bright core');
+  segmentBuried++;oldBuriedProbes++;
+ }
+ assert.ok(segmentBuried>=5,'The fixture reproduces the missing city-side segment, including the shallow southern toe');
+}
+
+// The historical timeline hides a parent of the hill. Both the neutral
+// overview and bright district contour must return to the remaining terrain,
+// then recover exactly once when the hill becomes visible again.
+saturnRoot.visible=false;boundaryDistricts.setOpacity(0);boundaryDistricts.setOverviewOpacity(1);boundaryScene.updateMatrixWorld(true);
+assert.equal(boundaryDistricts.state().visibleOverviewBoundary,1);
+let restoredFlatVertices=0;
+for(const mesh of cityBoundaries){
+ const hidden=boundaryWorld(mesh),shown=visibleBoundaryPositions.get(mesh);
+ for(let i=0;i<hidden.length;i++){
+  assert.ok(Math.hypot(hidden[i].x-shown[i].x,hidden[i].z-shown[i].z)<.001,'Timeline changes preserve every geographic boundary vertex');
+  const expected=mesh===cityOverview?-1.56:mesh.geometry.parameters.width===32?-1.85:mesh.geometry.parameters.width===8?-1.65:-1.42;
+  assert.ok(Math.abs(hidden[i].y-expected)<.001,'A hidden local hill leaves no floating contour above the flat regional terrain');
+  if(shown[i].y-hidden[i].y>1)restoredFlatVertices++;
+ }
+}
+assert.ok(restoredFlatVertices>100,'Hiding Saturn actually lowers the contour across its shoulder');
+saturnRoot.visible=true;boundaryDistricts.setOverviewOpacity(1);boundaryScene.updateMatrixWorld(true);
+assert.equal(boundaryDistricts.state().visibleOverviewBoundary,1);
+boundaryDistricts.setOpacity(1);boundaryDistricts.setOpacity(1);boundaryScene.updateMatrixWorld(true);
+assert.equal(boundaryDistricts.state().visibleOuterBoundaries,1);
+for(const mesh of cityBoundaries){
+ const restored=boundaryWorld(mesh),shown=visibleBoundaryPositions.get(mesh);
+ for(let i=0;i<restored.length;i++)assert.ok(restored[i].distanceTo(shown[i])<.001,'Restoring and repeatedly updating the hill does not accumulate contour height');
+}
+console.log('FLANKS_GEOMETRY_PASS',JSON.stringify({version:state.version,coordinateSystem:state.coordinateSystem,northernSpur:true,outlineArea,polygonAreas,overlapArea,coverageProbes,insideProbes,outsideProbes,sharedSegments:shared.length,perimeterSegments:perimeterEdges.length,neonCoreSegments:cores.length,saturnDistrict:'center',southernCityCovered:false,reliefClipProbes,raisedOverlayProbes,flatDrapeProbes,drapedBoundaryVertices,physicalBoundaryProbes,reliefAttributesShared:true,overviewReliefVisibility:true,continuousReliefFill:true,patchCoverageProbes,patchEdgeProbes,raisedPatchRimProbes,localBoundaryProbes,localOverviewProbes,localInteriorProbes,oldBuriedProbes,minLocalBoundaryClearance,restoredFlatVertices}));

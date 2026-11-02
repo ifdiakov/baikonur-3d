@@ -35,6 +35,8 @@ try{
  assert.deepEqual(state.flankDistricts.polygons.map(p=>p.length),[4,6,10]);assert.equal(state.flankDistricts.reference.version,'owner-osm-outline-20261028-v2');
  assert.deepEqual(state.flankDistricts.reference.imageSize,[1986,1632]);assert.equal(state.flankDistricts.reference.sourceFile,'контур и фланги.png');
  assert.equal(state.flankDistricts.coordinateSystem,'osm-map');assert.equal(state.flankDistricts.reliefClipped,true);
+ assert.equal(state.flankDistricts.boundaryTerrainSources,1,'The live scene registers Saturn as a boundary terrain source');
+ assert.ok(state.flankDistricts.localTerrainBoundaryVertices>100,'The city-facing contour follows the actual local hill, not only the regional DEM');
  assert.ok(state.flankDistricts.alpha>.9);assert.equal(state.flankCards.panels,3);
  assert.equal(state.flankCards.plane,'screen');assert.equal(state.flankCards.groundPanels,0);
  assert.equal(state.flankDistricts.groundTextPanels,0);assert.equal(state.flankDistricts.reliefCount,4);assert.deepEqual(state.flankDistricts.reliefFlanks,['center','left','center','right']);assert.equal(state.flankDistricts.visibleReliefSurfaces,4);
@@ -60,6 +62,10 @@ try{
   await page.screenshot({path:`qa-flanks/${prefix}-boundaries-day.png`,timeout:90000});
   await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await step();
   await page.screenshot({path:`qa-flanks/${prefix}-boundaries-evening.png`,timeout:90000});
+  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.inspectSaturnHill('flanks');q.evening.setEvening(false);});await step();
+  await page.screenshot({path:`qa-flanks/${prefix}-city-side-boundary-day.png`,timeout:90000});
+  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await step();
+  await page.screenshot({path:`qa-flanks/${prefix}-city-side-boundary-evening.png`,timeout:90000});
  }finally{await contourStyle.evaluate(el=>el.remove());}
  await page.evaluate(()=>window.__BAIKONUR_QA.showFlanks());await step();
 
