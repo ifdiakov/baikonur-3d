@@ -29,7 +29,7 @@ const html = `<!doctype html>
 
 </head><body>
 ${markup}
-<script src="./src/museum-preloader.js?v=20261101-preloader-strict-v4"></script>
+<script src="./src/museum-preloader.js?v=20261102-preloader-progress-v5"></script>
 </body></html>
 `;
 await writeFile(new URL('../preloader.html', import.meta.url), html);

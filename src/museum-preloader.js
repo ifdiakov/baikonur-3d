@@ -4,8 +4,8 @@
   var root = document.getElementById('museumLoading');
   if (!root) return;
 
-  // A cinematic launch sequence accompanies loading. Its clock never changes
-  // real scene progress or readiness, and never delays an already ready museum.
+  // Production follows real first-screen progress. Consecutive phrases use the
+  // browser's existing paint opportunities; there is no minimum loading time.
   var launchStatuses = [
     'ВЫБОР МЕСТА ДЛЯ СТРОИТЕЛЬСТВА КОСМОДРОМА',
     'РАЗМЕТКА МЕСТНОСТИ',
@@ -36,6 +36,7 @@
   var motion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var preview = root.dataset.preview === 'true';
   var launchStep = 0;
+  var targetStep = 0;
   var completed = 0;
   var totalStages = 9;
   var manuallyPaused = false;
@@ -43,7 +44,11 @@
   var finishing = false;
   var destroyed = false;
   var timer = null;
-  var statusAnimation = null;
+  var frame = null;
+  var frameFallback = null;
+  var exitDeadline = 0;
+  var exitTimer = null;
+  var onExit = null;
   var listeners = [];
 
   function listen(target, type, handler) {
@@ -62,9 +67,11 @@
     timer = null;
   }
 
-  function cancelStatusAnimation() {
-    if (statusAnimation) statusAnimation.cancel();
-    statusAnimation = null;
+  function stopAdvance() {
+    if (frame !== null) window.cancelAnimationFrame(frame);
+    if (frameFallback !== null) window.clearTimeout(frameFallback);
+    frame = null;
+    frameFallback = null;
   }
 
   function motionPaused() {
@@ -76,7 +83,6 @@
     root.classList.toggle('is-paused', paused);
     root.classList.toggle('is-reduced', Boolean(motion.matches));
     root.dataset.motion = paused ? 'paused' : 'running';
-    if (paused) cancelStatusAnimation();
     if (!toggle) return;
     toggle.disabled = failed || finishing || destroyed || motion.matches;
     toggle.setAttribute('aria-pressed', String(paused));
@@ -87,34 +93,66 @@
     text('museumMotionLabel', label);
   }
 
-  function showLaunchStep(index, animate) {
+  function showLaunchStep(index) {
     launchStep = Math.max(0, Math.min(launchStatuses.length - 1, index));
     root.dataset.launchStep = String(launchStep);
     if (status) status.textContent = launchStatuses[launchStep];
     text('museumLaunchStep', String(launchStep + 1).padStart(2, '0') + ' / ' + String(launchStatuses.length).padStart(2, '0'));
-    cancelStatusAnimation();
-    if (animate && !motionPaused() && status && typeof status.animate === 'function') {
-      statusAnimation = status.animate([
-        { opacity: 0, transform: 'translateY(7px)' },
-        { opacity: 1, transform: 'translateY(0)' }
-      ], { duration: 320, easing: 'cubic-bezier(.22,1,.36,1)' });
-    }
+    // Fast progress may change the phrase each frame. Fading every new string
+    // in from opacity zero would keep the whole sequence invisible.
   }
 
-  function scheduleCycle() {
+  function beginExit() {
+    if (!finishing || launchStep < launchStatuses.length - 1 || root.classList.contains('is-leaving')) return;
+    // Use the remainder of the existing startup transition, never another
+    // timed story after the first real frame has already become available.
+    var duration = Math.min(100, Math.max(0, exitDeadline - performance.now()));
+    root.style.transitionDuration = duration + 'ms';
+    root.classList.add('is-leaving');
+    if (onExit) exitTimer = window.setTimeout(function () {
+      exitTimer = null;
+      var reveal = onExit;
+      onExit = null;
+      if (reveal) reveal();
+    }, duration);
+  }
+
+  function flushAdvance() {
+    stopAdvance();
+    if (failed || destroyed) return;
+    while (launchStep < targetStep) showLaunchStep(launchStep + 1);
+    beginExit();
+  }
+
+  function scheduleAdvance() {
+    if (failed || destroyed || preview || frame !== null) return;
+    if (document.hidden) { flushAdvance(); return; }
+    if (launchStep >= targetStep) { beginExit(); return; }
+    var advance = function () {
+      stopAdvance();
+      if (failed || destroyed) return;
+      if (launchStep < targetStep) showLaunchStep(launchStep + 1);
+      scheduleAdvance();
+    };
+    frame = window.requestAnimationFrame(advance);
+    // Keep up with real progress even when rAF is throttled. This is a frame
+    // fallback for already completed work, never an independent story clock.
+    frameFallback = window.setTimeout(advance, 16);
+  }
+
+  function schedulePreview() {
     stopCycle();
-    if (motionPaused() || finishing) return;
-    // Production waits at «ключ на старт». Ignition belongs to the first real
-    // rendered frame. The explicitly labelled preview can replay all phrases.
-    if (!preview && launchStep >= launchStatuses.length - 2) return;
+    if (!preview || motionPaused() || finishing) return;
+    // Only the explicitly labelled standalone preview owns a demo clock.
+    // Production consumes actual stage updates instead of this timer.
     timer = window.setTimeout(function () {
       timer = null;
       if (motionPaused() || finishing) return;
       var next = launchStep + 1;
       if (next >= launchStatuses.length) next = 0;
-      showLaunchStep(next, true);
-      scheduleCycle();
-    }, preview && launchStep === launchStatuses.length - 1 ? 3300 : 2200);
+      showLaunchStep(next);
+      schedulePreview();
+    }, launchStep === 0 ? 950 : launchStep === launchStatuses.length - 1 ? 650 : 500);
   }
 
   function paintProgress() {
@@ -137,12 +175,17 @@
     completed = Math.min(totalStages - 1, Math.max(completed, index - 1, 0));
     root.dataset.loadStage = String(index);
     paintProgress();
+    if (!preview) {
+      targetStep = Math.max(targetStep, Math.floor(completed / Math.max(1, totalStages - 1) * (launchStatuses.length - 2)));
+      scheduleAdvance();
+    }
   }
 
   function fail() {
     if (destroyed || finishing || failed) return;
     failed = true;
     stopCycle();
+    stopAdvance();
     root.classList.add('has-error');
     root.classList.remove('is-slow');
     syncMotion();
@@ -153,23 +196,38 @@
     root.classList.add('is-slow');
   }
 
-  function finish() {
+  function finish(reveal) {
     if (destroyed || finishing || failed) return;
     finishing = true;
     stopCycle();
-    showLaunchStep(launchStatuses.length - 1, false);
+    exitDeadline = performance.now() + 460;
+    onExit = typeof reveal === 'function' ? reveal : null;
+    targetStep = launchStatuses.length - 1;
     completed = totalStages;
     paintProgress();
     root.classList.remove('is-slow');
-    root.classList.add('is-leaving');
     syncMotion();
+    scheduleAdvance();
+  }
+
+  function complete() {
+    if (destroyed || failed || !finishing) return;
+    // Startup owns the reveal deadline. Hidden/reduced-motion views and a very
+    // slow renderer must open immediately, rather than wait to replay a backlog.
+    if (exitTimer !== null) window.clearTimeout(exitTimer);
+    exitTimer = null;
+    onExit = null;
+    flushAdvance();
   }
 
   function destroy() {
     if (destroyed) return;
     destroyed = true;
     stopCycle();
-    cancelStatusAnimation();
+    stopAdvance();
+    if (exitTimer !== null) window.clearTimeout(exitTimer);
+    exitTimer = null;
+    onExit = null;
     root.classList.add('is-stopped');
     syncMotion();
     listeners.forEach(function (remove) { remove(); });
@@ -178,7 +236,11 @@
 
   function refreshMotion() {
     syncMotion();
-    scheduleCycle();
+    if (preview) schedulePreview();
+    else {
+      if (document.hidden) flushAdvance();
+      else scheduleAdvance();
+    }
   }
 
   listen(toggle, 'click', function () {
@@ -194,8 +256,8 @@
     listeners.push(function () { motion.removeListener(refreshMotion); });
   }
 
-  window.__MUSEUM_PRELOADER = Object.freeze({ stage: stage, fail: fail, slow: slow, finish: finish, destroy: destroy });
-  showLaunchStep(0, false);
+  window.__MUSEUM_PRELOADER = Object.freeze({ stage: stage, fail: fail, slow: slow, finish: finish, complete: complete, destroy: destroy });
+  showLaunchStep(0);
   stage(0, totalStages);
   refreshMotion();
 })();

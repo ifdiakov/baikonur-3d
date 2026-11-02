@@ -134,9 +134,14 @@
     var loading = element('museumLoading');
     var focusWasInside = loading && loading.contains(document.activeElement);
     var revealed = false;
+    var revealTimer = null;
     function reveal() {
       if (revealed) return;
       revealed = true;
+      if (revealTimer !== null) clearTimeout(revealTimer);
+      // All pending status updates share the existing exit window. The status
+      // sequence must never add a second wait to an already rendered map.
+      preloader('complete');
       if (loading) { loading.hidden = true; loading.dataset.state = 'ready'; }
       controls.forEach(function (id) {
         var control = element(id);
@@ -166,10 +171,10 @@
     window.removeEventListener('unhandledrejection', onRejection);
     setMessage('Космодром готов. Отправляемся…');
     preloader('stage', totalSteps, totalSteps);
-    preloader('finish');
+    preloader('finish', reveal);
     var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!loading || !window.__MUSEUM_PRELOADER || reduced || document.hidden || loading.dataset.motion === 'paused') reveal();
-    else setTimeout(reveal, 460);
+    else if (!revealed) revealTimer = setTimeout(reveal, 460);
   }
 
   function fail(error) {
