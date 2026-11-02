@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {SITE2_VERSION,SITE2_REFERENCE,SITE2_ACCESS,SITE2_BURAN,SITE2_STAIR,SITE2_VIEWS,site2Point as P} from './site2-layout.js?v=20261102-site2-photo-v3';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
+import {createLightField} from './light-field.js?v=20261028-site41-v1';
 
 import {buildSite2Outdoor} from './site2-outdoor.js?v=20261102-site2-photo-v3';
 
@@ -138,6 +139,24 @@ export function buildSite2Museum(root){
   const[x,z]=P(p);k.rod([x,.2,z],[x,5.7,z],.075,'steel','site2-lamp-post');k.rod([x,5.7,z],[x+.8,6.1,z],.055,'steel','site2-lamp-arm');k.box(.55,.16,.3,x+.8,6.12,z,'light','site2-lamp-head');lamps.push({position:[x+.8,6.0,z],normal:[0,-1,0],size:[.45,.2]});
  }
  lamps.forEach((lamp,i)=>registerFacilityFloodlights(root,{id:'site2-museum-lamp-'+i,target:[lamp.position[0],.14,lamp.position[2]],lamps:[lamp]}));
+ // Night lighting follows Site 2 when its museum anchor is relocated.
+ // One batched point field gives distant visibility without ten real-time lights.
+ const site2LightField=createLightField(root,lamps.map((lamp,i)=>({
+  x:lamp.position[0],y:lamp.position[1],z:lamp.position[2],height:0,
+  color:0xffd3a0,size:10,brightness:1.6
+ })),{name:'Площадка №2 · освещение территории',minPixels:4.4});
+ // Two real light sources gently pick out the Buran and the starboard stairs.
+ for(const [name,position,target,intensity,range] of [
+  ['Буран',[18,14,21],[35,5,0],4.8,85],
+  ['Правый трап',[12,10,-9],[32,4,-7],3.2,48]
+ ]){
+  const lamp=new THREE.SpotLight(0xffdfb5,intensity,range,Math.PI/5,.65,1.5);
+  lamp.name='Пл. 2 · подсветка '+name;
+  lamp.position.set(...position);lamp.target.position.set(...target);
+  lamp.castShadow=false;root.add(lamp,lamp.target);
+ }
+ root.userData.site2Lighting={lamps:lamps.length,accentLights:2,batch:site2LightField.root.name};
+
  for(const p of [[368,502],[433,537],[528,577]]){const[x,z]=P(p);k.box(2.3,.18,.65,x,.7,z,'rust','site2-bench-seat',YAW);k.box(2.3,.65,.10,x,1,z+.25,'rust','site2-bench-back',YAW);}
  const metadata={version:SITE2_VERSION,reference:SITE2_REFERENCE,unit:'metre',scale:.14,anchorPreserved:true,footprint,roadPort:SITE2_ACCESS.road,buran:{...SITE2_BURAN},stair:{...SITE2_STAIR},building:{center:[hall.position.x,0,hall.position.z],yaw:YAW,dimensions:[L,H,W]},vehicles,outdoorExhibits:outdoor.exhibits,views:SITE2_VIEWS,asset:{status:'pending'}};
  root.userData.site2Model=metadata;
