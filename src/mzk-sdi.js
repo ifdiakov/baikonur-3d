@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildMzkHall} from './mzk-hall.js?v=20261031-facilities-rails-lighting-v1';
 import {MZK_SDI_RAIL_STUBS,MZK_SDI_RAIL_PORTS} from './mik112-destination-ports.js?v=20261031-facilities-rails-lighting-v1';
-import {buildSdiStand} from './mzk-sdi-stand.js?v=20261030-mzk-sdi-v1';
+import {buildSdiStand,sdiController} from './mzk-sdi-stand.js?v=20261102-sdi-energia-m-v1';
 
 export const MZK_SDI_REFERENCE=Object.freeze({
  version:'mzk-sdi-photo-v3',scale:.14,yaw:-Math.PI/4,
@@ -45,7 +45,8 @@ export function buildMzkSdi(root){
  const views={
   all:{target:[0,38,0],eye:[260,340,390]},
   mzk:{target:transformed(m,[0,29,0]),eye:transformed(m,[-128,155,190])},
-  sdi:{target:transformed(s,[7,57,0]),eye:transformed(s,[115,174,165])},
+  sdi:{target:transformed(s,[6,53,8]),eye:transformed(s,[-12,68,235])},
+  'sdi-rocket':{target:transformed(s,[-5.5,28,7]),eye:transformed(s,[-7,34,102])},
   'sdi-side':{target:transformed(s,[0,58,-5]),eye:transformed(s,[-135,169,-150])}
  };
  const metadata={version:ref.version,photoSetDate:ref.photoSetDate,photoCount:ref.photoCount,
@@ -53,5 +54,6 @@ export function buildMzkSdi(root){
   scale:ref.scale,yaw:ref.yaw,mzk,sdi,roadPort:ref.roadPort,roads,views,
   displayNote:'Buildings are enlarged for museum legibility; facade subdivisions and SDI height are approximate.'};
  root.userData.mzkSdi=metadata;
- return {...k.finish(),mzkSdi:metadata};
+ const fixed=k.finish(),moving=sdiController(root).geometry;
+ return {...fixed,features:{...fixed.features,...moving.features},primitiveCount:fixed.primitiveCount+moving.primitiveCount,meshCount:fixed.meshCount+moving.meshCount,batches:fixed.batches+moving.batches,mzkSdi:metadata};
 }

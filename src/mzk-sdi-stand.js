@@ -1,14 +1,20 @@
 import * as THREE from 'three';
+import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 
-// SDI, photographic reconstruction of the present closed-gate condition.
+const controllers = new WeakMap();
+export const sdiController = root => controllers.get(root);
+export const SDI_GATE_TRAVEL = 32.5;
+export const SDI_GATE_DURATION = 8000;
+
+// SDI, photographic exterior with a reversible historical exhibition opening.
 // Owner's Drive folder: 1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09, refreshed 2026-10-30.
 // Side walls: 1623489.jpg, 23479382228_1341dc3c8c_b.jpg, photo130.jpg.
 // Closed gate / projecting guide: img_4162-4-2-5.jpg; back: 392115334410.7004.webp.
 // Historical open-gate photographs ror52zrd5ze31hyvs8.jpg.webp and
-// mx1w370o8tyk2l8ef7.jpg.webp clarify the door framing and upper guide; they
-// do not establish a current rocket display or a free-standing rooftop crane.
+// mx1w370o8tyk2l8ef7.jpg.webp establish the single leaf sliding to +X.
+// The Energia-M installation is a museum reconstruction, not a current survey.
 // The nominal dimensions below are photographic proportions, not a survey.
-export const SDI_PHOTO_REVISION = '20261030-closed-gate-photo-v3';
+export const SDI_PHOTO_REVISION = '20261102-sdi-energia-m-v1';
 
 /**
  * Add the SDI stand to an archiveKit without finishing its instance batches.
@@ -20,7 +26,7 @@ export function buildSdiStand(k, {
   x = 0, z = 0, yaw = 0, width = 52, depth = 46, height = 118
 } = {}) {
   const group = new THREE.Group();
-  group.name = 'СДИ · светлый корпус и закрытые откатные ворота';
+  group.name = 'СДИ · Энергия-М и откатные ворота';
   group.position.set(x, 0, z);
   group.rotation.y = yaw;
   group.scale.set(width / 52, height / 118, depth / 46);
@@ -129,6 +135,17 @@ export function buildSdiStand(k, {
     (rearSlotTop + rearSlotBottom) / 2, -D / 2 - .28,
     'steel', 'sdi-rear-slot-mullion');
 
+  // Door batches stay in their own moving frame; the static archive kit
+  // deliberately bakes its inputs and cannot animate a child afterwards.
+  const leaf = new THREE.Group();
+  leaf.name = 'СДИ · откатная створка';
+  leaf.userData.museumComponent = 'sdi-sliding-leaf';
+  // The entire leaf is outside the concrete jamb, including its depth braces.
+  leaf.position.z = 3;
+  group.add(leaf);
+  const doorKit = archiveKit(leaf);
+  const gateBox = (...args) => doorKit.box(...args);
+  const gateRod = (...args) => doorKit.rod(...args);
   // Grey infill panels sit behind the rust-brown structural grid of the
   // closed sliding leaf. Staggered diagonal pairs are the visible bracing,
   // not a substitute open lattice on all four sides of the stand.
@@ -139,26 +156,26 @@ export function buildSdiStand(k, {
     for (let bay = 0; bay < bays; bay++) {
       const px = -gateWidth / 2 + (bay + .5) * stepX;
       const material = (row + bay * 2) % 7 === 0 ? 'steel' : 'concrete';
-      box(stepX - .50, stepY - .39, .32, px, y0 + stepY / 2,
+      gateBox(stepX - .50, stepY - .39, .32, px, y0 + stepY / 2,
         panelZ, material, 'sdi-closed-gate-infill');
       for (let rib = 1; rib <= 3; rib++) {
-        box(stepX - .58, .085, .17, px, y0 + stepY * rib / 4,
+        gateBox(stepX - .58, .085, .17, px, y0 + stepY * rib / 4,
           panelZ + .22, 'steel', 'sdi-gate-sheet-rib');
       }
     }
   }
   for (let bay = 0; bay <= bays; bay++) {
     const px = -gateWidth / 2 + bay * stepX;
-    box(.66, gateHeight + .65, 1.3, px, (gateBottom + gateTop) / 2,
+    gateBox(.66, gateHeight + .65, 1.3, px, (gateBottom + gateTop) / 2,
       frameZ, 'rust', 'sdi-gate-vertical-frame');
-    box(1.05, gateHeight + .7, .22, px, (gateBottom + gateTop) / 2,
+    gateBox(1.05, gateHeight + .7, .22, px, (gateBottom + gateTop) / 2,
       frameZ + .68, 'rust', 'sdi-gate-frame-flange');
   }
   for (let row = 0; row <= levels; row++) {
     const yy = gateBottom + row * stepY;
-    box(gateWidth + 1, .52, 1.5, 0, yy, frameZ,
+    gateBox(gateWidth + 1, .52, 1.5, 0, yy, frameZ,
       'rust', 'sdi-gate-horizontal-frame');
-    box(gateWidth + 1.2, .18, .35, 0, yy + .31, frameZ + .76,
+    gateBox(gateWidth + 1.2, .18, .35, 0, yy + .31, frameZ + .76,
       'steel', 'sdi-gate-frame-cap');
   }
   for (let row = 0; row < levels; row += 2) {
@@ -167,9 +184,9 @@ export function buildSdiStand(k, {
     for (let bay = 0; bay < bays; bay++) {
       const x0 = -gateWidth / 2 + bay * stepX + .38;
       const x1 = x0 + stepX - .76;
-      rod([x0, y0, frameZ + .84], [x1, y1, frameZ + .84], .16,
+      gateRod([x0, y0, frameZ + .84], [x1, y1, frameZ + .84], .16,
         'rust', 'sdi-gate-diagonal-brace');
-      rod([x1, y0, frameZ + .84], [x0, y1, frameZ + .84], .16,
+      gateRod([x1, y0, frameZ + .84], [x0, y1, frameZ + .84], .16,
         'rust', 'sdi-gate-diagonal-brace');
     }
   }
@@ -178,7 +195,7 @@ export function buildSdiStand(k, {
     const px = side * (gateWidth / 2 + .1);
     for (let row = 0; row < levels; row += 2) {
       const yy = gateBottom + row * stepY;
-      rod([px, yy, panelZ - .6], [px, yy + stepY * 2, frameZ + .5],
+      gateRod([px, yy, panelZ - .6], [px, yy + stepY * 2, frameZ + .5],
         .18, 'rust', 'sdi-gate-edge-depth-brace');
     }
   }
@@ -266,6 +283,50 @@ export function buildSdiStand(k, {
       'steel', 'sdi-service-vent-cap');
   }
 
+  // The exposed interior in the historical photos has rear service decks
+  // and side columns. Keep the central test volume clear for Energia-M.
+  box(47, 99, .08, 0, 51, -20.54, 'dark', 'sdi-interior-rear-lining');
+  for (const xx of [-23.55, 23.55]) box(.08, 99, 40, xx, 51, -.7, 'steel', 'sdi-interior-side-lining');
+  for (let yy = 35; yy < 100; yy += 9) {
+    box(2.35, 5.8, .10, 0, yy, -20.44, 'glass', 'sdi-interior-window');
+    box(.10, 5.8, .12, 0, yy, -20.36, 'wall', 'sdi-interior-window-frame');
+  }
+  for (const xx of [-21, 21]) box(.8, 99, .9, xx, 51, -18.8, 'rust', 'sdi-interior-column');
+  for (let yy = 10; yy < 100; yy += 9) {
+    box(43, .45, 3.3, 0, yy, -18.5, 'steel', 'sdi-rear-service-deck');
+    rod([-21, yy + 1.3, -16.8], [21, yy + 1.3, -16.8], .07, 'yellow', 'sdi-interior-handrail');
+    for (const xx of [-21, -10.5, 0, 10.5, 21])
+      rod([xx, yy, -16.8], [xx, yy + 1.3, -16.8], .06, 'yellow', 'sdi-interior-handrail');
+  }
+  // Low support frame: the imported rocket remains in metres, at scale 1.
+  box(20, .55, 13, -5.5, 2.525, 7, 'steel', 'sdi-rocket-support-deck');
+  for (const xx of [-14, 3]) for (const zz of [2, 12])
+    box(1.3, 1.15, 1.3, xx, 1.675, zz, 'rust', 'sdi-rocket-support-leg');
+  // Floor guide runs parallel to the leaf travel, clear of both approach tracks.
+  box(78, .20, .28, 16, 1.38, 26.1, 'rail', 'sdi-lower-door-guide');
+
+  const doorGeometry = doorKit.finish();
+  let phase = 0, target = 0, lastTime = null;
+  const eased = t => t * t * t * (t * (t * 6 - 15) + 10);
+  const stats = () => ({progress: eased(phase), phase, targetOpen: Boolean(target),
+    state: phase === target ? (target ? 'open' : 'closed') : (target ? 'opening' : 'closing'),
+    translation: leaf.position.toArray(), travel: SDI_GATE_TRAVEL, durationMs: SDI_GATE_DURATION});
+  function update(now) {
+    if (!Number.isFinite(now)) return;
+    if (lastTime !== null) {
+      const dt = Math.max(0, now - lastTime) / SDI_GATE_DURATION;
+      phase = target > phase ? Math.min(target, phase + dt) : Math.max(target, phase - dt);
+    }
+    lastTime = Math.max(lastTime ?? now, now);
+    leaf.position.x = SDI_GATE_TRAVEL * eased(phase);
+  }
+  function setOpen(open, now = performance.now()) {
+    update(now); target = open ? 1 : 0;
+    k.root.dispatchEvent({type: 'sdi-gate-change', gate: stats()});
+    return stats();
+  }
+  controllers.set(k.root, {update, setOpen, toggle: now => setOpen(!target, now), stats, geometry: doorGeometry});
+
   group.updateMatrix();
   const point = p => new THREE.Vector3(...p).applyMatrix4(group.matrix).toArray();
   return {
@@ -281,12 +342,15 @@ export function buildSdiStand(k, {
     gateBays: bays,
     gateFace: '+Z',
     gateThreshold: point([0, 1.2, front + .6]),
-    gateCentre: point([0, (gateBottom + gateTop) / 2, frameZ]),
+    gateCentre: point([0, (gateBottom + gateTop) / 2, frameZ + 3]),
     guideTip: point([guideEnd, guideY, front + 2.65]),
     roofCentre: point([0, H, 0]),
     guideType: 'attached-horizontal-sliding-door-guide',
     detachedCrane: false,
-    rocketPresent: false,
+    rocketPresent: true,
+    displayPeriod: 'historical-museum-reconstruction',
+    rocketMount: {position: point([-5.5, 2.8, 7]), rotation: [0, yaw, 0], modelId: 'energia-m'},
+    gateAnimation: {type: 'single-sliding-leaf', axis: '+X', travel: SDI_GATE_TRAVEL, durationMs: SDI_GATE_DURATION},
     annexes: [office, service].map(a => ({
       center: point([a.x, a.h / 2, a.z]),
       size: [a.w * width / W, a.h * height / H, a.d * depth / D]
@@ -296,7 +360,9 @@ export function buildSdiStand(k, {
       '183m5J6bYMtuXR6IKg3cCP9PRQl-56cjm',
       '10op0vOetBmAxcj8HuWCZAGYQEW0bUP-2',
       '1I4h885nVNAcSZYPic13iP25sA-LkHqqs',
-      '1P02KKMPdBGvbYrwOl-TjuXuxR_unRpmR'
+      '1P02KKMPdBGvbYrwOl-TjuXuxR_unRpmR',
+      '1okDab5OnTndAoOdHbN0VBcMJFigke0Ac',
+      '144mR9x63tghpAPP_fO6drdGt-sKq_mXi'
     ]
   };
 }

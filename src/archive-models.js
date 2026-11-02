@@ -1,8 +1,9 @@
 import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
+import {sdiController} from './mzk-sdi-stand.js?v=20261102-sdi-energia-m-v1';
 import * as THREE from 'three';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261101-cyclone-v1';
 import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261101-hotel-v3';
-import * as buildings from './archive-buildings.js?v=buran-paint-20261102-v1';
+import * as buildings from './archive-buildings.js?v=20261102-sdi-energia-m-v1';
 import * as launches from './archive-launches.js?v=20261101-proton-launch-v1';
 import {photoCity} from './archive-city.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSite31Pad} from './site31-pad.js?v=20261031-facilities-rails-lighting-v1';
@@ -21,7 +22,7 @@ export function buildArchiveModel(root,entry){
  return builders[entry.kind](root);
 }
 export function installArchiveModels({objects,clickable,voids}){
- const records=[],silos=[];
+ const records=[],silos=[],sdiGates=[];
  for(const spec of ARCHIVE_MAP){
   const i=objects.findIndex(o=>o.record.id===spec.id);if(i<0)throw Error('Missing archive site '+spec.id);
   const o=objects[i],root=o.g;root.clear();root.scale.setScalar(spec.scale);root.rotation.y=spec.yaw;root.position.y=-2.72;
@@ -31,6 +32,7 @@ export function installArchiveModels({objects,clickable,voids}){
   // Builder handles belong to the live scene, not the serializable catalogue
   // report. In particular, a rocket holder points back through its parents.
   const {rocket:rocketHandle,...features}=built;
+  const gate=sdiController(root);if(gate)sdiGates.push(gate);
   const silo=siloController(root);if(silo)silos.push(silo);root.updateWorldMatrix(true,true);
   root.addEventListener('museum-exhibit-loaded',event=>{
    const removed=new Set(event.removed);
@@ -106,5 +108,5 @@ export function installArchiveModels({objects,clickable,voids}){
   }
   return true;
  }
- return {focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>silos.forEach(s=>s.update(now,camera,target)),silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
+ return {setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
 }

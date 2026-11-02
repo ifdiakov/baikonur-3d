@@ -34,7 +34,7 @@ const siteModels={
  'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','site45','zenit-sea'],
  'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
  'pad-110':['energia-buran','energia','n1'],'pad-112':['tua','energia-buran','energia-polyus','energia','energia-m','n1'],
- 'pad-112a':['buran','energia-buran'],'pad-251':['pua-100','mriya','buran','mig25'],'airfield':['tu204','aircraft'],'city':['train','coach'],
+ 'pad-112a':['energia-m','buran','energia-buran'],'pad-251':['pua-100','mriya','buran','mig25'],'airfield':['tu204','aircraft'],'city':['train','coach'],
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,['silo']]))
 };
 export function resolveModelId(id){return id==='mig25ru'?'mig25':id;}

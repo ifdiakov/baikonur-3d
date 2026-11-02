@@ -8,7 +8,7 @@ const prefix=process.env.QA_PREFIX||'local',out='qa-rocket-exhibits';
 const revision='20261102-rail-scheme-v1';
 const expected={
  'cyclone-0':['pad-90','cyclone-2'],'cyclone-1':['pad-90','cyclone-2'],gagarin:['pad-1','soyuz'],site31:['pad-31','soyuz'],site41:['pad-41','r16'],ukss:['pad-250','energia-polyus'],
- site110:['pad-110','energia-buran'],'mik112-hall':['pad-112','energia-buran'],
+ 'sdi-energia-m':['pad-112a','energia-m'],site110:['pad-110','energia-buran'],'mik112-hall':['pad-112','energia-buran'],
  'tua-0':['pad-112','energia-buran'],'tua-1':['pad-112','energia-buran']
 };
 const choices=['energia-polyus','energia-buran','energia','energia-m'];
@@ -53,7 +53,7 @@ const pixels=(bytes,points)=>page.evaluate(async({encoded,points})=>{
 },{encoded:bytes.toString('base64'),points});
 const near=(a,b,message)=>assert.ok(Math.abs(a-b)<1e-8,`${message}: ${a} != ${b}`);
 function checkScale(stats){
- assert.equal(stats.placements.length,10);near(stats.commonMetre,.14,'Common physical unit');
+ assert.equal(stats.placements.length,11);near(stats.commonMetre,.14,'Common physical unit');
  for(const placement of stats.placements){
   assert.equal(placement.status,'ready',placement.key+' loaded');assert.equal(placement.error,null);
   assert.equal(placement.metresToWorld.length,3);placement.metresToWorld.forEach(n=>near(n,.14,placement.key+' world metre'));
@@ -247,7 +247,7 @@ try{
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);assert.deepEqual(evidence.failedResources,[]);
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({...evidence,passed:true,checkedAt:new Date().toISOString()},null,2));
- console.log('ROCKET_EXHIBITS_BROWSER_PASS',JSON.stringify({prefix,placements:10,initialUniqueModels:5,loadedModels:7,commonMetre:.14,choices:4,storyTypes:4,mobile:true,views:evidence.views.length}));
+ console.log('ROCKET_EXHIBITS_BROWSER_PASS',JSON.stringify({prefix,placements:11,initialUniqueModels:6,loadedModels:7,commonMetre:.14,choices:4,storyTypes:4,mobile:true,views:evidence.views.length}));
 }catch(error){
  console.error('ROCKET_BROWSER_FAILURE',error.message);
  await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(()=>{});

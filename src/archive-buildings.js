@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {buildMzkSdi} from './mzk-sdi.js?v=20261031-facilities-rails-lighting-v1';
+import {buildMzkSdi} from './mzk-sdi.js?v=20261102-sdi-energia-m-v1';
 import {buildAirport} from './airport-models.js?v=buran-paint-20261102-v1';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
