@@ -238,7 +238,9 @@ async function preloaderState(page){
  return page.evaluate(()=>{
   const loader=document.getElementById('museumLoading'),progress=document.getElementById('museumStageProgress');
   const message=document.getElementById('museumLoadingMessage'),toggle=document.getElementById('museumMotionToggle');
-  const fill=document.getElementById('museumProgressFill')?.style.transform.match(/^scaleX\(([^)]+)\)$/);
+  const fillElement=document.getElementById('museumProgressFill');
+  const fill=fillElement?.style.transform.match(/^scaleX\(([^)]+)\)$/);
+  const renderedFill=fillElement?getComputedStyle(fillElement).transform.match(/^matrix(?:3d)?\(([^,]+)/):null;
   return {launchStep:Number(loader?.dataset.launchStep),status:document.getElementById('museumLaunchStatus')?.textContent.trim(),
    launchCounter:document.getElementById('museumLaunchStep')?.textContent.trim(),
    welcome:document.getElementById('museumWelcome')?.textContent.replace(/\s+/g,' ').trim(),
@@ -251,6 +253,7 @@ async function preloaderState(page){
     decoding:element.getAttribute('decoding'),complete:element.complete,naturalWidth:element.naturalWidth})),
    stage:Number(progress?.getAttribute('aria-valuenow')),total:Number(progress?.getAttribute('aria-valuemax')),
    role:progress?.getAttribute('role'),fillScale:fill?Number(fill[1]):null,
+   renderedFillScale:renderedFill?Number(renderedFill[1]):null,
    paused:loader?.classList.contains('is-paused'),motion:loader?.dataset.motion,
    running:loader?.getAnimations({subtree:true}).filter(animation=>animation.playState==='running').length,
    decorationRunning:[...loader.querySelectorAll('#museumFeatureSlides,#museumPreloaderGallery')]
@@ -261,6 +264,46 @@ async function preloaderState(page){
    outerLive:loader?.getAttribute('aria-live'),outerRole:loader?.getAttribute('role'),
    launch:window.__STARTUP_TEST.launch};
  });
+}
+
+function assertVisualProgress(state){
+ assert.ok(Number.isFinite(state.fillScale)&&state.fillScale>=0&&state.fillScale<=1,
+  'The displayed progress remains a finite fraction');
+ if(state.stage<state.total){
+  assert.ok(state.fillScale<1,'The bar cannot reach 100% before the first rendered frame');
+  assert.ok(state.fillScale<(state.stage+1)/state.total,
+   'Smooth progress never crosses the boundary of the currently loading stage');
+ }
+ if(Number.isFinite(state.renderedFillScale))assert.ok(Math.abs(state.renderedFillScale-state.fillScale)<1e-5,
+  'The measured visual fraction is actually rendered, rather than only assigned as a future CSS target');
+}
+
+async function sampleVisualProgress(page,duration){
+ return page.evaluate(duration=>new Promise(resolve=>{
+  const samples=[];
+  const sample=()=>{
+   const fill=document.getElementById('museumProgressFill'),progress=document.getElementById('museumStageProgress');
+   const value=fill.style.transform.match(/^scaleX\(([^)]+)\)$/);
+   const rendered=getComputedStyle(fill).transform.match(/^matrix(?:3d)?\(([^,]+)/);
+   samples.push({at:performance.now(),stage:Number(progress.getAttribute('aria-valuenow')),
+    total:Number(progress.getAttribute('aria-valuemax')),fillScale:value?Number(value[1]):null,
+    renderedFillScale:rendered?Number(rendered[1]):null});
+  };
+  sample();const timer=setInterval(sample,80);
+  setTimeout(()=>{clearInterval(timer);sample();resolve(samples);},duration);
+ }),duration);
+}
+
+function assertHeldVisualProgress(samples,stage){
+ assert.ok(samples.length>=4,'The held phase is sampled throughout its visual motion');
+ for(let i=0;i<samples.length;i++){
+  const sample=samples[i];assert.equal(sample.stage,stage,'ARIA reports only completed work throughout the visual advance');
+  assertVisualProgress(sample);
+  if(i)assert.ok(sample.fillScale>=samples[i-1].fillScale,'The held-phase bar never moves backwards');
+ }
+ assert.ok(samples.at(-1).fillScale>samples[0].fillScale,'Visible progress continues while the same actual stage is held');
+ assert.ok(new Set(samples.map(sample=>sample.renderedFillScale)).size>=4,
+  'Progress has multiple rendered intermediate positions instead of a single discrete jump');
 }
 
 async function assertPreloaderFits(page,viewport,{error=false}={}){
@@ -335,7 +378,7 @@ async function exercisePreloader(page){
   'The narrative counter names all twenty launch phrases');
  assert.equal(initial.role,'progressbar');assert.equal(initial.total,9);
  assert.equal(initial.stage,0,'No scene phase is complete while the required catalog is held');
- assert.equal(initial.fillScale,0,'The visible bar starts at the same real progress');
+ assertVisualProgress(initial);
  assert.equal(initial.live,'polite');assert.equal(initial.messageRole,'status');
  assert.notEqual(initial.outerLive,'polite','Changing a launch phrase must not announce the entire loading screen');
  assert.notEqual(initial.outerRole,'status');
@@ -366,24 +409,27 @@ async function exercisePreloader(page){
  const stillPaused=await preloaderState(page);
  assert.equal(stillPaused.launchStep,0,'Presentation controls cannot advance held scene progress');
  assert.equal(stillPaused.status,paused.status);assert.equal(stillPaused.stage,initial.stage);
- assert.equal(stillPaused.fillScale,initial.fillScale);
+ assertVisualProgress(stillPaused);
+ assert.ok(stillPaused.fillScale>=initial.fillScale,'Pausing decoration and changing the motion preference cannot rewind progress');
  assert.equal(stillPaused.running,0,'Pausing stops decorative motion');
  assert.deepEqual(stillPaused.features,restored.features,'Removing reduced motion preserves the manual pause');
  await page.setViewportSize({width:1280,height:800});
  await page.locator('#museumMotionToggle').focus();await page.keyboard.press('Space');
  const resumed=await preloaderState(page);
  assert.equal(resumed.paused,false);assert.equal(resumed.motion,'running');assert.equal(resumed.toggle.pressed,'false');
- // Outlast the removed 2.2-second story timer with animation running. Status
- // text must still describe the held real stage, without extending its 15s limit.
- await page.waitForTimeout(3400);
+ // Outlast the requested 1.6-second phrase interval. Status text and ARIA
+ // still describe real work while the bounded visual bar keeps moving.
+ const progressSamples=await sampleVisualProgress(page,1900);
+ assertHeldVisualProgress(progressSamples,initial.stage);
  const held=await preloaderState(page);
  assert.equal(held.launchStep,0,'Elapsed time alone cannot advance production launch text');
  assert.equal(held.status,firstLaunchStatus);assert.deepEqual(held.launch.map(item=>item.step),[0]);
- assert.equal(held.stage,initial.stage);assert.equal(held.fillScale,initial.fillScale);
+ assert.equal(held.stage,initial.stage);assertVisualProgress(held);
+ assert.ok(held.fillScale>resumed.fillScale,'Smooth progress does not wait for the next completed phase');
  assert.notDeepEqual(held.features.map(feature=>feature.active),resumed.features.map(feature=>feature.active),
   'Visitor phrases can advance while gallery images remain unavailable');
  // The actual load below runs with normal motion and records every phase.
- return {initial,paused,stillPaused,resumed,held,layouts,motion};
+ return {initial,paused,stillPaused,resumed,held,layouts,motion,progressSamples};
 }
 
 function assertLaunchSequence(sequence,{visible=true}={}){
@@ -479,8 +525,8 @@ function assertStageProgress(feedback){
  assert.ok(new Set(stages.map(item=>item.stage)).size>1,'The real boot advances the displayed stages');
  for(let i=0;i<stages.length;i++){
   assert.ok(stages[i].stage>=0&&stages[i].stage<=stages[i].total,'Stages stay within their declared range');
-  assert.ok(Math.abs(stages[i].fillScale-stages[i].stage/stages[i].total)<1e-6,
-   'The visible progress bar matches completed scene phases');
+  assertVisualProgress(stages[i]);
+  if(i)assert.ok(stages[i].fillScale>=stages[i-1].fillScale,'Visible progress never moves backwards across real-stage updates');
   const target=stages[i].stage===stages[i].total?finalLaunchStep:
    Math.floor(stages[i].stage/(stages[i].total-1)*lastLoadingLaunchStep);
   assert.ok(stages[i].launchStep<=target,'Launch text never announces a future scene phase');
@@ -493,6 +539,7 @@ function assertStageProgress(feedback){
  assert.equal(firstView?.stage,8,'Starting the ninth phase still leaves the first render incomplete');
  const ready=stages.find(item=>item.state==='ready');
  assert.ok(ready&&ready.stage===ready.total,'All stages finish only with a rendered, ready museum');
+ assert.equal(ready.fillScale,1,'The visible bar completes when the rendered museum is revealed');
  assert.equal(ready.launchStep,finalLaunchStep,'The final launch phrase belongs to the completed museum');
  assert.equal(ready.launchStatus,finalLaunchStatus);
  assert.equal(ready.launchCounter,launchStatusCount+' / '+launchStatusCount,'The completed narrative displays 20 / 20');
@@ -553,12 +600,18 @@ async function exerciseProgressFixtures(){
     await run.page.evaluate(index=>window.__MUSEUM_STARTUP.stage('Этап '+index,index),index);
     await run.page.waitForFunction(target=>Number(document.getElementById('museumLoading').dataset.launchStep)===target,
      targets[index-1],{timeout:2000});
+    if(index===1){
+     const samples=await sampleVisualProgress(run.page,480);assertHeldVisualProgress(samples,0);
+     run.record.pausedProgress=samples;
+    }
     const phase=await preloaderState(run.page);
-    assert.equal(phase.stage,index-1);assert.ok(Math.abs(phase.fillScale-(index-1)/9)<1e-6);
+    assert.equal(phase.stage,index-1);assertVisualProgress(phase);
+    if(run.record.phases.length)assert.ok(phase.fillScale>=run.record.phases.at(-1).fillScale,
+     'Real phase updates never rewind the bar while decoration is paused');
     assert.equal(phase.paused,true);assert.equal(phase.toggle.pressed,'true');
     assert.equal(phase.decorationRunning,0,'Manual pause freezes decoration while real-stage text advances');
     assert.equal(phase.status,launchStatuses[targets[index-1]]);
-    run.record.phases.push({index,launchStep:phase.launchStep,stage:phase.stage,decorationRunning:phase.decorationRunning});
+    run.record.phases.push({index,launchStep:phase.launchStep,stage:phase.stage,fillScale:phase.fillScale,decorationRunning:phase.decorationRunning});
    }
   }else if(mode==='reduced'){
    await assertReducedMotion(run.page);
@@ -600,6 +653,7 @@ async function exerciseProgressFixtures(){
   assert.ok(state.inert.every(item=>item.inert===false));
   assert.equal(intro.launchStep,finalLaunchStep);assert.equal(intro.status,finalLaunchStatus);
   assert.equal(intro.launchCounter,launchStatusCount+' / '+launchStatusCount);assert.equal(intro.stage,9);
+  assert.equal(intro.fillScale,1,'Completion reaches 100% without waiting for a decorative progress animation');
   assertLaunchWrites(state.test);
   if(mode==='main-thread-stall'){
    const timing=await assertExitOpportunity(run.page,stats,run.record);

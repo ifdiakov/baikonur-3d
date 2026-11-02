@@ -1,7 +1,8 @@
 import {readFile, writeFile} from 'node:fs/promises';
 
 // The labelled preview uses the production loader without importing the 3D
-// scene. Its phrases and gallery replay; the real loading bar remains at zero.
+// scene. Its explicitly labelled demo bar replays with the launch statuses;
+// production progress continues to come from actual museum-loading stages.
 const entry = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const match = entry.match(/<!-- MUSEUM_PRELOADER_START -->\s*([\s\S]*?)\s*<!-- MUSEUM_PRELOADER_END -->/);
 if (!match) throw new Error('Production preloader markup is missing');
@@ -11,10 +12,10 @@ if (!match[1].includes('<!-- PRELOADER_PREVIEW_ACTIONS -->')) throw new Error('P
 const markup = match[1]
   .replace('<section id="museumLoading"', '<section id="museumLoading" data-preview="true"')
   .replace('aria-label="Подготовка интерактивного музея Байконура"', 'aria-label="Предпросмотр прелоадера Байконура"')
-  .replace(/(<[^>]+id="museumPreloaderMode"[^>]*>)[^<]*/, '$1Предпросмотр анимации')
+  .replace(/(<[^>]+id="museumPreloaderMode"[^>]*>)[^<]*/, '$1ПРЕДПРОСМОТР')
   .replace('<!-- PRELOADER_PREVIEW_ACTIONS -->',
     '<a class="preloader__preview-link" href="./">Открыть музей <span aria-hidden="true">↗</span></a>')
-  .replace('>Загружаем музей…</p>', '>Предпросмотр экрана загрузки. Полоса заполняется при загрузке настоящего макета.</p>');
+  .replace('>Загружаем музей…</p>', '>Предпросмотр: демонстрационный цикл полосы загрузки. Откройте музей, чтобы загрузить настоящий макет.</p>');
 const html = `<!doctype html>
 <html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -25,11 +26,11 @@ const html = `<!doctype html>
 <style>${font}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
 </style>
-<link rel="stylesheet" href="./src/museum-preloader.css?v=20261102-preloader-gallery-v6">
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261102-preloader-smooth-v7">
 
 </head><body>
 ${markup}
-<script src="./src/museum-preloader.js?v=20261102-preloader-gallery-v6"></script>
+<script src="./src/museum-preloader.js?v=20261102-preloader-smooth-v7"></script>
 </body></html>
 `;
 await writeFile(new URL('../preloader.html', import.meta.url), html);

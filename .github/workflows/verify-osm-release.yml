@@ -1,4 +1,4 @@
-name: Visible city-side Central flank boundary
+name: Smooth preloader progress and faster feature phrases
 on:
   push:
     branches: [main]
@@ -56,7 +56,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-city-flank-boundary-20261102-v1
+  RELEASE_TAG: museum-preloader-smooth-20261102-v7
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -373,12 +373,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/city-flank-boundary-20261102-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/preloader-smooth-20261102-v7.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — граница Центрального фланга со стороны города',
+                name: 'Байконур — плавная загрузка Гранд-макета',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

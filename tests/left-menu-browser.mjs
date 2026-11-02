@@ -109,10 +109,12 @@ try{
  assert.ok(Math.abs(countdownBefore.totalSeconds-Math.max(0,Math.ceil((countdownBefore.deadline-countdownBefore.now)/1000)))<=1,'The visible countdown uses the real launch instant and wall clock');
  if(countdownBefore.deadline>countdownBefore.now+2000){
   assert.match(countdownBefore.status,/предварительн/i,'A provisional launch time is visibly identified');
+  // Observe this wall-clock timer independently of rendering. Headless
+  // SwiftShader can stop rAF while the one-second countdown keeps updating.
   await page.waitForFunction(previous=>{
    const panel=document.getElementById('nextLaunchPanel'),values=['days','hours','minutes','seconds'].map(unit=>Number(panel.querySelector('[data-countdown-unit="'+unit+'"]').textContent));
    return values[0]*86400+values[1]*3600+values[2]*60+values[3]<previous;
-  },countdownBefore.totalSeconds,{timeout:5000});
+  },countdownBefore.totalSeconds,{polling:100,timeout:5000});
  }else if(countdownBefore.deadline<=countdownBefore.now)assert.equal(countdownBefore.totalSeconds,0,'An elapsed launch must not produce a negative counter');
  evidence.nextLaunch={before:countdownBefore,after:await nextLaunchState()};
  assert.equal(await page.locator('#museumIdentity img,.rockettrip-logo,#cyclogramsAccordion,#timelineEvents,#timelineEventPanel').count(),0,'Removed branding and event UI do not remain hidden in the page');

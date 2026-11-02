@@ -36,6 +36,9 @@
   var phrases = Array.prototype.slice.call(root.querySelectorAll('#museumFeatureSlides .preloader__phrase'));
   var images = Array.prototype.slice.call(root.querySelectorAll('#museumPreloaderGallery .preloader__image'));
   var motion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
+  // Use the change event to update the preference. Reading MQL.matches on
+  // every animation frame can consume Chromium's pending change notification.
+  var reducedMotion = Boolean(motion.matches);
   var preview = root.dataset.preview === 'true';
   var launchStep = 0;
   var targetStep = 0;
@@ -54,8 +57,21 @@
   var listeners = [];
   var featureIndex = 0;
   var imageCursor = 0;
+  var presentationTick = 0;
   var presentationTimer = null;
   var pendingImage = null;
+  var activeStage = 0;
+  var stageStartedAt = performance.now();
+  var visualProgress = 0;
+  var progressFrame = null;
+  var progressLastTime = 0;
+  var progressFinishFrom = 0;
+  var progressFinishStartedAt = 0;
+  var progressFinishDuration = 100;
+  var demoStepStartedAt = performance.now();
+  var demoStepFrom = 0;
+  var demoStepDuration = 950;
+  var demoPercent = -1;
 
   function listen(target, type, handler) {
     if (!target) return;
@@ -81,7 +97,7 @@
   }
 
   function motionPaused() {
-    return manuallyPaused || motion.matches || document.hidden || failed || destroyed;
+    return manuallyPaused || reducedMotion || document.hidden || failed || destroyed;
   }
 
   function showFeature(index) {
@@ -166,23 +182,25 @@
       presentationTimer = null;
       if (motionPaused() || finishing) return;
       if (phrases.length) showFeature((featureIndex + 1) % phrases.length);
-      advanceImage();
+      // Copy moves twice as quickly; images retain their calmer 3.2s cadence.
+      presentationTick += 1;
+      if (presentationTick % 2 === 0) advanceImage();
       schedulePresentation();
-    }, 3200);
+    }, 1600);
   }
 
   function syncMotion() {
     var paused = motionPaused();
     root.classList.toggle('is-paused', paused);
-    root.classList.toggle('is-reduced', Boolean(motion.matches));
+    root.classList.toggle('is-reduced', reducedMotion);
     root.dataset.motion = paused ? 'paused' : 'running';
     if (!toggle) return;
-    toggle.disabled = failed || finishing || destroyed || motion.matches;
+    toggle.disabled = failed || finishing || destroyed || reducedMotion;
     toggle.setAttribute('aria-pressed', String(paused));
-    var label = failed || destroyed ? 'Анимация остановлена' : motion.matches ? 'Анимация отключена' :
+    var label = failed || destroyed ? 'Анимация остановлена' : reducedMotion ? 'Анимация отключена' :
       manuallyPaused ? 'Продолжить анимацию' : 'Пауза анимации';
     toggle.setAttribute('aria-label', label);
-    toggle.title = motion.matches ? 'В системе включено сокращение анимации' : label;
+    toggle.title = reducedMotion ? 'В системе включено сокращение анимации' : label;
     text('museumMotionLabel', label);
   }
 
@@ -191,6 +209,7 @@
     root.dataset.launchStep = String(launchStep);
     if (status) status.textContent = launchStatuses[launchStep];
     text('museumLaunchStep', String(launchStep + 1).padStart(2, '0') + ' / ' + String(launchStatuses.length).padStart(2, '0'));
+    if (preview && launchStep === 0) writeProgress(0);
     // Fast progress may change the phrase each frame. Fading every new string
     // in from opacity zero would keep the whole sequence invisible.
   }
@@ -238,6 +257,9 @@
     if (!preview || motionPaused() || finishing) return;
     // Only the explicitly labelled standalone preview owns a demo clock.
     // Production consumes actual stage updates instead of this timer.
+    demoStepDuration = launchStep === 0 ? 950 : launchStep === launchStatuses.length - 1 ? 650 : 500;
+    demoStepStartedAt = performance.now();
+    demoStepFrom = visualProgress;
     timer = window.setTimeout(function () {
       timer = null;
       if (motionPaused() || finishing) return;
@@ -245,12 +267,85 @@
       if (next >= launchStatuses.length) next = 0;
       showLaunchStep(next);
       schedulePreview();
-    }, launchStep === 0 ? 950 : launchStep === launchStatuses.length - 1 ? 650 : 500);
+    }, demoStepDuration);
+  }
+
+  function writeProgress(value) {
+    visualProgress = Math.max(0, Math.min(1, value));
+    if (fill) fill.style.transform = 'scaleX(' + Math.round(visualProgress * 1000000) / 1000000 + ')';
+    if (preview && progress) {
+      var percent = Math.round(visualProgress * 100);
+      if (percent !== demoPercent) {
+        demoPercent = percent;
+        progress.setAttribute('aria-label', 'Демонстрация загрузки');
+        progress.setAttribute('aria-valuemax', '100');
+        progress.setAttribute('aria-valuenow', String(percent));
+        progress.setAttribute('aria-valuetext', 'Демонстрация загрузки: ' + percent + '%');
+      }
+    }
+  }
+
+  function stopProgress() {
+    if (progressFrame !== null) window.cancelAnimationFrame(progressFrame);
+    progressFrame = null;
+    progressLastTime = 0;
+  }
+
+  function canAnimateProgress() {
+    return fill && !failed && !destroyed && !reducedMotion &&
+      !document.hidden && !root.hidden &&
+      (finishing || (preview ? !manuallyPaused : activeStage > 0));
+  }
+
+  function animateProgress(now) {
+    progressFrame = null;
+    if (!canAnimateProgress()) { stopProgress(); return; }
+    if (finishing) {
+      var fraction = progressFinishDuration > 0 ? Math.min(1, Math.max(0,
+        (now - progressFinishStartedAt) / progressFinishDuration)) : 1;
+      var eased = 1 - Math.pow(1 - fraction, 3);
+      writeProgress(Math.max(visualProgress, progressFinishFrom + (1 - progressFinishFrom) * eased));
+      if (fraction >= 1) { stopProgress(); return; }
+    } else if (preview) {
+      // A labelled demo follows only the standalone status clock. Its weighted
+      // segments keep an even speed across the longer first and last statuses.
+      var cycleDuration = 950 + (launchStatuses.length - 2) * 500 + 650;
+      var segmentEnd = launchStep === launchStatuses.length - 1 ? 1 : (950 + launchStep * 500) / cycleDuration;
+      var demoFraction = Math.min(1, Math.max(0, (now - demoStepStartedAt) / demoStepDuration));
+      writeProgress(Math.max(visualProgress, demoStepFrom + (segmentEnd - demoStepFrom) * demoFraction));
+    } else {
+      var elapsed = Math.max(0, now - stageStartedAt);
+      // Real stage boundaries are discrete. Between them, approach only 90%
+      // of the CURRENT unfinished stage, never the next unconfirmed boundary.
+      // This estimate is decorative; ARIA and startup retain the real counts.
+      var withinStage = .9 * (1 - Math.exp(-elapsed / 4000));
+      var target = Math.min((completed + withinStage) / totalStages, (totalStages - .1) / totalStages);
+      var delta = Math.min(64, Math.max(0, now - progressLastTime));
+      var next = visualProgress + Math.max(0, target - visualProgress) * (1 - Math.exp(-delta / 140));
+      writeProgress(Math.max(visualProgress, next));
+    }
+    progressLastTime = now;
+    progressFrame = window.requestAnimationFrame(animateProgress);
+  }
+
+  function syncProgress() {
+    if (failed || destroyed) { stopProgress(); return; }
+    if (!canAnimateProgress()) {
+      stopProgress();
+      // No animation for reduced motion or a background tab. Preserve an
+      // already displayed fraction when preferences change; never rewind.
+      writeProgress(Math.max(visualProgress, completed / totalStages));
+      return;
+    }
+    if (progressFrame === null) {
+      progressLastTime = performance.now();
+      progressFrame = window.requestAnimationFrame(animateProgress);
+    }
   }
 
   function paintProgress() {
-    if (fill) fill.style.transform = 'scaleX(' + (completed / totalStages) + ')';
-    if (!progress) return;
+    syncProgress();
+    if (!progress || preview) return;
     progress.setAttribute('aria-valuemax', String(totalStages));
     progress.setAttribute('aria-valuenow', String(completed));
     progress.setAttribute('aria-valuetext', finishing ? 'Музей готов' :
@@ -261,11 +356,17 @@
     if (destroyed || finishing || failed) return;
     total = Number(total);
     index = Number(index);
+    var previousCompleted = completed;
+    var previousTotal = totalStages;
     totalStages = Number.isFinite(total) && total > 0 ? Math.min(30, Math.floor(total)) : totalStages;
     index = Number.isFinite(index) ? Math.min(totalStages, Math.max(0, Math.floor(index))) : 0;
     // stage() announces an operation's START. Only preceding operations have
     // completed; the final fraction is earned exclusively by finish().
     completed = Math.min(totalStages - 1, Math.max(completed, index - 1, 0));
+    if (index > activeStage || completed !== previousCompleted || totalStages !== previousTotal) {
+      stageStartedAt = performance.now();
+    }
+    activeStage = Math.max(activeStage, index);
     root.dataset.loadStage = String(index);
     paintProgress();
     if (!preview) {
@@ -280,6 +381,7 @@
     stopCycle();
     stopAdvance();
     stopPresentation();
+    stopProgress();
     root.classList.add('has-error');
     root.classList.remove('is-slow');
     syncMotion();
@@ -295,8 +397,11 @@
     finishing = true;
     stopCycle();
     stopPresentation();
-    if (!motion.matches) showFeature(phrases.length - 1);
+    if (!reducedMotion) showFeature(phrases.length - 1);
     exitDeadline = performance.now() + 460;
+    progressFinishFrom = visualProgress;
+    progressFinishStartedAt = performance.now();
+    progressFinishDuration = Math.min(100, Math.max(0, exitDeadline - progressFinishStartedAt));
     onExit = typeof reveal === 'function' ? reveal : null;
     targetStep = launchStatuses.length - 1;
     completed = totalStages;
@@ -313,6 +418,8 @@
     if (exitTimer !== null) window.clearTimeout(exitTimer);
     exitTimer = null;
     onExit = null;
+    stopProgress();
+    writeProgress(1);
     flushAdvance();
   }
 
@@ -322,6 +429,7 @@
     stopCycle();
     stopAdvance();
     stopPresentation();
+    stopProgress();
     if (exitTimer !== null) window.clearTimeout(exitTimer);
     exitTimer = null;
     onExit = null;
@@ -332,13 +440,16 @@
   }
 
   function refreshMotion() {
+    reducedMotion = Boolean(motion.matches);
     syncMotion();
+    syncProgress();
     if (motionPaused() || finishing) stopPresentation();
     else schedulePresentation();
-    if (motion.matches) {
+    if (reducedMotion) {
       showFeature(0);
       showImage(0);
       imageCursor = 0;
+      presentationTick = 0;
     }
     if (preview) schedulePreview();
     else {
@@ -348,7 +459,7 @@
   }
 
   listen(toggle, 'click', function () {
-    if (destroyed || finishing || failed || motion.matches) return;
+    if (destroyed || finishing || failed || reducedMotion) return;
     manuallyPaused = !manuallyPaused;
     refreshMotion();
   });
