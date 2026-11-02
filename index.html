@@ -515,13 +515,45 @@ startup.stage('Создаём ландшафт…',2);
 await startup.paint();
 const geography=createMuseumGeography({catalog,matches:osmMatches});
 const siteRecords=geography.sites.filter(record=>!record.aliasOf&&record.render!==false);
-// Site 2: display it northeast of Gagarin, in the corridor toward the northern railway.
-// All exhibits and controls derive their pose from this single site record.
+// Site 2 stands beside the bend in the approach road to Gagarin's launch pad.
+// Keep the original OSM geography intact; only move the museum display anchor.
 const gagarinSiteRecord=siteRecords.find(record=>record.id==='pad-1');
 const site2Record=siteRecords.find(record=>record.id==='pad-2');
 if(gagarinSiteRecord&&site2Record){
- site2Record.x=gagarinSiteRecord.x+42;
- site2Record.y=gagarinSiteRecord.y-38;
+ const gx=gagarinSiteRecord.x,gy=gagarinSiteRecord.y;
+ const preferred=[gx+42,gy-38];
+ let best=null;
+ const considerRoad=coords=>{
+  if(!Array.isArray(coords)||coords.length<3)return;
+  for(let i=1;i<coords.length-1;i++){
+   const p=geography.project(...coords[i]),a=geography.project(...coords[i-1]),b=geography.project(...coords[i+1]);
+   const ux=p[0]-a[0],uy=p[1]-a[1],vx=b[0]-p[0],vy=b[1]-p[1];
+   const l1=Math.hypot(ux,uy),l2=Math.hypot(vx,vy),d=Math.hypot(p[0]-gx,p[1]-gy);
+   if(l1<2||l2<2||d<23||d>155)continue;
+   const turn=Math.acos(Math.max(-1,Math.min(1,(ux*vx+uy*vy)/(l1*l2))));
+   if(turn<.27)continue;
+   const near=Math.hypot(p[0]-preferred[0],p[1]-preferred[1]);
+   const score=near+turn*9+Math.abs(d-58)*.12;
+   if(!best||score<best.score)best={score,p,ux,uy,vx,vy};
+  }
+ };
+ for(const feature of osmRoads.features||[]){
+  const geometry=feature.geometry;
+  if(geometry?.type==='LineString')considerRoad(geometry.coordinates);
+  else if(geometry?.type==='MultiLineString')for(const line of geometry.coordinates)considerRoad(line);
+ }
+ if(best){
+  // Set the exhibit off the roadway, on the outward side of the bend.
+  const tangentX=best.ux/Math.hypot(best.ux,best.uy)+best.vx/Math.hypot(best.vx,best.vy);
+  const tangentY=best.uy/Math.hypot(best.ux,best.uy)+best.vy/Math.hypot(best.vx,best.vy);
+  const length=Math.hypot(tangentX,tangentY)||1;
+  const nx=-tangentY/length,ny=tangentX/length;
+  const sign=(preferred[0]-best.p[0])*nx+(preferred[1]-best.p[1])*ny>=0?1:-1;
+  site2Record.x=best.p[0]+nx*sign*23;
+  site2Record.y=best.p[1]+ny*sign*23;
+ }else{
+  site2Record.x=preferred[0];site2Record.y=preferred[1];
+ }
 }
 const site110Record=siteRecords.find(record=>record.id==='pad-110');
 if(site110Record){
