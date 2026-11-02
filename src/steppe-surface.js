@@ -5,7 +5,7 @@ export const STEPPE_BIOME_EXTENT=18000;
 export const STEPPE_BIOME_RESOLUTION=1024;
 // The generated field and the material program have separate revisions: an
 // image treatment must not silently claim that the fallback soil field changed.
-export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v11-progressive-satellite';
+export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v12-pbr-pilot';
 const installed=new WeakMap();
 
 function satelliteSurrounding(options){
@@ -276,7 +276,7 @@ export const STEPPE_SATELLITE_EXTENSION_FRAGMENT=/* glsl */`
 /** Install on soil only. Chaining preserves UKSS and every portal cutout. */
 export function installSteppeSurface(material,{biomeTexture,microTexture,mesoTexture,satelliteTexture=null,satelliteProjection=null,satelliteCorrection=null,
  extensionTexture=null,satelliteExtension=null},options={}){
- if(!material?.isMeshBasicMaterial)throw new Error('Shared steppe requires the museum unlit ground material');
+ if(!material?.isMeshBasicMaterial&&!material?.isMeshStandardMaterial)throw new Error('Shared steppe requires a basic or PBR soil material');
  if(!biomeTexture||!microTexture||!mesoTexture)throw new Error('Missing shared steppe textures');
  if(Boolean(satelliteTexture)!==Boolean(satelliteProjection))throw new Error('Satellite texture and registration must be supplied together');
  if(satelliteCorrection&&!satelliteTexture)throw new Error('Satellite UV correction requires a satellite surface');
