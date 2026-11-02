@@ -571,9 +571,11 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   disableShadows();
   root.traverse(o=>{if(o.isMesh){o.geometry?.dispose();o.material?.dispose();}});
   smokeTexture.dispose();
+  flameRoot.removeFromParent();
   root.removeFromParent();
  }
- return {root,pose,dispose,enableShadows,disableShadows,
+ function hideExhaust(){flameRoot.visible=false;movingFlameLight.intensity=0;}
+ return {root,pose,dispose,hideExhaust,enableShadows,disableShadows,
   shadowState:()=>({enabled:Boolean(shadowSettings),casters:shadowToggles.length,receivers:shadowReceivers.length,
    lightIntensity:shadowSpot.visible?shadowSpot.intensity:0,mapResolution:shadowResolution})};
 }
@@ -766,7 +768,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
    entry.holder.rotation.copy(originalRocket.rotation);
    entry.holder.visible=saved.rocketVisible;
   }
-  if(effects){effects.root.visible=false;effects.disableShadows();}
+  if(effects){effects.hideExhaust();effects.root.visible=false;effects.disableShadows();}
   if(preview)preview.visible=false;
   sceneRestore?.();sceneRestore=null;
   if(saved){
