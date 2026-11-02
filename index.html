@@ -492,7 +492,7 @@ import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPosition
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261101-altitude-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261102-site2-photo-v3';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
-import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261103-energia-polyus-logdepth-v9';
+import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261103-energia-polyus-cinematic-fx-v10';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261102-m62-headlamp-v2';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261102-site2-photo-v3';
@@ -521,7 +521,7 @@ mapAttribution.append(attribution,terrainAttribution);document.body.append(mapAt
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261103-menu-camera-docks-v2';
+const MUSEUM_REVISION='20261103-energia-cinematic-fx-v10';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
