@@ -3,7 +3,7 @@ import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 
 const out='qa-mriya',prefix=process.env.QA_PREFIX||'local';await mkdir(out,{recursive:true});
-const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261102-rail-scheme-v1';
+const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261102-energia-polyus-v2';
 const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
 page.setDefaultTimeout(90000);

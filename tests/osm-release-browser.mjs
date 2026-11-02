@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261102-rail-scheme-v1';
+const revision='20261102-energia-polyus-v2';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));
@@ -77,11 +77,11 @@ try{
  await step();
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(await page.locator('#error').isVisible(),false);
- assert.equal(initial.sites,98);assert.equal(initial.catalogEntries,99);assert.equal(initial.stations,36);
+ assert.equal(initial.sites,99);assert.equal(initial.catalogEntries,100);assert.equal(initial.stations,36);
  assert.equal(initial.transport.railScheme.connectionCount,20);assert.equal(initial.transport.railScheme.protectedRemovedEdges,0);
  assert.equal(initial.transport.railSurface.trainUsesSharedSurface,true);
  evidence.hierarchy=[await hierarchy('overview')];
- assert.equal(initial.geography.version,'osm-geography-v1');assert.equal(initial.geography.anchored,72);assert.equal(initial.geography.inferred,26);
+ assert.equal(initial.geography.version,'osm-geography-v1');assert.equal(initial.geography.anchored,72);assert.equal(initial.geography.inferred,27);
  assert.equal(initial.transport.version,'osm-transport-v1');assert.equal(initial.transport.source,'OpenStreetMap');
  assert.equal(initial.transport.roadFeatureCount,3185);assert.equal(initial.transport.railFeatureCount,543);
  assert.ok(initial.transport.roadRoutes>2500&&initial.transport.railRoutes>400);
