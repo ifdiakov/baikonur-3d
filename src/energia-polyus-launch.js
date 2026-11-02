@@ -19,7 +19,7 @@ export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
  {at:241,title:'СБРОС ГОЛОВНОГО ОБТЕКАТЕЛЯ',status:'Исторический этап, без точной визуальной модели',fact:'Согласно опубликованной программе полёта «Полюса», сброс защитного обтекателя приходился примерно на Т+241 с.',source:'https://www.buran-energia.com/polious/polious-desc.php'},
  {at:460,title:'ОТДЕЛЕНИЕ «ПОЛЮСА»',status:'Высота 110 км · архивная отметка',fact:'«Энергия» успешно выполнила свою программу. «Полюс» отделился приблизительно на высоте 110 км, но это ещё не означало выхода на орбиту.',source:'https://www.buran.ru/htm/cargo.htm'},
  {at:511,title:'РАЗВОРОТ «ПОЛЮСА»',status:'Манёвр для торможения вращения и коррекции',fact:'Аппарат начал разворот на 180° после отделения. Из-за ошибки системы управления вращение не было своевременно остановлено.',source:'https://www.buran.ru/htm/cargo.htm'},
- {at:568,title:'ОРБИТА НЕ ДОСТИГНУТА',status:'«Полюс» перешёл на баллистическую траекторию',fact:'Разгонный импульс не обеспечил запланированную орбиту: аппарат впоследствии вошёл в атмосферу и упал в Тихом океане.',source:'https://www.buran.ru/htm/str163.htm'},
+ {at:568,title:'ОРБИТА НЕ ДОСТИГНУТА',status:'Иллюстративная точка осмысления итогов полёта',fact:'Из-за ошибки ориентации аппарат не вышел на заданную орбиту и впоследствии упал в Тихом океане. Отметка T+568 с здесь условна, а не архивный момент аварии.',source:'https://www.buran.ru/htm/str163.htm'},
  {at:600,title:'ИСПЫТАНИЕ «ЭНЕРГИИ» УСПЕШНО',status:'Носитель отработал; экспериментальная нагрузка потеряна',fact:'Первый пуск подтвердил работоспособность сверхтяжёлой «Энергии». Её второй и последний пуск состоялся 15 ноября 1988 года с «Бураном».',source:'https://www.buran-energia.com/blog/2012/05/15/25th-anniversary-of-the-energias-flight/lang/en/'}
 ]);
 const MODEL_POINTS=[
@@ -61,7 +61,7 @@ function simpleRod(a,b,r,color,name,parent){
  return mesh;
 }
 function makeBillow(parent,count,color,opacity,name){
- const mesh=new THREE.InstancedMesh(new THREE.IcosahedronGeometry(1,1),new THREE.MeshStandardMaterial({
+ const mesh=new THREE.InstancedMesh(new THREE.SphereGeometry(1,10,8),new THREE.MeshStandardMaterial({
   color,roughness:1,metalness:0,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide
  }),count);
  mesh.name=name;mesh.count=count;mesh.frustumCulled=false;mesh.renderOrder=28;mesh.userData.pickable=false;parent.add(mesh);
@@ -109,6 +109,22 @@ function addEffectSystem(siteRoot){
  sparks.material.emissive=new THREE.Color(0xff6c16);sparks.material.emissiveIntensity=3.3;
  const flameRoot=new THREE.Group();flameRoot.name='Реактивные факелы';root.add(flameRoot);
  const coreMat=flameMaterial(0xffb240),fireMat=flameMaterial(0xff470d);
+ const ductJetMaterial=flameMaterial(0xff6920);
+ const ductJetRoot=new THREE.Group();ductJetRoot.name='Газоход · направленный поток горячих газов';
+ root.add(ductJetRoot);
+ const ductJets=[];
+ for(let i=0;i<7;i++){
+  // The UKSS model has ONE petal-shaped channel toward local +X,
+  // so the jet follows that open trench rather than fictional branches.
+  const length=40+i*9,width=4.1+(i*.62);
+  const jet=new THREE.Mesh(new THREE.CylinderGeometry(width*.55,width,length,18,3,true),ductJetMaterial);
+  jet.position.set(23+i*33,-24+i*2.5,Math.sin(i*1.4)*2.4);
+  jet.rotation.z=-Math.PI/2;
+  jet.name='Газоход · огненный факел '+(i+1);
+  jet.userData.pickable=false;
+  ductJetRoot.add(jet);ductJets.push(jet);
+ }
+
  for(let i=0;i<8;i++){
   const x=i<4?[-5,-2,2,5][i]:[-6,-2,2,6][i-4],z=i<4?0:[-5,-5,5,5][i-4];
   const m=new THREE.Mesh(new THREE.CylinderGeometry(i<4?1.0:1.3,i<4?3.5:5.1,i<4?29:37,16,3,true),i<4?coreMat:fireMat);
@@ -177,6 +193,10 @@ function addEffectSystem(siteRoot){
   outerMat.uniforms.uPower.value=exhaustAtGround*.55;
   coreMat.uniforms.uPower.value=fire;
   fireMat.uniforms.uPower.value=fire*.85;
+  ductJetMaterial.uniforms.uPower.value=exhaustAtGround*.9;
+  ductJetMaterial.uniforms.uTime.value=t;
+  ductJetRoot.visible=exhaustAtGround>.005;
+  for(const [i,jet] of ductJets.entries())jet.scale.set(1,1+.12*Math.sin(t*11+i*1.8),1+.06*Math.sin(t*5+i));
   coreMat.uniforms.uTime.value=t;fireMat.uniforms.uTime.value=t;
   const platformRetreat=smooth(-53,-37,t),clampRelease=smooth(-3,1.5,t);
   arms.forEach((arm,i)=>{arm.rotation.y=-platformRetreat*(.8+i*.065);arm.visible=t<15;});
@@ -191,9 +211,11 @@ function addEffectSystem(siteRoot){
    light.intensity=(i<2?140:90)*(i===0?fire:i===1?exhaustAtGround:i===2?after:exhaustAtGround*.8)*wobble;
   }
   flameRoot.visible=fire>0.005;
-  flameRoot.position.y=6+visualHeight(s.altitudeKm)/.14;
+  flameRoot.position.set(s.downrangeKm*.42/.14,6+visualHeight(s.altitudeKm)/.14,-s.downrangeKm*.28/.14);
   flameRoot.scale.y=1+.15*Math.sin(t*14);
-  return {smoke:after,lightIntensity:lights.map(l=>l.intensity),armsReopen:platformRetreat,ductPower:exhaustAtGround,flamePower:fire};
+  return {smoke:after,lightIntensity:lights.map(l=>l.intensity),armsReopen:platformRetreat,
+   ductPower:exhaustAtGround,flamePower:fire,ductJetVisible:ductJetRoot.visible,
+   mobileTowerArms:arms.map(a=>a.rotation.y),rocketExhaustOffset:flameRoot.position.toArray()};
  }
  function dispose(){
   root.traverse(o=>{if(o.isMesh){o.geometry?.dispose();o.material?.dispose();}});
@@ -357,7 +379,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,rocketAtMount:!active,effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:635,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,lightIntensity:lastFrame?.lightIntensity}:null}),
+   modelReady,rocketAtMount:!active,effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:730,ductJetCount:7,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
   update(now){
    if(!active)return;
    if(lastNow!==null&&!paused&&!document.hidden)seconds=Math.min(ENERGIA_LAUNCH_END,seconds+Math.max(0,(now-lastNow)/1000)*speed);
