@@ -1,6 +1,6 @@
 // Display-only, OSM-grounded approach to Gagarin's Start with one museum
 // junction to the relocated Site 2. Never mutate OSM source nodes or routes.
-export const GAGARIN_ROAD_VERSION='gagarin-site2-road-v3';
+export const GAGARIN_ROAD_VERSION='gagarin-site2-road-v4';
 export const GAGARIN_APPROACH_WAY_ID='54570611';
 export const GAGARIN_NORTH_FORK_WAY_ID='54569454';
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
@@ -66,7 +66,7 @@ export function planGagarinSite2Road({sourcePoints,gagarin,site2,site2Gate,metre
   if(i)length+=dist(smoothed[i-1],smoothed[i]);
   // Gentle approach grade joins OSM exterior pavement to the museum datum
   // before the branch and the already-modelled Gagarin apron.
-  const t=smooth(0,43,length);
+  const t=smooth(0,31,length);
   smoothed[i][1]=source[0][1]*(1-t)+gagarinGate[1]*t;
  }
  let best={distance:Infinity};
