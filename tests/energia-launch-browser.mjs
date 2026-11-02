@@ -68,7 +68,7 @@ try{
  const currentDirection=originalOrbit.position.map((p,i)=>p-originalOrbit.target[i]);
  const cosine=currentDirection.reduce((sum,v,i)=>sum+v*inputDirection[i],0)/
   (Math.hypot(...currentDirection)*Math.hypot(...inputDirection));
- assert.ok(cosine>.995,'Launch preserves the current camera angle instead of snapping to a pad shot');
+ assert.ok(cosine>.995,'Launch preserves current view angle, cosine='+cosine+', input='+JSON.stringify(inputDirection)+', camera='+JSON.stringify(currentDirection));
  assert.ok(Math.hypot(...originalOrbit.target.map((p,i)=>p-s.orbitTarget[i]))<.05,'Launch orbits the rocket center');
  assert.equal(s.effects.smokeMode,'multi-octave-feathered-billboards');
  assert.equal(s.effects.instancedSmokeCount,3335);

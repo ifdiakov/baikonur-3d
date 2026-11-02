@@ -625,9 +625,10 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   holder.updateWorldMatrix(true,false);
   return holder.localToWorld(V(0,28,0));
  }
- function alignFollowFromCurrentAngle(s){
+ function alignFollowFromCurrentAngle(s,inputDirection=null){
   const target=rocketOrbitTarget(s);
-  const direction=camera.position.clone().sub(controls.target);
+  // Capture before historical mode toggles can adjust a linked camera.
+  const direction=inputDirection?.clone()||camera.position.clone().sub(controls.target);
   if(direction.lengthSq()<1e-8)direction.set(1,.7,1);
   // The launching visitor can start from ANY azimuth/elevation, even in an
   // overview. A gentle bounded zoom gives a legible close-up without swapping
@@ -722,6 +723,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  function start(){
   if(!ensure())return false;
   const entry=source();
+  const launchViewDirection=camera.position.clone().sub(controls.target);
   if(!active){
     saved={camera:camera.position.clone(),target:controls.target.clone(),
     enabled:controls.enabled,damping:controls.enableDamping,pan:controls.enablePan,
@@ -741,7 +743,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   }
   seconds=ENERGIA_LAUNCH_START;paused=false;speed=8;$('energiaSpeed').value='8';lastNow=null;lastPhase=-1;mode='follow';
   controls.enablePan=false;
-  render();alignFollowFromCurrentAngle(sampleEnergiaLaunch(seconds));
+  render();alignFollowFromCurrentAngle(sampleEnergiaLaunch(seconds),launchViewDirection);
   return true;
  }
  function stop({releaseCamera=true}={}){
