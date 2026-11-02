@@ -442,7 +442,7 @@ import {fitOverviewCamera} from './src/overview-camera.js?v=20261102-museum10-v1
 import {buildExtendedTerrain, sampleSteppe, LARGE_TERRAIN_SEGMENTS} from './src/terrain-extent.js?v=20261102-progressive-v1';
 import {buildMuseumTerrainRelief} from './src/museum-terrain.js?v=20261102-progressive-v1';
 import {createSteppeSurface} from './src/steppe-surface.js?v=20261103-game-terrain-pbr-v1';
-import {createGameTerrainPilot} from './src/terrain-game-detail.js?v=20261103-game-terrain-pilot-v3';
+import {createGameTerrainPilot} from './src/terrain-game-detail.js?v=20261103-game-terrain-pilot-v4';
 import {loadSatelliteReference,SATELLITE_REFERENCE} from './src/satellite-reference.js?v=20261102-progressive-v1';
 import {getMriyaInstallation} from './src/mriya-exhibit.js?v=buran-paint-20261102-v1';
 import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-signs-v1';
@@ -487,7 +487,7 @@ mapAttribution.append(attribution,terrainAttribution);document.body.append(mapAt
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261103-game-terrain-pilot-v3';
+const MUSEUM_REVISION='20261103-game-terrain-pilot-v4';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
