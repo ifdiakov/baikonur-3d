@@ -1,4 +1,4 @@
-name: Smooth preloader progress and faster feature phrases
+name: Energia–Polyus 1987 launch reconstruction
 on:
   push:
     branches: [main]
@@ -56,7 +56,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-preloader-smooth-20261102-v7
+  RELEASE_TAG: museum-energia-polyus-19870515-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -121,6 +121,7 @@ jobs:
           node tests/seven-winds-geometry.mjs
           node tests/mzk-sdi-geometry.mjs
           node tests/sdi-gate-geometry.mjs
+          node tests/energia-launch-node.mjs
           node tests/ukss-source-model.mjs
           node tests/tua-source-model.mjs
           node tests/mik112-metric-geometry.mjs
@@ -188,7 +189,7 @@ jobs:
       max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi]
+        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi, energia]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -240,6 +241,9 @@ jobs:
       - name: Verify the historical Buran landing and scene restoration
         if: matrix.suite == 'landing-camera'
         run: node tests/buran-landing-browser.mjs
+      - name: Verify Energia–Polyus launch, telemetry, flame duct and scene restoration
+        if: matrix.suite == 'energia'
+        run: node tests/energia-launch-browser.mjs
       - name: Verify the interchange bridge
         if: matrix.suite == 'bridge-exhibits'
         run: node tests/interchange-browser.mjs
@@ -373,12 +377,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/preloader-smooth-20261102-v7.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/energia-polyus-19870515-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — плавная загрузка Гранд-макета',
+                name: 'Байконур — запуск «Энергии — Полюс», 15 мая 1987',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }
