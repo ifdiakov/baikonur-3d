@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes} from '../src/energia-polyus-launch.js';
+import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes,sampleEnergiaPadDissipation} from '../src/energia-polyus-launch.js';
 assert.equal(ENERGIA_LAUNCH_START,-90);
 assert.equal(ENERGIA_LAUNCH_END,600);
 assert.equal(ENERGIA_LAUNCH_EVENTS.find(e=>e.at===-9.4)?.title,'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКА Ц');
@@ -59,3 +59,13 @@ assert.equal(sampleEnergiaEnginePlumes(469.2).core,0);
 assert.equal(sampleEnergiaEnginePlumes(0).nozzleCount,8);
 assert.equal(sampleEnergiaEnginePlumes(150).boosters,0);
 assert.equal(sampleEnergiaEnginePlumes(150).core,1);
+
+assert.deepEqual(sampleEnergiaPadDissipation(0),{fire:1,smoke:1});
+assert.deepEqual(sampleEnergiaPadDissipation(100),{fire:1,smoke:1});
+assert.ok(sampleEnergiaPadDissipation(101).fire<1,'Pad fire must begin fading once above 100m');
+assert.ok(sampleEnergiaPadDissipation(101).smoke<1,'Pad smoke must begin fading once above 100m');
+assert.ok(sampleEnergiaPadDissipation(200).fire>0&&sampleEnergiaPadDissipation(200).fire<1);
+assert.ok(sampleEnergiaPadDissipation(200).smoke>0&&sampleEnergiaPadDissipation(200).smoke<1);
+assert.deepEqual(sampleEnergiaPadDissipation(360).fire,0);
+assert.deepEqual(sampleEnergiaPadDissipation(800),{fire:0,smoke:0});
+assert.deepEqual(sampleEnergiaPadDissipation(4000),{fire:0,smoke:0});

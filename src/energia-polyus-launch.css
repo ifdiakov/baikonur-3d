@@ -57,3 +57,9 @@ body.energia-launch-active #labelLayer{opacity:.08;pointer-events:none}
 .energia-camera-hint{margin:10px 0 2px;color:#dfb994;font:700 9px/1.5 Montserrat,Arial,sans-serif;letter-spacing:.055em}
 body.energia-launch-active canvas{touch-action:none}
 @media(max-width:760px){.energia-camera-hint{font-size:8px;margin:8px 0 0}}
+
+/* Show the event entrance at the UKSS detail level regardless of camera azimuth. */
+#energiaLaunchQuickStart{position:fixed;z-index:72;right:clamp(12px,2vw,28px);bottom:clamp(16px,4vh,46px);max-width:calc(100vw - 24px);border:1px solid #ffbe7d;background:linear-gradient(112deg,#7a311c,#bd6129 62%,#4b2824);box-shadow:0 8px 42px #0008,0 0 28px #f1682d66;color:#fff2d9;cursor:pointer;font:800 11px/1.4 Montserrat,Arial,sans-serif;letter-spacing:.07em;padding:14px 20px;border-radius:8px;text-transform:uppercase}
+#energiaLaunchQuickStart[hidden],body.energia-launch-active #energiaLaunchQuickStart{display:none!important}
+#energiaLaunchQuickStart:hover{filter:brightness(1.16)}
+@media(max-width:760px){#energiaLaunchQuickStart{right:12px;bottom:12px;font-size:10px;max-width:calc(100vw - 24px);padding:12px 14px}}

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v4-cinematic-plumes-shadows';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v5-follow-orbit-pad-dissipation';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
@@ -87,6 +87,15 @@ export function sampleEnergiaEnginePlumes(time){
  const boosters=smooth(-3.2,0,t)*(1-smooth(144,146,t));
  return {core:clamp(core,0,1),boosters:clamp(boosters,0,1),
   nozzleCount:8,coreNozzles:4,boosterNozzles:4};
+}
+
+// Height-dependent natural dissipation of the cloud left behind at UKSS.
+// This is independent of the engine jets travelling WITH the ascending rocket.
+// The requested 100 m threshold refers to physical launch altitude, not
+// the scene's logarithmically compressed camera/visual ascent.
+export function sampleEnergiaPadDissipation(altitudeMetres){
+ const metres=Math.max(0,Number(altitudeMetres)||0);
+ return {fire:1-smooth(100,360,metres),smoke:1-smooth(100,800,metres)};
 }
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -479,18 +488,19 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  };
  function pose(s,rocketHolder=null){
   const t=s.time,fire=s.exhaust;
+  const padDissipation=sampleEnergiaPadDissipation(s.altitudeKm*1000);
   root.visible=true;
   // All particle quads face the current camera in the UKSS local frame.
   camera.getWorldQuaternion(cameraWorldQ);
   billboardQ.copy(siteRoot.getWorldQuaternion(localWorldQ).invert()).multiply(cameraWorldQ);
-  const pilot=smooth(-22,-20,t)*(1-smooth(-10,-8,t));
-  const exhaustAtGround=fire*(1-smooth(30,95,t));
-  const water=(t>=-10?Math.max(.08,smooth(-10,-7,t)):0)*(1-smooth(46,115,t));
-  const groundCloud=smooth(-9.4,3,t)*(1-smooth(115,290,t));
-  const ductCloud=clamp(exhaustAtGround*1.10+water*.43,0,1);
+  const pilot=smooth(-22,-20,t)*(1-smooth(-10,-8,t))*padDissipation.fire;
+  const exhaustAtGround=fire*(1-smooth(30,95,t))*padDissipation.fire;
+  const water=(t>=-10?Math.max(.08,smooth(-10,-7,t)):0)*(1-smooth(46,115,t))*padDissipation.smoke;
+  const groundCloud=smooth(-9.4,3,t)*(1-smooth(115,290,t))*padDissipation.smoke;
+  const ductCloud=clamp((exhaustAtGround*1.10+water*.43)*padDissipation.smoke,0,1);
   const plume=smooth(0,3,t)*(1-smooth(140,245,t));
-  const vapor=(.55+.45*smooth(-90,-60,t))*(1-smooth(38,148,t));
-  const heat=clamp(fire*.85+pilot*.13,0,1);
+  const vapor=(.55+.45*smooth(-90,-60,t))*(1-smooth(38,148,t))*padDissipation.smoke;
+  const heat=clamp(exhaustAtGround*.85+pilot*.13,0,1);
   glow.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.08,0,1);
   trenchMat.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.12,0,1);
   outerMat.uniforms.uPower.value=clamp(exhaustAtGround*.86+groundCloud*.2,0,1);
@@ -522,7 +532,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   arms.forEach((arm,i)=>{arm.rotation.y=-platformRetreat*(.8+i*.065);arm.visible=t<25;});
   for(const item of support)item.pivot.rotation.z=item.sign*clampRelease*.65;
   for(const item of umbilicals)item.pivot.rotation.y=item.dir*umbilicalRelease*1.14;
-  setShadowPose(t,Math.max(enginePower.core*.58,enginePower.boosters,exhaustAtGround*.84),rocketHolder);
+  setShadowPose(t,Math.max(enginePower.core*.58,enginePower.boosters,exhaustAtGround*.84)*padDissipation.fire,rocketHolder);
   write(innerSmoke,t,'steam',vapor,s);
   write(waterSpray,t,'water',water,s);
   write(ductSmoke,t,'duct',ductCloud,s);
@@ -532,7 +542,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   for(const {mesh,cold,warm}of smokeBase)mesh.material.color.copy(cold).lerp(warm,heat*(mesh===ductSmoke?.82:mesh===fieldSmoke?.72:.50));
   lights.forEach((light,i)=>{
    const wobble=.94+.06*Math.sin(t*7+i*1.7);
-   const power=i===0?fire:i===1?exhaustAtGround:i===2?ductCloud:
+   const power=i===0?fire*padDissipation.fire:i===1?exhaustAtGround:i===2?ductCloud:
     i>=3&&i<=4?clamp(exhaustAtGround*.85+groundCloud*.30,0,1):
     i===5?ductCloud*.88:groundCloud*.73;
    light.intensity=lightSpecs[i][4]*power*wobble;
@@ -545,7 +555,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    flameRoot.quaternion.copy(rocketHolder.quaternion);
   }
   flameRoot.scale.set(1,1,1);
-  return {smoke:groundCloud,water,steam:vapor,plume,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,engineFlameAttached:!!rocketHolder,smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
+  return {smoke:groundCloud,water,steam:vapor,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,engineFlameAttached:!!rocketHolder,smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
    lightIntensity:lights.map(l=>l.intensity),armsReopen:platformRetreat,umbilicalRelease,
    ductPower:exhaustAtGround,flamePower:fire,ductJetVisible:ductJetRoot.visible,
    mobileTowerArms:arms.map(a=>a.rotation.y),rocketExhaustOffset:flameRoot.position.toArray()};
@@ -569,7 +579,7 @@ export function energiaVisualHeight(altKm){
 function visualHeight(altKm){return energiaVisualHeight(altKm);}
 
 export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,renderer,objects=[],getEntry,onStart=()=>null,onStop=()=>{}}){
- const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v4',import.meta.url);document.head.append(stylesheet);
+ const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v5',import.meta.url);document.head.append(stylesheet);
  const panel=document.createElement('section');panel.id='energiaLaunchPanel';panel.hidden=true;panel.setAttribute('aria-label','Энергия — Полюс: реконструкция запуска 15 мая 1987 года');
  panel.innerHTML=[
   '<header class="energia-event-head"><div><span class="energia-kicker">15 МАЯ 1987 · УКСС · ПЛ. 250</span><h2>ЭНЕРГИЯ — ПОЛЮС</h2><span class="energia-tag">ИСТОРИЧЕСКАЯ РЕКОНСТРУКЦИЯ</span></div><button type="button" id="energiaClose" title="Закрыть сценарий" aria-label="Закрыть сценарий">×</button></header>',
@@ -581,13 +591,13 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   '<div class="energia-timeline"><div class="energia-timeline-caption"><span>ЦИКЛОГРАММА</span><output id="energiaPosition">T−090 / T+600 c</output></div><input id="energiaSeek" type="range" min="-90" max="600" step="0.1" value="-90" aria-label="Перемотка исторической реконструкции"><div class="energia-ticks"><span>Т−90</span><span>СТАРТ</span><span>+146</span><span>+480</span><span>+600</span></div></div>',
   '<div class="energia-actions"><button id="energiaPlay" type="button">ПАУЗА</button><button id="energiaRestart" type="button">СНАЧАЛА</button><label>ТЕМП <select id="energiaSpeed"><option value="1">×1</option><option value="4">×4</option><option value="8" selected>×8</option><option value="20">×20</option></select></label></div>',
   '<p class="energia-rate" id="energiaTimeRate" aria-live="off">ПОДГОТОВКА ×8 · ПОСЛЕ ОТРЫВА — РЕАЛЬНОЕ ВРЕМЯ 1:1</p>',
-  '<p class="energia-camera-hint" id="energiaCameraHint">ВРАЩАЙТЕ И ПРИБЛИЖАЙТЕ КАМЕРУ — ПОЛЁТ ПРОДОЛЖИТСЯ. «АВТО» ВЕРНЁТ СОПРОВОЖДЕНИЕ.</p>',
-  '<div class="energia-cameras" role="group" aria-label="Выбор ракурса"><button data-energia-camera="auto" aria-pressed="true">АВТО</button><button data-energia-camera="pad">УКСС</button><button data-energia-camera="duct">ГАЗОХОД</button><button data-energia-camera="follow">ЗА РАКЕТОЙ</button></div>',
+  '<p class="energia-camera-hint" id="energiaCameraHint">КАМЕРА СЛЕДУЕТ ЗА РАКЕТОЙ · ВРАЩАЙТЕ И ПРИБЛИЖАЙТЕ ВОКРУГ НЕЁ.</p>',
+  '<div class="energia-cameras" role="group" aria-label="Выбор ракурса"><button data-energia-camera="follow" aria-pressed="true">ЗА РАКЕТОЙ</button><button data-energia-camera="pad">УКСС</button><button data-energia-camera="duct">ГАЗОХОД</button><button data-energia-camera="auto">АВТО</button></div>',
   '<details class="energia-disclaimer"><summary>О точности реконструкции и источниках</summary><p>Дата, время старта и документированные события подтверждены архивом. Отделение «Полюса» на высоте около 110 км подтверждено архивом; точная секунда не установлена. Промежуточные значения скорости, высоты, удаления и тангажа — демонстрационная интерполяция, не реальная телеметрия. Геометрия факелов, дым, работа механизмов и камера — художественно-техническая реконструкция по фотографиям УКСС. Визуальный масштаб полёта сжат относительно земной поверхности.</p><p>Источники: <a href="https://www.buran.ru/htm/cargo.htm" target="_blank" rel="noopener noreferrer">Buran.ru — «Полюс»</a> · <a href="https://www.buran.ru/htm/gud%2021.htm" target="_blank" rel="noopener noreferrer">В. Е. Гудилин</a> · <a href="https://www.buran.ru/htm/rocrt.htm" target="_blank" rel="noopener noreferrer">РД-170 / РД-0120</a>.</p></details>'
  ].join('');
  document.body.append(panel);
  const $=id=>panel.querySelector('#'+id);
- let active=false,paused=false,speed=8,seconds=ENERGIA_LAUNCH_START,lastNow=null,mode='auto',saved=null,sceneRestore=null;
+ let active=false,paused=false,speed=8,seconds=ENERGIA_LAUNCH_START,lastNow=null,mode='follow',saved=null,sceneRestore=null;
  let effects=null,lastPhase=-1,originalRocket=null,lastFrame=null,modelReady=false,preview=null;
  const source=()=>getEntry?.();
  function ensure(){
@@ -603,8 +613,33 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   entry.holder.rotation.set(originalRocket.rotation.x+sample.pitchDegrees*Math.PI/180,originalRocket.rotation.y,originalRocket.rotation.z);
   entry.holder.visible=sample.time<480;
  };
+ // Orbit center is the actual moving rocket, not the stationary UKSS or
+ // the old camera pivot. After payload separation follow the visible payload.
+ function rocketOrbitTarget(s){
+  if(s.payloadSeparated&&preview?.visible){
+   preview.updateWorldMatrix(true,false);
+   return preview.getWorldPosition(V());
+  }
+  const holder=source()?.holder;
+  if(!holder)return siteRoot.localToWorld(V(0,28,0));
+  holder.updateWorldMatrix(true,false);
+  return holder.localToWorld(V(0,28,0));
+ }
+ function alignFollowFromCurrentAngle(s){
+  const target=rocketOrbitTarget(s);
+  const direction=camera.position.clone().sub(controls.target);
+  if(direction.lengthSq()<1e-8)direction.set(1,.7,1);
+  // The launching visitor can start from ANY azimuth/elevation, even in an
+  // overview. A gentle bounded zoom gives a legible close-up without swapping
+  // to a hard-coded view or rotating their angle.
+  const distance=clamp(direction.length(),18,115);
+  direction.normalize().multiplyScalar(distance);
+  camera.position.copy(target).add(direction);
+  controls.target.copy(target);
+  controls.update();camera.updateMatrixWorld(true);
+ }
  function scenePose(modeName,s){
-  const worldPos=source().holder.getWorldPosition(V()),base=siteRoot.localToWorld(V(0,20,0));
+  const worldPos=source().holder.getWorldPosition(V());
   let target,eye;
   if(modeName==='duct'){
    target=siteRoot.localToWorld(V(95,-12,0));
@@ -612,15 +647,21 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   }else if(modeName==='pad'){
    target=siteRoot.localToWorld(V(0,25,0));
    eye=siteRoot.localToWorld(V(255,145,325));
-  }else {
-   const offset=s.altitudeKm>3?V(27,19,35):V(19,16,26);
-   target=worldPos.clone().add(V(0,4,0));
-   eye=target.clone().add(offset);
+  }else{
+   target=rocketOrbitTarget(s);
+   eye=target.clone().add(s.altitudeKm>3?V(27,19,35):V(19,16,26));
   }
   return {eye,target};
  }
  const updateCamera=s=>{
   if(mode==='manual')return;
+  if(mode==='follow'){
+   // Add the SAME translation to eye and pivot. OrbitControls can therefore
+   // rotate/zoom around the rocket while the rocket accelerates upward.
+   const target=rocketOrbitTarget(s),delta=target.clone().sub(controls.target);
+   camera.position.add(delta);controls.target.copy(target);controls.update();
+   return;
+  }
   const key=mode==='auto'?(s.time<15?'pad':'follow'):mode;
   const p=scenePose(key,s),blend=mode==='auto'?.085:.22;
   camera.position.lerp(p.eye,blend);
@@ -665,7 +706,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   $('energiaSeek').style.setProperty('--energia-progress',((seconds-ENERGIA_LAUNCH_START)/(ENERGIA_LAUNCH_END-ENERGIA_LAUNCH_START)*100).toFixed(3)+'%');
   $('energiaPosition').textContent=clock(seconds)+' / T+600 с';
   $('energiaPlay').textContent=seconds>=600?'ПОВТОРИТЬ':paused?'ПРОДОЛЖИТЬ':'ПАУЗА';
-  $('energiaCameraHint').textContent=mode==='manual'?'СВОБОДНАЯ КАМЕРА · ПОЛЁТ ПРОДОЛЖАЕТСЯ. «АВТО» ВЕРНЁТ СОПРОВОЖДЕНИЕ.':'ВРАЩАЙТЕ И ПРИБЛИЖАЙТЕ КАМЕРУ — ПОЛЁТ ПРОДОЛЖИТСЯ.';
+  $('energiaCameraHint').textContent=mode==='follow'?'ЗА РАКЕТОЙ · ВРАЩАЙТЕ КАМЕРУ ВОКРУГ РАКЕТЫ, ПОЛЁТ НЕ ПРЕРВЁТСЯ.':mode==='manual'?'СВОБОДНАЯ КАМЕРА · ПОЛЁТ ПРОДОЛЖАЕТСЯ. «ЗА РАКЕТОЙ» ВЕРНЁТ СОПРОВОЖДЕНИЕ.':'ВЫБРАННЫЙ РАКУРС · «ЗА РАКЕТОЙ» ВЕРНЁТ СОПРОВОЖДЕНИЕ.';
   $('energiaTimeRate').textContent=seconds>=0?'ПОЛЁТ · ×'+speed+' · '+(speed===1?'РЕАЛЬНОЕ ВРЕМЯ 1:1':'РУЧНОЕ УСКОРЕНИЕ'):'ПОДГОТОВКА ×'+speed+' · ПОСЛЕ T=0 АВТОМАТИЧЕСКИ ×1';
   for(const b of panel.querySelectorAll('[data-energia-camera]'))b.setAttribute('aria-pressed',String(b.dataset.energiaCamera===mode));
  }
@@ -682,14 +723,25 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   if(!ensure())return false;
   const entry=source();
   if(!active){
-   saved={camera:camera.position.clone(),target:controls.target.clone(),enabled:controls.enabled,damping:controls.enableDamping,rocketVisible:entry.holder.visible};
+    saved={camera:camera.position.clone(),target:controls.target.clone(),
+    enabled:controls.enabled,damping:controls.enableDamping,pan:controls.enablePan,
+    mouseButtons:{...controls.mouseButtons},touches:{...controls.touches},
+    minDistance:controls.minDistance,maxDistance:controls.maxDistance,rocketVisible:entry.holder.visible};
    originalRocket={position:entry.holder.position.clone(),rotation:entry.holder.rotation.clone()};
    sceneRestore=onStart?.()||null;
    active=true;panel.hidden=false;document.body.classList.add('energia-launch-active');effects.root.visible=true;effects.enableShadows();
-   controls.enableDamping=false;controls.enabled=true;createPayloadProxy();
+   controls.enableDamping=false;controls.enabled=true;
+   // Follow mode turns any primary drag into an orbit around the rocket.
+   // There is no pan escape from the moving focal point.
+   controls.enablePan=false;
+   controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};
+   controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_ROTATE};
+   controls.minDistance=12;controls.maxDistance=300;
+   createPayloadProxy();
   }
-  seconds=ENERGIA_LAUNCH_START;paused=false;speed=8;$('energiaSpeed').value='8';lastNow=null;lastPhase=-1;mode='auto';
-  render();const frame=scenePose('pad',sampleEnergiaLaunch(seconds));camera.position.copy(frame.eye);controls.target.copy(frame.target);controls.update();
+  seconds=ENERGIA_LAUNCH_START;paused=false;speed=8;$('energiaSpeed').value='8';lastNow=null;lastPhase=-1;mode='follow';
+  controls.enablePan=false;
+  render();alignFollowFromCurrentAngle(sampleEnergiaLaunch(seconds));
   return true;
  }
  function stop({releaseCamera=true}={}){
@@ -705,7 +757,12 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   if(preview)preview.visible=false;
   sceneRestore?.();sceneRestore=null;
   if(saved){
-   controls.enabled=saved.enabled;controls.enableDamping=false;controls.update();
+   controls.enabled=saved.enabled;
+   controls.enablePan=saved.pan;
+   controls.mouseButtons={...saved.mouseButtons};
+   controls.touches={...saved.touches};
+   controls.minDistance=saved.minDistance;controls.maxDistance=saved.maxDistance;
+   controls.enableDamping=false;controls.update();
    if(releaseCamera){camera.position.copy(saved.camera);controls.target.copy(saved.target);controls.update();}
    controls.enableDamping=saved.damping;
   }
@@ -713,7 +770,8 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  }
  function setManualCamera(){
   if(!active)return false;
-  if(mode!=='manual'){mode='manual';render();}
+  if(mode==='follow')return true;
+  if(mode!=='manual'){mode='manual';controls.enablePan=true;render();}
   return true;
  }
  // THREE OrbitControls dispatches start only for actual pointer/wheel/touch
@@ -728,7 +786,12 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  $('energiaSpeed').onchange=e=>{speed=Number(e.target.value)||8;lastNow=null;};
  $('energiaSeek').oninput=e=>seek(e.target.value);
  for(const button of panel.querySelectorAll('[data-energia-camera]'))button.onclick=()=>{
-  mode=button.dataset.energiaCamera;render();const p=scenePose(mode==='auto'?'pad':mode,sampleEnergiaLaunch(seconds));camera.position.copy(p.eye);controls.target.copy(p.target);controls.update();
+  mode=button.dataset.energiaCamera;
+  controls.enablePan=mode!=='follow';
+  render();
+  if(mode==='follow'){alignFollowFromCurrentAngle(sampleEnergiaLaunch(seconds));}
+  else{const p=scenePose(mode==='auto'?'pad':mode,sampleEnergiaLaunch(seconds));
+   camera.position.copy(p.eye);controls.target.copy(p.target);controls.update();}
  };
  const leave=e=>{if(active&&e.target.closest('button,a,input,select,summary')&&!e.target.closest('#energiaLaunchPanel,#energiaLaunchStart,#modelInspector'))stop({releaseCamera:false});};
  document.addEventListener('pointerdown',leave,{capture:true});
@@ -740,7 +803,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,setManualCamera,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,engineCorePower:lastFrame?.engineCorePower,engineBoosterPower:lastFrame?.engineBoosterPower,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
+   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,engineCorePower:lastFrame?.engineCorePower,engineBoosterPower:lastFrame?.engineBoosterPower,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
   update(now){
    if(!active)return;
    if(lastNow!==null&&!paused&&!document.hidden){

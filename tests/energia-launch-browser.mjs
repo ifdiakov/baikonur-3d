@@ -39,12 +39,37 @@ try{
   camera:window.__BAIKONUR_QA.cameraState()
  }));
  assert.equal(before.rocket.modelId,'energia-polyus');
- await page.locator('#energiaLaunchStart').click();
+ 
+ // Detail launch CTA must be available regardless of the viewing azimuth.
+ await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(220,'pad-250'));
+ await draw();
+ assert(await page.locator('#energiaLaunchQuickStart').isVisible(),'Any UKSS detail view exposes launch CTA');
+ // Pre-rotate around UKSS to verify we do not force an authored start camera.
+ await page.mouse.move(735,375);
+ await page.mouse.down({button:'right'});
+ await page.mouse.move(820,415,{steps:5});
+ await page.mouse.up({button:'right'});
+ const inputDirection=await page.evaluate(()=>{
+  const s=window.__BAIKONUR_QA.cameraState();
+  return s.position.map((p,i)=>p-s.target[i]);
+ });
+ await page.locator('#energiaLaunchQuickStart').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.active===true,null,{timeout:100000});
  let s=await stats();assert.equal(s.time,-90);assert.equal(s.active,true);
  assert.equal(await page.locator('#year').inputValue(),'1987');
  assert(await page.locator('#energiaLaunchPanel').isVisible());
  assert.equal(s.modelReady,true);
+ assert.equal(s.mode,'follow','Tracking the rocket is the default launch camera');
+ const originalOrbit=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+ assert.equal(originalOrbit.controls.enablePan,false,'Follow orbit has no panning escape');
+ assert.deepEqual(originalOrbit.controls.mouseButtons,{LEFT:0,MIDDLE:1,RIGHT:0},
+  'Both mouse drag buttons rotate around rocket while following');
+ assert.ok(originalOrbit.position.every(Number.isFinite));
+ const currentDirection=originalOrbit.position.map((p,i)=>p-originalOrbit.target[i]);
+ const cosine=currentDirection.reduce((sum,v,i)=>sum+v*inputDirection[i],0)/
+  (Math.hypot(...currentDirection)*Math.hypot(...inputDirection));
+ assert.ok(cosine>.995,'Launch preserves the current camera angle instead of snapping to a pad shot');
+ assert.ok(Math.hypot(...originalOrbit.target.map((p,i)=>p-s.orbitTarget[i]))<.05,'Launch orbits the rocket center');
  assert.equal(s.effects.smokeMode,'multi-octave-feathered-billboards');
  assert.equal(s.effects.instancedSmokeCount,3335);
  assert.equal(s.effects.shadowMapEnabled,true);
@@ -68,8 +93,13 @@ try{
    assert.ok(e.shadowMapResolution>=512,'Shadow map resolution is valid for device');
   }
   if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
-  if(t===6){assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
+  if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
   if(t===145.9){assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');}
+  if(t===30){
+   assert.equal(e.padFireFade,0,'No standing fire at UKSS after ascent above the pad');
+   assert.equal(e.padSmokeFade,0,'The ground cloud has dispersed while rocket exhaust remains active');
+   assert.ok(e.engineCorePower>.9,'Rocket engine flame remains bright after the pad dissipates');
+  }
   if(t===480){assert.equal(s.rocketVisible,false,'The launch assembly remains visible until payload separation');assert.equal(s.telemetry.altitudeKm,110);assert.equal(s.telemetry.payloadSeparated,true);await shot('polyus-separation');}
   if(t===511)assert.equal(s.telemetry.payloadTurn,true);
   if(t===0)assert.equal(s.flightRate,1,'Liftoff must reset the clock to realtime');
@@ -93,7 +123,7 @@ try{
  const manual=await stats(),cameraManual=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
  assert.equal(manual.active,true,'Dragging the camera cannot end the launch');
  assert.equal(manual.paused,false,'Camera orbit cannot pause the flight clock');
- assert.equal(manual.mode,'manual','Manual orbit must stop auto-follow only');
+ assert.equal(manual.mode,'follow','Rotating the camera must KEEP follow mode');
  assert.ok(cameraBefore.position.some((v,i)=>Math.abs(v-cameraManual.position[i])>.01),
   'Real OrbitControls drag rotates the scene while the launch continues');
  const progressed=await page.evaluate(()=>{
@@ -104,7 +134,9 @@ try{
  assert.ok(progressed.time>clockBefore.time,'Launch clock must keep progressing after an orbit');
  await shot('manual-camera-flight');
  await page.locator('[data-energia-camera="auto"]').click();
- assert.equal((await stats()).mode,'auto','The auto button resumes cinematic camera tracking');
+ assert.equal((await stats()).mode,'auto','Auto camera is available as an explicit alternative');
+ await page.locator('[data-energia-camera="follow"]').click();
+ assert.equal((await stats()).mode,'follow','Following the rocket can be reselected explicitly');
  await page.locator('#energiaClose').click();
  await draw();
  s=await stats();assert.equal(s.active,false);
@@ -119,6 +151,9 @@ try{
  assert.equal(after.year,before.year);assert.equal(after.evening,before.evening);
  assert.deepEqual(after.rocket.position,before.rocket.position);assert.deepEqual(after.rocket.quaternion,before.rocket.quaternion);
  assert.equal(after.rocket.visible,before.rocket.visible);assert(after.hidden);assert(!after.active);
+ assert.equal(after.camera.controls.enablePan,before.camera.controls.enablePan,'Original panning mode restored');
+ assert.deepEqual(after.camera.controls.mouseButtons,before.camera.controls.mouseButtons,'Original mouse mode restored');
+ assert.deepEqual(after.camera.controls.touches,before.camera.controls.touches,'Original touch mode restored');
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.energia.stats().effects.shadowMapEnabled)),false,
   'The renderer must restore its previous unshadowed museum state');
  evidence.restored=after;
