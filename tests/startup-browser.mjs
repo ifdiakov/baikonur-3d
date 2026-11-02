@@ -428,7 +428,7 @@ async function exerciseProgressFixtures(){
     await run.page.waitForFunction(target=>Number(document.getElementById('museumLoading').dataset.launchStep)===target,
      targets[index-1],{timeout:2000});
     const phase=await preloaderState(run.page);
-    assert.equal(phase.stage,index-1);assert.equal(phase.fillScale,(index-1)/9);
+    assert.equal(phase.stage,index-1);assert.ok(Math.abs(phase.fillScale-(index-1)/9)<1e-6);
     assert.equal(phase.paused,true);assert.equal(phase.toggle.pressed,'true');
     assert.equal(phase.illustrationRunning,0,'Manual pause freezes decoration while real-stage text advances');
     assert.equal(phase.status,launchStatuses[targets[index-1]]);
