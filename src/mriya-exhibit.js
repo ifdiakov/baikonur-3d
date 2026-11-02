@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 
-export const MRIYA_VERSION='mriya-buran-reference-v2';
+export const MRIYA_VERSION='buran-paint-20261102-v1';
 const installations=new WeakMap();
 export const getMriyaInstallation=root=>installations.get(root);
-const ASSETS={far:new URL('../assets/models/mriya-buran/far-v2.glb',import.meta.url).href,near:new URL('../assets/models/mriya-buran/near-v2.glb',import.meta.url).href};
+const ASSETS={far:new URL('../assets/models/mriya-buran/far-v2.glb?v=buran-paint-20261102-v1',import.meta.url).href,near:new URL('../assets/models/mriya-buran/near-v2.glb?v=buran-paint-20261102-v1',import.meta.url).href};
 const APRON_Y=1.75;
 
 // The OBJ is in metres, +Y up, with the nose along -X. Airport aircraft face +Z.
@@ -52,7 +52,7 @@ export function installMriyaExhibit(root,fallback,cx,cz,{eventTarget=root}={}){
  const gear=parkedGear();gear.visible=false;movingAircraft.add(gear);
  const state=root.userData.airport.mriya={version:MRIYA_VERSION,status:'loading',loaded:[],requested:[],errors:[],wheels:32,apronY:APRON_Y,modelScale:1,
   physicalUnits:'metres',physicalToAirportLocal:root.userData.airport.physicalToLocal??1,
-  nearBytes:2176700,farBytes:1188432};
+  nearBytes:3108200,farBytes:1875780};
  let replaced=false;
  function attach(gltf,detail){
   const prepared=prepareModel(gltf.scene),model=prepared.aircraft;model.name='Мрия · '+detail;prepared.orbiter.name='Буран · '+detail;

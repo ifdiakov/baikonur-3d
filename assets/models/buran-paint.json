@@ -1,0 +1,37 @@
+{
+  "version": "buran-paint-20261102-v1",
+  "sourceHashes": {
+    "rockets/energia-buran.glb": "51638dfe815935e06934505303662e95ae18e7306d2d62956c02a45c36e5083b",
+    "mriya-buran/near-v2.glb": "ffad09ad153f39f51fa4ad13fd2e7043657d662e3ebe329b70c7dea1a3b5a827",
+    "mriya-buran/far-v2.glb": "f10255869f2d726c5bfc372d9eb75d9f3d6aa72fca93edc4595068d6f0b99ce5"
+  },
+  "assets": {
+    "rockets/energia-buran.glb": {
+      "sha256": "758d4ccf64bf6081138af28ed8531a0411ffae1ff90a3e3d3f5423f751501cdf",
+      "bytes": 3200812,
+      "triangles": 78388,
+      "vertices": 103015,
+      "primitives": 52,
+      "materials": 52,
+      "textures": 51
+    },
+    "mriya-buran/near-v2.glb": {
+      "sha256": "6f4ecc0e30cf40c20b276187a3e444f20b5f67a93efe50f8490c83db7c96f56b",
+      "bytes": 3108200,
+      "triangles": 294795,
+      "vertices": 248092,
+      "primitives": 43,
+      "materials": 39,
+      "textures": 33
+    },
+    "mriya-buran/far-v2.glb": {
+      "sha256": "158ce33e04ef33d6bd84dcec2d33ca166cd32e27a619a7256c3ab0163208e5d8",
+      "bytes": 1875780,
+      "triangles": 110104,
+      "vertices": 120948,
+      "primitives": 43,
+      "materials": 39,
+      "textures": 33
+    }
+  }
+}

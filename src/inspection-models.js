@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261102-m62-v1';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=buran-paint-20261102-v1';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -27,7 +27,7 @@ export async function createInspectionModel(id,{signal}={}){
  }else if(id==='proton'){
   const {createProtonRocket}=await import('./proton-rocket.js?v=20261101-source-exhibits-v2');const rocket=createProtonRocket();root=rocket.root;setExploded=rocket.setExploded;
  }else if(id==='buran'){
-  const [{buildLandingAircraft},source]=await Promise.all([import('./buran-landing-aircraft.js?v=20261101-without-ll22-v1'),gltf('rockets/energia-buran.glb',signal)]);const actors=buildLandingAircraft({sourceBuran:source});actors.update({gear:1,airbrake:0});root=actors.buran;owned.push(source);
+  const [{buildLandingAircraft},source]=await Promise.all([import('./buran-landing-aircraft.js?v=20261101-without-ll22-v1'),gltf('rockets/energia-buran.glb',signal,'buran-paint-20261102-v1')]);const actors=buildLandingAircraft({sourceBuran:source});actors.update({gear:1,airbrake:0});root=actors.buran;owned.push(source);
  }else if(id==='silo'){
   const {buildSiloPad,siloController}=await import('./silo-pad.js?v=20261031-facilities-rails-lighting-v1');root=new THREE.Group();buildSiloPad(root);const controller=siloController(root);update=(time,camera,target)=>controller.update(time,camera,target);
  }else if(id==='proton-pad'){

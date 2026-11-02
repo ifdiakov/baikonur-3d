@@ -13,7 +13,7 @@ try{
  await page.goto(new URL('?view=pua',base).href,{waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.puaLoading.stats().active&&window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny').mriya.status==='ready');
  await page.evaluate(()=>{window.__BAIKONUR_QA.setLabelsVisible(false);window.__BAIKONUR_QA.puaLoading.pause();});
- assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny').mriya.orbiterMeshCount),8);
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny').mriya.orbiterMeshCount),15);
  for(const [seconds,view]of [[0,'all'],[20,'side'],[45,'all'],[76,'rigging'],[90,'side'],[110,'all']]){
   await page.evaluate(({seconds,view})=>{const q=window.__BAIKONUR_QA.puaLoading;q.seek(seconds);q.view(view);},{seconds,view});await frame();
   const s=await page.evaluate(()=>window.__BAIKONUR_QA.puaLoading.stats());assert.equal(s.elapsed,seconds);assert.equal(s.aircraftPose.lift,s.pose.lift);assert.equal(s.aircraftPose.aircraftZ,s.pose.aircraftZ);assert.equal(s.aircraftPose.orbiterZ,s.pose.orbiterZ);evidence.phases.push(s);

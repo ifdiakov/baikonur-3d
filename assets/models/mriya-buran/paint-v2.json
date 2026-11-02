@@ -1,5 +1,5 @@
 {
-  "version": "mriya-buran-reference-v2",
+  "version": "buran-paint-20261102-v1",
   "source": "user-provided MriyaBuran.7z",
   "referencesFolder": "https://drive.google.com/drive/folders/1vZsG2t23ZUFBzKwFbrTfRp5jn1Nm9mSu",
   "references": [
@@ -7,17 +7,19 @@
     "https://drive.google.com/file/d/1w4R2miuxgYz9hveGn5F-DPbkN4oFIx4P/view",
     "https://drive.google.com/file/d/17IcBWP-vCUDJfqWxW62ibRY_OHLXKamW/view"
   ],
-  "appearance": "Historic white An-225 with red cheatline, USSR tail markings and 387/CCCP-82060 source texture set; Buran white upper surfaces, dark thermal areas, Cyrillic title and USSR flag. Some small thermal areas are interpreted from photographs.",
+  "appearance": "Historic white/red An-225 preserved. Buran fin and split rudder thermal borders, right-wing USSR flag and left-wing CCCP marking, nose TPS and cockpit glazing corrected from the supplied archive texture set and transport photographs.",
   "levels": {
     "near": {
-      "bytes": 2176700,
-      "triangles": 294643,
-      "draws": 36
+      "bytes": 3108200,
+      "triangles": 294795,
+      "draws": 43,
+      "sha256": "6f4ecc0e30cf40c20b276187a3e444f20b5f67a93efe50f8490c83db7c96f56b"
     },
     "far": {
-      "bytes": 1188432,
-      "triangles": 109952,
-      "draws": 36
+      "bytes": 1875780,
+      "triangles": 110104,
+      "draws": 43,
+      "sha256": "158ce33e04ef33d6bd84dcec2d33ca166cd32e27a619a7256c3ab0163208e5d8"
     }
   }
 }

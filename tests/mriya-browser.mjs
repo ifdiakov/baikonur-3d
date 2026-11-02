@@ -26,10 +26,10 @@ try{
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.evening.setEvening(false);q.focusSite('pad-251');window.__MRIYA_FRAME();});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().airports.find(a=>a.key==='yubileiny')?.mriya?.status==='ready',null,{timeout:180000});
  const state=await page.evaluate(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny'));
- assert.equal(state.mriya.version,'mriya-buran-reference-v2');assert.deepEqual(state.mriya.errors,[]);
+ assert.equal(state.mriya.version,'buran-paint-20261102-v1');assert.deepEqual(state.mriya.errors,[]);
  assert.deepEqual(state.mriya.loaded,['far','near']);assert.equal(state.mriya.wheels,32);
  assert.ok(Math.abs(state.mriya.dimensions[0]-82.15)<.1);assert.ok(Math.abs(state.mriya.dimensions[2]-88.31)<.1);
- assert.ok(state.mriya.drawCallsPerLevel<=40);assert.equal(state.mriya.paint,'reference-white-red-mriya-thermal-buran');assert.equal(state.length,2250);
+ assert.ok(state.mriya.drawCallsPerLevel<=43);assert.equal(state.mriya.paint,'reference-white-red-mriya-thermal-buran');assert.equal(state.length,2250);
  assert.equal(assets.length,2);assert.ok(assets.every(a=>a.status===200));
  assert.equal(assetRequests.length,2,'focus requests the close-up Mriya model once');
  assert.equal(assetRequests.filter(url=>/\/near-v2\.glb(?:\?|$)/.test(url)).length,1);

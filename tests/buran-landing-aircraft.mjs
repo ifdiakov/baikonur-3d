@@ -11,7 +11,7 @@ const V=(...xyz)=>new THREE.Vector3(...xyz),sha=bytes=>createHash('sha256').upda
 const near=(a,b,tolerance=3e-6,message='physical coordinate')=>assert.ok(Math.abs(a-b)<=tolerance,`${message}: ${a} vs ${b}`);
 const vectorNear=(a,b,tolerance=3e-6,message='physical point')=>a.forEach((value,i)=>near(value,b[i],tolerance,message+' '+i));
 const sourceUrl=new URL('../assets/models/rockets/energia-buran.glb',import.meta.url),bytes=await readFile(sourceUrl);
-assert.equal(sha(bytes),'51638dfe815935e06934505303662e95ae18e7306d2d62956c02a45c36e5083b','The existing source GLB is the input, without a replacement asset');
+assert.equal(sha(bytes),'758d4ccf64bf6081138af28ed8531a0411ffae1ff90a3e3d3f5423f751501cdf','The corrected archive GLB is the input; extraction must preserve its geometry and paint');
 await MeshoptDecoder.ready;
 const document=await new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.decoder':MeshoptDecoder}).readBinary(bytes);
 const scene=new THREE.Group(),materials=new Map(),sourceTriangles=[];

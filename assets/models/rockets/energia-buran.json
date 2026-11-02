@@ -143,10 +143,10 @@
     "materials": 112,
     "textures": 51
   },
-  "assetSha256": "51638dfe815935e06934505303662e95ae18e7306d2d62956c02a45c36e5083b",
+  "assetSha256": "758d4ccf64bf6081138af28ed8531a0411ffae1ff90a3e3d3f5423f751501cdf",
   "recoverySha256": "e0feef16776f26ff33220e0fb7393a09c9e4f683d92bcf1259f60541725f4e0c",
   "assetStats": {
-    "bytes": 3133448,
+    "bytes": 3200812,
     "triangles": 78388,
     "vertices": 103015,
     "primitives": 52,
@@ -220,5 +220,7 @@
     "sourceUrl": "http://buran.ru/htm/3d-model.htm",
     "driveUrl": "https://drive.google.com/file/d/1MUcaqTuvInvk5kJQ0kubEb7RSUY41Zrt/view",
     "licenseNote": "Авторская модель из архива buran.ru; файл предоставлен владельцем проекта. Открытая лицензия не заявляется."
-  }
+  },
+  "modelRevision": "buran-paint-20261102-v1",
+  "appearanceRevision": "buran-paint-20261102-v1"
 }

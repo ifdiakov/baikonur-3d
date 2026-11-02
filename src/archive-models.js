@@ -2,7 +2,7 @@ import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import * as THREE from 'three';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261101-cyclone-v1';
 import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261101-hotel-v3';
-import * as buildings from './archive-buildings.js?v=20261102-progressive-v1';
+import * as buildings from './archive-buildings.js?v=buran-paint-20261102-v1';
 import * as launches from './archive-launches.js?v=20261101-proton-launch-v1';
 import {photoCity} from './archive-city.js?v=20261031-facilities-rails-lighting-v1';
 import {buildSite31Pad} from './site31-pad.js?v=20261031-facilities-rails-lighting-v1';
