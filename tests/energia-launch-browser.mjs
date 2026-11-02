@@ -121,17 +121,25 @@ try{
  await seek(6);
  await page.locator('#energiaPlay').click();
  const clockBefore=await stats(),cameraBefore=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
- await page.mouse.move(740,370);
- await page.mouse.down();
- await page.mouse.move(840,418,{steps:6});
- await page.mouse.up();
+ const pointerCheck=await page.evaluate(()=>{
+  const el=document.elementFromPoint(720,600);
+  return {tag:el?.tagName,id:el?.id,klass:typeof el?.className==='string'?el.className:''};
+ });
+ assert.equal(pointerCheck.tag,'CANVAS','The orbit gesture must begin on the 3D canvas: '+JSON.stringify(pointerCheck));
+ await page.mouse.move(720,600);
+ // Use the museum's established RIGHT-button orbit gesture (also mapped to
+ // ROTATE in the launch). Horizontal motion avoids polar-angle clamping.
+ await page.mouse.down({button:'right'});
+ await page.mouse.move(880,600,{steps:9});
+ await page.mouse.up({button:'right'});
  await draw();
  const manual=await stats(),cameraManual=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
  assert.equal(manual.active,true,'Dragging the camera cannot end the launch');
  assert.equal(manual.paused,false,'Camera orbit cannot pause the flight clock');
  assert.equal(manual.mode,'follow','Rotating the camera must KEEP follow mode');
- assert.ok(cameraBefore.position.some((v,i)=>Math.abs(v-cameraManual.position[i])>.01),
-  'Real OrbitControls drag rotates the scene while the launch continues');
+ const cameraDelta=Math.hypot(...cameraBefore.position.map((v,i)=>v-cameraManual.position[i]));
+ console.log('ENERGIA_ORBIT_GESTURE',JSON.stringify({element:pointerCheck,delta:cameraDelta,mode:manual.mode,before:cameraBefore,after:cameraManual}));
+ assert.ok(cameraDelta>.01,'Orbit gesture must rotate around the rocket, delta='+cameraDelta);
  const progressed=await page.evaluate(()=>{
   const q=window.__BAIKONUR_QA;
   q.energia.update(performance.now()+850);
