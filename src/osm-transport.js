@@ -475,9 +475,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    ||protectedTrafficWays.has(way.osmId)||way.tags.name||way.tags.ref
    ||way.tags.bridge||way.tags.tunnel||way.tags.destination)return false;
   if(!['service','track','residential','living_street','unclassified'].includes(way.tags.highway))return false;
-  const nodes=way.segments.flatMap(edge=>[edge.a,edge.b]),total=way.segments.reduce((sum,edge)=>sum+edge.length,0);
   const distance=node=>Math.hypot(node.position.x-gagarinZonePoint.x,node.position.z-gagarinZonePoint.z);
-  return total<225&&nodes.some(node=>distance(node)<155)&&nodes.every(node=>distance(node)<275);
+  if(!way.segments.some(edge=>distance(edge.a)<155||distance(edge.b)<155))return false;
+  const total=way.segments.reduce((sum,edge)=>sum+edge.length,0);
+  return total<225&&way.segments.every(edge=>distance(edge.a)<275&&distance(edge.b)<275);
  }
  const localAccessMinor=tags=>['service','track','residential','living_street'].includes(tags.highway);
  const sitePoint=id=>{const s=siteRecords.find(s=>s.id===id);return point(s.x,s.y,.72);};
@@ -656,6 +657,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   drawRoad(mainPoints,3.2,{highway:'unclassified',surface:'asphalt'},true,true,sourceId,mainRuns);
   renderedRoadWays.add(sourceId);
   const startNode=sourceGagarinWay.segments[0].a;
+  // The source road begins at the actual OSM fork. Seal its shoulder and
+  // pavement to the surviving northbound branch at the exact shared node.
+  shoulder.disc(startNode.position,2.25,-.055);
+  asphalt.disc(startNode.position,1.9);
   junctionWidths.set(startNode.id,Math.max(3.2,junctionWidths.get(startNode.id)||0));
   roadPaths.push({id:'gagarin-approach-road',label:'Дорога на Гагаринский старт',width:3.2,
    points:mainRuns.flat(),source:'osm-guided-museum-correction',osmWayIds:[sourceId]});
