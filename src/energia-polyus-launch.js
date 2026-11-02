@@ -315,6 +315,11 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    const bottomRadius=Math.max(tip,top*(layer===0?.36:.27));
    const cone=new THREE.Mesh(new THREE.CylinderGeometry(topRadius,bottomRadius,layerLength,36,18,true),material);
    cone.position.set(x,-layerLength/2-.42,z);
+   // A scaled cone must still begin BELOW its actual nozzle. Scaling a
+   // cylinder about its centre used to send its top 20-40 units into the
+   // rocket at high engine power (the previous upward "fire rays").
+   cone.userData.nozzleFlameLength=layerLength;
+   cone.userData.nozzleFlameAnchorY=-.42;
    cone.renderOrder=33+layer;cone.frustumCulled=false;cone.userData.pickable=false;
    cone.name=(core?'РД-0120':'РД-170')+' · рваный реактивный факел '+(index+1)+(layer?' · ядро':' · оболочка');
    flameRoot.add(cone);meshes.push(cone);
@@ -588,6 +593,9 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
     const radialPulse=1+.08*Math.sin(t*7.5+jet.index*1.3+i*.8)+.04*Math.sin(t*15-jet.index*.7+i*1.6);
     const axialPulse=(.92+.42*power)*flicker*(1+.04*Math.sin(t*4+jet.index+i));
     mesh.scale.set(radialPulse,axialPulse,radialPulse*(.98+.05*Math.cos(t*11+jet.index+i)));
+    // Compensate for Three.js scaling about the mesh midpoint: its TOP stays
+    // fixed at the nozzle under every flicker/engine thrust variation.
+    mesh.position.y=mesh.userData.nozzleFlameAnchorY-mesh.userData.nozzleFlameLength*axialPulse/2;
     mesh.visible=power>.003;
    });
    jet.halo.visible=power>.003;
@@ -630,6 +638,9 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    engineNozzleGlowCount:engineJets.length,
    engineNozzleGlowVisible:engineJets.filter(jet=>jet.halo.visible).length,
    engineNozzleGlowOpacity:{core:coreHaloMaterial.opacity,boosters:boosterHaloMaterial.opacity},
+   engineUpperFlameLimitY:Math.max(...engineJets.flatMap(jet=>jet.meshes.map(mesh=>
+    mesh.position.y+mesh.userData.nozzleFlameLength*mesh.scale.y/2))),
+   engineHaloUpperLimitY:Math.max(...engineJets.map(jet=>jet.halo.position.y+jet.haloSize/2)),
   engineFlameAttached:!!rocketHolder&&flameRoot.parent===rocketHolder,
   engineFlameDepthCompatible:depthCompatible,
   engineFlameDepthTest:rocketNozzleMaterials.core.depthTest,
@@ -937,6 +948,8 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
    engineNozzleGlowCount:lastFrame?.engineNozzleGlowCount,
    engineNozzleGlowVisible:lastFrame?.engineNozzleGlowVisible,
    engineNozzleGlowOpacity:lastFrame?.engineNozzleGlowOpacity,
+   engineUpperFlameLimitY:lastFrame?.engineUpperFlameLimitY,
+   engineHaloUpperLimitY:lastFrame?.engineHaloUpperLimitY,
    engineFlameDepthCompatible:lastFrame?.engineFlameDepthCompatible,
    engineFlameDepthTest:lastFrame?.engineFlameDepthTest,
    rocketNozzleWorld:lastFrame?.rocketNozzleWorld,
