@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import {nozzleFlameMaterial} from './energia-plasma-shader.js?v=20261103-plasma-v1';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v7-billowing-steam';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v8-plasma-ribbons';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
@@ -213,53 +214,6 @@ function flameMaterial(color){
   transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,toneMapped:false
  });
 }
-function nozzleFlameMaterial(color){
- return new THREE.ShaderMaterial({
-  uniforms:{uPower:{value:0},uTime:{value:0},uTint:{value:new THREE.Color(color)}},
-  vertexShader:[
-   // The museum enables logarithmicDepthBuffer. Both depth shaders MUST use
-   // the same encoding as the ground/rocket or depthTest hides all flames.
-   '#include <common>',
-   '#include <logdepthbuf_pars_vertex>',
-   'varying vec2 vUv;',
-   'void main(){',
-   ' vUv=uv;',
-   ' gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);',
-   ' #include <logdepthbuf_vertex>',
-   '}'
-  ].join('\n'),
-  fragmentShader:[
-   '#include <common>',
-   '#include <logdepthbuf_pars_fragment>',
-   'uniform float uPower,uTime;uniform vec3 uTint;varying vec2 vUv;',
-   'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
-   'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
-   ' return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}',
-   'float fbm(vec2 p){return .52*noise(p)+.28*noise(p*2.13)+.14*noise(p*4.17)+.06*noise(p*8.07);}',
-   'void main(){',
-   ' #include <logdepthbuf_fragment>',
-   ' float axial=clamp(vUv.y,0.,1.);', // 1 = nozzle
-   ' vec2 flow=vec2(vUv.x*9.,axial*26.-uTime*2.9);',
-   ' float rolling=fbm(flow+vec2(sin(axial*31.-uTime*7.)*.28,0.));',
-   ' float fine=fbm(flow*3.1+vec2(0.,-uTime*7.));',
-   ' float irregular=.68+.56*rolling+.20*fine;',
-   ' float collar=smoothstep(0.,.075,axial);',
-   ' float tip=smoothstep(.015,.21,axial);',
-   ' float diamonds=pow(.5+.5*cos((1.-axial)*92.+rolling*2.),18.)*smoothstep(.18,.6,axial);',
-   ' float filament=pow(.5+.5*sin(vUv.x*71.+axial*57.-uTime*11.+rolling*6.),6.);',
-   ' float nozzleFade=1.0-smoothstep(.86,1.0,axial);',
-   ' float opacity=clamp(uPower*tip*collar*nozzleFade*(.42+.48*axial)*irregular*(.87+.13*filament),0.,.98);',
-   ' vec3 plasma=mix(uTint,vec3(1.,.97,.87),pow(axial,2.5)*.68);',
-   ' plasma*=1.1+1.20*axial+.32*diamonds+.24*filament;',
-   ' plasma+=vec3(1.,.78,.42)*diamonds*.36;',
-   ' gl_FragColor=vec4(plasma,opacity);',
-   '}'
-  ].join('\n'),
-  transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,
-  blending:THREE.AdditiveBlending,toneMapped:false
- });
-}
-
 function glowMaterial(color){
  return new THREE.ShaderMaterial({
   uniforms:{uPower:{value:0},uTint:{value:new THREE.Color(color)}},
@@ -317,7 +271,8 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  // these model-local exits are museum approximations inside its footprint.
  const rocketNozzleMaterials={
   core:nozzleFlameMaterial(0x8fdcff),coreGlow:nozzleFlameMaterial(0x36a7ff),coreWhite:nozzleFlameMaterial(0xffffff),
-  booster:nozzleFlameMaterial(0xffcc72),boosterGlow:nozzleFlameMaterial(0xff6a12),boosterWhite:nozzleFlameMaterial(0xfffdf4)
+  booster:nozzleFlameMaterial(0xffcc72),boosterGlow:nozzleFlameMaterial(0xff6a12),boosterWhite:nozzleFlameMaterial(0xfffdf4),
+  coreRibbon:nozzleFlameMaterial(0xc9f1ff,{ribbon:true}),boosterRibbon:nozzleFlameMaterial(0xffcf83,{ribbon:true})
  };
  const engineJets=[];
  const buildEngineJet=(x,z,type,index)=>{
@@ -332,12 +287,24 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   for(const [material,top,tip,layer,relativeLength]of entries){
    // Wide, incandescent mouth at nozzle level; plasma tapers downward.
    const lengthAtLayer=length*relativeLength;
-   const cone=new THREE.Mesh(new THREE.CylinderGeometry(top,tip,lengthAtLayer,24,9,true),material);
+   const cone=new THREE.Mesh(new THREE.CylinderGeometry(top,tip,lengthAtLayer,36,16,true),material);
    cone.position.set(x,-lengthAtLayer/2-.2,z);
    // Keep the jet in the normal transparent pass with depth testing against the pad.
     cone.renderOrder=33+layer;cone.frustumCulled=false;cone.userData.pickable=false;
    cone.name=(core?'РД-0120':'РД-170')+' · направленный факел сопла '+(index+1)+(layer?' · ядро':' · ореол');
    flameRoot.add(cone);meshes.push(cone);
+  }
+  // Crossing sheets carry the brightest boiling regions near the nozzle.
+  // Noise and alpha erosion remove the visible rectangular plane outlines.
+  const ribbonMat=core?rocketNozzleMaterials.coreRibbon:rocketNozzleMaterials.boosterRibbon;
+  for(let i=0;i<3;i++){
+   const tall=length*(.27+.04*i),wide=radius*(4.7+.35*i);
+   const sheet=new THREE.Mesh(new THREE.PlaneGeometry(wide,tall,8,18),ribbonMat);
+   sheet.name=(core?'РД-0120':'РД-170')+' · пульсирующий язык плазмы '+(index+1)+'/'+(i+1);
+   sheet.position.set(x,-tall/2-1.25,z);
+   sheet.rotation.y=i*Math.PI/3+index*.17;
+   sheet.renderOrder=39+i;sheet.frustumCulled=false;sheet.userData.pickable=false;
+   flameRoot.add(sheet);meshes.push(sheet);
   }
   engineJets.push({x,z,type,index,length,meshes});
  };
@@ -585,7 +552,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   const enginePower=sampleEnergiaEnginePlumes(t);
   for(const kind of ['core','booster']){
    const power=enginePower[kind==='core'?'core':'boosters'];
-   for(const suffix of [kind,kind+'Glow',kind+'White']){
+   for(const suffix of [kind,kind+'Glow',kind+'White',kind+'Ribbon']){
     rocketNozzleMaterials[suffix].uniforms.uPower.value=power*(suffix.endsWith('Glow')?.72:1);
     rocketNozzleMaterials[suffix].uniforms.uTime.value=t;
    }
