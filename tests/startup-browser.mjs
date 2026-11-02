@@ -20,7 +20,7 @@ const launchStatuses=[
  'КЛЮЧ НА ДРЕНАЖ','ПРОДУВКА','КЛЮЧ НА СТАРТ','ЗАЖИГАНИЕ/КИСЛОРОД!'
 ];
 const firstLaunchStatus=launchStatuses[0],finalLaunchStatus=launchStatuses[finalLaunchStep];
-const exitBudgetMs=460,exitSchedulingMarginMs=250;
+const exitBudgetMs=460,exitSchedulingMarginMs=250,exitCallbackMarginMs=50;
 const evidence={base,prefix,revision,cases:{}};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -75,17 +75,48 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
   record.consoleErrors.push(message.text());
   if(/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/.test(message.text()))record.shaderErrors.push(message.text());
  });
- await page.addInitScript(({stalledBody,finalLaunchStep})=>{
-  const state=window.__STARTUP_TEST={feedback:[],launch:[],ready:[],stalled:[],animateRequests:0};
+ await page.addInitScript(({stalledBody,finalLaunchStep,exitBudgetMs})=>{
+  const state=window.__STARTUP_TEST={feedback:[],launch:[],launchWrites:[],counterWrites:[],ready:[],stalled:[],
+   animateRequests:0,deadlineProbe:null,hiddenWrite:null};
+  const nativeMark=performance.mark;
+  performance.mark=function(){
+   const result=nativeMark.apply(this,arguments);
+   if(arguments[0]==='museum:first-frame'&&!state.deadlineProbe){
+    const firstFrame=window.__MUSEUM_STARTUP.stats().marks.find(mark=>mark.name==='first-frame').at;
+    const probe=state.deadlineProbe={firstFrame,dueAt:firstFrame+exitBudgetMs,armedAt:performance.now(),firedAt:null};
+    // An independent timer records when the browser can actually deliver the
+    // existing deadline. It neither drives nor extends the production exit.
+    setTimeout(()=>{
+     probe.firedAt=performance.now();
+     const loading=document.getElementById('museumLoading');
+     probe.hiddenAtFire=loading?.hidden;probe.launchStepAtFire=Number(loading?.dataset.launchStep);
+    },Math.max(0,Math.ceil(probe.dueAt-performance.now())));
+   }
+   return result;
+  };
   const nativeFrame=window.requestAnimationFrame.bind(window);let pendingFrame;
   window.requestAnimationFrame=fn=>{
    if(fn.name==='animate'){state.animateRequests++;pendingFrame=fn;return 0;}
    return nativeFrame(fn);
   };
   window.__STARTUP_FRAME=()=>{const fn=pendingFrame;pendingFrame=null;fn?.(performance.now());};
-  let lastFeedback='',lastLaunchStep=null;
-  new MutationObserver(()=>{
+  let lastFeedback='',lastLaunchStep=null,batch=0,mutationOrder=0;
+  new MutationObserver(records=>{
    const loading=document.getElementById('museumLoading');if(!loading)return;
+   const currentBatch=++batch,introReady=Boolean(window.__MUSEUM_PRELOADER);
+   for(const record of records){
+    const order=++mutationOrder;
+    if(record.target===loading&&record.type==='attributes'&&record.attributeName==='hidden'&&loading.hidden)
+     state.hiddenWrite??={batch:currentBatch,order,at:performance.now()};
+    if(!introReady||record.type!=='childList'||!record.addedNodes.length)continue;
+    const writes=record.target.id==='museumLaunchStatus'?state.launchWrites:
+     record.target.id==='museumLaunchStep'?state.counterWrites:null;
+    if(!writes)continue;
+    const value=[...record.addedNodes].map(node=>node.textContent).join('').replace(/\s+/g,' ').trim();
+    // HTML and controller initialization can both write the initial phrase.
+    if(writes.length===1&&writes[0].value===value)continue;
+    writes.push({value,batch:currentBatch,order,at:performance.now()});
+   }
    const message=document.getElementById('museumLoadingMessage')?.textContent||'';
    const progress=document.getElementById('museumStageProgress');
    const stage=progress?Number(progress.getAttribute('aria-valuenow')):null;
@@ -96,17 +127,16 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    const launchCounter=document.getElementById('museumLaunchStep')?.textContent.trim()||'';
    const fill=document.getElementById('museumProgressFill')?.style.transform.match(/^scaleX\(([^)]+)\)$/);
    const fillScale=fill?Number(fill[1]):null;
-   const introReady=Boolean(window.__MUSEUM_PRELOADER);
    const signature=[loading.hidden,loading.dataset.state||'',message,stage,total,launchStep,launchStatus,launchCounter,fillScale,introReady].join('|');
    if(signature===lastFeedback)return;lastFeedback=signature;
    const render=(stage===total&&total>0||launchStep===finalLaunchStep)?window.__BAIKONUR_QA?.renderStats()||null:null;
    if(introReady&&launchStatus&&Number.isInteger(launchStep)&&launchStep!==lastLaunchStep){
-    state.launch.push({at:performance.now(),step:launchStep,text:launchStatus,counter:launchCounter,stage,fillScale,render,
+    state.launch.push({at:performance.now(),batch:currentBatch,step:launchStep,text:launchStatus,counter:launchCounter,stage,fillScale,render,
      hidden:loading.hidden,opacity:launchElement?Number(getComputedStyle(launchElement).opacity):null,
      animations:launchElement?.getAnimations().length||0,paintTick:window.__PRELOADER_FIXTURE?.paintTicks??null});
     lastLaunchStep=launchStep;
    }
-   const feedback={at:performance.now(),hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total,
+   const feedback={at:performance.now(),batch:currentBatch,hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total,
     launchStep,launchStatus,launchCounter,fillScale,render};
    state.feedback.push(feedback);
    if(loading.dataset.state==='ready'){
@@ -140,7 +170,7 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    item.headersAt=performance.now();
    return Promise.resolve(new Response(body,{status:200,headers:{'Content-Type':isCatalog?'application/json':'model/gltf-binary'}}));
   };
- },{stalledBody,finalLaunchStep});
+ },{stalledBody,finalLaunchStep,exitBudgetMs});
  const url=new URL(base);url.searchParams.set('startup-check',name);
  return {page,record,releaseCatalog,navigate:()=>page.goto(url.href,{waitUntil:'commit',timeout:90000}),
   close:async()=>{releaseCatalog();await context.close();activePage=null;}};
@@ -348,6 +378,70 @@ function assertExitBudget(stats){
  return elapsed;
 }
 
+function assertLaunchWrites(test){
+ assert.deepEqual(test.launchWrites.map(write=>write.value),launchStatuses,
+  'All twenty exact status strings are written to the DOM in order');
+ assert.deepEqual(test.counterWrites.map(write=>write.value),
+  Array.from({length:launchStatusCount},(_,index)=>String(index+1).padStart(2,'0')+' / '+launchStatusCount));
+ assert.ok(test.hiddenWrite,'The observer records the loader being hidden');
+ for(let index=0;index<launchStatusCount;index++){
+  const text=test.launchWrites[index],counter=test.counterWrites[index];
+  assert.ok(text.order<counter.order&&counter.order<test.hiddenWrite.order,
+   'Each status and its counter are assigned before the loader is hidden');
+  if(index)assert.ok(test.counterWrites[index-1].order<text.order,'DOM status assignments retain their sequence');
+ }
+}
+
+async function assertExitOpportunity(page,stats,record){
+ const firstFrame=stats.marks.find(mark=>mark.name==='first-frame');
+ const interactive=stats.marks.find(mark=>mark.name==='interactive');
+ assert.ok(firstFrame&&interactive,'Startup records both timing boundaries');
+ const elapsed=interactive.at-firstFrame.at;
+ let probe=await page.evaluate(()=>window.__STARTUP_TEST.deadlineProbe);
+ record.exitMs=elapsed;record.deadlineProbe=probe;
+ assert.ok(probe&&probe.firstFrame===firstFrame.at&&probe.dueAt===firstFrame.at+exitBudgetMs,
+  'The independent deadline is armed synchronously with the real first frame');
+ assert.ok(elapsed>=0);
+ if(elapsed>exitBudgetMs){
+  if(probe.firedAt===null){
+   await page.waitForFunction(()=>window.__STARTUP_TEST.deadlineProbe?.firedAt!==null,null,{polling:25,timeout:2000});
+   probe=await page.evaluate(()=>window.__STARTUP_TEST.deadlineProbe);record.deadlineProbe=probe;
+  }
+  assert.ok(Number.isFinite(probe.firedAt)&&probe.firedAt>=probe.dueAt,'The browser delivered the independent expired deadline');
+  assert.ok(interactive.at<=probe.firedAt+exitCallbackMarginMs,
+   'Reveal uses the first available deadline opportunity, without a new wait: '+JSON.stringify({elapsed,probe,revealAt:interactive.at}));
+ }
+ const schedulingLagMs=probe.firedAt===null?null:probe.firedAt-probe.dueAt;
+ record.deadlineLagMs=schedulingLagMs;
+ return {elapsed,probe,schedulingLagMs};
+}
+
+function assertProgressSequence(test,timing){
+ assertLaunchWrites(test);
+ if(test.launch.length===launchStatusCount&&test.launch.every(item=>!item.hidden)){
+  assertLaunchSequence(test.launch);return {coalesced:false};
+ }
+ // Under a blocked browser, complete() may write the remaining suffix in one
+ // turn. Those DOM writes are not claimed to have been individually painted.
+ const prefix=test.launch.slice(0,-1),last=test.launch.at(-1);
+ assert.ok(prefix.length>=1&&prefix.length<launchStatusCount);
+ assert.deepEqual(prefix.map(item=>item.step),Array.from({length:prefix.length},(_,index)=>index),
+  'No status can be skipped before the final deadline flush');
+ assert.ok(prefix.every(item=>!item.hidden));
+ assert.equal(last.step,finalLaunchStep);assert.equal(last.hidden,true);
+ assert.equal(last.batch,test.hiddenWrite.batch);assert.equal(last.batch,test.ready[0].batch);
+ assert.ok(timing.elapsed>=exitBudgetMs&&Number.isFinite(timing.probe.firedAt)&&timing.schedulingLagMs>=0,
+  'Coalescing is allowed only after an independently observed expired deadline');
+ assert.deepEqual(test.launchWrites.filter(write=>write.batch===last.batch).map(write=>write.value),
+  launchStatuses.slice(prefix.length),'Only the missing final suffix may share the reveal turn');
+ for(const item of test.launch){
+  assert.equal(item.text,launchStatuses[item.step]);
+  assert.equal(item.counter,String(item.step+1).padStart(2,'0')+' / '+launchStatusCount);
+  assert.equal(item.opacity,1);assert.equal(item.animations,0);
+ }
+ return {coalesced:true,observedSteps:test.launch.map(item=>item.step),flushedSteps:launchStatusCount-prefix.length};
+}
+
 function assertStageProgress(feedback){
  const stages=feedback.filter(item=>Number.isFinite(item.stage)&&Number.isFinite(item.total)&&item.total>0);
  assert.ok(new Set(stages.map(item=>item.stage)).size>1,'The real boot advances the displayed stages');
@@ -376,7 +470,7 @@ async function exerciseProgressFixtures(){
  const source=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const markup=source.match(/<!-- MUSEUM_PRELOADER_START -->([\s\S]*?)<!-- MUSEUM_PRELOADER_END -->/)?.[1];
  assert.ok(markup,'The focused fixture reuses the production preloader markup');
- for(const mode of ['burst','paused','reduced','hidden','suspended-raf','failed-hidden']){
+ for(const mode of ['burst','paused','reduced','hidden','suspended-raf','main-thread-stall','failed-hidden']){
   const run=await newCase('status-'+mode,{reducedMotion:mode==='reduced'});
   const url=new URL('__preloader-progress-test?mode='+mode,base);
   await run.page.route('**/__preloader-progress-test*',route=>route.fulfill({contentType:'text/html',body:
@@ -449,6 +543,11 @@ async function exerciseProgressFixtures(){
    // This is a DOM-only completion signal. Actual-scene cases below retain
    // their independent requirement for a successful real renderer pass.
    api.ready();
+   if(document.body.dataset.fixtureMode==='main-thread-stall'){
+    const startedAt=performance.now();
+    while(performance.now()-startedAt<575){} // Deliberately prevent both rAF and timer delivery.
+    window.__PRELOADER_FIXTURE.stall={startedAt,finishedAt:performance.now()};
+   }
    return {before,immediate:{hidden:loader.hidden,stage:Number(document.getElementById('museumStageProgress').getAttribute('aria-valuenow')),
     inert:document.getElementById('museumLeftStack').inert}};
   },!['paused','reduced'].includes(mode));
@@ -462,18 +561,28 @@ async function exerciseProgressFixtures(){
   await run.page.waitForFunction(()=>document.getElementById('museumLoading').dataset.state==='ready',null,{polling:25,timeout:2000});
   const state=await loaderState(run.page),intro=await preloaderState(run.page);
   const stats=await run.page.evaluate(()=>window.__MUSEUM_STARTUP.stats());
+  run.record.transition=transition;run.record.launch=state.test.launch;run.record.marks=stats.marks;
+  run.record.launchWrites=state.test.launchWrites;run.record.counterWrites=state.test.counterWrites;
+  run.record.hiddenWrite=state.test.hiddenWrite;
   assert.equal(state.hidden,true);assert.equal(state.chromeReady,true);assert.equal(state.test.ready.length,1);
   assert.ok(state.inert.every(item=>item.inert===false));
   assert.equal(intro.launchStep,finalLaunchStep);assert.equal(intro.status,finalLaunchStatus);
   assert.equal(intro.launchCounter,launchStatusCount+' / '+launchStatusCount);assert.equal(intro.stage,9);
-  run.record.exitMs=assertExitBudget(stats);
+  assertLaunchWrites(state.test);
+  if(mode==='main-thread-stall'){
+   const timing=await assertExitOpportunity(run.page,stats,run.record);
+   run.record.sequencePolicy=assertProgressSequence(state.test,timing);
+   run.record.stall=await run.page.evaluate(()=>window.__PRELOADER_FIXTURE.stall);
+   assert.ok(run.record.stall.finishedAt-run.record.stall.startedAt>=575,'The fixture actually blocks the main thread');
+   assert.ok(timing.schedulingLagMs>=100,'The controlled stall delays delivery beyond the original deadline');
+   assert.equal(run.record.sequencePolicy.coalesced,true,'The expired deadline flushes the remaining suffix without a new cycle');
+  }else run.record.exitMs=assertExitBudget(stats);
   if(mode==='burst'||mode==='suspended-raf')assertLaunchSequence(state.test.launch);
   if(mode==='paused'||mode==='reduced')assertLaunchSequence(state.test.launch,{visible:false});
   if(mode==='suspended-raf'){
    assert.ok(await run.page.evaluate(()=>window.__PRELOADER_FIXTURE.blockedFrames>0),'The case actually suppresses native frame delivery');
    assert.ok(state.test.launch.every(item=>item.paintTick===0),'The bounded frame fallback works without native rAF delivery');
   }
-  run.record.transition=transition;run.record.launch=state.test.launch;run.record.marks=stats.marks;
   assertNoRuntimeErrors(run.record);await run.close();
  }
 }
@@ -497,9 +606,11 @@ try{
   const ready=await waitReady(run.page);console.log('STARTUP_OFFLINE_READY');
   run.record.ready=ready.state.test.ready[0];run.record.feedback=ready.state.test.feedback;
   run.record.launch=ready.state.test.launch;run.record.marks=ready.stats.loading.marks;
+  run.record.launchWrites=ready.state.test.launchWrites;run.record.counterWrites=ready.state.test.counterWrites;
+  run.record.hiddenWrite=ready.state.test.hiddenWrite;
   assertStageProgress(ready.state.test.feedback);
-  assertLaunchSequence(ready.state.test.launch);
-  run.record.exitMs=assertExitBudget(ready.stats.loading);
+  const timing=await assertExitOpportunity(run.page,ready.stats.loading,run.record);
+  run.record.sequencePolicy=assertProgressSequence(ready.state.test,timing);
   assert.equal(await run.page.evaluate(()=>document.getElementById('museumLoading').contains(document.activeElement)),false,
    'Focus does not remain inside the hidden preloader');
   assert.equal(ready.stats.ukss.status,'ready');assert.equal(ready.stats.mik112.tua.status,'ready');
