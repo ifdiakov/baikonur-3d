@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {buildSite2Museum} from './site2-museum.js?v=20261102-site2-photo-v3';
+import {buildSite2Museum} from './site2-museum.js?v=20261103-site2-light-v1';
 import {installSite2Exhibit} from './site2-exhibit.js?v=20261102-site2-photo-v3';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {buildMzkSdi} from './mzk-sdi.js?v=20261102-site2-photo-v3';
