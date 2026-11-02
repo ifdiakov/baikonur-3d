@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261101-tu204-cpk-v1';
+import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261102-m62-v1';
 export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION;
 const definitions={
  'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
@@ -22,8 +22,8 @@ const definitions={
  mriya:{title:'Мрия и Буран',subtitle:'Ан-225 · аэродром Юбилейный',kind:'aircraft',asset:'mriya-buran/near-v2.glb',yaw:Math.PI/2},
  aircraft:{title:'Airbus A320 · Алроса',subtitle:'A320-214 · рейс на Крайний',kind:'aircraft',source:'https://sketchfab.com/3d-models/bulgaria-air-airbus-a320-214-ab1d295a30c1477eb8a81b072b5fbf06',credit:'Dave Love SketchFab · CC BY 4.0 · адаптация RocketTrip'},
  tu204:{title:'Ту-204-300 · ЦПК',subtitle:'«Юрий Гагарин» · RA-64044 · Крайний',kind:'aircraft',asset:'tu204-cpk/model-v1.glb',assetRevision:'20261101-tu204-cpk-v1',source:'https://sketchfab.com/3d-models/tupolev-tu-204-3acbd21815b14758a3e0d48e1ff82233',credit:'mamont nikita · CC BY 4.0 · ливрея и адаптация RocketTrip'},
- train:{title:'Мотовоз',subtitle:'Железнодорожная техника',kind:'vehicle'},
- coach:{title:'Пассажирский вагон',subtitle:'Железнодорожная техника',kind:'vehicle'},
+ train:{title:'М62 · Космотранс',subtitle:'Магистральный тепловоз · Байконур',kind:'vehicle',source:'https://sketchfab.com/3d-models/teplovoz-m62-6a3deae9991f45bfa89c2a6882a044e7',credit:'Leafia dev. · CC BY 4.0 · адаптация RocketTrip'},
+ coach:{title:'Пассажирский вагон',subtitle:'Служебный состав космодрома',kind:'vehicle',source:'https://sketchfab.com/3d-models/527c6d20f06443b2ad6d8f88bfe28e04',credit:'mamont nikita · CC BY 4.0 · адаптация RocketTrip'},
  silo:{title:'Шахтная установка',subtitle:'Музейная модель ШПУ',kind:'site'},
  'proton-pad':{title:'Старт Протона',subtitle:'Площадки №81 и №200',kind:'site',initialView:'front',viewLabels:{front:'Стартовая позиция',side:'Газоходы',top:'Башня'},source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/proton-launch-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,23,0],offset:[100,77,-125]},side:{target:[25,-3,0],offset:[48,34,40]},top:{target:[0,32,303],offset:[70,35,-113]},interface:{target:[0,-1,0],offset:[18,22,-23]}}},
  site45:{title:'Старт Зенита',subtitle:'Историческая площадка №45/1',kind:'site'}

@@ -6,7 +6,7 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 import {createAccessTransition,smoothLocalRoadGraph} from '../src/access-transitions.js';
 import {FACILITY_PORTS,portWorld} from '../src/facility-ports.js';
 import {RAIL_PROFILE,RAIL_METRES} from '../src/rail-profile.js';
-import {buildRailVehicle,TRAIN_METRIC_SCALE,COACH_OFFSETS} from '../src/rail-vehicles.js';
+import {buildRailVehicle,TRAIN_METRIC_SCALE,COACH_OFFSETS,RAIL_VEHICLE_PROFILES,COUPLER_CLEARANCE} from '../src/rail-vehicles.js';
 import {buildMik112,MIK112} from '../src/mik112.js';
 import {SITE110_REFERENCE} from '../src/site110.js';
 import {buildSite45} from '../src/site45.js';
@@ -210,5 +210,5 @@ for(const vehicle of [engine,coach])for(const axle of vehicle.axles){
  const centers=axle.wheels.map(w=>w.getWorldPosition(V()));near(centers[0].distanceTo(centers[1]),RAIL_PROFILE.gauge,1e-8,'Actual train wheel-centre gauge');
  for(const wheel of axle.wheels){const b=new THREE.Box3().setFromObject(wheel);assert(b.min.y<.001&&b.max.y>vehicle.wheelRadius,'Wheel treads reach the running datum');}
 }
-near(engine.bodyLength/coach.bodyLength,6.1/8.3,1e-12,'Coherent locomotive/coach scale');near(COACH_OFFSETS[0],7.9*TRAIN_METRIC_SCALE,1e-12,'Scaled coupler spacing');
+near(engine.bodyLength/coach.bodyLength,RAIL_VEHICLE_PROFILES.m62.bodyLength/RAIL_VEHICLE_PROFILES.coach.bodyLength,1e-12,'Coherent locomotive/coach scale');near(COACH_OFFSETS[0],(RAIL_VEHICLE_PROFILES.m62.couplerHalf+RAIL_VEHICLE_PROFILES.coach.couplerHalf+COUPLER_CLEARANCE)*TRAIN_METRIC_SCALE,1e-12,'Scaled coupler spacing');
 console.log('ACCESS_RAIL_CONTINUITY_PASS',JSON.stringify({roadGates:stats.facilityPorts.length,railPorts:stats.facilityRailPorts.length,accessProbes,railHeadProbes,fanHeadProbes,removedStubProbes,sleeperSeamProbes,localPaintProbes,minSourceDot,minGateDot,sourceSwitches:mik.sourceSwitches,profile:RAIL_METRES.version,gauge:RAIL_PROFILE.gauge,headWidth:RAIL_PROFILE.headWidth}));

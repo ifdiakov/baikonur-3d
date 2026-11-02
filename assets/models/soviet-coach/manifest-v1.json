@@ -1,0 +1,50 @@
+{
+  "id": "soviet-coach",
+  "version": "rail-source-v1",
+  "source": {
+    "author": "mamont nikita (https://sketchfab.com/mamontnikita62)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/527c6d20f06443b2ad6d8f88bfe28e04",
+    "title": "РЖД пассажирский вагон",
+    "driveFileId": "1hpAKrVxPOBb-4nTQmMZRhT5tovpWBOik",
+    "bytes": 14226720,
+    "sha256": "dac938f7866ad8a0f6faa23dff91ae407ba926167e0e65e6ad2eb5f33b4f443a"
+  },
+  "bytes": 1158644,
+  "sha256": "c42ee121415e1dc01985a95ba4e78b30cb03478ab4aadf4017b5bc6fdf2089ed",
+  "sourceTriangles": 125666,
+  "triangles": 39073,
+  "removedTriangles": 84311,
+  "primitives": 19,
+  "bounds": {
+    "min": [
+      -1.5913296498061063,
+      -0.02843002986907961,
+      -10.183664321899414
+    ],
+    "max": [
+      1.5913296498061063,
+      4.0730499641631965,
+      10.183664321899414
+    ]
+  },
+  "profile": {
+    "id": "coach",
+    "gauge": 1.52,
+    "wheelRadius": 0.478,
+    "axles": [
+      -8.115654786529541,
+      -5.714854786529542,
+      5.716385213470458,
+      8.117185213470458
+    ],
+    "bogies": [
+      -6.915254786529541,
+      6.916785213470458
+    ],
+    "bodyLength": 19.4,
+    "width": 3.2,
+    "couplerHalf": 10.183664798736572,
+    "height": 3.94057
+  }
+}

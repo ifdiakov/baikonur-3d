@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createRoadVehicles} from './road-vehicles.js?v=20261031-facilities-rails-lighting-v1';
-import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH,TRAIN_METRIC_SCALE} from './rail-vehicles.js?v=20261031-facilities-rails-lighting-v1';
+import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH,TRAIN_METRIC_SCALE,TRAIN_VERSION} from './rail-vehicles.js?v=20261102-m62-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
 const smooth=(a,b,t)=>{const u=clamp((t-a)/(b-a),0,1);return u*u*(3-2*u);};
@@ -24,13 +24,17 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
  const cars=roadVehicles.cars,trainRoot=new THREE.Group();trainRoot.name='Поезд · площадка 1 → город';layers.rails.add(trainRoot);
  const engine=buildRailVehicle(trainRoot,{gauge:plan.gauge});
  const coaches=Array.from({length:COACH_COUNT},(_,index)=>buildRailVehicle(trainRoot,{wagon:true,gauge:plan.gauge,index,last:index===COACH_COUNT-1})),vehicles=[engine,...coaches];
+ let detailPromise=null;
+ const loadModels=()=>detailPromise||(detailPromise=Promise.all(vehicles.map(v=>v.loadDetail())).then(results=>{render(elapsed);return results.every(Boolean);}).finally(()=>{if(vehicles.some(v=>v.state.status!=='ready'))detailPromise=null;}));
+ let queued=null;if(typeof window!=='undefined')queued=(globalThis.__MUSEUM_STARTUP?.defer?globalThis.__MUSEUM_STARTUP.defer(loadModels,{key:'rail-vehicles',priority:4}):Promise.resolve().then(loadModels)).then(ok=>{if(!ok)queued=null;return ok;});
+ const requestModels=()=>{globalThis.__MUSEUM_STARTUP?.promote?.('rail-vehicles',100);return queued||loadModels();};
  const vehicleDistances=new Map(),followTarget=V(),followDirection=V(),followSide=V();
  let elapsed=0,lastNow=null,forced=null,night=true,following=false,lastPhase='';
  const quaternion=new THREE.Quaternion();let engineDistance=TRAIN_START_DISTANCE;
  const orient=t=>quaternion.setFromEuler(new THREE.Euler(-Math.asin(clamp(t.y,-1,1)),Math.atan2(t.x,t.z),0,'YXZ'));
  function stopFollowing(){following=false;button?.setAttribute('aria-pressed','false');document.body.classList.remove('following-train');}
- function setFollowing(value){if(!value){stopFollowing();return;}layers.rails.visible=true;const toggle=document.querySelector('[data-layer="rails"]');if(toggle)toggle.checked=true;following=true;button?.setAttribute('aria-pressed','true');document.body.classList.add('following-train');onFollow?.();render(elapsed);}
- if(button){button.textContent='Мотовоз';button.title='Мотовоз и 4 вагона: пл. №1 → Тюратам → город';button.addEventListener('click',()=>setFollowing(!following));}
+ function setFollowing(value){if(!value){stopFollowing();return;}if(typeof window!=='undefined')requestModels();layers.rails.visible=true;const toggle=document.querySelector('[data-layer="rails"]');if(toggle)toggle.checked=true;following=true;button?.setAttribute('aria-pressed','true');document.body.classList.add('following-train');onFollow?.();render(elapsed);}
+ if(button){button.textContent='М62';button.title='М62 и 4 вагона: пл. №1 → Тюратам → город';button.addEventListener('click',()=>setFollowing(!following));}
  canvas.addEventListener('pointerdown',stopFollowing,{passive:true});canvas.addEventListener('wheel',stopFollowing,{passive:true});
  document.addEventListener('keydown',e=>{if(!e.target.matches('input,textarea,select')&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright'].includes(e.key.toLowerCase()))stopFollowing();});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
@@ -47,27 +51,27 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
   engineDistance=trainDistance(t,rail.length);placeRailVehicle(engine,engineDistance);coaches.forEach((coach,i)=>placeRailVehicle(coach,engineDistance-COACH_OFFSETS[i]));
   if(following&&!layers.rails.visible)stopFollowing();
   if(following)frameTrain();
-  const phase=t>=TRAIN_DURATION?'arrived':'moving';if(lastPhase!==phase){lastPhase=phase;if(button)button.title=phase==='arrived'?'Мотовоз прибыл в станционный район Тюратам':'Мотовоз и 4 вагона: пл. №1 → Тюратам → город';}
+  const phase=t>=TRAIN_DURATION?'arrived':'moving';if(lastPhase!==phase){lastPhase=phase;if(button)button.title=phase==='arrived'?'М62 прибыл в станционный район Тюратам':'М62 и 4 вагона: пл. №1 → Тюратам → город';}
  }
  function frameTrain(distanceScale=1){
   const centerDistance=engineDistance-COACH_OFFSETS.at(-1)/2,at=rail.sample(centerDistance,4*TRAIN_METRIC_SCALE);
-  followTarget.copy(at.position).add(V(0,.8*TRAIN_METRIC_SCALE,0));followDirection.copy(at.tangent).setY(0).normalize();followSide.set(followDirection.z,0,-followDirection.x);
+  followTarget.copy(at.position).add(V(0,2.2*TRAIN_METRIC_SCALE,0));followDirection.copy(at.tangent).setY(0).normalize();followSide.set(followDirection.z,0,-followDirection.x);
   const halfV=THREE.MathUtils.degToRad(camera.fov*.5),halfH=Math.atan(Math.tan(halfV)*camera.aspect);
   const distance=TRAIN_CONSIST_LENGTH*.54/Math.sin(Math.min(halfV,halfH))*distanceScale;
   controls.target.copy(followTarget);camera.position.copy(followTarget).addScaledVector(followSide,distance*.79).addScaledVector(followDirection,-distance*.17);camera.position.y+=distance*.59;controls.update();
  }
  function setEvening(value){night=!!value;roadVehicles.setEvening(night);for(const v of vehicles)v.setEvening(night);render(elapsed);}
  setEvening(true);
- return {setEvening,stopFollowing,setFollowing,focusTrain(distanceScale=1){stopFollowing();onFollow?.();frameTrain(distanceScale);},seek(t){elapsed=Math.max(0,t);forced=elapsed;render(elapsed);},resume(){forced=null;lastNow=null;},
+ return {whenReady:requestModels,loadModels,setEvening,stopFollowing,setFollowing,focusTrain(distanceScale=1){if(typeof window!=='undefined')requestModels();stopFollowing();onFollow?.();frameTrain(distanceScale);},seek(t){elapsed=Math.max(0,t);forced=elapsed;render(elapsed);},resume(){forced=null;lastNow=null;},
   focusCars(index=null){stopFollowing();onFollow?.();layers.roads.visible=true;const toggle=document.querySelector('[data-layer="roads"]');if(toggle)toggle.checked=true;roadVehicles.focus(index);},
   focusHighway(){stopFollowing();onFollow?.();const at=highway.sample(highway.bridgeDistance);controls.target.copy(at.position);camera.position.copy(at.position).add(V(65,70,90));controls.update();},
   update(now){if(lastNow===null)lastNow=now;if(!document.hidden&&forced===null)elapsed+=(now-lastNow)/1000;lastNow=now;render(elapsed);},
   stats:()=>({version:'ground-traffic-v2',elapsed,night,cars:cars.length,highwayRoutes:highway.routeIds,highwayLength:highway.length,highwayJoinGap:highway.joinGap,bridgeDistance:highway.bridgeDistance,
    cityRoutes:roadVehicles.stats().routes.filter(r=>r.id.startsWith('highway-city-')),roadVehicles:roadVehicles.stats(),carStates:roadVehicles.stats().carStates,
    train:{from:plan.from,to:plan.to,duration:TRAIN_DURATION,distance:engineDistance,length:rail.length,phase:lastPhase,following,gauge:plan.gauge,
-    version:'motovoz-photo-shunter-v3',coachCount:coaches.length,consistLength:TRAIN_CONSIST_LENGTH,startDistance:TRAIN_START_DISTANCE,
+    version:TRAIN_VERSION,modelsReady:vehicles.every(v=>v.state.status==='ready'),coachCount:coaches.length,consistLength:TRAIN_CONSIST_LENGTH,startDistance:TRAIN_START_DISTANCE,
     locomotive:engine.root.position.toArray(),wagon:coaches[0].root.position.toArray(),coaches:coaches.map((v,i)=>({number:i+1,position:v.root.position.toArray(),distance:vehicleDistances.get(v),offset:COACH_OFFSETS[i],tailLights:v.last,lights:v.lightCount,detailCounts:v.detailCounts})),joins:plan.joins,
-    vehicleDetails:vehicles.map(v=>({kind:v.kind,axles:v.axles.length,bogies:v.bogies.length,bodyLength:v.bodyLength,meshes:v.root.children.filter(c=>c.isMesh).length,lightCount:v.lightCount,detailCounts:v.detailCounts})),
+    vehicleDetails:vehicles.map(v=>({kind:v.kind,axles:v.axles.length,bogies:v.bogies.length,bodyLength:v.bodyLength,meshes:(()=>{let n=0;v.root.traverse(o=>{if(o.isMesh)n++;});return n;})(),model:{...v.state},lightCount:v.lightCount,detailCounts:v.detailCounts})),
     wheelContacts:vehicles.flatMap(v=>v.axles.map(a=>({vehicle:v.root.name,distance:vehicleDistances.get(v)+a.offset,position:a.root.position.toArray(),railPosition:rail.position(vehicleDistances.get(v)+a.offset).toArray()}))),
     wheels:vehicles.flatMap(v=>v.axles.flatMap(a=>a.wheels.map(w=>({center:w.getWorldPosition(V()).toArray(),bottom:w.getWorldPosition(V()).y-v.wheelRadius}))))}})};
 }

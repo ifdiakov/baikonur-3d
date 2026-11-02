@@ -9,7 +9,7 @@ const diagnostics={networkFailures:[],badHTTPResponses:[],consoleErrors:[],
  counts:{networkFailures:0,badHTTPResponses:0,consoleErrors:0}};
 const diagnostic=(kind,item)=>{diagnostics.counts[kind]++;if(diagnostics[kind].length<80)diagnostics[kind].push({elapsedMs:elapsed(),...item});};
 const resource=request=>{const url=new URL(request.url());return{url:request.url(),path:url.pathname,type:request.resourceType(),sameOrigin:url.origin===new URL(origin).origin};};
-const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
+const browser=await chromium.launch({headless:true,...(process.env.ZENIT_PROXY?{proxy:{server:process.env.ZENIT_PROXY,bypass:'127.0.0.1,localhost'}}:{}),...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1400,height:900},deviceScaleFactor:1});page.setDefaultTimeout(90000);
 // Render deliberate static frames for screenshot QA; continuous SwiftShader frames
 // otherwise saturate the shared renderer. This only instruments the test page.
@@ -31,8 +31,9 @@ try{
  await page.goto(origin,{waitUntil:'domcontentloaded',timeout:90000});timing.domContentLoadedMs=elapsed();
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.traffic&&window.__TRAIN_PENDING&&document.getElementById('museumLoading')?.dataset.state==='ready',null,{polling:100});timing.qaAndFrameReadyMs=elapsed();
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
+ assert(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.whenReady()),'Both source models load successfully');
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train);
- assert.equal(initial.coachCount,4);assert.equal(initial.version,'motovoz-photo-shunter-v3');
+ assert(initial.modelsReady);assert(initial.vehicleDetails.every(v=>v.model.status==='ready'));assert.equal(initial.coachCount,4);assert.equal(initial.version,'m62-kosmotrans-v1');
  assert.equal(initial.coaches.filter(c=>c.tailLights).length,1);assert.equal(initial.coaches[3].tailLights,true);
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.traffic.seek(0);q.traffic.setFollowing(true);});
  await page.waitForTimeout(180);await snapshot('departure');
