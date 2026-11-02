@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import {MUSEUM_MAP_SCALE} from './museum-scale.js?v=20261103-energia-camera-v1';
-import {nozzleFlameMaterial} from './energia-plasma-shader.js?v=20261103-plasma-v1';
+import {nozzleFlameMaterial} from './energia-plasma-shader.js?v=20261103-plasma-v2';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v9-camera-release';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v10-confined-nozzle-glow';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_CAMERA_DETACH_UNITS=100;
@@ -271,10 +271,31 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  // Two physically separate groups of vertical, nozzle-anchored flames.
  // The installed Energia-Polyus GLB has x ±8.85 m and z −8.58…+5.47 m;
  // these model-local exits are museum approximations inside its footprint.
+ // Compact diffuse glows sit entirely BELOW the nozzle plane, with
+ // logarithmic depth-testing inherited from Three's built-in SpriteMaterial.
+ // Replaces all 24 upward-looking crossing sheets and their visible rays.
+ const glowCanvas=document.createElement('canvas');
+ glowCanvas.width=glowCanvas.height=128;
+ const ctx=glowCanvas.getContext('2d');
+ const gradient=ctx.createRadialGradient(64,64,0,64,64,64);
+ gradient.addColorStop(0,'rgba(255,255,255,.98)');
+ gradient.addColorStop(.16,'rgba(255,255,255,.74)');
+ gradient.addColorStop(.46,'rgba(255,255,255,.17)');
+ gradient.addColorStop(.79,'rgba(255,255,255,.02)');
+ gradient.addColorStop(1,'rgba(255,255,255,0)');
+ ctx.fillStyle=gradient;ctx.fillRect(0,0,128,128);
+ const nozzleGlowTexture=new THREE.CanvasTexture(glowCanvas);
+ nozzleGlowTexture.colorSpace=THREE.SRGBColorSpace;
+ nozzleGlowTexture.minFilter=THREE.LinearMipmapLinearFilter;
+ nozzleGlowTexture.magFilter=THREE.LinearFilter;
+ nozzleGlowTexture.generateMipmaps=true;nozzleGlowTexture.needsUpdate=true;
+ const haloMaterial=(color)=>new THREE.SpriteMaterial({map:nozzleGlowTexture,color,
+  transparent:true,opacity:0,depthWrite:false,depthTest:true,
+  blending:THREE.AdditiveBlending,toneMapped:false});
+ const coreHaloMaterial=haloMaterial(0xbceaff),boosterHaloMaterial=haloMaterial(0xffb769);
  const rocketNozzleMaterials={
   core:nozzleFlameMaterial(0x8fdcff),coreGlow:nozzleFlameMaterial(0x36a7ff),coreWhite:nozzleFlameMaterial(0xffffff),
-  booster:nozzleFlameMaterial(0xffcc72),boosterGlow:nozzleFlameMaterial(0xff6a12),boosterWhite:nozzleFlameMaterial(0xfffdf4),
-  coreRibbon:nozzleFlameMaterial(0xc9f1ff,{ribbon:true}),boosterRibbon:nozzleFlameMaterial(0xffcf83,{ribbon:true})
+  booster:nozzleFlameMaterial(0xffcc72),boosterGlow:nozzleFlameMaterial(0xff6a12),boosterWhite:nozzleFlameMaterial(0xfffdf4)
  };
  const engineJets=[];
  const buildEngineJet=(x,z,type,index)=>{
@@ -287,28 +308,24 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   ];
   const meshes=[];
   for(const [material,top,tip,layer,relativeLength]of entries){
-   // Wide, incandescent mouth at nozzle level; plasma tapers downward.
-   const lengthAtLayer=length*relativeLength;
-   const cone=new THREE.Mesh(new THREE.CylinderGeometry(top,tip,lengthAtLayer,36,16,true),material);
-   cone.position.set(x,-lengthAtLayer/2-.2,z);
-   // Keep the jet in the normal transparent pass with depth testing against the pad.
-    cone.renderOrder=33+layer;cone.frustumCulled=false;cone.userData.pickable=false;
-   cone.name=(core?'РД-0120':'РД-170')+' · направленный факел сопла '+(index+1)+(layer?' · ядро':' · ореол');
+   const layerLength=length*relativeLength;
+   // Constrain the collar inside the rocket footprint; the downstream
+   // shoulder is irregularly broken by the exhaust shader.
+   const topRadius=top*(layer===0?.59:.71);
+   const bottomRadius=Math.max(tip,top*(layer===0?.36:.27));
+   const cone=new THREE.Mesh(new THREE.CylinderGeometry(topRadius,bottomRadius,layerLength,36,18,true),material);
+   cone.position.set(x,-layerLength/2-.42,z);
+   cone.renderOrder=33+layer;cone.frustumCulled=false;cone.userData.pickable=false;
+   cone.name=(core?'РД-0120':'РД-170')+' · рваный реактивный факел '+(index+1)+(layer?' · ядро':' · оболочка');
    flameRoot.add(cone);meshes.push(cone);
   }
-  // Crossing sheets carry the brightest boiling regions near the nozzle.
-  // Noise and alpha erosion remove the visible rectangular plane outlines.
-  const ribbonMat=core?rocketNozzleMaterials.coreRibbon:rocketNozzleMaterials.boosterRibbon;
-  for(let i=0;i<3;i++){
-   const tall=length*(.27+.04*i),wide=radius*(4.7+.35*i);
-   const sheet=new THREE.Mesh(new THREE.PlaneGeometry(wide,tall,8,18),ribbonMat);
-   sheet.name=(core?'РД-0120':'РД-170')+' · пульсирующий язык плазмы '+(index+1)+'/'+(i+1);
-   sheet.position.set(x,-tall/2-1.25,z);
-   sheet.rotation.y=i*Math.PI/3+index*.17;
-   sheet.renderOrder=39+i;sheet.frustumCulled=false;sheet.userData.pickable=false;
-   flameRoot.add(sheet);meshes.push(sheet);
-  }
-  engineJets.push({x,z,type,index,length,meshes});
+  const halo=new THREE.Sprite(core?coreHaloMaterial:boosterHaloMaterial);
+  halo.name=(core?'РД-0120':'РД-170')+' · локальное свечение под соплом '+(index+1);
+  halo.position.set(x,-5.4,z);
+  halo.scale.set(radius*3.4,radius*3.4,1);
+  halo.renderOrder=38;halo.frustumCulled=false;halo.userData.pickable=false;
+  halo.visible=false;flameRoot.add(halo);
+  engineJets.push({x,z,type,index,length,meshes,halo,haloSize:radius*3.4});
  };
  // Compact core cluster and four peripheral first-stage exhaust exits.
  [[-1.85,-2.0],[1.85,-2.0],[-1.85,1.7],[1.85,1.7]].forEach(([x,z],i)=>buildEngineJet(x,z,'core',i));
@@ -554,7 +571,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   const enginePower=sampleEnergiaEnginePlumes(t);
   for(const kind of ['core','booster']){
    const power=enginePower[kind==='core'?'core':'boosters'];
-   for(const suffix of [kind,kind+'Glow',kind+'White',kind+'Ribbon']){
+   for(const suffix of [kind,kind+'Glow',kind+'White']){
     rocketNozzleMaterials[suffix].uniforms.uPower.value=power*(suffix.endsWith('Glow')?.72:1);
     rocketNozzleMaterials[suffix].uniforms.uTime.value=t;
    }
@@ -569,11 +586,17 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    const flicker=.96+.09*Math.sin(t*10.7+jet.index*1.7)+.055*Math.sin(t*21-jet.index*.7);
    jet.meshes.forEach((mesh,i)=>{
     const radialPulse=1+.08*Math.sin(t*7.5+jet.index*1.3+i*.8)+.04*Math.sin(t*15-jet.index*.7+i*1.6);
-     const axialPulse=(.92+.42*power)*flicker*(1+.04*Math.sin(t*4+jet.index+i));
-     mesh.scale.set(radialPulse,axialPulse,radialPulse*(.98+.05*Math.cos(t*11+jet.index+i)));
+    const axialPulse=(.92+.42*power)*flicker*(1+.04*Math.sin(t*4+jet.index+i));
+    mesh.scale.set(radialPulse,axialPulse,radialPulse*(.98+.05*Math.cos(t*11+jet.index+i)));
     mesh.visible=power>.003;
    });
+   jet.halo.visible=power>.003;
+   const shimmer=.94+.06*Math.sin(t*9.7+jet.index*2.1);
+   jet.halo.scale.set(jet.haloSize*shimmer,jet.haloSize*shimmer,1);
   }
+  // Bright but small: the sprites cannot extend above the model's exit plane.
+  coreHaloMaterial.opacity=.52*enginePower.core*(.94+.06*Math.sin(t*9.3));
+  boosterHaloMaterial.opacity=.58*enginePower.boosters*(.94+.06*Math.sin(t*8.1));
   movingFlameLight.intensity=1650*Math.max(enginePower.core*.92,enginePower.boosters);
   movingFlameLight.distance=210;
   const platformRetreat=smooth(-55,-37,t),clampRelease=smooth(-.5,2,t),umbilicalRelease=smooth(-1,1.5,t);
@@ -603,7 +626,10 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   }
   flameRoot.scale.set(1,1,1);
   return {smoke:groundCloud,water,steam:vapor,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,
-   enginePlasmaRibbonCount:engineJets.reduce((sum,jet)=>sum+jet.meshes.filter(mesh=>mesh.geometry?.type==='PlaneGeometry').length,0),
+   enginePlasmaRibbonCount:0,
+   engineNozzleGlowCount:engineJets.length,
+   engineNozzleGlowVisible:engineJets.filter(jet=>jet.halo.visible).length,
+   engineNozzleGlowOpacity:{core:coreHaloMaterial.opacity,boosters:boosterHaloMaterial.opacity},
   engineFlameAttached:!!rocketHolder&&flameRoot.parent===rocketHolder,
   engineFlameDepthCompatible:depthCompatible,
   engineFlameDepthTest:rocketNozzleMaterials.core.depthTest,
@@ -619,6 +645,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   disableShadows();
   root.traverse(o=>{if(o.isMesh){o.geometry?.dispose();o.material?.dispose();}});
   smokeTexture.dispose();
+  nozzleGlowTexture.dispose();coreHaloMaterial.dispose();boosterHaloMaterial.dispose();
   flameRoot.removeFromParent();
   root.removeFromParent();
  }
@@ -907,6 +934,9 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
    detachedAt:detachedAt?{...detachedAt}:null,
    orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,
    enginePlasmaRibbonCount:lastFrame?.enginePlasmaRibbonCount,
+   engineNozzleGlowCount:lastFrame?.engineNozzleGlowCount,
+   engineNozzleGlowVisible:lastFrame?.engineNozzleGlowVisible,
+   engineNozzleGlowOpacity:lastFrame?.engineNozzleGlowOpacity,
    engineFlameDepthCompatible:lastFrame?.engineFlameDepthCompatible,
    engineFlameDepthTest:lastFrame?.engineFlameDepthTest,
    rocketNozzleWorld:lastFrame?.rocketNozzleWorld,
