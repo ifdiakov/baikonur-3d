@@ -87,13 +87,16 @@ try{
   if(t===-3.2)assert.ok(e.flamePower>0,'Booster ignition produces exhaust');
   if(t===0){
    assert.ok(e.engineCorePower>.9&&e.engineBoosterPower>.9,'Both engine families show bright nozzle flames');
+   assert.equal(e.engineFlameDepthCompatible,true,'Nozzle shader depth must match the museum logarithmic depth buffer');
+   assert.equal(e.engineFlameDepthTest,true,'Nozzle flame must still be occluded by opaque ground and launch pad');
+   assert.equal(e.engineFlameAttached,true,'Flames must stay attached to the rocket holder');
    assert.equal(e.shadowMapEnabled,true,'Live cast shadows enabled only during the launch');
    assert.ok(e.shadowLightIntensity>250,'Engine lights illuminate the UKSS structures');
    assert.equal(e.shadowReceiverCount,6,'Shadow projection covers launch apron and surrounding steppe');
    assert.ok(e.shadowMapResolution>=512,'Shadow map resolution is valid for device');
   }
   if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
-  if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
+  if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');assert.equal(e.engineFlameDepthCompatible,true);assert.equal(e.engineFlameAttached,true);assert.ok(e.rocketNozzleWorld?.every(Number.isFinite),'Nozzle position follows the rocket in world space');await shot('lift-off');}
   if(t===145.9){assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');}
   if(t===20){
    assert.equal(e.padFireFade,0,'UKSS flame is gone after rocket exceeds 360m');
