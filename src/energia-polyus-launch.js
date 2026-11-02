@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v6-log-depth-exhaust';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v7-billowing-steam';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
@@ -93,6 +93,17 @@ export function sampleEnergiaEnginePlumes(time){
 // This is independent of the engine jets travelling WITH the ascending rocket.
 // The requested 100 m threshold refers to physical launch altitude, not
 // the scene's logarithmically compressed camera/visual ascent.
+// Pre-launch vents expand into irregular banks of semi-transparent steam.
+export function sampleEnergiaSteamSpread(time){
+ const stage=smooth(-90,0,Number(time)||0),late=smooth(-42,-2,Number(time)||0);
+ return {stage,late,radius:mix(31,148,stage),drift:mix(6,35,stage),
+  rise:mix(23,42,stage),puffScale:mix(1,1.58,late),transparency:mix(.64,.43,stage)};
+}
+// The older, lower tail of the plume dissolves in broken layers.
+export function sampleEnergiaPlumeBottomFade(age,groundHeight,seed=0){
+ const wave=.55*Math.sin(seed*1.83)+.45*Math.cos(seed*3.11);
+ return clamp((1-smooth(.57+.13*wave,.99,age))*smooth(-24+21*wave,72+32*wave,groundHeight),0,1);
+}
 export function sampleEnergiaPadDissipation(altitudeMetres){
  const metres=Math.max(0,Number(altitudeMetres)||0);
  return {fire:1-smooth(100,360,metres),smoke:1-smooth(100,800,metres)};
@@ -158,8 +169,24 @@ function makeBillow(parent,count,color,opacity,name,texture){
  const mesh=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),
   new THREE.MeshBasicMaterial({color,map:texture,transparent:true,opacity,depthWrite:false,depthTest:true,
    side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1}),count);
+ // A single float per instance fades individual puffs without losing the atlas
+ // alpha. This removes the hard lower edge of the rocket's smoke column.
+ const densityAttribute=new THREE.InstancedBufferAttribute(new Float32Array(count).fill(1),1);
+ densityAttribute.setUsage(THREE.DynamicDrawUsage);
+ mesh.geometry.setAttribute('aSmokeDensity',densityAttribute);
+ mesh.material.onBeforeCompile=shader=>{
+  shader.vertexShader=shader.vertexShader.replace('#include <common>',
+   '#include <common>\nattribute float aSmokeDensity;\nvarying float vSmokeDensity;');
+  shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
+   '#include <begin_vertex>\nvSmokeDensity=aSmokeDensity;');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
+   '#include <common>\nvarying float vSmokeDensity;');
+  shader.fragmentShader=shader.fragmentShader.replace('#include <alphamap_fragment>',
+   '#include <alphamap_fragment>\ndiffuseColor.a*=vSmokeDensity;');
+ };
+ mesh.material.customProgramCacheKey=()=> 'energia-smoke-density-v2';
  mesh.name=name;mesh.frustumCulled=false;mesh.renderOrder=28;
- mesh.userData={pickable:false,softSmoke:true,baseOpacity:opacity};
+ mesh.userData={pickable:false,softSmoke:true,baseOpacity:opacity,densityAttribute};
  parent.add(mesh);
  const colorAttr=new THREE.Color();
  for(let i=0;i<count;i++){
@@ -252,7 +279,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  const waterMat=glowMaterial(0xc7e4f0),waterGlow=makeGlow(290,125,waterMat);waterGlow.position.set(25,.7,0);root.add(waterGlow);
  const farDuctMat=glowMaterial(0xffa347),farDuctGlow=makeGlow(220,85,farDuctMat);farDuctGlow.position.set(220,.4,0);root.add(farDuctGlow);
 
- const innerSmoke=makeBillow(root,420,0xe4e9eb,.73,'Холодный криогенный пар · мягкие облака',smokeTexture);
+ const innerSmoke=makeBillow(root,420,0xe4e9eb,.50,'Холодный криогенный пар · мягкие облака',smokeTexture);
  const waterSpray=makeBillow(root,320,0xeaf3f3,.78,'Водяная завеса · испарение',smokeTexture);
  const ductSmoke=makeBillow(root,1050,0xaeb1b1,.76,'Газоход · турбулентный плотный пар',smokeTexture);
  const fieldSmoke=makeBillow(root,820,0x8d8d8d,.69,'Степь · стелющиеся клубы дыма',smokeTexture);
@@ -459,6 +486,8 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   const count=mesh.count;
   const height=visualHeight(s.altitudeKm)/.14;
   const xShift=s.downrangeKm*.42/.14,zShift=-s.downrangeKm*.28/.14;
+  const steamState=kind==='steam'?sampleEnergiaSteamSpread(time):null;
+  const particleAlpha=mesh.userData.densityAttribute;
   for(let i=0;i<count;i++){
    const r1=(i*37%211)/211,r2=(i*97%257)/257,r3=(i*23%199)/199;
    const cycle=kind==='steam'?9.2:kind==='duct'?10.5:kind==='field'?17.5:kind==='water'?5.2:kind==='plume'?5.8:2.4;
@@ -467,10 +496,13 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    const swirl=Math.sin(u*13+i*.91)*.63+Math.cos(u*6+i*.23)*.48;
    let x=0,y=0,z=0,size=0;
    if(kind==='steam'){
-    x=-51+Math.sin(i*1.73)*16+u*9;
-    y=4+u*39;
-    z=-20+(i*83%73)/1.6+swirl*4;
-    size=(5.4+u*21)*(1+.33*r2);
+    const a=Math.PI*2*r2+.4*Math.sin(time*.047+i*.57);
+    const radial=Math.pow(r3,.73)*steamState.radius;
+    const curl=steamState.drift*(Math.sin(time*.14+i*1.17)+.4*Math.cos(time*.09+i*.53));
+    x=-38+Math.cos(a)*radial+Math.sin(a*2.2)*curl+u*12;
+    z=2+Math.sin(a)*radial*.78+Math.cos(a*.7)*curl+swirl*8;
+    y=2.5+u*steamState.rise+Math.sin(i*.93+time*.17)*4*(.45+steamState.stage);
+    size=(11+u*31)*(1+.54*r2)*steamState.puffScale;
    }else if(kind==='water'){
     x=-25+u*200+Math.sin(i*1.37)*11;
     y=1.4+u*27;
@@ -499,10 +531,23 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
     y=-20+u*34;
     size=(.9+1.9*r3)*(1-u*.78);
    }
-   // Continuous age taper avoids sudden popping at either end of a puff.
+   // Age, height, and independent turbulence break up individual smoke edges.
+   let puffAlpha=.52+.45*r3;
+   if(kind==='steam'){
+    const chaos=.76+.18*Math.sin(time*.63+i*.71)+.13*Math.cos(time*1.27+i*1.37);
+    puffAlpha*=clamp(chaos,.28,1.05)*steamState.transparency;
+   }else if(kind==='plume'){
+    const fading=sampleEnergiaPlumeBottomFade(u,y,i);
+    x+=Math.sin(i*.41+time*.63)*Math.pow(u,1.7)*(10+24*r3);
+    z+=Math.cos(i*.63-time*.41)*Math.pow(u,1.5)*(9+23*r2);
+    size*=.75+.25*fading;
+    puffAlpha*=fading*(.69+.28*Math.sin(i*.92+time*.7)**2);
+   }else puffAlpha*=.74+.26*Math.sin(i*.41+time*.22)**2;
    const lifespan=Math.min(1,u*6)*Math.min(1,(1-u)*5);
+   puffAlpha*=Math.max(.03,lifespan);
    size*=.55+.45*lifespan;
    size=Math.max(.01,size*(.75+.25*density));
+   particleAlpha.setX(i,clamp(puffAlpha,0,1));
    // Rotate each irregular silhouette and vary cloud aspect ratio. The cloud
    // layers stay camera-facing even while the visitor orbits the launch.
    pos.set(x,y,z);
@@ -513,6 +558,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    mtx.compose(pos,smokeTwist,scale);mesh.setMatrixAt(i,mtx);
   }
   mesh.instanceMatrix.needsUpdate=true;
+  particleAlpha.needsUpdate=true;
  };
  const depthCompatible=rocketNozzleMaterials.core.vertexShader.includes('logdepthbuf_vertex')
   &&rocketNozzleMaterials.core.fragmentShader.includes('logdepthbuf_fragment');
@@ -529,7 +575,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   const groundCloud=smooth(-9.4,3,t)*(1-smooth(115,290,t))*padDissipation.smoke;
   const ductCloud=clamp((exhaustAtGround*1.10+water*.43)*padDissipation.smoke,0,1);
   const plume=smooth(0,3,t)*(1-smooth(140,245,t));
-  const vapor=(.55+.45*smooth(-90,-60,t))*(1-smooth(38,148,t))*padDissipation.smoke;
+  const vapor=(.60+.37*smooth(-90,-23,t))*(1-smooth(42,153,t))*padDissipation.smoke;
   const heat=clamp(exhaustAtGround*.85+pilot*.13,0,1);
   glow.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.08,0,1);
   trenchMat.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.12,0,1);
