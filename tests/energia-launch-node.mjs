@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {nozzleFlameMaterial,ENERGIA_PLASMA_VERSION} from '../src/energia-plasma-shader.js';
 import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes,sampleEnergiaPadDissipation,sampleEnergiaSteamSpread,sampleEnergiaPlumeBottomFade,energiaCameraHeightUnits,shouldDetachEnergiaCamera,ENERGIA_CAMERA_DETACH_UNITS} from '../src/energia-polyus-launch.js';
 assert.equal(ENERGIA_LAUNCH_START,-90);
 assert.equal(ENERGIA_LAUNCH_END,600);
@@ -85,3 +86,16 @@ assert.ok(energiaCameraHeightUnits(sampleEnergiaLaunch(90).altitudeKm)>100);
 assert.equal(shouldDetachEnergiaCamera(sampleEnergiaLaunch(30).altitudeKm),false);
 assert.equal(shouldDetachEnergiaCamera(sampleEnergiaLaunch(90).altitudeKm),true);
 console.log('ENERGIA_CINEMATIC_FX_PASS');
+
+const nozzleMaterial=nozzleFlameMaterial(0xffb45d);
+assert.equal(nozzleMaterial.depthTest,true,'Exhaust remains behind solid launch hardware');
+assert.equal(nozzleMaterial.depthWrite,false,'Transparent glow does not create hard depth silhouettes');
+assert.match(nozzleMaterial.vertexShader,/logdepthbuf_vertex/);
+assert.match(nozzleMaterial.fragmentShader,/logdepthbuf_fragment/);
+assert.match(nozzleMaterial.vertexShader,/tailChaos/,'Tail needs physical vertex turbulence');
+assert.match(nozzleMaterial.fragmentShader,/topLimit/,'Nozzle collar must be bounded by alpha');
+assert.match(nozzleMaterial.fragmentShader,/lowerCut/,'Tail must dissolve at staggered heights');
+assert.ok(!('uRibbon' in nozzleMaterial.uniforms),'Ray-like crossing ribbon shader controls are removed');
+assert.match(ENERGIA_PLASMA_VERSION,/soft-nozzle-frayed-tail/);
+nozzleMaterial.dispose();
+console.log('ENERGIA_NO_UPPER_RAYS_PASS');
