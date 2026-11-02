@@ -603,6 +603,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   }
   flameRoot.scale.set(1,1,1);
   return {smoke:groundCloud,water,steam:vapor,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,
+   enginePlasmaRibbonCount:engineJets.reduce((sum,jet)=>sum+jet.meshes.filter(mesh=>mesh.geometry?.type==='PlaneGeometry').length,0),
   engineFlameAttached:!!rocketHolder&&flameRoot.parent===rocketHolder,
   engineFlameDepthCompatible:depthCompatible,
   engineFlameDepthTest:rocketNozzleMaterials.core.depthTest,
@@ -637,7 +638,7 @@ export function energiaCameraHeightUnits(altKm){return visualHeight(altKm)/MUSEU
 export function shouldDetachEnergiaCamera(altKm){return energiaCameraHeightUnits(altKm)>=ENERGIA_CAMERA_DETACH_UNITS;}
 
 export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,renderer,objects=[],getEntry,onStart=()=>null,onStop=()=>{}}){
- const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v5',import.meta.url);document.head.append(stylesheet);
+ const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261103-cinematic-100h-v1',import.meta.url);document.head.append(stylesheet);
  const panel=document.createElement('section');panel.id='energiaLaunchPanel';panel.hidden=true;panel.setAttribute('aria-label','Энергия — Полюс: реконструкция запуска 15 мая 1987 года');
  panel.innerHTML=[
   '<header class="energia-event-head"><div><span class="energia-kicker">15 МАЯ 1987 · УКСС · ПЛ. 250</span><h2>ЭНЕРГИЯ — ПОЛЮС</h2><span class="energia-tag">ИСТОРИЧЕСКАЯ РЕКОНСТРУКЦИЯ</span></div><button type="button" id="energiaClose" title="Закрыть сценарий" aria-label="Закрыть сценарий">×</button></header>',
@@ -905,6 +906,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
    cinematicPanel:panel.classList.contains('energia-cinematic-ascent'),
    detachedAt:detachedAt?{...detachedAt}:null,
    orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,
+   enginePlasmaRibbonCount:lastFrame?.enginePlasmaRibbonCount,
    engineFlameDepthCompatible:lastFrame?.engineFlameDepthCompatible,
    engineFlameDepthTest:lastFrame?.engineFlameDepthTest,
    rocketNozzleWorld:lastFrame?.rocketNozzleWorld,
