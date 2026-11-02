@@ -209,7 +209,7 @@ function nozzleFlameMaterial(color){
    ' gl_FragColor=vec4(plasma,clamp(alpha,0.,.98));',
    '}'
   ].join('\n'),
-  transparent:true,depthWrite:false,side:THREE.DoubleSide,
+  transparent:true,depthWrite:false,depthTest:false,side:THREE.DoubleSide,
   blending:THREE.AdditiveBlending,toneMapped:false
  });
 }
@@ -242,6 +242,13 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  sparks.material.toneMapped=false;
 
  const flameRoot=new THREE.Group();flameRoot.name='Реактивные факелы';root.add(flameRoot);
+  let exhaustParent=null;
+  function attachExhaustToRocket(holder){
+   if(!holder||exhaustParent===holder)return;
+   holder.add(flameRoot);
+   flameRoot.position.set(0,0,0);flameRoot.quaternion.identity();
+   exhaustParent=holder;
+  }
  const coreMat=flameMaterial(0x8edfff),fireMat=flameMaterial(0xff6a19);
  const ductJetMaterial=flameMaterial(0xff9e39);
  const ductJetRoot=new THREE.Group();ductJetRoot.name='Газоход · направленный поток горячих газов';
@@ -551,8 +558,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   // Exact parent-local pose of the flying GLB, including its initial mount,
   // program pitch and roll. The plumes follow the nozzles during camera orbit.
   if(rocketHolder){
-   flameRoot.position.copy(rocketHolder.position);
-   flameRoot.quaternion.copy(rocketHolder.quaternion);
+   attachExhaustToRocket(rocketHolder);
   }
   flameRoot.scale.set(1,1,1);
   return {smoke:groundCloud,water,steam:vapor,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,engineFlameAttached:!!rocketHolder,smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
