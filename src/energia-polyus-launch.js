@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v5-follow-orbit-pad-dissipation';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v6-log-depth-exhaust';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
@@ -190,16 +190,27 @@ function nozzleFlameMaterial(color){
  return new THREE.ShaderMaterial({
   uniforms:{uPower:{value:0},uTime:{value:0},uTint:{value:new THREE.Color(color)}},
   vertexShader:[
+   // The museum enables logarithmicDepthBuffer. Both depth shaders MUST use
+   // the same encoding as the ground/rocket or depthTest hides all flames.
+   '#include <common>',
+   '#include <logdepthbuf_pars_vertex>',
    'varying vec2 vUv;',
-   'void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}'
+   'void main(){',
+   ' vUv=uv;',
+   ' gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);',
+   ' #include <logdepthbuf_vertex>',
+   '}'
   ].join('\n'),
   fragmentShader:[
+   '#include <common>',
+   '#include <logdepthbuf_pars_fragment>',
    'uniform float uPower,uTime;uniform vec3 uTint;varying vec2 vUv;',
    'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
    'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
    ' return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}',
    'float fbm(vec2 p){return .52*noise(p)+.28*noise(p*2.13)+.14*noise(p*4.17)+.06*noise(p*8.07);}',
    'void main(){',
+   ' #include <logdepthbuf_fragment>',
    ' float axial=clamp(vUv.y,0.,1.);', // 1 = nozzle
    ' vec2 flow=vec2(vUv.x*9.,axial*26.-uTime*2.9);',
    ' float rolling=fbm(flow+vec2(sin(axial*31.-uTime*7.)*.28,0.));',
