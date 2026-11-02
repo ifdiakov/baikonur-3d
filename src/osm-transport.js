@@ -612,6 +612,37 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(!n.edges.some(e=>isHighwayRoad(e.tags))){shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);}
   junctionCount++;
  }
+ // Restore a short paved access beside the relocated Site 2 museum exhibit.
+ // The source OSM road graph is not modified; only the displayed access is drawn.
+ const site2Access=siteRecords.find(site=>site.id==='pad-2');
+ if(site2Access){
+  const centre=point(site2Access.x,site2Access.y,.72);
+  let candidate=null;
+  for(const way of roadGraph.ways){
+   if(!['service','unclassified','residential','track'].includes(way.tags.highway))continue;
+   if(!renderedRoadWays.has(way.osmId))continue;
+   for(const edge of way.segments){
+    if(!edgeKept(roadGraph,edge))continue;
+    const a=edge.a.position,b=edge.b.position,v=b.clone().sub(a),lengthSq=v.lengthSq();
+    if(lengthSq<1e-5)continue;
+    const t=Math.max(0,Math.min(1,centre.clone().sub(a).dot(v)/lengthSq));
+    const hit=a.clone().addScaledVector(v,t),distance=centre.distanceTo(hit);
+    if(distance<27||distance>95)continue;
+    const gagarin=siteRecords.find(site=>site.id==='pad-1');
+    if(gagarin){
+     const pad=point(gagarin.x,gagarin.y,0);
+     if(new THREE.Line3(centre,hit).closestPointToPoint(pad,true,V()).distanceTo(pad)<30)continue;
+    }
+    if(!candidate||distance<candidate.distance)candidate={hit,distance};
+   }
+  }
+  if(candidate){
+   const outward=candidate.hit.clone().sub(centre).setY(0).normalize();
+   const gate=centre.clone().addScaledVector(outward,25);
+   drawRoad([gate,gate.clone().lerp(candidate.hit,.5),candidate.hit],2.4,
+    {highway:'service',surface:'asphalt'},false,false,null);
+  }
+ }
  if(krayniyClearanceReport){
   const access=krayniyLayout.access,source=roadGraph.nodes.get(access.sourceNodeId),sourcePoint=source?.position,
    sourceRendered=!!sourcePoint&&roadPaths.some(r=>r.source==='OpenStreetMap'&&r.osmWayIds?.includes(access.sourceWayId)&&r.points.some(p=>p.distanceTo(sourcePoint)<1e-5)),
