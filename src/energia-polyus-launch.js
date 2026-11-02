@@ -261,13 +261,13 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  sparks.material.toneMapped=false;
 
  const flameRoot=new THREE.Group();flameRoot.name='Реактивные факелы';root.add(flameRoot);
-  let exhaustParent=null;
-  function attachExhaustToRocket(holder){
-   if(!holder||exhaustParent===holder)return;
-   holder.add(flameRoot);
-   flameRoot.position.set(0,0,0);flameRoot.quaternion.identity();
-   exhaustParent=holder;
-  }
+ function attachExhaustToRocket(holder){
+  if(!holder)return;
+  // A rocket model reload can clear() the exhibit holder. Reattach if needed.
+  if(flameRoot.parent!==holder)holder.add(flameRoot);
+  flameRoot.position.set(0,0,0);
+  flameRoot.quaternion.identity();
+ }
  const coreMat=flameMaterial(0x8edfff),fireMat=flameMaterial(0xff6a19);
  const ductJetMaterial=flameMaterial(0xff9e39);
  const ductJetRoot=new THREE.Group();ductJetRoot.name='Газоход · направленный поток горячих газов';
@@ -514,6 +514,8 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   }
   mesh.instanceMatrix.needsUpdate=true;
  };
+ const depthCompatible=rocketNozzleMaterials.core.vertexShader.includes('logdepthbuf_vertex')
+  &&rocketNozzleMaterials.core.fragmentShader.includes('logdepthbuf_fragment');
  function pose(s,rocketHolder=null){
   const t=s.time,fire=s.exhaust;
   const padDissipation=sampleEnergiaPadDissipation(s.altitudeKm*1000);
@@ -585,10 +587,16 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    attachExhaustToRocket(rocketHolder);
   }
   flameRoot.scale.set(1,1,1);
-  return {smoke:groundCloud,water,steam:vapor,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,engineFlameAttached:!!rocketHolder,smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
+  return {smoke:groundCloud,water,steam:vapor,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,
+  engineFlameAttached:!!rocketHolder&&flameRoot.parent===rocketHolder,
+  engineFlameDepthCompatible:depthCompatible,
+  engineFlameDepthTest:rocketNozzleMaterials.core.depthTest,
+  smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
    lightIntensity:lights.map(l=>l.intensity),armsReopen:platformRetreat,umbilicalRelease,
    ductPower:exhaustAtGround,flamePower:fire,ductJetVisible:ductJetRoot.visible,
-   mobileTowerArms:arms.map(a=>a.rotation.y),rocketExhaustOffset:flameRoot.position.toArray()};
+   mobileTowerArms:arms.map(a=>a.rotation.y),
+   rocketExhaustOffset:rocketHolder?rocketHolder.position.toArray():flameRoot.position.toArray(),
+   rocketNozzleWorld:rocketHolder?rocketHolder.localToWorld(V(0,0,0)).toArray():null};
  }
 
  function dispose(){
@@ -842,7 +850,11 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,setManualCamera,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,engineCorePower:lastFrame?.engineCorePower,engineBoosterPower:lastFrame?.engineBoosterPower,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
+   modelReady,orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,
+   engineFlameDepthCompatible:lastFrame?.engineFlameDepthCompatible,
+   engineFlameDepthTest:lastFrame?.engineFlameDepthTest,
+   rocketNozzleWorld:lastFrame?.rocketNozzleWorld,
+   engineCorePower:lastFrame?.engineCorePower,engineBoosterPower:lastFrame?.engineBoosterPower,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
   update(now){
    if(!active)return;
    if(lastNow!==null&&!paused&&!document.hidden){
