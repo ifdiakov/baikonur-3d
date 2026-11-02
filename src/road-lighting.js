@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js?v=20261101-highway-fog-v1';
-import {HIGHWAY_DISPLAY,applyHighwayDisplayFade} from './highway-display.js?v=20261101-museum-view-v1';
+import {HIGHWAY_DISPLAY,applyHighwayDisplayFade} from './highway-display.js?v=20261102-site2-photo-v3';
 
 export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v3';
 export const ROAD_LIGHT_LENS_EMISSION=1.65;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 
 const controllers = new WeakMap();
 export const sdiController = root => controllers.get(root);

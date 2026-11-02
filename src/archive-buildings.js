@@ -1,8 +1,10 @@
 import * as THREE from 'three';
+import {buildSite2Museum} from './site2-museum.js?v=20261102-site2-photo-v3';
+import {installSite2Exhibit} from './site2-exhibit.js?v=20261102-site2-photo-v3';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {buildMzkSdi} from './mzk-sdi.js?v=20261102-sdi-energia-m-v1';
-import {buildAirport} from './airport-models.js?v=buran-paint-20261102-v1';
-import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {buildMzkSdi} from './mzk-sdi.js?v=20261102-site2-photo-v3';
+import {buildAirport} from './airport-models.js?v=20261102-site2-photo-v3';
+import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
 export function protonHalls(root){
  const k=archiveKit(root),P=imageFrame([680,450],.60);const hall=(p,w,d,h,opts={})=>{const[x,z]=P(p);return k.hall({x,z,w:w*.6,d:d*.6,h,yaw:imageAxisYaw([0,0],[260,198]),...opts});};
@@ -37,22 +39,7 @@ export function observationPoint(root){
 export function nedelinRuins(root){
  const k=archiveKit(root);k.box(66,.35,36,0,-.1,0,'concrete','ruin-floor');for(const x of[-32,32])k.box(1,5,35,x,2.5,0,'light','ruin-sidewall');for(const x of[-27,-12,3,18,31])k.box(2.8,5,1.1,x,2.5,18,'light','ruin-front-jamb');k.box(66,1.1,1.1,0,5.1,18,'light','ruin-front-lintel');k.box(65,5,1,0,2.5,-18,'concrete','ruin-backwall');for(const[x,z,w,d]of[[-24,-9,16,17],[21,-7,22,20]])k.box(w,.5,d,x,5.4,z,'concrete','broken-roof-slab');for(let i=0;i<48;i++)k.box(1+i%4,.3+i%3*.2,1+i%5,-35+i*23%73,.2,-24+i*41%49,'concrete','rubble');for(let i=0;i<14;i++)k.rod([-30+i*4,4.8,18],[-29+i*4,6.5,17],.08,'rust','exposed-rebar');const physical={units:'metres',localScale:1,modelFloorMetres:[66,36],wallHeightMetres:5,dimensionsSurveyed:false,interpretation:'Photo-guided ruin exhibit, not the complete Site 41 launch complex or a measured R-16 launcher.'};root.userData.physicalUnits=physical;return {...k.finish(),physical};
 }
-export function buranMuseum(root){
- const k=archiveKit(root),body=new THREE.Group();root.add(body);k.box(34,.35,38,0,-.2,0,'green','museum-lawn');k.sphere(1,0,4,0,'white','orbiter-fuselage',[2.9,2.7,12.8],body);k.sphere(1,0,2.65,-.2,'dark','orbiter-belly',[2.85,1.1,12.6],body);k.sphere(1,0,3.6,-11.4,'dark','orbiter-nose-cap',[2,1.65,2.5],body);k.sphere(1,0,5.6,-7.5,'white','cockpit-hump',[2.3,1.5,3.7],body);for(const x of[-1.5,1.5])k.box(1.7,.8,.2,x,6.7,-9.5,'glass','cockpit-glazing',x<0?-.38:.38,body);
- for(const s of[-1,1]){const wing=[[s*2.3,-3],[s*12.7,7],[s*12.9,10],[s*2.5,9.4]];k.poly(wing,3,'dark','orbiter-wing-leading-edge',body);k.poly(wing.map(([x,z])=>[x*.96,z+.16]),3.15,'white','orbiter-delta-wing',body);k.box(.26,2.9,2.5,s*2.35,5.9,-.3,'steel','payload-door-hinge',0,body);k.cyl(.75,.6,s*4,1.1,6.4,'dark','landing-wheel',Math.PI/2,body);k.rod([s*2.5,3,5.5],[s*4,1.2,6.4],.15,'steel','landing-strut',body);}
- k.quad([0,5,5],[0,12,10],[0,12,12],[0,5,12.5],'white','tail-fin',body);k.rod([0,5,5],[0,12,10],.18,'dark','tail-leading-edge',body);for(const[x,y]of[[0,5],[-1.6,3.6],[1.6,3.6]])k.cyl(.85,2,x,y,12.6,'dark','orbiter-engine-nozzle',Math.PI/2,body);k.hall({x:22,z:5,w:18,d:42,h:5,roof:'blue',gates:0,tag:'museum-background-building'});k.path([[9,-7],[5,-7],[3,-7]],2.5,4.6,'concrete','visitors-boarding-ramp');for(let x=3;x<=9;x+=1.2)k.rod([x,4.6,-8.2],[x,5.6,-8.2],.06,'steel','ramp-railing');
- // Dedicated boarding stair to the port-side hatch. This is intentionally
- // separate from the low visitor ramp so the museum Buran reads correctly.
- const stairX=-5.4,stairZ=-5.8,steps=12;
- for(let i=0;i<steps;i++){const t=i/(steps-1);k.box(2.5,.22,.72,stairX,0.22+i*.39,stairZ+5.8*t,'concrete','buran-boarding-step');}
- for(const side of[-1,1]){k.rod([stairX+side*1.15,.4,stairZ],[stairX+side*1.15,5.2,0],.07,'steel','buran-boarding-stair-rail');}
- k.box(3.4,.25,2.4,stairX,5.05,.45,'concrete','buran-boarding-platform');
- for(const side of[-1,1])k.rod([stairX+side*1.55,5.15,-.75],[stairX+side*1.55,6.25,1.55],.07,'steel','buran-platform-railing');
- // Small museum details: landing-gear doors and access service cabinet.
- for(const side of[-1,1])k.box(1.4,.18,3.2,side*4.1,.78,5.2,'dark','buran-main-gear-door');
- k.box(3.8,2.4,1.8,-11,1.2,4,'light','buran-ground-service-cabinet');
- return k.finish();
-}
+export function buranMuseum(root){const result=buildSite2Museum(root);if(typeof window!=='undefined')installSite2Exhibit(root);return result;}
 export function cleanroom(root){
  const k=archiveKit(root);k.box(72,.25,94,0,0,0,'green','cleanroom-floor');k.box(72,29,.7,0,14.5,-47,'light','cleanroom-back-wall');for(const x of[-36,36])k.box(.7,29,94,x,14.5,0,'light','cleanroom-side-wall');for(const x of[-34,34]){k.box(1,1,90,x,24,0,'yellow','crane-runway');for(let z=-40;z<45;z+=12)k.box(.6,28,.6,x,14,z,'concrete','cleanroom-column');}k.box(69,2.2,3,0,25,-9,'yellow','overhead-crane');k.box(5,3,5,3,24,-9,'yellow','crane-trolley');k.rod([3,23,-9],[3,15,-9],.08,'dark','crane-cable');k.cyl(4.8,5,0,3,-6,'steel','spacecraft-service-module');k.sphere(4.5,0,8,-6,'dark','spacecraft-reentry-module',[1,.7,1]);k.sphere(3.5,0,13,-6,'dark','spacecraft-orbital-module');for(const x of[-9,9]){k.box(6,.35,14,x,8,-6,'yellow','assembly-platform');for(const z of[-12,0])k.rod([x,0,z],[x,8,z],.25,'yellow','platform-post');}k.cyl(6.7,16,22,7,16,'light','horizontal-clean-container',Math.PI/2);k.sign('ИНТЕРЬЕР · ФОТОЭТЮД',0,22,-46.5,47,4);return k.finish();
 }

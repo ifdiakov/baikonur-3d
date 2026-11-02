@@ -1,5 +1,5 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261102-m62-v1';
+import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261102-site2-photo-v3';
 export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION;
 const definitions={
  'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
@@ -30,6 +30,7 @@ const definitions={
 };
 export const MODEL_CATALOG=Object.freeze(Object.fromEntries(Object.entries(definitions).map(([id,spec])=>[id,{...spec,id,description:MODEL_FACTS[id].summary,facts:MODEL_FACTS[id]}])));
 const siteModels={
+ 'pad-2':['buran'],
  'pad-90':['cyclone-2','cyclone-pad','cyclone-3'],
  'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','site45','zenit-sea'],
  'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],

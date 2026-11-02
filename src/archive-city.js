@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit,imageFrame} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
 
 // A small set of representative blocks keeps the photo-derived city legible at
 // museum scale. Its real road network is rendered by the OSM transport layer.

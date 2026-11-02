@@ -136,6 +136,6 @@ for(const p of probes)for(const m of models){
  assert(!obstruction,'The road enters '+m.id+' geometry at '+p.toArray()+': '+obstruction?.object.name);
 }
 assert(modelProbes>0,'The actual nearby model geometry must be checked');
-assert.equal(stats.facilityPorts.length,42);assert.equal(stats.facilityRailPorts.length,14);assert.equal(stats.stationCount,36);
+assert.equal(stats.facilityPorts.length,46);assert.equal(stats.facilityRailPorts.length,14);assert.equal(stats.stationCount,36);
 console.log('INDUSTRIAL_ROAD_CONTINUITY_PASS',JSON.stringify({sourceWayId:way.osmId,renderedRuns:visible.length,
  centerSamples,pavementSamples,shoulderSamples,modelProbes,formerMaskSamples:oldMasks.map(m=>({id:m.id,samples:m.samples})),saturnExternalAccess:false}));

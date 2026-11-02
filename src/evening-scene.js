@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js?v=20261101-highway-fog-v1';
-import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightLayoutStats} from './road-lighting.js?v=20261101-highway-fog-v1';
+import {buildRoadLightRecords,filterRoadLightStations,createRoadLightField,roadLightLayoutStats} from './road-lighting.js?v=20261102-site2-photo-v3';
 import {SATURN_ACCESS,saturnTerrainHeight} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 import {buildAirportLightRecords,AIRPORT_LIGHT_LAYOUT_VERSION} from './airport-light-layout.js?v=20261031-rocket-exhibits-v1';
 import {buildFacilityTowerLighting} from './facility-tower-lighting.js?v=20261031-facilities-rails-lighting-v2';
@@ -50,7 +50,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  const down=new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,-1,0));
  function baseAt(x,z,meshes,ceiling){down.ray.origin.set(x,1000,z);return groundQuery.intersections(down,meshes).find(h=>h.point.y<=ceiling)?.point.y??-2.755;}
  for(const o of objects){
-  if(o.type==='air')continue;
+  if(o.type==='air'||o.g.userData.site2Model)continue; // Site 2 uses its ten photo-built lamp fixtures below.
   // Photo-built courtyards provide existing lamp heads. A generic ring of
   // additional poles can otherwise land on the building after a site turn.
   if(o.g.userData.courtyardLightRecords){courtyardLights.push(...o.g.userData.courtyardLightRecords());continue;}

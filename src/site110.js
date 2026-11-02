@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
 import {createSite110IncomingRails} from './site110-incoming-rails.js?v=20261031-facilities-rails-lighting-v5';
 export {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';

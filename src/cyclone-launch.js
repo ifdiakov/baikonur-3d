@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {registerFacilityBeacon,registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 export const CYCLONE_VERSION='cyclone-v1';
 // Metres. Photographic reconstruction of the late operating period, not a

@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
-import {ROAD_LIGHT_STYLES,ROAD_LIGHT_LENS_EMISSION,createRoadFixtureGeometry,createRoadFixtureMaterials,roadFixtureHead} from './road-lighting.js?v=20261031-road-markings-v1';
+import {ROAD_LIGHT_STYLES,ROAD_LIGHT_LENS_EMISSION,createRoadFixtureGeometry,createRoadFixtureMaterials,roadFixtureHead} from './road-lighting.js?v=20261102-site2-photo-v3';
 import {createBridgeApproachPlan,createBridgeEmbankmentGeometry} from './bridge-embankments.js?v=20261031-road-markings-v1';
 
 export const INTERCHANGE_BRIDGE_VERSION='reference-viaduct-v1';

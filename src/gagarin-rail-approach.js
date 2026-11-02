@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {nearestRoadPoint} from './road-layout.js?v=20261031-facilities-rails-lighting-v1';
+import {nearestRoadPoint} from './road-layout.js?v=20261102-site2-photo-v3';
 import {GAGARIN_RAIL_PORT} from './gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {RAIL_PROFILE} from './rail-profile.js?v=20261031-facilities-rails-lighting-v1';

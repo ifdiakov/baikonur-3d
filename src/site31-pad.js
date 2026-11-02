@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {buildSite31Trench} from './site31-trench.js?v=20261028-museum4-osm-live-v2';
 import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';

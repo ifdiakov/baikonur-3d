@@ -32,7 +32,7 @@ for(const record of sites){
   const before=JSON.stringify(record),section=museumCatalogueSection(record);
   assert.ok(Object.hasOwn(groups,section));groups[section].push(record.id);assert.equal(JSON.stringify(record),before,'Grouping does not rewrite the source catalogue');
 }
-assert.equal(groups.sitesAccordion.length,40);assert.equal(groups.infrastructureAccordion.length,58);
+assert.equal(groups.sitesAccordion.length,40);assert.equal(groups.infrastructureAccordion.length,59);
 assert.equal(new Set(Object.values(groups).flat()).size,sites.length,'Every existing displayed site belongs to exactly one catalogue section');
 const expectedLaunch=['pad-1','pad-31','pad-45','pad-81','pad-200','pad-90','pad-250','pad-110','pad-41'];
 const expectedInfrastructure=['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-182','pad-110a','pad-250а','city','pad-130','pad-175'];

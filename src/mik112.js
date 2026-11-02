@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {createSurfacePalette} from './surface-materials.js';
 import {applyMik112PhotoFinishes} from './mik112-materials.js?v=20261031-rocket-exhibits-v1';
 import {MIK112_RAIL_LAYOUT} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v4';

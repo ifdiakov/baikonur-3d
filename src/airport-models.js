@@ -1,10 +1,10 @@
 import {installTu204Cpk} from './tu204-cpk.js?v=20261102-progressive-v1';
-import {buildPua100} from './pua-100.js?v=20261101-pua-v1';
+import {buildPua100} from './pua-100.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {installMriyaExhibit} from './mriya-exhibit.js?v=buran-paint-20261102-v1';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {buildKrayniyTerminal,KRAYNIY_AIRPORT_DISPLAY} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
-import {buildYubileinyAirport,yubileinyDisplaySpec} from './yubileiny-airport.js?v=20261031-facilities-rails-lighting-v5';
+import {buildYubileinyAirport,yubileinyDisplaySpec} from './yubileiny-airport.js?v=20261102-site2-photo-v3';
 export const AIRPORT_SCALE=.28;
 export const AIRPORT_DIMENSIONS={
  // The longest ten-unit display length that keeps the full approach-light

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {adaptUkssRailProfile} from './ukss-rail-profile.js?v=20261031-facilities-rails-lighting-v1';
 

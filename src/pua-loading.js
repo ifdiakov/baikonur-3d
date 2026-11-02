@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {getPuaInstallation,PUA_SPEC} from './pua-100.js?v=20261101-pua-v1';
+import {getPuaInstallation,PUA_SPEC} from './pua-100.js?v=20261102-site2-photo-v3';
 
 export const PUA_PHASES=[
  [0,'Подготовка к подъёму','«Буран» на транспортной опоре. Траверса опускается к точкам крепления.'],

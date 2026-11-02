@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=buran-paint-20261102-v1';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261102-site2-photo-v3';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -29,15 +29,15 @@ export async function createInspectionModel(id,{signal}={}){
  }else if(id==='buran'){
   const [{buildLandingAircraft},source]=await Promise.all([import('./buran-landing-aircraft.js?v=20261101-without-ll22-v1'),gltf('rockets/energia-buran.glb',signal,'buran-paint-20261102-v1')]);const actors=buildLandingAircraft({sourceBuran:source});actors.update({gear:1,airbrake:0});root=actors.buran;owned.push(source);
  }else if(id==='silo'){
-  const {buildSiloPad,siloController}=await import('./silo-pad.js?v=20261031-facilities-rails-lighting-v1');root=new THREE.Group();buildSiloPad(root);const controller=siloController(root);update=(time,camera,target)=>controller.update(time,camera,target);
+  const {buildSiloPad,siloController}=await import('./silo-pad.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildSiloPad(root);const controller=siloController(root);update=(time,camera,target)=>controller.update(time,camera,target);
  }else if(id==='proton-pad'){
-  const {buildProtonPosition,protonPositionController}=await import('./proton-launch.js?v=20261101-proton-launch-v1');root=new THREE.Group();buildProtonPosition(root);setVehicleVisible=protonPositionController(root).setRocketVisible;
+  const {buildProtonPosition,protonPositionController}=await import('./proton-launch.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildProtonPosition(root);setVehicleVisible=protonPositionController(root).setRocketVisible;
  }else if(id==='cyclone-pad'){
-  const {buildCyclonePosition}=await import('./cyclone-launch.js?v=20261101-cyclone-v1');root=new THREE.Group();buildCyclonePosition(root);const rocket=await gltf('rockets/cyclone-2.glb',signal);rocket.position.y=1.38;root.add(rocket);setVehicleVisible=visible=>rocket.visible=!!visible;
+  const {buildCyclonePosition}=await import('./cyclone-launch.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildCyclonePosition(root);const rocket=await gltf('rockets/cyclone-2.glb',signal);rocket.position.y=1.38;root.add(rocket);setVehicleVisible=visible=>rocket.visible=!!visible;
  }else if(id==='pua-100'){
-  const {buildPua100}=await import('./pua-100.js?v=20261101-pua-v1');root=new THREE.Group();buildPua100(root);
+  const {buildPua100}=await import('./pua-100.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildPua100(root);
  }else if(id==='site45'){
-  const {buildSite45}=await import('./site45.js?v=20261101-source-exhibits-v2');root=new THREE.Group();buildSite45(root);
+  const {buildSite45}=await import('./site45.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildSite45(root);
  }
  if(!root)throw new Error('Не удалось собрать модель');
  if(id.startsWith('cyclone-')&&id!=='cyclone-pad'){const parts=[];root.traverse(o=>{if(Number.isFinite(o.userData.inspectionStage))parts.push({o,base:o.position.clone(),stage:o.userData.inspectionStage});});setExploded=enabled=>{for(const {o,base,stage}of parts){o.position.copy(base);if(enabled){if(stage===4){o.position.x+=8;o.position.y+=8;}else o.position.y+=stage*3;}}root.updateMatrixWorld(true);};root.userData.inspectionPrecise=true;}

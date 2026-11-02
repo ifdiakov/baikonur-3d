@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {buildProtonPosition} from './proton-launch.js?v=20261101-proton-launch-v1';
+import {buildProtonPosition} from './proton-launch.js?v=20261102-site2-photo-v3';
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {flamePetal} from './flame-petals.js';
-import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
 function ring(k,x,y,z,r,t=.35,m='steel',tag='ring'){const o=k.direct(new THREE.TorusGeometry(r,t,7,48),m,tag);o.rotation.x=Math.PI/2;o.position.set(x,y,z);return o;}
 // Image coordinates retain the owner's traced layout. The two explicitly named
 // parked service gantries in the stored OSM extract calibrate each image in metres.
@@ -60,4 +60,4 @@ export function soyuz31(root){
  for(const s of[-1,1]){k.lattice(s*22,28,48,7,8,{levels:9,deck:true,material:'green',tag:'soyuz-service-gantry'});for(let y=12;y<46;y+=7){k.box(11,.6,8,s*17,y,26,'green','folding-service-balcony');k.rod([s*22,y+1,21],[s*12,y+1,21],.08,'yellow','service-railing');}}
  for(const[x,z]of[[-70,-48],[70,-48]])k.lattice(x,z,88,5,5,{levels:15,tag:'soyuz-lightning-mast'});k.rail([[0,174],[0,42],[0,3]]);k.path([[-59,139],[-51,57],[-47,-44],[57,-44],[60,133]],6,.1);k.hall({x:61,z:91,w:22,d:40,h:7,roof:'blue',gates:1,tag:'soyuz-service-house'});root.userData.orientationNote='No overhead of Site 31 in the satellite folder; azimuth remains schematic.';return k.finish();
 }
-export {buildSite45 as zenit45} from './site45.js?v=20261101-model-inspector-v1';
+export {buildSite45 as zenit45} from './site45.js?v=20261102-site2-photo-v3';

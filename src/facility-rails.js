@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-cyclone-v1';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
-import {nearestRoadPoint} from './road-layout.js?v=20261031-facilities-rails-lighting-v1';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261102-site2-photo-v3';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
+import {nearestRoadPoint} from './road-layout.js?v=20261102-site2-photo-v3';
 export function buildFacilityRailApproaches({data,point,siteRecords}){
  const replacements=new Map(),extras=[],reports=[];
  const get=id=>data.routes.rail.find(r=>r.id===id),curve=r=>new THREE.CatmullRomCurve3(r.points.map(p=>point(...p,.75+RAIL_PROFILE.headY)),false,'centripetal',.3);

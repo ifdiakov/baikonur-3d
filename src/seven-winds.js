@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {SEVEN_WINDS_VERSION,SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
 export {SEVEN_WINDS_VERSION};
 export const SEVEN_WINDS_REFERENCE=Object.freeze({

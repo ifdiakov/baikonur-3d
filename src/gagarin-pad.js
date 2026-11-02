@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {createSurfacePalette} from './surface-materials.js';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {GAGARIN_LEGACY_METRE,GAGARIN_LEGACY_RIM_Y,GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_PHYSICAL_RAIL_GAUGE,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 export {GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_ROCKET_MOUNT} from './gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 

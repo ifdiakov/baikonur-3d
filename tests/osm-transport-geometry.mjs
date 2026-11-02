@@ -205,7 +205,7 @@ assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','
 for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}
 assert(stats.facilityPorts.length>=6);for(const p of stats.facilityPorts)assert(p.roadGap<1e-7);
-assert.equal(stats.facilityPorts.length,42,'A facility lost its road connection');
+assert.equal(stats.facilityPorts.length,46,'A facility lost its road connection');
 assert.equal(stats.facilityRailPorts.length,14,'A facility lost its rail connection');
 assert.deepEqual(Object.fromEntries(['pad-110','pad-112a','pad-250','pad-31','pad-45'].map(id=>[id,stats.facilityRailPorts.filter(p=>p.id===id).length])),{'pad-110':4,'pad-112a':4,'pad-250':2,'pad-31':1,'pad-45':1});
 // Inspect the entire new curves: zero endpoint gap alone did not catch a

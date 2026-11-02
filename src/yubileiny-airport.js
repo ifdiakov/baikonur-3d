@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {YUBILEINY_SOURCE_LAYOUT,YUBILEINY_SOURCE_ACCESS} from './yubileiny-layout.js?v=20261031-rocket-exhibits-v1';
 
 export const YUBILEINY_VERSION='yubileiny-source-landing-complex-v2';

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {buildMzkHall} from './mzk-hall.js?v=20261031-facilities-rails-lighting-v1';
 import {MZK_SDI_RAIL_STUBS,MZK_SDI_RAIL_PORTS} from './mik112-destination-ports.js?v=20261031-facilities-rails-lighting-v1';
-import {buildSdiStand,sdiController} from './mzk-sdi-stand.js?v=20261102-sdi-energia-m-v1';
+import {buildSdiStand,sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 
 export const MZK_SDI_REFERENCE=Object.freeze({
  version:'mzk-sdi-photo-v3',scale:.14,yaw:-Math.PI/4,
@@ -57,3 +57,5 @@ export function buildMzkSdi(root){
  const fixed=k.finish(),moving=sdiController(root).geometry;
  return {...fixed,features:{...fixed.features,...moving.features},primitiveCount:fixed.primitiveCount+moving.primitiveCount,meshCount:fixed.meshCount+moving.meshCount,batches:fixed.batches+moving.batches,mzkSdi:metadata};
 }
+
+export {sdiController};

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {registerFacilityBeacon,registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {createZenitRocket} from './zenit-rocket.js?v=20261101-model-inspector-v1';
 export const SITE45_VERSION='site45-photo-v2';

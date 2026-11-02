@@ -244,7 +244,7 @@
       "name": "Площадка № 2 — музейный комплекс «Буран»",
       "x": 655,
       "y": 390,
-      "model": "buran-museum-photo-v2",
+      "model": "site2-photo-v3",
       "firstYear": null,
       "status": "label-read",
       "positionBasis": "Коррекция RocketTrip 02.11.2026: между ж/д станцией Северная и Гагаринским стартом",
@@ -252,7 +252,7 @@
         "original-plan-3993x3208",
         "owner-portal-photos"
       ],
-      "note": "Площадка №2 добавлена как отдельный музейный комплекс между ж/д Северная и Гагаринским стартом. Экспонат «Буран» выполнен по архивной папке RocketTrip; положение и архитектурные размеры требуют дальнейшей геодезической сверки.",
+      "note": "Музей истории космодрома, открытая выставка космической и автомобильной техники. «Буран» установлен на транспортных тележках; закрытый белый трап ведёт в правый борт.",
       "purpose": "Музейный комплекс космодрома · экспонат «Буран»",
       "purposeLong": "Музейный комплекс космодрома с полноразмерным экспонатом «Буран»",
       "purposeShort": "Музейный «Буран»",
@@ -268,11 +268,11 @@
       "legacySchematicAnchor": false,
       "archiveModel": {
         "kind": "buran",
-        "version": "pad2-buran-ladder-v2",
+        "version": "20261102-site2-photo-v3",
         "folder": "1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO",
         "orientation": "owner-placement-between-north-station-and-pad1"
       },
-      "publicReferences": [],
+      "publicReferences": ["https://www.360pano.eu/space/baikonur/site2/"],
       "contentSource": "owner-correction-2026-11-02"
     },
     {

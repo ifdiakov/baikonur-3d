@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {nearestRoadPoint} from './road-layout.js?v=20261031-facilities-rails-lighting-v1';
+import {nearestRoadPoint} from './road-layout.js?v=20261102-site2-photo-v3';
 import {buildRoadSurfaces,sampleRoadCurve,joinedRoadCurve} from './road-surface.js?v=20261031-facilities-rails-lighting-v6';
 
 // Two separate overpasses in the southern entrance area of the museum plan.

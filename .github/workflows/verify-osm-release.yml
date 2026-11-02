@@ -1,4 +1,4 @@
-name: Energia–Polyus 1987 launch reconstruction
+name: Site 2 museum and Buran photo reconstruction
 on:
   push:
     branches: [main]
@@ -56,7 +56,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-energia-polyus-19870515-v5
+  RELEASE_TAG: museum-site2-photo-20261102-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -121,6 +121,7 @@ jobs:
           node tests/seven-winds-geometry.mjs
           node tests/mzk-sdi-geometry.mjs
           node tests/sdi-gate-geometry.mjs
+          node tests/site2-geometry.mjs
           node tests/energia-launch-node.mjs
           node tests/ukss-source-model.mjs
           node tests/tua-source-model.mjs
@@ -189,7 +190,7 @@ jobs:
       max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi, energia]
+        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi, energia, site2]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -207,6 +208,9 @@ jobs:
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-preview.log 2>&1 &
           curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Verify the Site 2 museum, source Buran and starboard stairs
+        if: matrix.suite == 'site2'
+        run: node tests/site2-browser.mjs
       - name: Verify the Zenit model, orbit controls and mobile views
         if: matrix.suite == 'zenit'
         run: node tests/zenit-browser.mjs
@@ -335,6 +339,7 @@ jobs:
             qa-silo/
             qa-hotel/
             qa-sdi/
+            qa-site2/
           retention-days: 14
 
   release:
@@ -377,12 +382,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/energia-polyus-19870515-v5.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/site2-photo-20261102-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — запуск «Энергии — Полюс», 15 мая 1987',
+                name: 'Байконур — площадка № 2, музей и «Буран»',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

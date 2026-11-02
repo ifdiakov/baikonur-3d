@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-cyclone-v1';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261102-site2-photo-v3';
 
 export const KAZ_GATE = Object.freeze({x:-67,z:53,scaleX:.29,scaleZ:.48});
 

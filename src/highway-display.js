@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
-import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
+import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 // These distant continuations are scenery, not surveyed roads or OSM edges.
 // Keep them outside the traffic graph and the source attribution/counts.

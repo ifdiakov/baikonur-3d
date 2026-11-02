@@ -3,13 +3,13 @@ import * as THREE from 'three';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
 import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectangleSegmentInterval,clipRoadOutsideRectangle,airportPerimeterBypass} from './exhibit-road-filter.js?v=20261030-river-roads-signs-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
+import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261102-museum10-v1';
-import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261102-site2-photo-v3';
+import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainHeight,saturnTerrainSample} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
-import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261031-facilities-rails-lighting-v2';
+import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261102-site2-photo-v3';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS,highwayRunsOutsideBridge} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
 import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes,fillEnclosedRoadSurfaceVoid} from './road-surface.js?v=20261031-facilities-rails-lighting-v6';
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-facilities-rails-lighting-v2';
@@ -19,7 +19,7 @@ import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-ra
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
 import {railApproachSleeperDistances} from './paired-rail-approach.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite110RailFan} from './site110-rail-fan.js?v=20261031-facilities-rails-lighting-v4';
-import {buildHighwayDisplay} from './highway-display.js?v=20261102-museum10-v1';
+import {buildHighwayDisplay} from './highway-display.js?v=20261102-site2-photo-v3';
 import {smoothRailGraph,graphRailRoutePoints} from './rail-surface.js?v=20261102-rail-scheme-v1';
 import {createRailSchemePlan,RAIL_SCHEME_REFERENCE} from './rail-scheme.js?v=20261102-rail-scheme-v1';
 import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261102-rail-scheme-v1';
@@ -416,7 +416,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const cityMinor=tags=>!streetAllowed(cityRegion,tags);
  function settlementHidden(p,tags,wayId){return !protectedTrafficWays.has(wayId)&&settlements.some(region=>region.contains(p)&&!streetAllowed(region,tags));}
  const masks=new Map();
- for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-250a':22,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-3':24,'pad-2':18,'pad-1':16})){
+ for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-250a':22,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-3':24,'pad-2':21.5,'pad-1':16})){
   const s=siteRecords.find(s=>s.id===id);if(s)masks.set(id,{center:point(s.x,s.y,0),radius});
  }
  const hotelSite=siteRecords.find(s=>s.id==='pad-75');if(hotelSite)masks.set('pad-75',{center:portWorld(FACILITY_PORTS['pad-75'],FACILITY_PORTS['pad-75'].modelOffset,hotelSite,point),yaw:FACILITY_PORTS['pad-75'].yaw,rectangle:{halfX:10.8,minZ:-3.4,maxZ:12.4}});

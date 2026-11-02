@@ -45,7 +45,7 @@ export const FACT_SOURCES=Object.freeze({
  m62History:['В. А. Раков · история М62 и 2М62','https://poezdvl.com/books/rakov/rakov1_17.html'],
  railModel:['Музейный состав · параметры и границы реконструкции','https://github.com/ifdiakov/baikonur-3d/blob/main/src/rail-vehicles.js'],
  silo:['История КБ «Южное» · комплекс Р-36М','https://rvsn.ruzhany.info/kbu_002_03_2.html'],
- siloModel:['Музейная ШПУ · происхождение и границы модели','https://github.com/ifdiakov/baikonur-3d/blob/main/src/silo-pad.js']
+ siloModel:['Музейная ШПУ · происхождение и границы модели','https://github.com/ifdiakov/baikonur-3d/blob/main/src/silo-pad.js?v=20261102-site2-photo-v3']
 });
 const record=(summary,specs,developer,service,activity,facts,sources,note='')=>({summary,specs,developer,service,activity,facts,sources,note});
 export const MODEL_FACTS=Object.freeze({

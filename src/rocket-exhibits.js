@@ -128,3 +128,6 @@ export function createRocketExhibits({onChange=()=>{}}={}){
   return {add,setModel,setVisible,prioritizeSite,get:key=>entries.get(key),whenReady:()=>Promise.all([...entries.values()].map(e=>e.pending)),
     stats:()=>({version:ROCKET_MODEL_VERSION,commonMetre:MUSEUM_METRE,loadedAssetCount:cache.size,placements:[...entries.values()].map(snapshot)})};
 }
+
+// Shared immutable source for derived museum exhibits; avoids another GLB fetch.
+export {loadModel as loadRocketSource};

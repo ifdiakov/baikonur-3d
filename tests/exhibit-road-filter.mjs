@@ -78,7 +78,7 @@ for(const region of simplification.regions){
 }
 const hotel=simplification.regions.find(r=>r.id==='pad-75');
 assert.deepEqual([...hotel.keptWayIds].sort(),['172971509','173082916']);
-assert.equal(stats.facilityPorts.length,42);assert.equal(stats.facilityRailPorts.length,14);assert.equal(stats.stationCount,36);
+assert.equal(stats.facilityPorts.length,46);assert.equal(stats.facilityRailPorts.length,14);assert.equal(stats.stationCount,36);
 for(const port of stats.facilityPorts)assert(port.roadGap<1e-7);
 for(const port of stats.facilityRailPorts)assert(port.headCenterGap<1e-7&&port.networkDatumGap<1e-7);
 const train=transport.trainPath();

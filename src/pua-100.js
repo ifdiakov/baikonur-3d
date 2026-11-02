@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {archiveKit} from './archive-kit.js';
+import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 
 export const PUA_VERSION='pua-100-reference-v1';
 // Photo reconstruction in metres, not measured construction drawings.

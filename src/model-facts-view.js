@@ -1,4 +1,4 @@
-import {FACT_SOURCES} from './model-facts.js?v=20261101-model-facts-v1';
+import {FACT_SOURCES} from './model-facts.js?v=20261102-site2-photo-v3';
 
 // Build with text nodes so catalogue copy and source labels cannot become markup.
 export function renderModelFacts(spec,container,sources){
