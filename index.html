@@ -483,7 +483,7 @@ import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/O
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261031-rocket-exhibits-v1';
-import {installArchiveModels} from './src/archive-models.js?v=20261102-progressive-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261102-silo-height-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261031-facilities-rails-lighting-v1';
@@ -522,7 +522,7 @@ import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-
 import {installModelInspector} from './src/model-inspector.js?v=20261101-tu204-cpk-v1';
 import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261101-tu204-cpk-v1';
 import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261101-bottom-docks-v1';
-import {MUSEUM_METRE} from './src/museum-scale.js?v=20261031-rocket-exhibits-v1';
+import {MUSEUM_METRE,MUSEUM_MAP_SCALE} from './src/museum-scale.js?v=20261102-silo-height-v1';
 import {CYCLONE_MOUNTS} from './src/cyclone-launch.js?v=20261101-cyclone-v1';
 import {SITE41_R16_MOUNT} from './src/site41-profile.js?v=20261101-r16-exhibit-v1';
 import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=20261102-progressive-v1';
@@ -541,7 +541,7 @@ mapAttribution.append(attribution,terrainAttribution);document.body.append(mapAt
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261102-progressive-v1';
+const MUSEUM_REVISION='20261102-silo-height-v1';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
@@ -589,7 +589,7 @@ for(const [id,wayId] of [['airfield',37591623],['pad-251',24949215]]){
 
 // Common display scale for structures on the schematic; geometry stays fully detailed.
 const MODEL_SCALE=0.28;
-const SCENE_SCALE=3.40/1.45;
+const SCENE_SCALE=MUSEUM_MAP_SCALE;
 const cameraAltitude=createCameraAltitude();
 const GAGARIN_SCALE=MUSEUM_METRE;
 const SATURN_SCALE=0.525;
@@ -1779,7 +1779,7 @@ function focus(i){
  loadingButton.hidden=r.id!=='pad-251';loadingButton.style.display=loadingButton.hidden?'none':'block';loadingButton.disabled=!puaLoading?.stats().ready;
  let siloViews=document.getElementById('siloViews');if(!siloViews){siloViews=document.createElement('div');siloViews.id='siloViews';siloViews.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';document.getElementById('description').after(siloViews);}
  siloViews.replaceChildren();siloViews.hidden=o.archive?.kind!=='silo';siloViews.style.display=siloViews.hidden?'none':'flex';
- if(o.archive?.kind==='silo'){for(const [label,view] of [['Вся площадка','all'],['К шахте','close']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectSilo(view,camera,ctl,r.id);siloViews.append(b);}const hint=document.createElement('p');hint.style.cssText='flex-basis:100%;font-size:12px;line-height:1.5;margin:0';hint.textContent='Приблизьтесь к шахте — крышка откроется автоматически.';siloViews.append(hint);}
+ if(o.archive?.kind==='silo'){for(const [label,view] of [['Вся площадка','all'],['К шахте','close']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectSilo(view,camera,ctl,r.id);siloViews.append(b);}const hint=document.createElement('p');hint.style.cssText='flex-basis:100%;font-size:12px;line-height:1.5;margin:0';hint.textContent='Наведите камеру на шахту и опуститесь до H = 8 — крышка откроется автоматически. Выше H = 9 она закроется.';siloViews.append(hint);}
  let hotelViews=document.getElementById('hotelViews');if(!hotelViews){hotelViews=document.createElement('div');hotelViews.id='hotelViews';hotelViews.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';document.getElementById('description').after(hotelViews);}
  hotelViews.replaceChildren();hotelViews.hidden=o.archive?.kind!=='seven-winds';hotelViews.style.display=hotelViews.hidden?'none':'flex';
  if(o.archive?.kind==='seven-winds')for(const [label,view] of [['Весь комплекс','all'],['Фасад','front'],['Двор и беседки','garden'],['Торец · ЦЭНКИ','sign'],['Заезд','access']]){const b=document.createElement('button');b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectHotel(view,camera,ctl);hotelViews.append(b);}

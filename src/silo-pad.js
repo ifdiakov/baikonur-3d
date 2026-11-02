@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {archiveKit} from './archive-kit.js?v=20261031-facilities-rails-lighting-v1';
+import {MUSEUM_MAP_SCALE} from './museum-scale.js?v=20261102-silo-height-v1';
 
 // Exterior museum interpretation of the owner's R-36M references, not a surveyed
 // reconstruction or a working launch mechanism. Only the visible upper cavity is modelled.
@@ -8,7 +9,11 @@ export const SILO_VERSION='museum-silos-v2';
 export const SILO_REFERENCE=Object.freeze({
  sources:['https://rvsn.ruzhany.info/kbu_002_03_2.html','https://habr.com/ru/articles/87341/'],
  interpretation:'Photo-guided exterior; layout, lid animation and white vapour are museum effects.',
- siteId:'pad-109',openingRadius:3.2,openDistance:32,closeDistance:43,openSeconds:3.2,
+ siteId:'pad-109',openingRadius:3.2,openSeconds:3.2,
+ // H and horizontal proximity use map units, independent of exhibit scale.
+ openHeight:8,closeHeight:9,openPlanDistance:32,closePlanDistance:43,overviewHeight:10,
+ // The standalone model viewer has no map-height gauge and keeps local zoom.
+ openDistance:32,closeDistance:43,
  physical:{units:'metres',localScale:1,apronMetres:[24,25],openingDiameterMetres:6.4,
   visibleNoseDiameterMetres:2.84,lidMetres:[8.9,9.8,1.12],dimensionsSurveyed:false,
   interpretation:'Dimensions of the shared museum exterior, not measured dimensions of each catalogued silo or a complete underground launcher.'}
@@ -64,7 +69,7 @@ function createVapour(root){
  return {points,update,count};
 }
 
-export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пусковая установка · пл.'+siteId.slice(4)}={}){
+export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пусковая установка · пл.'+siteId.slice(4),activation='distance'}={}){
  const k=archiveKit(root);root.name=title;
  k.mat.green.color.setHex(0x50664a);k.mat.concrete.color.setHex(0xaaa89a);k.mat.dark.color.setHex(0x242b28);
  // Concrete apron has a real central opening; the map terrain uses the same void.
@@ -123,8 +128,8 @@ export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пус
  for(const x of [-4,4])k.box(.28,2.8,.28,x,1.4,25,'concrete','gate-post');
  for(const side of [-1,1]){k.box(3.8,1.3,.09,side*5.8,1.0,25,'green','folded-gate');k.box(.24,3.2,.24,side*8,1.6,21,'steel','site-light-pole');k.box(.8,.17,.45,side*8,3.2,21,'white','site-lamp');}
  k.cutouts.push({x:0,z:0,rx:3.24,rz:3.24,shape:'ellipse',compactCircle:true});
- const features=k.finish(),vapour=createVapour(root),localCamera=V(),localTarget=V(),a=V(),b=V(),direction=V(),up=V(0,1,0);
- let progress=0,wanted=false,lastTime=null,distance=Infinity,aimDistance=Infinity,vapourAmount=0;
+ const features=k.finish(),vapour=createVapour(root),localCamera=V(),localTarget=V(),worldCenter=V(),a=V(),b=V(),direction=V(),up=V(0,1,0);
+ let progress=0,wanted=false,lastTime=null,distance=Infinity,aimDistance=Infinity,cameraHeight=Infinity,planDistance=Infinity,vapourAmount=0;
  function pose(){
   const eased=smooth(progress);hinge.rotation.x=-THREE.MathUtils.degToRad(108)*eased;
   hinge.updateMatrix();
@@ -137,16 +142,36 @@ export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пус
   update(now,camera,target){
    root.updateWorldMatrix(true,false);localCamera.copy(camera.position);root.worldToLocal(localCamera);localTarget.copy(target);root.worldToLocal(localTarget);
    distance=localCamera.distanceTo(V(0,.8,0));aimDistance=Math.hypot(localTarget.x,localTarget.z);
+   cameraHeight=camera.position.y/MUSEUM_MAP_SCALE;worldCenter.setFromMatrixPosition(root.matrixWorld);
+   planDistance=Math.hypot(camera.position.x-worldCenter.x,camera.position.z-worldCenter.z)/MUSEUM_MAP_SCALE;
    const shown=visible(root),dt=lastTime===null?0:THREE.MathUtils.clamp((now-lastTime)/1000,0,.12);lastTime=now;
    const previous=progress;
-   if(!shown){wanted=false;progress=0;}else if(!wanted&&distance<SILO_REFERENCE.openDistance&&aimDistance<12)wanted=true;else if(wanted&&(distance>SILO_REFERENCE.closeDistance||aimDistance>18))wanted=false;
+   if(!shown){wanted=false;progress=0;}
+   else if(!wanted&&aimDistance<12&&(activation==='height'
+    ?cameraHeight<=SILO_REFERENCE.openHeight+1e-9&&planDistance<SILO_REFERENCE.openPlanDistance
+    :distance<SILO_REFERENCE.openDistance))wanted=true;
+   else if(wanted&&(aimDistance>18||(activation==='height'
+    ?cameraHeight>SILO_REFERENCE.closeHeight+1e-9||planDistance>SILO_REFERENCE.closePlanDistance
+    :distance>SILO_REFERENCE.closeDistance)))wanted=false;
    const step=dt/SILO_REFERENCE.openSeconds;progress=THREE.MathUtils.clamp(progress+(wanted?step:-step),0,1);
-   if(detail.visible&&distance>300)detail.visible=false;else if(!detail.visible&&distance<260)detail.visible=true;proxy.visible=!detail.visible;
+   // An opening/closing lid must never be hidden behind the closed far proxy.
+   if(wanted||progress>0)detail.visible=true;
+   else if(detail.visible&&distance>300)detail.visible=false;
+   else if(!detail.visible&&distance<260)detail.visible=true;
+   proxy.visible=!detail.visible;
    if(progress!==previous)pose();
    vapourAmount=shown?smooth((progress-.12)/.60):0;vapour.update(now/1000,vapourAmount);
   },
-  inspect(view,camera,controls){root.updateWorldMatrix(true,false);const near=view==='close';controls.target.copy(root.localToWorld(V(0,near?.8:1,0)));camera.position.copy(root.localToWorld(near?V(9,19,18):V(66,74,82)));controls.update();},
-  stats(){return {version:SILO_VERSION,siteId,detailVisible:detail.visible,progress,open:wanted,state:progress===0?'closed':progress===1?'open':wanted?'opening':'closing',lidAngleDeg:108*smooth(progress),cameraDistance:distance,aimDistance,steamVisible:vapour.points.visible,steamParticles:vapour.points.visible?vapour.count:0,noseTipY:.70,rimY:.87,openingRadius:3.2,visible:visible(root),features:{...features.features,...lidFeatures.features}};}
+  inspect(view,camera,controls){
+   root.updateWorldMatrix(true,false);const near=view==='close';controls.target.copy(root.localToWorld(V(0,near?.8:1,0)));
+   camera.position.copy(root.localToWorld(near?V(9,19,18):V(66,74,82)));
+   if(activation==='height'&&!near&&camera.position.y<SILO_REFERENCE.overviewHeight*MUSEUM_MAP_SCALE){
+    direction.copy(camera.position).sub(controls.target);
+    camera.position.copy(controls.target).addScaledVector(direction,(SILO_REFERENCE.overviewHeight*MUSEUM_MAP_SCALE-controls.target.y)/direction.y);
+   }
+   controls.update();
+  },
+  stats(){return {version:SILO_VERSION,siteId,activation,detailVisible:detail.visible,progress,open:wanted,state:progress===0?'closed':progress===1?'open':wanted?'opening':'closing',lidAngleDeg:108*smooth(progress),cameraDistance:distance,cameraHeight,planDistance,aimDistance,steamVisible:vapour.points.visible,steamParticles:vapour.points.visible?vapour.count:0,noseTipY:.70,rimY:.87,openingRadius:3.2,visible:visible(root),features:{...features.features,...lidFeatures.features}};}
  };
  const detail=new THREE.Group();detail.name='ШПУ · подробная модель';for(const child of [...root.children])detail.add(child);root.add(detail);shareGeometry(detail);
  const proxy=createFarSilo();root.add(proxy);detail.visible=false;proxy.visible=true;

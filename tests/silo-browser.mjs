@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {SILO_SITE_IDS} from '../src/silo-sites.js';
+import {MUSEUM_MAP_SCALE} from '../src/museum-scale.js';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 const out='qa-silo',prefix=process.env.QA_PREFIX||'local';await mkdir(out,{recursive:true});
@@ -12,6 +13,19 @@ await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);le
 // Synthetic silo-only ticks must not hide navigation/scale regressions.
 async function advance(seconds=4){return page.evaluate(seconds=>{window.__SILO_FRAME();const q=window.__BAIKONUR_QA,start=performance.now();q.silo.update(start);for(let i=1;i<=seconds*60;i++)q.silo.update(start+i*1000/60);window.__SILO_FRAME();return q.silo.stats()[0];},seconds);}
 async function screenshot(name){await page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:180000});}
+// Cross the H threshold through real OrbitControls wheel input. Exact H=8 is
+// covered by the controller tests; the tiny margin here allows native wheel
+// event quantization while the visible gauge still reads 8.0.
+async function wheelToHeight(height){
+ const camera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState()),y=height*MUSEUM_MAP_SCALE;
+ const ratio=(y-camera.target[1])/(camera.position[1]-camera.target[1]);
+ await page.mouse.move(820,510);await page.mouse.wheel(0,-100*Math.log(ratio)/Math.log(.95));
+ await page.waitForFunction(y=>Math.abs(window.__BAIKONUR_QA.cameraState().position[1]-y)<1e-4,y);
+ const silo=await advance(.25),gauge=Number(await page.locator('#cameraAltitude').getAttribute('data-height'));
+ assert(Math.abs(silo.cameraHeight-height)<1e-4,'The controller uses the rendered camera height');
+ assert.equal(gauge,Number(silo.cameraHeight.toFixed(1)),'The trigger and visible gauge share H units');
+ return {height:silo.cameraHeight,gauge,state:silo.state,detail:silo.detailVisible};
+}
 try{
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/?view=silo',{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.silo?.stats()[0],null,{timeout:180000});
@@ -20,6 +34,16 @@ try{
  assert(await page.getByRole('button',{name:'К шахте',exact:true}).isVisible());
  assert.equal((await advance()).state,'closed');await screenshot('closed');
  await page.evaluate(()=>window.__BAIKONUR_QA.setLabelsVisible(false));
+ await page.locator('#close').click();
+ const heights=[];
+ heights.push(await wheelToHeight(8.1));assert.equal(heights.at(-1).state,'closed');
+ heights.push(await wheelToHeight(8-1e-5));assert.equal(heights.at(-1).state,'opening');assert(heights.at(-1).detail);assert.equal(heights.at(-1).gauge,8);
+ await screenshot('height-8-opening');await advance(4);
+ heights.push(await wheelToHeight(8.5));assert.equal(heights.at(-1).state,'open','The open lid remains stable above H=8');
+ heights.push(await wheelToHeight(9.1));assert.equal(heights.at(-1).state,'closing');assert(heights.at(-1).detail,'Closing remains visible beyond the far LOD threshold');
+ await advance(4);heights.push(await wheelToHeight(8.5));assert.equal(heights.at(-1).state,'closed','A closed lid waits until H=8');
+ console.log('SILO_HEIGHT_BROWSER_PASS',JSON.stringify({prefix,heights}));
+ await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-109');window.__SILO_FRAME();});
  await page.getByRole('button',{name:'К шахте',exact:true}).click();
  await page.locator('#close').click();
  const moving=await advance(1);assert.equal(moving.state,'opening');assert(moving.lidAngleDeg>0&&moving.lidAngleDeg<108);
@@ -59,5 +83,5 @@ try{
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{window.__BAIKONUR_QA.hotel.inspect('all');window.__SILO_FRAME();});await screenshot('hotel-mobile');
  const state=await page.evaluate(()=>({silo:window.__BAIKONUR_QA.silo.stats()[0],site:window.__BAIKONUR_QA.siteState('pad-109'),shaders:window.__BAIKONUR_QA.stats().shadersValid,voids:window.__BAIKONUR_QA.stats().terrainVoids.count}));
  assert(state.shaders);assert.deepEqual(errors,[]);
- await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,opened,closest,mobile,checked,hotel,state,errors},null,2));console.log('SILO_BROWSER_PASS',JSON.stringify({prefix,sites:checked.length,hotelGazebos:hotel.gazebos,openAngle:opened.lidAngleDeg,closestDistance:closest.cameraDistance,errors}));
+ await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,heights,opened,closest,mobile,checked,hotel,state,errors},null,2));console.log('SILO_BROWSER_PASS',JSON.stringify({prefix,sites:checked.length,hotelGazebos:hotel.gazebos,openAngle:opened.lidAngleDeg,closestDistance:closest.cameraDistance,errors}));
 }catch(e){await screenshot('failure').catch(()=>{});console.error(JSON.stringify({error:e.message,errors}));throw e;}finally{await browser.close();}

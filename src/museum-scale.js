@@ -2,5 +2,7 @@
 // compresses long distances; every metric rocket/launch complex uses this one
 // uniform factor. No focus-dependent enlargement or per-rocket fitting.
 export const MUSEUM_METRE=.14;
+// Camera-height H and map hierarchy share these normalized scene units.
+export const MUSEUM_MAP_SCALE=3.4/1.45;
 export const MUSEUM_SCALE_VERSION='physical-exhibits-v1';
 

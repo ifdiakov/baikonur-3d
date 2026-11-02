@@ -5,7 +5,7 @@ import {SITE41_R16_MOUNT} from '../src/site41-profile.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-rocket-exhibits';
-const revision='20261102-progressive-v1';
+const revision='20261102-silo-height-v1';
 const expected={
  'cyclone-0':['pad-90','cyclone-2'],'cyclone-1':['pad-90','cyclone-2'],gagarin:['pad-1','soyuz'],site31:['pad-31','soyuz'],site41:['pad-41','r16'],ukss:['pad-250','energia-polyus'],
  site110:['pad-110','energia-buran'],'mik112-hall':['pad-112','energia-buran'],

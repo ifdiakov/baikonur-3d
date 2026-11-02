@@ -6,7 +6,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 // Only frame scheduling is controlled; every deliberate frame is real WebGL.
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
-const revision='20261102-progressive-v1';
+const revision='20261102-silo-height-v1';
 const welcome='Добро пожаловать на космодром Байконур первый в истории и крупнейший на планете космическая гавань человечества';
 const slogan='КОСМОС НАЧИНАЕТСЯ С НАЗЕМКИ';
 const launchStatusCount=20,finalLaunchStep=launchStatusCount-1,lastLoadingLaunchStep=finalLaunchStep-1;

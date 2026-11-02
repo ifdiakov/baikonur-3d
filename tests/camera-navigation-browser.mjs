@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-camera-navigation';
-const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261102-progressive-v1';
+const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261102-silo-height-v1';
 const origin=new URL(base).origin,groundY=-2.755;
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],views:[],cycles:[],inputs:[]};
 await mkdir(out,{recursive:true});
