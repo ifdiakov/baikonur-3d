@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v3';
+export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v4';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
@@ -106,7 +106,7 @@ function createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point
   const [x,y]=toXY(p.x,p.z);
   const fade=ctx.createRadialGradient(x,y,radius*unit,x,y,(radius+12)*unit);
   fade.addColorStop(0,'#000000');fade.addColorStop(1,'#ffffff');
-  ctx.save();ctx.beginPath();ctx.arc(x,y,(radius+12)*unit,0,Math.PI*2);
+  ctx.save();ctx.globalCompositeOperation='darken';ctx.beginPath();ctx.arc(x,y,(radius+12)*unit,0,Math.PI*2);
   ctx.clip();ctx.fillStyle=fade;ctx.fillRect(x-radius*unit-15,y-radius*unit-15,
    2*(radius*unit+15),2*(radius*unit+15));ctx.restore();
  };
