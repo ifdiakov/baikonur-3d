@@ -1,0 +1,46 @@
+name: Optimize preloader gallery
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'assets/preloader/_source-04.webp'
+      - '.github/workflows/optimize-preloader.yml'
+permissions:
+  contents: write
+concurrency:
+  group: optimize-preloader-gallery
+  cancel-in-progress: true
+jobs:
+  optimize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Pillow
+        run: python3 -m pip install --quiet Pillow
+      - name: Optimize gallery WebP files
+        run: |
+          cp assets/preloader/_source-04.webp assets/preloader/antenna-v1.webp
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          for name in ['soyuz-v1.webp','energia-v1.webp','railway-v1.webp','antenna-v1.webp']:
+              p=Path('assets/preloader')/name
+              im=Image.open(p).convert('RGBA')
+              if im.width>1152:
+                  h=round(im.height*1152/im.width)
+                  im=im.resize((1152,h),Image.Resampling.LANCZOS)
+              im.save(p,'WEBP',quality=76,method=4,exact=True)
+              print(name, p.stat().st_size, im.size)
+          PY
+      - name: Commit optimized runtime images
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/preloader/soyuz-v1.webp assets/preloader/energia-v1.webp assets/preloader/railway-v1.webp assets/preloader/antenna-v1.webp
+          if git diff --cached --quiet; then
+            echo "Nothing to optimize"
+            exit 0
+          fi
+          git commit -m "Optimize preloader gallery WebP assets"
+          git push

@@ -59,7 +59,8 @@
   var imageCursor = 0;
   var presentationTick = 0;
   var presentationTimer = null;
-  var pendingImage = null;
+  var galleryPreloadTimer = null;
+  var galleryPreloadIdle = null;
   var activeStage = 0;
   var stageStartedAt = performance.now();
   var visualProgress = 0;
@@ -119,57 +120,77 @@
   function stopPresentation() {
     if (presentationTimer !== null) window.clearTimeout(presentationTimer);
     presentationTimer = null;
-    if (pendingImage) {
-      var pending = pendingImage;
-      pendingImage = null;
-      pending.cleanup();
-      // Removing an inactive source lets the browser abandon a decorative
-      // request. A late decode promise cannot change the visible slide.
-      pending.image.removeAttribute('src');
-    }
+    if (galleryPreloadTimer !== null) window.clearTimeout(galleryPreloadTimer);
+    galleryPreloadTimer = null;
+    if (galleryPreloadIdle !== null && 'cancelIdleCallback' in window) window.cancelIdleCallback(galleryPreloadIdle);
+    galleryPreloadIdle = null;
+  }
+
+  function ensureImageReady(index) {
+    var image = images[index];
+    if (!image) return Promise.resolve(false);
+    if (image.complete && image.naturalWidth > 0) return Promise.resolve(true);
+    if (image._preloaderReady) return image._preloaderReady;
+    var source = image.dataset.src || image.getAttribute('src');
+    if (!source) return Promise.resolve(false);
+    if (!image.dataset.src) image.dataset.src = source;
+    image.decoding = 'async';
+    image.fetchPriority = index === 0 ? 'high' : 'low';
+    image._preloaderReady = new Promise(function (resolve) {
+      var settled = false;
+      function cleanup() {
+        image.removeEventListener('load', loaded);
+        image.removeEventListener('error', failedImage);
+      }
+      function finish(value) {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(value);
+      }
+      function decoded() {
+        finish(image.naturalWidth > 0);
+      }
+      function loaded() {
+        if (typeof image.decode === 'function') image.decode().then(decoded, decoded);
+        else decoded();
+      }
+      function failedImage() {
+        image._preloaderReady = null;
+        image.removeAttribute('src');
+        finish(false);
+      }
+      image.addEventListener('load', loaded, { once: true });
+      image.addEventListener('error', failedImage, { once: true });
+      image.src = source;
+      if (image.complete) loaded();
+    });
+    return image._preloaderReady;
+  }
+
+  function preloadFollowingImage(delay) {
+    if (images.length < 2 || motionPaused() || finishing || destroyed) return;
+    if (galleryPreloadTimer !== null) window.clearTimeout(galleryPreloadTimer);
+    galleryPreloadTimer = window.setTimeout(function () {
+      galleryPreloadTimer = null;
+      var work = function () {
+        galleryPreloadIdle = null;
+        ensureImageReady((imageCursor + 1) % images.length);
+      };
+      if ('requestIdleCallback' in window) galleryPreloadIdle = window.requestIdleCallback(work, { timeout: 1200 });
+      else work();
+    }, Math.max(0, delay || 0));
   }
 
   function advanceImage() {
-    if (images.length < 2 || pendingImage || motionPaused() || finishing) return;
-    imageCursor = (imageCursor + 1) % images.length;
-    var index = imageCursor;
-    var image = images[index];
-    if (image.complete && image.naturalWidth > 0) {
+    if (images.length < 2 || motionPaused() || finishing) return;
+    var index = (imageCursor + 1) % images.length;
+    ensureImageReady(index).then(function (ready) {
+      if (!ready || motionPaused() || finishing || destroyed) return;
+      imageCursor = index;
       showImage(index);
-      return;
-    }
-    var source = image.dataset.src || image.getAttribute('src');
-    if (!source) return;
-    if (!image.dataset.src) image.dataset.src = source;
-    var pending = { image: image, cleanup: cleanup };
-    pendingImage = pending;
-    function cleanup() {
-      image.removeEventListener('load', loaded);
-      image.removeEventListener('error', failedImage);
-    }
-    function ready() {
-      if (pendingImage !== pending) return;
-      pendingImage = null;
-      cleanup();
-      if (!motionPaused() && !finishing && image.naturalWidth > 0) showImage(index);
-    }
-    function failedImage() {
-      if (pendingImage !== pending) return;
-      pendingImage = null;
-      cleanup();
-      image.removeAttribute('src');
-      // Keep the last successful picture; the next tick tries another image.
-    }
-    function loaded() {
-      cleanup();
-      if (typeof image.decode === 'function') image.decode().then(ready, failedImage);
-      else ready();
-    }
-    image.addEventListener('load', loaded);
-    image.addEventListener('error', failedImage);
-    image.decoding = 'async';
-    image.fetchPriority = 'low';
-    image.src = source;
+      preloadFollowingImage(650);
+    });
   }
 
   function schedulePresentation() {
@@ -301,6 +322,10 @@
   function animateProgress(now) {
     progressFrame = null;
     if (!canAnimateProgress()) { stopProgress(); return; }
+    if (progressLastTime && now - progressLastTime < 33 && !finishing) {
+      progressFrame = window.requestAnimationFrame(animateProgress);
+      return;
+    }
     if (finishing) {
       var fraction = progressFinishDuration > 0 ? Math.min(1, Math.max(0,
         (now - progressFinishStartedAt) / progressFinishDuration)) : 1;
@@ -445,7 +470,10 @@
     syncMotion();
     syncProgress();
     if (motionPaused() || finishing) stopPresentation();
-    else schedulePresentation();
+    else {
+      schedulePresentation();
+      preloadFollowingImage(1000);
+    }
     if (reducedMotion) {
       showFeature(0);
       showImage(0);
