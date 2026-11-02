@@ -104,7 +104,7 @@ try{
  evidence.statsCycles=statsCycles;if(statsCycles.length)console.log('ROCKET_STATS_CYCLES',JSON.stringify(statsCycles));
  const serializable=await page.evaluate(()=>{try{JSON.stringify(window.__BAIKONUR_QA.stats());return true;}catch(error){return error.message;}});assert.equal(serializable,true,'Public QA statistics serialize without scene handles');
  const initial=await page.evaluate(()=>({rocket:window.__BAIKONUR_QA.rockets.stats(),knowledge:window.__BAIKONUR_QA.knowledge(),clearance:window.__BAIKONUR_QA.clearance(),stats:window.__BAIKONUR_QA.stats()}));
- checkScale(initial.rocket);assert.equal(initial.rocket.loadedAssetCount,5);
+ checkScale(initial.rocket);assert.equal(initial.rocket.loadedAssetCount,new Set(Object.values(expected).map(p=>p[1])).size);
  assert.deepEqual(Object.fromEntries(initial.rocket.placements.map(p=>[p.key,[p.siteId,p.modelId]])),expected);
  assert.equal(new Set(initial.rocket.placements.map(p=>p.modelId)).size,new Set(Object.values(expected).map(p=>p[1])).size);
  assert(initial.rocket.placements.every(p=>p.visible));
