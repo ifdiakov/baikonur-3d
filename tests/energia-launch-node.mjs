@@ -35,3 +35,8 @@ assert.equal(sampleEnergiaLaunch(0).ground.umbilicals,'РАССТЫКОВАНЫ'
 assert.ok(sampleEnergiaLaunch(-10).ground.water==='ПОДАЧА');
 assert.equal(sampleEnergiaLaunch(467.6).engines.rd0120,'ВЫКЛ');
 assert.equal(sampleEnergiaLaunch(145.9).engines.rd170,'ВЫКЛ');
+
+// Low frame rate must not slow the actual T+ clock; visibility resets the
+// previous timestamp separately in the browser controller.
+assert.equal(advanceEnergiaClock(0,1.2,8,1),1.2);
+assert.equal(advanceEnergiaClock(-2,1.2,8,1),.95);

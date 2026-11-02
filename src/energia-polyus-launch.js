@@ -530,7 +530,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
    if(!active)return;
    if(lastNow!==null&&!paused&&!document.hidden){
     const previous=seconds;
-    seconds=advanceEnergiaClock(seconds,Math.min(.25,Math.max(0,(now-lastNow)/1000)),speed,speed);
+    seconds=advanceEnergiaClock(seconds,Math.max(0,(now-lastNow)/1000),speed,speed);
     if(previous<0&&seconds>=0){speed=1;$('energiaSpeed').value='1';}
    }
    lastNow=now;if(seconds>=ENERGIA_LAUNCH_END)paused=true;
