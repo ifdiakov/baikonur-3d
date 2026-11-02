@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v1';
+export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v2';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
@@ -165,8 +165,38 @@ function makePebbles({bounds,mask,heightAt,root}){
  stones.count=accepted;
  stones.instanceMatrix.needsUpdate=true;
  if(stones.instanceColor)stones.instanceColor.needsUpdate=true;
- stones.visible=false;root.add(stones);
+ stones.renderOrder=5;stones.visible=false;root.add(stones);
  return {stones,accepted};
+}
+// A small number of low, desaturated steppe shrubs share one draw call.
+function makeSparseShrubs({bounds,mask,heightAt,root}){
+ const geometry=new THREE.IcosahedronGeometry(1,0);
+ const material=new THREE.MeshStandardMaterial({
+  color:0x938b68,roughness:1,transparent:true,depthWrite:false,opacity:0
+ });
+ const max=260,mesh=new THREE.InstancedMesh(geometry,material,max);
+ mesh.name='Пилот грунта · редкий степной кустарник';
+ mesh.userData.pickable=false;mesh.castShadow=false;mesh.frustumCulled=false;
+ const dummy=new THREE.Object3D(),color=new THREE.Color();
+ let count=0;
+ for(let i=0;i<max*9&&count<max;i++){
+  const x=bounds.minX+hash(i,113,73)*worldMaskSize;
+  const z=bounds.minZ+hash(i,131,71)*worldMaskSize;
+  if(mask.pixelAt(x,z)<.94||hash(i,17,79)<.35)continue;
+  const y=heightAt(x,z);
+  if(!Number.isFinite(y))continue;
+  const width=.18+hash(i,23,83)*.25,height=.08+hash(i,31,89)*.20;
+  dummy.position.set(x,y+.05+height*.4,z);
+  dummy.rotation.set(0,hash(i,37,97)*Math.PI*2,0);
+  dummy.scale.set(width,height,width*(.7+hash(i,41,101)*.5));
+  dummy.updateMatrix();mesh.setMatrixAt(count,dummy.matrix);
+  color.setRGB(.55+hash(i,53,107)*.13,.52+hash(i,59,109)*.13,.37+hash(i,61,113)*.11);
+  mesh.setColorAt(count,color);count++;
+ }
+ mesh.count=count;mesh.instanceMatrix.needsUpdate=true;
+ if(mesh.instanceColor)mesh.instanceColor.needsUpdate=true;
+ mesh.renderOrder=5;mesh.visible=false;root.add(mesh);
+ return {mesh,count};
 }
 export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,transport,point,terrainRelief,steppeSurface,sceneScale=3.4}){
  const g=siteRecords.find(item=>item.id==='pad-1'),s=siteRecords.find(item=>item.id==='pad-2');
@@ -204,6 +234,7 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
  terrain.renderOrder=4;terrain.receiveShadow=true;
  terrain.visible=false;terrain.userData.pickable=false;root.add(terrain);
  const {stones,accepted}=makePebbles({bounds,mask,heightAt:terrainRelief.heightAt,root});
+ const {mesh:shrubs,count:shrubCount}=makeSparseShrubs({bounds,mask,heightAt:terrainRelief.heightAt,root});
  scene.add(root);
  let altitude=-1,strength=0,stonesStrength=0;
  function update(){
@@ -219,12 +250,13 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
   stonesStrength=tiny;
   stones.visible=tiny>.015;
   stones.material.opacity=tiny;
+  shrubs.visible=tiny>.03;shrubs.material.opacity=tiny*.86;
   altitude=height;
  }
  update();
  return {update,stats:()=>({version:GAME_TERRAIN_VERSION,active:terrain.visible,
   height:altitude,blend:strength,stonesBlend:stonesStrength,
-  stones:accepted,triangles:terrain.geometry.index.count/3,
+  stones:accepted,shrubs:shrubCount,triangles:terrain.geometry.index.count/3,
   geometry:'DEM-aligned mesh',material:'PBR MeshStandardMaterial',
   textures:['grain','normal','roughness'],satellitePreserved:true,
   clearance:'launch pads, roads and rails are left visible',
