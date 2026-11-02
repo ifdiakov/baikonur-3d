@@ -15,6 +15,7 @@ import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes,fillEnclosedRoadSurfaceV
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-facilities-rails-lighting-v2';
 import {buildRoadMarkings} from './road-markings.js?v=20261031-facilities-rails-lighting-v6';
 import {smoothLocalRoadGraph,createAccessTransition} from './access-transitions.js?v=20261031-facilities-rails-lighting-v3';
+import {planGagarinSite2Road,GAGARIN_APPROACH_WAY_ID,GAGARIN_NORTH_FORK_WAY_ID} from './gagarin-site2-road.js?v=20261103-site2-road-v4';
 import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
 import {railApproachSleeperDistances} from './paired-rail-approach.js?v=20261031-facilities-rails-lighting-v4';
@@ -466,9 +467,18 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // Only the local display is simplified. The source road graph remains untouched.
  const gagarinAccessCentre=siteRecords.find(s=>s.id==='pad-1');
  const site2AccessCentre=siteRecords.find(s=>s.id==='pad-2');
- const inGagarinAccessZone=p=>gagarinAccessCentre&&
-  Math.hypot(p.x-point(gagarinAccessCentre.x,gagarinAccessCentre.y,0).x,
-             p.z-point(gagarinAccessCentre.x,gagarinAccessCentre.y,0).z)<138;
+ const gagarinZonePoint=gagarinAccessCentre?point(gagarinAccessCentre.x,gagarinAccessCentre.y,0):null;
+ const inGagarinAccessZone=p=>gagarinZonePoint&&Math.hypot(p.x-gagarinZonePoint.x,p.z-gagarinZonePoint.z)<138;
+ function isRedundantGagarinWay(way){
+  // Remove short local service webs as whole source ways, not broken stubs.
+  if(!gagarinZonePoint||[GAGARIN_APPROACH_WAY_ID,GAGARIN_NORTH_FORK_WAY_ID].includes(way.osmId)
+   ||protectedTrafficWays.has(way.osmId)||way.tags.name||way.tags.ref
+   ||way.tags.bridge||way.tags.tunnel||way.tags.destination)return false;
+  if(!['service','track','residential','living_street','unclassified'].includes(way.tags.highway))return false;
+  const nodes=way.segments.flatMap(edge=>[edge.a,edge.b]),total=way.segments.reduce((sum,edge)=>sum+edge.length,0);
+  const distance=node=>Math.hypot(node.position.x-gagarinZonePoint.x,node.position.z-gagarinZonePoint.z);
+  return total<225&&nodes.some(node=>distance(node)<155)&&nodes.every(node=>distance(node)<275);
+ }
  const localAccessMinor=tags=>['service','track','residential','living_street'].includes(tags.highway);
  const sitePoint=id=>{const s=siteRecords.find(s=>s.id===id);return point(s.x,s.y,.72);};
  const majorNode=n=>n.edges.some(e=>MAIN.has(e.tags.highway?.replace('_link','')));
@@ -582,7 +592,26 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   }
   return runs.map(run=>run.map(krayniyWorld));
  }
+ // Main access uses its actual OSM centreline, ending at the model forecourt.
+ let gagarinApproach=null,gagarinRoadReport={status:'unavailable'};
+ const sourceGagarinWay=roadGraph.ways.find(way=>way.osmId===GAGARIN_APPROACH_WAY_ID);
+ if(sourceGagarinWay&&gagarinAccessCentre&&site2AccessCentre){
+  try{
+   const spec=FACILITY_PORTS['pad-2'],yaw=site2AccessCentre.runtimeYaw??spec.yaw;
+   const gate=portWorld({...spec,yaw},spec.road,site2AccessCentre,point);
+   gagarinApproach=planGagarinSite2Road({
+    sourcePoints:[sourceGagarinWay.segments[0].a.position,...sourceGagarinWay.segments.map(edge=>edge.b.position)],
+    gagarin:point(gagarinAccessCentre.x,gagarinAccessCentre.y,0),
+    site2:point(site2AccessCentre.x,site2AccessCentre.y,0),
+    site2Gate:gate,metre:MUSEUM_METRE
+   });
+  }catch(error){
+   gagarinRoadReport={status:'fallback',error:String(error?.message||error)};
+   console.warn('Gagarin access reverts to OSM source:',error);
+  }
+ }
  for(const way of roadGraph.ways){
+  if((gagarinApproach&&way.osmId===GAGARIN_APPROACH_WAY_ID)||isRedundantGagarinWay(way))continue;
   const major=MAIN.has(way.tags.highway?.replace('_link',''))||way.tags.highway==='unclassified',points=[];
   const visibleRuns=[];
   for(const region of settlements)if(way.segments.some(e=>region.contains(e.a.position)||region.contains(e.b.position)||region.contains(e.a.position.clone().lerp(e.b.position,.5)))){
@@ -619,42 +648,43 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(!n.edges.some(e=>isHighwayRoad(e.tags))){shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);}
   junctionCount++;
  }
- // A single continuous museum access road replaces the fragmented service web
- // around the Gagarin apron; branch once to the relocated Site 2.
- if(gagarinAccessCentre&&site2AccessCentre){
-  const g=point(gagarinAccessCentre.x,gagarinAccessCentre.y,.72);
-  const p2=point(site2AccessCentre.x,site2AccessCentre.y,.72);
-  let entrance=null;
-  for(const way of roadGraph.ways){
-   if(!['unclassified','tertiary','secondary','primary','service'].includes(way.tags.highway))continue;
-   for(const edge of way.segments){
-    if(!edgeKept(roadGraph,edge))continue;
-    for(const p of [edge.a.position,edge.b.position]){
-     const d=Math.hypot(p.x-g.x,p.z-g.z);
-     if(d<125||d>225)continue;
-     const westPreference=p.x<g.x?0:45;
-     const score=Math.abs(d-155)+westPreference+Math.abs(p.z-g.z)*.12;
-     if(!entrance||score<entrance.score)entrance={p:p.clone(),score};
-    }
-   }
-  }
-  if(entrance){
-   const start=entrance.p;
-   const direction=g.clone().sub(start).setY(0).normalize();
-   const padGate=g.clone().addScaledVector(direction,-23);
-   const branch=p2.clone().addScaledVector(start.clone().sub(p2).setY(0).normalize(),26);
-   const trunkMid=start.clone().lerp(padGate,.58);
-   // Round joins rather than drawing several overlapping straight strips.
-   const mainCurve=new THREE.CatmullRomCurve3([start,trunkMid,padGate],false,'centripetal',.35);
-   drawRoad(mainCurve.getPoints(28),3.2,{highway:'unclassified',surface:'asphalt'},true,true);
-   const branchPoint=new THREE.Line3(start,padGate).closestPointToPoint(branch,true,V());
-   const branchMid=branchPoint.clone().lerp(branch,.55);
-   const spurCurve=new THREE.CatmullRomCurve3([branchPoint,branchMid,branch],false,'centripetal',.35);
-   drawRoad(spurCurve.getPoints(18),2.4,{highway:'service',surface:'asphalt'},false,true);
-   const turnRadius=2.2;
-   shoulder.disc(branchPoint,turnRadius+.35,-.055);
-   asphalt.disc(branchPoint,turnRadius);
-  }
+ // Exactly one Gagarin road and one branch to Site 2; these share
+ // precise endpoints rather than overlapping guessed centre lines.
+ if(gagarinApproach){
+  const sourceId=GAGARIN_APPROACH_WAY_ID;
+  const mainPoints=gagarinApproach.main.map(p=>V(...p)),mainRuns=[];
+  drawRoad(mainPoints,3.2,{highway:'unclassified',surface:'asphalt'},true,true,sourceId,mainRuns);
+  renderedRoadWays.add(sourceId);
+  const startNode=sourceGagarinWay.segments[0].a;
+  junctionWidths.set(startNode.id,Math.max(3.2,junctionWidths.get(startNode.id)||0));
+  roadPaths.push({id:'gagarin-approach-road',label:'Дорога на Гагаринский старт',width:3.2,
+   points:mainRuns.flat(),source:'osm-guided-museum-correction',osmWayIds:[sourceId]});
+  const site=site2AccessCentre,spec={...FACILITY_PORTS['pad-2'],yaw:site.runtimeYaw??FACILITY_PORTS['pad-2'].yaw};
+  const gate=portWorld(spec,spec.road,site,point),junction=V(...gagarinApproach.branchStart);
+  const towardsSite=gate.clone().sub(junction).setY(0).normalize();
+  const tangent=V(...gagarinApproach.branchTangent).setY(0).normalize().multiplyScalar(.22)
+   .addScaledVector(towardsSite,.78).normalize();
+  const inward=V(...spec.roadOutward).negate().applyAxisAngle(V(0,1,0),spec.yaw).normalize();
+  const endWidth=(spec.roadWidth??6)*spec.scale;
+  const transition=createAccessTransition({start:junction,end:gate,startTangent:tangent,endTangent:inward,
+   startWidth:3.2,endWidth,sampleStep:.3});
+  const spurRuns=[];
+  drawRoad(transition.points,3.2,{highway:'service',surface:'asphalt'},false,true,null,spurRuns,
+   [{nodeId:'museum-port:pad-2',position:junction.clone(),hostWayId:sourceId}],{widthAt:transition.widthAt});
+  shoulder.disc(junction,2.2,-.055);asphalt.disc(junction,1.88);
+  roadPaths.push({id:'gagarin-site2-turnoff',label:'Съезд на площадку № 2',
+   points:spurRuns.flat(),width:3.2,widthAt:transition.widthAt,
+   source:'museum-port-to-OSM-main',osmWayIds:[sourceId]});
+  accessReports.push({id:'pad-2',sourceWayId:sourceId,roadGap:transition.points.at(-1).distanceTo(gate),
+   gate:gate.toArray(),sourcePoint:junction.toArray(),sourceTangent:tangent.toArray(),
+   gateInward:inward.toArray(),...transition.stats,profile:'one-turnoff-on-Gagarin-road'});
+  connections++;
+  gagarinRoadReport={status:'connected',...gagarinApproach.metrics,
+   branchEndGap:transition.points.at(-1).distanceTo(gate),
+   branchStartGap:transition.points[0].distanceTo(junction),
+   branchLength:transition.length,sourceJunction:startNode.id,
+   mainRuns:mainRuns.length,spurRuns:spurRuns.length,
+   forecourt:mainPoints.at(-1).toArray()};
  }
  if(krayniyClearanceReport){
   const access=krayniyLayout.access,source=roadGraph.nodes.get(access.sourceNodeId),sourcePoint=source?.position,
@@ -798,6 +828,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return null;
  }
  for(const [id,baseSpec] of Object.entries(FACILITY_PORTS)){
+  if(id==='pad-2'&&gagarinApproach)continue; // Site 2 already has its only road connection.
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw),target=gate.clone().addScaledVector(out,30);
   const near=id==='pad-41'&&site41Replacement.attachmentEdge?{
    edge:site41Replacement.attachmentEdge,point:site41Replacement.attachmentEdge.b.position.clone(),distance:0,
@@ -992,6 +1023,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    modelPortConnections:connections,facilityPorts:accessReports,facilityRailPorts:railPortReports,
    site110RailFan:site110Fan?{...site110Fan.stats,mappedNodes:site110Fan.mappedNodes,declaredJunctions:site110Fan.declaredJunctions,
     joinedLinks:site110Fan.joinedLinks.map(({points,startTangent,endTangent,...link})=>({...link,points:points.map(p=>p.toArray()),startTangent:startTangent.toArray(),endTangent:endTangent.toArray()})),hiddenLinks:site110Fan.hiddenLinks}:null,
+   gagarinSite2Road:gagarinRoadReport,
    siteAccess:accessReports.map(r=>r.id.replace('pad-','')),gatePorts:accessReports.map(r=>r.id),
    vehicleRoutes:roadPlan.routes.map(r=>({id:r.id,source:r.source,length:r.length,osmWayCount:r.osmWayIds.length,nodeCount:r.nodeIds.length,vehicleScale:r.vehicleScale})),trainSource:train.source,trainWayCount:train.osmWayIds.length,
    saturnAccess:null,
