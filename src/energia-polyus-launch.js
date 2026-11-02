@@ -1,11 +1,13 @@
 import * as THREE from 'three';
+import {MUSEUM_MAP_SCALE} from './museum-scale.js?v=20261103-energia-camera-v1';
 import {nozzleFlameMaterial} from './energia-plasma-shader.js?v=20261103-plasma-v1';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v8-plasma-ribbons';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v9-camera-release';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
+export const ENERGIA_CAMERA_DETACH_UNITS=100;
 export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
  {at:-90,title:'ПРЕДСТАРТОВАЯ ГОТОВНОСТЬ',status:'УКСС · пл. 250 · 15 мая 1987',fact:'Первый старт «Энергии» состоялся в 21:30:02 по московскому времени. Комплекс простоял на УКСС несколько месяцев, пережив морозы, жару и пылевые бури.',source:'https://www.buran.ru/other/skif.pdf'},
  {at:-80,title:'ПЕРЕХОД НА БОРТОВОЕ ПИТАНИЕ',status:'Бортовые системы контроля',fact:'За 80 секунд до контакта подъёма система управления перешла на бортовое электропитание.',source:'https://www.buran.ru/other/skif.pdf'},
@@ -630,6 +632,9 @@ export function energiaVisualHeight(altKm){
  return altKm<=1.12?Math.max(0,altKm)*140:156.8+85*Math.log1p((altKm-1.12)*.32);
 }
 function visualHeight(altKm){return energiaVisualHeight(altKm);}
+// Same H units as the museum's technical altitude ruler; not GLB metres.
+export function energiaCameraHeightUnits(altKm){return visualHeight(altKm)/MUSEUM_MAP_SCALE;}
+export function shouldDetachEnergiaCamera(altKm){return energiaCameraHeightUnits(altKm)>=ENERGIA_CAMERA_DETACH_UNITS;}
 
 export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,renderer,objects=[],getEntry,onStart=()=>null,onStop=()=>{}}){
  const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v5',import.meta.url);document.head.append(stylesheet);
@@ -652,6 +657,34 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  const $=id=>panel.querySelector('#'+id);
  let active=false,paused=false,speed=8,seconds=ENERGIA_LAUNCH_START,lastNow=null,mode='follow',saved=null,sceneRestore=null;
  let effects=null,lastPhase=-1,originalRocket=null,lastFrame=null,modelReady=false,preview=null;
+ let cameraDetached=false,detachedAt=null;
+ const cinematicHiddenSelectors=['.energia-cameras','.energia-camera-hint','.energia-timeline',
+  '.energia-actions','.energia-rate','.energia-disclaimer'];
+ function resetCinematicPanel(){
+  cameraDetached=false;detachedAt=null;
+  panel.classList.remove('energia-cinematic-ascent');
+  for(const selector of cinematicHiddenSelectors){
+   const el=panel.querySelector(selector);if(el)el.hidden=false;
+  }
+ }
+ function setCinematicDetach(detach,s){
+  if(cameraDetached===detach)return;
+  cameraDetached=detach;
+  panel.classList.toggle('energia-cinematic-ascent',detach);
+  for(const selector of cinematicHiddenSelectors){
+   const el=panel.querySelector(selector);if(el)el.hidden=detach;
+  }
+  if(detach){
+   detachedAt={time:s.time,height:energiaCameraHeightUnits(s.altitudeKm),
+    camera:camera.position.toArray(),target:controls.target.toArray()};
+   mode='detached';
+   controls.enablePan=true;
+  }else{
+   const preservedAngle=camera.position.clone().sub(controls.target);
+   detachedAt=null;mode='follow';controls.enablePan=false;
+   alignFollowFromCurrentAngle(s,preservedAngle);
+  }
+ }
  const source=()=>getEntry?.();
  function ensure(){
   const entry=source();if(!entry||entry.status!=='ready')return false;
@@ -713,7 +746,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   return {eye,target};
  }
  const updateCamera=s=>{
-  if(mode==='manual')return;
+  if(cameraDetached||mode==='manual')return;
   if(mode==='follow'){
    // Add the SAME translation to eye and pivot. OrbitControls can therefore
    // rotate/zoom around the rocket while the rocket accelerates upward.
@@ -741,6 +774,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   poseRocket(s);
   if(effects)lastFrame=effects.pose(s,source()?.holder);
   visualPayload(s);
+  setCinematicDetach(shouldDetachEnergiaCamera(s.altitudeKm),s);
   const event=ENERGIA_LAUNCH_EVENTS[s.phase];
   $('energiaClock').textContent=clock(seconds);
   $('energiaStage').textContent=event.title;
@@ -807,6 +841,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  function stop({releaseCamera=true}={}){
   if(!active)return false;
   active=false;paused=false;lastNow=null;panel.hidden=true;document.body.classList.remove('energia-launch-active');
+  resetCinematicPanel();
   const entry=source();
   if(originalRocket&&entry){
    entry.holder.position.copy(originalRocket.position);
@@ -830,6 +865,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  }
  function setManualCamera(){
   if(!active)return false;
+  if(cameraDetached)return true;
   if(mode==='follow')return true;
   if(mode!=='manual'){mode='manual';controls.enablePan=true;render();}
   return true;
@@ -846,6 +882,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  $('energiaSpeed').onchange=e=>{speed=Number(e.target.value)||8;lastNow=null;};
  $('energiaSeek').oninput=e=>seek(e.target.value);
  for(const button of panel.querySelectorAll('[data-energia-camera]'))button.onclick=()=>{
+  if(cameraDetached)return;
   mode=button.dataset.energiaCamera;
   controls.enablePan=mode!=='follow';
   render();
@@ -863,7 +900,11 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,setManualCamera,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,
+   modelReady,cameraDetached,detachAtHeightH:ENERGIA_CAMERA_DETACH_UNITS,
+   visualHeightH:energiaCameraHeightUnits(sampleEnergiaLaunch(seconds).altitudeKm),
+   cinematicPanel:panel.classList.contains('energia-cinematic-ascent'),
+   detachedAt:detachedAt?{...detachedAt}:null,
+   orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,
    engineFlameDepthCompatible:lastFrame?.engineFlameDepthCompatible,
    engineFlameDepthTest:lastFrame?.engineFlameDepthTest,
    rocketNozzleWorld:lastFrame?.rocketNozzleWorld,
