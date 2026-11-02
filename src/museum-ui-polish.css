@@ -5,8 +5,8 @@
  --museum-ui-copy:9px;
  --museum-ui-data:20px;
  --museum-ui-border:rgba(218,231,238,.20);
- --history-dock-height:100px;
- --launch-dock-height:100px;
+ --history-dock-height:110px;
+ --launch-dock-height:110px;
  --launch-dock-width:clamp(355px,31vw,470px);
  --museum-dock-gap:10px;
  --museum-dock-reserve:calc(var(--museum-edge) + var(--launch-dock-height) + var(--museum-dock-gap));
@@ -149,7 +149,7 @@
 #timeDock .year{accent-color:#f0a07f}
 .next-launch{grid-template-columns:minmax(0,1fr) minmax(0,1.14fr);
  grid-template-rows:minmax(0,1fr) 27px;
- column-gap:12px;row-gap:8px;padding:13px 15px!important}
+ column-gap:12px;row-gap:6px;padding:10px 14px!important}
 .next-launch::before{display:none}
 .next-launch__eyebrow{
  color:#f1f3f1!important;
@@ -197,11 +197,11 @@
   grid-template-rows:1fr;column-gap:14px;row-gap:0;padding:11px 15px!important}
  .next-launch__head{grid-column:1;grid-row:1}
  .next-launch__clock{grid-column:2;grid-row:1}
- .next-launch__meta{grid-column:3;grid-row:1}
+ .next-launch__meta{grid-column:3;grid-row:1;align-self:start}
  .next-launch__footer{grid-column:3;grid-row:1;align-self:end}
  .next-launch__status{display:none}
  .next-launch__name{font-size:14px!important}
- .next-launch__value{font-size:19px!important}
+ .next-launch__value{font-size:20px!important}
  .next-launch[data-state="unknown"] .next-launch__meta,
  .next-launch[data-state="date"] .next-launch__meta{grid-column:2;grid-row:1;align-self:center}
  .next-launch[data-state="unknown"] .next-launch__status,
