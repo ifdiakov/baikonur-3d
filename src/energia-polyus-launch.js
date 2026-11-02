@@ -189,24 +189,31 @@ function flameMaterial(color){
 function nozzleFlameMaterial(color){
  return new THREE.ShaderMaterial({
   uniforms:{uPower:{value:0},uTime:{value:0},uTint:{value:new THREE.Color(color)}},
-  vertexShader: [
+  vertexShader:[
    'varying vec2 vUv;',
    'void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}'
   ].join('\n'),
-  fragmentShader: [
-   'uniform float uPower;uniform float uTime;uniform vec3 uTint;varying vec2 vUv;',
-   'float wave(float x){return sin(x)*.5+.5;}',
+  fragmentShader:[
+   'uniform float uPower,uTime;uniform vec3 uTint;varying vec2 vUv;',
+   'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
+   'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
+   ' return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}',
+   'float fbm(vec2 p){return .52*noise(p)+.28*noise(p*2.13)+.14*noise(p*4.17)+.06*noise(p*8.07);}',
    'void main(){',
-   ' float atNozzle=clamp(vUv.y,0.,1.);',
-   ' float tail=smoothstep(.015,.29,atNozzle);',
-   ' float swirl=wave(vUv.x*41.0+uTime*8.0+sin(atNozzle*26.0+uTime*9.0)*2.8);',
-   ' float flicker=.72+.27*swirl+.12*wave(vUv.x*79.-uTime*18.0+atNozzle*57.);',
-   ' float diamonds=pow(wave(atNozzle*79.0-uTime*5.5),18.0);',
-   ' float base=pow(atNozzle,.72);',
-   ' float alpha=uPower*tail*(.30+.54*base)*flicker;',
-   ' vec3 plasma=mix(uTint,vec3(1.0,.98,.91),pow(atNozzle,2.1));',
-   ' plasma*=1.15+1.0*base+diamonds*.44;',
-   ' gl_FragColor=vec4(plasma,clamp(alpha,0.,.98));',
+   ' float axial=clamp(vUv.y,0.,1.);', // 1 = nozzle
+   ' vec2 flow=vec2(vUv.x*9.,axial*26.-uTime*2.9);',
+   ' float rolling=fbm(flow+vec2(sin(axial*31.-uTime*7.)*.28,0.));',
+   ' float fine=fbm(flow*3.1+vec2(0.,-uTime*7.));',
+   ' float irregular=.68+.56*rolling+.20*fine;',
+   ' float collar=smoothstep(0.,.075,axial);',
+   ' float tip=smoothstep(.015,.21,axial);',
+   ' float diamonds=pow(.5+.5*cos((1.-axial)*92.+rolling*2.),18.)*smoothstep(.18,.6,axial);',
+   ' float filament=pow(.5+.5*sin(vUv.x*71.+axial*57.-uTime*11.+rolling*6.),6.);',
+   ' float opacity=clamp(uPower*tip*collar*(.42+.48*axial)*irregular*(.87+.13*filament),0.,.98);',
+   ' vec3 plasma=mix(uTint,vec3(1.,.97,.87),pow(axial,2.5)*.68);',
+   ' plasma*=1.1+1.20*axial+.32*diamonds+.24*filament;',
+   ' plasma+=vec3(1.,.78,.42)*diamonds*.36;',
+   ' gl_FragColor=vec4(plasma,opacity);',
    '}'
   ].join('\n'),
   transparent:true,depthWrite:false,depthTest:false,side:THREE.DoubleSide,
@@ -270,16 +277,17 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  // The installed Energia-Polyus GLB has x ±8.85 m and z −8.58…+5.47 m;
  // these model-local exits are museum approximations inside its footprint.
  const rocketNozzleMaterials={
-  core:nozzleFlameMaterial(0xb0e9ff),coreGlow:nozzleFlameMaterial(0x229cff),coreWhite:nozzleFlameMaterial(0xffffff),
-  booster:nozzleFlameMaterial(0xffdc8b),boosterGlow:nozzleFlameMaterial(0xff5c0a),boosterWhite:nozzleFlameMaterial(0xfffdf1)
+  core:nozzleFlameMaterial(0x8fdcff),coreGlow:nozzleFlameMaterial(0x36a7ff),coreWhite:nozzleFlameMaterial(0xffffff),
+  booster:nozzleFlameMaterial(0xffcc72),boosterGlow:nozzleFlameMaterial(0xff6a12),boosterWhite:nozzleFlameMaterial(0xfffdf4)
  };
  const engineJets=[];
  const buildEngineJet=(x,z,type,index)=>{
-  const core=type==='core',length=core?98:142,radius=core?1.8:2.5;
+  const core=type==='core',length=core?112:166,radius=core?2.0:2.9;
   const entries=[
-   [core?rocketNozzleMaterials.coreGlow:rocketNozzleMaterials.boosterGlow,radius*3.4,radius*.32,0,1],
-   [core?rocketNozzleMaterials.core:rocketNozzleMaterials.booster,radius*1.65,radius*.16,1,.85],
-   [core?rocketNozzleMaterials.coreWhite:rocketNozzleMaterials.boosterWhite,radius*.66,radius*.06,2,.65]
+   [core?rocketNozzleMaterials.coreGlow:rocketNozzleMaterials.boosterGlow,radius*4.1,radius*.44,0,1.08],
+   [core?rocketNozzleMaterials.core:rocketNozzleMaterials.booster,radius*2.35,radius*.20,1,.96],
+   [core?rocketNozzleMaterials.coreWhite:rocketNozzleMaterials.boosterWhite,radius*1.05,radius*.08,2,.78],
+   [core?rocketNozzleMaterials.coreWhite:rocketNozzleMaterials.boosterWhite,radius*.45,radius*.02,3,.54]
   ];
   const meshes=[];
   for(const [material,top,tip,layer,relativeLength]of entries){
@@ -530,11 +538,14 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    const power=jet.type==='core'?enginePower.core:enginePower.boosters;
    const flicker=.96+.09*Math.sin(t*10.7+jet.index*1.7)+.055*Math.sin(t*21-jet.index*.7);
    jet.meshes.forEach((mesh,i)=>{
-    mesh.scale.set(1+.05*Math.sin(t*8+jet.index+i),(.88+.30*power)*flicker,1+.05*Math.cos(t*13+jet.index+i));
+    const radialPulse=1+.08*Math.sin(t*7.5+jet.index*1.3+i*.8)+.04*Math.sin(t*15-jet.index*.7+i*1.6);
+     const axialPulse=(.92+.42*power)*flicker*(1+.04*Math.sin(t*4+jet.index+i));
+     mesh.scale.set(radialPulse,axialPulse,radialPulse*(.98+.05*Math.cos(t*11+jet.index+i)));
     mesh.visible=power>.003;
    });
   }
-  movingFlameLight.intensity=1150*Math.max(enginePower.core,enginePower.boosters);
+  movingFlameLight.intensity=1650*Math.max(enginePower.core*.92,enginePower.boosters);
+  movingFlameLight.distance=210;
   const platformRetreat=smooth(-55,-37,t),clampRelease=smooth(-.5,2,t),umbilicalRelease=smooth(-1,1.5,t);
   arms.forEach((arm,i)=>{arm.rotation.y=-platformRetreat*(.8+i*.065);arm.visible=t<25;});
   for(const item of support)item.pivot.rotation.z=item.sign*clampRelease*.65;
