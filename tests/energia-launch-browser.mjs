@@ -91,7 +91,12 @@ try{
    assert.equal(e.engineFlameDepthCompatible,true,'Nozzle shader depth must match the museum logarithmic depth buffer');
    assert.equal(e.engineFlameDepthTest,true,'Nozzle flame must still be occluded by opaque ground and launch pad');
    assert.equal(e.engineFlameAttached,true,'Flames must stay attached to the rocket holder');
-   assert.equal(e.enginePlasmaRibbonCount,24,'Eight engines have three turbulent plasma sheets each');
+   assert.equal(e.enginePlasmaRibbonCount,0,'Long crossed plasma sheets must be gone');
+   assert.equal(e.engineNozzleGlowCount,8,'Each nozzle gets a compact contact glow');
+   assert.equal(e.engineNozzleGlowVisible,8,'All firing nozzles glow below the rocket');
+   assert.ok(e.engineNozzleGlowOpacity.core>.3&&e.engineNozzleGlowOpacity.boosters>.3);
+   assert.ok(e.engineUpperFlameLimitY<0,'Animated flames must stay below the engine exits');
+   assert.ok(e.engineHaloUpperLimitY<0,'Nozzle glow must not extend into the rocket body');
    assert.equal(s.cameraDetached,false);
    assert.equal(e.shadowMapEnabled,true,'Live cast shadows enabled only during the launch');
    assert.ok(e.shadowLightIntensity>250,'Engine lights illuminate the UKSS structures');
@@ -99,7 +104,7 @@ try{
    assert.ok(e.shadowMapResolution>=512,'Shadow map resolution is valid for device');
   }
   if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
-  if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');assert.equal(e.engineFlameDepthCompatible,true);assert.equal(e.engineFlameAttached,true);assert.ok(e.rocketNozzleWorld?.every(Number.isFinite),'Nozzle position follows the rocket in world space');await shot('lift-off');}
+  if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');assert.equal(e.engineFlameDepthCompatible,true);assert.equal(e.engineFlameAttached,true);assert.ok(e.engineUpperFlameLimitY<0,'Nozzle lip remains clear during ascent');assert.ok(e.engineHaloUpperLimitY<0);assert.ok(e.rocketNozzleWorld?.every(Number.isFinite),'Nozzle position follows the rocket in world space');await shot('lift-off');}
   if(t===145.9){
    assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');
    assert.equal(s.cameraDetached,true,'At H=100 the camera must detach from the rocket');
