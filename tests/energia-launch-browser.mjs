@@ -45,8 +45,10 @@ try{
  assert.equal(await page.locator('#year').inputValue(),'1987');
  assert(await page.locator('#energiaLaunchPanel').isVisible());
  assert.equal(s.modelReady,true);
- assert.equal(s.effects.smokeMode,'soft-feathered-billboards');
- assert.equal(s.effects.instancedSmokeCount,2195);
+ assert.equal(s.effects.smokeMode,'multi-octave-feathered-billboards');
+ assert.equal(s.effects.instancedSmokeCount,3335);
+ assert.equal(s.effects.shadowMapEnabled,true);
+ assert.equal(s.effects.shadowReceiverCount,6);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState().controlsEnabled),true,
   'OrbitControls must remain enabled during the launch');
  await shot('prelaunch');
@@ -58,9 +60,15 @@ try{
   if(t===-10)assert.ok(e.water>0,'Water curtains begin before engine ignition');
   if(t===-9.4)assert.ok(e.engineJetCount===8&&e.engineFlameAttached,'All eight nozzle plumes follow the rocket');
   if(t===-3.2)assert.ok(e.flamePower>0,'Booster ignition produces exhaust');
-  if(t===0){assert.ok(e.engineCorePower>.9&&e.engineBoosterPower>.9,'Both engine families show bright nozzle flames');}
-  if(t===0){assert.equal(e.smokeMode,'soft-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
-  if(t===6){assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
+  if(t===0){
+   assert.ok(e.engineCorePower>.9&&e.engineBoosterPower>.9,'Both engine families show bright nozzle flames');
+   assert.equal(e.shadowMapEnabled,true,'Live cast shadows enabled only during the launch');
+   assert.ok(e.shadowLightIntensity>250,'Engine lights illuminate the UKSS structures');
+   assert.equal(e.shadowReceiverCount,6,'Shadow projection covers launch apron and surrounding steppe');
+   assert.ok(e.shadowMapResolution>=512,'Shadow map resolution is valid for device');
+  }
+  if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
+  if(t===6){assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
   if(t===145.9){assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');}
   if(t===480){assert.equal(s.rocketVisible,false,'The launch assembly remains visible until payload separation');assert.equal(s.telemetry.altitudeKm,110);assert.equal(s.telemetry.payloadSeparated,true);await shot('polyus-separation');}
   if(t===511)assert.equal(s.telemetry.payloadTurn,true);
@@ -111,6 +119,8 @@ try{
  assert.equal(after.year,before.year);assert.equal(after.evening,before.evening);
  assert.deepEqual(after.rocket.position,before.rocket.position);assert.deepEqual(after.rocket.quaternion,before.rocket.quaternion);
  assert.equal(after.rocket.visible,before.rocket.visible);assert(after.hidden);assert(!after.active);
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.energia.stats().effects.shadowMapEnabled)),false,
+  'The renderer must restore its previous unshadowed museum state');
  evidence.restored=after;
  await page.setViewportSize({width:390,height:844});
  await page.evaluate(()=>window.__BAIKONUR_QA.energia.start());

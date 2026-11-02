@@ -53,3 +53,9 @@ assert.equal(sampleEnergiaEnginePlumes(-3.2).boosters,0);
 assert.equal(sampleEnergiaEnginePlumes(0).boosters,1);
 assert.equal(sampleEnergiaEnginePlumes(146).boosters,0);
 assert.equal(sampleEnergiaEnginePlumes(469.2).core,0);
+
+// The physical nozzle power remains independently timed when the effects
+// switch on heavy shadow maps and denser billboards.
+assert.equal(sampleEnergiaEnginePlumes(0).nozzleCount,8);
+assert.equal(sampleEnergiaEnginePlumes(150).boosters,0);
+assert.equal(sampleEnergiaEnginePlumes(150).core,1);

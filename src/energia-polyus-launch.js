@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v3-free-camera-flame';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v4-cinematic-plumes-shadows';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
@@ -99,26 +99,49 @@ function simpleRod(a,b,r,color,name,parent){
 }
 
 function makeSmokeTexture(){
- // Irregular, feathered particle; RGBA is generated locally, without network
- // textures, external libraries or a simulation that would block startup.
- const canvas=document.createElement('canvas');canvas.width=canvas.height=96;
- const context=canvas.getContext('2d',{willReadFrequently:false});
- const image=context.createImageData(96,96);
- for(let y=0;y<96;y++)for(let x=0;x<96;x++){
-  const nx=(x-47.5)/47.5,ny=(y-47.5)/47.5;
-  const radial=Math.hypot(nx,ny);
-  const turbulence=.82+.08*Math.sin(nx*16+ny*9)+.07*Math.cos(ny*18-nx*11)+.05*Math.sin(nx*35-ny*29);
-  const rim=Math.max(0,1-radial*(.94+.09*Math.sin(Math.atan2(ny,nx)*7+nx*5)));
-  const opacity=Math.round(220*Math.pow(rim,2.25)*Math.max(.5,turbulence));
-  const i=(y*96+x)*4;image.data[i]=255;image.data[i+1]=255;image.data[i+2]=255;image.data[i+3]=opacity;
+ // Fractional Brownian noise with a warped, feathered perimeter. The texture
+ // is generated once on demand, independently of web resources and frame rate.
+ const size=128,canvas=document.createElement('canvas');
+ canvas.width=canvas.height=size;
+ const context=canvas.getContext('2d'),image=context.createImageData(size,size);
+ const hash=(x,y)=>{const n=Math.sin(x*127.1+y*311.7)*43758.5453123;return n-Math.floor(n);};
+ function noise(x,y){
+  const ix=Math.floor(x),iy=Math.floor(y),fx=x-ix,fy=y-iy;
+  const u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy);
+  return mix(mix(hash(ix,iy),hash(ix+1,iy),u),
+    mix(hash(ix,iy+1),hash(ix+1,iy+1),u),v);
+ }
+ function fbm(x,y){
+  let signal=0,strength=.55,frequency=1;
+  for(let octave=0;octave<5;octave++){
+   signal+=strength*noise(x*frequency,y*frequency);
+   frequency*=2.1;strength*=.48;
+  }
+  return signal;
+ }
+ for(let y=0;y<size;y++)for(let x=0;x<size;x++){
+  const nx=(x+.5-size/2)/(size/2),ny=(y+.5-size/2)/(size/2);
+  const bend=fbm(nx*3.1+7.3,ny*3.1-6.2)-.46;
+  const wx=nx+bend*.19,wy=ny+(fbm(nx*2.9-4.1,ny*2.9+8.5)-.45)*.16;
+  const radius=Math.hypot(wx*.97,wy*1.04);
+  const edge=Math.max(0,1-radius*(.95+.12*(fbm(wx*3.2+3,wy*3.2+2)-.45)));
+  const cloud=fbm(wx*3.6+19,wy*3.6-7);
+  const fine=fbm(wx*8.6-17,wy*8.6+13);
+  const density=clamp(.20+1.2*cloud+.40*(fine-.46),.05,1);
+  const alpha=Math.round(238*Math.pow(edge,1.65)*density);
+  const index=(y*size+x)*4;
+  image.data[index]=255;image.data[index+1]=255;
+  image.data[index+2]=255;image.data[index+3]=alpha;
  }
  context.putImageData(image,0,0);
  const texture=new THREE.CanvasTexture(canvas);
  texture.colorSpace=THREE.SRGBColorSpace;
- texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
+ texture.minFilter=THREE.LinearMipmapLinearFilter;
+ texture.magFilter=THREE.LinearFilter;
  texture.generateMipmaps=true;texture.needsUpdate=true;
  return texture;
 }
+
 function makeBillow(parent,count,color,opacity,name,texture){
  // GPU instanced camera-facing quads use two triangles per particle instead
  // of solid sphere meshes; the feathered alpha makes overlapping, flowing
@@ -154,6 +177,34 @@ function flameMaterial(color){
   transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,toneMapped:false
  });
 }
+function nozzleFlameMaterial(color){
+ return new THREE.ShaderMaterial({
+  uniforms:{uPower:{value:0},uTime:{value:0},uTint:{value:new THREE.Color(color)}},
+  vertexShader: [
+   'varying vec2 vUv;',
+   'void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}'
+  ].join('\n'),
+  fragmentShader: [
+   'uniform float uPower;uniform float uTime;uniform vec3 uTint;varying vec2 vUv;',
+   'float wave(float x){return sin(x)*.5+.5;}',
+   'void main(){',
+   ' float atNozzle=clamp(vUv.y,0.,1.);',
+   ' float tail=smoothstep(.015,.29,atNozzle);',
+   ' float swirl=wave(vUv.x*41.0+uTime*8.0+sin(atNozzle*26.0+uTime*9.0)*2.8);',
+   ' float flicker=.72+.27*swirl+.12*wave(vUv.x*79.-uTime*18.0+atNozzle*57.);',
+   ' float diamonds=pow(wave(atNozzle*79.0-uTime*5.5),18.0);',
+   ' float base=pow(atNozzle,.72);',
+   ' float alpha=uPower*tail*(.30+.54*base)*flicker;',
+   ' vec3 plasma=mix(uTint,vec3(1.0,.98,.91),pow(atNozzle,2.1));',
+   ' plasma*=1.15+1.0*base+diamonds*.44;',
+   ' gl_FragColor=vec4(plasma,clamp(alpha,0.,.98));',
+   '}'
+  ].join('\n'),
+  transparent:true,depthWrite:false,side:THREE.DoubleSide,
+  blending:THREE.AdditiveBlending,toneMapped:false
+ });
+}
+
 function glowMaterial(color){
  return new THREE.ShaderMaterial({
   uniforms:{uPower:{value:0},uTint:{value:new THREE.Color(color)}},
@@ -164,7 +215,7 @@ function glowMaterial(color){
   transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending,toneMapped:false,side:THREE.DoubleSide
  });
 }
-function addEffectSystem(siteRoot,camera){
+function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  const root=new THREE.Group();root.name='Энергия — Полюс · огонь, дым и газоход';root.visible=false;root.userData.pickable=false;siteRoot.add(root);
  const smokeTexture=makeSmokeTexture();
  const glow=glowMaterial(0xffb456),pitGlow=makeGlow(240,220,glow);pitGlow.position.set(5,5.95,0);root.add(pitGlow);
@@ -173,11 +224,11 @@ function addEffectSystem(siteRoot,camera){
  const waterMat=glowMaterial(0xc7e4f0),waterGlow=makeGlow(290,125,waterMat);waterGlow.position.set(25,.7,0);root.add(waterGlow);
  const farDuctMat=glowMaterial(0xffa347),farDuctGlow=makeGlow(220,85,farDuctMat);farDuctGlow.position.set(220,.4,0);root.add(farDuctGlow);
 
- const innerSmoke=makeBillow(root,350,0xe4e9eb,.72,'Холодный криогенный пар · мягкие облака',smokeTexture);
- const waterSpray=makeBillow(root,250,0xeaf3f3,.76,'Водяная завеса · испарение',smokeTexture);
- const ductSmoke=makeBillow(root,650,0xaeb1b1,.78,'Газоход · турбулентный плотный пар',smokeTexture);
- const fieldSmoke=makeBillow(root,500,0x8d8d8d,.73,'Степь · стелющиеся клубы дыма',smokeTexture);
- const ascentPlume=makeBillow(root,350,0xe6e4df,.70,'Энергия · хвост дыма при наборе высоты',smokeTexture);
+ const innerSmoke=makeBillow(root,420,0xe4e9eb,.73,'Холодный криогенный пар · мягкие облака',smokeTexture);
+ const waterSpray=makeBillow(root,320,0xeaf3f3,.78,'Водяная завеса · испарение',smokeTexture);
+ const ductSmoke=makeBillow(root,1050,0xaeb1b1,.76,'Газоход · турбулентный плотный пар',smokeTexture);
+ const fieldSmoke=makeBillow(root,820,0x8d8d8d,.69,'Степь · стелющиеся клубы дыма',smokeTexture);
+ const ascentPlume=makeBillow(root,630,0xe6e4df,.67,'Энергия · хвост дыма при наборе высоты',smokeTexture);
  const sparks=makeBillow(root,95,0xffb45c,.87,'Огневые частицы и отражения',smokeTexture);
  sparks.material.toneMapped=false;
 
@@ -203,21 +254,23 @@ function addEffectSystem(siteRoot,camera){
  // The installed Energia-Polyus GLB has x ±8.85 m and z −8.58…+5.47 m;
  // these model-local exits are museum approximations inside its footprint.
  const rocketNozzleMaterials={
-  core:flameMaterial(0xa2ddff),coreGlow:flameMaterial(0x278efc),
-  booster:flameMaterial(0xffe5a4),boosterGlow:flameMaterial(0xff5c10)
+  core:nozzleFlameMaterial(0xb0e9ff),coreGlow:nozzleFlameMaterial(0x229cff),coreWhite:nozzleFlameMaterial(0xffffff),
+  booster:nozzleFlameMaterial(0xffdc8b),boosterGlow:nozzleFlameMaterial(0xff5c0a),boosterWhite:nozzleFlameMaterial(0xfffdf1)
  };
  const engineJets=[];
  const buildEngineJet=(x,z,type,index)=>{
-  const core=type==='core',length=core?46:60,radius=core?1.55:2.2;
+  const core=type==='core',length=core?98:142,radius=core?1.8:2.5;
   const entries=[
-   [core?rocketNozzleMaterials.coreGlow:rocketNozzleMaterials.boosterGlow,radius*1.8,1.5,0],
-   [core?rocketNozzleMaterials.core:rocketNozzleMaterials.booster,radius*.8,.45,1]
+   [core?rocketNozzleMaterials.coreGlow:rocketNozzleMaterials.boosterGlow,radius*3.4,radius*.32,0,1],
+   [core?rocketNozzleMaterials.core:rocketNozzleMaterials.booster,radius*1.65,radius*.16,1,.85],
+   [core?rocketNozzleMaterials.coreWhite:rocketNozzleMaterials.boosterWhite,radius*.66,radius*.06,2,.65]
   ];
   const meshes=[];
-  for(const [material,top,tip,layer]of entries){
-   // The broad mouth is at y=0, the narrowing luminous tail points down.
-   const cone=new THREE.Mesh(new THREE.CylinderGeometry(top,tip,length*(layer?.93:1),20,6,true),material);
-   cone.position.set(x,-length*(layer?.93:1)/2-.5,z);
+  for(const [material,top,tip,layer,relativeLength]of entries){
+   // Wide, incandescent mouth at nozzle level; plasma tapers downward.
+   const lengthAtLayer=length*relativeLength;
+   const cone=new THREE.Mesh(new THREE.CylinderGeometry(top,tip,lengthAtLayer,24,9,true),material);
+   cone.position.set(x,-lengthAtLayer/2-.2,z);
    cone.renderOrder=33+layer;cone.frustumCulled=false;cone.userData.pickable=false;
    cone.name=(core?'РД-0120':'РД-170')+' · направленный факел сопла '+(index+1)+(layer?' · ядро':' · ореол');
    flameRoot.add(cone);meshes.push(cone);
@@ -267,6 +320,93 @@ function addEffectSystem(siteRoot,camera){
   light.position.set(x,y,z);root.add(light);return light;
  });
 
+ const smokeTwist=new THREE.Quaternion(),smokeAxis=V(0,0,1);
+
+ // A single low-cost PCF shadow map projects real silhouettes from the UKSS
+ // lattice and nearby buildings onto the concrete and surrounding steppe.
+ // Only the launch enables it; the museum's previous renderer state is saved.
+ const shadowReceivers=[],shadowMaterial=new THREE.ShadowMaterial({color:0x0b111b,opacity:.71,depthWrite:false});
+ for(const [x,z,width,depth]of [
+  [-220,-90,310,180],[-220,115,310,180],
+  [105,-160,380,190],[105,158,380,190],
+  [-345,0,160,420],[355,0,100,250]
+ ]){
+  const plane=new THREE.Mesh(new THREE.PlaneGeometry(width,depth),shadowMaterial);
+  plane.rotation.x=-Math.PI/2;plane.position.set(x,.52,z);
+  plane.receiveShadow=true;plane.castShadow=false;plane.renderOrder=16;
+  plane.userData={pickable:false,museumComponent:'launch-shadow-receiver'};
+  root.add(plane);shadowReceivers.push(plane);
+ }
+ const shadowSpot=new THREE.SpotLight(0xffbd76,0,145,1.11,.58,1.25);
+ shadowSpot.name='РД-170 · направленный стартовый свет с динамическими тенями';
+ shadowSpot.position.set(0,28,0);
+ const shadowTarget=new THREE.Object3D();shadowTarget.position.set(165,.5,35);
+ root.add(shadowTarget,shadowSpot);shadowSpot.target=shadowTarget;
+ shadowSpot.castShadow=true;
+ const mobileShadow=typeof window!=='undefined'&&window.matchMedia?.('(max-width:760px)')?.matches;
+ const shadowResolution=mobileShadow?512:1024;
+ shadowSpot.shadow.mapSize.set(shadowResolution,shadowResolution);
+ shadowSpot.shadow.camera.near=.45;shadowSpot.shadow.camera.far=145;
+ shadowSpot.shadow.bias=-.00011;shadowSpot.shadow.normalBias=.018;
+ shadowSpot.shadow.radius=2.7;
+ shadowSpot.visible=false;
+ const shadowToggles=[];let shadowSettings=null,lastShadowTime=-Infinity;
+ function enableShadows(){
+  if(!renderer?.shadowMap||shadowSettings)return;
+  shadowSettings={enabled:renderer.shadowMap.enabled,type:renderer.shadowMap.type,
+   autoUpdate:renderer.shadowMap.autoUpdate};
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate=false;
+  renderer.shadowMap.needsUpdate=true;
+  // Restrict extra casters to neighbouring museum sites. Structural UKSS
+  // imported meshes already contain castShadow/receiveShadow attributes.
+  const anchor=siteRoot.getWorldPosition(V()),near=V();let candidateCount=0;
+  for(const exhibit of objects){
+   if(!exhibit?.g||exhibit.g===siteRoot)continue;
+   exhibit.g.getWorldPosition(near);
+   if(Math.hypot(anchor.x-near.x,anchor.z-near.z)>170)continue;
+   exhibit.g.traverse(mesh=>{
+    if(!mesh.isMesh||candidateCount>=90)return;
+    const materials=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+    if(!materials.some(material=>material?.isMeshStandardMaterial))return;
+    const triangles=(mesh.geometry?.index?.count??mesh.geometry?.attributes?.position?.count??0)/3;
+    if(triangles>12000)return;
+    shadowToggles.push({mesh,cast:mesh.castShadow,receive:mesh.receiveShadow});
+    mesh.castShadow=true;mesh.receiveShadow=true;candidateCount++;
+   });
+  }
+ }
+ function disableShadows(){
+  shadowSpot.visible=false;shadowSpot.intensity=0;
+  for(const previous of shadowToggles){
+   previous.mesh.castShadow=previous.cast;previous.mesh.receiveShadow=previous.receive;
+  }
+  shadowToggles.length=0;
+  if(shadowSettings&&renderer?.shadowMap){
+   renderer.shadowMap.enabled=shadowSettings.enabled;
+   renderer.shadowMap.type=shadowSettings.type;
+   renderer.shadowMap.autoUpdate=shadowSettings.autoUpdate;
+   renderer.shadowMap.needsUpdate=true;
+  }
+  shadowSettings=null;lastShadowTime=-Infinity;
+ }
+ function setShadowPose(t,power,rocketHolder){
+  const intensity=clamp(power,0,1)*(1-smooth(28,90,t));
+  shadowSpot.visible=Boolean(shadowSettings)&&intensity>.025;
+  shadowSpot.intensity=3300*Math.max(0,intensity)*(.92+.08*Math.sin(t*5.7));
+  if(rocketHolder){
+   shadowSpot.position.copy(rocketHolder.position);
+   shadowSpot.position.y+=20;
+   shadowSpot.position.x+=5;
+  }
+  // A held PCF shadow map updates at 8 Hz during launch: cinematic soft
+  // shadows, without multiplying the cost of every 60 Hz animation frame.
+  if(shadowSpot.visible&&renderer?.shadowMap&&Math.abs(t-lastShadowTime)>=.125){
+   renderer.shadowMap.needsUpdate=true;lastShadowTime=t;
+  }
+ }
+
  const mtx=new THREE.Matrix4(),pos=V(),scale=V(),cameraWorldQ=new THREE.Quaternion(),
   localWorldQ=new THREE.Quaternion(),billboardQ=new THREE.Quaternion();
  const smokeBase=[
@@ -293,29 +433,29 @@ function addEffectSystem(siteRoot,camera){
     x=-51+Math.sin(i*1.73)*16+u*9;
     y=4+u*39;
     z=-20+(i*83%73)/1.6+swirl*4;
-    size=(4.2+u*18)*(1+.30*r2);
+    size=(5.4+u*21)*(1+.33*r2);
    }else if(kind==='water'){
     x=-25+u*200+Math.sin(i*1.37)*11;
     y=1.4+u*27;
     z=(r2*2-1)*(17+u*20)+swirl*4;
-    size=(3.2+u*17)*(1+.38*r3);
+    size=(3.8+u*19)*(1+.42*r3);
    }else if(kind==='duct'){
     x=8+Math.pow(u,1.14)*308;
     z=(r2*2-1)*(11+47*u)+swirl*10;
     y=-24+u*35+Math.sin(i*.7)*4;
-    size=(6.3+u*36)*(1+.46*r3);
+    size=(8.2+u*43)*(1+.43*r3);
    }else if(kind==='field'){
     const angle=2*Math.PI*r2,spread=Math.pow(u,.81);
     x=Math.cos(angle)*(18+spread*235)+spread*65;
     z=Math.sin(angle)*(18+spread*202)+swirl*12;
     y=2+spread*20+Math.sin(i*.81+u*9)*2.4;
-    size=(7+spread*48)*(1+.38*r3);
+    size=(8.2+spread*56)*(1+.42*r3);
    }else if(kind==='plume'){
     const tail=u*Math.min(320,Math.max(20,height*1.07));
     x=xShift*(1-u*.18)+swirl*(5+u*18);
     y=6+height-tail;
     z=zShift*(1-u*.18)+(r2*2-1)*(8+u*23);
-    size=(7+u*29)*(1+.25*r3);
+    size=(8.4+u*38)*(1+.29*r3);
    }else{
     x=18+u*210+Math.sin(i*.31)*17;
     z=(r2*2-1)*(8+u*29);
@@ -326,8 +466,14 @@ function addEffectSystem(siteRoot,camera){
    const lifespan=Math.min(1,u*6)*Math.min(1,(1-u)*5);
    size*=.55+.45*lifespan;
    size=Math.max(.01,size*(.75+.25*density));
-   pos.set(x,y,z);scale.set(size*2,size*2*(kind==='duct'?1.22:1),1);
-   mtx.compose(pos,billboardQ,scale);mesh.setMatrixAt(i,mtx);
+   // Rotate each irregular silhouette and vary cloud aspect ratio. The cloud
+   // layers stay camera-facing even while the visitor orbits the launch.
+   pos.set(x,y,z);
+   const aspect=.82+.48*r2,stretch=kind==='duct'?1.25:kind==='plume'?1.20:1;
+   scale.set(size*2*aspect,size*2/stretch*(1.1+.35*r3),1);
+   smokeTwist.setFromAxisAngle(smokeAxis,Math.PI*2*r2+u*.65+(kind==='duct'?.17:0));
+   smokeTwist.premultiply(billboardQ);
+   mtx.compose(pos,smokeTwist,scale);mesh.setMatrixAt(i,mtx);
   }
   mesh.instanceMatrix.needsUpdate=true;
  };
@@ -340,9 +486,9 @@ function addEffectSystem(siteRoot,camera){
   const pilot=smooth(-22,-20,t)*(1-smooth(-10,-8,t));
   const exhaustAtGround=fire*(1-smooth(30,95,t));
   const water=(t>=-10?Math.max(.08,smooth(-10,-7,t)):0)*(1-smooth(46,115,t));
-  const groundCloud=smooth(-9.4,4,t)*(1-smooth(90,260,t));
-  const ductCloud=clamp(exhaustAtGround*1.04+water*.40,0,1);
-  const plume=smooth(0,4,t)*(1-smooth(100,200,t));
+  const groundCloud=smooth(-9.4,3,t)*(1-smooth(115,290,t));
+  const ductCloud=clamp(exhaustAtGround*1.10+water*.43,0,1);
+  const plume=smooth(0,3,t)*(1-smooth(140,245,t));
   const vapor=(.55+.45*smooth(-90,-60,t))*(1-smooth(38,148,t));
   const heat=clamp(fire*.85+pilot*.13,0,1);
   glow.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.08,0,1);
@@ -353,8 +499,8 @@ function addEffectSystem(siteRoot,camera){
   const enginePower=sampleEnergiaEnginePlumes(t);
   for(const kind of ['core','booster']){
    const power=enginePower[kind==='core'?'core':'boosters'];
-   for(const suffix of [kind,kind+'Glow']){
-    rocketNozzleMaterials[suffix].uniforms.uPower.value=power*(suffix.endsWith('Glow')?.60:1);
+   for(const suffix of [kind,kind+'Glow',kind+'White']){
+    rocketNozzleMaterials[suffix].uniforms.uPower.value=power*(suffix.endsWith('Glow')?.72:1);
     rocketNozzleMaterials[suffix].uniforms.uTime.value=t;
    }
   }
@@ -365,21 +511,25 @@ function addEffectSystem(siteRoot,camera){
   // White-hot nozzle cores flicker without changing the launch clock.
   for(const jet of engineJets){
    const power=jet.type==='core'?enginePower.core:enginePower.boosters;
-   const flicker=.92+.07*Math.sin(t*11+jet.index*1.6)+.035*Math.sin(t*19-jet.index);
-   jet.meshes.forEach(mesh=>{mesh.scale.y=(.82+.28*power)*flicker;mesh.visible=power>.003;});
+   const flicker=.96+.09*Math.sin(t*10.7+jet.index*1.7)+.055*Math.sin(t*21-jet.index*.7);
+   jet.meshes.forEach((mesh,i)=>{
+    mesh.scale.set(1+.05*Math.sin(t*8+jet.index+i),(.88+.30*power)*flicker,1+.05*Math.cos(t*13+jet.index+i));
+    mesh.visible=power>.003;
+   });
   }
-  movingFlameLight.intensity=850*Math.max(enginePower.core,enginePower.boosters);
+  movingFlameLight.intensity=1150*Math.max(enginePower.core,enginePower.boosters);
   const platformRetreat=smooth(-55,-37,t),clampRelease=smooth(-.5,2,t),umbilicalRelease=smooth(-1,1.5,t);
   arms.forEach((arm,i)=>{arm.rotation.y=-platformRetreat*(.8+i*.065);arm.visible=t<25;});
   for(const item of support)item.pivot.rotation.z=item.sign*clampRelease*.65;
   for(const item of umbilicals)item.pivot.rotation.y=item.dir*umbilicalRelease*1.14;
+  setShadowPose(t,Math.max(enginePower.core*.58,enginePower.boosters,exhaustAtGround*.84),rocketHolder);
   write(innerSmoke,t,'steam',vapor,s);
   write(waterSpray,t,'water',water,s);
   write(ductSmoke,t,'duct',ductCloud,s);
   write(fieldSmoke,t,'field',groundCloud,s);
   write(ascentPlume,t,'plume',plume,s);
   write(sparks,t,'sparks',exhaustAtGround*.8,s);
-  for(const {mesh,cold,warm}of smokeBase)mesh.material.color.copy(cold).lerp(warm,heat*(mesh===ductSmoke?0.76:mesh===fieldSmoke?0.68:0.42));
+  for(const {mesh,cold,warm}of smokeBase)mesh.material.color.copy(cold).lerp(warm,heat*(mesh===ductSmoke?.82:mesh===fieldSmoke?.72:.50));
   lights.forEach((light,i)=>{
    const wobble=.94+.06*Math.sin(t*7+i*1.7);
    const power=i===0?fire:i===1?exhaustAtGround:i===2?ductCloud:
@@ -395,18 +545,19 @@ function addEffectSystem(siteRoot,camera){
    flameRoot.quaternion.copy(rocketHolder.quaternion);
   }
   flameRoot.scale.set(1,1,1);
-  return {smoke:groundCloud,water,steam:vapor,plume,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,engineFlameAttached:!!rocketHolder,smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
+  return {smoke:groundCloud,water,steam:vapor,plume,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,engineFlameAttached:!!rocketHolder,smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
    lightIntensity:lights.map(l=>l.intensity),armsReopen:platformRetreat,umbilicalRelease,
    ductPower:exhaustAtGround,flamePower:fire,ductJetVisible:ductJetRoot.visible,
    mobileTowerArms:arms.map(a=>a.rotation.y),rocketExhaustOffset:flameRoot.position.toArray()};
  }
 
  function dispose(){
+  disableShadows();
   root.traverse(o=>{if(o.isMesh){o.geometry?.dispose();o.material?.dispose();}});
   smokeTexture.dispose();
   root.removeFromParent();
  }
- return {root,pose,dispose};
+ return {root,pose,dispose,enableShadows,disableShadows};
 }
 export function energiaVisualHeight(altKm){
  // In the first seconds 1 physical metre = 0.14 world units, matching the
@@ -415,8 +566,8 @@ export function energiaVisualHeight(altKm){
 }
 function visualHeight(altKm){return energiaVisualHeight(altKm);}
 
-export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEntry,onStart=()=>null,onStop=()=>{}}){
- const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v3',import.meta.url);document.head.append(stylesheet);
+export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,renderer,objects=[],getEntry,onStart=()=>null,onStop=()=>{}}){
+ const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v4',import.meta.url);document.head.append(stylesheet);
  const panel=document.createElement('section');panel.id='energiaLaunchPanel';panel.hidden=true;panel.setAttribute('aria-label','Энергия — Полюс: реконструкция запуска 15 мая 1987 года');
  panel.innerHTML=[
   '<header class="energia-event-head"><div><span class="energia-kicker">15 МАЯ 1987 · УКСС · ПЛ. 250</span><h2>ЭНЕРГИЯ — ПОЛЮС</h2><span class="energia-tag">ИСТОРИЧЕСКАЯ РЕКОНСТРУКЦИЯ</span></div><button type="button" id="energiaClose" title="Закрыть сценарий" aria-label="Закрыть сценарий">×</button></header>',
@@ -439,7 +590,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
  const source=()=>getEntry?.();
  function ensure(){
   const entry=source();if(!entry||entry.status!=='ready')return false;
-  if(!effects)effects=addEffectSystem(siteRoot,camera);
+  if(!effects)effects=addEffectSystem(siteRoot,camera,renderer,objects);
   modelReady=true;return true;
  }
  const poseRocket=(sample)=>{
@@ -532,7 +683,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
    saved={camera:camera.position.clone(),target:controls.target.clone(),enabled:controls.enabled,damping:controls.enableDamping,rocketVisible:entry.holder.visible};
    originalRocket={position:entry.holder.position.clone(),rotation:entry.holder.rotation.clone()};
    sceneRestore=onStart?.()||null;
-   active=true;panel.hidden=false;document.body.classList.add('energia-launch-active');effects.root.visible=true;
+   active=true;panel.hidden=false;document.body.classList.add('energia-launch-active');effects.root.visible=true;effects.enableShadows();
    controls.enableDamping=false;controls.enabled=true;createPayloadProxy();
   }
   seconds=ENERGIA_LAUNCH_START;paused=false;speed=8;$('energiaSpeed').value='8';lastNow=null;lastPhase=-1;mode='auto';
@@ -548,7 +699,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
    entry.holder.rotation.copy(originalRocket.rotation);
    entry.holder.visible=saved.rocketVisible;
   }
-  if(effects)effects.root.visible=false;
+  if(effects){effects.root.visible=false;effects.disableShadows();}
   if(preview)preview.visible=false;
   sceneRestore?.();sceneRestore=null;
   if(saved){
@@ -587,7 +738,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,setManualCamera,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:2195,smokeMode:'soft-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,engineCorePower:lastFrame?.engineCorePower,engineBoosterPower:lastFrame?.engineBoosterPower,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
+   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,shadowMapEnabled:lastFrame?.shadowMapEnabled,shadowLightIntensity:lastFrame?.shadowLightIntensity,shadowReceiverCount:lastFrame?.shadowReceiverCount,shadowCasterCount:lastFrame?.shadowCasterCount,shadowMapResolution:lastFrame?.shadowMapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,engineCorePower:lastFrame?.engineCorePower,engineBoosterPower:lastFrame?.engineBoosterPower,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
   update(now){
    if(!active)return;
    if(lastNow!==null&&!paused&&!document.hidden){
