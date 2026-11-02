@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "created": "2026-11-02",
+  "generator": "OpenAI built-in image_gen",
+  "type": "illustrative concept artwork, not documentary photographs or technical diagrams",
+  "style": "Photorealistic museum scale models; warm ivory background, muted graphite and olive structures, sparse coral accents; soft upper-left light.",
+  "images": [
+    {
+      "file": "soyuz-v1.webp",
+      "width": 1152,
+      "height": 1152,
+      "prompt": "Use case: stylized-concept. Asset type: right-side hero artwork for a premium Baikonur interactive museum website preloader, one image in a coordinated series. Create a spectacular photorealistic studio photograph of an exquisitely detailed physical architectural scale model of the Baikonur Soyuz launch complex. A slender white and muted olive-gray Soyuz rocket with the recognizable four tapered side boosters, standing upright between muted olive-green lattice service gantries at the Gagarin launch pad, fine railway tracks leading into the foreground, cutaway concrete flame trench and sandy steppe ground. Miniature museum diorama, architectural model photography, not a drawing, not a diagram, not a digital user interface. Centered composition, elevated three-quarter viewpoint, long-lens macro photography feel, all major structures crisp, subtle depth-of-field only at the distant edge. The terrain is a low organic miniature island on a continuous warm ivory studio background (#f3f0e7), with generous breathing room around the rocket and model. Directional soft warm studio light from upper left, long elegant shadows, refined graphite concrete and muted green metal, extremely restrained coral red (#F14E36) accent objects, slight analog film texture. Beautiful realistic materials and tiny engineering details. Quiet monumental composition with the rocket's top fully within the frame. Square image. No people, no text, no lettering, no numbers, no logos, no watermark, no border, no collage, no rounded frame, no black background.",
+      "bytes": 137732,
+      "quality": 78
+    },
+    {
+      "file": "energia-v1.webp",
+      "width": 1152,
+      "height": 1152,
+      "prompt": "Use case: stylized-concept. Asset type: coordinated museum website artwork. Input image role: STYLE REFERENCE ONLY. Create a BRAND NEW separate image, not a collage, not an edited copy of the reference. Match exactly the artistic treatment of the provided reference: photorealistic studio photograph of an exquisitely detailed physical museum architectural scale model, miniature sandy steppe island against continuous warm ivory (#f3f0e7) background, premium architectural model photography, elevated three-quarter view, refined muted graphite concrete and metal, sparse restrained coral red #F14E36 accents, directional warm soft light from upper left, tiny engineering details, slight analog film grain, elegant soft long shadows. Center the composition with all major objects fully inside the frame and modest breathing room. Square format. No text, no lettering, no logos, no numbers, no watermark, no decorative UI, no border. The scene is evocative concept artwork, not an information diagram. SUBJECT: Soviet Energia heavy-lift rocket with the Buran space shuttle attached to its side, standing at the historical Baikonur site 110 launch complex. Tall white cylindrical Energia core with white side boosters, a recognizable white Buran orbiter with black thermal tile nose and black lower wing edges, its two delta wings clearly visible, two large graphite industrial service structures on either side set back, concrete launch foundation and a sloping empty flame channel in foreground. Four tapered side boosters around the central core, no orange American shuttle tank. Buran mounted nose-up next to the Energia core and recognizable in three-quarter view. The ground has a few precise miniature utility roads and muted green pipes. No railway in the flame channel. Monumental and beautiful physical museum model.",
+      "bytes": 142594,
+      "quality": 75
+    },
+    {
+      "file": "railway-v1.webp",
+      "width": 1152,
+      "height": 1152,
+      "prompt": "Use case: stylized-concept. Asset type: coordinated museum website artwork. Input image role: STYLE REFERENCE ONLY. Create a BRAND NEW separate image, not a collage, not an edited copy of the reference. Match exactly the artistic treatment of the provided reference: photorealistic studio photograph of an exquisitely detailed physical museum architectural scale model, miniature sandy steppe island against continuous warm ivory (#f3f0e7) background, premium architectural model photography, elevated three-quarter view, refined muted graphite concrete and metal, sparse restrained coral red #F14E36 accents, directional warm soft light from upper left, tiny engineering details, slight analog film grain, elegant soft long shadows. Center the composition with all major objects fully inside the frame and modest breathing room. Square format. No text, no lettering, no logos, no numbers, no watermark, no decorative UI, no border. The scene is evocative concept artwork, not an information diagram. SUBJECT: Baikonur cosmodrome rail transport scene, a classic red Soviet diesel locomotive with a dark graphite roof at front-left pulling a long flat transporter carrying a horizontally positioned white-gray Soyuz rocket with its pointed nose and four tapered boosters. The rail line runs diagonally across the miniature sandy ground island, with clean paired steel rails and small sleepers, curved spur track at the edge. A huge pale graphite assembly hangar with open tall entrance stands farther behind the train, subtle industrial pipes and sparse light masts. Authentic restrained engineering miniature, no steam engine, no tracks through buildings or through other objects. Eye is drawn to locomotive and long horizontal rocket. Entire train composition within frame. No people.",
+      "bytes": 143162,
+      "quality": 72
+    },
+    {
+      "file": "antenna-v1.webp",
+      "width": 1152,
+      "height": 1152,
+      "prompt": "Use case: stylized-concept. Asset type: coordinated museum website artwork. Input image role: STYLE REFERENCE ONLY. Create a BRAND NEW separate image, not a collage, not an edited copy of the reference. Match exactly the artistic treatment of the provided reference: photorealistic studio photograph of an exquisitely detailed physical museum architectural scale model, miniature sandy steppe island against continuous warm ivory (#f3f0e7) background, premium architectural model photography, elevated three-quarter view, refined muted graphite concrete and metal, sparse restrained coral red #F14E36 accents, directional warm soft light from upper left, tiny engineering details, slight analog film grain, elegant soft long shadows. Center the composition with all major objects fully inside the frame and modest breathing room. Square format. No text, no lettering, no logos, no numbers, no watermark, no decorative UI, no border. The scene is evocative concept artwork, not an information diagram. SUBJECT: Baikonur telemetry and tracking station miniature, one very large white parabolic radio telescope dish tilted upward at about 45 degrees, on a sturdy graphite lattice pedestal on a gently raised natural sandy hill. Feed-support struts clearly visible. A few restrained low rectangular cream industrial buildings, thin utility lines, a winding precise access road, muted green equipment, and only tiny coral-red access railings. Fine sandy steppe textures, a few dry grasses, restrained concrete paths. One smaller tracking antenna in far background if useful, but hero is single large white dish. Quiet heroic iconic museum diorama, believable radio telescope engineering. No rocket, no text.",
+      "bytes": 129158,
+      "quality": 78
+    }
+  ]
+}

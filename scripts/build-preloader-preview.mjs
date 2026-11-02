@@ -1,7 +1,7 @@
 import {readFile, writeFile} from 'node:fs/promises';
 
 // The labelled preview uses the production loader without importing the 3D
-// scene. Its illustration replays; the real loading bar remains at zero.
+// scene. Its phrases and gallery replay; the real loading bar remains at zero.
 const entry = await readFile(new URL('../index.html', import.meta.url), 'utf8');
 const match = entry.match(/<!-- MUSEUM_PRELOADER_START -->\s*([\s\S]*?)\s*<!-- MUSEUM_PRELOADER_END -->/);
 if (!match) throw new Error('Production preloader markup is missing');
@@ -19,17 +19,17 @@ const html = `<!doctype html>
 <html lang="ru"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex"><meta name="theme-color" content="#f3f0e7">
-<title>Байконур — анимация загрузки</title>
-<meta name="description" content="Динамичный флэт-прелоадер музея Байконура: от выбора места для космодрома до зажигания.">
+<title>Гранд-макет Байконур — экран загрузки</title>
+<meta name="description" content="Гранд-макет Байконур: интерактивный музей 3D. Предпросмотр экрана загрузки с тематической галереей.">
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <style>${font}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
 </style>
-<link rel="stylesheet" href="./src/museum-preloader.css?v=20261101-preloader-strict-v4">
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261102-preloader-gallery-v6">
 
 </head><body>
 ${markup}
-<script src="./src/museum-preloader.js?v=20261102-preloader-progress-v5"></script>
+<script src="./src/museum-preloader.js?v=20261102-preloader-gallery-v6"></script>
 </body></html>
 `;
 await writeFile(new URL('../preloader.html', import.meta.url), html);

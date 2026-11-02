@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {chromium} from 'playwright';
+const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 
 // Exercise transport failures with the production 15/20-second deadlines.
@@ -8,8 +8,17 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
 const revision='20261102-rail-scheme-v1';
-const welcome='Добро пожаловать на космодром Байконур первый в истории и крупнейший на планете космическая гавань человечества';
+const welcome='ГРАНД-МАКЕТ БАЙКОНУР ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D';
 const slogan='КОСМОС НАЧИНАЕТСЯ С НАЗЕМКИ';
+const featurePhrases=[
+ 'ИЗУЧАЙТЕ ГЛАВНУЮ КОСМИЧЕСКУЮ ГАВАНЬ ЗЕМЛИ',
+ 'ЗНАКОМЬТЕСЬ С ИСТОРИЕЙ И ГЕОГРАФИЕЙ КОСМОДРОМА',
+ 'ДЕТАЛЬНЫЕ МАКЕТЫ РАКЕТ И СТАРТОВЫХ КОМПЛЕКСОВ',
+ 'ДОСТОВЕРНАЯ СХЕМА ПЛОЩАДОК И ОБЪЕКТОВ',
+ 'СОВЕРШИТЕ ПОЛЁТ НАД ЛЕГЕНДАРНЫМ КОМПЛЕКСОМ',
+ 'ЧИТАЙТЕ МИФЫ И ЛЕГЕНДЫ, О КОТОРЫХ НЕ ПИШУТ',
+ 'ПРИЯТНОГО ПУТЕШЕСТВИЯ'
+];
 const launchStatusCount=20,finalLaunchStep=launchStatusCount-1,lastLoadingLaunchStep=finalLaunchStep-1;
 const launchStatuses=[
  'ВЫБОР МЕСТА ДЛЯ СТРОИТЕЛЬСТВА КОСМОДРОМА','РАЗМЕТКА МЕСТНОСТИ','ЗАГРУЗКА СТАРТОВЫХ КОМПЛЕКСОВ',
@@ -28,13 +37,13 @@ const browser=await chromium.launch({headless:true,
  args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 let activePage=null,activeCase=null;
 
-async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=null,reducedMotion=false}={}){
+async function newCase(name,{holdCatalog=false,holdGallery=false,httpFailure=false,stalledBody=null,reducedMotion=false}={}){
  console.log('STARTUP_CASE',name);
  const context=await browser.newContext({viewport:{width:1280,height:800},deviceScaleFactor:1,serviceWorkers:'block',
   reducedMotion:reducedMotion?'reduce':'no-preference'});
  const page=await context.newPage();activePage=page;activeCase=name;page.setDefaultTimeout(60000);
  const record={externalBlocked:[],fontStylesheetsPending:[],pageErrors:[],shaderErrors:[],
-  networkFailures:[],badHTTPResponses:[],consoleErrors:[],catalogRequests:0};
+  networkFailures:[],badHTTPResponses:[],consoleErrors:[],catalogRequests:0,galleryRequestsPending:[]};
  evidence.cases[name]=record;
  let releaseCatalog;
  const catalogGate=new Promise(resolve=>{releaseCatalog=resolve;});
@@ -53,6 +62,11 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    record.catalogRequests++;
    if(httpFailure){await route.fulfill({status:500,contentType:'application/json',body:'{"error":"startup test"}'});return;}
    if(holdCatalog)await catalogGate;
+  }
+  if(holdGallery&&url.pathname.includes('/assets/preloader/')){
+   // Decorative imagery may never arrive. Neither phrase rotation nor the
+   // first rendered, interactive museum is allowed to depend on its response.
+   record.galleryRequestsPending.push(request.url());return;
   }
   if(stalledBody==='optional-models'&&url.pathname.endsWith('/assets/models/mriya-buran/far-v2.glb')){
    await route.fulfill({status:503,contentType:'text/plain',body:'Expected optional model failure'});return;
@@ -229,12 +243,18 @@ async function preloaderState(page){
    launchCounter:document.getElementById('museumLaunchStep')?.textContent.trim(),
    welcome:document.getElementById('museumWelcome')?.textContent.replace(/\s+/g,' ').trim(),
    slogan:document.getElementById('museumPreloaderSlogan')?.textContent.replace(/\s+/g,' ').trim(),
+   features:[...loader.querySelectorAll('#museumFeatureSlides .preloader__phrase')].map(element=>({
+    text:element.textContent.replace(/\s+/g,' ').trim(),active:element.classList.contains('is-active'),
+    hidden:element.getAttribute('aria-hidden')})),
+   images:[...loader.querySelectorAll('#museumPreloaderGallery .preloader__image')].map(element=>({
+    active:element.classList.contains('is-active'),priority:element.getAttribute('fetchpriority'),
+    decoding:element.getAttribute('decoding'),complete:element.complete,naturalWidth:element.naturalWidth})),
    stage:Number(progress?.getAttribute('aria-valuenow')),total:Number(progress?.getAttribute('aria-valuemax')),
    role:progress?.getAttribute('role'),fillScale:fill?Number(fill[1]):null,
    paused:loader?.classList.contains('is-paused'),motion:loader?.dataset.motion,
    running:loader?.getAnimations({subtree:true}).filter(animation=>animation.playState==='running').length,
-   illustrationRunning:loader?.querySelector('.preloader__illustration')?.getAnimations({subtree:true})
-    .filter(animation=>animation.playState==='running').length||0,
+   decorationRunning:[...loader.querySelectorAll('#museumFeatureSlides,#museumPreloaderGallery')]
+    .flatMap(element=>element.getAnimations({subtree:true})).filter(animation=>animation.playState==='running').length,
    toggle:{tag:toggle?.tagName,pressed:toggle?.getAttribute('aria-pressed'),disabled:toggle?.disabled,
     label:toggle?.getAttribute('aria-label')||toggle?.textContent.trim()},
    live:message?.getAttribute('aria-live'),messageRole:message?.getAttribute('role'),
@@ -301,7 +321,14 @@ async function assertReducedMotion(page){
 
 async function exercisePreloader(page){
  const initial=await preloaderState(page);
- assert.equal(initial.welcome,welcome,'The welcome preserves the requested wording and letter case');
+ assert.equal(initial.welcome,welcome,'The museum identity preserves the requested wording and letter case');
+ assert.deepEqual(initial.features.map(feature=>feature.text),featurePhrases,'All seven visitor phrases preserve the requested order');
+ assert.equal(initial.features.filter(feature=>feature.active).length,1,'The phrase carousel has one active slide');
+ assert.ok(initial.features.every(feature=>feature.hidden===String(!feature.active)),'Only the current phrase is exposed to assistive technology');
+ assert.equal(initial.images.length,4,'The scene uses the four thematic images');
+ assert.ok(initial.images.every(image=>image.priority==='low'&&image.decoding==='async'),
+  'Decorative image requests and decoding leave priority to the museum');
+ assert.equal(await page.locator('.preloader__illustration,.poster__vehicle').count(),0,'The previous animated rocket is removed');
  assert.equal(initial.slogan,slogan,'The separate slogan preserves its exact uppercase wording');
  assert.equal(await page.locator('#museumPreloaderSlogan').isVisible(),true,'The new slogan is visible during loading');
  assert.equal(initial.launchCounter,String(initial.launchStep+1).padStart(2,'0')+' / '+launchStatusCount,
@@ -326,6 +353,8 @@ async function exercisePreloader(page){
  const layouts=[];
  for(const viewport of [{width:1280,height:800},{width:390,height:720}])
   layouts.push(await assertPreloaderFits(page,viewport));
+ assert.deepEqual((await preloaderState(page)).features,paused.features,
+  'Manual pause freezes the promotional phrase carousel during viewport changes');
  await page.emulateMedia({reducedMotion:'reduce'});
  await page.waitForFunction(()=>document.getElementById('museumMotionToggle').disabled);
  const motion=await assertReducedMotion(page);
@@ -339,17 +368,20 @@ async function exercisePreloader(page){
  assert.equal(stillPaused.status,paused.status);assert.equal(stillPaused.stage,initial.stage);
  assert.equal(stillPaused.fillScale,initial.fillScale);
  assert.equal(stillPaused.running,0,'Pausing stops decorative motion');
+ assert.deepEqual(stillPaused.features,restored.features,'Removing reduced motion preserves the manual pause');
  await page.setViewportSize({width:1280,height:800});
  await page.locator('#museumMotionToggle').focus();await page.keyboard.press('Space');
  const resumed=await preloaderState(page);
  assert.equal(resumed.paused,false);assert.equal(resumed.motion,'running');assert.equal(resumed.toggle.pressed,'false');
  // Outlast the removed 2.2-second story timer with animation running. Status
  // text must still describe the held real stage, without extending its 15s limit.
- await page.waitForTimeout(2400);
+ await page.waitForTimeout(3400);
  const held=await preloaderState(page);
  assert.equal(held.launchStep,0,'Elapsed time alone cannot advance production launch text');
  assert.equal(held.status,firstLaunchStatus);assert.deepEqual(held.launch.map(item=>item.step),[0]);
  assert.equal(held.stage,initial.stage);assert.equal(held.fillScale,initial.fillScale);
+ assert.notDeepEqual(held.features.map(feature=>feature.active),resumed.features.map(feature=>feature.active),
+  'Visitor phrases can advance while gallery images remain unavailable');
  // The actual load below runs with normal motion and records every phase.
  return {initial,paused,stillPaused,resumed,held,layouts,motion};
 }
@@ -508,7 +540,7 @@ async function exerciseProgressFixtures(){
    assert.equal(state.state,'error');assert.equal(state.hidden,false);assert.equal(state.retryHidden,false);
    assert.equal(state.chromeReady,false);assert.ok(state.inert.every(item=>item.inert===true));
    assert.deepEqual(state.test.ready,[]);assert.equal(intro.launchStep,failedAt);
-   assert.equal(intro.stage,8);assert.equal(intro.illustrationRunning,0);
+   assert.equal(intro.stage,8);assert.equal(intro.decorationRunning,0);
    assert.equal(intro.toggle.disabled,true);
    assert.deepEqual(state.test.launch.map(item=>item.step),[0],
     'Visibility changes cannot flush queued statuses after startup has failed');
@@ -524,9 +556,9 @@ async function exerciseProgressFixtures(){
     const phase=await preloaderState(run.page);
     assert.equal(phase.stage,index-1);assert.ok(Math.abs(phase.fillScale-(index-1)/9)<1e-6);
     assert.equal(phase.paused,true);assert.equal(phase.toggle.pressed,'true');
-    assert.equal(phase.illustrationRunning,0,'Manual pause freezes decoration while real-stage text advances');
+    assert.equal(phase.decorationRunning,0,'Manual pause freezes decoration while real-stage text advances');
     assert.equal(phase.status,launchStatuses[targets[index-1]]);
-    run.record.phases.push({index,launchStep:phase.launchStep,stage:phase.stage,illustrationRunning:phase.illustrationRunning});
+    run.record.phases.push({index,launchStep:phase.launchStep,stage:phase.stage,decorationRunning:phase.decorationRunning});
    }
   }else if(mode==='reduced'){
    await assertReducedMotion(run.page);
@@ -592,7 +624,7 @@ try{
  // No third-party response can help this successful launch. Hold the catalog
  // until the test has observed usable startup feedback and inert controls.
  {
-  const run=await newCase('external-unavailable',{holdCatalog:true});
+  const run=await newCase('external-unavailable',{holdCatalog:true,holdGallery:true});
   const request=run.page.waitForRequest(r=>new URL(r.url()).pathname.endsWith('/data/catalog.json'),{timeout:45000});
   await run.navigate();await request;console.log('STARTUP_CATALOG_HELD');
   const loading=await loaderState(run.page);
@@ -615,6 +647,7 @@ try{
    'Focus does not remain inside the hidden preloader');
   assert.equal(ready.stats.ukss.status,'ready');assert.equal(ready.stats.mik112.tua.status,'ready');
   assert.ok(run.record.fontStylesheetsPending.length>0,'A genuinely pending font stylesheet does not block startup');
+  assert.ok(run.record.galleryRequestsPending.length>0,'The museum opens even when decorative image responses never complete');
   assert.deepEqual(run.record.externalBlocked.filter(item=>item.type==='script'),[],'All executable engine modules come from the museum origin');
   await run.page.evaluate(()=>window.__MUSEUM_CONTENT_READY);
   await run.page.evaluate(()=>window.__MUSEUM_ROCKETS_READY);

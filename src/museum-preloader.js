@@ -33,6 +33,8 @@
   var progress = byId('museumStageProgress');
   var fill = byId('museumProgressFill');
   var toggle = byId('museumMotionToggle');
+  var phrases = Array.prototype.slice.call(root.querySelectorAll('#museumFeatureSlides .preloader__phrase'));
+  var images = Array.prototype.slice.call(root.querySelectorAll('#museumPreloaderGallery .preloader__image'));
   var motion = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : { matches: false };
   var preview = root.dataset.preview === 'true';
   var launchStep = 0;
@@ -50,6 +52,10 @@
   var exitTimer = null;
   var onExit = null;
   var listeners = [];
+  var featureIndex = 0;
+  var imageCursor = 0;
+  var presentationTimer = null;
+  var pendingImage = null;
 
   function listen(target, type, handler) {
     if (!target) return;
@@ -76,6 +82,93 @@
 
   function motionPaused() {
     return manuallyPaused || motion.matches || document.hidden || failed || destroyed;
+  }
+
+  function showFeature(index) {
+    if (!phrases.length) return;
+    featureIndex = index;
+    phrases.forEach(function (phrase, position) {
+      var active = position === index;
+      phrase.classList.toggle('is-active', active);
+      phrase.setAttribute('aria-hidden', String(!active));
+    });
+  }
+
+  function showImage(index) {
+    images.forEach(function (image, position) {
+      image.classList.toggle('is-active', position === index);
+    });
+  }
+
+  function stopPresentation() {
+    if (presentationTimer !== null) window.clearTimeout(presentationTimer);
+    presentationTimer = null;
+    if (pendingImage) {
+      var pending = pendingImage;
+      pendingImage = null;
+      pending.cleanup();
+      // Removing an inactive source lets the browser abandon a decorative
+      // request. A late decode promise cannot change the visible slide.
+      pending.image.removeAttribute('src');
+    }
+  }
+
+  function advanceImage() {
+    if (images.length < 2 || pendingImage || motionPaused() || finishing) return;
+    imageCursor = (imageCursor + 1) % images.length;
+    var index = imageCursor;
+    var image = images[index];
+    if (image.complete && image.naturalWidth > 0) {
+      showImage(index);
+      return;
+    }
+    var source = image.dataset.src || image.getAttribute('src');
+    if (!source) return;
+    if (!image.dataset.src) image.dataset.src = source;
+    var pending = { image: image, cleanup: cleanup };
+    pendingImage = pending;
+    function cleanup() {
+      image.removeEventListener('load', loaded);
+      image.removeEventListener('error', failedImage);
+    }
+    function ready() {
+      if (pendingImage !== pending) return;
+      pendingImage = null;
+      cleanup();
+      if (!motionPaused() && !finishing && image.naturalWidth > 0) showImage(index);
+    }
+    function failedImage() {
+      if (pendingImage !== pending) return;
+      pendingImage = null;
+      cleanup();
+      image.removeAttribute('src');
+      // Keep the last successful picture; the next tick tries another image.
+    }
+    function loaded() {
+      cleanup();
+      if (typeof image.decode === 'function') image.decode().then(ready, failedImage);
+      else ready();
+    }
+    image.addEventListener('load', loaded);
+    image.addEventListener('error', failedImage);
+    image.decoding = 'async';
+    image.fetchPriority = 'low';
+    image.src = source;
+  }
+
+  function schedulePresentation() {
+    if (presentationTimer !== null) window.clearTimeout(presentationTimer);
+    presentationTimer = null;
+    if (motionPaused() || finishing || (!phrases.length && !images.length)) return;
+    // This is decoration only: neither its clock nor an image download is
+    // included in the museum's real progress or its reveal deadline.
+    presentationTimer = window.setTimeout(function () {
+      presentationTimer = null;
+      if (motionPaused() || finishing) return;
+      if (phrases.length) showFeature((featureIndex + 1) % phrases.length);
+      advanceImage();
+      schedulePresentation();
+    }, 3200);
   }
 
   function syncMotion() {
@@ -186,6 +279,7 @@
     failed = true;
     stopCycle();
     stopAdvance();
+    stopPresentation();
     root.classList.add('has-error');
     root.classList.remove('is-slow');
     syncMotion();
@@ -200,6 +294,8 @@
     if (destroyed || finishing || failed) return;
     finishing = true;
     stopCycle();
+    stopPresentation();
+    if (!motion.matches) showFeature(phrases.length - 1);
     exitDeadline = performance.now() + 460;
     onExit = typeof reveal === 'function' ? reveal : null;
     targetStep = launchStatuses.length - 1;
@@ -225,6 +321,7 @@
     destroyed = true;
     stopCycle();
     stopAdvance();
+    stopPresentation();
     if (exitTimer !== null) window.clearTimeout(exitTimer);
     exitTimer = null;
     onExit = null;
@@ -236,6 +333,13 @@
 
   function refreshMotion() {
     syncMotion();
+    if (motionPaused() || finishing) stopPresentation();
+    else schedulePresentation();
+    if (motion.matches) {
+      showFeature(0);
+      showImage(0);
+      imageCursor = 0;
+    }
     if (preview) schedulePreview();
     else {
       if (document.hidden) flushAdvance();

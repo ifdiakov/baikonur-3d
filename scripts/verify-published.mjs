@@ -14,6 +14,7 @@ const files=['assets/models/m62-kosmotrans/model-v1.glb','assets/models/m62-kosm
  'assets/terrain/satellite-uv-correction-v1.bin','assets/terrain/satellite-uv-correction-v1.json',
  'assets/terrain/satellite-expansion-v1.jpg','assets/terrain/satellite-expansion-v1.json',
  'assets/terrain/satellite-expansion-preview-v1.jpg',
+ ...(await readdir('assets/preloader')).filter(file=>/\.(?:webp|json)$/.test(file)).map(file=>'assets/preloader/'+file),
  ...['soyuz','energia-polyus','energia-buran','energia','energia-m','r16','cyclone-2','cyclone-3'].flatMap(id=>['assets/models/rockets/'+id+'.glb','assets/models/rockets/'+id+'.json']),
  'assets/models/mriya-buran/near-v2.glb','assets/models/mriya-buran/far-v2.glb','src/vendor/meshopt_decoder-v1.mjs',
  ...(await readdir('src/vendor/three-r160',{recursive:true})).filter(file=>file.endsWith('.js')).map(file=>'src/vendor/three-r160/'+file),
