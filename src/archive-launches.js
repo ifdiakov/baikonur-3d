@@ -61,3 +61,6 @@ export function soyuz31(root){
  for(const[x,z]of[[-70,-48],[70,-48]])k.lattice(x,z,88,5,5,{levels:15,tag:'soyuz-lightning-mast'});k.rail([[0,174],[0,42],[0,3]]);k.path([[-59,139],[-51,57],[-47,-44],[57,-44],[60,133]],6,.1);k.hall({x:61,z:91,w:22,d:40,h:7,roof:'blue',gates:1,tag:'soyuz-service-house'});root.userData.orientationNote='No overhead of Site 31 in the satellite folder; azimuth remains schematic.';return k.finish();
 }
 export {buildSite45 as zenit45} from './site45.js?v=20261102-site2-photo-v3';
+
+// Export the same module instance used by protonComplex for geometry checks.
+export {buildProtonPosition,protonPositionController} from './proton-launch.js?v=20261102-site2-photo-v3';

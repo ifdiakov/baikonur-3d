@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildProtonPosition,protonPositionController} from '../src/proton-launch.js?v=20261101-proton-launch-v1';
-import {protonComplex,PROTON_METRIC_REFERENCE} from '../src/archive-launches.js';
+import {protonComplex,PROTON_METRIC_REFERENCE,buildProtonPosition,protonPositionController} from '../src/archive-launches.js';
 const root=new THREE.Group();buildProtonPosition(root,{rocketVisible:false});root.updateMatrixWorld(true);
 const ray=(a,d,far=100)=>new THREE.Raycaster(new THREE.Vector3(...a),new THREE.Vector3(...d),0,far).intersectObject(root,true).filter(h=>{for(let o=h.object;o;o=o.parent)if(!o.visible)return false;return true;});
 const opening=ray([0,5,0],[0,-1,0],20)[0];assert(opening&&opening.point.y<-3.8,'The launch aperture is physically open down to the gas splitter');
