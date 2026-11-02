@@ -77,7 +77,7 @@ try{
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState().controlsEnabled),true,
   'OrbitControls must remain enabled during the launch');
  await shot('prelaunch');
- for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-10,'water-spray'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[6,'initial-ascent'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
+ for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-10,'water-spray'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[6,'initial-ascent'],[20,'pad-disperse'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
   s=await seek(t);const e=s.effects;
   evidence.phases.push({t,phase:s.phase,gasPower:e.gasPower,flamePower:e.flamePower,ductJetVisible:e.ductJetVisible,rocketExhaustOffset:e.rocketExhaustOffset});
   assert.ok(Number.isFinite(s.telemetry.altitudeKm)&&Number.isFinite(s.telemetry.speedKmS));
@@ -95,6 +95,12 @@ try{
   if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
   if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
   if(t===145.9){assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');}
+  if(t===20){
+   assert.equal(e.padFireFade,0,'UKSS flame is gone after rocket exceeds 360m');
+   assert.ok(e.padSmokeFade>0&&e.padSmokeFade<1,'UKSS smoke dissipates gradually from 100 to 800m');
+   assert.ok(e.lightIntensity.every(v=>v<.1),'Orange start-pit lighting turns off while residual smoke clears');
+   assert.ok(e.engineCorePower>.9,'Engine plume on the rocket remains fully active');
+  }
   if(t===30){
    assert.equal(e.padFireFade,0,'No standing fire at UKSS after ascent above the pad');
    assert.equal(e.padSmokeFade,0,'The ground cloud has dispersed while rocket exhaust remains active');

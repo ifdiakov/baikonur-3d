@@ -503,7 +503,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   const heat=clamp(exhaustAtGround*.85+pilot*.13,0,1);
   glow.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.08,0,1);
   trenchMat.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.12,0,1);
-  outerMat.uniforms.uPower.value=clamp(exhaustAtGround*.86+groundCloud*.2,0,1);
+  outerMat.uniforms.uPower.value=clamp((exhaustAtGround*.86+groundCloud*.2)*padDissipation.fire,0,1);
   waterMat.uniforms.uPower.value=water*.48;
   farDuctMat.uniforms.uPower.value=clamp(exhaustAtGround*.95,0,1);
   const enginePower=sampleEnergiaEnginePlumes(t);
@@ -542,9 +542,9 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   for(const {mesh,cold,warm}of smokeBase)mesh.material.color.copy(cold).lerp(warm,heat*(mesh===ductSmoke?.82:mesh===fieldSmoke?.72:.50));
   lights.forEach((light,i)=>{
    const wobble=.94+.06*Math.sin(t*7+i*1.7);
-   const power=i===0?fire*padDissipation.fire:i===1?exhaustAtGround:i===2?ductCloud:
+   const power=(i===0?fire:i===1?exhaustAtGround:i===2?ductCloud:
     i>=3&&i<=4?clamp(exhaustAtGround*.85+groundCloud*.30,0,1):
-    i===5?ductCloud*.88:groundCloud*.73;
+    i===5?ductCloud*.88:groundCloud*.73)*padDissipation.fire;
    light.intensity=lightSpecs[i][4]*power*wobble;
   });
   flameRoot.visible=enginePower.core>.003||enginePower.boosters>.003;
