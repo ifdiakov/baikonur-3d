@@ -83,6 +83,7 @@ try{
   assert.ok(Number.isFinite(s.telemetry.altitudeKm)&&Number.isFinite(s.telemetry.speedKmS));
   if(t===-50)assert.ok(e.mobileTowerArms.some(x=>x!==0),'Ground umbilicals begin to move');
   if(t===-10)assert.ok(e.water>0,'Water curtains begin before engine ignition');
+  if(t===-50)assert.ok(e.steam>0,'Airy steam must already be visible before the main countdown');
   if(t===-9.4)assert.ok(e.engineJetCount===8&&e.engineFlameAttached,'All eight nozzle plumes follow the rocket');
   if(t===-3.2)assert.ok(e.flamePower>0,'Booster ignition produces exhaust');
   if(t===0){
@@ -90,6 +91,8 @@ try{
    assert.equal(e.engineFlameDepthCompatible,true,'Nozzle shader depth must match the museum logarithmic depth buffer');
    assert.equal(e.engineFlameDepthTest,true,'Nozzle flame must still be occluded by opaque ground and launch pad');
    assert.equal(e.engineFlameAttached,true,'Flames must stay attached to the rocket holder');
+   assert.equal(e.enginePlasmaRibbonCount,24,'Eight engines have three turbulent plasma sheets each');
+   assert.equal(s.cameraDetached,false);
    assert.equal(e.shadowMapEnabled,true,'Live cast shadows enabled only during the launch');
    assert.ok(e.shadowLightIntensity>250,'Engine lights illuminate the UKSS structures');
    assert.equal(e.shadowReceiverCount,6,'Shadow projection covers launch apron and surrounding steppe');
@@ -97,7 +100,22 @@ try{
   }
   if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
   if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');assert.equal(e.engineFlameDepthCompatible,true);assert.equal(e.engineFlameAttached,true);assert.ok(e.rocketNozzleWorld?.every(Number.isFinite),'Nozzle position follows the rocket in world space');await shot('lift-off');}
-  if(t===145.9){assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');}
+  if(t===145.9){
+   assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');
+   assert.equal(s.cameraDetached,true,'At H=100 the camera must detach from the rocket');
+   assert.equal(s.mode,'detached');assert.equal(s.cinematicPanel,true);
+   assert.equal(s.detachAtHeightH,100);assert.ok(s.visualHeightH>=100);
+   const hud=await page.evaluate(()=>({
+    cameras:document.querySelector('.energia-cameras').hidden,
+    hint:document.querySelector('.energia-camera-hint').hidden,
+    timeline:document.querySelector('.energia-timeline').hidden,
+    actions:document.querySelector('.energia-actions').hidden,
+    factsVisible:!!document.querySelector('.energia-fact')?.getClientRects().length,
+    telemetryVisible:!!document.querySelector('.energia-telemetry')?.getClientRects().length
+   }));
+   assert.deepEqual(hud,{cameras:true,hint:true,timeline:true,actions:true,
+    factsVisible:true,telemetryVisible:true},'Cinematic HUD shows only mission telemetry and information');
+  }
   if(t===20){
    assert.equal(e.padFireFade,0,'UKSS flame is gone after rocket exceeds 360m');
    assert.ok(e.padSmokeFade>0&&e.padSmokeFade<1,'UKSS smoke dissipates gradually from 100 to 800m');
@@ -105,6 +123,7 @@ try{
    assert.ok(e.engineCorePower>.9,'Engine plume on the rocket remains fully active');
   }
   if(t===30){
+   assert.equal(s.cameraDetached,false,'Camera stays attached before H=100');
    assert.equal(e.padFireFade,0,'No standing fire at UKSS after ascent above the pad');
    assert.equal(e.padSmokeFade,0,'The ground cloud has dispersed while rocket exhaust remains active');
    assert.ok(e.engineCorePower>.9,'Rocket engine flame remains bright after the pad dissipates');
@@ -115,7 +134,13 @@ try{
   if(t===0)assert.ok(s.rocketVerticalWorld<.1,'At zero the rocket stays on its support');
   if(t===6)assert.ok(s.rocketVerticalWorld<18,'First seconds are shown near the pad');
  }
- await page.locator('#energiaRestart').click();s=await stats();assert.equal(s.time,-90);
+ // The playback controls hide in cinematic mode. Restart by the controller;
+ // the normal camera controls must reappear on the opening phase.
+ await page.evaluate(()=>window.__BAIKONUR_QA.energia.start());
+ s=await stats();assert.equal(s.time,-90);
+ assert.equal(s.cameraDetached,false);
+ assert.equal(await page.locator('.energia-cameras').isVisible(),true);
+ assert.equal(await page.locator('#energiaPlay').isVisible(),true);
  await page.locator('#energiaSpeed').selectOption('4');
  await page.locator('#energiaPlay').click();s=await stats();assert(s.paused);
  await page.locator('#energiaPlay').click();s=await stats();assert(!s.paused);
