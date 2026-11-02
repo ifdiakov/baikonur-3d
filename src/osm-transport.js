@@ -459,10 +459,17 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    }
    rendered=true;if(renderedRuns)renderedRuns.push(run.map(p=>p.clone()));
   }run=[];};
-  const hidden=p=>!force&&(masked(p,tags,width/2+ROAD_STYLE.shoulderExtra/2,wayId)||settlementHidden(p,tags,wayId));
+  const hidden=p=>!force&&(inGagarinAccessZone(p)&&localAccessMinor(tags)||masked(p,tags,width/2+ROAD_STYLE.shoulderExtra/2,wayId)||settlementHidden(p,tags,wayId));
   for(const p of samples){if(hidden(p)){flush();continue;}run.push(p);}flush();
   return rendered;
  }
+ // Only the local display is simplified. The source road graph remains untouched.
+ const gagarinAccessCentre=siteRecords.find(s=>s.id==='pad-1');
+ const site2AccessCentre=siteRecords.find(s=>s.id==='pad-2');
+ const inGagarinAccessZone=p=>gagarinAccessCentre&&
+  Math.hypot(p.x-point(gagarinAccessCentre.x,gagarinAccessCentre.y,0).x,
+             p.z-point(gagarinAccessCentre.x,gagarinAccessCentre.y,0).z)<138;
+ const localAccessMinor=tags=>['service','track','residential','living_street'].includes(tags.highway);
  const sitePoint=id=>{const s=siteRecords.find(s=>s.id===id);return point(s.x,s.y,.72);};
  const majorNode=n=>n.edges.some(e=>MAIN.has(e.tags.highway?.replace('_link','')));
  const trunkNodes=[...roadGraph.nodes.values()].filter(n=>n.component===roadGraph.largest&&n.edges.some(e=>['trunk','primary'].includes(e.tags.highway))&&n.coord[1]<45.83);
@@ -612,35 +619,41 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(!n.edges.some(e=>isHighwayRoad(e.tags))){shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);}
   junctionCount++;
  }
- // Restore a short paved access beside the relocated Site 2 museum exhibit.
- // The source OSM road graph is not modified; only the displayed access is drawn.
- const site2Access=siteRecords.find(site=>site.id==='pad-2');
- if(site2Access){
-  const centre=point(site2Access.x,site2Access.y,.72);
-  let candidate=null;
+ // A single continuous museum access road replaces the fragmented service web
+ // around the Gagarin apron; branch once to the relocated Site 2.
+ if(gagarinAccessCentre&&site2AccessCentre){
+  const g=point(gagarinAccessCentre.x,gagarinAccessCentre.y,.72);
+  const p2=point(site2AccessCentre.x,site2AccessCentre.y,.72);
+  let entrance=null;
   for(const way of roadGraph.ways){
-   if(!['service','unclassified','residential','track'].includes(way.tags.highway))continue;
-   if(!renderedRoadWays.has(way.osmId))continue;
+   if(!['unclassified','tertiary','secondary','primary','service'].includes(way.tags.highway))continue;
    for(const edge of way.segments){
     if(!edgeKept(roadGraph,edge))continue;
-    const a=edge.a.position,b=edge.b.position,v=b.clone().sub(a),lengthSq=v.lengthSq();
-    if(lengthSq<1e-5)continue;
-    const t=Math.max(0,Math.min(1,centre.clone().sub(a).dot(v)/lengthSq));
-    const hit=a.clone().addScaledVector(v,t),distance=centre.distanceTo(hit);
-    if(distance<27||distance>95)continue;
-    const gagarin=siteRecords.find(site=>site.id==='pad-1');
-    if(gagarin){
-     const pad=point(gagarin.x,gagarin.y,0);
-     if(new THREE.Line3(centre,hit).closestPointToPoint(pad,true,V()).distanceTo(pad)<30)continue;
+    for(const p of [edge.a.position,edge.b.position]){
+     const d=Math.hypot(p.x-g.x,p.z-g.z);
+     if(d<125||d>225)continue;
+     const westPreference=p.x<g.x?0:45;
+     const score=Math.abs(d-155)+westPreference+Math.abs(p.z-g.z)*.12;
+     if(!entrance||score<entrance.score)entrance={p:p.clone(),score};
     }
-    if(!candidate||distance<candidate.distance)candidate={hit,distance};
    }
   }
-  if(candidate){
-   const outward=candidate.hit.clone().sub(centre).setY(0).normalize();
-   const gate=centre.clone().addScaledVector(outward,25);
-   drawRoad([gate,gate.clone().lerp(candidate.hit,.5),candidate.hit],2.4,
-    {highway:'service',surface:'asphalt'},false,false,null);
+  if(entrance){
+   const start=entrance.p;
+   const direction=g.clone().sub(start).setY(0).normalize();
+   const padGate=g.clone().addScaledVector(direction,-23);
+   const branch=p2.clone().addScaledVector(start.clone().sub(p2).setY(0).normalize(),26);
+   const trunkMid=start.clone().lerp(padGate,.58);
+   // Round joins rather than drawing several overlapping straight strips.
+   const mainCurve=new THREE.CatmullRomCurve3([start,trunkMid,padGate],false,'centripetal',.35);
+   drawRoad(mainCurve.getPoints(28),3.2,{highway:'unclassified',surface:'asphalt'},true,true);
+   const branchPoint=new THREE.Line3(start,padGate).closestPointToPoint(branch,true,V());
+   const branchMid=branchPoint.clone().lerp(branch,.55);
+   const spurCurve=new THREE.CatmullRomCurve3([branchPoint,branchMid,branch],false,'centripetal',.35);
+   drawRoad(spurCurve.getPoints(18),2.4,{highway:'service',surface:'asphalt'},false,true);
+   const turnRadius=2.2;
+   shoulder.disc(branchPoint,turnRadius+.35,-.055);
+   asphalt.disc(branchPoint,turnRadius);
   }
  }
  if(krayniyClearanceReport){
