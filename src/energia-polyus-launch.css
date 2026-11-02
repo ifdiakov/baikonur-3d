@@ -63,3 +63,25 @@ body.energia-launch-active canvas{touch-action:none}
 #energiaLaunchQuickStart[hidden],body.energia-launch-active #energiaLaunchQuickStart{display:none!important}
 #energiaLaunchQuickStart:hover{filter:brightness(1.16)}
 @media(max-width:760px){#energiaLaunchQuickStart{right:12px;bottom:12px;font-size:10px;max-width:calc(100vw - 24px);padding:12px 14px}}
+
+/* After the rocket crosses H=100 on the museum's technical height ruler,
+   leave only mission telemetry and the historical narrative on screen. */
+#energiaLaunchPanel.energia-cinematic-ascent{
+ max-height:min(78dvh,790px);
+}
+#energiaLaunchPanel.energia-cinematic-ascent .energia-cameras,
+#energiaLaunchPanel.energia-cinematic-ascent .energia-camera-hint,
+#energiaLaunchPanel.energia-cinematic-ascent .energia-timeline,
+#energiaLaunchPanel.energia-cinematic-ascent .energia-actions,
+#energiaLaunchPanel.energia-cinematic-ascent .energia-rate,
+#energiaLaunchPanel.energia-cinematic-ascent .energia-disclaimer,
+#energiaLaunchPanel [hidden]{
+ display:none!important;
+}
+#energiaLaunchPanel.energia-cinematic-ascent .energia-fact{
+ margin-bottom:0;
+}
+@media(max-width:760px){
+ #energiaLaunchPanel.energia-cinematic-ascent{max-height:min(58dvh,540px)}
+ #energiaLaunchPanel.energia-cinematic-ascent .energia-systems{margin-bottom:8px}
+}
