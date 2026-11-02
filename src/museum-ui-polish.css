@@ -223,7 +223,7 @@
 }
 @media(max-width:640px){
  :root{--museum-ui-title:9px;--museum-ui-copy:8px;--museum-ui-data:18px;
- --history-dock-height:70px;--launch-dock-height:88px}
+ --history-dock-height:88px;--launch-dock-height:88px}
  #museumLeftStack #ui{padding:10px 11px 11px!important}
  #museumIdentity{grid-template-columns:77px minmax(0,1fr);padding-bottom:9px!important}
  #museumIdentity .museum-brand-logo{width:77px;min-height:44px}
