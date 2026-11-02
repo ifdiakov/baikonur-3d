@@ -4,8 +4,8 @@ import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-light
 
 // These distant continuations are scenery, not surveyed roads or OSM edges.
 // Keep them outside the traffic graph and the source attribution/counts.
-export const HIGHWAY_DISPLAY=Object.freeze({version:'highway-horizon-v1',lengthPerEnd:150000,sampleStep:512,turnSampleStep:8,
- shoulderExtra:.6,detailedFixturesUntil:8192,fadeStart:30000,fadeEnd:65000});
+export const HIGHWAY_DISPLAY=Object.freeze({version:'highway-horizon-v2',lengthPerEnd:36000,sampleStep:512,turnSampleStep:8,
+ shoulderExtra:.6,detailedFixturesUntil:4096,fadeStart:15000,fadeEnd:30000});
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 
 export function applyHighwayDisplayFade(material){

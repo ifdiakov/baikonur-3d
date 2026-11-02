@@ -11,7 +11,7 @@ export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live
 // four supporting arms, open bridge, lined excavation and lightning towers.
 // The local plan and compass orientation now follow north-up WV03 imagery.
 // Heights and the museum diagram's global anchor remain approximate.
-export const SITE31_VERSION='site31-metric-soyuz-v4';
+export const SITE31_VERSION='site31-metric-soyuz-v5';
 export const SITE31_SOURCES=Object.freeze([
  SITE31_REFERENCE.sourceUrl,
  SITE31_REFERENCE.metadataUrl,
@@ -192,6 +192,18 @@ export function buildSite31Pad(root){
   for(let z=14;z<72;z+=4){k.rod([side*2.8,1.4,z],[side*2.8,4,z+4],.12,'green','rail-erector-brace');k.rod([side*2.8,4,z],[side*2.8,1.4,z+4],.12,'green','rail-erector-brace');}
  }
 
+ // Additional visible service detail from the current photographic pass:
+ // cable trays, pipe racks and compact perimeter floodlights.
+ for(const side of[-1,1]){
+  k.rod([side*34,2.0,34],[side*34,2.0,106],.11,'light','site31-cable-tray');
+  for(let z=38;z<=104;z+=11)k.rod([side*34,.2,z],[side*34,2.0,z],.08,'steel','site31-cable-tray-support');
+ }
+ for(const [x,z]of[[-43,22],[43,22],[-45,88],[45,88]]){
+  k.rod([x,0,z],[x,10,z],.11,'steel','site31-yard-light-pole');
+  k.box(1.6,.55,.42,x,10.2,z,'white','site31-yard-light-head');
+ }
+ k.box(18,4.8,7,-47,2.4,68,'light','site31-control-cabin');
+ k.box(12,3.6,6,48,1.8,70,'light','site31-utility-cabin');
  const machineryResult=k.finish();root=metricRoot;k=layoutKit;
  // Full-metre holder; the optimized source model is inserted by the shared
  // loader. The old schematic cylinders must not double the new rocket.

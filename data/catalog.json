@@ -240,6 +240,42 @@
       "contentSource": "reviewed-sites-workbook-20261028"
     },
     {
+      "id": "pad-2",
+      "name": "Площадка № 2 — музейный комплекс «Буран»",
+      "x": 655,
+      "y": 390,
+      "model": "buran-museum-photo-v2",
+      "firstYear": null,
+      "status": "label-read",
+      "positionBasis": "Коррекция RocketTrip 02.11.2026: между ж/д станцией Северная и Гагаринским стартом",
+      "sources": [
+        "original-plan-3993x3208",
+        "owner-portal-photos"
+      ],
+      "note": "Площадка №2 добавлена как отдельный музейный комплекс между ж/д Северная и Гагаринским стартом. Экспонат «Буран» выполнен по архивной папке RocketTrip; положение и архитектурные размеры требуют дальнейшей геодезической сверки.",
+      "purpose": "Музейный комплекс космодрома · экспонат «Буран»",
+      "purposeLong": "Музейный комплекс космодрома с полноразмерным экспонатом «Буран»",
+      "purposeShort": "Музейный «Буран»",
+      "number": "2",
+      "titleShort": "Музей · «Буран»",
+      "titleFull": "пл. №2 · музейный «Буран»",
+      "category": "музейный",
+      "organisation": {
+        "org": "ЦЭНКИ",
+        "role": ""
+      },
+      "positionVerified": false,
+      "legacySchematicAnchor": false,
+      "archiveModel": {
+        "kind": "buran",
+        "version": "pad2-buran-ladder-v2",
+        "folder": "1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO",
+        "orientation": "owner-placement-between-north-station-and-pad1"
+      },
+      "publicReferences": [],
+      "contentSource": "owner-correction-2026-11-02"
+    },
+    {
       "id": "pad-2a",
       "name": "Площадка № 2А",
       "x": 594,
@@ -581,46 +617,62 @@
       "contentSource": "reviewed-sites-workbook-20261028"
     },
     {
-      "id": "sector-north-center",
-      "name": "Северо-центральный сектор",
+      "id": "pad-250a",
+      "name": "Площадка № 250А — Криогенный центр",
       "x": 608,
       "y": 239,
       "model": "tech",
       "firstYear": null,
-      "status": "provisional-sector",
-      "positionBasis": "original-map-overview",
+      "status": "label-read",
+      "positionBasis": "Коррекция RocketTrip 02.11.2026: бывший северо-центральный сектор",
       "sources": [
         "original-plan-3993x3208"
       ],
-      "note": "«Северо-центральный сектор» — рабочее название группы геометрии в нашем макете. Это не подтверждённый номер или официальное название площадки Байконура. Состав зданий, их назначение, история и принадлежность ещё не установлены; для заполнения нужны исходная карта с легендой либо привязка к конкретным объектам.",
-      "purpose": "Условный сектор музейной схемы",
-      "purposeLong": "Условный сектор музейной схемы",
-      "purposeShort": "Условный сектор музейной схемы",
+      "note": "Идентифицировано владельцем макета как площадка №250А — криогенный центр. Положение модели сохраняет существующий сектор макета.",
+      "purpose": "Криогенный центр",
+      "purposeLong": "Площадка №250А · криогенный центр",
+      "purposeShort": "Криогенный центр",
       "publicReferences": [
         "https://github.com/ifdiakov/baikonur-3d/blob/bacdceeb26fa7b6806440cd08dc16e0f9cda9c3b/data/catalog.json"
       ],
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "number": "250А",
+      "titleShort": "Криогенный центр",
+      "titleFull": "пл. №250А · Криогенный центр",
+      "organisation": {
+        "org": "ЦЭНКИ",
+        "role": ""
+      },
+      "attributionSource": "owner-correction-2026-11-02"
     },
     {
-      "id": "sector-northeast",
-      "name": "Северо-восточный сектор",
+      "id": "pad-32",
+      "name": "Площадка № 32",
       "x": 1040,
       "y": 228,
       "model": "tech",
       "firstYear": null,
-      "status": "provisional-sector",
-      "positionBasis": "original-map-overview",
+      "status": "label-read",
+      "positionBasis": "Коррекция RocketTrip 02.11.2026: район ж/д Кубань и бывшего северо-восточного сектора",
       "sources": [
         "original-plan-3993x3208"
       ],
-      "note": "«Северо-восточный сектор» — рабочее название группы геометрии в нашем макете. Это не подтверждённый номер или официальное название площадки Байконура. Состав зданий, их назначение, история и принадлежность ещё не установлены; для заполнения нужны исходная карта с легендой либо привязка к конкретным объектам.",
-      "purpose": "Условный сектор музейной схемы",
-      "purposeLong": "Условный сектор музейной схемы",
-      "purposeShort": "Условный сектор музейной схемы",
+      "note": "Идентифицировано владельцем макета как площадка №32. Точное назначение отдельных зданий внутри площадки требует дальнейшей сверки.",
+      "purpose": "Площадка №32 · техническая инфраструктура ЦЭНКИ",
+      "purposeLong": "Площадка №32 · техническая инфраструктура ЦЭНКИ",
+      "purposeShort": "Техническая площадка №32",
       "publicReferences": [
         "https://github.com/ifdiakov/baikonur-3d/blob/bacdceeb26fa7b6806440cd08dc16e0f9cda9c3b/data/catalog.json"
       ],
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "number": "32",
+      "titleShort": "Площадка №32",
+      "titleFull": "пл. №32 · ЦЭНКИ",
+      "organisation": {
+        "org": "ЦЭНКИ",
+        "role": ""
+      },
+      "attributionSource": "owner-correction-2026-11-02"
     },
     {
       "id": "sector-east",
@@ -1192,7 +1244,7 @@
     },
     {
       "id": "pad-89",
-      "name": "Площадка № 89",
+      "name": "Площадка № 89 — наблюдательный пункт «Протон»",
       "x": 146,
       "y": 144,
       "model": "tech",
@@ -1203,14 +1255,18 @@
         "original-plan-3993x3208",
         "service-photo-2026"
       ],
-      "note": "Номер 89 присутствует в исходном каталоге музейной схемы. Независимое подтверждение назначения площадки в проверенных открытых документах не найдено. До получения плана или архивной подписи описание остаётся открытым; связь с конкретной ракетной программой не установлена.",
-      "purpose": "Назначение не установлено",
-      "purposeLong": "Назначение не установлено",
-      "purposeShort": "Назначение не установлено",
+      "note": "Идентифицировано владельцем макета как наблюдательный пункт для запусков ракет семейства «Протон».",
+      "purpose": "Наблюдательный пункт для запусков «Протона»",
+      "purposeLong": "Наблюдательный пункт для запусков ракет семейства «Протон»",
+      "purposeShort": "Наблюдательный пункт «Протон»",
       "publicReferences": [
         "https://github.com/ifdiakov/baikonur-3d/blob/bacdceeb26fa7b6806440cd08dc16e0f9cda9c3b/data/catalog.json"
       ],
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "number": "89",
+      "titleShort": "НП «Протон»",
+      "titleFull": "пл. №89 · Наблюдательный пункт «Протон»",
+      "attributionSource": "owner-correction-2026-11-02"
     },
     {
       "id": "pad-130",

@@ -5,7 +5,7 @@ import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectan
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261031-facilities-rails-lighting-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261101-hotel-v3';
+import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261102-museum10-v1';
 import {distancePath} from './traffic-paths.js?v=20261031-facilities-rails-lighting-v1';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainHeight,saturnTerrainSample} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
@@ -19,7 +19,7 @@ import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-ra
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
 import {railApproachSleeperDistances} from './paired-rail-approach.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite110RailFan} from './site110-rail-fan.js?v=20261031-facilities-rails-lighting-v4';
-import {buildHighwayDisplay} from './highway-display.js?v=20261101-museum-view-v1';
+import {buildHighwayDisplay} from './highway-display.js?v=20261102-museum10-v1';
 import {smoothRailGraph,graphRailRoutePoints} from './rail-surface.js?v=20261102-rail-scheme-v1';
 import {createRailSchemePlan,RAIL_SCHEME_REFERENCE} from './rail-scheme.js?v=20261102-rail-scheme-v1';
 import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261102-rail-scheme-v1';
@@ -416,7 +416,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const cityMinor=tags=>!streetAllowed(cityRegion,tags);
  function settlementHidden(p,tags,wayId){return !protectedTrafficWays.has(wayId)&&settlements.some(region=>region.contains(p)&&!streetAllowed(region,tags));}
  const masks=new Map();
- for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-1':16})){
+ for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-250a':22,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-3':24,'pad-2':18,'pad-1':16})){
   const s=siteRecords.find(s=>s.id===id);if(s)masks.set(id,{center:point(s.x,s.y,0),radius});
  }
  const hotelSite=siteRecords.find(s=>s.id==='pad-75');if(hotelSite)masks.set('pad-75',{center:portWorld(FACILITY_PORTS['pad-75'],FACILITY_PORTS['pad-75'].modelOffset,hotelSite,point),yaw:FACILITY_PORTS['pad-75'].yaw,rectangle:{halfX:10.8,minZ:-3.4,maxZ:12.4}});
@@ -501,7 +501,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const protectedNode=n=>n.id.startsWith('clip:')||destinations.some(d=>Math.hypot(n.position.x-d.position.x,n.position.z-d.position.z)<d.radius);
  const inCosmodrome=e=>[e.a,e.b].every(n=>n.coord[1]>=45.70&&!settlements.some(region=>region.contains(n.position)));
  const infrastructure=e=>e.tags.name||e.tags.ref||e.tags.destination||e.tags.bridge&&e.tags.bridge!=='no'||e.tags.tunnel&&e.tags.tunnel!=='no';
- roadPruning=pruneTerminalBranches(roadGraph,{maxLength:80,protectedEdges:roadProtected,protectedNode:n=>protectedNode(n)||EXHIBIT_ACCESS_NODE_IDS.includes(n.id)||krayniyClearance&&n.id===krayniyLayout.access.sourceNodeId,
+ roadPruning=pruneTerminalBranches(roadGraph,{maxLength:160,protectedEdges:roadProtected,protectedNode:n=>protectedNode(n)||EXHIBIT_ACCESS_NODE_IDS.includes(n.id)||krayniyClearance&&n.id===krayniyLayout.access.sourceNodeId,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&!MAIN.has(e.tags.highway?.replace('_link',''))&&!['driveway','parking_aisle'].includes(e.tags.service)});
  railPruning=pruneTerminalBranches(railGraph,{maxLength:55,protectedEdges:railProtected,protectedNode,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&e.tags.usage!=='main'&&!['yard','siding','crossover'].includes(e.tags.service)});
@@ -535,10 +535,21 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // without changing either the archived source node or the shared area spec.
  const exhibitAreas=EXHIBIT_ROAD_AREAS.map(area=>area.id==='krayniy'&&krayniyClearance?{...area,
   destinationNode:krayniyLayout.access.sourceNodeId,destinationSource:'way/'+krayniyLayout.access.sourceWayId}:area);
+ // Remove short unnamed service webs on the left flank after protecting
+ // traffic routes and every facility access. Source OSM topology stays intact.
+ const leftWebEdges=new Set();
+ for(const way of roadGraph.ways){
+  if(way.tags.name||way.tags.ref||protectedTrafficWays.has(way.osmId)||way.segments.some(e=>roadProtected.has(e)))continue;
+  if(!['service','track'].includes(way.tags.highway))continue;
+  const length=way.segments.reduce((sum,e)=>sum+e.length,0);
+  const left=way.segments.every(e=>(e.a.position.x+e.b.position.x)/2<-380);
+  if(left&&length<260)for(const edge of way.segments)leftWebEdges.add(edge);
+ }
  exhibitRoadFilter=buildExhibitRoadFilter(roadGraph,{protectedEdges:roadProtected,protectedTrafficWays,areas:exhibitAreas,
-  available:e=>!roadPruning.removed.has(e),excludedEdges:excludedAirportEdges,geography,point});
+  available:e=>!roadPruning.removed.has(e)&&!leftWebEdges.has(e),excludedEdges:excludedAirportEdges,geography,point});
  // The enlarged runway can extend beyond the source airport cleanup box.
  for(const edge of excludedAirportEdges)exhibitRoadFilter.removed.add(edge);
+ for(const edge of leftWebEdges)exhibitRoadFilter.removed.add(edge);
  for(const edge of site41Replacement.removed)exhibitRoadFilter.removed.add(edge);
  exhibitRoadFilter.stats.removedEdgeCount=exhibitRoadFilter.removed.size;
  // Junction surfaces follow only retained source roads. Paint is planned
@@ -783,6 +794,26 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    drawRail(points,false,true,endGauge,null,frame,'end');connections++;
    const renderedHeadCenter=points.at(-1).clone().add(V(0,RAIL_PROFILE.headY,0));railPortReports.push({id,portId:port.id,sourceWayId:rr.edge.wayId,sourceNodeId:port.sourceNodeId??null,sourceRouteId:port.sourceRouteId??null,sourcePoint:rr.point.toArray(),sourceTangent:tangent.toArray(),gateInward:railOut.clone().negate().toArray(),points:points.map(p=>p.toArray()),headCenter:headCenter.toArray(),renderedHeadCenter:renderedHeadCenter.toArray(),headCenterGap:renderedHeadCenter.distanceTo(headCenter),networkDatumGap:points[0].distanceTo(rr.point),networkGauge:RAIL_PROFILE.gauge,portGauge:endGauge,physicalGaugeMetres:spec.physicalRailGauge??null,
     ...(fanTrack?{displaySourceNodeId:fanTrack.displaySourceNodeId,displayLayout:site110Fan.version,sourceDestination:fanTrack.originalDestination,metrics:fanTrack.metrics}:{} )});
+  }
+ }
+ // One deliberate continuous service road: road to Yubileiny -> 250A
+ // cryogenic centre -> UKSS. It is display geometry only; OSM topology is
+ // not rewritten and all three endpoints retain their own source metadata.
+ const cryoSite=siteRecords.find(s=>s.id==='pad-250a'),ukssSite=siteRecords.find(s=>s.id==='pad-250');
+ if(cryoSite&&ukssSite){
+  const cryoSpec={...FACILITY_PORTS['pad-250a'],yaw:cryoSite.runtimeYaw??FACILITY_PORTS['pad-250a'].yaw};
+  const ukssSpec={...FACILITY_PORTS['pad-250'],yaw:ukssSite.runtimeYaw??FACILITY_PORTS['pad-250'].yaw};
+  const cryoGate=portWorld(cryoSpec,cryoSpec.road,cryoSite,point),ukssGate=portWorld(ukssSpec,ukssSpec.road,ukssSite,point);
+  const source=nearestSegment(roadGraph,cryoGate,e=>e.tags.highway!=='track'&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
+  if(source&&source.distance<420**2){
+   const sourceTangent=source.tangent.clone();if(sourceTangent.dot(cryoGate.clone().sub(source.point))<0)sourceTangent.negate();
+   const p0=source.point.clone(),p1=p0.clone().addScaledVector(sourceTangent,24);
+   const mid=cryoGate.clone().lerp(ukssGate,.52).add(V(18,0,-10));
+   const curve=new THREE.CatmullRomCurve3([p0,p1,cryoGate,mid,ukssGate],false,'centripetal');
+   const points=curve.getSpacedPoints(Math.max(48,Math.ceil(curve.getLength()/1.4))),runs=[];
+   drawRoad(points,6.5,{},false,true,null,runs);
+   roadPaths.push({id:'museum-yubileiny-250a-ukss',label:'Юбилейный · 250А · УКСС',points:runs.flat(),width:6.5,source:'owner-directed-museum-road',osmWayIds:[source.edge.wayId]});
+   accessReports.push({id:'pad-250a-to-pad-250',sourceWayId:source.edge.wayId,profile:'owner-directed-via-250a',roadGap:points.at(-1).distanceTo(ukssGate)});
   }
  }
  if(site110Fan)for(const link of site110Fan.joinedLinks){

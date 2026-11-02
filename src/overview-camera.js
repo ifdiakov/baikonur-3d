@@ -57,9 +57,12 @@ export function fitOverviewCamera({width,height,outline,uiRect=null,heroRect=nul
  const top=MARGIN,focal=height/(2*Math.tan(FOV/2));
  const fits=(x,z,h,d)=>visible(pixels(points,width,height,x,z,h,d),width,top,bottom,obstacles);
 
- // On the large desktop the north-eastern spur sits just left of the hero,
- // while the wide lower body extends beneath it. This avoids a small strip fit.
- if(!topDown&&width>=1400&&fits(290,-590,1650,2475))return result(290,-590,1650,2475);
+ // Museum 10 starts at H=1200 and a 45° view. Center the entire
+ // registered outline; pan limits in the scene keep the camera on the model.
+ if(!topDown&&width>=900){
+  const x=(bounds.minX+bounds.maxX)/2,z=(bounds.minZ+bounds.maxZ)/2;
+  return result(x,z,1200,1200);
+ }
 
  if(width<=640){
   const toolbar=rect(uiRect),safeTop=Math.max(top,toolbar?toolbar.bottom+MARGIN:top);

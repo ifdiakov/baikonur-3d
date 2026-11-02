@@ -55,10 +55,10 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   // additional poles can otherwise land on the building after a site turn.
   if(o.g.userData.courtyardLightRecords){courtyardLights.push(...o.g.userData.courtyardLightRecords());continue;}
   const center=o.g.getWorldPosition(new THREE.Vector3()),id=o.record.id;
-  const radius=id==='pad-1'?19:id==='pad-250'?36:id==='pad-112'?25:id==='pad-23'?53:o.type==='city'?23:10;
+  const radius=id==='pad-1'?19:id==='pad-250'?36:id==='pad-112'?25:id==='pad-23'?53:id==='pad-3'?18:o.type==='city'?23:10;
   const height=id==='pad-1'?2:1.2;
   const surfaces=[];o.g.traverse(m=>{if(m.isMesh)surfaces.push(m);});
-  const count=o.type==='city'?12:4;
+  const count=o.type==='city'?12:id==='pad-3'?8:4;
   for(let j=0;j<count;j++){const angle=(j+.5)*Math.PI*2/count;
    // Site 31's traced bowl is wider than the former generic light circle.
    // Keep its poles and pools on the solid service yards, not above the void.
@@ -69,7 +69,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
    // height field, so bases and light pools cannot drop to the flat map below.
    const y=(site31Base?site31Base.y:id==='pad-23'?saturnGround(x,z):baseAt(x,z,surfaces,height))+.02;
    (o.type==='city'?cityLights:siteLights).push({x,y,z,
-    height:id==='pad-1'?1.8:id==='pad-250'?3.6:2.6,radius:site31Base?4:10,owner:o.g,color:j%3?0xffcf94:0xd6e8ff});
+    height:id==='pad-1'?1.8:id==='pad-250'?3.6:id==='pad-3'?3.2:2.6,radius:site31Base?4:10,owner:o.g,color:j%3?0xffcf94:0xd6e8ff});
   }
  }
  filterBank(siteLights,'site');filterBank(cityLights,'city');
@@ -87,8 +87,8 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  fields.push(createLightField(layers.city,apron,{poles:true,pools:true,name:'Аэродромы · перроны'}));
  const facilityLighting=buildFacilityTowerLighting({scene,objects,groundMeshes,groundQuery,isLightAllowed,isLightPowered});fields.push(facilityLighting);
  const floods=[];
- for(const id of ['pad-1','pad-250','pad-112','pad-23']){const o=objects.find(o=>o.record.id===id);if(!o)continue;
-  const c=o.g.getWorldPosition(new THREE.Vector3()),light=new THREE.PointLight(0xffc48a,100,75,1.4);
+ for(const id of ['pad-1','pad-250','pad-112','pad-23','pad-3']){const o=objects.find(o=>o.record.id===id);if(!o)continue;
+  const c=o.g.getWorldPosition(new THREE.Vector3()),light=new THREE.PointLight(0xffc48a,id==='pad-3'?165:100,id==='pad-3'?95:75,1.4);
   light.position.set(c.x-9,(id==='pad-23'?saturnGround(c.x-9,c.z+8):0)+13,c.z+8);
   if(!isLightAllowed(light.position.x,light.position.z)||!isLightPowered(light.position.x,light.position.z)){excludedByBank.flood++;continue;}
   scene.add(light);floods.push({light,owner:o.g});
