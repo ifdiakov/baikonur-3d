@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v2';
+export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v3';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
@@ -55,7 +55,7 @@ function makeMaterialTextures(renderer){
   normal:make(normal,'Game terrain · ground normal'),
   roughness:make(roughness,'Game terrain · dry roughness')};
 }
-function createClearanceMask({bounds,geography,osmRoads,transport,point,pad,site2}){
+function createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point,pad,site2}){
  const canvas=document.createElement('canvas');
  canvas.width=canvas.height=MASK_RESOLUTION;
  const ctx=canvas.getContext('2d');
@@ -85,6 +85,17 @@ function createClearanceMask({bounds,geography,osmRoads,transport,point,pad,site
    if(!line?.length)continue;
    const samples=line.map(coord=>{const [x,y]=geography.project(...coord),p=point(x,y,0);return [p.x,p.z];});
    road(samples,width);
+  }
+ }
+ // Keep railway ballast, sleepers and rails clean; this is a soil-only overlay.
+ for(const feature of osmRails.features||[]){
+  const geometry=feature.geometry;
+  if(!['LineString','MultiLineString'].includes(geometry?.type))continue;
+  const lines=geometry.type==='LineString'?[geometry.coordinates]:geometry.coordinates;
+  for(const line of lines){
+   if(!line?.length)continue;
+   const samples=line.map(coord=>{const [x,y]=geography.project(...coord),p=point(x,y,0);return [p.x,p.z];});
+   road(samples,5);
   }
  }
  // Rendered major roads can have smoothed centre lines different from OSM.
@@ -198,12 +209,12 @@ function makeSparseShrubs({bounds,mask,heightAt,root}){
  mesh.renderOrder=5;mesh.visible=false;root.add(mesh);
  return {mesh,count};
 }
-export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,transport,point,terrainRelief,steppeSurface,sceneScale=3.4}){
+export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,osmRails,transport,point,terrainRelief,steppeSurface,sceneScale=3.4}){
  const g=siteRecords.find(item=>item.id==='pad-1'),s=siteRecords.find(item=>item.id==='pad-2');
  if(!g||!s)throw new Error('Game terrain pilot requires Gagarin and Site 2');
  const pad=point(g.x,g.y,0),site2=point(s.x,s.y,0),mid=pad.clone().add(site2).multiplyScalar(.5);
  const bounds={minX:mid.x-worldMaskSize/2,minZ:mid.z-worldMaskSize/2};
- const mask=createClearanceMask({bounds,geography,osmRoads,transport,point,pad,site2});
+ const mask=createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point,pad,site2});
  const maps=makeMaterialTextures(renderer);
  const material=new THREE.MeshStandardMaterial({
   color:0xffffff,roughness:.96,metalness:0,normalMap:maps.normal,roughnessMap:maps.roughness,
