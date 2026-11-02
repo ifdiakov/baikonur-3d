@@ -181,12 +181,13 @@
     presentationTimer = window.setTimeout(function () {
       presentationTimer = null;
       if (motionPaused() || finishing) return;
-      if (phrases.length) showFeature((featureIndex + 1) % phrases.length);
-      // Copy moves twice as quickly; images retain their calmer 3.2s cadence.
       presentationTick += 1;
-      if (presentationTick % 2 === 0) advanceImage();
+      // Text and images use independent cadences: copy every 3 seconds,
+      // gallery artwork every 4 seconds.
+      if (phrases.length && presentationTick % 3 === 0) showFeature((featureIndex + 1) % phrases.length);
+      if (presentationTick % 4 === 0) advanceImage();
       schedulePresentation();
-    }, 1600);
+    }, 1000);
   }
 
   function syncMotion() {
