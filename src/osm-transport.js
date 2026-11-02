@@ -172,6 +172,14 @@ function pavementHeightSampler(meshes){
   const t=[0,1,2].flatMap(k=>V().fromBufferAttribute(p,index?index.getX(i+k):i+k).applyMatrix4(mesh.matrixWorld).toArray());
   const [ax,,az,bx,,bz,cx,,cz]=t,den=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz);if(Math.abs(den)<1e-12)continue;t.push(den);
   t.bounds={minX:Math.min(ax,bx,cx),maxX:Math.max(ax,bx,cx),minZ:Math.min(az,bz,cz),maxZ:Math.max(az,bz,cz)};
+  // Both the Float32 edge tolerance and its conservative X/Z bounds depend
+  // only on this fixed triangle, not on the paint or vehicle query point.
+  const maxEdge=Math.max(Math.hypot(bx-ax,bz-az),Math.hypot(cx-ax,cz-az),Math.hypot(cx-bx,cz-bz));
+  t.epsilon=.00035*maxEdge/Math.abs(den);
+  // u,v,w >= -epsilon enlarges each vertex by epsilon*(2A-B-C).
+  // Twice the longest edge bounds that displacement on either axis. Keep
+  // an additional arithmetic margin and the original cell membership/order.
+  t.boundsMargin=2*t.epsilon*maxEdge+1e-7;
   for(let x=Math.floor(Math.min(ax,bx,cx)/cellSize);x<=Math.floor(Math.max(ax,bx,cx)/cellSize);x++)for(let z=Math.floor(Math.min(az,bz,cz)/cellSize);z<=Math.floor(Math.max(az,bz,cz)/cellSize);z++){
    const key=x+':'+z;if(!cells.has(key))cells.set(key,[]);cells.get(key).push(t);
   }
@@ -179,12 +187,15 @@ function pavementHeightSampler(meshes){
  }
  const sample=q=>{
   let top=-Infinity,nearbyTop=-Infinity;
-  for(const [ax,ay,az,bx,by,bz,cx,cy,cz,den] of cells.get(Math.floor(q.x/cellSize)+':'+Math.floor(q.z/cellSize))||[]){
+  for(const triangle of cells.get(Math.floor(q.x/cellSize)+':'+Math.floor(q.z/cellSize))||[]){
+   const box=triangle.bounds,margin=triangle.boundsMargin;
+   if(q.x<box.minX-margin||q.x>box.maxX+margin||q.z<box.minZ-margin||q.z>box.maxZ+margin)continue;
+   const [ax,ay,az,bx,by,bz,cx,cy,cz,den]=triangle;
    const u=((bz-cz)*(q.x-cx)+(cx-bx)*(q.z-cz))/den,v=((cz-az)*(q.x-cx)+(ax-cx)*(q.z-cz))/den;
    // At far map coordinates Float32 rounds a shared section by up to 0.00025
    // world units. Use a physical edge tolerance, not a fixed barycentric one
    // that rejects perfectly adjoining, very short triangles at way nodes.
-   const epsilon=.00035*Math.max(Math.hypot(bx-ax,bz-az),Math.hypot(cx-ax,cz-az),Math.hypot(cx-bx,cz-bz))/Math.abs(den);
+   const epsilon=triangle.epsilon;
    if(u< -epsilon||v< -epsilon||u+v>1+epsilon)continue;
    const y=u*ay+v*by+(1-u-v)*cy;if(Math.abs(y-q.y)<.6){nearbyTop=Math.max(nearbyTop,y);if(u>=-1e-8&&v>=-1e-8&&u+v<=1+1e-8)top=Math.max(top,y);}
   }

@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261101-satellite-surface-v1';
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261102-progressive-v1';
 const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
 const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};
@@ -84,6 +84,9 @@ try{
  const url=new URL(base);url.searchParams.delete('view');url.searchParams.delete('detail');
  await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected&&document.getElementById('museumLoading')?.dataset.state==='ready',revision,{timeout:180000});
+ // Full articles, historical entries and launch data join the background queue.
+ // Their contents are checked after that contract, independently of first paint.
+ await page.evaluate(()=>window.__MUSEUM_CONTENT_READY);
  assert.equal(await page.locator('#error').isVisible(),false);
  assert.equal(await page.locator('#all,#top,#fly,#showLabels,[data-layer]').count(),0);
  assert.ok(!(await page.locator('#ui').innerText()).includes('СЛОИ СЦЕНЫ'));

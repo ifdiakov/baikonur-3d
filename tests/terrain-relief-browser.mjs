@@ -4,7 +4,7 @@ import {chromium} from 'playwright';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',prefix=process.env.QA_PREFIX||'local',out='qa-terrain-relief';
 const revision=process.env.BAIKONUR_EXPECTED_REVISION||null,origin=new URL(base).origin;
-const evidence={base,prefix,revision,views:[],errors:[],shaderErrors:[],failedResources:[],failedRequests:[],satelliteRequests:[],extensionRequests:[],correctionRequests:[]};
+const evidence={base,prefix,revision,views:[],errors:[],shaderErrors:[],failedResources:[],failedRequests:[],satellitePreviewRequests:[],extensionPreviewRequests:[],satelliteRequests:[],extensionRequests:[],correctionRequests:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
  ...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),
@@ -14,6 +14,8 @@ page.setDefaultTimeout(60000);
 page.on('pageerror',error=>evidence.errors.push(error.message));
 page.on('request',request=>{
  const path=new URL(request.url()).pathname;
+ if(path.endsWith('/assets/terrain/satellite-single-pass-preview-v1.jpg'))evidence.satellitePreviewRequests.push(request.url());
+ if(path.endsWith('/assets/terrain/satellite-expansion-preview-v1.jpg'))evidence.extensionPreviewRequests.push(request.url());
  if(path.endsWith('/assets/terrain/satellite-single-pass-v1.jpg'))evidence.satelliteRequests.push(request.url());
  if(path.endsWith('/assets/terrain/satellite-expansion-v1.jpg'))evidence.extensionRequests.push(request.url());
  if(path.endsWith('/assets/terrain/satellite-uv-correction-v1.bin'))evidence.correctionRequests.push(request.url());
@@ -37,6 +39,15 @@ await page.addInitScript(()=>{
  for(const type of ['keydown','keyup'])document.addEventListener(type,event=>{
   if(['w','d'].includes(event.key.toLowerCase()))window.__RELIEF_KEYS.push({type,key:event.key,trusted:event.isTrusted});
  },true);
+ // Capture the actual first revealed surface before the background queue
+ // starts. Reading it after navigation would race the local HD downloads.
+ const observer=new MutationObserver(()=>{
+  if(document.getElementById('museumLoading')?.dataset.state!=='ready')return;
+  const q=window.__BAIKONUR_QA;if(!q?.satelliteSurface)return;
+  window.__RELIEF_FIRST_READY={at:performance.now(),surface:q.satelliteSurface.stats(),startup:window.__MUSEUM_STARTUP.stats()};
+  observer.disconnect();
+ });
+ observer.observe(document,{subtree:true,attributes:true,attributeFilter:['data-state']});
 });
 const step=()=>page.evaluate(()=>window.__RELIEF_FRAME());
 const near=(a,b,tolerance,message)=>assert(Math.abs(a-b)<=tolerance,`${message}: ${a} != ${b}`);
@@ -62,7 +73,13 @@ function checkFrame(s){
  assert(s.terrain.flatChecks.protectedVertices>0&&s.terrain.flatChecks.gridMarginSafe);
  assert(s.terrain.protection.corridors>0&&s.terrain.protection.polygons>0,'Roads and area footprints are included in the scene protection');
  assert.equal(s.following,false);
- assert.equal(s.surface.surfaceVersion,'baikonur-steppe-surface-v10-extended-satellite');
+ assert.equal(s.surface.surfaceVersion,'baikonur-steppe-surface-v11-progressive-satellite');
+ assert.equal(s.surface.biomeFieldGenerated,false,'Satellite color avoids an unused procedural biome field');
+ assert.equal(s.surface.biomeResolution,1);
+ assert.equal(s.terrain.proceduralColorGenerated,false);
+ assert.deepEqual(s.terrain.textureResolution,[1,1],'Opaque relief keeps its alpha without generating unused RGB');
+ assert.deepEqual(s.surface.loading.errors,[]);
+ for(const key of ['detail','satellite','extension'])assert.equal(s.surface.loading[key],'ready','Visual checks wait for full '+key+' quality');
  assert.equal(s.surface.extraGeometry,0,'The photograph does not alter the approved terrain');
  assert.equal(s.surface.satellite.sharedTexture,true);
  assert.equal(s.surface.satellite.repeat,false,'One photograph spans the museum without repeated tiles');
@@ -128,6 +145,32 @@ try{
   const q=window.__BAIKONUR_QA;
   return q?.terrainRelief&&typeof q.inspectTerrainRelief==='function'&&document.getElementById('museumLoading')?.dataset.state==='ready';
  },null,{timeout:180000});
+ evidence.firstReady=await page.evaluate(()=>window.__RELIEF_FIRST_READY);
+ assert(evidence.firstReady,'The initial surface is observed at the real ready transition');
+ const preview=evidence.firstReady.surface;
+ assert.equal(preview.loading.progressive,true);
+ assert.equal(preview.loading.detail,'queued','Small-scale texture details do not block the first view');
+ assert.equal(preview.textureSize,1,'The initial detail texture is a neutral placeholder');
+ assert.equal(preview.loading.satellite,'preview');assert.equal(preview.loading.extension,'preview');
+ assert.deepEqual(preview.loading.errors,[]);
+ assert.deepEqual(preview.satellite.resolution,[768,740]);
+ assert.deepEqual(preview.satellite.extension.resolution,[768,683]);
+ assert.deepEqual(preview.satellite.uvCorrection.resolution,[256,256],'The preview retains the full registration grid');
+ assert.equal(preview.extraGeometry,0);
+ for(const key of ['terrain-detail','terrain-hd']){
+  const task=evidence.firstReady.startup.tasks.find(task=>task.key===key);
+  assert.equal(task?.state,'queued',key+' starts only after the first view is revealed');
+ }
+ // The public QA stats read the live surface; wait explicitly for its full
+ // detail state before the existing geometry, registration and visual checks.
+ await page.waitForFunction(()=>{
+  const loading=window.__BAIKONUR_QA.satelliteSurface.stats().loading;
+  return loading.errors.length||['detail','satellite','extension'].every(key=>loading[key]==='ready');
+ },null,{timeout:90000});
+ evidence.fullQuality=await page.evaluate(()=>({at:performance.now(),surface:window.__BAIKONUR_QA.satelliteSurface.stats()}));
+ assert.deepEqual(evidence.fullQuality.surface.loading.errors,[],'Every optional terrain enhancement loads successfully');
+ assert.deepEqual(evidence.fullQuality.surface.satellite.worldToUv,preview.satellite.worldToUv,'The HD swap preserves the primary registration');
+ assert.deepEqual(evidence.fullQuality.surface.satellite.extension.worldToUv,preview.satellite.extension.worldToUv,'The HD swap preserves the outer-belt registration');
  await page.waitForFunction(()=>['museumLeftStack','timeDock','nextLaunchPanel'].every(id=>{
   const el=document.getElementById(id);return el&&!el.closest('[inert]')&&Number(getComputedStyle(el).opacity)>.95;
  }));
@@ -288,6 +331,8 @@ try{
  await shot('ridge-camera-clearance');await checkChrome();
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);
  assert.deepEqual(evidence.failedResources,[]);assert.deepEqual(evidence.failedRequests,[]);
+ assert.equal(evidence.satellitePreviewRequests.length,1,'All soil materials share one initial photo preview');
+ assert.equal(evidence.extensionPreviewRequests.length,1,'The outer belt shares one initial photo preview');
  assert.equal(evidence.satelliteRequests.length,1,'All soil materials share a single image load');
  assert.equal(evidence.extensionRequests.length,1,'The generated outer belt uses one shared image load');
  assert.equal(evidence.correctionRequests.length,1,'All soil materials share one numerical registration grid');

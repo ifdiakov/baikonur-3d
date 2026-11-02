@@ -1,4 +1,4 @@
-name: Museum strict preloader
+name: Museum progressive loading
 on:
   push:
     branches: [main]
@@ -6,6 +6,7 @@ on:
       - 'index.html'
       - 'preloader.html'
       - 'scripts/build-preloader-preview.mjs'
+      - 'scripts/build-knowledge-index.mjs'
       - 'workshop/zenit.html'
       - 'workshop/model.html'
       - 'workshop/saturn.html'
@@ -55,7 +56,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-preloader-strict-20261101-v4
+  RELEASE_TAG: museum-progressive-20261102-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -71,6 +72,7 @@ jobs:
           npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 @gltf-transform/functions@4.5.1 meshoptimizer@1.3.0
       - name: Verify the photo-based Site 45 and both Zenit variants
         run: |
+          node scripts/build-knowledge-index.mjs --check
           node tests/saturn-geometry.mjs
           node tests/a320-geometry.mjs
           node tests/tu204-geometry.mjs
@@ -169,7 +171,7 @@ jobs:
 
   verify_browser:
     name: Browser — ${{ matrix.target }} / ${{ matrix.suite }}
-    # Both suites examine the same immutable commit independently. Start the
+    # All suites examine the same immutable commit independently. Start the
     # visual checks as soon as its public bytes match; release still requires
     # geometry, published-byte verification and every browser job below.
     needs: [verify_bytes]
@@ -180,7 +182,7 @@ jobs:
       max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector]
+        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -215,6 +217,11 @@ jobs:
       - name: Verify DEM relief, infrastructure clearances and terrain camera
         if: matrix.suite == 'terrain-relief'
         run: node tests/terrain-relief-browser.mjs
+      - name: Verify the background queue, early fetch reuse and deferred articles
+        if: matrix.suite == 'progressive-loading'
+        run: |
+          node tests/progressive-loading-browser.mjs
+          node tests/deferred-knowledge-browser.mjs
       - name: Verify startup and failure recovery
         if: matrix.suite == 'startup-menu'
         run: node tests/startup-browser.mjs
@@ -353,12 +360,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/preloader-strict-20261101-v4.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/progressive-20261102-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — строгая сетка прелоадера',
+                name: 'Байконур — поэтапная загрузка музея',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

@@ -25,12 +25,12 @@ const smooth=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3
  *  - regional 18 km landscape: fine scrub, clay and dry salt crust
  * each feathering to the lower level for a clean horizon.
  */
-export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
+export function buildExtendedTerrain({scene,registerGroundSurface,renderer,satelliteOwnsGroundColor=false}) {
   const config=[
     {id:'regional',extent:116000,resolution:512,height:-4.95,fade:.22,detail:0,order:0,segments:LARGE_TERRAIN_SEGMENTS},
     {id:'intermediate',extent:18000,resolution:768,height:-3.75,fade:.24,detail:1,order:1}
   ];
-  const planes=[],textures=[],regionInfo=[];
+  const planes=[],textures=[],regionInfo=[],satelliteBase=[161,136,109];
   for(const spec of config){
     const cv=document.createElement('canvas'),side=spec.resolution;
     cv.width=cv.height=side;
@@ -44,7 +44,9 @@ export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
       for(let ix=0;ix<side;ix++){
         const wx=(ix/(side-1)-.5)*spec.extent;
         const edgeX=Math.min(ix/(side-1),1-ix/(side-1));
-        const [r,g,b]=sampleSteppe(wx,wz,spec.detail);
+        // The registered satellite shader replaces all of this RGB, including
+        // the surrounding steppe. Preserve the original alpha mask exactly.
+        const [r,g,b]=satelliteOwnsGroundColor?satelliteBase:sampleSteppe(wx,wz,spec.detail);
         const alpha=smooth(0,spec.fade,Math.min(edgeX,edgeZ));
         const k=(iy*side+ix)*4;
         bytes[k]=r;bytes[k+1]=g;bytes[k+2]=b;
@@ -130,6 +132,7 @@ export function buildExtendedTerrain({scene,registerGroundSurface,renderer}) {
       textureResolution:config[0].resolution,
       textureResolutions:config.map(a=>a.resolution),
       regions:regionInfo,terrainTypes:['dry steppe','sand','solonchak','clay','gravel','alluvium'],
+      proceduralColorGenerated:!satelliteOwnsGroundColor,
       riparianShrubs:riparianCount,photographicClaim:false,
       detailBeyondHistoricMap:true,continuousWorldCoordinates:true
     })

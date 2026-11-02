@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 
-const revision='20261101-satellite-surface-v1';
+const revision='20261102-progressive-v1';
 const markingsVersion='junction-aware-markings-v1';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-road-markings';

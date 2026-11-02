@@ -1,4 +1,4 @@
-import {ROCKET_MODELS,TUA_ROCKET_CHOICES} from './rocket-exhibits.js?v=20261101-cyclone-v1';
+import {ROCKET_MODELS,TUA_ROCKET_CHOICES} from './rocket-exhibits.js?v=20261102-progressive-v1';
 
 export function createTuaRocketControls({container,exhibits,keys,onSelect}){
   const panel=document.createElement('section');panel.id='tuaRocketControls';panel.className='tua-rocket-controls';panel.hidden=true;

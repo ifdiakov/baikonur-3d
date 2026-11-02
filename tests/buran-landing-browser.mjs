@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-buran-landing';
-const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261101-satellite-surface-v1';
+const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261102-progressive-v1';
 const origin=new URL(base).origin;
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],failedRequests:[],views:[],contacts:[],controls:[]};
 await mkdir(out,{recursive:true});
@@ -13,6 +13,11 @@ const browser=await chromium.launch({headless:true,
  args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
 page.setDefaultTimeout(60000);
+let releaseBuranSource;
+const buranSourceGate=new Promise(resolve=>{releaseBuranSource=resolve;});
+await page.route('**/assets/models/rockets/energia-buran.glb?*',async route=>{
+ await buranSourceGate;await route.continue();
+});
 page.on('pageerror',error=>evidence.errors.push(error.message));
 page.on('console',message=>{
  if(message.type()==='error'&&/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/i.test(message.text()))evidence.shaderErrors.push(message.text());
@@ -182,9 +187,27 @@ try{
  await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected&&
   document.getElementById('museumLoading')?.dataset.state==='ready',revision,{timeout:180000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().airports.find(a=>a.id==='pad-251')?.mriya?.status==='ready',null,{timeout:180000});
- assert.equal(await page.locator('#error').isVisible(),false);await step();
+ assert.equal(await page.locator('#error').isVisible(),false);
+ // Ask for the event while its source model is still downloading, then leave
+ // through the real map menu. Completion must not hijack the next selection.
  await openAirport();
+ await page.locator('#buranLandingStart').click();
+ assert.equal(await page.locator('#buranLandingStart').getAttribute('data-pending'),'true');
+ assert.equal(await page.locator('#buranLandingStart').isDisabled(),true);
+ const pendingStart=await state();assert.equal(pendingStart.landing.active,false);
+ await openSection('sitesAccordion');
+ await page.locator('#list .entry[data-site-id="pad-31"]').click();
+ const cancelledStart=await state();assert.equal(cancelledStart.landing.active,false);
+ releaseBuranSource();
+ await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().rockets.placements.find(p=>p.key==='site110')?.status==='ready',null,{timeout:60000});
+ const loadedAfterCancel=await state();
+ assert.equal(loadedAfterCancel.landing.active,false,'A late source model cannot start a cancelled landing request');
+ assert.equal(loadedAfterCancel.selection.currentObject,cancelledStart.selection.currentObject);
+ assert.deepEqual(loadedAfterCancel.camera.position,cancelledStart.camera.position,'Completing a cancelled request leaves the current camera alone');
+ evidence.controls.push({kind:'deferred-start-cancelled',pendingStart,cancelledStart,loadedAfterCancel});
+ await openAirport();
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().airports.find(a=>a.id==='pad-251')?.mriya?.status==='ready',null,{timeout:180000});
+ await page.evaluate(()=>window.__MUSEUM_CONTENT_READY);await step();
  // Establish a non-default historical/light state and a known visible, paused
  // modern flight so the later restoration cannot pass merely by coincidence.
  await page.locator('#year').focus();await page.keyboard.press('End');await page.keyboard.press('ArrowLeft');
@@ -330,4 +353,4 @@ try{
  await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(()=>{});
  await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({...evidence,passed:false,message:error.message,stack:error.stack},null,2));
  throw error;
-}finally{await browser.close();}
+}finally{releaseBuranSource();await browser.close();}

@@ -80,7 +80,15 @@ export function collectTerrainProtection({objects,transport,riverWater,riverCore
  return {protection,protectedSites,airports};
 }
 
-function reliefTexture({bounds,satelliteCanvas,renderer}){
+function reliefTexture({bounds,satelliteCanvas,renderer,satelliteOwnsGroundColor=false}){
+ // The satellite shader replaces every RGB texel of this fully opaque map.
+ // Relief edges still use their original per-vertex alpha and geometry.
+ if(satelliteOwnsGroundColor){
+  const texture=new THREE.DataTexture(new Uint8Array([161,136,109,255]),1,1,THREE.RGBAFormat);
+  texture.name='Рельеф · непрозрачная основа спутникового покрытия';
+  texture.colorSpace=THREE.SRGBColorSpace;texture.minFilter=texture.magFilter=THREE.LinearFilter;
+  texture.generateMipmaps=false;texture.needsUpdate=true;return texture;
+ }
  const canvas=document.createElement('canvas');canvas.width=1024;canvas.height=808;
  const context=canvas.getContext('2d'),image=context.createImageData(canvas.width,canvas.height);
  const source=satelliteCanvas.getContext('2d').getImageData(0,0,satelliteCanvas.width,satelliteCanvas.height);
@@ -112,7 +120,9 @@ function reliefTexture({bounds,satelliteCanvas,renderer}){
 export function buildMuseumTerrainRelief(options){
  const {dem,satelliteCanvas,renderer,steppeSurface,scene,registerGroundSurface}=options;
  const {protection,protectedSites,airports}=collectTerrainProtection(options);
- const material=new THREE.MeshBasicMaterial({map:reliefTexture({bounds:dem.bounds,satelliteCanvas,renderer}),
+ const satelliteOwnsGroundColor=Boolean(steppeSurface?.stats?.().satellite?.surrounding);
+ const texture=reliefTexture({bounds:dem.bounds,satelliteCanvas,renderer,satelliteOwnsGroundColor});
+ const material=new THREE.MeshBasicMaterial({map:texture,
   color:0xffffff,vertexColors:true,transparent:true,depthWrite:true,alphaTest:.001,side:THREE.DoubleSide,forceSinglePass:true});
  material.name='Пологий рельеф Байконура · Mapzen / SRTM';steppeSurface.apply(material);
  const terrain=buildTerrainRelief({dem,material,protection,step:16,baseY:-2.755,
@@ -120,7 +130,8 @@ export function buildMuseumTerrainRelief(options){
   transitionVariation:.3,heightVariation:.28});
  scene.add(terrain.mesh);registerGroundSurface(terrain.mesh);
  const report=terrain.stats;
- return {...terrain,stats:()=>({...report(),protectedSites,airports,textureResolution:[1024,808],
+ return {...terrain,stats:()=>({...report(),protectedSites,airports,textureResolution:[texture.image.width,texture.image.height],
+  proceduralColorGenerated:!satelliteOwnsGroundColor,
   sourceUrl:'https://registry.opendata.aws/terrain-tiles/',infrastructureAdapted:true,
   attribution:'Mapzen Terrain Tiles; SRTM data courtesy of the U.S. Geological Survey'})};
 }

@@ -3,6 +3,7 @@
 // TextureLoader uses bottom-left UV coordinates; image north remains at v=1.
 export const SATELLITE_REFERENCE=Object.freeze({
  url:new URL('../assets/terrain/satellite-single-pass-v1.jpg',import.meta.url).href,
+ previewUrl:new URL('../assets/terrain/satellite-single-pass-preview-v1.jpg',import.meta.url).href,
  source:'RocketTrip / Google Drive / Поверхность земли / подложка.jpg',
  treatment:'mosaic harmonized for a single-satellite-pass appearance',
  worldToUv:Object.freeze([0.00025253091310637864,4.40479916308898e-7,0.580736699491189,-7.55798430496509e-7,-0.00026425034633227124,0.4979066536173544]),
@@ -13,6 +14,7 @@ export const SATELLITE_REFERENCE=Object.freeze({
  }),
  extension:Object.freeze({
   url:new URL('../assets/terrain/satellite-expansion-v1.jpg',import.meta.url).href,
+  previewUrl:new URL('../assets/terrain/satellite-expansion-preview-v1.jpg',import.meta.url).href,
   source:'RocketTrip reference / generated surrounding steppe',
   treatment:'Two outpainting passes; the separately retained detailed original center remains authoritative',
   worldToUv:Object.freeze([0.00009728812509120913,0.0000018595158552411593,0.5355685531981587,-0.0000005714155248860683,-0.00010922020714511084,0.4986371647063046]),

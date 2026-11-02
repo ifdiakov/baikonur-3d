@@ -5,7 +5,7 @@ export const STEPPE_BIOME_EXTENT=18000;
 export const STEPPE_BIOME_RESOLUTION=1024;
 // The generated field and the material program have separate revisions: an
 // image treatment must not silently claim that the fallback soil field changed.
-export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v10-extended-satellite';
+export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v11-progressive-satellite';
 const installed=new WeakMap();
 
 function satelliteSurrounding(options){
@@ -392,27 +392,85 @@ export async function createSteppeSurface({renderer,satellite=null}={}){
  const extensionConfig=satellite?.extension??null;
  if(extensionConfig&&!(typeof extensionConfig.url==='string'&&extensionConfig.url.trim()))throw new Error('Satellite extension requires an image URL');
  const satelliteExtension=extensionConfig?createSatelliteExtensionProjection(satelliteProjection,extensionConfig):null;
- const loader=new THREE.TextureLoader();
- const urls=['steppe-micro-v1.png','steppe-meso-v1.png'].map(file=>new URL('../assets/terrain/'+file,import.meta.url).href);
- if(satellite)urls.push(satellite.url);
- if(extensionConfig)urls.push(extensionConfig.url);
- const [microTexture,mesoTexture,satelliteTexture=null,extensionTexture=null]=await Promise.all(urls.map(url=>loader.loadAsync(url)));
- for(const texture of [microTexture,mesoTexture]){
+ const loader=new THREE.TextureLoader(),materials=new Set();
+ const loadTexture=url=>{
+  let expired=false,timer;
+  const pending=loader.loadAsync(url);
+  pending.then(texture=>{if(expired)texture.dispose();},()=>{});
+  const deadline=new Promise((_,reject)=>{timer=setTimeout(()=>{
+   expired=true;const error=new Error('Terrain texture request timed out');error.name='TimeoutError';reject(error);
+  },20000);});
+  return Promise.race([pending,deadline]).finally(()=>clearTimeout(timer));
+ };
+ const detailUrls=['steppe-micro-v1.png','steppe-meso-v1.png'].map(file=>new URL('../assets/terrain/'+file,import.meta.url).href);
+ const progressive=Boolean(satellite?.previewUrl);
+ const neutralTexture=name=>{
+  const texture=new THREE.DataTexture(new Uint8Array([128,128,128,255]),1,1,THREE.RGBAFormat);
+  texture.name=name;texture.needsUpdate=true;return texture;
+ };
+ const configureDetail=texture=>{
   texture.colorSpace=THREE.NoColorSpace;texture.wrapS=texture.wrapT=THREE.RepeatWrapping;
   texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
   texture.generateMipmaps=true;texture.anisotropy=Math.min(renderer?.capabilities?.getMaxAnisotropy?.()||4,8);
-  texture.needsUpdate=true;
- }
- for(const [texture,name]of [[satelliteTexture,'Shared satellite-style earth'],[extensionTexture,'Shared satellite-style earth extension']]){
-  if(!texture)continue;
+  texture.needsUpdate=true;return texture;
+ };
+ const configurePhoto=(texture,name)=>{
+  if(!texture)return null;
   texture.name=name;texture.colorSpace=THREE.SRGBColorSpace;
   texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;texture.flipY=true;
   texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
   texture.generateMipmaps=true;texture.anisotropy=Math.min(renderer?.capabilities?.getMaxAnisotropy?.()||4,8);
-  texture.needsUpdate=true;
+  texture.needsUpdate=true;return texture;
+ };
+ // These previews use the original complete image and exactly the same UV
+ // registration. The first view therefore has the final terrain layout.
+ const [microTexture,mesoTexture,satelliteTexture,extensionTexture]=await Promise.all([
+  progressive?neutralTexture('Steppe micro detail pending'):loadTexture(detailUrls[0]),
+  progressive?neutralTexture('Steppe meso detail pending'):loadTexture(detailUrls[1]),
+  satellite?loadTexture(satellite.previewUrl||satellite.url):null,
+  extensionConfig?loadTexture(extensionConfig.previewUrl||extensionConfig.url):null
+ ]);
+ configureDetail(microTexture);configureDetail(mesoTexture);
+ configurePhoto(satelliteTexture,'Shared satellite-style earth');
+ configurePhoto(extensionTexture,'Shared satellite-style earth extension');
+ // Satellite surroundings replace the procedural biome color everywhere.
+ // Its million-pixel field is not sampled by that shader path.
+ const biomeFieldGenerated=!satelliteProjection?.surrounding;
+ const textures={biomeTexture:biomeFieldGenerated?createSteppeBiomeTexture():neutralTexture('Unused satellite biome field'),
+  microTexture,mesoTexture,satelliteTexture,satelliteProjection,satelliteCorrection,extensionTexture,satelliteExtension};
+ const loading={progressive,detail:progressive?'queued':'ready',satellite:progressive?'preview':satellite?'ready':'none',
+  extension:extensionConfig?.previewUrl?'preview':extensionConfig?'ready':'none',errors:[]};
+ const replaceTexture=(key,uniformName,texture)=>{
+  const previous=textures[key];textures[key]=texture;
+  for(const material of materials){const uniform=installed.get(material)?.uniforms[uniformName];if(uniform)uniform.value=texture;}
+  previous?.dispose();
+ };
+ const defer=(job,options)=>globalThis.__MUSEUM_STARTUP?.defer?globalThis.__MUSEUM_STARTUP.defer(job,options):job();
+ const jobs=[];
+ if(progressive){
+  jobs.push(defer(async()=>{
+   loading.detail='loading';
+   const results=await Promise.allSettled(detailUrls.map(loadTexture));
+   results.forEach((result,index)=>{
+    if(result.status==='fulfilled')replaceTexture(index?'mesoTexture':'microTexture',index?'steppeMeso':'steppeMicro',configureDetail(result.value));
+    else loading.errors.push({resource:index?'meso':'micro',message:String(result.reason?.message||result.reason)});
+   });
+   loading.detail=results.every(result=>result.status==='fulfilled')?'ready':'partial';
+  },{key:'terrain-detail',priority:10}));
+  jobs.push(defer(async()=>{
+   const upgrades=[['satelliteTexture','steppeSatellite',satellite,'satellite','Shared satellite-style earth'],
+    ['extensionTexture','steppeSatelliteExtension',extensionConfig,'extension','Shared satellite-style earth extension']];
+   // Full images are an enhancement. A failure leaves the registered preview
+   // in place and cannot turn an already usable museum into an error screen.
+   for(const [key,uniform,config,stateKey,name]of upgrades){
+    if(!config?.previewUrl)continue;
+    loading[stateKey]='loading';
+    try{replaceTexture(key,uniform,configurePhoto(await loadTexture(config.url),name));loading[stateKey]='ready';}
+    catch(error){loading[stateKey]='preview';loading.errors.push({resource:stateKey,message:String(error.message||error)});}
+   }
+  },{key:'terrain-hd',priority:8}));
  }
- const textures={biomeTexture:createSteppeBiomeTexture(),microTexture,mesoTexture,satelliteTexture,satelliteProjection,satelliteCorrection,
-  extensionTexture,satelliteExtension},materials=new Set();
+ const ready=Promise.allSettled(jobs);
  const primaryAt=(x,z)=>{
   const affine=satelliteProjection?.sample(x,z);if(!affine||!satelliteCorrection)return affine??null;
   const correction=satelliteCorrection.sample(...affine.uv);
@@ -424,14 +482,19 @@ export async function createSteppeSurface({renderer,satellite=null}={}){
   return primary&&satelliteExtension?{...primary,extension:satelliteExtension.sample(x,z,primary)}:primary;
  };
  return {apply(material,options){installSteppeSurface(material,textures,options);materials.add(material);return material;},
-  satelliteAt,
+  satelliteAt,ready,requestDetail(){
+   globalThis.__MUSEUM_STARTUP?.promote?.('terrain-detail',100);
+   globalThis.__MUSEUM_STARTUP?.promote?.('terrain-hd',100);return ready;
+  },
   stats:()=>({version:STEPPE_VERSION,surfaceVersion:STEPPE_SURFACE_VERSION,projection:'world-xz',materials:materials.size,detailMaps:2,
-   textureSize:512,biomeResolution:STEPPE_BIOME_RESOLUTION,biomeExtent:STEPPE_BIOME_EXTENT,
+   textureSize:textures.microTexture.image?.width??1,biomeResolution:biomeFieldGenerated?STEPPE_BIOME_RESOLUTION:1,biomeExtent:STEPPE_BIOME_EXTENT,
+   biomeFieldGenerated,loading:{...loading,errors:loading.errors.map(error=>({...error}))},
    mipmapped:true,derivativeFade:true,extraGeometry:0,types:['dry-steppe','sand','salt-crust','sparse-scrub'],
    satellite:satelliteTexture?{url:satellite.url,source:satellite.source??'configured image',treatment:satellite.treatment??'shared satellite-style color',
     projection:satelliteCorrection?'world-xz-affine-with-uv-correction':'world-xz-affine',worldToUv:[...satelliteProjection.worldToUv],featherWorld:satelliteProjection.featherWorld,
     worldCorners:satelliteProjection.worldCorners.map(p=>[...p]),bounds:{...satelliteProjection.bounds},
-    resolution:[satelliteTexture.image?.naturalWidth??satelliteTexture.image?.width??0,satelliteTexture.image?.naturalHeight??satelliteTexture.image?.height??0],
+    resolution:[textures.satelliteTexture.image?.naturalWidth??textures.satelliteTexture.image?.width??0,textures.satelliteTexture.image?.naturalHeight??textures.satelliteTexture.image?.height??0],
+    previewUrl:satellite.previewUrl??null,
     colorSpace:THREE.SRGBColorSpace,sharedTexture:true,repeat:false,alphaSource:'existing terrain',microContrast:.12,
     surrounding:satelliteProjection.surrounding?{...satelliteProjection.surrounding,color:[...satelliteProjection.surrounding.color],
      darkColor:[...satelliteProjection.surrounding.darkColor],lightColor:[...satelliteProjection.surrounding.lightColor],
@@ -441,7 +504,8 @@ export async function createSteppeSurface({renderer,satellite=null}={}){
      treatment:extensionConfig.treatment??'registered image extension',worldToUv:[...satelliteExtension.projection.worldToUv],
      fromPrimaryUv:[...satelliteExtension.fromPrimaryUv],featherWorld:satelliteExtension.projection.featherWorld,
      worldCorners:satelliteExtension.projection.worldCorners.map(p=>[...p]),bounds:{...satelliteExtension.projection.bounds},
-     resolution:[extensionTexture.image?.naturalWidth??extensionTexture.image?.width??0,extensionTexture.image?.naturalHeight??extensionTexture.image?.height??0],
+     resolution:[textures.extensionTexture.image?.naturalWidth??textures.extensionTexture.image?.width??0,textures.extensionTexture.image?.naturalHeight??textures.extensionTexture.image?.height??0],
+     previewUrl:extensionConfig.previewUrl??null,
      sharedTexture:true,repeat:false,colorSpace:THREE.SRGBColorSpace,primaryCorePreserved:true,
      correctionFadeWorld:satelliteExtension.correctionFadeWorld,
      confidencePolicy:'primary confidence inside its footprint; smooth release outside; low confidence reveals surrounding earth'}:null}:null})};

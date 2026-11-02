@@ -50,7 +50,7 @@ export function installMriyaExhibit(root,fallback,cx,cz,{eventTarget=root}={}){
  const movingAircraft=new THREE.Group(),movingOrbiter=new THREE.Group();holder.add(movingAircraft,movingOrbiter);
  const lod=new THREE.LOD(),orbiterLod=new THREE.LOD();movingAircraft.add(lod);movingOrbiter.add(orbiterLod);
  const gear=parkedGear();gear.visible=false;movingAircraft.add(gear);
- const state=root.userData.airport.mriya={version:MRIYA_VERSION,status:'loading',loaded:[],errors:[],wheels:32,apronY:APRON_Y,modelScale:1,
+ const state=root.userData.airport.mriya={version:MRIYA_VERSION,status:'loading',loaded:[],requested:[],errors:[],wheels:32,apronY:APRON_Y,modelScale:1,
   physicalUnits:'metres',physicalToAirportLocal:root.userData.airport.physicalToLocal??1,
   nearBytes:2176700,farBytes:1188432};
  let replaced=false;
@@ -67,22 +67,51 @@ export function installMriyaExhibit(root,fallback,cx,cz,{eventTarget=root}={}){
   state.dimensions=prepared.dimensions;state.orbiterMeshCount=prepared.orbiter.children.length;let draws=0,triangles=0;for(const part of [model,prepared.orbiter])part.traverse(m=>{if(m.isMesh){draws+=m.geometry.groups.length||1;triangles+=(m.geometry.index?.count||m.geometry.attributes.position.count)/3;}});state.drawCallsPerLevel=draws;state.triangles=triangles;state.paint='reference-white-red-mriya-thermal-buran';
   holder.updateWorldMatrix(true,true);
  }
- // Dynamic imports keep initial map construction synchronous and retain a fallback
- // if a model request fails. Both detail levels come from this same repository.
- if(typeof window!=='undefined'){
-  (async()=>{
-   const [{GLTFLoader},{MeshoptDecoder}]=await Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('./vendor/meshopt_decoder-v1.mjs')]);
-   const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-   for(const detail of ['far','near']){
-    try{attach(await loader.loadAsync(ASSETS[detail]),detail);}catch(error){state.errors.push({detail,message:String(error.message||error)});}
-   }
-   if(!replaced)state.status='fallback';
-  })().catch(error=>{state.status='fallback';state.errors.push({detail:'loader',message:String(error.message||error)});});
+ // Keep the existing silhouette until the first usable museum view is shown.
+ // The close-up mesh is downloaded only when the visitor approaches this
+ // exhibit or requests it explicitly; a THREE.LOD alone does not defer bytes.
+ const pending=new Map();let loaderReady=null;
+ function requestLevel(detail,{retry=false}={}){
+  if(state.loaded.includes(detail))return Promise.resolve(true);
+  const key='mriya-'+detail;
+  if(pending.has(detail)&&!retry){globalThis.__MUSEUM_STARTUP?.promote?.(key,100);return pending.get(detail);}
+  if(!state.requested.includes(detail))state.requested.push(detail);
+  const job=async()=>{
+   const abort=new AbortController(),timer=setTimeout(()=>abort.abort(),25000);
+   try{
+    if(!loaderReady)loaderReady=Promise.all([import('three/addons/loaders/GLTFLoader.js'),import('./vendor/meshopt_decoder-v1.mjs')])
+     .then(([{GLTFLoader},{MeshoptDecoder}])=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder));
+    const loader=await loaderReady;
+    const response=await fetch(ASSETS[detail],{signal:abort.signal});
+    if(!response.ok)throw new Error('Мрия: HTTP '+response.status);
+    const gltf=await loader.parseAsync(await response.arrayBuffer(),new URL('.',ASSETS[detail]).href);
+    if(abort.signal.aborted)throw new Error('Загрузка модели заняла слишком много времени');
+    attach(gltf,detail);return true;
+   }catch(error){
+    if(!replaced)state.status='fallback';
+    state.errors.push({detail,message:String(error.message||error)});return false;
+   }finally{clearTimeout(timer);}
+  };
+  const result=globalThis.__MUSEUM_STARTUP?.defer?globalThis.__MUSEUM_STARTUP.defer(job,{key,priority:detail==='near'?100:4}):job();
+  pending.set(detail,result);return result;
  }
- const controller={holder,state,setPose({aircraftZ=0,lift=0,orbiterZ=0}={}){
+ const cameraPosition=new THREE.Vector3(),holderPosition=new THREE.Vector3(),worldScale=new THREE.Vector3();
+ const controller={holder,state,ready:Promise.resolve(false),requestDetail:()=>requestLevel('near'),
+  update(camera){
+   if(!camera||pending.has('near')||!holder.visible)return;
+   for(let ancestor=holder.parent;ancestor;ancestor=ancestor.parent)if(!ancestor.visible)return;
+   camera.getWorldPosition(cameraPosition);holder.getWorldPosition(holderPosition);root.getWorldScale(worldScale);
+   if(cameraPosition.distanceTo(holderPosition)<480*Math.abs(worldScale.x))requestLevel('near');
+  },setPose({aircraftZ=0,lift=0,orbiterZ=0}={}){
   movingAircraft.position.z=aircraftZ;movingOrbiter.position.set(0,lift,orbiterZ);
   state.loadingPose={aircraftZ,lift,orbiterZ};holder.updateWorldMatrix(true,true);
  },bounds(){holder.updateWorldMatrix(true,true);return {aircraft:new THREE.Box3().setFromObject(movingAircraft),orbiter:new THREE.Box3().setFromObject(movingOrbiter)};}};
  installations.set(eventTarget,controller);controller.setPose({});
+ if(typeof window!=='undefined'){
+  const farReady=requestLevel('far');
+  // The standalone archive has no museum queue or proximity controller.
+  // Preserve its existing sequential loading of both detail levels.
+  controller.ready=globalThis.__MUSEUM_STARTUP?.defer?farReady:farReady.then(()=>requestLevel('near'));
+ }
  return controller;
 }

@@ -6,7 +6,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 // Only frame scheduling is controlled; every deliberate frame is real WebGL.
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
-const revision='20261101-satellite-surface-v1';
+const revision='20261102-progressive-v1';
 const welcome='Добро пожаловать на космодром Байконур первый в истории и крупнейший на планете космическая гавань человечества';
 const slogan='КОСМОС НАЧИНАЕТСЯ С НАЗЕМКИ';
 const launchStatusCount=20,finalLaunchStep=launchStatusCount-1,lastLoadingLaunchStep=finalLaunchStep-1;
@@ -44,6 +44,9 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    record.catalogRequests++;
    if(httpFailure){await route.fulfill({status:500,contentType:'application/json',body:'{"error":"startup test"}'});return;}
    if(holdCatalog)await catalogGate;
+  }
+  if(stalledBody==='optional-models'&&url.pathname.endsWith('/assets/models/mriya-buran/far-v2.glb')){
+   await route.fulfill({status:503,contentType:'text/plain',body:'Expected optional model failure'});return;
   }
   await route.continue();
  });
@@ -106,7 +109,8 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
   window.fetch=(input,init)=>{
    const url=new URL(typeof input==='string'||input instanceof URL?input:input.url,location.href);
    const isCatalog=stalledBody==='catalog'&&url.pathname.endsWith('/data/catalog.json');
-   const isModel=stalledBody==='models'&&/\/assets\/models\/(?:tua|ukss)\/model-v2\.glb$/.test(url.pathname);
+   const isModel=(stalledBody==='models'&&/\/assets\/models\/(?:tua|ukss)\/model-v2\.glb$/.test(url.pathname))||
+    (stalledBody==='optional-models'&&url.pathname.endsWith('/assets/models/rockets/soyuz.glb'));
    if(!isCatalog&&!isModel)return originalFetch(input,init);
    const item={path:url.pathname,startedAt:performance.now(),headersAt:null,abortedAt:null};state.stalled.push(item);
    const signal=init?.signal||(input instanceof Request?input.signal:null);
@@ -366,6 +370,8 @@ try{
   assert.equal(ready.stats.ukss.status,'ready');assert.equal(ready.stats.mik112.tua.status,'ready');
   assert.ok(run.record.fontStylesheetsPending.length>0,'A genuinely pending font stylesheet does not block startup');
   assert.deepEqual(run.record.externalBlocked.filter(item=>item.type==='script'),[],'All executable engine modules come from the museum origin');
+  await run.page.evaluate(()=>window.__MUSEUM_CONTENT_READY);
+  await run.page.evaluate(()=>window.__MUSEUM_ROCKETS_READY);
   const overview=await camera(run.page);
   // Use the current visitor-facing menu to prove that startup has enabled
   // real navigation. The removed overview/layer controls must stay absent.
@@ -424,6 +430,33 @@ try{
   run.record.error=state;run.record.bodyTimeoutMs=elapsed;
   await run.page.screenshot({path:`${out}/${prefix}-required-body-timeout.png`,timeout:90000});
   assertNoRuntimeErrors(run.record);await run.close();
+ }
+ {
+  // Exercise the real scene and loaders, independently of the synthetic queue
+  // contract: a stalled rocket body and a failed distant Mriya are optional.
+  const run=await newCase('optional-assets-unavailable',{stalledBody:'optional-models'});await run.navigate();
+  const ready=await waitReady(run.page);assertStageProgress(ready.state.test.feedback);
+  await run.page.waitForFunction(()=>window.__STARTUP_TEST.stalled.length===1&&
+   window.__BAIKONUR_QA.stats().airports.find(a=>a.id==='pad-251')?.mriya?.status==='fallback',null,{timeout:45000});
+  const pending=await loaderState(run.page),request=pending.test.stalled[0];
+  assert.ok(request.startedAt>=ready.state.test.ready[0].at,'The optional model request starts after the first visible museum');
+  assert.equal(pending.hidden,true);assert.equal(pending.chromeReady,true);
+  assert.ok(pending.inert.every(item=>item.inert===false),'Optional failures do not disable the museum');
+  const before=await camera(run.page);
+  await run.page.locator('#sitesAccordion > summary').click();
+  await run.page.locator('#list .entry[data-site-id="pad-31"]').click();await step(run.page);
+  const after=await camera(run.page);assert.notDeepEqual(after.position,before.position,'Navigation remains usable while an optional model stalls');
+  await run.page.waitForFunction(()=>window.__STARTUP_TEST.stalled[0].abortedAt!==null&&
+   window.__BAIKONUR_QA.stats().rockets.placements.some(p=>p.modelId==='soyuz'&&p.status==='error'),null,{timeout:40000});
+  const final=await loaderState(run.page),stats=await run.page.evaluate(()=>window.__BAIKONUR_QA.stats());
+  assert.equal(final.hidden,true);assert.equal(final.chromeReady,true);assert.equal(final.test.ready.length,1);
+  assert.equal(await run.page.locator('#error').isVisible(),false);
+  assert.equal(stats.airports.find(a=>a.id==='pad-251').mriya.status,'fallback');
+  assert.ok(stats.render.drawCalls>0&&stats.render.triangles>0,'The real map still renders after both optional failures');
+  run.record.ready=ready.state.test.ready[0];run.record.request=final.test.stalled[0];
+  run.record.mriya=stats.airports.find(a=>a.id==='pad-251').mriya;
+  run.record.rocketErrors=stats.rockets.placements.filter(p=>p.modelId==='soyuz').map(p=>({key:p.key,status:p.status,error:p.error}));
+  run.record.cameras={before,after};assertNoRuntimeErrors(run.record);await run.close();
  }
  {
   const run=await newCase('parallel-model-fallback',{stalledBody:'models'});await run.navigate();

@@ -3,17 +3,27 @@ import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 
 const out='qa-mriya',prefix=process.env.QA_PREFIX||'local';await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--disable-gpu-sandbox']});
+const revision=process.env.BAIKONUR_EXPECTED_REVISION||'20261102-progressive-v1';
+const browser=await chromium.launch({headless:true,...(process.env.BAIKONUR_CHROMIUM?{executablePath:process.env.BAIKONUR_CHROMIUM}:{}),args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
 page.setDefaultTimeout(90000);
-const errors=[],assets=[];
+const errors=[],assets=[],assetRequests=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('console',m=>{if(m.type()==='error'&&/Shader Error|compile shader|TypeError|ReferenceError|VALIDATE_STATUS/.test(m.text()))errors.push(m.text());});
+page.on('request',r=>{if(/mriya-buran\/.*\.glb/.test(r.url()))assetRequests.push(r.url());});
 page.on('response',r=>{if(/mriya-buran\/.*\.glb/.test(r.url()))assets.push({url:r.url(),status:r.status()});});
 if(process.env.BAIKONUR_THREE_DIR)await page.route('https://cdn.jsdelivr.net/npm/three@0.160.1/**',r=>r.fulfill({path:process.env.BAIKONUR_THREE_DIR+'/'+new URL(r.request().url()).pathname.split('/three@0.160.1/')[1],contentType:'text/javascript'}));
 await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__MRIYA_FRAME=()=>{const fn=pending;pending=null;fn?.(performance.now());};});
 try{
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',{waitUntil:'domcontentloaded'});
+ await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.stats().airports.find(a=>a.key==='yubileiny')?.mriya?.loaded.includes('far'),null,{timeout:180000});
+ const initialState=await page.evaluate(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny'));
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().museumRevision),revision);
+ assert.equal(initialState.mriya.status,'partial');assert.deepEqual(initialState.mriya.loaded,['far']);
+ assert.deepEqual(initialState.mriya.requested,['far']);assert.deepEqual(initialState.mriya.errors,[]);
+ assert.equal(assetRequests.length,1,'overview downloads only the distant Mriya model');
+ assert.ok(assetRequests.every(url=>/\/far-v2\.glb(?:\?|$)/.test(url)),'the close-up model is not requested before focus');
+ await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.evening.setEvening(false);q.focusSite('pad-251');window.__MRIYA_FRAME();});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().airports.find(a=>a.key==='yubileiny')?.mriya?.status==='ready',null,{timeout:180000});
  const state=await page.evaluate(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny'));
  assert.equal(state.mriya.version,'mriya-buran-reference-v2');assert.deepEqual(state.mriya.errors,[]);
@@ -21,7 +31,8 @@ try{
  assert.ok(Math.abs(state.mriya.dimensions[0]-82.15)<.1);assert.ok(Math.abs(state.mriya.dimensions[2]-88.31)<.1);
  assert.ok(state.mriya.drawCallsPerLevel<=40);assert.equal(state.mriya.paint,'reference-white-red-mriya-thermal-buran');assert.equal(state.length,2250);
  assert.equal(assets.length,2);assert.ok(assets.every(a=>a.status===200));
- await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.arrival.stopFollowing();q.evening.setEvening(false);q.focusSite('pad-251');window.__MRIYA_FRAME();});
+ assert.equal(assetRequests.length,2,'focus requests the close-up Mriya model once');
+ assert.equal(assetRequests.filter(url=>/\/near-v2\.glb(?:\?|$)/.test(url)).length,1);
  await page.getByRole('button',{name:'Мрия и Буран',exact:true}).click();
  await page.locator('#close').click();
  await page.evaluate(()=>{window.__MRIYA_FRAME();});
@@ -43,6 +54,6 @@ try{
  await page.evaluate(()=>{window.__MRIYA_FRAME();});
  assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  assert.deepEqual(errors,[]);
- await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,state,assets,pick,updates:{...updates,powered:updates.powered.length},errors},null,2));
- console.log('MRIYA_BROWSER_PASS',JSON.stringify({prefix,loaded:state.mriya.loaded,dimensions:state.mriya.dimensions}));
+ await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,initialState,state,assetRequests,assets,pick,updates:{...updates,powered:updates.powered.length},errors},null,2));
+ console.log('MRIYA_BROWSER_PASS',JSON.stringify({prefix,initial:initialState.mriya.loaded,loaded:state.mriya.loaded,dimensions:state.mriya.dimensions}));
 }finally{await browser.close();}

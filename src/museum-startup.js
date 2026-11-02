@@ -5,6 +5,23 @@
   var failed = false;
   var step = 0;
   var totalSteps = 9;
+  var interactive = false;
+  var jobs = [];
+  var activeJobs = 0;
+  var jobSequence = 0;
+  var pumpScheduled = false;
+  var jobHistory = [];
+  var marks = [];
+  var prefetchedJSON = new Map();
+  var connection = navigator.connection;
+  var concurrency = connection && (connection.saveData || /(^|-)2g$/.test(connection.effectiveType)) ? 1 : 2;
+  function mark(name) {
+    var time = performance.now();
+    marks.push({ name: name, at: time });
+    if (performance.mark) performance.mark('museum:' + name);
+    return time;
+  }
+  mark('startup');
   var controls = ['museumLeftStack', 'museumRightStack', 'labelLayer', 'timeDock', 'hero'];
   var element = function (id) { return document.getElementById(id); };
   var setMessage = function (text) {
@@ -30,6 +47,7 @@
     if (finished || failed) return;
     setMessage(text);
     if (Number.isInteger(index) && index >= 0 && index <= totalSteps) {
+      if (index > step) mark('stage-' + index);
       step = Math.max(step, index);
       preloader('stage', step, totalSteps);
     }
@@ -52,9 +70,66 @@
     });
   }
 
+  // Start optional network/decoding work only after the actual map has been
+  // painted and revealed. A bounded queue leaves bandwidth and event-loop
+  // turns for navigation; choosing a site can promote its pending assets.
+  function pump() {
+    if (!interactive || pumpScheduled || activeJobs >= concurrency || !jobs.length) return;
+    pumpScheduled = true;
+    var run = function () {
+      pumpScheduled = false;
+      if (!interactive || activeJobs >= concurrency || !jobs.length) return;
+      jobs.sort(function (a, b) { return b.priority - a.priority || a.order - b.order; });
+      var job = jobs.shift();
+      activeJobs++;
+      job.record.state = 'loading';
+      job.record.startedAt = performance.now();
+      Promise.resolve().then(job.task).then(function (value) {
+        job.record.state = 'ready';
+        job.resolve(value);
+      }, function (error) {
+        job.record.state = 'error';
+        job.record.error = String(error && error.message || error);
+        job.reject(error);
+      }).finally(function () {
+        job.record.finishedAt = performance.now();
+        activeJobs--;
+        pump();
+      });
+      pump();
+    };
+    if (typeof requestIdleCallback === 'function') requestIdleCallback(run, { timeout: 300 });
+    else setTimeout(run, 16);
+  }
+
+  function defer(task, options) {
+    options = options || {};
+    var record = { key: options.key || 'task-' + jobSequence, state: 'queued', queuedAt: performance.now() };
+    jobHistory.push(record);
+    return new Promise(function (resolve, reject) {
+      jobs.push({ task: task, resolve: resolve, reject: reject, record: record,
+        key: record.key, priority: options.priority || 0, order: jobSequence++ });
+      pump();
+    });
+  }
+
+  function promote(key, priority) {
+    jobs.forEach(function (job) {
+      if (job.key === key) job.priority = Math.max(job.priority, priority == null ? 100 : priority);
+    });
+    pump();
+  }
+
+  function stats() {
+    return { interactive: interactive, active: activeJobs, queued: jobs.length, concurrency: concurrency,
+      marks: marks.map(function (entry) { return Object.assign({}, entry); }),
+      tasks: jobHistory.map(function (entry) { return Object.assign({}, entry); }) };
+  }
+
   function ready() {
     if (finished || failed) return;
     finished = true;
+    mark('first-frame');
     clearTimeout(watchdog);
     var loading = element('museumLoading');
     var focusWasInside = loading && loading.contains(document.activeElement);
@@ -71,6 +146,10 @@
         }
       });
       document.body.classList.add('museum-ready');
+      mark('interactive');
+      // Resolve the presentation first. Optional parsing must not occupy the
+      // same browser turn as the first visible, interactive overview.
+      paint().then(function () { interactive = true; pump(); });
       preloader('destroy');
       if (focusWasInside) {
         var target = document.querySelector('#sitesAccordion > summary');
@@ -106,7 +185,13 @@
     preloader('fail');
   }
 
-  async function fetchJSON(path, options) {
+  function fetchJSON(path, options) {
+    var key = new URL(path, location.href).href;
+    if (!options && prefetchedJSON.has(key)) return prefetchedJSON.get(key);
+    return requestJSON(path, options);
+  }
+
+  async function requestJSON(path, options) {
     options = options || {};
     var timeoutMs = Number.isFinite(options.timeoutMs) && options.timeoutMs >= 0 ? options.timeoutMs : 15000;
     var controller = new AbortController();
@@ -120,7 +205,10 @@
       }, timeoutMs);
     });
     var request = (async function () {
-      var response = await fetch(path, { cache: 'no-store', signal: controller.signal });
+      // Versioned assets can reuse a fresh HTTP cache entry. Mutable datasets
+      // revalidate with ETags, avoiding a full download when unchanged.
+      var cache = options.cache || (/[?&]v=/.test(String(path)) ? 'default' : 'no-cache');
+      var response = await fetch(path, { cache: cache, signal: controller.signal, priority: options.priority || 'auto' });
       if (!response.ok) {
         if (options.optional) return null;
         throw new Error('Не удалось загрузить данные музея (HTTP ' + response.status + ').');
@@ -165,5 +253,19 @@
     preloader('slow');
   }, 30000);
 
-  window.__MUSEUM_STARTUP = Object.freeze({ stage: stage, ready: ready, fail: fail, fetchJSON: fetchJSON, paint: paint });
+  // Fetch the map while the browser resolves the ES-module graph. Low
+  // network priority leaves the rendering engine first; callers reuse these
+  // exact promises rather than issuing a second round of requests.
+  if (document.body.dataset.preloadMuseum === 'true') {
+    ['./data/catalog.json', './data/osm/catalog-matches.json', './data/osm/roads.geojson',
+      './data/osm/railways.geojson', './data/terrain/baikonur-dem.json?v=20261101-relief-v1',
+      './data/road-signs.json'].forEach(function (path) {
+      var pending = requestJSON(path, { priority: 'low' });
+      pending.catch(function () {});
+      prefetchedJSON.set(new URL(path, location.href).href, pending);
+    });
+  }
+
+  window.__MUSEUM_STARTUP = Object.freeze({ stage: stage, ready: ready, fail: fail, fetchJSON: fetchJSON, paint: paint,
+    defer: defer, promote: promote, stats: stats, mark: mark });
 })();

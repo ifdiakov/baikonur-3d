@@ -39,7 +39,7 @@ function validateBinary(bytes){
 async function loadModel(id){
   if(!ROCKET_MODELS[id])throw new Error('Неизвестная ракета');
   if(cache.has(id))return cache.get(id);
-  const pending=(async()=>{
+  const load=async()=>{
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
     try{
       const assetVersion=ROCKET_MODELS[id].assetVersion||ROCKET_MODEL_VERSION;
@@ -67,7 +67,11 @@ async function loadModel(id){
       gltf.scene.traverse(object=>{if(object.isMesh){object.castShadow=true;object.receiveShadow=true;object.userData.museumComponent='rocket-exhibit';}});
       return {scene:gltf.scene,manifest};
     }finally{clearTimeout(timer);}
-  })();
+  };
+  // The overview already contains the launch structures. Rocket geometry is
+  // queued after that first frame; its timeout starts when its request starts.
+  const startup=globalThis.window?.__MUSEUM_STARTUP;
+  const pending=startup?.defer?startup.defer(load,{key:'rocket:'+id,priority:20}):load();
   cache.set(id,pending);
   try{return await pending;}catch(error){cache.delete(id);throw error;}
 }
@@ -116,7 +120,11 @@ export function createRocketExhibits({onChange=()=>{}}={}){
     })();
     return entry.pending;
   }
-  function setVisible(key,value){const entry=entries.get(key);if(!entry)return false;entry.holder.visible=Boolean(value);return entry.holder.visible;}
-  return {add,setModel,setVisible,get:key=>entries.get(key),whenReady:()=>Promise.all([...entries.values()].map(e=>e.pending)),
+  function prioritizeSite(siteId){
+    for(const entry of entries.values())if(entry.siteId===siteId)
+      globalThis.window?.__MUSEUM_STARTUP?.promote?.('rocket:'+entry.modelId);
+  }
+  function setVisible(key,value){const entry=entries.get(key);if(!entry)return false;entry.holder.visible=Boolean(value);if(value)prioritizeSite(entry.siteId);return entry.holder.visible;}
+  return {add,setModel,setVisible,prioritizeSite,get:key=>entries.get(key),whenReady:()=>Promise.all([...entries.values()].map(e=>e.pending)),
     stats:()=>({version:ROCKET_MODEL_VERSION,commonMetre:MUSEUM_METRE,loadedAssetCount:cache.size,placements:[...entries.values()].map(snapshot)})};
 }
