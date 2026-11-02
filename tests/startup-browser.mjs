@@ -7,7 +7,7 @@ import {mkdir,readFile,writeFile} from 'node:fs/promises';
 // Small DOM fixtures separately exercise status projection and the exit bound.
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const origin=new URL(base).origin,prefix=process.env.QA_PREFIX||'local',out='qa-startup';
-const revision='20261102-rail-scheme-v1';
+const revision='20261102-energia-polyus-v2';
 const welcome='ГРАНД-МАКЕТ БАЙКОНУР ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D';
 const slogan='КОСМОС НАЧИНАЕТСЯ С НАЗЕМКИ';
 const featurePhrases=[

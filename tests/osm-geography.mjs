@@ -11,14 +11,23 @@ const [catalog,matches,airports,facilities]=await Promise.all([
 ]);
 const original=JSON.stringify(catalog),geo=createMuseumGeography({catalog,matches}),report=geo.stats();
 const active=geo.sites.filter(s=>!s.aliasOf&&s.render!==false);
-assert.equal(report.activeSites,98);
+assert.equal(report.activeSites,99);
 assert.equal(report.anchored+report.inferred,report.activeSites);
 assert.equal(report.anchored,72);
 assert.equal(report.resolvedByName,3);
 assert.equal(report.sharedCompoundSites,2);
-assert.equal(report.inferred,26);
+assert.equal(report.inferred,27);
 assert.equal(JSON.stringify(catalog),original,'Input catalogue was mutated');
 const byId=new Map(geo.sites.map(s=>[s.id,s]));
+assert.equal(byId.get('pad-2')?.titleShort,'Музей · «Буран»');
+assert.equal(byId.get('pad-32')?.organisation?.org,'ЦЭНКИ');
+assert.equal(byId.get('pad-250a')?.titleShort,'Криогенный центр');
+assert.equal(byId.get('pad-89')?.titleShort,'НП «Протон»');
+assert.deepEqual(byId.get('pad-3')?.geoSource?.displayOffset,[0,10]);
+assert.equal(byId.get('pad-3')?.geoSource?.displayOffsetBasis,'owner-request-20261102');
+assert.equal(byId.has('sector-northeast'),false);
+assert.equal(byId.has('sector-north-center'),false);
+
 for(const before of catalog.sites){
   const after=byId.get(before.id);
   for(const key of ['id','model','organisation','purpose','purposeLong','firstYear','titleShort','photoFolder','aliasOf','render'])
@@ -54,6 +63,12 @@ for(const match of matches.matches.filter(m=>m.status.startsWith('exact-'))){
     assert(Math.hypot(site.x-expected[0]-offset[0],site.y-expected[1]-offset[1])<1e-9);
     assert.equal(site.geoSource.displayOffsetBasis,'owner-request-20261031');
     assert.equal(site.positionConfidence,'owner-adjusted-display');
+  }else if(site.id==='pad-42'){
+    assert.deepEqual(site.geoSource.displayOffset,[0,10]);
+    assert.equal(site.geoSource.displayOffsetBasis,'owner-request-20261102');
+    assert.equal(site.positionConfidence,'owner-adjusted-display');
+    assert(Math.abs(site.x-expected[0])<1e-9&&Math.abs(site.y-expected[1]-10)<1e-9,
+      'Owner moved Site 42 exactly ten map units to the south without moving the OSM source');
   }else if(site.geoSource.status!=='shared-compound-relative')
     assert(Math.hypot(site.x-expected[0],site.y-expected[1])<1e-9,`${site.id}: not at its source point`);
 }
