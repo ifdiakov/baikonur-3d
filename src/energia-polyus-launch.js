@@ -209,14 +209,15 @@ function nozzleFlameMaterial(color){
    ' float tip=smoothstep(.015,.21,axial);',
    ' float diamonds=pow(.5+.5*cos((1.-axial)*92.+rolling*2.),18.)*smoothstep(.18,.6,axial);',
    ' float filament=pow(.5+.5*sin(vUv.x*71.+axial*57.-uTime*11.+rolling*6.),6.);',
-   ' float opacity=clamp(uPower*tip*collar*(.42+.48*axial)*irregular*(.87+.13*filament),0.,.98);',
+   ' float nozzleFade=1.0-smoothstep(.86,1.0,axial);',
+   ' float opacity=clamp(uPower*tip*collar*nozzleFade*(.42+.48*axial)*irregular*(.87+.13*filament),0.,.98);',
    ' vec3 plasma=mix(uTint,vec3(1.,.97,.87),pow(axial,2.5)*.68);',
    ' plasma*=1.1+1.20*axial+.32*diamonds+.24*filament;',
    ' plasma+=vec3(1.,.78,.42)*diamonds*.36;',
    ' gl_FragColor=vec4(plasma,opacity);',
    '}'
   ].join('\n'),
-  transparent:true,depthWrite:false,depthTest:false,side:THREE.DoubleSide,
+  transparent:true,depthWrite:false,depthTest:true,side:THREE.DoubleSide,
   blending:THREE.AdditiveBlending,toneMapped:false
  });
 }
@@ -295,7 +296,8 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    const lengthAtLayer=length*relativeLength;
    const cone=new THREE.Mesh(new THREE.CylinderGeometry(top,tip,lengthAtLayer,24,9,true),material);
    cone.position.set(x,-lengthAtLayer/2-.2,z);
-   cone.renderOrder=33+layer;cone.frustumCulled=false;cone.userData.pickable=false;
+   // Keep the jet in the normal transparent pass with depth testing against the pad.
+    cone.renderOrder=33+layer;cone.frustumCulled=false;cone.userData.pickable=false;
    cone.name=(core?'РД-0120':'РД-170')+' · направленный факел сопла '+(index+1)+(layer?' · ядро':' · ореол');
    flameRoot.add(cone);meshes.push(cone);
   }
@@ -475,11 +477,11 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
     y=2+spread*20+Math.sin(i*.81+u*9)*2.4;
     size=(8.2+spread*56)*(1+.42*r3);
    }else if(kind==='plume'){
-    const tail=u*Math.min(320,Math.max(20,height*1.07));
+    const tail=u*Math.min(640,Math.max(40,height*2.14));
     x=xShift*(1-u*.18)+swirl*(5+u*18);
     y=6+height-tail;
     z=zShift*(1-u*.18)+(r2*2-1)*(8+u*23);
-    size=(8.4+u*38)*(1+.29*r3);
+    size=2*(8.4+u*38)*(1+.29*r3);
    }else{
     x=18+u*210+Math.sin(i*.31)*17;
     z=(r2*2-1)*(8+u*29);
