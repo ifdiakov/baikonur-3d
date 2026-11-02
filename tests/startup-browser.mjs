@@ -150,7 +150,7 @@ async function newCase(name,{holdCatalog=false,holdGallery=false,httpFailure=fal
      animations:launchElement?.getAnimations().length||0,paintTick:window.__PRELOADER_FIXTURE?.paintTicks??null});
     lastLaunchStep=launchStep;
    }
-   const feedback={at:performance.now(),batch:currentBatch,hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total,
+   const feedback={at:performance.now(),batch:currentBatch,hidden:loading.hidden,state:loading.dataset.state||'loading',message,stage,total,introReady,
     launchStep,launchStatus,launchCounter,fillScale,render};
    state.feedback.push(feedback);
    if(loading.dataset.state==='ready'){
@@ -525,8 +525,15 @@ function assertStageProgress(feedback){
  assert.ok(new Set(stages.map(item=>item.stage)).size>1,'The real boot advances the displayed stages');
  for(let i=0;i<stages.length;i++){
   assert.ok(stages[i].stage>=0&&stages[i].stage<=stages[i].total,'Stages stay within their declared range');
-  assertVisualProgress(stages[i]);
-  if(i)assert.ok(stages[i].fillScale>=stages[i-1].fillScale,'Visible progress never moves backwards across real-stage updates');
+  if(stages[i].introReady)assertVisualProgress(stages[i]);
+  else{
+   // The parser can expose the initial HTML before the controller has assigned
+   // its first inline transform. This is not an animation sample.
+   assert.equal(stages[i].stage,0,'Markup cannot claim completed work before controller initialization');
+   assert.ok(stages[i].fillScale===null||stages[i].fillScale===0,'The pre-controller inline fill is absent or zero');
+  }
+  if(i&&Number.isFinite(stages[i-1].fillScale)&&Number.isFinite(stages[i].fillScale))
+   assert.ok(stages[i].fillScale>=stages[i-1].fillScale,'Visible progress never moves backwards across real-stage updates');
   const target=stages[i].stage===stages[i].total?finalLaunchStep:
    Math.floor(stages[i].stage/(stages[i].total-1)*lastLoadingLaunchStep);
   assert.ok(stages[i].launchStep<=target,'Launch text never announces a future scene phase');
@@ -560,7 +567,8 @@ async function exerciseProgressFixtures(){
    <div id="museumRightStack" inert></div><div id="labelLayer" inert></div>
    <div id="timeDock" inert></div><div id="hero" inert></div><main id="view"></main>
    <script>
-    window.__PRELOADER_FIXTURE={paintTicks:0,blockedFrames:0,hidden:document.body.dataset.fixtureMode==='hidden'};
+    window.__PRELOADER_FIXTURE={paintTicks:0,blockedFrames:0,hidden:document.body.dataset.fixtureMode==='hidden',
+     initialFillTransform:getComputedStyle(document.getElementById('museumProgressFill')).transform};
     if(['hidden','failed-hidden'].includes(document.body.dataset.fixtureMode)){
      Object.defineProperty(document,'hidden',{configurable:true,get:()=>window.__PRELOADER_FIXTURE.hidden});
      Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>window.__PRELOADER_FIXTURE.hidden?'hidden':'visible'});
@@ -572,6 +580,8 @@ async function exerciseProgressFixtures(){
    <script src="${new URL('src/museum-preloader.js',base).href}"></script>
    <script src="${new URL('src/museum-startup.js',base).href}"></script></body></html>`}));
   await run.page.goto(url.href,{waitUntil:'load',timeout:90000});
+  assert.match(await run.page.evaluate(()=>window.__PRELOADER_FIXTURE.initialFillTransform),/^matrix\(0,/,
+   'The stylesheet renders an empty bar before the controller initializes');
   assert.equal((await preloaderState(run.page)).launchStep,0);
   if(mode==='failed-hidden'){
    const failedAt=await run.page.evaluate(()=>{
