@@ -635,8 +635,13 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   // to a hard-coded view or rotating their angle.
   const distance=clamp(direction.length(),18,115);
   direction.normalize().multiplyScalar(distance);
-  camera.position.copy(target).add(direction);
-  controls.target.copy(target);
+  const intendedEye=target.clone().add(direction);
+  camera.position.copy(intendedEye);controls.target.copy(target);
+  // OrbitControls may still hold a damped delta from the visitor's last drag.
+  // First update flushes that pending input; re-applying the preserved eye
+  // guarantees the launch starts at the EXACT visible azimuth/elevation.
+  controls.update();
+  camera.position.copy(intendedEye);controls.target.copy(target);
   controls.update();camera.updateMatrixWorld(true);
  }
  function scenePose(modeName,s){
