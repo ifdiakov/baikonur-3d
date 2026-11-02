@@ -46,7 +46,9 @@ try{
  assert(await page.locator('#energiaLaunchPanel').isVisible());
  assert.equal(s.modelReady,true);
  assert.equal(s.effects.smokeMode,'soft-feathered-billboards');
- assert.equal(s.effects.instancedSmokeCount,1305);
+ assert.equal(s.effects.instancedSmokeCount,2195);
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState().controlsEnabled),true,
+  'OrbitControls must remain enabled during the launch');
  await shot('prelaunch');
  for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-10,'water-spray'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[6,'initial-ascent'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
   s=await seek(t);const e=s.effects;
@@ -54,9 +56,12 @@ try{
   assert.ok(Number.isFinite(s.telemetry.altitudeKm)&&Number.isFinite(s.telemetry.speedKmS));
   if(t===-50)assert.ok(e.mobileTowerArms.some(x=>x!==0),'Ground umbilicals begin to move');
   if(t===-10)assert.ok(e.water>0,'Water curtains begin before engine ignition');
+  if(t===-9.4)assert.ok(e.engineJetCount===8&&e.engineFlameAttached,'All eight nozzle plumes follow the rocket');
   if(t===-3.2)assert.ok(e.flamePower>0,'Booster ignition produces exhaust');
+  if(t===0){assert.ok(e.engineCorePower>.9&&e.engineBoosterPower>.9,'Both engine families show bright nozzle flames');}
   if(t===0){assert.equal(e.smokeMode,'soft-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
   if(t===6){assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
+  if(t===145.9){assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');}
   if(t===480){assert.equal(s.rocketVisible,false,'The launch assembly remains visible until payload separation');assert.equal(s.telemetry.altitudeKm,110);assert.equal(s.telemetry.payloadSeparated,true);await shot('polyus-separation');}
   if(t===511)assert.equal(s.telemetry.payloadTurn,true);
   if(t===0)assert.equal(s.flightRate,1,'Liftoff must reset the clock to realtime');
@@ -67,6 +72,31 @@ try{
  await page.locator('#energiaSpeed').selectOption('4');
  await page.locator('#energiaPlay').click();s=await stats();assert(s.paused);
  await page.locator('#energiaPlay').click();s=await stats();assert(!s.paused);
+ // Actual pointer orbit must not cancel or pause the event. The scene-selection
+ // onNavigate handler previously called stop() on drag/wheel/keyboard.
+ await seek(6);
+ await page.locator('#energiaPlay').click();
+ const clockBefore=await stats(),cameraBefore=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+ await page.mouse.move(740,370);
+ await page.mouse.down();
+ await page.mouse.move(840,418,{steps:6});
+ await page.mouse.up();
+ await draw();
+ const manual=await stats(),cameraManual=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+ assert.equal(manual.active,true,'Dragging the camera cannot end the launch');
+ assert.equal(manual.paused,false,'Camera orbit cannot pause the flight clock');
+ assert.equal(manual.mode,'manual','Manual orbit must stop auto-follow only');
+ assert.ok(cameraBefore.position.some((v,i)=>Math.abs(v-cameraManual.position[i])>.01),
+  'Real OrbitControls drag rotates the scene while the launch continues');
+ const progressed=await page.evaluate(()=>{
+  const q=window.__BAIKONUR_QA;
+  q.energia.update(performance.now()+850);
+  return q.energia.stats();
+ });
+ assert.ok(progressed.time>clockBefore.time,'Launch clock must keep progressing after an orbit');
+ await shot('manual-camera-flight');
+ await page.locator('[data-energia-camera="auto"]').click();
+ assert.equal((await stats()).mode,'auto','The auto button resumes cinematic camera tracking');
  await page.locator('#energiaClose').click();
  await draw();
  s=await stats();assert.equal(s.active,false);

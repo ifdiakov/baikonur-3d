@@ -53,3 +53,7 @@ body.energia-launch-active #labelLayer{opacity:.08;pointer-events:none}
 .energia-systems strong{color:#f7e1c2;font-size:10px;font-weight:800;line-height:1.3;display:block;overflow-wrap:break-word}
 .energia-rate{margin:9px 0 0;color:#f8bb7c;font:700 10px/1.45 Montserrat,Arial,sans-serif;letter-spacing:.045em}
 @media(max-width:760px){.energia-systems strong{font-size:9px}.energia-systems>div{padding:7px}.energia-rate{font-size:9px}}
+
+.energia-camera-hint{margin:10px 0 2px;color:#dfb994;font:700 9px/1.5 Montserrat,Arial,sans-serif;letter-spacing:.055em}
+body.energia-launch-active canvas{touch-action:none}
+@media(max-width:760px){.energia-camera-hint{font-size:8px;margin:8px 0 0}}

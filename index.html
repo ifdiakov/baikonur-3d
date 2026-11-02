@@ -455,7 +455,7 @@ import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPosition
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261101-altitude-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261101-pua-v1';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
-import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261102-energia-polyus-v2';
+import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261102-energia-polyus-v3';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261102-m62-v1';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261031-facilities-rails-lighting-v4';
@@ -2187,8 +2187,8 @@ const sceneSelection=installSceneSelection({element:renderer.domElement,camera,c
    if(index===INTERCHANGE_SELECTION_INDEX){focusInterchange();return;}
    focus(index);
    if(mesh?.userData.museumComponent==='tua-imported-model'||mesh?.userData.rocketExhibitKey?.startsWith('tua-')){focusMik112('tua');showRocketKnowledge('tua','pad-112',false);}
-  },blocked:()=>Boolean(lightingEditor?.active),
- onNavigate:()=>{++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();if(fly){fly=false;}}
+  },blocked:()=>Boolean(lightingEditor?.active)||Boolean(energiaLaunch?.isActive()),
+ onNavigate:()=>{if(energiaLaunch?.isActive()){energiaLaunch.setManualCamera();return;}++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();if(fly){fly=false;}}
 });
 startup.stage('Готовим первый вид космодрома…',9);
 await startup.paint();

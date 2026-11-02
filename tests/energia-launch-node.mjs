@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight} from '../src/energia-polyus-launch.js';
+import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes} from '../src/energia-polyus-launch.js';
 assert.equal(ENERGIA_LAUNCH_START,-90);
 assert.equal(ENERGIA_LAUNCH_END,600);
 assert.equal(ENERGIA_LAUNCH_EVENTS.find(e=>e.at===-9.4)?.title,'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКА Ц');
@@ -40,3 +40,16 @@ assert.equal(sampleEnergiaLaunch(145.9).engines.rd170,'ВЫКЛ');
 // previous timestamp separately in the browser controller.
 assert.equal(advanceEnergiaClock(0,1.2,8,1),1.2);
 assert.equal(advanceEnergiaClock(-2,1.2,8,1),.95);
+
+for(const time of [-90,-9.4,-5.4,-3.2,0,3,144,145.9,146,467.6,469.2]){
+ const p=sampleEnergiaEnginePlumes(time);
+ assert.equal(p.nozzleCount,8);
+ assert.equal(p.coreNozzles,4);assert.equal(p.boosterNozzles,4);
+ assert.ok(p.core>=0&&p.core<=1&&p.boosters>=0&&p.boosters<=1);
+}
+assert.equal(sampleEnergiaEnginePlumes(-9.4).core,0);
+assert.equal(sampleEnergiaEnginePlumes(-5.4).core,1);
+assert.equal(sampleEnergiaEnginePlumes(-3.2).boosters,0);
+assert.equal(sampleEnergiaEnginePlumes(0).boosters,1);
+assert.equal(sampleEnergiaEnginePlumes(146).boosters,0);
+assert.equal(sampleEnergiaEnginePlumes(469.2).core,0);
