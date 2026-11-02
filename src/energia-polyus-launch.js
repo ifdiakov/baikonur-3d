@@ -2,30 +2,43 @@ import * as THREE from 'three';
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v1';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v2-realtime';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_LAUNCH_EVENTS=Object.freeze([
- {at:-90,title:'ПРЕДСТАРТОВАЯ ГОТОВНОСТЬ',status:'УКСС · 250-я площадка',fact:'15 мая 1987 года старт ракеты был задержан из-за неполадок с наземными и бортовыми системами.',source:'https://www.buran.ru/htm/gud%2021.htm'},
- {at:-55,title:'ОТВОД ПЕРЕХОДНЫХ СИСТЕМ',status:'Наземные коммуникации',fact:'Переходные связи и площадки обслуживания освобождали ракету по предстартовой циклограмме. Визуальная механика реконструирована.',source:'https://www.buran.ru/htm/cargo.htm'},
- {at:-50,title:'ОТВОД ПЛОЩАДКИ ОБСЛУЖИВАНИЯ',status:'2 ЗДМ · по архивной циклограмме',fact:'За 50 секунд до старта начала отходить площадка обслуживания 2 ЗДМ.',source:'https://www.buran.ru/htm/cargo.htm'},
- {at:-45,title:'ДОЖИГАНИЕ НА СТАРТЕ',status:'Газоотводный тракт',fact:'За 45 секунд до старта включили систему дожигания стартового комплекса. Подача воды в газоотвод работала с затруднениями.',source:'https://www.buran.ru/htm/cargo.htm'},
- {at:-14.4,title:'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКА Ц',status:'4 двигателя РД-0120',fact:'Кислородно-водородные двигатели центрального блока начали работать за 14,4 секунды до отрыва.',source:'https://www.buran.ru/htm/cargo.htm'},
- {at:-3.2,title:'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКОВ А',status:'4 двигателя РД-170',fact:'За 3,2 секунды до старта включились двигатели боковых блоков; суммарная тяга на старте — около 3550 тонн-сил.',source:'https://www.buran.ru/htm/rocrt.htm'},
- {at:0,title:'КОНТАКТ ПОДЪЁМА',status:'21:30 МСК · 15 мая 1987',fact:'В 21:30 «Энергия» №6СЛ стартовала с УКСС, неся на борту экспериментальный аппарат «Полюс» («Скиф-ДМ»).',source:'https://www.buran.ru/htm/newsold15.htm'},
- {at:3,title:'ПЕРВЫЕ СЕКУНДЫ ПОЛЁТА',status:'Кратковременный кивок ракеты',fact:'Сразу после отрыва был заметен необычный наклон в плоскости тангажа. Он был связан с алгоритмом управления и затем прекратился.',source:'https://www.buran.ru/htm/gud%2021.htm'},
- {at:30,title:'ДРОССЕЛИРОВАНИЕ БЛОКА Ц',status:'Режим первой минуты',fact:'По воспоминаниям Б. И. Губанова, на 30-й секунде центральные двигатели переводились на дросселированный режим.',source:'https://www.buran.ru/htm/35-3.htm'},
- {at:39,title:'РЕГУЛИРОВАНИЕ ТЯГИ БОКОВЫХ БЛОКОВ',status:'Ограничение перегрузок',fact:'С 39-й секунды регулировалась тяга боковых блоков для ограничения скоростного напора и продольной перегрузки.',source:'https://www.buran.ru/htm/35-3.htm'},
- {at:241,title:'СБРОС ГОЛОВНОГО ОБТЕКАТЕЛЯ',status:'Исторический этап, без точной визуальной модели',fact:'Согласно опубликованной программе полёта «Полюса», сброс защитного обтекателя приходился примерно на Т+241 с.',source:'https://www.buran-energia.com/polious/polious-desc.php'},
- {at:460,title:'ОТДЕЛЕНИЕ «ПОЛЮСА»',status:'Высота 110 км · архивная отметка',fact:'«Энергия» успешно выполнила свою программу. «Полюс» отделился приблизительно на высоте 110 км, но это ещё не означало выхода на орбиту.',source:'https://www.buran.ru/htm/cargo.htm'},
- {at:511,title:'РАЗВОРОТ «ПОЛЮСА»',status:'Манёвр для торможения вращения и коррекции',fact:'Аппарат начал разворот на 180° после отделения. Из-за ошибки системы управления вращение не было своевременно остановлено.',source:'https://www.buran.ru/htm/cargo.htm'},
- {at:568,title:'ОРБИТА НЕ ДОСТИГНУТА',status:'Иллюстративная точка осмысления итогов полёта',fact:'Из-за ошибки ориентации аппарат не вышел на заданную орбиту и впоследствии упал в Тихом океане. Отметка T+568 с здесь условна, а не архивный момент аварии.',source:'https://www.buran.ru/htm/str163.htm'},
- {at:600,title:'ИСПЫТАНИЕ «ЭНЕРГИИ» УСПЕШНО',status:'Носитель отработал; экспериментальная нагрузка потеряна',fact:'Первый пуск подтвердил работоспособность сверхтяжёлой «Энергии». Её второй и последний пуск состоялся 15 ноября 1988 года с «Бураном».',source:'https://www.buran-energia.com/blog/2012/05/15/25th-anniversary-of-the-energias-flight/lang/en/'}
+ {at:-90,title:'ПРЕДСТАРТОВАЯ ГОТОВНОСТЬ',status:'УКСС · пл. 250 · 15 мая 1987',fact:'Первый старт «Энергии» состоялся в 21:30:02 по московскому времени. Комплекс простоял на УКСС несколько месяцев, пережив морозы, жару и пылевые бури.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-80,title:'ПЕРЕХОД НА БОРТОВОЕ ПИТАНИЕ',status:'Бортовые системы контроля',fact:'За 80 секунд до контакта подъёма система управления перешла на бортовое электропитание.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-65,title:'ПРЕДСТАРТОВЫЙ НАДДУВ',status:'Кислород и водород · блок Ц',fact:'Криогенные компоненты требовали точного управления более чем четырьмя тысячами исполнительных органов. При заправке водородный бак укорачивался примерно на 250 мм.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-50,title:'ОТВОД ПЛОЩАДОК ОБСЛУЖИВАНИЯ',status:'Наземная механизация · реконструкция',fact:'Огромный комплекс «Энергия — Полюс» вывезли на УКСС в феврале 1987 года; подготовка к историческому пуску шла несколько месяцев.',source:'https://www.buran.ru/htm/cargo.htm'},
+ {at:-40,title:'РАСКРУТКА НАСОСОВ РД-0120',status:'Блок Ц · предстартовая циклограмма',fact:'За сорок секунд до пуска началась раскрутка бустерного насоса кислородно-водородных двигателей.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-22,title:'СИСТЕМА ДОЖИГАНИЯ ВОДОРОДА',status:'Предупреждение накопления водорода',fact:'Перед запуском двигателей включались зажигательные устройства системы дожигания неотреагировавшего водорода.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-10,title:'ВОДЯНАЯ СИСТЕМА ПЕРВОГО ЯРУСА',status:'Орошение · газоотводный канал',fact:'За десять секунд до старта началась подача воды первого яруса. В нашей сцене пар и факелы показаны художественно.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-9.4,title:'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКА Ц',status:'РД-0120 · кислород / водород',fact:'В опубликованной циклограмме первый запуск четырёх РД-0120 начинается на отметке T−9,4 секунды.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-5.4,title:'РД-0120 · ПРЕДВАРИТЕЛЬНАЯ ТЯГА',status:'Контроль устойчивой работы двигателя',fact:'Центральные двигатели вышли на предварительную ступень тяги за 5,4 секунды до подъёма.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-3.2,title:'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКОВ А',status:'4 × РД-170 · основная тяга',fact:'За 3,2 секунды до старта запускаются РД-170 боковых блоков. Их включение превращает УКСС в ослепительно освещённую стартовую сцену.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:-1,title:'КОНТРОЛЬ ТУРБОНАСОСОВ',status:'Блокировка и аварийная защита',fact:'В финальную секунду проверяются обороты турбонасосных агрегатов и работа системы аварийной защиты.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:0,title:'КОНТАКТ ПОДЪЁМА',status:'21:30:02 МСК · 15 мая 1987',fact:'Ракета-носитель №6СЛ стартует с универсального комплекса стенд-старт 17П31. С этого момента часы идут в реальном времени 1:1.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:3,title:'АВТОМАТ СТАБИЛИЗАЦИИ',status:'Штатный наклон в сторону полезного груза',fact:'Сразу после отрыва заметен характерный наклон ракеты; затем включается автомат стабилизации и корректирует движение.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:5,title:'ПРОГРАММНЫЙ РАЗВОРОТ ПО ТАНГАЖУ',status:'Начало программного манёвра',fact:'Через пять секунд после старта начинается программный разворот в плоскости тангажа.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:6,title:'ПРОГРАММНЫЙ РАЗВОРОТ ПО КРЕНУ',status:'Контролируемый набор высоты',fact:'На шестой секунде начинается программный разворот по крену.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:30,title:'ДРОССЕЛИРОВАНИЕ БЛОКА Ц',status:'Ограничение нагрузок',fact:'На 30-й секунде тяга центральных двигателей переводилась на дросселированный режим. После этой отметки стартовая площадка считалась вне угрозы падения ракеты.',source:'https://www.buran.ru/htm/35-3.htm'},
+ {at:39,title:'РЕГУЛИРОВАНИЕ ТЯГИ БЛОКОВ А',status:'Снижение перегрузок',fact:'С 39-й секунды регулируют тягу боковых блоков для снижения аэродинамического скоростного напора.',source:'https://www.buran.ru/htm/35-3.htm'},
+ {at:144,title:'ВЫКЛЮЧЕНИЕ ДВИГАТЕЛЕЙ БЛОКОВ А',status:'Боковые блоки · завершение работы',fact:'Двигатели 10А и 30А выключились около 144-й секунды, через долю секунды — двигатели блоков 20А и 40А.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:145.9,title:'ОТДЕЛЕНИЕ ЧЕТЫРЁХ БЛОКОВ А',status:'Блоки первой ступени отделились',fact:'Отделение боковых блоков произошло приблизительно на 145,9-й секунде.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:467.6,title:'ВЫКЛЮЧЕНИЕ РД-0120',status:'Центральный блок Ц · окончание тяги',fact:'Кислородно-водородные двигатели выключились около T+467,6 секунды. Ракета выполнила программу выведения.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:480,title:'ОТДЕЛЕНИЕ «ПОЛЮСА»',status:'Около 110 км · момент указан приблизительно',fact:'«Полюс» отделился от носителя примерно на высоте 110 км. Время разделения здесь оценочное, а не точная архивная секундная отметка.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:511,title:'ПОПЫТКА РАЗВОРОТА «ПОЛЮСА»',status:'Автономный этап · время условное',fact:'Аппарату предстояло развернуться на 180° для довыведения на орбиту. Из-за ошибки в системе управления вращение не остановилось штатно.',source:'https://www.buran.ru/other/skif.pdf'},
+ {at:600,title:'ИСТОРИЧЕСКИЙ ИТОГ МИССИИ',status:'«Энергия» — успешно · «Полюс» — орбита не достигнута',fact:'«Энергия» отработала штатно. Впоследствии «Скиф-ДМ» не достиг расчётной орбиты и приводнился в Тихом океане. T+600 — конец музейного показа, а не время падения.',source:'https://www.buran.ru/other/skif.pdf'}
 ]);
 const MODEL_POINTS=[
- [0,0,0,0],[3,.08,.03,.02],[15,.8,.26,.2],[30,3.5,.58,1.4],[39,7.3,.85,3.8],
- [90,25,1.8,24],[150,56,2.7,74],[212,90,4.25,145],[241,95,4.9,184],
- [340,104,6.5,302],[460,110,7.45,482],[511,124,7.3,542],[568,142,7.1,608],[600,155,6.9,635]
+ // Illustrated flight path. Early metres follow a heavy, accelerating lift;
+ // the archive documents event times, not a full time-series telemetry log.
+ [0,0,0,0],[1,.001,.003,0],[3,.012,.009,.001],[5,.033,.016,.003],
+ [10,.128,.026,.008],[15,.27,.040,.035],[20,.48,.055,.090],
+ [30,1.12,.083,.34],[39,2.08,.116,.95],[90,14.8,.70,20],
+ [150,46,1.75,73],[212,78,3.1,143],[241,91,4.08,187],
+ [340,105,6.1,308],[467.6,110,7.45,482],[480,110,7.5,496],
+ [511,121,7.3,538],[600,145,7.0,600]
 ];
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a),0,1);return t*t*(3-2*t);};
@@ -44,12 +57,27 @@ export function sampleEnergiaLaunch(time){
  const t=clamp(Number(time)||0,ENERGIA_LAUNCH_START,ENERGIA_LAUNCH_END);
  const phase=Math.max(0,ENERGIA_LAUNCH_EVENTS.findLastIndex(e=>t>=e.at));
  const [altitudeKm,speedKmS,downrangeKm]=pointAt(t);
- const ignition=clamp(smooth(-14.4,-9.0,t)*.28+smooth(-3.2,0,t)*.72,0,1);
- const exhaust=t<0?ignition:t<460?1:t<468?1-smooth(460,468,t):0;
- const nosePitch=t<0?0:t<7?9*Math.sin(Math.PI*clamp(t/7,0,1)):Math.min(38,3+(t-7)*.17);
+ const ignition=clamp(smooth(-9.4,-5.4,t)*.34+smooth(-3.2,0,t)*.66,0,1);
+ const exhaust=t<0?ignition:t<467.6?1:t<477?1-smooth(467.6,477,t):0;
+ const nosePitch=t<0?0:t<3?4*Math.sin(Math.PI*clamp(t/6,0,1)):t<7?4+3*smooth(3,7,t):Math.min(38,4+(t-7)*.10);
+ const rollDegrees=t<6?0:Math.min(7,(t-6)*.045);
  return {time:t,phase,phaseTitle:ENERGIA_LAUNCH_EVENTS[phase].title,altitudeKm,speedKmS,downrangeKm,
-  pitchDegrees:nosePitch,ignition,exhaust,prepared:t>=-50,release:t>=0,
-  payloadSeparated:t>=460,payloadTurn:t>=511,failedOrbit:t>=568};
+  pitchDegrees:nosePitch,rollDegrees,ignition,exhaust,prepared:t>=-50,release:t>=0,
+  engines:{rd0120:t< -9.4?'ОЖИДАНИЕ':t< -5.4?'ЗАПУСК':t<467.6?'РАБОТА':'ВЫКЛ',rd170:t< -3.2?'ОЖИДАНИЕ':t<0?'ВЫХОД НА ТЯГУ':t<144.2?'РАБОТА':'ВЫКЛ'},
+  ground:{umbilicals:t<0?'ПОДКЛЮЧЕНЫ':'РАССТЫКОВАНЫ',water:t< -10?'ГОТОВНОСТЬ':t<38?'ПОДАЧА':'ЗАВЕРШЕНА'},
+  payloadSeparated:t>=480,payloadTurn:t>=511,failedOrbit:t>=600};
+}
+
+// Before T=0 preparation can run faster. Any remaining wall-clock fraction
+// after crossing zero is always applied at flightRate (default 1:1).
+export function advanceEnergiaClock(time,elapsedSeconds,prelaunchRate=8,flightRate=1){
+ const t=clamp(Number(time)||0,ENERGIA_LAUNCH_START,ENERGIA_LAUNCH_END);
+ const elapsed=Math.max(0,Number(elapsedSeconds)||0);
+ const before=Math.max(.05,Number(prelaunchRate)||8),after=Math.max(.05,Number(flightRate)||1);
+ if(t>=0)return Math.min(ENERGIA_LAUNCH_END,t+elapsed*after);
+ const countdownWall=-t/before;
+ if(elapsed<=countdownWall)return Math.min(0,t+elapsed*before);
+ return Math.min(ENERGIA_LAUNCH_END,(elapsed-countdownWall)*after);
 }
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -223,21 +251,26 @@ function addEffectSystem(siteRoot){
  }
  return {root,pose,dispose};
 }
-function visualHeight(altKm){
- return altKm<1?altKm*140:140+Math.log1p(altKm-1)*265;
+export function energiaVisualHeight(altKm){
+ // In the first seconds 1 physical metre = 0.14 world units, matching the
+ // rocket/UKSS model. Only the distant flight view compresses altitude.
+ return altKm<=1.12?Math.max(0,altKm)*140:156.8+85*Math.log1p((altKm-1.12)*.32);
 }
+function visualHeight(altKm){return energiaVisualHeight(altKm);}
 
 export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEntry,onStart=()=>null,onStop=()=>{}}){
- const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v1',import.meta.url);document.head.append(stylesheet);
+ const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261102-energia-polyus-v2',import.meta.url);document.head.append(stylesheet);
  const panel=document.createElement('section');panel.id='energiaLaunchPanel';panel.hidden=true;panel.setAttribute('aria-label','Энергия — Полюс: реконструкция запуска 15 мая 1987 года');
  panel.innerHTML=[
   '<header class="energia-event-head"><div><span class="energia-kicker">15 МАЯ 1987 · УКСС · ПЛ. 250</span><h2>ЭНЕРГИЯ — ПОЛЮС</h2><span class="energia-tag">ИСТОРИЧЕСКАЯ РЕКОНСТРУКЦИЯ</span></div><button type="button" id="energiaClose" title="Закрыть сценарий" aria-label="Закрыть сценарий">×</button></header>',
   '<div class="energia-primary"><div><span class="energia-small">ПРОШЕДШЕЕ ВРЕМЯ</span><strong id="energiaClock">T−090 c</strong></div><div><span class="energia-small">СТАДИЯ</span><strong id="energiaStage">ПРЕДСТАРТОВАЯ ГОТОВНОСТЬ</strong></div></div>',
   '<div class="energia-telemetry"><div><span>ВЫСОТА</span><strong id="energiaAltitude">0,0 <em>км</em></strong></div><div><span>СКОРОСТЬ</span><strong id="energiaVelocity">0,00 <em>км/с</em></strong></div><div><span>УДАЛЕНИЕ</span><strong id="energiaRange">0,0 <em>км</em></strong></div><div><span>ТАНГАЖ</span><strong id="energiaPitch">0,0 <em>°</em></strong></div></div>',
+  '<div class="energia-systems"><div><span>РД-0120</span><strong id="energiaRd0120">ОЖИДАНИЕ</strong></div><div><span>РД-170</span><strong id="energiaRd170">ОЖИДАНИЕ</strong></div><div><span>КРЕН</span><strong id="energiaRoll">0,0°</strong></div><div><span>ВОДА / ГАЗОХОД</span><strong id="energiaWater">ГОТОВНОСТЬ</strong></div><div><span>СВЯЗИ С ЗЕМЛЁЙ</span><strong id="energiaUmbilicals">ПОДКЛЮЧЕНЫ</strong></div><div><span>ПОЛЮС</span><strong id="energiaPayload">НА НОСИТЕЛЕ</strong></div></div>',
   '<div class="energia-status"><span class="energia-status-dot"></span><span id="energiaStatus">ПОДГОТОВКА СТАРТА</span></div>',
   '<div class="energia-fact"><div class="energia-fact-label">ИЗ АРХИВА</div><h3 id="energiaFactTitle">Первый полёт сверхтяжёлой ракеты</h3><p id="energiaFactText"></p><a id="energiaFactSource" href="https://www.buran.ru/htm/cargo.htm" target="_blank" rel="noopener noreferrer">Источник: Buran.ru</a></div>',
-  '<div class="energia-timeline"><div class="energia-timeline-caption"><span>ЦИКЛОГРАММА</span><output id="energiaPosition">T−090 / T+600 c</output></div><input id="energiaSeek" type="range" min="-90" max="600" step="0.1" value="-90" aria-label="Перемотка исторической реконструкции"><div class="energia-ticks"><span>Т−90</span><span>СТАРТ</span><span>+241</span><span>+460</span><span>+600</span></div></div>',
-  '<div class="energia-actions"><button id="energiaPlay" type="button">ПАУЗА</button><button id="energiaRestart" type="button">СНАЧАЛА</button><label>СКОРОСТЬ <select id="energiaSpeed"><option value="1">×1</option><option value="4">×4</option><option value="8" selected>×8</option><option value="20">×20</option></select></label></div>',
+  '<div class="energia-timeline"><div class="energia-timeline-caption"><span>ЦИКЛОГРАММА</span><output id="energiaPosition">T−090 / T+600 c</output></div><input id="energiaSeek" type="range" min="-90" max="600" step="0.1" value="-90" aria-label="Перемотка исторической реконструкции"><div class="energia-ticks"><span>Т−90</span><span>СТАРТ</span><span>+146</span><span>+480</span><span>+600</span></div></div>',
+  '<div class="energia-actions"><button id="energiaPlay" type="button">ПАУЗА</button><button id="energiaRestart" type="button">СНАЧАЛА</button><label>ТЕМП <select id="energiaSpeed"><option value="1">×1</option><option value="4">×4</option><option value="8" selected>×8</option><option value="20">×20</option></select></label></div>',
+  '<p class="energia-rate" id="energiaTimeRate" aria-live="off">ПОДГОТОВКА ×8 · ПОСЛЕ ОТРЫВА — РЕАЛЬНОЕ ВРЕМЯ 1:1</p>',
   '<div class="energia-cameras" role="group" aria-label="Выбор ракурса"><button data-energia-camera="auto" aria-pressed="true">АВТО</button><button data-energia-camera="pad">УКСС</button><button data-energia-camera="duct">ГАЗОХОД</button><button data-energia-camera="follow">ЗА РАКЕТОЙ</button></div>',
   '<details class="energia-disclaimer"><summary>О точности реконструкции и источниках</summary><p>Дата, время старта и документированные события подтверждены архивом. Высота 110 км в T+460 c — архивная отметка. Промежуточные значения скорости, высоты, удаления и тангажа — демонстрационная интерполяция, не реальная телеметрия. Геометрия факелов, дым, работа механизмов и камера — художественно-техническая реконструкция по фотографиям УКСС. Визуальный масштаб полёта сжат относительно земной поверхности.</p><p>Источники: <a href="https://www.buran.ru/htm/cargo.htm" target="_blank" rel="noopener noreferrer">Buran.ru — «Полюс»</a> · <a href="https://www.buran.ru/htm/gud%2021.htm" target="_blank" rel="noopener noreferrer">В. Е. Гудилин</a> · <a href="https://www.buran.ru/htm/rocrt.htm" target="_blank" rel="noopener noreferrer">РД-170 / РД-0120</a>.</p></details>'
  ].join('');
@@ -269,14 +302,14 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
    target=siteRoot.localToWorld(V(0,25,0));
    eye=siteRoot.localToWorld(V(255,145,325));
   }else {
-   const offset=s.altitudeKm>3?V(33,22,44):V(52,40,74);
+   const offset=s.altitudeKm>3?V(27,19,35):V(19,16,26);
    target=worldPos.clone().add(V(0,4,0));
    eye=target.clone().add(offset);
   }
   return {eye,target};
  }
  const updateCamera=s=>{
-  const key=mode==='auto'?(s.time<0?'pad':s.time<7?'duct':'follow'):mode;
+  const key=mode==='auto'?(s.time<15?'pad':'follow'):mode;
   const p=scenePose(key,s),blend=mode==='auto'?.085:.22;
   camera.position.lerp(p.eye,blend);
   controls.target.lerp(p.target,blend);
@@ -303,6 +336,12 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
   $('energiaVelocity').innerHTML=fmt(s.speedKmS,2)+' <em>км/с</em>';
   $('energiaRange').innerHTML=fmt(s.downrangeKm,1)+' <em>км</em>';
   $('energiaPitch').innerHTML=fmt(s.pitchDegrees,1)+' <em>°</em>';
+  $('energiaRoll').textContent=fmt(s.rollDegrees,1)+'°';
+  $('energiaRd0120').textContent=s.engines.rd0120;
+  $('energiaRd170').textContent=s.engines.rd170;
+  $('energiaWater').textContent=s.ground.water;
+  $('energiaUmbilicals').textContent=s.ground.umbilicals;
+  $('energiaPayload').textContent=s.failedOrbit?'ОРБИТА НЕ ДОСТИГНУТА':s.payloadSeparated?'АВТОНОМНЫЙ ПОЛЁТ':'НА НОСИТЕЛЕ';
   $('energiaStatus').textContent=event.status;
   if(s.phase!==lastPhase){
    lastPhase=s.phase;$('energiaFactTitle').textContent=event.title;
@@ -314,6 +353,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
   $('energiaSeek').style.setProperty('--energia-progress',((seconds-ENERGIA_LAUNCH_START)/(ENERGIA_LAUNCH_END-ENERGIA_LAUNCH_START)*100).toFixed(3)+'%');
   $('energiaPosition').textContent=clock(seconds)+' / T+600 с';
   $('energiaPlay').textContent=seconds>=600?'ПОВТОРИТЬ':paused?'ПРОДОЛЖИТЬ':'ПАУЗА';
+  $('energiaTimeRate').textContent=seconds>=0?'ПОЛЁТ · ×'+speed+' · '+(speed===1?'РЕАЛЬНОЕ ВРЕМЯ 1:1':'РУЧНОЕ УСКОРЕНИЕ'):'ПОДГОТОВКА ×'+speed+' · ПОСЛЕ T=0 АВТОМАТИЧЕСКИ ×1';
   for(const b of panel.querySelectorAll('[data-energia-camera]'))b.setAttribute('aria-pressed',String(b.dataset.energiaCamera===mode));
  }
  function createPayloadProxy(){
@@ -335,7 +375,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
    active=true;panel.hidden=false;document.body.classList.add('energia-launch-active');effects.root.visible=true;
    controls.enableDamping=false;controls.enabled=false;createPayloadProxy();
   }
-  seconds=ENERGIA_LAUNCH_START;paused=false;speed=Number($('energiaSpeed').value)||8;lastNow=null;lastPhase=-1;mode='auto';
+  seconds=ENERGIA_LAUNCH_START;paused=false;speed=8;$('energiaSpeed').value='8';lastNow=null;lastPhase=-1;mode='auto';
   render();const frame=scenePose('pad',sampleEnergiaLaunch(seconds));camera.position.copy(frame.eye);controls.target.copy(frame.target);controls.update();
   return true;
  }
@@ -359,8 +399,8 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
   onStop?.();saved=null;originalRocket=null;lastPhase=-1;return true;
  }
  function pause(){paused=true;lastNow=null;render();}
- function play(){if(seconds>=ENERGIA_LAUNCH_END)seconds=ENERGIA_LAUNCH_START;paused=false;lastNow=null;render();}
- function seek(value){if(!active&&!start())return false;seconds=clamp(Number(value)||0,ENERGIA_LAUNCH_START,ENERGIA_LAUNCH_END);pause();return true;}
+ function play(){if(seconds>=ENERGIA_LAUNCH_END){seconds=ENERGIA_LAUNCH_START;speed=8;$('energiaSpeed').value='8';}paused=false;lastNow=null;render();}
+ function seek(value){if(!active&&!start())return false;seconds=clamp(Number(value)||0,ENERGIA_LAUNCH_START,ENERGIA_LAUNCH_END);if(seconds>=0){speed=1;$('energiaSpeed').value='1';}pause();return true;}
  $('energiaClose').onclick=()=>stop();
  $('energiaPlay').onclick=()=>seconds>=ENERGIA_LAUNCH_END?start():paused?play():pause();
  $('energiaRestart').onclick=()=>start();
@@ -379,10 +419,14 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,rocketAtMount:!active,effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:730,ductJetCount:7,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
+   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:730,ductJetCount:7,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
   update(now){
    if(!active)return;
-   if(lastNow!==null&&!paused&&!document.hidden)seconds=Math.min(ENERGIA_LAUNCH_END,seconds+Math.max(0,(now-lastNow)/1000)*speed);
+   if(lastNow!==null&&!paused&&!document.hidden){
+    const previous=seconds;
+    seconds=advanceEnergiaClock(seconds,Math.min(.25,Math.max(0,(now-lastNow)/1000)),speed,speed);
+    if(previous<0&&seconds>=0){speed=1;$('energiaSpeed').value='1';}
+   }
    lastNow=now;if(seconds>=ENERGIA_LAUNCH_END)paused=true;
    const s=sampleEnergiaLaunch(seconds);
    render();updateCamera(s);
