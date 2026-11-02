@@ -88,16 +88,46 @@ function simpleRod(a,b,r,color,name,parent){
  mesh.quaternion.setFromUnitVectors(V(0,1,0),delta.normalize());mesh.name=name;mesh.castShadow=false;parent.add(mesh);
  return mesh;
 }
-function makeBillow(parent,count,color,opacity,name){
- const mesh=new THREE.InstancedMesh(new THREE.SphereGeometry(1,10,8),new THREE.MeshStandardMaterial({
-  color,roughness:1,metalness:0,transparent:true,opacity,depthWrite:false,side:THREE.DoubleSide
- }),count);
- mesh.name=name;mesh.count=count;mesh.frustumCulled=false;mesh.renderOrder=28;mesh.userData.pickable=false;parent.add(mesh);
- const tint=new THREE.Color();
- for(let i=0;i<count;i++){const shade=.7+((i*47%127)/127)*.52;tint.setRGB(shade,shade,shade);mesh.setColorAt(i,tint);}
+
+function makeSmokeTexture(){
+ // Irregular, feathered particle; RGBA is generated locally, without network
+ // textures, external libraries or a simulation that would block startup.
+ const canvas=document.createElement('canvas');canvas.width=canvas.height=96;
+ const context=canvas.getContext('2d',{willReadFrequently:false});
+ const image=context.createImageData(96,96);
+ for(let y=0;y<96;y++)for(let x=0;x<96;x++){
+  const nx=(x-47.5)/47.5,ny=(y-47.5)/47.5;
+  const radial=Math.hypot(nx,ny);
+  const turbulence=.82+.08*Math.sin(nx*16+ny*9)+.07*Math.cos(ny*18-nx*11)+.05*Math.sin(nx*35-ny*29);
+  const rim=Math.max(0,1-radial*(.94+.09*Math.sin(Math.atan2(ny,nx)*7+nx*5)));
+  const opacity=Math.round(220*Math.pow(rim,2.25)*Math.max(.5,turbulence));
+  const i=(y*96+x)*4;image.data[i]=255;image.data[i+1]=255;image.data[i+2]=255;image.data[i+3]=opacity;
+ }
+ context.putImageData(image,0,0);
+ const texture=new THREE.CanvasTexture(canvas);
+ texture.colorSpace=THREE.SRGBColorSpace;
+ texture.minFilter=THREE.LinearMipmapLinearFilter;texture.magFilter=THREE.LinearFilter;
+ texture.generateMipmaps=true;texture.needsUpdate=true;
+ return texture;
+}
+function makeBillow(parent,count,color,opacity,name,texture){
+ // GPU instanced camera-facing quads use two triangles per particle instead
+ // of solid sphere meshes; the feathered alpha makes overlapping, flowing
+ // banks of smoke rather than opaque "popcorn" blobs.
+ const mesh=new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1),
+  new THREE.MeshBasicMaterial({color,map:texture,transparent:true,opacity,depthWrite:false,depthTest:true,
+   side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1}),count);
+ mesh.name=name;mesh.frustumCulled=false;mesh.renderOrder=28;
+ mesh.userData={pickable:false,softSmoke:true,baseOpacity:opacity};
+ parent.add(mesh);
+ const colorAttr=new THREE.Color();
+ for(let i=0;i<count;i++){
+  const shade=.81+(i*47%127)/127*.21;colorAttr.setRGB(shade,shade,shade);mesh.setColorAt(i,colorAttr);
+ }
  mesh.instanceColor.needsUpdate=true;
  return mesh;
 }
+
 function makeGlow(width,depth,material){
  const disk=new THREE.Mesh(new THREE.PlaneGeometry(width,depth),material);disk.rotation.x=-Math.PI/2;
  disk.renderOrder=32;disk.userData.pickable=false;return disk;
@@ -125,19 +155,26 @@ function glowMaterial(color){
   transparent:true,depthWrite:false,depthTest:false,blending:THREE.AdditiveBlending,toneMapped:false,side:THREE.DoubleSide
  });
 }
-function addEffectSystem(siteRoot){
+function addEffectSystem(siteRoot,camera){
  const root=new THREE.Group();root.name='Энергия — Полюс · огонь, дым и газоход';root.visible=false;root.userData.pickable=false;siteRoot.add(root);
- const glow=glowMaterial(0xff721d),pitGlow=makeGlow(240,220,glow);pitGlow.position.set(5,5.95,0);root.add(pitGlow);
+ const smokeTexture=makeSmokeTexture();
+ const glow=glowMaterial(0xffb456),pitGlow=makeGlow(240,220,glow);pitGlow.position.set(5,5.95,0);root.add(pitGlow);
  const trenchMat=glowMaterial(0xff5b18),trenchGlow=makeGlow(340,85,trenchMat);trenchGlow.position.set(130,.6,0);root.add(trenchGlow);
  const outerMat=glowMaterial(0xf15a24),outerGlow=makeGlow(550,400,outerMat);outerGlow.position.set(15,.2,10);root.add(outerGlow);
- const innerSmoke=makeBillow(root,175,0xd7d1c5,.48,'Белый пар · холодные магистрали');
- const ductSmoke=makeBillow(root,260,0x787980,.55,'Газоход · турбулентная дымовая масса');
- const fieldSmoke=makeBillow(root,200,0x696765,.42,'Площадка · стелющийся дым');
- const sparks=makeBillow(root,95,0xffa744,.9,'Огневой выброс · светящиеся частицы');
- sparks.material.emissive=new THREE.Color(0xff6c16);sparks.material.emissiveIntensity=3.3;
+ const waterMat=glowMaterial(0xc7e4f0),waterGlow=makeGlow(290,125,waterMat);waterGlow.position.set(25,.7,0);root.add(waterGlow);
+ const farDuctMat=glowMaterial(0xffa347),farDuctGlow=makeGlow(220,85,farDuctMat);farDuctGlow.position.set(220,.4,0);root.add(farDuctGlow);
+
+ const innerSmoke=makeBillow(root,210,0xe4e9eb,.64,'Холодный криогенный пар · мягкие облака',smokeTexture);
+ const waterSpray=makeBillow(root,165,0xeaf3f3,.72,'Водяная завеса · испарение',smokeTexture);
+ const ductSmoke=makeBillow(root,360,0xaeb1b1,.72,'Газоход · турбулентный плотный пар',smokeTexture);
+ const fieldSmoke=makeBillow(root,320,0x8d8d8d,.68,'Степь · стелющиеся клубы дыма',smokeTexture);
+ const ascentPlume=makeBillow(root,185,0xe6e4df,.60,'Энергия · хвост дыма при наборе высоты',smokeTexture);
+ const sparks=makeBillow(root,65,0xffb45c,.88,'Огневые частицы и отражения',smokeTexture);
+ sparks.material.toneMapped=false;
+
  const flameRoot=new THREE.Group();flameRoot.name='Реактивные факелы';root.add(flameRoot);
- const coreMat=flameMaterial(0xffb240),fireMat=flameMaterial(0xff470d);
- const ductJetMaterial=flameMaterial(0xff6920);
+ const coreMat=flameMaterial(0x8edfff),fireMat=flameMaterial(0xff6a19);
+ const ductJetMaterial=flameMaterial(0xff9e39);
  const ductJetRoot=new THREE.Group();ductJetRoot.name='Газоход · направленный поток горячих газов';
  root.add(ductJetRoot);
  const ductJets=[];
@@ -174,79 +211,148 @@ function addEffectSystem(siteRoot){
   const strut=new THREE.Mesh(new THREE.BoxGeometry(6,.85,2.5),new THREE.MeshStandardMaterial({color:0x9d8f63,metalness:.62,roughness:.33}));
   strut.position.x=sign*2.5;pivot.add(strut);support.push({pivot,sign});
  }
- const lights=[
-  [0,20,0,0xfff2b3,0,300], [45,-2,0,0xff9c30,0,280],[175,6,0,0xff6519,0,420],
-  [-60,20,-90,0xffa965,0,370],[60,14,90,0xffa965,0,370]
- ].map(([x,y,z,color,intensity,distance])=>{const light=new THREE.PointLight(color,intensity,distance,1.1);light.position.set(x,y,z);root.add(light);return light;});
- const mtx=new THREE.Matrix4(),pos=V(),scale=V(),q=new THREE.Quaternion();
- const write=(mesh,seconds,kind,amount)=>{
+ // Service umbilicals and hydraulic braces give a readable, staged release.
+ // The imported UKSS CAD is not destructively modified.
+ const umbilicals=[];
+ for(const [x,y,z,dir]of[[-37,17,-10,1],[-37,37,7,1],[31,29,-9,-1]]){
+  const pivot=new THREE.Group();pivot.position.set(x,y,z);root.add(pivot);
+  simpleRod([0,0,0],[dir*18,-2,0],.55,0x9fb5ae,'Пневмолиния · отводное колено',pivot);
+  simpleRod([dir*18,-2,0],[dir*22,-7,0],.27,0xc6ba9a,'Трос и шланг',pivot);
+  umbilicals.push({pivot,dir});
+ }
+ // Edge fixtures glow behind the white-hot exhaust, adding reflections on
+ // trench banks, latticework and terrain instead of only a flat flame sprite.
+ const lightSpecs=[
+  [0,20,0,0xffe3a6,1900,320], [45,-12,0,0xffad51,1200,260],
+  [185,-3,0,0xff722a,1450,370],[-60,28,-80,0xffb37b,550,330],
+  [62,24,88,0xffd09d,550,330],[260,8,-58,0xff9b49,450,320],
+  [-100,7,105,0xffb76a,360,300]
+ ];
+ const lights=lightSpecs.map(([x,y,z,color,,distance])=>{
+  const light=new THREE.PointLight(color,0,distance,1.2);
+  light.position.set(x,y,z);root.add(light);return light;
+ });
+
+ const mtx=new THREE.Matrix4(),pos=V(),scale=V(),cameraWorldQ=new THREE.Quaternion(),
+  localWorldQ=new THREE.Quaternion(),billboardQ=new THREE.Quaternion();
+ const smokeBase=[
+  [innerSmoke,0xe4e9eb,0xffe9c2],[waterSpray,0xeaf3f3,0xffeed9],
+  [ductSmoke,0xaeb1b1,0xffc78d],[fieldSmoke,0x8d8d8d,0xe8a36c],
+  [ascentPlume,0xe6e4df,0xffc99c],[sparks,0xffb45c,0xffeeaa]
+ ].map(([mesh,cold,warm])=>({mesh,cold:new THREE.Color(cold),warm:new THREE.Color(warm)}));
+ const write=(mesh,time,kind,amount,s)=>{
+  const density=clamp(amount,0,1);
+  mesh.visible=density>.002;
+  mesh.material.opacity=mesh.userData.baseOpacity*density;
+  if(!mesh.visible)return;
   const count=mesh.count;
+  const height=visualHeight(s.altitudeKm)/.14;
+  const xShift=s.downrangeKm*.42/.14,zShift=-s.downrangeKm*.28/.14;
   for(let i=0;i<count;i++){
    const r1=(i*37%211)/211,r2=(i*97%257)/257,r3=(i*23%199)/199;
-   const cycle=kind==='steam'?5.8:kind==='duct'?7.2:kind==='field'?12:2.3;
-   const start=kind==='steam'?-90:kind==='sparks'?-3.2:-14.4;
-   const life=Math.max(0,seconds-start),u=((life/cycle)*(kind==='steam'?.31:kind==='sparks'?1.35:.55)+r1)%1;
-   const swirl=Math.sin(u*18+i*.91)*.5+Math.cos(u*8+i*.23)*.5;
-   let x=0,y=0,z=0,size=.01;
+   const cycle=kind==='steam'?9.2:kind==='duct'?10.5:kind==='field'?17.5:kind==='water'?5.2:kind==='plume'?5.8:2.4;
+   const born=kind==='steam'?-90:kind==='water'?-10:kind==='plume'?0:kind==='sparks'?-3.2:-9.4;
+   const life=Math.max(0,time-born),u=((life/cycle)*(kind==='steam'?.24:kind==='sparks'?1.15:.52)+r1)%1;
+   const swirl=Math.sin(u*13+i*.91)*.63+Math.cos(u*6+i*.23)*.48;
+   let x=0,y=0,z=0,size=0;
    if(kind==='steam'){
-    x=-46+Math.sin(i*1.73)*11;y=5+u*55;z=-19+(i*83%73)/2;
-    size=(2.2+u*8)*(1+.2*r2);
+    x=-51+Math.sin(i*1.73)*16+u*9;
+    y=4+u*39;
+    z=-20+(i*83%73)/1.6+swirl*4;
+    size=(3.4+u*14)*(1+.27*r2);
+   }else if(kind==='water'){
+    x=-25+u*200+Math.sin(i*1.37)*11;
+    y=1.4+u*27;
+    z=(r2*2-1)*(17+u*20)+swirl*4;
+    size=(2.2+u*13)*(1+.35*r3);
    }else if(kind==='duct'){
-    x=15+Math.pow(u,1.12)*272;
-    const width=13+35*u;z=(r2*2-1)*width+swirl*6;
-    y=-23+u*37+Math.sin(i*.7)*4;
-    size=(3+u*20)*(1+.4*r3);
+    x=8+Math.pow(u,1.18)*290;
+    z=(r2*2-1)*(9+42*u)+swirl*8;
+    y=-24+u*35+Math.sin(i*.7)*4;
+    size=(4.5+u*30)*(1+.48*r3);
    }else if(kind==='field'){
-    const ang=2*Math.PI*r2,u2=Math.pow(u,.8);
-    x=Math.cos(ang)*(18+u2*140)+(u2*35);
-    z=Math.sin(ang)*(19+u2*115);
-    y=3+u2*21+Math.sin(i*.81+u*9)*3;
-    size=(4+u2*25)*(1+.32*r3);
+    const angle=2*Math.PI*r2,spread=Math.pow(u,.81);
+    x=Math.cos(angle)*(14+spread*176)+spread*47;
+    z=Math.sin(angle)*(15+spread*146)+swirl*9;
+    y=2+spread*16+Math.sin(i*.81+u*9)*2;
+    size=(5.5+spread*37)*(1+.38*r3);
+   }else if(kind==='plume'){
+    const tail=u*Math.min(240,Math.max(13,height*.9));
+    x=xShift*(1-u*.2)+swirl*(3+u*13);
+    y=6+height-tail;
+    z=zShift*(1-u*.2)+(r2*2-1)*(5+u*16);
+    size=(4.8+u*23)*(1+.22*r3);
    }else{
-    x=18+u*210+Math.sin(i*.31)*19;z=(r2*2-1)*(8+u*27);y=-21+u*30;
-    size=(.65+1.25*r3)*(1-u*.8);
+    x=18+u*210+Math.sin(i*.31)*17;
+    z=(r2*2-1)*(8+u*29);
+    y=-20+u*34;
+    size=(.9+1.9*r3)*(1-u*.78);
    }
-   size*=amount>0?1:.001;
-   pos.set(x,y,z);scale.set(size,size*(kind==='duct'?1.2:1),size);mtx.compose(pos,q,scale);mesh.setMatrixAt(i,mtx);
+   // Continuous age taper avoids sudden popping at either end of a puff.
+   const lifespan=Math.min(1,u*6)*Math.min(1,(1-u)*5);
+   size*=.55+.45*lifespan;
+   size=Math.max(.01,size*(.75+.25*density));
+   pos.set(x,y,z);scale.set(size*2,size*2*(kind==='duct'?1.22:1),1);
+   mtx.compose(pos,billboardQ,scale);mesh.setMatrixAt(i,mtx);
   }
   mesh.instanceMatrix.needsUpdate=true;
  };
  function pose(s){
-  const t=s.time;
-  const fire=s.exhaust;root.visible=true;
-  const exhaustAtGround=fire*(1-smooth(22,75,t));
-  const after=smooth(-3,2,t)*(1-smooth(35,175,t));
-  glow.uniforms.uPower.value=exhaustAtGround*.98;
-  trenchMat.uniforms.uPower.value=exhaustAtGround*.95;
-  outerMat.uniforms.uPower.value=exhaustAtGround*.55;
+  const t=s.time,fire=s.exhaust;
+  root.visible=true;
+  // All particle quads face the current camera in the UKSS local frame.
+  camera.getWorldQuaternion(cameraWorldQ);
+  billboardQ.copy(siteRoot.getWorldQuaternion(localWorldQ).invert()).multiply(cameraWorldQ);
+  const pilot=smooth(-22,-20,t)*(1-smooth(-10,-8,t));
+  const exhaustAtGround=fire*(1-smooth(23,74,t));
+  const water=smooth(-10,-7,t)*(1-smooth(32,85,t));
+  const groundCloud=smooth(-3,9,t)*(1-smooth(55,200,t));
+  const ductCloud=clamp(exhaustAtGround*.89+water*.28,0,1);
+  const plume=smooth(0,6,t)*(1-smooth(55,110,t));
+  const vapor=(.4+.6*smooth(-90,-60,t))*(1-smooth(25,115,t));
+  const heat=clamp(fire*.85+pilot*.13,0,1);
+  glow.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.08,0,1);
+  trenchMat.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.12,0,1);
+  outerMat.uniforms.uPower.value=clamp(exhaustAtGround*.86+groundCloud*.2,0,1);
+  waterMat.uniforms.uPower.value=water*.48;
+  farDuctMat.uniforms.uPower.value=clamp(exhaustAtGround*.95,0,1);
   coreMat.uniforms.uPower.value=fire;
-  fireMat.uniforms.uPower.value=fire*.85;
-  ductJetMaterial.uniforms.uPower.value=exhaustAtGround*.9;
+  fireMat.uniforms.uPower.value=fire*.90;
+  ductJetMaterial.uniforms.uPower.value=exhaustAtGround*.94;
   ductJetMaterial.uniforms.uTime.value=t;
   ductJetRoot.visible=exhaustAtGround>.005;
-  for(const [i,jet] of ductJets.entries())jet.scale.set(1,1+.12*Math.sin(t*11+i*1.8),1+.06*Math.sin(t*5+i));
+  ductJets.forEach((jet,i)=>jet.scale.set(1,1+.13*Math.sin(t*8+i*1.8),1+.05*Math.sin(t*5+i)));
   coreMat.uniforms.uTime.value=t;fireMat.uniforms.uTime.value=t;
-  const platformRetreat=smooth(-53,-37,t),clampRelease=smooth(-3,1.5,t);
-  arms.forEach((arm,i)=>{arm.rotation.y=-platformRetreat*(.8+i*.065);arm.visible=t<15;});
+  const platformRetreat=smooth(-55,-37,t),clampRelease=smooth(-.5,2,t),umbilicalRelease=smooth(-1,1.5,t);
+  arms.forEach((arm,i)=>{arm.rotation.y=-platformRetreat*(.8+i*.065);arm.visible=t<25;});
   for(const item of support)item.pivot.rotation.z=item.sign*clampRelease*.65;
-  const vapor=(1-smooth(-4,27,t))*(.35+.65*smooth(-90,-60,t));
-  write(innerSmoke,t,'steam',vapor);
-  write(ductSmoke,t,'duct',exhaustAtGround+after*.4);
-  write(fieldSmoke,t,'field',after);
-  write(sparks,t,'sparks',exhaustAtGround);
-  for(const [i,light]of lights.entries()){
-   const wobble=.94+.06*Math.sin(t*13+i*1.7);
-   light.intensity=(i<2?140:90)*(i===0?fire:i===1?exhaustAtGround:i===2?after:exhaustAtGround*.8)*wobble;
-  }
-  flameRoot.visible=fire>0.005;
+  for(const item of umbilicals)item.pivot.rotation.y=item.dir*umbilicalRelease*1.14;
+  write(innerSmoke,t,'steam',vapor,s);
+  write(waterSpray,t,'water',water,s);
+  write(ductSmoke,t,'duct',ductCloud,s);
+  write(fieldSmoke,t,'field',groundCloud,s);
+  write(ascentPlume,t,'plume',plume,s);
+  write(sparks,t,'sparks',exhaustAtGround*.8,s);
+  for(const {mesh,cold,warm}of smokeBase)mesh.material.color.copy(cold).lerp(warm,heat*(mesh===ductSmoke?.76:mesh===fieldSmoke?.68:.42));
+  lights.forEach((light,i)=>{
+   const wobble=.94+.06*Math.sin(t*7+i*1.7);
+   const power=i===0?fire:i===1?exhaustAtGround:i===2?ductCloud:
+    i>=3&&i<=4?clamp(exhaustAtGround*.85+groundCloud*.30,0,1):
+    i===5?ductCloud*.88:groundCloud*.73;
+   light.intensity=lightSpecs[i][4]*power*wobble;
+  });
+  flameRoot.visible=fire>.005;
   flameRoot.position.set(s.downrangeKm*.42/.14,6+visualHeight(s.altitudeKm)/.14,-s.downrangeKm*.28/.14);
-  flameRoot.scale.y=1+.15*Math.sin(t*14);
-  return {smoke:after,lightIntensity:lights.map(l=>l.intensity),armsReopen:platformRetreat,
+  flameRoot.scale.y=1+.065*Math.sin(t*11);
+  return {smoke:groundCloud,water,steam:vapor,plume,smokeBillboards:innerSmoke.count+waterSpray.count+ductSmoke.count+fieldSmoke.count+ascentPlume.count+sparks.count,
+   lightIntensity:lights.map(l=>l.intensity),armsReopen:platformRetreat,umbilicalRelease,
    ductPower:exhaustAtGround,flamePower:fire,ductJetVisible:ductJetRoot.visible,
    mobileTowerArms:arms.map(a=>a.rotation.y),rocketExhaustOffset:flameRoot.position.toArray()};
  }
+
  function dispose(){
   root.traverse(o=>{if(o.isMesh){o.geometry?.dispose();o.material?.dispose();}});
+  smokeTexture.dispose();
   root.removeFromParent();
  }
  return {root,pose,dispose};
@@ -281,7 +387,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
  const source=()=>getEntry?.();
  function ensure(){
   const entry=source();if(!entry||entry.status!=='ready')return false;
-  if(!effects)effects=addEffectSystem(siteRoot);
+  if(!effects)effects=addEffectSystem(siteRoot,camera);
   modelReady=true;return true;
  }
  const poseRocket=(sample)=>{
@@ -419,7 +525,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:730,ductJetCount:7,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
+   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:1305,smokeMode:'soft-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
   update(now){
    if(!active)return;
    if(lastNow!==null&&!paused&&!document.hidden){

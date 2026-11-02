@@ -31,3 +31,7 @@ assert.ok(energiaVisualHeight(sampleEnergiaLaunch(3).altitudeKm)<3,'At T+3 the r
 assert.ok(energiaVisualHeight(sampleEnergiaLaunch(10).altitudeKm)>energiaVisualHeight(sampleEnergiaLaunch(3).altitudeKm));
 assert.equal(sampleEnergiaLaunch(-9.4).engines.rd0120,'ЗАПУСК');
 assert.equal(sampleEnergiaLaunch(0).ground.umbilicals,'РАССТЫКОВАНЫ');
+
+assert.ok(sampleEnergiaLaunch(-10).ground.water==='ПОДАЧА');
+assert.equal(sampleEnergiaLaunch(467.6).engines.rd0120,'ВЫКЛ');
+assert.equal(sampleEnergiaLaunch(145.9).engines.rd170,'ВЫКЛ');

@@ -45,15 +45,18 @@ try{
  assert.equal(await page.locator('#year').inputValue(),'1987');
  assert(await page.locator('#energiaLaunchPanel').isVisible());
  assert.equal(s.modelReady,true);
+ assert.equal(s.effects.smokeMode,'soft-feathered-billboards');
+ assert.equal(s.effects.instancedSmokeCount,1305);
  await shot('prelaunch');
- for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[6,'initial-ascent'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
+ for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-10,'water-spray'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[6,'initial-ascent'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
   s=await seek(t);const e=s.effects;
   evidence.phases.push({t,phase:s.phase,gasPower:e.gasPower,flamePower:e.flamePower,ductJetVisible:e.ductJetVisible,rocketExhaustOffset:e.rocketExhaustOffset});
   assert.ok(Number.isFinite(s.telemetry.altitudeKm)&&Number.isFinite(s.telemetry.speedKmS));
   if(t===-50)assert.ok(e.mobileTowerArms.some(x=>x!==0),'Ground umbilicals begin to move');
+  if(t===-10)assert.ok(e.water>0,'Water curtains begin before engine ignition');
   if(t===-3.2)assert.ok(e.flamePower>0,'Booster ignition produces exhaust');
-  if(t===0){assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
-  if(t===6){assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
+  if(t===0){assert.equal(e.smokeMode,undefined);assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
+  if(t===6){assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');await shot('lift-off');}
   if(t===480){assert.equal(s.telemetry.altitudeKm,110);assert.equal(s.telemetry.payloadSeparated,true);await shot('polyus-separation');}
   if(t===511)assert.equal(s.telemetry.payloadTurn,true);
   if(t===0)assert.equal(s.flightRate,1,'Liftoff must reset the clock to realtime');
