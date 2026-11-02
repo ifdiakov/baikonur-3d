@@ -333,7 +333,7 @@ function addEffectSystem(siteRoot,camera){
   write(fieldSmoke,t,'field',groundCloud,s);
   write(ascentPlume,t,'plume',plume,s);
   write(sparks,t,'sparks',exhaustAtGround*.8,s);
-  for(const {mesh,cold,warm}of smokeBase)mesh.material.color.copy(cold).lerp(warm,heat*(mesh===ductSmoke?.76:mesh===fieldSmoke?.68:.42));
+  for(const {mesh,cold,warm}of smokeBase)mesh.material.color.copy(cold).lerp(warm,heat*(mesh===ductSmoke?0.76:mesh===fieldSmoke?0.68:0.42));
   lights.forEach((light,i)=>{
    const wobble=.94+.06*Math.sin(t*7+i*1.7);
    const power=i===0?fire:i===1?exhaustAtGround:i===2?ductCloud:
@@ -396,7 +396,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
   const sideways=sample.downrangeKm*.42,fore=-sample.downrangeKm*.28;
   entry.holder.position.set(origin.x+sideways/.14,origin.y+world/.14,origin.z+fore/.14);
   entry.holder.rotation.set(originalRocket.rotation.x+sample.pitchDegrees*Math.PI/180,originalRocket.rotation.y,originalRocket.rotation.z);
-  entry.holder.visible=sample.time<470;
+  entry.holder.visible=sample.time<480;
  };
  function scenePose(modeName,s){
   const worldPos=source().holder.getWorldPosition(V()),base=siteRoot.localToWorld(V(0,20,0));
@@ -525,7 +525,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,getEnt
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:1305,smokeMode:'soft-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
+   modelReady,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:1305,smokeMode:'soft-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,umbilicalRelease:lastFrame?.umbilicalRelease,ductJetVisible:lastFrame?.ductJetVisible,gasPower:lastFrame?.ductPower,flamePower:lastFrame?.flamePower,mobileTowerArms:lastFrame?.mobileTowerArms,rocketExhaustOffset:lastFrame?.rocketExhaustOffset,lightIntensity:lastFrame?.lightIntensity}:null}),
   update(now){
    if(!active)return;
    if(lastNow!==null&&!paused&&!document.hidden){
