@@ -99,7 +99,7 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
    const introReady=Boolean(window.__MUSEUM_PRELOADER);
    const signature=[loading.hidden,loading.dataset.state||'',message,stage,total,launchStep,launchStatus,launchCounter,fillScale,introReady].join('|');
    if(signature===lastFeedback)return;lastFeedback=signature;
-   const render=(stage===total&&total>0||launchStep===finalLaunchStep)?window.__BAIKONUR_QA?.stats().render||null:null;
+   const render=(stage===total&&total>0||launchStep===finalLaunchStep)?window.__BAIKONUR_QA?.renderStats()||null:null;
    if(introReady&&launchStatus&&Number.isInteger(launchStep)&&launchStep!==lastLaunchStep){
     state.launch.push({at:performance.now(),step:launchStep,text:launchStatus,counter:launchCounter,stage,fillScale,render,
      hidden:loading.hidden,opacity:launchElement?Number(getComputedStyle(launchElement).opacity):null,
@@ -110,9 +110,9 @@ async function newCase(name,{holdCatalog=false,httpFailure=false,stalledBody=nul
     launchStep,launchStatus,launchCounter,fillScale,render};
    state.feedback.push(feedback);
    if(loading.dataset.state==='ready'){
-    const stats=window.__BAIKONUR_QA?.stats();
+    const readyRender=window.__BAIKONUR_QA?.renderStats();
     const menus=['museumLeftStack','museumRightStack'].map(id=>({id,inert:document.getElementById(id)?.inert}));
-    state.ready.push({...feedback,render:stats?.render||null,animateRequests:state.animateRequests,menus,
+    state.ready.push({...feedback,render:readyRender||null,animateRequests:state.animateRequests,menus,
      chromeReady:document.body.classList.contains('museum-ready')});
    }
   }).observe(document,{subtree:true,childList:true,attributes:true,attributeFilter:['hidden','data-state','data-launch-step','aria-valuenow']});
@@ -495,6 +495,8 @@ try{
   // catalog deadline and release the request immediately after the checks.
   run.record.preloader=await exercisePreloader(run.page);run.releaseCatalog();
   const ready=await waitReady(run.page);console.log('STARTUP_OFFLINE_READY');
+  run.record.ready=ready.state.test.ready[0];run.record.feedback=ready.state.test.feedback;
+  run.record.launch=ready.state.test.launch;run.record.marks=ready.stats.loading.marks;
   assertStageProgress(ready.state.test.feedback);
   assertLaunchSequence(ready.state.test.launch);
   run.record.exitMs=assertExitBudget(ready.stats.loading);
@@ -519,7 +521,6 @@ try{
   assert.equal(await run.page.locator('#mik112Tua').getAttribute('aria-pressed'),'true','The TUA action selects the native transporter view');
   assert.notDeepEqual(tua.position,r7.position);
   await run.page.screenshot({path:`${out}/${prefix}-ready.png`,timeout:90000});
-  run.record.ready=ready.state.test.ready[0];run.record.feedback=ready.state.test.feedback;
   run.record.models={ukss:ready.stats.ukss.status,tua:ready.stats.mik112.tua.status};run.record.cameras={overview,r7,tua};
   assertNoRuntimeErrors(run.record);await run.close();
  }
