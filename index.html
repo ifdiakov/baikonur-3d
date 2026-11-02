@@ -457,7 +457,7 @@ import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPosition
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261101-altitude-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261102-site2-photo-v3';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
-import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261102-energia-polyus-v5';
+import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261102-energia-polyus-plumes-v6';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261102-site2-photo-v3';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261102-site2-photo-v3';
@@ -515,6 +515,14 @@ startup.stage('Создаём ландшафт…',2);
 await startup.paint();
 const geography=createMuseumGeography({catalog,matches:osmMatches});
 const siteRecords=geography.sites.filter(record=>!record.aliasOf&&record.render!==false);
+// Site 2: display it northeast of Gagarin, in the corridor toward the northern railway.
+// All exhibits and controls derive their pose from this single site record.
+const gagarinSiteRecord=siteRecords.find(record=>record.id==='pad-1');
+const site2Record=siteRecords.find(record=>record.id==='pad-2');
+if(gagarinSiteRecord&&site2Record){
+ site2Record.x=gagarinSiteRecord.x+42;
+ site2Record.y=gagarinSiteRecord.y-38;
+}
 const site110Record=siteRecords.find(record=>record.id==='pad-110');
 if(site110Record){
  [site110Record.x,site110Record.y]=geography.project(...SITE110_REFERENCE.originLonLat);
