@@ -369,8 +369,11 @@ async function exercisePreloader(page){
  assert.equal(initial.features.filter(feature=>feature.active).length,1,'The phrase carousel has one active slide');
  assert.ok(initial.features.every(feature=>feature.hidden===String(!feature.active)),'Only the current phrase is exposed to assistive technology');
  assert.equal(initial.images.length,4,'The scene uses the four thematic images');
- assert.ok(initial.images.every(image=>image.priority==='low'&&image.decoding==='async'),
-  'Decorative image requests and decoding leave priority to the museum');
+ assert.equal(initial.images[0].priority,'high','The first preloader visual is a critical startup resource');
+ assert.ok(initial.images.slice(1).every(image=>image.priority==='low'),
+  'Later gallery images remain low-priority while the museum loads');
+ assert.ok(initial.images.every(image=>image.decoding==='async'),
+  'Preloader images decode asynchronously');
  assert.equal(await page.locator('.preloader__illustration,.poster__vehicle').count(),0,'The previous animated rocket is removed');
  assert.equal(initial.slogan,slogan,'The separate slogan preserves its exact uppercase wording');
  assert.equal(await page.locator('#museumPreloaderSlogan').isVisible(),true,'The new slogan is visible during loading');
