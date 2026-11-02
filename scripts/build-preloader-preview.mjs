@@ -26,11 +26,11 @@ const html = `<!doctype html>
 <style>${font}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
 </style>
-<link rel="stylesheet" href="./src/museum-preloader.css?v=20261103-preloader-cadence-v8">
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261103-preloader-cadence-v9">
 
 </head><body>
 ${markup}
-<script src="./src/museum-preloader.js?v=20261103-preloader-cadence-v8"></script>
+<script src="./src/museum-preloader.js?v=20261103-preloader-cadence-v9"></script>
 </body></html>
 `;
 await writeFile(new URL('../preloader.html', import.meta.url), html);

@@ -182,10 +182,10 @@
       presentationTimer = null;
       if (motionPaused() || finishing) return;
       presentationTick += 1;
-      // Text and images use independent cadences: copy every 3 seconds,
-      // gallery artwork every 4 seconds.
-      if (phrases.length && presentationTick % 3 === 0) showFeature((featureIndex + 1) % phrases.length);
-      if (presentationTick % 4 === 0) advanceImage();
+      // Text and images use independent cadences: copy every 4 seconds,
+      // gallery artwork every 5 seconds.
+      if (phrases.length && presentationTick % 4 === 0) showFeature((featureIndex + 1) % phrases.length);
+      if (presentationTick % 5 === 0) advanceImage();
       schedulePresentation();
     }, 1000);
   }

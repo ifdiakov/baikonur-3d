@@ -417,9 +417,9 @@ async function exercisePreloader(page){
  await page.locator('#museumMotionToggle').focus();await page.keyboard.press('Space');
  const resumed=await preloaderState(page);
  assert.equal(resumed.paused,false);assert.equal(resumed.motion,'running');assert.equal(resumed.toggle.pressed,'false');
- // Outlast the requested 3-second phrase interval. Status text and ARIA
+ // Outlast the requested 4-second phrase interval. Status text and ARIA
  // still describe real work while the bounded visual bar keeps moving.
- const progressSamples=await sampleVisualProgress(page,3300);
+ const progressSamples=await sampleVisualProgress(page,4300);
  assertHeldVisualProgress(progressSamples,initial.stage);
  const held=await preloaderState(page);
  assert.equal(held.launchStep,0,'Elapsed time alone cannot advance production launch text');
