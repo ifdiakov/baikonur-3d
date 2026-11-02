@@ -1,0 +1,48 @@
+/* Energia–Polyus museum launch event · scoped to this panel. */
+#energiaLaunchStart{display:block;width:100%;margin:10px 0 4px;padding:14px 12px;border:1px solid #f8ba6988;background:linear-gradient(115deg,#8d381e,#c76c26 60%,#5d3229);color:#fff4db;font:800 12px Montserrat,Arial,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;border-radius:7px;box-shadow:0 5px 25px #ec6a2c20}
+#energiaLaunchStart[hidden]{display:none!important}#energiaLaunchStart:hover{filter:brightness(1.16)}#energiaLaunchStart[disabled]{opacity:.65;cursor:progress}
+body.energia-launch-active #timeDock,body.energia-launch-active #nextLaunchPanel,body.energia-launch-active #hero,body.energia-launch-active #arrivalPanel{display:none!important}
+body.energia-launch-active #labelLayer{opacity:.08;pointer-events:none}
+#energiaLaunchPanel{position:fixed;z-index:90;top:clamp(12px,3vh,40px);right:20px;width:min(430px,calc(100vw - 36px));max-height:calc(100dvh - 36px);box-sizing:border-box;overflow:auto;background:linear-gradient(160deg,#111b24f7,#1e2832fa 56%,#141a21fc);color:#f1e9de;border:1px solid #d59b6161;border-radius:13px;box-shadow:0 20px 80px #000b,0 0 44px #ff7b251a;backdrop-filter:blur(17px);font-family:Montserrat,Arial,sans-serif;padding:19px 21px 17px;overscroll-behavior:contain}
+#energiaLaunchPanel[hidden]{display:none!important}#energiaLaunchPanel *{box-sizing:border-box}
+.energia-event-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;border-bottom:1px solid #aab5bb24;padding-bottom:16px}
+.energia-kicker{display:block;font:700 10px/1.5 Montserrat,Arial,sans-serif;letter-spacing:.12em;color:#e89d66}
+.energia-event-head h2{font:900 clamp(17px,1.45vw,23px)/1.2 Montserrat,Arial,sans-serif;letter-spacing:.01em;margin:7px 0}
+.energia-tag{font-size:9px;font-weight:650;letter-spacing:.11em;color:#a9b9c0}
+#energiaClose{border:1px solid #e7d0aa55;background:#ffffff0a;color:#fce4ca;border-radius:8px;font-size:26px;line-height:1;width:37px;height:37px;cursor:pointer}
+.energia-primary{display:grid;grid-template-columns:120px minmax(0,1fr);gap:20px;margin:17px 0 15px}
+.energia-small{font-size:9px;letter-spacing:.1em;display:block;color:#9ba8b1;font-weight:750;margin-bottom:5px}
+.energia-primary strong{display:block;font-size:13px;font-weight:800;line-height:1.35;letter-spacing:.015em;color:#ffedd6}
+#energiaClock{font:800 19px/1.2 ui-monospace,SFMono-Regular,Consolas,monospace!important;color:#ffbd71!important}
+.energia-telemetry{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#b3c7d12b;border:1px solid #aab5bb24;margin-bottom:13px}
+.energia-telemetry>div{background:#172630;padding:12px 13px}
+.energia-telemetry span{display:block;color:#9faeb7;font-size:9px;font-weight:750;letter-spacing:.12em;margin-bottom:7px}
+.energia-telemetry strong{font:800 22px/1.1 ui-monospace,SFMono-Regular,Consolas,monospace;white-space:nowrap;color:#fbfbf6}
+.energia-telemetry em{font:600 11px Montserrat,Arial,sans-serif;font-style:normal;color:#e3ae7f}
+.energia-status{display:flex;align-items:center;gap:9px;color:#f4c9a2;font-size:10px;letter-spacing:.07em;font-weight:750;padding:6px 0 14px;border-bottom:1px solid #c0bec22e}
+.energia-status-dot{width:7px;height:7px;border-radius:50%;background:#f38c3c;box-shadow:0 0 12px #f36928;flex-shrink:0;animation:energia-pulse 1.9s ease-in-out infinite}
+@keyframes energia-pulse{50%{opacity:.35;box-shadow:0 0 2px #e46e42}}
+.energia-fact{padding:14px 0 8px;min-height:145px}
+.energia-fact-label{font-size:9px;font-weight:800;letter-spacing:.12em;color:#ed9459}
+.energia-fact h3{font-size:14px;line-height:1.35;margin:8px 0 6px;color:#ffe4c4}
+.energia-fact p{font-size:11.5px;line-height:1.65;margin:0;color:#ced8dc}
+.energia-fact a{display:inline-block;margin-top:8px;color:#deb88f;font-size:10px;text-underline-offset:3px}
+.energia-timeline{border-top:1px solid #9daab52b;margin-top:12px;padding-top:13px}
+.energia-timeline-caption{display:flex;justify-content:space-between;gap:8px;font-size:10px;font-weight:750;letter-spacing:.08em;color:#aeb9bc;margin-bottom:10px}
+#energiaPosition{color:#edb17e;font-family:ui-monospace,monospace}
+#energiaSeek{width:100%;height:6px;accent-color:#f88a43;cursor:pointer;margin:0;background:linear-gradient(to right,#fb873b var(--energia-progress,0%),#43525f var(--energia-progress,0%));border-radius:20px;appearance:none}
+#energiaSeek::-webkit-slider-thumb{appearance:none;width:14px;height:14px;border-radius:50%;background:#ffae62;border:2px solid #fbf7ef;box-shadow:0 0 13px #f8793aa0}
+.energia-ticks{display:flex;justify-content:space-between;font-size:9px;color:#95a5ac;margin-top:9px;font-family:ui-monospace,monospace}
+.energia-actions{display:flex;align-items:center;gap:7px;margin-top:17px;flex-wrap:wrap}
+.energia-actions button,.energia-cameras button,.energia-actions select{border:1px solid #a7b3bd5c;background:#30404c;color:#f4e8d8;font:750 10px Montserrat,Arial,sans-serif;border-radius:6px;cursor:pointer;padding:10px 12px}
+.energia-actions button:first-child{background:#a94c24;border-color:#df864b}
+.energia-actions label{font-size:9px;color:#aeb7bd;margin-left:auto;display:flex;align-items:center;gap:6px}
+.energia-actions select{padding:8px 9px}
+.energia-cameras{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:10px}
+.energia-cameras button{padding:9px 4px;font-size:9px;white-space:nowrap}
+.energia-cameras button[aria-pressed=true]{background:#674125;color:#ffce9c;border-color:#de9556}
+.energia-disclaimer{margin-top:12px;font-size:10px;color:#a8b6bb;line-height:1.55}
+.energia-disclaimer summary{cursor:pointer;color:#bdc6c6}
+.energia-disclaimer a{color:#e2b889}
+@media(max-width:760px){#energiaLaunchPanel{width:calc(100vw - 18px);left:9px;right:9px;top:auto;bottom:max(9px,env(safe-area-inset-bottom));max-height:min(66dvh,630px);padding:13px 15px}.energia-event-head h2{font-size:16px}.energia-primary{margin:10px 0;grid-template-columns:110px 1fr;gap:12px}.energia-telemetry strong{font-size:19px}.energia-telemetry>div{padding:9px}.energia-fact{min-height:105px;padding:11px 0}.energia-fact h3{font-size:12px;margin:5px 0}.energia-fact p{font-size:10px;line-height:1.4}.energia-actions{margin-top:10px}.energia-timeline{padding-top:8px}.energia-cameras button{font-size:8px;padding:9px 2px}}
+@media(prefers-reduced-motion:reduce){#energiaLaunchPanel .energia-status-dot{animation:none}}
