@@ -549,8 +549,11 @@ if(gagarinSiteRecord&&site2Record){
   const length=Math.hypot(tangentX,tangentY)||1;
   const nx=-tangentY/length,ny=tangentX/length;
   const sign=(preferred[0]-best.p[0])*nx+(preferred[1]-best.p[1])*ny>=0?1:-1;
-  site2Record.x=best.p[0]+nx*sign*23;
-  site2Record.y=best.p[1]+ny*sign*23;
+  // Shift closer to Gagarin along the access-road bend while preserving clearance.
+  const toPadX=gx-best.p[0],toPadY=gy-best.p[1];
+  const toPadLength=Math.hypot(toPadX,toPadY)||1;
+  site2Record.x=best.p[0]+nx*sign*30+toPadX/toPadLength*16;
+  site2Record.y=best.p[1]+ny*sign*30+toPadY/toPadLength*16;
  }else{
   site2Record.x=preferred[0];site2Record.y=preferred[1];
  }
