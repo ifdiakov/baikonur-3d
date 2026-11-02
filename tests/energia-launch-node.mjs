@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes,sampleEnergiaPadDissipation} from '../src/energia-polyus-launch.js';
+import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes,sampleEnergiaPadDissipation,sampleEnergiaSteamSpread,sampleEnergiaPlumeBottomFade,energiaCameraHeightUnits,shouldDetachEnergiaCamera,ENERGIA_CAMERA_DETACH_UNITS} from '../src/energia-polyus-launch.js';
 assert.equal(ENERGIA_LAUNCH_START,-90);
 assert.equal(ENERGIA_LAUNCH_END,600);
 assert.equal(ENERGIA_LAUNCH_EVENTS.find(e=>e.at===-9.4)?.title,'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКА Ц');
@@ -69,3 +69,19 @@ assert.ok(sampleEnergiaPadDissipation(200).smoke>0&&sampleEnergiaPadDissipation(
 assert.deepEqual(sampleEnergiaPadDissipation(360).fire,0);
 assert.deepEqual(sampleEnergiaPadDissipation(800),{fire:0,smoke:0});
 assert.deepEqual(sampleEnergiaPadDissipation(4000),{fire:0,smoke:0});
+
+const early=sampleEnergiaSteamSpread(-90),near=sampleEnergiaSteamSpread(-1);
+assert.ok(near.radius>early.radius*3,'Prelaunch steam expands across the apron before ignition');
+assert.ok(near.drift>early.drift*4,'Prelaunch steam gains chaotic lateral motion');
+assert.ok(near.transparency<early.transparency,'A larger cloud must also become more transparent');
+assert.ok(sampleEnergiaPlumeBottomFade(.25,280,8)>sampleEnergiaPlumeBottomFade(.96,280,8),
+ 'The oldest, low end of a smoke plume must dissolve irregularly');
+assert.equal(sampleEnergiaPlumeBottomFade(.7,-80,4),0,'The plume cannot leave a hard smoke plane underground');
+assert.notEqual(sampleEnergiaPlumeBottomFade(.7,40,3),sampleEnergiaPlumeBottomFade(.7,40,9),
+ 'Each billow must have a different dissolution envelope');
+assert.equal(ENERGIA_CAMERA_DETACH_UNITS,100);
+assert.ok(energiaCameraHeightUnits(sampleEnergiaLaunch(30).altitudeKm)<100);
+assert.ok(energiaCameraHeightUnits(sampleEnergiaLaunch(90).altitudeKm)>100);
+assert.equal(shouldDetachEnergiaCamera(sampleEnergiaLaunch(30).altitudeKm),false);
+assert.equal(shouldDetachEnergiaCamera(sampleEnergiaLaunch(90).altitudeKm),true);
+console.log('ENERGIA_CINEMATIC_FX_PASS');
