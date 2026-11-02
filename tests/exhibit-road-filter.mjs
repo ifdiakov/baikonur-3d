@@ -78,13 +78,13 @@ for(const region of simplification.regions){
 }
 const hotel=simplification.regions.find(r=>r.id==='pad-75');
 assert.deepEqual([...hotel.keptWayIds].sort(),['172971509','173082916']);
-assert.equal(stats.facilityPorts.length,42);assert.equal(stats.facilityRailPorts.length,14);assert.equal(stats.stationCount,32);
+assert.equal(stats.facilityPorts.length,42);assert.equal(stats.facilityRailPorts.length,14);assert.equal(stats.stationCount,36);
 for(const port of stats.facilityPorts)assert(port.roadGap<1e-7);
 for(const port of stats.facilityRailPorts)assert(port.headCenterGap<1e-7&&port.networkDatumGap<1e-7);
 const train=transport.trainPath();
 assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','1468604922','173086738','256360833']);
 let trainPlanLength=0;for(let i=1;i<train.path.points.length;i++)trainPlanLength+=Math.hypot(train.path.points[i].x-train.path.points[i-1].x,train.path.points[i].z-train.path.points[i-1].z);
-assert(Math.abs(trainPlanLength-1712.7127365959147)<1e-6,'Airport road cleanup changed the train route');
+assert(Math.abs(trainPlanLength-1712.7556363702122)<1e-6,'Airport road cleanup changed the shared smoothed train route');
 assert.equal(roads.osmVehiclePlan.routes.length,4);
 for(const route of roads.osmVehiclePlan.routes)for(const region of simplification.regions)
  for(const id of route.osmWayIds)assert(!region.hiddenWayIds.includes(id),'A working vehicle road was hidden');

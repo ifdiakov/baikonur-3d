@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261102-silo-height-v1';
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261102-rail-scheme-v1';
 const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
 const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};

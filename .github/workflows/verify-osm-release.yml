@@ -1,4 +1,4 @@
-name: M62 Kosmotrans and Soviet passenger coaches
+name: Baikonur railway scheme and continuous track geometry
 on:
   push:
     branches: [main]
@@ -56,7 +56,7 @@ concurrency:
 permissions:
   contents: read
 env:
-  RELEASE_TAG: museum-m62-kosmotrans-20261102-v1
+  RELEASE_TAG: museum-rail-scheme-20261102-v1
 jobs:
   verify_geometry:
     name: Geography, geometry and source invariants
@@ -125,6 +125,9 @@ jobs:
           node tests/mik112-rail-layout.mjs
           node tests/mik112-destination-ports.mjs
           node tests/site110-rail-fan.mjs
+          node tests/rail-surface.mjs
+          node tests/rail-crossing-profile.mjs
+          node tests/rail-scheme.mjs
           node tests/access-rail-continuity.mjs
           node tests/rocket-assets.mjs
           node tests/zenit-geometry.mjs
@@ -364,12 +367,12 @@ jobs:
               if (error.status !== 404) throw error;
             }
             if (!release) {
-              const body = fs.readFileSync('docs/releases/m62-kosmotrans-20261102-v1.md', 'utf8') +
+              const body = fs.readFileSync('docs/releases/rail-scheme-20261102-v1.md', 'utf8') +
                 '\n\nVerified commit: `' + sha + '`\n\n' +
                 '[Local and public browser checks](https://github.com/' + owner + '/' + repo + '/actions/runs/' + context.runId + ')';
               release = (await github.rest.repos.createRelease({
                 owner, repo, tag_name: tag, target_commitish: sha,
-                name: 'Байконур — М62 Космотранс и советские вагоны',
+                name: 'Байконур — железнодорожная сеть по схеме',
                 body, draft: false, prerelease: false, make_latest: 'true'
               })).data;
             }

@@ -26,7 +26,8 @@ assert.equal(stats.branchSimplification.version,'terminal-branches-v2');
 assert.equal(stats.branchSimplification.road.maxLength,80);
 assert.equal(stats.branchSimplification.rail.maxLength,55);
 assert(stats.branchSimplification.road.removedSegments>1000);
-assert(stats.branchSimplification.rail.removedSegments>340);
+assert.equal(stats.railScheme.protectedRemovedEdges,0,'Reference station yards and approaches must survive branch simplification');
+assert.equal(stats.railScheme.connectionCount,20);assert.equal(stats.railScheme.stations.length,4);
 assert(stats.renderedRoadWays<1320&&stats.renderedRailWays<510);
 for(const kind of ['road','rail']){
  const pruning=stats.branchSimplification[kind];
@@ -194,12 +195,12 @@ for(const route of plan.routes)for(const direction of [-1,1])for(let d=2;d<route
  assert(!(hotelLocal.x>-33&&hotelLocal.x<34&&hotelLocal.z>-10&&hotelLocal.z<42),'Through traffic crosses the hotel courtyard');
 }
 const train=transport.trainPath();assert.equal(train.source,'OpenStreetMap');assert(train.path.length>500);assert(train.osmWayIds.length>5);
-// The OSM route is unchanged. Its short museum connector now ends at the
-// metric Gagarin socket (85.5 m × .14) instead of the old drawing-unit socket.
-// This adds 1.75055 world units without changing any source railway way.
+// The source route is unchanged. Its display chords now follow the same
+// smooth source-node curves as both rail heads and the physical wheelsets.
 let trainHorizontalLength=0;
 for(let i=1;i<train.path.points.length;i++)trainHorizontalLength+=Math.hypot(train.path.points[i].x-train.path.points[i-1].x,train.path.points[i].z-train.path.points[i-1].z);
-assert(Math.abs(trainHorizontalLength-1712.7127365959147)<1e-6,'The working train route changed in plan');
+assert(Math.abs(trainHorizontalLength-1712.7556363702122)<1e-6,'The shared smoothed train route changed in plan');
+assert.equal(train.surfaceVersion,stats.railSurface.version);
 assert.deepEqual(train.osmWayIds,['37547653','37543646','37545112','172422609','1468604922','173086738','256360833'],'The train must retain its established OSM route');
 for(const route of plan.routes)for(const id of route.osmWayIds)assert(!stats.branchSimplification.road.affectedWayIds.includes(id),'Pruning touched an active vehicle route');
 for(let d=0;d<train.path.length-1;d+=1){const a=train.path.position(d),b=train.path.position(d+1);assert(a.distanceTo(b)<=1.00001,'train path jump');assert(a.toArray().every(Number.isFinite));}

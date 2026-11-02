@@ -8,7 +8,7 @@ import {AIRPORT_DIMENSIONS} from '../src/airport-models.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-osm-release';
-const revision='20261102-silo-height-v1';
+const revision='20261102-rail-scheme-v1';
 await mkdir(out,{recursive:true});
 const catalog=JSON.parse(await readFile('data/catalog.json','utf8'));
 const ukssManifest=JSON.parse(await readFile('assets/models/ukss/manifest-v2.json','utf8'));
@@ -77,7 +77,9 @@ try{
  await step();
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(await page.locator('#error').isVisible(),false);
- assert.equal(initial.sites,98);assert.equal(initial.catalogEntries,99);assert.equal(initial.stations,32);
+ assert.equal(initial.sites,98);assert.equal(initial.catalogEntries,99);assert.equal(initial.stations,36);
+ assert.equal(initial.transport.railScheme.connectionCount,20);assert.equal(initial.transport.railScheme.protectedRemovedEdges,0);
+ assert.equal(initial.transport.railSurface.trainUsesSharedSurface,true);
  evidence.hierarchy=[await hierarchy('overview')];
  assert.equal(initial.geography.version,'osm-geography-v1');assert.equal(initial.geography.anchored,72);assert.equal(initial.geography.inferred,26);
  assert.equal(initial.transport.version,'osm-transport-v1');assert.equal(initial.transport.source,'OpenStreetMap');
@@ -86,7 +88,7 @@ try{
  assert.ok(initial.transport.renderedRoadWays>0&&initial.transport.renderedRoadWays<initial.transport.roadRoutes,'Settlement filtering changes the display while retaining the full source graph');
  assert.equal(initial.transport.branchSimplification.version,'terminal-branches-v2');
  assert.ok(initial.transport.branchSimplification.road.branchCount>270);
- assert.ok(initial.transport.branchSimplification.rail.branchCount>75);
+ assert.equal(initial.transport.branchSimplification.rail.branchCount,0,'Short station and industrial tracks identified by the reference are retained');
  assert.equal(initial.transport.facilityPorts.length,42);
  assert.equal(initial.transport.facilityRailPorts.length,14);
  assert.equal(initial.transport.cityRoadSimplification.sourceBoundary,'way/39209179');
@@ -194,6 +196,14 @@ try{
  assert.ok((await page.locator('#title').textContent()).includes('Крайний'));
  assert.ok(!(await page.locator('#description').textContent()).includes('Временный сектор'));
  evidence.sites=sites;
+ evidence.schemeStations=[];
+ for(const [id,name]of [['scheme-station-kosmotrans','Космотранс'],['scheme-station-kuban','Кубань'],['scheme-station-predobektnaya','Предобъектная'],['scheme-station-bp9','БП 9 км']]){
+  await page.evaluate(id=>window.__BAIKONUR_QA.focusStation(id),id);await step();
+  assert((await page.locator('#title').innerText()).includes(name),'Reference station has an accessible card: '+name);
+  const card=await page.locator('#info').innerText();
+  assert(/схем/i.test(card)&&/приблизител/i.test(card),'Reference-derived positions are distinguished from measured OSM station coordinates');
+  evidence.schemeStations.push({id,name,card});
+ }
 
  // Saturn retains its natural hill and requested display adjustment after
  // removal of the separate, broad black approach and its roadside lights.
