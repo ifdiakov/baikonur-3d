@@ -58,7 +58,11 @@ try{
  // The removed LL22 must never be constructed, including during the landing event.
  await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>window.__BAIKONUR_QA.openObject('pad-251'));
  const models=(await page.locator('#modelCardButton').getAttribute('data-models')).split(',');assert(!models.includes('mig'));assert(models.includes('mig25'));
- await page.locator('#buranLandingStart').click();await page.evaluate(()=>window.__BAIKONUR_QA.buranLanding.pause());
+ await page.locator('#buranLandingStart').click();
+ // The button may first fetch its deferred source. Pause only once the
+ // landing actually starts, rather than racing its pending request.
+ await page.waitForFunction(()=>window.__BAIKONUR_QA.buranLanding.stats().active);
+ await page.evaluate(()=>window.__BAIKONUR_QA.buranLanding.pause());
  const times=await page.evaluate(()=>window.__BAIKONUR_QA.buranLanding.stats().times);
  for(const t of [0,200,times.touchdown,times.stop,times.end]){
   const b=await page.evaluate(t=>{const q=window.__BAIKONUR_QA;q.buranLanding.seek(t);window.__INSPECTOR_FRAME();return q.buranLanding.stats();},t);

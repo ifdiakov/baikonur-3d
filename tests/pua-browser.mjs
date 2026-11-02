@@ -28,6 +28,10 @@ try{
  await page.setViewportSize({width:1440,height:1000});await page.locator('#puaClose').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.puaLoading.stats().active),false);
  const reset=await page.evaluate(()=>window.__BAIKONUR_QA.puaLoading.stats().aircraftPose);assert.deepEqual(reset,{aircraftZ:0,lift:0,orbiterZ:0});
  // Both historic scenes share the aircraft exhibit and must be mutually exclusive.
+ // This direct controller call needs the separate deferred Energia/Buran
+ // source; Mriya readiness alone only guarantees the PUA aircraft.
+ await page.waitForFunction(()=>['ready','error'].includes(window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site110')?.status));
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site110')?.status),'ready','The landing source is loaded before testing mutual exclusion');
  await page.evaluate(()=>{window.__BAIKONUR_QA.puaLoading.start();window.__BAIKONUR_QA.buranLanding.start();});assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.puaLoading.stats().active),false);
  await page.evaluate(()=>window.__BAIKONUR_QA.puaLoading.start());assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.buranLanding.stats().active),false);
  await page.evaluate(()=>{window.__BAIKONUR_QA.puaLoading.stop();window.__BAIKONUR_QA.focusSite('pad-251');});await frame();assert(await page.locator('#puaLoadingStart').isVisible());assert(await page.locator('#puaLoadingStart').isEnabled());await page.locator('#puaLoadingStart').click();assert(await page.locator('#puaLoadingPanel').isVisible());

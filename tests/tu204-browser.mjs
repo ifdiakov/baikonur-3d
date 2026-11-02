@@ -14,6 +14,9 @@ try{
  const facts=await page.locator('#modelFacts').innerText();assert(facts.includes('RA-64044 «Юрий Гагарин»'));assert(facts.includes('До 53 пассажиров'));assert(facts.includes('До 7 200 км'));assert(!/окраска|ливрея|тёмно-син/.test(facts));
  for(const v of ['full','side','top']){await page.locator(`[data-view="${v}"]`).click();await page.evaluate(()=>window.__MODEL_VIEWER_QA.frame());await page.screenshot({path:`${out}/${prefix}-viewer-${v}.png`});}
  await page.goto(new URL('?view=krayniy&detail=tu204',base).href,{waitUntil:'domcontentloaded',timeout:180000});await page.waitForFunction(()=>window.__BAIKONUR_QA&&document.getElementById('museumLoading')?.dataset.state==='ready',undefined,{timeout:180000});
+ // The selected aircraft is prioritized after the first usable map. Wait for
+ // its own result before checking its geometry and taking close-up evidence.
+ await page.waitForFunction(()=>['ready','error'].includes(window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='krayniy')?.tu204?.status),undefined,{timeout:90000});
  await page.evaluate(()=>{__BAIKONUR_QA.evening.setEvening(false);__BAIKONUR_QA.setLabelsVisible(false);});await frame();
  report.airport=await page.evaluate(()=>__BAIKONUR_QA.stats().airports.find(a=>a.key==='krayniy'));assert.equal(report.airport.tu204.status,'ready');assert.equal(report.airport.tu204.static,true);assert.equal(report.airport.tu204.registration,'RA-64044');assert.equal(report.airport.tu204.drawCalls,10);assert.equal(report.airport.tu204.wheelBottom,1.75);
  assert.equal(await page.locator('[data-airport-view="tu204"]').getAttribute('aria-pressed'),'true');assert((await page.locator('#modelCardButton').getAttribute('data-models')).includes('tu204'));assert.equal((await page.evaluate(()=>__BAIKONUR_QA.stats())).arrival.appearance.airframe,'Airbus A320-214');

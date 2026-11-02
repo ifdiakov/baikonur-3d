@@ -41,7 +41,11 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.inspectSaturnRelief());await shot('saturn-relief');
  await minimal.evaluate(el=>el.remove());
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.focusSite(q.stats().portalArchive.models.find(m=>m.id==='pad-251').index);});
- await page.getByRole('button',{name:'Мрия и Буран',exact:true}).click();await page.locator('#close').click();await shot('mriya-buran');
+ await page.getByRole('button',{name:'Мрия и Буран',exact:true}).click();
+ await page.waitForFunction(()=>{const m=window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny')?.mriya;return m?.status==='ready'||m?.errors.length;});
+ const mriya=await page.evaluate(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny').mriya);
+ assert.equal(mriya.status,'ready','The selected Mriya close-up waits for both model levels: '+JSON.stringify(mriya.errors));
+ await page.locator('#close').click();await shot('mriya-buran');
  await page.evaluate(()=>{window.__BAIKONUR_QA.focusInterchange();});await shot('interchange');
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(true);q.setLabelsVisible(true);q.showFlanks();});
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.stats())).flankCardLayout,'horizontal');await shot('flanks');

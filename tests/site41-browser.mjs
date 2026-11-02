@@ -17,6 +17,8 @@ try{
  const url=new URL(base);url.searchParams.set('view','site41');url.searchParams.set('detail','all');
  await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(v=>window.__BAIKONUR_QA?.stats().museumRevision===v&&document.getElementById('museumLoading')?.dataset.state==='ready',revision,{timeout:180000});
+ await page.waitForFunction(()=>['ready','error'].includes(window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site41')?.status),null,{timeout:90000});
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site41')?.status),'ready','The R-16 source is installed before site close-up screenshots');
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));await step();
  assert.equal(await page.locator('#error').isVisible(),false);assert.equal(await page.locator('#site41Views button').count(),7);
  await page.locator('#site41Views button[data-site41-view="memorial"]').click();await step();

@@ -13,11 +13,7 @@ const browser=await chromium.launch({headless:true,
  args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
 page.setDefaultTimeout(60000);
-let releaseBuranSource;
-const buranSourceGate=new Promise(resolve=>{releaseBuranSource=resolve;});
-await page.route('**/assets/models/rockets/energia-buran.glb?*',async route=>{
- await buranSourceGate;await route.continue();
-});
+const releaseBuranSource=()=>page.evaluate(()=>window.__BURAN_RELEASE_SOURCE?.());
 page.on('pageerror',error=>evidence.errors.push(error.message));
 page.on('console',message=>{
  if(message.type()==='error'&&/Shader Error|VALIDATE_STATUS|compile shader|GL_INVALID_OPERATION/i.test(message.text()))evidence.shaderErrors.push(message.text());
@@ -31,6 +27,17 @@ page.on('requestfailed',request=>{
 // Freeze the museum and temporary inspector's named render loops. Browser UI
 // scheduling is unchanged; their normal load/render functions still run.
 await page.addInitScript(()=>{
+ // Hold the optional queue task before its real network deadline starts. A
+ // network-route gate could exceed that deadline on a software renderer and
+ // manufacture an unrelated failed request while exercising the UI race.
+ let releaseSource;
+ const sourceGate=new Promise(resolve=>{releaseSource=resolve;});
+ window.__BURAN_RELEASE_SOURCE=releaseSource;
+ Object.defineProperty(window,'__MUSEUM_STARTUP',{configurable:true,set(startup){
+  Object.defineProperty(window,'__MUSEUM_STARTUP',{configurable:true,writable:true,value:Object.freeze({...startup,
+   defer(task,options){return startup.defer(options?.key==='rocket:energia-buran'?async()=>{await sourceGate;return task();}:task,options);}
+  })});
+ }});
  const native=requestAnimationFrame.bind(window);let pending;
  window.requestAnimationFrame=fn=>['animate','animateModel'].includes(fn.name)?(pending=fn,0):native(fn);
  window.__BURAN_FRAME=()=>{const fn=pending;pending=null;const started=performance.now();fn?.(started);return started;};
@@ -198,7 +205,7 @@ try{
  await openSection('sitesAccordion');
  await page.locator('#list .entry[data-site-id="pad-31"]').click();
  const cancelledStart=await state();assert.equal(cancelledStart.landing.active,false);
- releaseBuranSource();
+ await releaseBuranSource();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().rockets.placements.find(p=>p.key==='site110')?.status==='ready',null,{timeout:60000});
  const loadedAfterCancel=await state();
  assert.equal(loadedAfterCancel.landing.active,false,'A late source model cannot start a cancelled landing request');
@@ -353,4 +360,4 @@ try{
  await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:90000}).catch(()=>{});
  await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({...evidence,passed:false,message:error.message,stack:error.stack},null,2));
  throw error;
-}finally{releaseBuranSource();await browser.close();}
+}finally{await releaseBuranSource().catch(()=>{});await browser.close();}
