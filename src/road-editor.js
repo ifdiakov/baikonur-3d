@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-v1';
-import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v2';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v5';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
