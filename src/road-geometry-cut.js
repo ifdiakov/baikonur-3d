@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // Physical cutouts for the displayed road geometry, instead of transparent
 // mask textures. Original centreline/OSM graph remains unmodified. This module
 // clips every surfaced triangle, including white paint and both shoulders.
-export const ROAD_GEOMETRY_CUT_VERSION='source-aware-crossing-v3';
+export const ROAD_GEOMETRY_CUT_VERSION='intersection-limited-crossing-v4';
 const EPS=1e-8,CELL=14,TAU=Math.PI*2;
 const area=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
 const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,
@@ -89,14 +89,31 @@ function existingRoadSegmentIndex(roads){
  const grid=new Map();
  for(const r of roads)for(let i=1;i<r.points.length;i++){
   const a=r.points[i-1],b=r.points[i];
-  const radius=(r.width||2)*.5+11,entry={a,b,width:r.width||2};
+  const radius=(r.width||2)*.5+11,entry={a,b,width:r.width||2,id:r.id};
   const loX=Math.floor((Math.min(a[0],b[0])-radius)/CELL),hiX=Math.floor((Math.max(a[0],b[0])+radius)/CELL);
   const loZ=Math.floor((Math.min(a[2],b[2])-radius)/CELL),hiZ=Math.floor((Math.max(a[2],b[2])+radius)/CELL);
   for(let x=loX;x<=hiX;x++)for(let z=loZ;z<=hiZ;z++){
    const key=x+':'+z,list=grid.get(key)||[];list.push(entry);grid.set(key,list);
   }
  }
- return (a,b,width)=>{
+ const crossingAt=(a,b,sourceId,width)=>{
+  const dx=b[0]-a[0],dz=b[2]-a[2],len=Math.hypot(dx,dz);
+  if(len<1e-6)return false;
+  const x=(a[0]+b[0])/2,z=(a[2]+b[2])/2,y=(a[1]+b[1])/2;
+  for(const other of grid.get(Math.floor(x/CELL)+':'+Math.floor(z/CELL))||[]){
+   if(other.id===sourceId||other.id.startsWith(sourceId+'-'))continue;
+   const ox=other.b[0]-other.a[0],oz=other.b[2]-other.a[2],d=ox*ox+oz*oz;
+   if(d<1e-8)continue;
+   if(Math.abs((dx*ox+dz*oz)/(len*Math.sqrt(d)))>.42)continue;
+   const t=Math.max(0,Math.min(1,((x-other.a[0])*ox+(z-other.a[2])*oz)/d));
+   const nearX=other.a[0]+ox*t,nearZ=other.a[2]+oz*t;
+   if(Math.hypot(x-nearX,z-nearZ)>(width+other.width)*.5+1.4)continue;
+   const h=other.a[1]+(other.b[1]-other.a[1])*t;
+   if(Math.abs(y-h)<1.05)return true;
+  }
+  return false;
+ };
+ const nearAligned=(a,b,width)=>{
   const x=(a[0]+b[0])/2,z=(a[2]+b[2])/2,y=(a[1]+b[1])/2;
   for(const r of grid.get(Math.floor(x/CELL)+':'+Math.floor(z/CELL))||[]){
    const dx=r.b[0]-r.a[0],dz=r.b[2]-r.a[2],den=dx*dx+dz*dz;
@@ -114,6 +131,8 @@ function existingRoadSegmentIndex(roads){
   }
   return false;
  };
+ nearAligned.crossingAt=crossingAt;
+ return nearAligned;
 }
 export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edgeMargin=.19,sourceRoads=[]}={}){
  const clips=[],seen=new Set();
@@ -133,6 +152,7 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    if(kind==='added'&&nearOld&&!nearOld(a,b,width)){skippedOffRoad++;continue;}
    section.gradeTolerance=kind==='hidden'?1.9:1.05;
    section.kind=kind;
+   section.protectCrossing=kind==='hidden'&&Boolean(nearOld?.crossingAt?.(a,b,r.sourceId,width));
    clips.push(section);
    if(kind==='hidden')sourceCuts++;else replacementCuts++;
   }
@@ -145,6 +165,7 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    const corner=circleCut(r.points[j],width);corner.gradeTolerance=kind==='hidden'?1.9:1.05;
    corner.kind=kind;
    const a=r.points[j-1],b=r.points[j+1],dx=b[0]-a[0],dz=b[2]-a[2],d=Math.hypot(dx,dz);
+   corner.protectCrossing=kind==='hidden'&&Boolean(nearOld?.crossingAt?.(a,b,r.sourceId,width));
    if(d>1e-6)corner.direction=[dx/d,dz/d];
    clips.push(corner);
   }
@@ -199,7 +220,7 @@ export function physicallyCutRoadGeometry(geometry,cutIndex,{gradeTolerance=1.05
    // Different OSM ways at one junction are geometrically separate even if
    // their triangles overlap in XZ. Hide the requested alignment, not the
    // active perpendicular road passing through that same space.
-   if(cut.kind==='hidden'&&cut.direction&&sourceDirection){
+   if(cut.kind==='hidden'&&cut.protectCrossing&&cut.direction&&sourceDirection){
     const dot=Math.abs(cut.direction[0]*sourceDirection[0]+cut.direction[1]*sourceDirection[1]);
     if(dot<.36)continue;
    }
