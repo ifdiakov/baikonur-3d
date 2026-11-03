@@ -18,7 +18,7 @@ const root=new THREE.Group();root.scale.setScalar(manifest.scale);root.rotation.
 root.position.copy(point(site.x,site.y,-2.72));
 const result=buildSite31Pad(root);root.updateMatrixWorld(true);
 const model=result.site31;
-assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-metric-soyuz-v4');
+assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-metric-soyuz-v5');
 assert.equal(model.siteId,'pad-31');assert.equal(model.orientationVerified,true);
 assert.equal(model.orientationScope,'local-plan-from-satellite');
 assert.equal(model.heightsVerified,false,'The satellite plan does not establish elevations');
