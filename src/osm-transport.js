@@ -656,8 +656,11 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   // minor roads that are intentionally omitted from active vehicle routes.
   // No extra road meshes are allocated: only sampled pickable coordinates.
   visibleRuns.forEach((run,i)=>editableRoadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),
-   label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap'}));
-  if(major)visibleRuns.forEach((run,i)=>roadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap',highway:isHighwayRoad(way.tags)}));
+   label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap',
+   tags:{...way.tags},marked:major,highway:isHighwayRoad(way.tags),
+   surface:way.tags.highway==='track'||['ground','unpaved','dirt','sand'].includes(way.tags.surface)?'ground':'asphalt'}));
+  if(major)visibleRuns.forEach((run,i)=>roadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap',highway:isHighwayRoad(way.tags),
+    tags:{...way.tags},marked:true,surface:way.tags.highway==='track'||['ground','unpaved','dirt','sand'].includes(way.tags.surface)?'ground':'asphalt'}));
  }
  let junctionCount=0;
  for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&renderedRoadWays.has(e.wayId)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){
