@@ -1,3 +1,4 @@
+import {SITE254_ACCESS} from './site254-layout.js?v=20261103-site254-v1';
 import {SITE2_ACCESS} from './site2-layout.js?v=20261102-site2-photo-v3';
 import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import {CYCLONE_PORTS} from './cyclone-profile.js?v=20261101-cyclone-v1';
@@ -11,6 +12,7 @@ import {SITE41_ACCESS} from './site41-profile.js?v=20261031-facilities-rails-lig
 // Gate points come from the model's visible aprons and internal rails.
 // Site centres remain anchored to the user's historical plan.
 export const FACILITY_PORTS={
+ 'pad-254':SITE254_ACCESS,
  'pad-90':CYCLONE_PORTS,
  'pad-75':{...SEVEN_WINDS_LAYOUT},
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,{scale:MUSEUM_METRE,yaw:0,elevation:-2.72,road:[0,.08,25],roadWidth:6.5,silo:true}])),
