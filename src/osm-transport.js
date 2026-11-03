@@ -41,6 +41,8 @@ const ROAD_STYLE=Object.freeze({asphaltColor:'#adb2b3',shoulderColor:'#c5c1b4',p
 // Their conservative circular model masks used to cut three gaps into it.
 // Preserve its source centreline once, while still hiding internal service webs.
 const INDUSTRIAL_THROUGH_ROAD='183464610';
+// The actual primary road runs along the west boundary of the Site 2 museum.
+const SITE2_PRIMARY_WAY_ID='173082916';
 const INDUSTRIAL_THROUGH_SITES=new Set(['pad-112','pad-112a','pad-110']);
 const keyFor=f=>String(f.properties.osmId);
 const tagsFor=f=>f.properties.tags||{};
@@ -431,7 +433,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // Reserve the same compact museum footprint as each detailed shaft model.
  for(const id of SILO_SITE_IDS){const site=siteRecords.find(s=>s.id===id);if(site)masks.set(id,{center:point(site.x,site.y,0),radius:10.5});}
  const railSiteClearance=createRailSiteClearancePlan({siteRecords,point}),railFootprintSites=new Set(railSiteClearance.siteIds);
- function masked(p,tags,margin=0,sourceWayId=null){for(const [id,m] of masks){if(sourceWayId===INDUSTRIAL_THROUGH_ROAD&&INDUSTRIAL_THROUGH_SITES.has(id))continue;const dx=p.x-m.center.x,dz=p.z-m.center.z,c=Math.cos(m.yaw||0),s=Math.sin(m.yaw||0),x=dx*c-dz*s,z=dx*s+dz*c;if(m.rectangle){if(['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;const r=m.rectangle;if(Math.abs(x)<r.halfX+margin&&z>r.minZ-margin&&z<r.maxZ+margin)return true;}else if(x*x+z*z<(m.radius+margin)**2)return true;}return false;}
+ function masked(p,tags,margin=0,sourceWayId=null){for(const [id,m] of masks){if(id==='pad-2'&&sourceWayId===SITE2_PRIMARY_WAY_ID)continue;if(sourceWayId===INDUSTRIAL_THROUGH_ROAD&&INDUSTRIAL_THROUGH_SITES.has(id))continue;const dx=p.x-m.center.x,dz=p.z-m.center.z,c=Math.cos(m.yaw||0),s=Math.sin(m.yaw||0),x=dx*c-dz*s,z=dx*s+dz*c;if(m.rectangle){if(['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;const r=m.rectangle;if(Math.abs(x)<r.halfX+margin&&z>r.minZ-margin&&z<r.maxZ+margin)return true;}else if(x*x+z*z<(m.radius+margin)**2)return true;}return false;}
  function railMasked(p,margin=0){
   if(railSiteClearance.contains(p))return true;
   for(const [id,m]of masks){
@@ -595,10 +597,20 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   }
   return runs.map(run=>run.map(krayniyWorld));
  }
- // Main access uses its actual OSM centreline, ending at the model forecourt.
- let gagarinApproach=null,gagarinRoadReport={status:'unavailable'};
+ // Site 2 borders the real primary road. Use that one short perpendicular
+ // driveway instead of sending a new road around Gagarin's northern fork.
+ const site2PrimaryWay=roadGraph.ways.find(way=>way.osmId===SITE2_PRIMARY_WAY_ID);
+ const site2Spec=site2AccessCentre?{...FACILITY_PORTS['pad-2'],yaw:site2AccessCentre.runtimeYaw??FACILITY_PORTS['pad-2'].yaw}:null;
+ const site2PrimaryGate=site2Spec?portWorld(site2Spec,site2Spec.road,site2AccessCentre,point):null;
+ const site2PrimaryNearby=!!(site2PrimaryWay&&site2PrimaryGate&&site2PrimaryWay.segments.some(edge=>{
+  const closest=new THREE.Line3(edge.a.position,edge.b.position).closestPointToPoint(site2PrimaryGate,true,V());
+  return Math.hypot(closest.x-site2PrimaryGate.x,closest.z-site2PrimaryGate.z)<18;
+ }));
+ // Main access to Site 1 retains its real OSM road. The older Site 2 link
+ // remains a fallback only if the museum is ever relocated off the primary.
+ let gagarinApproach=null,gagarinRoadReport={status:site2PrimaryNearby?'site2-adjacent-primary':'unavailable'};
  const sourceGagarinWay=roadGraph.ways.find(way=>way.osmId===GAGARIN_APPROACH_WAY_ID);
- if(sourceGagarinWay&&gagarinAccessCentre&&site2AccessCentre){
+ if(sourceGagarinWay&&gagarinAccessCentre&&site2AccessCentre&&!site2PrimaryNearby){
   try{
    const spec=FACILITY_PORTS['pad-2'],yaw=site2AccessCentre.runtimeYaw??spec.yaw;
    const gate=portWorld({...spec,yaw},spec.road,site2AccessCentre,point);
@@ -813,7 +825,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    if(best&&dx*dx+dz*dz>best.distance)continue;
    for(let i=1;i<samples.length;i++){
     const p=new THREE.Line3(samples[i-1],samples[i]).closestPointToPoint(target,true,V());
-    if((graph===railGraph?railMasked(p,e.width/2+.3):masked(p,{},e.width/2+.3))||graph===roadGraph&&inAirportClearance(p))continue;
+    if((graph===railGraph?railMasked(p,e.width/2+.3):masked(p,{},e.width/2+.3,e.wayId))||graph===roadGraph&&inAirportClearance(p))continue;
     p.y=(graph===railGraph?railTerrainDatum:terrainDatum)(p,e.width);
     if(graph===roadGraph)p.y=roadGraph.highwaySurfaceHeight(p,e.width)+(isHighwayRoad(e.tags)?HIGHWAY_ASPHALT_LIFT:0);
     const distance=p.distanceToSquared(target);
@@ -842,12 +854,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  for(const [id,baseSpec] of Object.entries(FACILITY_PORTS)){
   if(id==='pad-2'&&gagarinApproach)continue; // Site 2 already has its only road connection.
-  const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw),target=gate.clone().addScaledVector(out,30);
+  const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw),target=id==='pad-2'&&site2PrimaryNearby?gate.clone():gate.clone().addScaledVector(out,30);
   const near=id==='pad-41'&&site41Replacement.attachmentEdge?{
    edge:site41Replacement.attachmentEdge,point:site41Replacement.attachmentEdge.b.position.clone(),distance:0,
    tangent:(site41Replacement.attachmentEdge.surfaceTangents?.[1]??site41Replacement.attachmentEdge.b.position.clone().sub(site41Replacement.attachmentEdge.a.position).normalize()).clone()
-  }:nearestSegment(roadGraph,target,e=>e.tags.highway!=='track'&&airportPortSourceAllowed(id,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));if(!near||near.distance>300**2)continue;
-  const tangent=near.tangent.clone();if(tangent.dot(gate.clone().sub(near.point))<0)tangent.negate();
+  }:nearestSegment(roadGraph,target,e=>id==='pad-2'&&site2PrimaryNearby?e.wayId===SITE2_PRIMARY_WAY_ID:e.tags.highway!=='track'&&airportPortSourceAllowed(id,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));if(!near||near.distance>300**2)continue;
+  const tangent=id==='pad-2'&&site2PrimaryNearby?gate.clone().sub(near.point).setY(0).normalize():near.tangent.clone();if(tangent.dot(gate.clone().sub(near.point))<0)tangent.negate();
   let anchors=(spec.roadApproach??[]).map(local=>portWorld(spec,local,site,point));
   if(id==='pad-251'&&airportClearance){
    const start=airportLocal(near.point),end=airportLocal(gate),laneX=airportClearance.rectangle.maxX;
@@ -867,7 +879,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   drawRoad(points,width,{},false,true,null,visibleRuns,[{nodeId:'museum-port:'+id,position:near.point.clone(),hostWayId:near.edge.wayId}],{widthAt:transition.widthAt,directionAt:accessDirection});
   const renderedPoints=visibleRuns.flat();
   roadPaths.push({id:'osm-access-'+id,label:site.titleShort||site.name,points:renderedPoints,width:1.8,widthAt:transition.widthAt,source:'museum-model-port',osmWayIds:[near.edge.wayId]});
-  accessReports.push({id,sourceWayId:near.edge.wayId,roadGap:points.at(-1).distanceTo(gate),gate:gate.toArray(),sourcePoint:near.point.toArray(),sourceTangent:tangent.toArray(),gateInward:out.clone().negate().toArray(),...transition.stats});connections++;
+  const mainRoadCorner=id==='pad-2'&&site2PrimaryNearby;
+  accessReports.push({id,sourceWayId:near.edge.wayId,roadGap:points.at(-1).distanceTo(gate),gate:gate.toArray(),sourcePoint:near.point.toArray(),sourceTangent:tangent.toArray(),gateInward:out.clone().negate().toArray(),...transition.stats,
+   ...(mainRoadCorner?{profile:'single-primary-road-to-site2-corner',junctionAngleDegrees:Math.acos(Math.min(1,Math.abs(near.tangent.clone().setY(0).normalize().dot(tangent))))*180/Math.PI,parallelRoadsAdded:0}:{} )});connections++;
+  if(mainRoadCorner)gagarinRoadReport={status:'site2-connected-to-primary',sourceWayId:near.edge.wayId,
+   sourceGap:transition.points[0].distanceTo(near.point),gateGap:transition.points.at(-1).distanceTo(gate),length:transition.length,
+   sourceJunction:near.point.toArray(),museumCorner:gate.toArray(),parallelRoadsAdded:0};
   if(id==='pad-251'&&airportClearanceReport)airportClearanceReport.gateAccess={sourceWayId:near.edge.wayId,sourcePoint:near.point.toArray(),gatePoint:gate.toArray(),
    profile:'landside-terminal-access',sampleCount:points.length,sourceGap:points[0].distanceTo(near.point),gateGap:points.at(-1).distanceTo(gate),
    airsideHits:points.filter(p=>{const [x,,z]=airportLocal(p);return x>-36&&x<36&&Math.abs(z)<1250;}).length};
