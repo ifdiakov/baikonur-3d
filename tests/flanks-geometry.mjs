@@ -4,7 +4,6 @@ import {readFile} from 'node:fs/promises';
 import {projectOsm,MUSEUM_DISPLAY_OFFSETS} from '../src/osm-geography.js';
 import {FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_REFERENCE,FLANK_COORDINATE_SYSTEM,FLANK_CENTERS,FLANK_BOUNDS,FLANK_REFERENCE_OUTLINE,FLANK_REFERENCE_DIVIDERS,referenceToPlan,containsFlankPoint} from '../src/flank-boundaries.js';
 import {buildFlankDistricts,FLANK_DISTRICTS} from '../src/flank-districts.js';
-import {CITY_TERRITORY_COLOR} from '../src/city-territory.js';
 import {CITY_TERRITORY_OUTLINE,CITY_TERRITORY_REFERENCE,CITY_TERRITORY_COLOR} from '../src/city-territory.js';
 import {buildTerrainRelief} from '../src/terrain-relief.js';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample,saturnTerrainMeshHeight} from '../src/saturn-access.js';
