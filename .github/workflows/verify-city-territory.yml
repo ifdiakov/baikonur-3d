@@ -46,18 +46,7 @@ jobs:
           console.log('CITY_MESH_PASS');
           JS
       - name: Validate city and existing flank relief geometry
-        run: |
-          set +e
-          node tests/flanks-geometry.mjs > /tmp/city-flank-qa.log 2>&1
-          status=$?
-          cat /tmp/city-flank-qa.log
-          if [ "$status" -ne 0 ]; then
-            git config user.name "RocketTrip QA"
-            git config user.email "actions@users.noreply.github.com"
-            git checkout -B city-hill-qa-diagnostics
-            cp /tmp/city-flank-qa.log city-hill-qa.log
-            git add -f city-hill-qa.log
-            git commit -m "Capture city/hill QA failure"
-            git push -f origin HEAD:refs/heads/city-hill-qa-diagnostics
-          fi
-          exit "$status"
+        run: node tests/flanks-geometry.mjs
+      - name: Clean temporary diagnostic ref
+        if: success()
+        run: git push origin --delete city-hill-qa-diagnostics || true
