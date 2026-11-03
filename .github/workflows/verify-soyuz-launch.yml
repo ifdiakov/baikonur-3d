@@ -1,0 +1,47 @@
+name: Verify Soyuz launch animations (sites 1 and 31)
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/soyuz-dual-launch.js'
+      - 'src/soyuz-launch-columns.js'
+      - 'src/soyuz-launch-effects.js'
+      - 'src/energia-plasma-shader.js'
+      - 'index.html'
+      - 'tests/soyuz-dual-launch-*.mjs'
+      - '.github/workflows/verify-soyuz-launch.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: soyuz-launch-main
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test runtime
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Start Baikonur 3D locally
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/soyuz-http.log 2>&1 &
+          curl --retry 7 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Verify countdown, pneumatics and flame (geometry)
+        run: node tests/soyuz-dual-launch-unit.mjs
+      - name: Verify both live 3D animations in Chromium
+        run: node tests/soyuz-dual-launch-browser.mjs
+      - name: Preserve frames at T-30, T-5 and T+8
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: soyuz-reconstruction-visual-check
+          path: qa-soyuz-launch/
+          if-no-files-found: ignore
+          retention-days: 14
