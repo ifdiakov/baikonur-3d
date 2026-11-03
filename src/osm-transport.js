@@ -16,7 +16,7 @@ import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes,fillEnclosedRoadSurfaceV
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-facilities-rails-lighting-v2';
 import {buildRoadMarkings} from './road-markings.js?v=20261031-facilities-rails-lighting-v6';
 import {smoothLocalRoadGraph,createAccessTransition} from './access-transitions.js?v=20261031-facilities-rails-lighting-v3';
-import {planGagarinSite2Road,GAGARIN_APPROACH_WAY_ID,GAGARIN_NORTH_FORK_WAY_ID} from './gagarin-site2-road.js?v=20261103-site2-road-v4';
+import {planGagarinSite2Road,GAGARIN_APPROACH_WAY_ID,GAGARIN_NORTH_FORK_WAY_ID} from './gagarin-site2-road.js?v=20261103-site2-road-v5';
 import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
 import {railApproachSleeperDistances} from './paired-rail-approach.js?v=20261031-facilities-rails-lighting-v4';
@@ -658,9 +658,14 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const mainPoints=gagarinApproach.main.map(p=>V(...p)),mainRuns=[];
   drawRoad(mainPoints,3.2,{highway:'unclassified',surface:'asphalt'},true,true,sourceId,mainRuns);
   renderedRoadWays.add(sourceId);
-  const startNode=sourceGagarinWay.segments[0].a;
-  // The source road begins at the actual OSM fork. Seal its shoulder and
-  // pavement to the surviving northbound branch at the exact shared node.
+  // The OSM way may be stored in either direction. Seal the fork at the
+  // displayed road's true main-road end, not blindly at segment[0].a.
+  const sourceEnds=[sourceGagarinWay.segments[0].a,sourceGagarinWay.segments.at(-1).b];
+  const startNode=sourceEnds.reduce((a,b)=>Math.hypot(a.position.x-mainPoints[0].x,a.position.z-mainPoints[0].z)
+   <=Math.hypot(b.position.x-mainPoints[0].x,b.position.z-mainPoints[0].z)?a:b);
+  const mainRoadJoinGap=Math.hypot(startNode.position.x-mainPoints[0].x,startNode.position.z-mainPoints[0].z);
+  if(mainRoadJoinGap>1e-4)throw Error('Gagarin access road lost its OSM main-road junction');
+  const mainRoadHostWays=[...new Set(startNode.edges.filter(edge=>edge.wayId!==sourceId&&edgeKept(roadGraph,edge)).map(edge=>edge.wayId))];
   shoulder.disc(startNode.position,2.25,-.055);
   asphalt.disc(startNode.position,1.9);
   junctionWidths.set(startNode.id,Math.max(3.2,junctionWidths.get(startNode.id)||0));
@@ -690,6 +695,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    branchEndGap:transition.points.at(-1).distanceTo(gate),
    branchStartGap:transition.points[0].distanceTo(junction),
    branchLength:transition.length,sourceJunction:startNode.id,
+   mainRoadJoinGap,mainRoadHostWays,
    mainRuns:mainRuns.length,spurRuns:spurRuns.length,
    forecourt:mainPoints.at(-1).toArray()};
  }
