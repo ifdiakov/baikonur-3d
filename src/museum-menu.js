@@ -1,6 +1,6 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 
-export const MUSEUM_MENU_VERSION='museum-traditions-v7';
+export const MUSEUM_MENU_VERSION='museum-eight-sections-v8';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -24,8 +24,16 @@ export function museumCatalogueSection(record){
   ?'sitesAccordion':'infrastructureAccordion';
 }
 
-// These entries open exhibits and animations already present in the museum.
-// The separate knowledge base can add stories later without inventing them here.
+// Stable navigation groups. Animated reconstructions are not mixed into
+// physical rocket exhibits, and one documented archive story has one home.
+// Reconstruction links to UKSS/Yubileiny open their site cards: the actual
+// launch/landing/loading buttons remain in those cards.
+export const MUSEUM_STORY_GROUPS=Object.freeze({
+ heroesAccordion:Object.freeze(['runway-profilometer','mriya-after-flight','energia-m-winter','jet-buran','evacuation-slide','which-buran']),
+ mythsAccordion:Object.freeze(['dmb-inscription','landing-turn','baikal-secret-flight']),
+ traditionsAccordion:Object.freeze(['coins-under-tua']),
+ graveyardAccordion:Object.freeze(['abort-51','polyus-turn'])
+});
 export const MUSEUM_SECTIONS=Object.freeze([
  {id:'sitesAccordion',title:'СТАРТОВЫЕ КОМПЛЕКСЫ',catalogue:true},
  {id:'equipmentAccordion',title:'РАКЕТЫ И ТЕХНИКА',items:[
@@ -42,21 +50,29 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'r16',title:'Р-16',description:'Музейный экспонат на площадке №41 · просмотр в 3D'},
   {action:'mig25',title:'МиГ-25',description:'Рассмотреть самолёт в 3D'},
   {action:'mriya',title:'«Мрия» с «Бураном»',description:'Экспонат на Юбилейном'},
-  {action:'aircraft',title:'Самолёт',description:'Сопровождение текущего рейса'},
   {action:'sprinter',title:'Mercedes-Benz Sprinter',description:'Экскурсионный микроавтобус RocketTrip'},
-  {action:'train',title:'М62 и вагоны',description:'Локомотив и четыре вагона'},
-  {action:'silo',title:'Шахтная пусковая установка',description:'Площадка №109'},
-  {action:'flight-cycle',title:'Москва — Крайний — Москва',description:'Посадка · стоянка · вылет'},
-  {action:'train-cycle',title:'Рейс мотовоза',description:'Площадка №1 → Тюратам'},
-  {action:'silo-cycle',title:'Открытие шахты',description:'Крышка и пар при приближении'}
+  {action:'silo',title:'Шахтная пусковая установка',description:'Площадка №109'}
+ ]},
+ {id:'reconstructionsAccordion',title:'ЦИФРОВЫЕ РЕКОНСТРУКЦИИ',items:[
+  {action:'energia-reconstruction',title:'Запуск «Энергии — Полюс» · 1987',description:'УКСС · открыть карточку и запустить реконструкцию'},
+  {action:'buran-landing-reconstruction',title:'Посадка «Бурана» · 1988',description:'Юбилейный · запуск реконструкции в карточке аэродрома'},
+  {action:'buran-loading-reconstruction',title:'Погрузка «Бурана» · ПУА-100',description:'Юбилейный · анимация погрузки в карточке'},
+  {action:'flight-cycle',title:'Рейс Москва — Крайний — Москва',description:'Заход на посадку · стоянка · взлёт'},
+  {action:'train-cycle',title:'Поезд: полный рейс мотовоза',description:'Площадка №1 → Тюратам · цикл движения'},
+  {action:'silo-cycle',title:'Открытие шахтной установки',description:'Крышка и пар при приближении к шахте'},
+  {action:'aircraft',title:'Сопровождение самолёта',description:'Камера следует за воздушным судном'},
+  {action:'train',title:'Сопровождение локомотива',description:'Камера следует за поездом'}
  ]},
  {id:'infrastructureAccordion',title:'ИНФРАСТРУКТУРА',catalogue:true},
+ {id:'heroesAccordion',title:'ГЕРОИ И ИСТОРИИ',items:[
+  {action:'flanks-history',title:'Конструкторы и инженерные школы',description:'Королёв, Челомей, Янгель · истории и территории'}
+ ],empty:'Истории людей и инженерных достижений готовятся к публикации.'},
  {id:'mythsAccordion',title:'МИФЫ И ЛЕГЕНДЫ',items:[],empty:'Материалы раздела пока не добавлены.'},
  {id:'traditionsAccordion',title:'ТРАДИЦИИ И СУЕВЕРИЯ',items:[],empty:'Истории о традициях и суевериях космодрома готовятся к публикации.'},
  {id:'graveyardAccordion',title:'КОСМИЧЕСКОЕ КЛАДБИЩЕ',items:[
-  {action:'r16-memorial',title:'Катастрофа Р-16',description:'Площадка №41'},
-  {action:'mik-ruins',title:'Разрушенные пролёты МИК',description:'Площадка №112'}
- ]}
+  {action:'r16-memorial',title:'Катастрофа Р-16',description:'24 октября 1960 · площадка №41'},
+  {action:'mik-ruins',title:'Разрушенные пролёты МИК',description:'Площадка №112 · утраченная инфраструктура'}
+ ],empty:'Подтверждённые аварии, неудачные пуски и районы падения будут добавляться по проверенным источникам.'}
 ]);
 
 export function installMuseumMenu({container,onAction,stories=[]}){
@@ -67,8 +83,15 @@ export function installMuseumMenu({container,onAction,stories=[]}){
    if(section.open)for(const other of sections)if(other!==section)other.open=false;
   });
  }
+ // Archive entries are assigned exactly once; new unclassified stories are
+ // surfaced under «Герои и истории», not silently dropped from navigation.
+ const storyById=new Map(stories.map(story=>[story.action.slice(6),story]));
+ const assignedIds=new Set(Object.values(MUSEUM_STORY_GROUPS).flat());
  for(const baseSection of MUSEUM_SECTIONS){
-  const section=baseSection.id==='mythsAccordion'?{...baseSection,items:stories}:baseSection;
+  const assigned=MUSEUM_STORY_GROUPS[baseSection.id]||[];
+  const archiveItems=assigned.map(id=>storyById.get(id)).filter(Boolean);
+  if(baseSection.id==='heroesAccordion')archiveItems.push(...stories.filter(item=>!assignedIds.has(item.action.slice(6))));
+  const section={...baseSection,items:[...(baseSection.items||[]),...archiveItems]};
   const details=container.querySelector('#'+section.id);
   if(!details)throw new Error('Museum section is missing: '+section.id);
   if(section.catalogue)continue;
