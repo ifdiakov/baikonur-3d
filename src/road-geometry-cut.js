@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // Physical cutouts for the displayed road geometry, instead of transparent
 // mask textures. Original centreline/OSM graph remains unmodified. This module
 // clips every surfaced triangle, including white paint and both shoulders.
-export const ROAD_GEOMETRY_CUT_VERSION='physical-road-cuts-junction-protection-v2';
+export const ROAD_GEOMETRY_CUT_VERSION='source-aware-crossing-v3';
 const EPS=1e-8,CELL=14,TAU=Math.PI*2;
 const area=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
 const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,
@@ -151,6 +151,22 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
  }
  return {...gridIndex(clips),clips:clips.length,sourceCuts,replacementCuts,duplicateCuts,skippedOffRoad};
 }
+// Batched OSM surfaces no longer retain an OSM way-id per GPU triangle.
+// Preserve an unrelated THROUGH road when the owner hides a crossing way:
+// the geometry itself still reveals the strip's longitudinal direction.
+function sourceTriangleDirection(tri,surfaceName=''){
+ const lengths=[0,1,2].map(i=>{
+  const a=tri[i],b=tri[(i+1)%3],dx=b.x-a.x,dz=b.z-a.z,len=Math.hypot(dx,dz);
+  return {dx,dz,len};
+ }).sort((a,b)=>a.len-b.len);
+ const thin=lengths[0].len<.65||/разметка|жёлтая|кромки|dashes|edge-lines|continuation · (white|yellow)/i.test(surfaceName);
+ const edge=thin?lengths[2]:lengths[0];
+ if(edge.len<1e-6)return null;
+ // Nearly equilateral clipped junction faces have no reliable road tangent.
+ // Keep the source junction footprint to cover rather than remove a crossing.
+ if(!thin&&lengths[2].len/edge.len<1.20)return null;
+ return [edge.dx/edge.len,edge.dz/edge.len];
+}
 function triangleGeom(geo,index){
  const position=geo.getAttribute('position'),uv=geo.getAttribute('uv');
  return Array.from({length:3},(_,k)=>{
@@ -159,7 +175,7 @@ function triangleGeom(geo,index){
    ...(uv?{u:uv.getX(i),v:uv.getY(i)}:{})};
  });
 }
-export function physicallyCutRoadGeometry(geometry,cutIndex,{gradeTolerance=1.05}={}){
+export function physicallyCutRoadGeometry(geometry,cutIndex,{gradeTolerance=1.05,surfaceName=''}={}){
  const position=geometry.getAttribute('position'),uv=geometry.getAttribute('uv'),index=geometry.index;
  const output=[],outputUV=uv?[]:null;
  let checked=0,clipped=0,removed=0;
@@ -178,7 +194,15 @@ export function physicallyCutRoadGeometry(geometry,cutIndex,{gradeTolerance=1.05
   if(!near.length){emit(...t);continue;}checked++;
   const originalArea=Math.abs(area(...t));
   let pieces=[positive(t)];
+  const sourceDirection=surfaceName?sourceTriangleDirection(t,surfaceName):null;
   for(const cut of near){
+   // Different OSM ways at one junction are geometrically separate even if
+   // their triangles overlap in XZ. Hide the requested alignment, not the
+   // active perpendicular road passing through that same space.
+   if(cut.kind==='hidden'&&cut.direction&&sourceDirection){
+    const dot=Math.abs(cut.direction[0]*sourceDirection[0]+cut.direction[1]*sourceDirection[1]);
+    if(dot<.36)continue;
+   }
    pieces=pieces.flatMap(p=>subtractTriangle(p,cut,gradeTolerance));
    if(!pieces.length)break;
   }
