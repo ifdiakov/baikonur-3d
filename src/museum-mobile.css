@@ -1,0 +1,29 @@
+/* Mobile interface layer. Desktop remains unchanged. */
+@media (max-width: 850px) {
+  html,body {width:100%;height:100%;overscroll-behavior:none}
+  #view {touch-action:none}
+  #museumMobileBar {position:fixed;z-index:85;top:calc(env(safe-area-inset-top,0px) + 8px);left:10px;right:10px;display:flex;align-items:center;gap:9px;pointer-events:none}
+  #museumMobileBar button,#museumMobileBar .mobile-title {pointer-events:auto;background:rgba(7,22,35,.93);color:#f5f6f8;border:1px solid #ffffff38;border-radius:12px;min-height:44px;box-shadow:0 8px 28px #0005;backdrop-filter:blur(14px)}
+  #museumMobileBar button {min-width:44px;font-size:22px;cursor:pointer}
+  #museumMobileBar .mobile-title {flex:1;display:flex;align-items:center;padding:0 13px;font:800 13px Montserrat,Arial,sans-serif;letter-spacing:.09em}
+  #museumLeftStack {position:fixed!important;z-index:82!important;top:0!important;left:0!important;bottom:0!important;width:min(88vw,360px)!important;max-width:360px!important;transform:translateX(-110%);transition:transform .25s ease;pointer-events:none}
+  body.mobile-menu-open #museumLeftStack {transform:translateX(0);pointer-events:auto}
+  #ui {position:relative!important;top:0!important;left:0!important;width:100%!important;max-height:100%!important;height:100%!important;padding-top:calc(env(safe-area-inset-top,0px) + 65px)!important;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 20px)!important;border-radius:0 18px 18px 0!important;overflow-y:auto!important}
+  #museumMobileShade {position:fixed;inset:0;background:#02080eb8;z-index:81;display:none}
+  body.mobile-menu-open #museumMobileShade {display:block}
+  #hero {display:none!important}
+  #museumRightStack {display:none!important}
+  #info {position:fixed!important;top:auto!important;left:8px!important;right:8px!important;bottom:calc(env(safe-area-inset-bottom,0px) + 8px)!important;width:auto!important;max-width:none!important;max-height:min(65dvh,620px)!important;overflow:auto!important;border-radius:20px!important;padding:18px!important;z-index:70!important;box-shadow:0 -14px 40px #0009}
+  #info .close {min-width:44px;min-height:44px;font-size:26px}
+  #info button {min-height:42px}
+  #timeDock {max-width:100vw!important;bottom:0!important}
+  .hud {display:none!important}
+  .site-label {max-width:180px}
+  button,input,select {touch-action:manipulation}
+}
+@media (max-width:850px) and (orientation:landscape) {
+  #info {left:auto!important;right:8px!important;bottom:8px!important;width:min(43vw,420px)!important;max-height:calc(100dvh - 20px)!important}
+}
+@media (min-width:851px) {
+  #museumMobileBar,#museumMobileShade {display:none!important}
+}
