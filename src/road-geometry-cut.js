@@ -46,7 +46,7 @@ function subtractTriangle(subject,clip,gradeTolerance){
   const v=area(triangle[2],triangle[0],{x,z})/(den||1);
   const w=1-u-v;
   const meshY=triangle[0].y*u+triangle[1].y*v+triangle[2].y*w;
-  if(Math.abs(meshY-clip.height(x,z))>gradeTolerance)return [subject];
+  if(Math.abs(meshY-clip.height(x,z))>(clip.gradeTolerance??gradeTolerance))return [subject];
  }
  return outside;
 }
@@ -125,6 +125,7 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    const section=rectangularCut(a,b,width);
    if(!section)continue;
    if(kind==='added'&&nearOld&&!nearOld(a,b,width)){skippedOffRoad++;continue;}
+   section.gradeTolerance=kind==='hidden'?1.9:1.05;
    clips.push(section);
    if(kind==='hidden')sourceCuts++;else replacementCuts++;
   }
@@ -134,7 +135,7 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    const width=(widths?widths[j]:r.width)+shoulderExtra+edgeMargin;
    if(kind==='added'&&nearOld&&!nearOld(r.points[j-1],r.points[j],width)
       &&!nearOld(r.points[j],r.points[j+1],width))continue;
-   clips.push(circleCut(r.points[j],width));
+   const corner=circleCut(r.points[j],width);corner.gradeTolerance=kind==='hidden'?1.9:1.05;clips.push(corner);
   }
  }
  return {...gridIndex(clips),clips:clips.length,sourceCuts,replacementCuts,duplicateCuts,skippedOffRoad};
@@ -164,13 +165,20 @@ export function physicallyCutRoadGeometry(geometry,cutIndex,{gradeTolerance=1.05
    ...(uv?{u:uv.getX(i+k),v:uv.getY(i+k)}:{})});
   const b=bounds(t),near=cutIndex.at(b);
   if(!near.length){emit(...t);continue;}checked++;
+  const originalArea=Math.abs(area(...t));
   let pieces=[positive(t)];
   for(const cut of near){
    pieces=pieces.flatMap(p=>subtractTriangle(p,cut,gradeTolerance));
    if(!pieces.length)break;
   }
   if(pieces.length!==1||pieces[0].length!==3){clipped++;if(!pieces.length)removed++;}
-  for(const p of pieces)for(let k=1;k<p.length-1;k++)emit(p[0],p[k],p[k+1]);
+  for(const p of pieces){
+   let remainingArea=0;
+   for(let k=1;k<p.length-1;k++)remainingArea+=Math.abs(area(p[0],p[k],p[k+1]));
+   // Avoid pale islands left by almost fully clipped source triangles.
+   if(remainingArea<Math.min(.018,originalArea*.035))continue;
+   for(let k=1;k<p.length-1;k++)emit(p[0],p[k],p[k+1]);
+  }
  }
  const result=new THREE.BufferGeometry();
  result.setAttribute('position',new THREE.Float32BufferAttribute(output,3));
