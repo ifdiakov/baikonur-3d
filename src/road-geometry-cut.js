@@ -101,7 +101,8 @@ function existingRoadSegmentIndex(roads){
   if(len<1e-6)return false;
   const x=(a[0]+b[0])/2,z=(a[2]+b[2])/2,y=(a[1]+b[1])/2;
   for(const other of grid.get(Math.floor(x/CELL)+':'+Math.floor(z/CELL))||[]){
-   if(other.id===sourceId||other.id.startsWith(sourceId+'-'))continue;
+   const way=a=>String(a).match(/^osm-road-(\d+)/)?.[1]||String(a);
+   if(other.id===sourceId||way(other.id)===way(sourceId))continue;
    const ox=other.b[0]-other.a[0],oz=other.b[2]-other.a[2],d=ox*ox+oz*oz;
    if(d<1e-8)continue;
    if(Math.abs((dx*ox+dz*oz)/(len*Math.sqrt(d)))>.42)continue;
