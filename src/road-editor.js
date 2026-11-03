@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-v1';
-import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v5';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v7';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-qa-v3';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
@@ -93,7 +93,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  const clone=()=>({version:ROAD_EDITOR_VERSION,added:state.added.map(r=>({...r,points:r.points.map(p=>[...p])})),
   hidden:state.hidden.map(r=>({...r,points:r.points.map(p=>[...p])}))});
  function persist(){
-  try{localStorage.setItem(ROAD_EDITOR_STORAGE,JSON.stringify(clone()));return true;}
+  try{localStorage.setItem(ROAD_EDITOR_STORAGE,JSON.stringify({...clone(),baselineRevision:baselineData?.revision||null}));return true;}
   catch{status.textContent='Браузер не смог сохранить правки. Экспортируйте JSON.';return false;}
  }
  function checkpoint(){history.push(clone());if(history.length>40)history.shift();future=[];clearPending=false;}
@@ -331,17 +331,44 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(e.shiftKey)redo();else undo();}
  });
  try{
-  baselineData=defaultEdits?validateRoadEdits(defaultEdits):null;
+  baselineData=defaultEdits?{...validateRoadEdits(defaultEdits),revision:defaultEdits.revision||null}:null;
   const saved=localStorage.getItem(ROAD_EDITOR_STORAGE);
-  if(saved){Object.assign(state,validateRoadEdits(JSON.parse(saved)));}
-  else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}
+  if(saved){
+   const snapshot=JSON.parse(saved),local=validateRoadEdits(snapshot);
+   Object.assign(state,local);
+   // A newer authoritative owner scheme must be visible even to visitors
+   // whose browser still holds edits from the preceding release.
+   // Preserve their local roads/cuts; merge only missing baseline records.
+   if(baselineData?.revision&&snapshot.baselineRevision!==baselineData.revision){
+    const ids=new Set(state.added.map(r=>r.id));
+    for(const r of baselineData.added)if(!ids.has(r.id)&&state.added.length<ROAD_EDITOR_LIMITS.roads){
+     state.added.push({...r,points:r.points.map(p=>[...p])});ids.add(r.id);
+    }
+    const ends=h=>{
+     const p=h.points,a=p[0],b=p.at(-1),quant=v=>v.map(x=>Math.round(x*100)/100).join(',');
+     const e=[quant(a),quant(b)].sort().join('~');
+     let len=0;for(let i=1;i<p.length;i++)len+=Math.hypot(p[i][0]-p[i-1][0],p[i][2]-p[i-1][2]);
+     return h.sourceId+'|'+h.width+'|'+e+'|'+Math.round(len*10)/10;
+    };
+    const counts=new Map();
+    for(const h of state.hidden)counts.set(ends(h),(counts.get(ends(h))||0)+1);
+    const addedCounts=new Map();
+    for(const h of baselineData.hidden){
+     const key=ends(h),required=(addedCounts.get(key)||0)+1;
+     addedCounts.set(key,required);
+     if((counts.get(key)||0)>=required||state.hidden.length>=ROAD_EDITOR_LIMITS.hidden)continue;
+     state.hidden.push({...h,points:h.points.map(p=>[...p])});
+     counts.set(key,(counts.get(key)||0)+1);
+    }
+   }
+  }else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}
   nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
  }catch{status.textContent='Сохранённая схема повреждена. Импортируйте её из JSON или очистите правки.';}
  button?.addEventListener('click',()=>setActive(!active));
  setMode('draw');
  return {get active(){return active;},setActive,undo,redo,finish,
   snapshot:clone,roadLightRemoved,stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,active,mode,
-   added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,
+   added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
    joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
    mesh:geometryStats,mask:maskStats,maskApplied:tiles.some(t=>t.enabled.value===1),
