@@ -371,8 +371,8 @@ body.following-arrival #labelLayer{display:none!important}
 
 #site31Views button{min-width:0;padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#site31Views button:hover{background:#3b5969}#site31Views button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
 @media(max-width:850px){
- body:has(#info.site31-active[style*="display: block"]) #museumIdentity{display:none}
- #info.site31-active{top:auto;bottom:200px;z-index:14;height:auto;max-height:250px;padding:12px}
+ body:has(#info.site31-active) #museumIdentity{display:none!important}
+ #info.site31-active{top:auto!important;bottom:var(--museum-dock-reserve,200px)!important;z-index:14;height:auto;max-height:250px!important;padding:12px}
  #info.site31-active #title{display:block;padding-right:28px;line-height:1.4}
  #info.site31-active .close{position:absolute;right:10px;top:8px;min-width:28px;min-height:28px}
  #info.site31-active:not(.site31-details-open) .orgrow,#info.site31-active:not(.site31-details-open) #infoPurpose,#info.site31-active:not(.site31-details-open) #description,#info.site31-active:not(.site31-details-open) #rocketLoadStatus{display:none}
@@ -381,7 +381,7 @@ body.following-arrival #labelLayer{display:none!important}
  #info.site31-active #rocketExhibitToggle{padding:8px 10px;margin:4px 0;font-size:9px}
  #info.site31-active #detailMore{padding:8px 10px;font-size:9px}
  #info.site31-active>p:last-child{display:none}
- #info.site31-active.site31-details-open{max-height:calc(100dvh - 250px)}
+ #info.site31-active.site31-details-open{max-height:calc(100dvh - 250px)!important}
 }
 
 #site31Views,#site254Views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
@@ -616,6 +616,7 @@ ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MUSEUM_METRE;ctl.maxDistance=3300
 const steppeSurfaceReady=loadSatelliteReference().then(satellite=>createSteppeSurface({renderer,satellite}));
 let overviewAltitudeLimit=1650,overviewTopDown=false;
 function applyOverviewFrame(topDown=false){
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open');
  const ui=document.getElementById('ui').getBoundingClientRect(),hero=document.getElementById('hero');
  const rightBounds=getComputedStyle(hero).display==='none'?null:hero.getBoundingClientRect();
  const fit=fitOverviewCamera({width:innerWidth,height:innerHeight,outline:FLANK_OUTLINE,uiRect:ui,heroRect:rightBounds,dockTop:museumDockTop(),topDown});
@@ -1377,6 +1378,7 @@ const flanks=[
 // Restore the readable flank cards while retaining the colored terrain zones.
 const flankCards=createFlankTerritories({flanks,point,camera,container:labelLayer});
 function showFlanks(){
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open');
  puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});setMobileMenu(false);
  arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();fly=false;
  labelsVisible=true;document.getElementById('info').style.display='none';
@@ -1916,6 +1918,7 @@ function showResearch(item){
  arrivalFlight?.stopFollowing();
  groundTraffic?.stopFollowing();
  setGagarinDetailView(false);
+ document.getElementById('info').classList.remove('site31-active','site31-details-open');
  currentResearch=item;activeKnowledge=null;syncRocketLoadStatus();
  syncUkssControls();syncTuaControls();syncTerminalControls();
  document.getElementById('mik112Controls').hidden=true;
@@ -2236,6 +2239,7 @@ function showArchiveStory(id){
  syncUkssControls();syncTuaControls();syncRocketLoadStatus();return true;
 }
 function openMuseumAction(action){
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open');
  ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
  setMobileMenu(false);setGagarinDetailView(false);
