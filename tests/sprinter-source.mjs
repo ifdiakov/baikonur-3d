@@ -4,10 +4,10 @@ import {createHash} from 'node:crypto';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'meshoptimizer';
-import {createSprinterVehicle,validateSprinterGlb} from '../src/sprinter-source.js';
+import {createSprinterVehicle,validateSprinterGlb,prepareSprinterSurface} from '../src/sprinter-source.js';
 const binary=await readFile('assets/models/sprinter/model-v1.glb'),bytes=binary.buffer.slice(binary.byteOffset,binary.byteOffset+binary.byteLength),manifest=JSON.parse(await readFile('assets/models/sprinter/manifest-v1.json'));
 validateSprinterGlb(bytes);assert.equal(createHash('sha256').update(binary).digest('hex'),manifest.asset.sha256);assert.ok(binary.length<2000000);assert.ok(manifest.asset.triangles<300000);
-const {scene}=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes,'');scene.updateMatrixWorld(true);
+const {scene}=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes,'');prepareSprinterSurface(scene);scene.updateMatrixWorld(true);
 const bounds=new THREE.Box3().setFromObject(scene);assert.ok(Math.abs(bounds.min.y)<.001);assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).z-6.706)<.003);
 for(const w of manifest.wheels){const part=scene.getObjectByName(w.name);assert.ok(part);const box=new THREE.Box3().setFromObject(part);assert.ok(Math.abs(box.min.y)<.002,'Tyre rests on ground');assert.ok(Math.abs(box.max.y-.70078)<.003);}
 let fail=true;const root=new THREE.Group(),fallbackMesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial());root.add(fallbackMesh);root.scale.setScalar(.64);

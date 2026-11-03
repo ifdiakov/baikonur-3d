@@ -2,6 +2,13 @@ import * as THREE from 'three';
 import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
 export const SPRINTER_VERSION='sprinter-drive-v1';
 let templatePromise=null;
+export function prepareSprinterSurface(scene){
+ // Several source normals oppose the actual panel faces after simplification.
+ // Rebuild on the existing indexed vertices: source seam duplicates retain
+ // hard edges while broad panels regain continuous physical lighting.
+ const done=new Set();scene.traverse(o=>{if(!o.isMesh||done.has(o.geometry))return;done.add(o.geometry);o.geometry.deleteAttribute('normal');o.geometry.computeVertexNormals();});
+ return scene;
+}
 export function validateSprinterGlb(bytes){
  const v=new DataView(bytes);
  if(bytes.byteLength<20||v.getUint32(0,true)!==0x46546c67||v.getUint32(4,true)!==2||v.getUint32(8,true)!==bytes.byteLength)throw Error('Повреждён файл Sprinter');
@@ -19,7 +26,7 @@ export async function loadSprinterSource(){
    const manager=new THREE.LoadingManager();manager.setURLModifier(u=>{if(u.startsWith('data:')||(u.startsWith('blob:')&&new URL(u).origin===location.origin))return u;throw Error('Внешний ресурс Sprinter');});
    const {scene}=await new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes,base.href),size=new THREE.Box3().setFromObject(scene).getSize(new THREE.Vector3()).toArray();
    if(size.some((n,i)=>!Number.isFinite(n)||Math.abs(n-manifest.bounds.size[i])>.015)||manifest.wheels.some(w=>!scene.getObjectByName(w.name)))throw Error('Не прошли проверку размеры или колёса Sprinter');
-   return {scene,manifest};
+   prepareSprinterSurface(scene);return {scene,manifest};
   }finally{clearTimeout(timer);}
  })().catch(error=>{templatePromise=null;throw error;});
  const source=await templatePromise,scene=source.scene.clone(true),materials=new Map();
