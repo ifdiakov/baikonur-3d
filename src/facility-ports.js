@@ -1,3 +1,4 @@
+import {SITE250A_ACCESS} from './site250a-layout.js?v=20261103-site250a-photo-v1';
 import {SITE254_ACCESS} from './site254-layout.js?v=20261103-site254-e10s5';
 import {SITE2_ACCESS} from './site2-layout.js?v=20261103-site2-main-road-v1';
 import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
@@ -19,7 +20,7 @@ export const FACILITY_PORTS={
  'pad-110':{scale:MUSEUM_METRE,yaw:0,...SITE110_PORTS,railConnections:SITE110_RAIL_DESTINATIONS},
  'pad-2':{...SITE2_ACCESS},
  'pad-3':{scale:.28,elevation:-2.72,yaw:0,road:[-70,.1,54],roadOutward:[-1,0,0],roadWidth:7},
- 'pad-250a':{scale:.28,elevation:-2.72,yaw:0,road:[0,.1,38],roadOutward:[0,0,1],roadWidth:7},
+ 'pad-250a':SITE250A_ACCESS,
  'pad-250':{scale:MUSEUM_METRE,elevation:-2.755,yaw:-.56,road:[-40,.2,225].map(v=>v/.687885342706393),roadWidth:1.8/MUSEUM_METRE,rail:[[-18,1.55,227],[18,1.55,227]].map(p=>p.map(v=>v/.687885342706393)),physicalRailGauge:1.52},
  'pad-251':{scale:.28,yaw:1.948,road:[404.9,1.78,62.9],roadOutward:[1,0,0],roadWidth:7},
  'pad-112a':{scale:.14,yaw:-Math.PI/4,road:[160,.15,130],roadOutward:[1,0,0],roadWidth:6,railConnections:MZK_SDI_RAIL_PORTS,physicalRailGauge:1.52},
