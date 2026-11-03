@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-import {readFile,mkdir} from 'node:fs/promises';
+import {mkdir} from 'node:fs/promises';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-road-editor';await mkdir(out,{recursive:true});
@@ -69,46 +69,24 @@ try{
  assert(initial.maskTiles.length===5&&initial.maskTiles.some(t=>t.enabled));
  assert(initial.maskTiles.every(t=>!t.enabled||t.worldUnitsPerPixel<.5),'Mask must not tear a 1.6-unit service road');
  assert(initial.mask.duplicateCuts>=10,'Exact duplicate owner cuts must be coalesced in rendering');
- await page.locator('#roadEditorToggle').click();
- await page.locator('#roadEditorPanel').waitFor({state:'visible'});
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).active,true);
+ // Existing owner-authored roads, joins and removals remain visible, but editing
+ // controls must not exist in the published museum.
+ assert.equal(initial.readOnly,true,'Published road overlay is view-only');
+ assert.equal(initial.active,false,'Road editing is not active');
+ assert.equal(await page.locator('#roadEditorToggle,#roadEditorPanel,#roadEditorImport').count(),0,
+  'No road editor controls or panel remain in the document');
+ const original=await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.snapshot());
+ assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.setActive(true)),false,
+  'Read-only road renderer must reject activation even through the QA reference');
  await page.mouse.click(850,680);await page.mouse.click(970,690);await frame();
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).draftPoints,2);
- await page.locator('#roadEditorPanel [data-action="finish"]').click();await frame();
- let snapshot=await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.snapshot());
- assert.equal(snapshot.added.length,20);assert.equal(snapshot.hidden.length,302);
- assert.equal(snapshot.added.at(-1).points.length,2);
- const road=snapshot.added.at(-1);
- assert(road.points.every(p=>p.every(Number.isFinite)));
- await page.locator('#roadEditorPanel [data-action="undo"]').click();await frame();
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,19);
- await page.locator('#roadEditorPanel [data-action="redo"]').click();await frame();
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,20);
- const downloadPromise=page.waitForEvent('download');
- await page.locator('#roadEditorPanel [data-action="export"]').click();
- const downloaded=await downloadPromise;
- const exported=JSON.parse(await readFile(await downloaded.path(),'utf8'));
- assert.equal(exported.added.length,20);assert.equal(exported.hidden.length,302);assert.equal(exported.version,1);
- await page.locator('#roadEditorImport').setInputFiles({name:'broken.json',mimeType:'application/json',
-  buffer:Buffer.from('{"version":1,"added":[{"id":"bad","points":[["invalid"]]}],"hidden":[]}')});
- await page.waitForFunction(()=>document.getElementById('roadEditorStatus').textContent.includes('Ошибка импорта'));
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,20);
- // Remove a freshly built road and recover it with Undo.
- await page.locator('#roadEditorPanel [data-mode="erase"]').click();
- const center=road.points[0].map((v,i)=>(v+road.points[1][i])/2);
- const click=await page.evaluate(p=>window.__BAIKONUR_QA.projectWorld(...p),center);
- assert(click.x>320&&click.x<1220&&click.y>200&&click.y<940,
-  'The editable road is under the canvas, not hidden behind a panel');
- await page.mouse.click(click.x,click.y);await frame();
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,19);
- await page.locator('#roadEditorPanel [data-action="undo"]').click();await frame();
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,20);
- await page.screenshot({path:out+'/'+prefix+'-editor.png'});
- // JSON is persistent in this browser but source OSM must not be changed.
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).active,false);
+ assert.deepEqual(await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.snapshot()),original,
+  'Map clicks cannot create, erase or alter roads');
  await page.reload({waitUntil:'domcontentloaded'});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.roadEditor,null,{timeout:300000});
- assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,20);
- assert.equal(await page.locator('#roadEditorPanel').isVisible(),false);
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,original.added.length);
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).hidden,original.hidden.length);
+ assert.equal(await page.locator('#roadEditorToggle,#roadEditorPanel').count(),0);
  // The road audit covers the real museum camera, not just off-screen meshes.
  // Save three close-up images for source geometry / rendered-pavement review.
  for(const [id,range,label] of [
@@ -128,7 +106,7 @@ try{
   await page.screenshot({path:out+'/'+prefix+'-'+label+'.png'});
  }
  assert.deepEqual(errors,[]);
- console.log('ROAD_EDITOR_BROWSER_PASS',JSON.stringify({sourcePaths:initial.sourceRoadPaths,erasedRoadAudit,matchedStyles:initial.roadStyles.length,paintedRoads:initial.mesh.markedRoads,importVersion:exported.version,download:downloaded.suggestedFilename()}));
+ console.log('ROADS_READ_ONLY_BROWSER_PASS',JSON.stringify({sourcePaths:initial.sourceRoadPaths,erasedRoadAudit,matchedStyles:initial.roadStyles.length,paintedRoads:initial.mesh.markedRoads,added:original.added.length,hidden:original.hidden.length}));
 }finally{
  if(errors.length)console.log('ROAD_EDITOR_PAGE_ERRORS',JSON.stringify(errors));
  await browser.close();
