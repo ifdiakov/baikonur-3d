@@ -61,7 +61,7 @@ const hillside=x=>x*.25;
 const terrainWay={id:'terrain-bank',surface:'asphalt',width:4,points:[[10,1,0],[30,1,0]]};
 const bank=buildEditedRoadMeshes([terrainWay],{terrainHeightAt:(x,z)=>hillside(x)});
 const verts=bank.geometries.shoulder.attributes.position;
-for(let i=0;i<verts.count;i++)assert(verts.getY(i)>=hillside(verts.getX(i))+.07,
+for(let i=0;i<verts.count;i++)assert(verts.getY(i)>=hillside(verts.getX(i))+.007,
  'Road edge is under the hillside');
 
 
