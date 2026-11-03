@@ -47,9 +47,10 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  let excludedByRoadEditor=0;
  function refreshRoadEditor(editor){
   let removed=0;
-  for(const r of roadField.records){
-   const hidden=Boolean(editor?.roadLightRemoved?.(r));
-   r.visible=!hidden;if(hidden)removed++;
+  for(let i=0;i<roadField.records.length;i++){
+   const r=roadField.records[i],hidden=Boolean(editor?.roadLightRemoved?.(r));
+   r.visible=!hidden;roadLights[i].visible=!hidden;
+   if(hidden)removed++;
   }
   excludedByRoadEditor=removed;roadField.sync();
   return removed;
