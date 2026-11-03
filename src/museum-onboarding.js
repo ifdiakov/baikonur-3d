@@ -27,6 +27,7 @@
   let elapsed = 0, lastNow = 0, currentStage = -1;
   let move = null, orbit = null, initiallyFocused = false, originalControls = null;
   let selectedDuringDemo = false, spotlight = null, openedMenu = null;
+  let startingPose = null; // Exact original eye + look-at, including height and heading.
 
   function hasSeen() {
     try { return localStorage.getItem(STORAGE_KEY) === 'yes'; }
@@ -199,6 +200,13 @@
       if (!initiallyFocused) startOrbit(elapsed, false);
       highlight(mobile ? document.getElementById('mobileMenuToggle') : document.getElementById('sitesAccordion'));
     } else if (i === 4) {
+      // Finish the fly-around with a gentle 3.9 s return to the exact view
+      // shown before the tour: original position, height, target and heading.
+      if (startingPose) {
+        const current = pose();
+        const travel = current.eye.distanceTo(startingPose.eye);
+        tweenTo(startingPose, 3900, Math.min(280, travel * .10));
+      }
       const menu = document.getElementById('reconstructionsAccordion');
       if (menu && !mobile) {
         openedMenu = { element: menu, wasOpen: menu.open };
@@ -215,7 +223,9 @@
     if (lastNow > 0) elapsed += Math.max(0, now - lastNow);
     lastNow = now;
     if (elapsed >= TOTAL_MS) {
-      stop();
+      // The final rendered frame may land beyond 26 s. Complete the move
+      // before stopping; do not leave a near-but-not-exact camera pose.
+      stop(true);
       return;
     }
     const i = stages.findIndex(s => elapsed < s.end);
@@ -246,11 +256,12 @@
     // interaction restores OrbitControls before its event handler executes.
     api.controls.enableDamping = false;
     api.controls.update();
+    startingPose = pose();
     api.controls.enabled = false;
     root.hidden = false;
     return true;
   }
-  function stop() {
+  function stop(completed = false) {
     if (!active) {
       pendingStart = false;
       return;
@@ -259,6 +270,9 @@
     pendingStart = false;
     move = null;
     orbit = null;
+    // Natural completion returns to the starting altitude/view. A visitor
+    // pressing Skip or using the map stays at the camera's current pose.
+    if (completed && startingPose) setPose(startingPose);
     highlight(null);
     root.hidden = true;
     if (openedMenu && !openedMenu.wasOpen) openedMenu.element.open = false;
@@ -271,6 +285,7 @@
     }
     // Keep the current camera view: skipping must never snap the visitor back.
     originalControls = null;
+    startingPose = null;
     markSeen();
   }
   function attach(options) {
@@ -318,7 +333,8 @@
     attach, ready: readyAfterPreloader, update, fail, replay: start, skip: stop,
     stats: () => ({
       active, ready, pendingStart, elapsedMs: Math.round(elapsed), step: currentStage,
-      durationMs: TOTAL_MS, focused: initiallyFocused, moving: Boolean(move), orbiting: Boolean(orbit)
+      durationMs: TOTAL_MS, focused: initiallyFocused, moving: Boolean(move), orbiting: Boolean(orbit),
+      returning: active && currentStage === 4 && Boolean(move)
     })
   });
 })();
