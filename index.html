@@ -500,7 +500,7 @@ import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-sign
 import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261101-saturn-terrain-v5';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainSample,saturnTerrainMeshHeight} from './src/saturn-access.js?v=20261101-saturn-terrain-v5';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
-import {createRoadEditor} from './src/road-editor.js?v=20261103-road-editor-v8';
+import {createRoadEditor} from './src/road-editor.js?v=20261103-road-editor-v9';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261102-site2-photo-v3';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261101-tu204-cpk-v1';
@@ -540,7 +540,7 @@ mapAttribution.append(attribution,terrainAttribution);document.body.append(mapAt
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261103-owner-road-rework-v8';
+const MUSEUM_REVISION='20261103-owner-road-rework-v9';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
@@ -2390,6 +2390,15 @@ window.__BAIKONUR_QA={terrainVisibility(visibility=null){
  camera.position.copy(ctl.target).add(new THREE.Vector3(0,n*SCENE_SCALE,Math.max(240,n*.6)*SCENE_SCALE));
  ctl.update();ctl.enableDamping=wasDamping;
  camera.updateMatrixWorld(true);updateLabels()
+},inspectEditedRoad(id,{fraction=.5,range=90}={}){
+ const road=roadEditor.path(id);if(!road)return null;
+ const n=Math.max(0,Math.min(road.points.length-1,Math.round((road.points.length-1)*fraction)));
+ const p=new THREE.Vector3(...road.points[n]);
+ arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
+ const wasDamping=ctl.enableDamping;ctl.enableDamping=false;ctl.update();
+ ctl.target.copy(p);camera.position.copy(p).add(new THREE.Vector3(range*.48,range*.85,range*.65));
+ ctl.update();ctl.enableDamping=wasDamping;camera.updateMatrixWorld(true);updateLabels();
+ return {id,sampledPoint:n,position:p.toArray(),width:road.width,points:road.points.length};
 },focusSite(id){const index=typeof id==='string'?objects.findIndex(o=>o.record.id===id):id;if(index>=0)focus(index);},siteState(id){const o=objects.find(o=>o.record.id===id);if(!o)return null;const worldBounds=new THREE.Box3().setFromObject(o.g);return {id,worldBounds:{min:worldBounds.min.toArray(),max:worldBounds.max.toArray()},illustrativeFootprint:o.g.userData.illustrativeFootprint||null,index:objects.indexOf(o),map:[o.record.x,o.record.y],position:o.g.position.toArray(),scale:o.g.scale.toArray(),rotationY:o.g.rotation.y,organisation:o.record.organisation?.org,geoSource:o.record.geoSource,runwaySource:o.record.runwaySource,title:displaySiteName(o),bounds:worldBounds.getSize(new THREE.Vector3()).toArray()};},focusStation(id){
  const index=cardObjects.findIndex(o=>o.isStation&&o.record.id===id);
  if(index>=0){selectSiteCard(index);focus(index);}
