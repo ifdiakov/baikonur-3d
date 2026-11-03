@@ -179,8 +179,18 @@ function pavementHeightSampler(meshes){
  for(const mesh of meshes){
  if(!mesh)continue;mesh.updateWorldMatrix(true,false);
  const p=mesh.geometry.attributes.position,index=mesh.geometry.index;
+ // Transform straight into the temporary numerical triangle buffer. Three
+ // THREE.Vector3 allocations and one flatMap closure per triangle made the
+ // startup surface-height index unnecessarily expensive on slower devices.
+ const m=mesh.matrixWorld.elements;
  for(let i=0;i<(index?.count??p.count);i+=3){
-  const t=[0,1,2].flatMap(k=>V().fromBufferAttribute(p,index?index.getX(i+k):i+k).applyMatrix4(mesh.matrixWorld).toArray());
+  const t=[];
+  for(let k=0;k<3;k++){
+   const j=index?index.getX(i+k):i+k,x=p.getX(j),y=p.getY(j),z=p.getZ(j);
+   t.push(m[0]*x+m[4]*y+m[8]*z+m[12],
+    m[1]*x+m[5]*y+m[9]*z+m[13],
+    m[2]*x+m[6]*y+m[10]*z+m[14]);
+  }
   const [ax,,az,bx,,bz,cx,,cz]=t,den=(bz-cz)*(ax-cx)+(cx-bx)*(az-cz);if(Math.abs(den)<1e-12)continue;t.push(den);
   t.bounds={minX:Math.min(ax,bx,cx),maxX:Math.max(ax,bx,cx),minZ:Math.min(az,bz,cz),maxZ:Math.max(az,bz,cz)};
   // Both the Float32 edge tolerance and its conservative X/Z bounds depend
@@ -1027,11 +1037,15 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return [corner(previous,-1),corner(previous,1),corner(at,1),corner(at,-1)];
  }):[];
  const ordinarySurfaceClip=clipOrdinaryRoadMeshes([asphalt.mesh,shoulder.mesh,unpaved.mesh,paint.mesh],highwayAsphalt.mesh,[...highwayAsphalt.ownershipPolygons,...bridgeOwnership]);
+ checkpoint('pavement-owner');
  clipOrdinaryRoadMeshes([shoulder.mesh],asphalt.mesh,[],{onlyProtruding:true});
+ checkpoint('shoulder-owner');
  const bridgeAsphalt=interchangeBridge?.root.getObjectByName('Виадук · asphalt');
  const pavementY=pavementHeightSampler([highwayAsphalt.mesh,bridgeAsphalt]);
+ checkpoint('highway-index');
  for(const route of roadPlan.routes)route.surfaceHeightAt=p=>pavementY(p)??p.y;
  const markingPavementY=pavementHeightSampler([asphalt.mesh,highwayAsphalt.mesh,bridgeAsphalt]);
+ checkpoint('marking-index');
  checkpoint('surface-height');
  const roadMarkingPlan=buildRoadMarkings({roads:markingRoads,graph:roadGraph,surfaceHeightAt:markingPavementY,surfaceTrianglesAt:markingPavementY.trianglesAt,directionAt:highwayDirectionAt,
   extraEdges:lowerAprons.flatMap(apron=>apron.edgeLines.map((edge,i)=>({...edge,id:'apron-'+apron.spec.nodeId+'-'+i,family:'highway',width:HIGHWAY_MARKINGS.edgeWidth}))),
