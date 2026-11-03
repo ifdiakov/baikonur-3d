@@ -4,8 +4,25 @@ import {subtractRoadPolygon} from './road-surface.js?v=20261103-restored-junctio
 // Physical cutouts for the displayed road geometry, instead of transparent
 // mask textures. Original centreline/OSM graph remains unmodified. This module
 // clips every surfaced triangle, including white paint and both shoulders.
-export const ROAD_GEOMETRY_CUT_VERSION='protected-through-roads-v5';
+export const ROAD_GEOMETRY_CUT_VERSION='source-matched-pavement-v6';
 const EPS=1e-8,CELL=14,TAU=Math.PI*2;
+// OSM meshes batch multiple ways: local edits must not cut a trunk road.
+function sourceRoadClass(road){
+ if(!road)return null;
+ const tags=road.tags||{},type=String(tags.highway||'');
+ if(road.highway===true||['motorway','trunk','motorway_link','trunk_link'].includes(type))return 'highway';
+ if(road.surface==='ground'||type==='track'||['unpaved','ground','dirt','sand'].includes(tags.surface))return 'ground';
+ return 'asphalt';
+}
+function surfaceRoadClass(name){
+ if(['OSM · асфальт трассы','Трасса · двойная жёлтая','Трасса · белые кромки',
+  'Трасса · продолжение · asphalt','Трасса · продолжение · white','Трасса · продолжение · yellow'].includes(name))return 'highway';
+ if(name==='OSM · грунтовые проезды')return 'ground';
+ if(['OSM · единое дорожное полотно','OSM · разметка','road-pavement-union',
+  'road-center-dashes','road-edge-lines'].includes(name))return 'asphalt';
+ // Unified shoulders contain several surface classes and retain crossing protection.
+ return null;
+}
 const area=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
 const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,
  ...(a.u!=null&&b.u!=null?{u:a.u+(b.u-a.u)*t,v:a.v+(b.v-a.v)*t}:{})});
@@ -205,21 +222,32 @@ function existingRoadSegmentIndex(roads){
 export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edgeMargin=.19,sourceRoads=[]}={}){
  const clips=[],seen=new Set();
  const nearOld=sourceRoads.length?existingRoadSegmentIndex(sourceRoads):null;
+ const classes=new Map(),root=id=>String(id||'').match(/^osm-road-\d+/)?.[0]||String(id||'');
+ for(const road of sourceRoads){
+  const id=String(road.id),cls=sourceRoadClass(road);
+  classes.set(id,cls);if(!classes.has(root(id)))classes.set(root(id),cls);
+ }
  let duplicateCuts=0,sourceCuts=0,replacementCuts=0,skippedOffRoad=0,restoredCrossings=0,protectedClipParts=0;
  for(const [kind,roads]of [['hidden',hidden],['added',added]])for(const r of roads){
   if(r.points?.length<2)continue;
+  const roadClass=kind==='hidden'?(classes.get(String(r.sourceId))??classes.get(root(r.sourceId))??null):
+   (['asphalt','ground','highway'].includes(r.style)?r.style:null);
   if(kind==='hidden'){
    const key=r.sourceId+'|'+r.width+'|'+r.points.map(p=>p.map(x=>Math.round(x*1000)).join(',')).join(';');
    if(seen.has(key)){duplicateCuts++;continue;}seen.add(key);
   }
   const widths=r.widths;
   for(let j=1;j<r.points.length;j++){
-   const a=r.points[j-1],b=r.points[j],width=(widths?(widths[j-1]+widths[j])*.5:r.width)+shoulderExtra+edgeMargin;
+   const a=r.points[j-1],b=r.points[j],
+    // The new strip must cover every area removed from source asphalt.
+    // Deleted source ways still clear their full shoulders and old edge paint.
+    width=Math.max(.6,(widths?(widths[j-1]+widths[j])*.5:r.width)+
+     (kind==='hidden'?shoulderExtra+edgeMargin:-.10));
    const section=rectangularCut(a,b,width);
    if(!section)continue;
    if(kind==='added'&&nearOld&&!nearOld(a,b,width)){skippedOffRoad++;continue;}
    section.gradeTolerance=kind==='hidden'?1.9:1.05;
-   section.kind=kind;
+   section.kind=kind;section.roadClass=roadClass;
    section.protectCrossing=kind==='hidden'&&Boolean(nearOld?.crossingAt?.(a,b,r.sourceId,width));
    if(kind==='hidden'&&nearOld?.protectorsFor){
     const originalPoly=section.points;
@@ -241,11 +269,11 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
   // Only internal bends are rounded; outer butt ends preserve the adjoining
   // road right up to its surveyed / user-selected connecting vertex.
   for(let j=1;j<r.points.length-1;j++){
-   const width=(widths?widths[j]:r.width)+shoulderExtra+edgeMargin;
+   const width=Math.max(.6,(widths?widths[j]:r.width)+(kind==='hidden'?shoulderExtra+edgeMargin:-.10));
    if(kind==='added'&&nearOld&&!nearOld(r.points[j-1],r.points[j],width)
       &&!nearOld(r.points[j],r.points[j+1],width))continue;
    const corner=circleCut(r.points[j],width);corner.gradeTolerance=kind==='hidden'?1.9:1.05;
-   corner.kind=kind;
+   corner.kind=kind;corner.roadClass=roadClass;
    const a=r.points[j-1],b=r.points[j+1],dx=b[0]-a[0],dz=b[2]-a[2],d=Math.hypot(dx,dz);
    corner.protectCrossing=kind==='hidden'&&Boolean(nearOld?.crossingAt?.(a,b,r.sourceId,width));
    if(d>1e-6)corner.direction=[dx/d,dz/d];
@@ -289,6 +317,7 @@ function triangleGeom(geo,index){
 }
 export function physicallyCutRoadGeometry(geometry,cutIndex,{gradeTolerance=1.05,surfaceName=''}={}){
  const position=geometry.getAttribute('position'),uv=geometry.getAttribute('uv'),index=geometry.index;
+ const materialClass=surfaceRoadClass(surfaceName);
  const output=[],outputUV=uv?[]:null;
  let checked=0,clipped=0,removed=0;
  const emit=(a,b,c)=>{
@@ -308,6 +337,8 @@ export function physicallyCutRoadGeometry(geometry,cutIndex,{gradeTolerance=1.05
   let pieces=[positive(t)];
   const sourceDirection=surfaceName?sourceTriangleDirection(t,surfaceName):null;
   for(const cut of near){
+   // Preserve highway asphalt and paint when a local way is edited.
+   if(materialClass&&cut.roadClass&&cut.roadClass!==materialClass)continue;
    // Different OSM ways at one junction are geometrically separate even if
    // their triangles overlap in XZ. Hide the requested alignment, not the
    // active perpendicular road passing through that same space.

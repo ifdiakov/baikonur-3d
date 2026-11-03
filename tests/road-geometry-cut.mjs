@@ -110,6 +110,35 @@ assert.equal(underpassCuts.restoredCrossings,0,'A five-unit bridge is not a grou
 const exposedDeleted=physicallyCutRoadGeometry(erasedSpurMesh,underpassCuts,
  {surfaceName:'OSM · единое дорожное полотно'});
 assert(!rays(exposedDeleted.geometry,[0,8]).length,'The cut must remain beneath an elevated bridge');
+
+// A removed minor source must never chop holes in a parallel trunk road.
+const parallelSources=[
+ {id:'osm-road-771',width:8,highway:true,tags:{highway:'trunk'},points:[[-10,0,0],[10,0,0]]},
+ {id:'osm-road-772',width:2,surface:'ground',tags:{highway:'track'},points:[[-8,0,0],[8,0,0]]}
+];
+const parallelDeletion=makeRoadSurfaceCutIndex([
+ {sourceId:'osm-road-772',width:2,points:[[-7,0,0],[7,0,0]]}
+],[],{sourceRoads:parallelSources});
+for(const highwayName of ['OSM · асфальт трассы','Трасса · двойная жёлтая','Трасса · белые кромки']){
+ const preserved=physicallyCutRoadGeometry(strip(-12,12,-3,3),parallelDeletion,{surfaceName:highwayName});
+ assert(rays(preserved.geometry,[0,0]).length>0,highwayName+' must survive a deleted dirt track');
+}
+const removedGround=physicallyCutRoadGeometry(strip(-12,12,-3,3),parallelDeletion,{surfaceName:'OSM · грунтовые проезды'});
+assert.equal(rays(removedGround.geometry,[0,0]).length,0,'Deleted ground track must disappear');
+const parallelAdded=makeRoadSurfaceCutIndex([],[
+ {id:'road-new',style:'asphalt',width:2,widths:[2,2],points:[[-7,0,0],[7,0,0]]}
+],{sourceRoads:parallelSources});
+const intactTrunk=physicallyCutRoadGeometry(strip(-12,12,-3,3),parallelAdded,{surfaceName:'OSM · асфальт трассы'});
+assert(rays(intactTrunk.geometry,[0,0]).length>0,'A new local-road overlay must not cut the highway');
+const narrowCut=parallelAdded.at({minX:-1,maxX:1,minZ:-1.2,maxZ:1.2}).find(c=>c.kind==='added');
+assert(narrowCut&&narrowCut.bounds.maxZ<1.01&&narrowCut.bounds.minZ>-1.01,
+ 'Replacement cutter must fit inside new pavement with a coverage allowance');
+const deleteTrunk=makeRoadSurfaceCutIndex([
+ {sourceId:'osm-road-771',width:8,points:[[-7,0,0],[7,0,0]]}
+],[],{sourceRoads:parallelSources});
+const removedTrunk=physicallyCutRoadGeometry(strip(-12,12,-3,3),deleteTrunk,{surfaceName:'OSM · асфальт трассы'});
+assert.equal(rays(removedTrunk.geometry,[0,0]).length,0,'Explicitly deleted trunk must remain removable');
+
 console.log('ROAD_PHYSICAL_GEOMETRY_PASS',JSON.stringify({
  version:ROAD_GEOMETRY_CUT_VERSION,clips:r.stats.clipped,triangles:r.stats.outputTriangles,
  remainder:rr.stats.outputTriangles,gradePreserved:true,uvPreserved:true
