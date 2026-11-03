@@ -587,7 +587,7 @@ mapAttribution.append(attribution,terrainAttribution,modelCreditsLink);document.
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261103-loading-optimization-v2';
+const MUSEUM_REVISION='20261103-loading-optimization-v3';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
@@ -900,16 +900,32 @@ if(mik112Index>=0){
  // MIK112_LAYOUT_NE_V3: preserve adjacent 112A and the source TUA poses.
  group.userData.mik112Model.suppressedFallbackGeometry=[];
 }
-const [ukssExhibit,loadedTuaExhibit]=await Promise.all([
- loadUkssExhibit(ukssGroup),
- mik112Exhibit?loadTuaExhibit(objects[mik112Index].g,mik112Exhibit):Promise.resolve(null)
-]);
-tuaExhibit=loadedTuaExhibit;
+// UKSS's gas-trench geometry remains part of the first scene, but the
+// separately imported pair of 112 transporter GLBs is not required to paint
+// the overview. The source-aligned running rails use a stable public profile
+// and can connect before the detailed vehicles arrive.
+const ukssExhibit=await loadUkssExhibit(ukssGroup);
 if(mik112Exhibit){
  const group=objects[mik112Index].g;
- if(tuaExhibit.metadata.status==='ready')adaptTuaRails(mik112Exhibit,tuaExhibit.metadata);
+ adaptTuaRails(mik112Exhibit);
  group.traverse(o=>{if(o.isMesh){o.userData.idx=mik112Index;clickable.push(o);}});
 }
+// A bounded background job replaces the procedural transporter placeholders
+// only AFTER the first map is revealed. It preserves clickable ownership,
+// the calibrated rail axes and the visitor's current camera.
+const tuaDeferredReady=mik112Exhibit?startup.defer(async()=>{
+ const group=objects[mik112Index].g,old=new Set();
+ group.traverse(o=>{if(o.isMesh)old.add(o);});
+ const loaded=await loadTuaExhibit(group,mik112Exhibit);
+ tuaExhibit=loaded;
+ if(loaded.metadata.status==='ready')adaptTuaRails(mik112Exhibit,loaded.metadata);
+ const current=new Set();
+ group.traverse(o=>{if(o.isMesh){current.add(o);o.userData.idx=mik112Index;}});
+ for(let i=clickable.length-1;i>=0;i--)if(old.has(clickable[i])&&!current.has(clickable[i]))clickable.splice(i,1);
+ for(const mesh of current)if(!clickable.includes(mesh))clickable.push(mesh);
+ return loaded;
+},{key:'tua-detailed-model',priority:12}):Promise.resolve(null);
+tuaDeferredReady.catch(error=>console.warn('TUA detail remains on procedural fallback:',error));
 startup.stage('Прокладываем дороги и железнодорожные пути…',4);
 await startup.paint();
 const transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords,checkpoint7RoadGrade:checkpointRoadGrade});

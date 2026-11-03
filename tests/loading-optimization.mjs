@@ -22,6 +22,10 @@ for(const file of ['roads.geojson?v=8681815663cf','railways.geojson?v=6652ccc212
  assert(html.includes(file)&&startup.includes(file),'Large OSM data must be reusable from the browser HTTP cache: '+file);
 for(const file of ['rail-points.geojson?v=b1676d9b3ec7','river-water.geojson?v=65f8a2f3f082'])
  assert(html.includes(file),'Immutable OSM snapshot has a content-keyed URL: '+file);
+assert(html.includes("key:'tua-detailed-model'"));
+assert(html.includes('const ukssExhibit=await loadUkssExhibit(ukssGroup);'));
+assert(!html.includes('await Promise.all([\n loadUkssExhibit(ukssGroup)'));
+assert(html.includes('adaptTuaRails(mik112Exhibit);'));
 assert(ukss.includes("redirect:'error',cache:'default'"));
 assert(tua.includes("redirect:'error',cache:'default'"));
 console.log('MUSEUM_LOADING_OPTIMIZATION_PASS',JSON.stringify({galleryDeferred:gallery.length,historyInitiallyDeferred:true,soilInitiallyDeferred:true,versionedGlbCaching:true}));
