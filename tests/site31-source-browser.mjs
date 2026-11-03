@@ -38,7 +38,7 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-structure-day.png`});
  await page.locator('#site31Views button').filter({hasText:'Газоотвод'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-duct-day.png`});
  await page.locator('#site31Views button').filter({hasText:'Сверху'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-top-day.png`});
- await page.locator('#detailMore').click();assert(await page.getByRole('link',{name:'Soviet Model Magic',exact:true}).isVisible());await page.locator('#detailMore').click();
+ await page.locator('#detailMore').click();assert.equal(await page.locator('#infoExtra').getByRole('link',{name:'Soviet Model Magic',exact:true}).count(),0,'Model license no longer clutters the site card');assert.equal(await page.locator('#modelCreditsLink').getAttribute('href'),'./credits.html');await page.locator('#detailMore').click();
  await checkpoint('site31-mobile');await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
  const buttons=await page.locator('#site31Views button').evaluateAll(xs=>xs.map(x=>{const b=x.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom};}));assert(buttons.every(b=>b.left>=0&&b.right<=390&&b.bottom<=844));
  await page.locator('#close').click();assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await frame();await page.screenshot({path:`${out}/${prefix}-mobile-uncovered.png`});
@@ -49,7 +49,7 @@ try{
  await checkpoint('gagarin-metadata');const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
  assert.equal(gagarin.tableAsset.triangles,88524);assert.equal(gagarin.tableAsset.sourceSite,'pad-31');assert.equal(gagarin.tableAsset.sourceSha256,state.asset.sourceSha256);
  assert.equal(gagarin.version,'5.0-site31-table');assert.deepEqual(gagarin.railPort,[0,.55,85.5]);
- assert(await page.locator('#gagarinTableStatus').getByRole('link').isVisible());
+ assert.equal(await page.locator('#gagarinTableStatus').isVisible(),false,'No model metadata is displayed once Gagarin table is ready');assert.equal(await page.locator('#gagarinTableStatus').getByRole('link').count(),0);
  await checkpoint('gagarin-screenshots');await page.screenshot({path:`${out}/${prefix}-gagarin-table-day.png`});
  await page.locator('#rocketExhibitToggle').click();await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-table-empty.png`});await page.locator('#rocketExhibitToggle').click();
  await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('all'));await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-all.png`});
