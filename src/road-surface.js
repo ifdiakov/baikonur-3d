@@ -42,10 +42,37 @@ export function subtractRoadPolygon(subject,clip,overlapAllowed=null){
 function bounds(poly){return {minX:Math.min(...poly.map(v=>v.x)),maxX:Math.max(...poly.map(v=>v.x)),minZ:Math.min(...poly.map(v=>v.z)),maxZ:Math.max(...poly.map(v=>v.z))};}
 function overlaps(a,b){return a.maxX>b.minX+EPS&&a.minX<b.maxX-EPS&&a.maxZ>b.minZ+EPS&&a.minZ<b.maxZ-EPS;}
 class PolygonIndex{
- constructor(){this.cells=new Map();}
- keys(b){const keys=[];for(let x=Math.floor(b.minX/CELL);x<=Math.floor(b.maxX/CELL);x++)for(let z=Math.floor(b.minZ/CELL);z<=Math.floor(b.maxZ/CELL);z++)keys.push(x+':'+z);return keys;}
- add(record){for(const key of this.keys(record.bounds)){const cell=this.cells.get(key)||[];cell.push(record);this.cells.set(key,cell);}}
- near(b){const out=new Set();for(const key of this.keys(b))for(const r of this.cells.get(key)||[])if(overlaps(b,r.bounds))out.add(r);return [...out];}
+ constructor(){
+  this.cells=new Map();
+  // Each index has its own mark, so nested independent polygon indexes
+  // cannot overwrite one another's duplicate-elimination state.
+  this.seen=Symbol('polygon-index-visit');
+  this.generation=0;
+ }
+ add(record){
+  const b=record.bounds,fromX=Math.floor(b.minX/CELL),toX=Math.floor(b.maxX/CELL),
+   fromZ=Math.floor(b.minZ/CELL),toZ=Math.floor(b.maxZ/CELL);
+  for(let x=fromX;x<=toX;x++)for(let z=fromZ;z<=toZ;z++){
+   const key=x+':'+z;let bucket=this.cells.get(key);
+   if(!bucket){bucket=[];this.cells.set(key,bucket);}
+   bucket.push(record);
+  }
+ }
+ near(b){
+  // The old code allocated an array of cell names AND a new Set for every
+  // triangle. Direct cell traversal with generation stamps preserves exactly
+  // the same first-seen order while avoiding both allocations.
+  const out=[],generation=++this.generation,seen=this.seen;
+  for(let x=Math.floor(b.minX/CELL);x<=Math.floor(b.maxX/CELL);x++)
+   for(let z=Math.floor(b.minZ/CELL);z<=Math.floor(b.maxZ/CELL);z++){
+    const bucket=this.cells.get(x+':'+z);
+    if(!bucket)continue;
+    for(const polygon of bucket)if(polygon[seen]!==generation&&overlaps(b,polygon.bounds)){
+     polygon[seen]=generation;out.push(polygon);
+    }
+   }
+  return out;
+ }
 }
 function sameLevel(a,b,overlap=null){
  const x=overlap?overlap.reduce((sum,p)=>sum+p.x,0)/overlap.length:(Math.max(a.bounds.minX,b.bounds.minX)+Math.min(a.bounds.maxX,b.bounds.maxX))/2;
