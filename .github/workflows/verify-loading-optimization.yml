@@ -5,6 +5,8 @@ on:
     paths:
       - 'src/museum-menu.js'
       - 'src/complex-history-menu.js'
+      - 'src/osm-transport.js'
+      - 'index.html'
       - 'src/ukss-exhibit.js'
       - 'src/tua-exhibit.js'
       - 'tests/loading-*'
