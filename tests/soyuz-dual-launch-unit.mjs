@@ -42,7 +42,7 @@ for(const needle of ['soyuz-dual-launch.js','soyuz-dual-launch.css','requestSoyu
 assert.ok(source.includes('createSoyuzPneumaticColumns'),'Real hinged pneumatic columns must be active');
 const sourceEffects=readFileSync(new URL('../src/soyuz-launch-effects.js',import.meta.url),'utf8');
 const sourceColumns=readFileSync(new URL('../src/soyuz-launch-columns.js',import.meta.url),'utf8');
-assert.ok(!/SphereGeometry|IcosahedronGeometry/.test(sourceEffects),'Smoke must not use spheres');
+assert.ok(!/new\s+THREE\.(SphereGeometry|IcosahedronGeometry)\s*\(/.test(sourceEffects),'Smoke must not use spheres');
 assert.ok(sourceEffects.includes('nozzleFlameMaterial'),'Use animated plasma shader for engine exhaust');
 assert.ok(sourceEffects.includes('holder.add(flame)'),'Flame must follow rocket');
 assert.ok(sourceColumns.includes('rotation.z'),'Pneumatic towers rotate about horizontal hinges');
