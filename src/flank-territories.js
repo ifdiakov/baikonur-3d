@@ -4,7 +4,7 @@
 export function createFlankTerritories({flanks,camera,container}){
  const credits=document.createElement('a');credits.className='flank-portrait-credits';
  credits.href='./assets/flank-portraits/credits.html';credits.target='_blank';credits.rel='noopener';
- credits.textContent='Портреты: источники и лицензии ↗';container.append(credits);
+ credits.textContent='Портреты: сведения об изображениях ↗';container.append(credits);
  let alpha=0,layout='horizontal';
  for(const f of flanks){
   f.el.setAttribute('aria-label',f.zone+' · '+f.fullname+' · перейти к площадкам');

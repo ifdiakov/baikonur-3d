@@ -1,5 +1,41 @@
 [
   {
+    "file": "chelomey.webp",
+    "subject": "Владимир Николаевич Челомей",
+    "status": "active",
+    "source": "RocketTrip Google Drive / _Конструкторы",
+    "sourceFileName": "ЧЕЛОМЕЙ.webp",
+    "received": "2026-11-03",
+    "mediaType": "image/webp",
+    "credit": "Provided by the project team; original author not supplied",
+    "license": "Not provided with the uploaded file",
+    "displayChanges": "Portrait crop and grayscale styling in museum card; original WebP bytes preserved."
+  },
+  {
+    "file": "korolev.webp",
+    "subject": "Сергей Павлович Королёв",
+    "status": "active",
+    "source": "RocketTrip Google Drive / _Конструкторы",
+    "sourceFileName": "КОРОЛЕВ.webp",
+    "received": "2026-11-03",
+    "mediaType": "image/webp",
+    "credit": "Provided by the project team; original author not supplied",
+    "license": "Not provided with the uploaded file",
+    "displayChanges": "Portrait crop and grayscale styling in museum card; original WebP bytes preserved."
+  },
+  {
+    "file": "yangel.webp",
+    "subject": "Михаил Кузьмич Янгель",
+    "status": "active",
+    "source": "RocketTrip Google Drive / _Конструкторы",
+    "sourceFileName": "ЯНГЕЛЬ.webp",
+    "received": "2026-11-03",
+    "mediaType": "image/webp",
+    "credit": "Provided by the project team; original author not supplied",
+    "license": "Not provided with the uploaded file",
+    "displayChanges": "Portrait crop and grayscale styling in museum card; original WebP bytes preserved."
+  },
+  {
     "file": "chelomey.jpg",
     "subject": "Владимир Николаевич Челомей",
     "source": "https://commons.wikimedia.org/wiki/File:Vladimir_Chelomey.jpg",
@@ -9,7 +45,8 @@
     "license": "CC BY 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
     "attributionUrl": "https://www.mos.ru/news/item/86218073/",
-    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged."
+    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged.",
+    "status": "archived"
   },
   {
     "file": "korolev.jpg",
@@ -21,7 +58,8 @@
     "license": "Public domain (PD-USGov-NASA on Wikimedia Commons)",
     "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-USGov-NASA",
     "attributionUrl": "https://www.nasa.gov/audience/foreducators/rocketry/home/sergei-korolev.html",
-    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged."
+    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged.",
+    "status": "archived"
   },
   {
     "file": "yangel.jpg",
@@ -34,6 +72,7 @@
     "licenseUrl": "https://commons.wikimedia.org/wiki/Template:PD-UA-exempt",
     "attributionUrl": "https://commons.wikimedia.org/wiki/File:Mikhail_Yangel_2011.jpg",
     "note": "Corrected the previous coin-obverse URL, which did not depict Yangel’s face.",
-    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged."
+    "displayChanges": "Interface applies monochrome styling and a portrait crop; downloaded source bytes are unchanged.",
+    "status": "archived"
   }
 ]

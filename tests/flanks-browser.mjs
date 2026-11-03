@@ -47,7 +47,8 @@ try{
  for(const r of rects){assert.ok(r.x>ui.x+ui.width-6,r.id+' clears the left controls');assert.ok(r.x+r.w<1602,r.id+' fits the viewport');assert.ok(r.y>0&&r.y+r.h<850,r.id+' stays above the timeline');assert.ok(!r.transform.includes('matrix3d'),'Restored cards stay screen-aligned');}
  for(let i=1;i<rects.length;i++)assert.ok(rects[i].x>rects[i-1].x+rects[i-1].w,'Territory cards do not overlap');
  const portraits=await page.locator('.flank-portrait img').evaluateAll(es=>es.map(e=>({src:e.currentSrc||e.src,loaded:e.complete&&e.naturalWidth>0})));
- assert.ok(portraits.every(p=>p.loaded),'All three local archival portraits load');
+ assert.ok(portraits.every(p=>p.loaded),'All three local WebP portraits load');
+ for(const file of ['chelomey.webp','korolev.webp','yangel.webp'])assert.ok(portraits.some(p=>new URL(p.src).pathname.endsWith('/assets/flank-portraits/'+file)),'New portrait appears on the correct flank: '+file);
  await page.screenshot({path:`qa-flanks/${prefix}-cards-evening.png`,timeout:90000});
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});await step();await page.screenshot({path:`qa-flanks/${prefix}-cards-day.png`,timeout:90000});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(!q.evening.evening);});
  // The wider inspection view includes the complete perimeter and the empty

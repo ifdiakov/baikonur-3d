@@ -1332,13 +1332,13 @@ const flankViewCenter=polygonCenter(FLANK_OUTLINE);
 const flanks=[
  {key:"left",zone:"ЛЕВЫЙ ФЛАНГ",x:235,y:340,
   surname:"ЧЕЛОМЕЙ",fullname:"Владимир Николаевич Челомей",initials:"ВН",
-  photo:"./assets/flank-portraits/chelomey.jpg"},
+  photo:"./assets/flank-portraits/chelomey.webp"},
  {key:"center",zone:"ЦЕНТРАЛЬНЫЙ ФЛАНГ",x:650,y:340,
   surname:"КОРОЛЁВ",fullname:"Сергей Павлович Королёв",initials:"СП",
-  photo:"./assets/flank-portraits/korolev.jpg"},
+  photo:"./assets/flank-portraits/korolev.webp"},
  {key:"right",zone:"ПРАВЫЙ ФЛАНГ",x:1070,y:340,
   surname:"ЯНГЕЛЬ",fullname:"Михаил Кузьмич Янгель",initials:"МК",
-  photo:"./assets/flank-portraits/yangel.jpg",photoAlt:"Портрет Михаила Кузьмича Янгеля на памятной марке Укрпочты, 2011"}
+  photo:"./assets/flank-portraits/yangel.webp"}
 ].map((f,i)=>{
  const projected=FLANK_CENTERS[f.key];f={...f,x:projected[0],y:projected[1]};
  const district=FLANK_DISTRICTS.find(d=>d.key===f.key);
