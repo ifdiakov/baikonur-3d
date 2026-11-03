@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-v1';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v2';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
 // replacing each source way with thousands of individual draw calls.
-export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange}){
+export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange,onChange=()=>{},terrainHeightAt=null,defaultEdits=null}){
  const base=roads.filter(r=>r?.points?.length>1).map(r=>({
   id:String(r.id),width:Math.max(1,Number(r.width)||2),
   points:r.points.map(p=>Array.isArray(p)?[...p]:[p.x,p.y,p.z])
@@ -21,10 +22,18 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  const draftMaterial=new THREE.LineBasicMaterial({color:0xffbd80,depthTest:false});
  const draftPointMaterial=new THREE.MeshBasicMaterial({color:0xffbd80,depthTest:false});
  const draftPointGeometry=new THREE.SphereGeometry(.8,8,6);
- const maskCanvas=document.createElement('canvas');maskCanvas.width=maskCanvas.height=2048;
- const maskContext=maskCanvas.getContext('2d',{alpha:true});
- const mask=new THREE.CanvasTexture(maskCanvas);mask.generateMipmaps=false;mask.minFilter=THREE.LinearFilter;mask.magFilter=THREE.LinearFilter;
- const maskBounds={value:new THREE.Vector4(0,0,1,1)},maskEnabled={value:0};
+ // Three medium-sized atlases keep even the narrow service-road cuts
+ // subpixel-free across the far-flung OSM map; source altitude prevents a
+ // removed bridge from puncturing the road below it.
+ const MASK_SIZE=2048,TILE_COUNT=3;
+ const tiles=Array.from({length:TILE_COUNT},()=>{
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=MASK_SIZE;
+  const context=canvas.getContext('2d',{alpha:true});
+  const texture=new THREE.CanvasTexture(canvas);texture.generateMipmaps=false;
+  texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;
+  return {canvas,context,texture,bounds:{value:new THREE.Vector4(0,0,1,1)},enabled:{value:0},strokes:0,worldUnitsPerPixel:0};
+ });
+ const maskWorld=pos=>pos[2]>600?2:pos[0]>175?1:0;
  const targets=new Set(['OSM · единые обочины','OSM · единое дорожное полотно','OSM · асфальт трассы',
    'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки']);
  for(const mesh of roadMeshes){
@@ -35,19 +44,29 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   const previous=material.onBeforeCompile;
   material.onBeforeCompile=shader=>{
    previous?.(shader);
-   shader.uniforms.roadEditorMask={value:mask};
-   shader.uniforms.roadEditorBounds=maskBounds;
-   shader.uniforms.roadEditorEnabled=maskEnabled;
+   const uniforms=[];
+   for(let i=0;i<TILE_COUNT;i++){
+    shader.uniforms['roadEditorMask'+i]={value:tiles[i].texture};
+    shader.uniforms['roadEditorBounds'+i]=tiles[i].bounds;
+    shader.uniforms['roadEditorEnabled'+i]=tiles[i].enabled;
+    uniforms.push('uniform sampler2D roadEditorMask'+i+'; uniform vec4 roadEditorBounds'+i+'; uniform float roadEditorEnabled'+i+';');
+   }
    shader.vertexShader=shader.vertexShader.replace('#include <common>',
-    '#include <common>\nvarying vec2 vRoadEditWorld;');
+    '#include <common>\nvarying vec3 vRoadEditorPosition;');
    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
-    '#include <begin_vertex>\nvRoadEditWorld = (modelMatrix * vec4(position,1.0)).xz;');
+    '#include <begin_vertex>\nvRoadEditorPosition = (modelMatrix * vec4(position,1.0)).xyz;');
    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-    '#include <common>\nvarying vec2 vRoadEditWorld;\nuniform sampler2D roadEditorMask;\nuniform vec4 roadEditorBounds;\nuniform float roadEditorEnabled;');
+    '#include <common>\nvarying vec3 vRoadEditorPosition;\n'+uniforms.join('\n'));
+   const clip=Array.from({length:TILE_COUNT},(_,i)=>
+    'if(roadEditorEnabled'+i+'>0.5){vec2 uv=(vRoadEditorPosition.xz-roadEditorBounds'+i+'.xy)/roadEditorBounds'+i+'.zw;'+
+    'if(all(greaterThanEqual(uv,vec2(0.0)))&&all(lessThanEqual(uv,vec2(1.0)))){'+
+    'vec4 cut=texture2D(roadEditorMask'+i+',uv);'+
+    'if(cut.r>0.5&&abs(vRoadEditorPosition.y-(cut.g*48.0-16.0))<0.85)discard;}}'
+   ).join('\n');
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
-    '#include <clipping_planes_fragment>\nif(roadEditorEnabled > 0.5) {\n vec2 uv=(vRoadEditWorld-roadEditorBounds.xy)/roadEditorBounds.zw;\n if(all(greaterThanEqual(uv,vec2(0.0))) && all(lessThanEqual(uv,vec2(1.0))) && texture2D(roadEditorMask,uv).r > 0.48) discard;\n}');
+    '#include <clipping_planes_fragment>\n'+clip);
   };
-  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v1';
+  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v2';
   material.needsUpdate=true;
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
