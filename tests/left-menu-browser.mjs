@@ -4,9 +4,9 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261103-museum-eight-sections-v8';
-const sections=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','infrastructureAccordion','heroesAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','ИНФРАСТРУКТУРА','ГЕРОИ И ИСТОРИИ','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261103-museum-six-sections-v9';
+const sections=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -123,17 +123,19 @@ try{
  const catalogue=await page.evaluate(()=>{
   const q=window.__BAIKONUR_QA,s=q.stats();return{sections:q.menu.stats().sections,sites:s.sites,stations:s.stations,research:s.researchObjects,history:s.historyEvents};
  });
- const launch=catalogue.sections.find(s=>s.id==='sitesAccordion'),infrastructure=catalogue.sections.find(s=>s.id==='infrastructureAccordion'),graveyard=catalogue.sections.find(s=>s.id==='graveyardAccordion');
+ const launch=catalogue.sections.find(s=>s.id==='sitesAccordion'),graveyard=catalogue.sections.find(s=>s.id==='graveyardAccordion');
+ assert.equal(await page.locator('#infrastructureAccordion,#heroesAccordion,#infrastructureList,#infrastructureSearch').count(),0,'Removed categories must not leave hidden controls');
  const siteIds=catalogue.sections.flatMap(section=>section.siteIds);
- assert.equal(siteIds.length,catalogue.sites+catalogue.stations,'Every existing rendered object remains reachable');
- assert.equal(new Set(siteIds).size,siteIds.length,'A site has one catalogue entry, with no duplicate category');
+ assert.equal(siteIds.length,40,'The launch category retains all launch sites and silos');
+ assert.equal(new Set(siteIds).size,siteIds.length,'No map site is duplicated in the remaining sidebar');
  for(const id of ['pad-1','pad-31','pad-41','pad-45','pad-81','pad-90','pad-109','pad-110','pad-200','pad-250'])assert.ok(launch.siteIds.includes(id),id+' is a launch or stand-start complex');
- for(const id of ['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-130','pad-175'])assert.ok(infrastructure.siteIds.includes(id),id+' is infrastructure');
  assert.equal(launch.count,10,'Nine named launch complexes and one silo group form the top-level launch menu');
  assert.equal(launch.siteCount,40,'Grouping keeps all 40 physical launch facilities reachable');
- assert.equal(infrastructure.siteIds.length,58+catalogue.stations);
- assert.equal(graveyard.researchIds.length,catalogue.research);assert.equal(catalogue.history,18,'The historical data is preserved after removing its bottom strip');
- assert.equal(await page.locator('#infrastructureList .entry-station').count(),catalogue.stations,'Railway stations and depots stay in infrastructure');
+ assert.equal(graveyard.researchIds.length,catalogue.research);assert.equal(catalogue.history,18,'Historical and field research records remain in the museum');
+ for(const id of ['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-130','pad-175']){
+  const found=await page.evaluate(id=>Boolean(window.__BAIKONUR_QA.siteState(id)),id);
+  assert.equal(found,true,id+' remains in the 3D map even without an infrastructure menu');
+ }
  evidence.catalogue=catalogue;
  for(const id of sections)assert.equal(await page.locator('#'+id).evaluate(element=>element.open),false);
  assert.equal(await page.locator('#mobileMenuToggle').isVisible(),false);
@@ -150,10 +152,8 @@ try{
  await page.locator('#year').focus();await page.keyboard.press('ArrowLeft');
  assert.equal(await page.locator('#yearVal').textContent(),'2025','The compact year control remains keyboard-accessible');
  await page.keyboard.press('ArrowRight');assert.equal(await page.locator('#yearVal').textContent(),'2026');
- await openSection('infrastructureAccordion');await page.locator('#infrastructureSearch').fill('Юбилейный');
- assert.equal(await page.locator('#infrastructureList [data-site-id="pad-251"]').count(),1);
- await page.locator('#infrastructureList [data-site-id="pad-251"]').click();await selectedSite('pad-251');
- await page.locator('#infrastructureSearch').fill('');await shot('desktop-infrastructure');
+ await page.evaluate(()=>window.__BAIKONUR_QA.openObject('pad-251'));await selectedSite('pad-251');
+ await shot('desktop-yubileiny');
  await openSection('sitesAccordion');
  assert.deepEqual(await page.locator('#list > .entry').evaluateAll(elements=>elements.map(element=>element.dataset.siteId)),MUSEUM_LAUNCH_ENTRIES.map(entry=>entry.id),'The nine named launch complexes remain separate top-level buttons');
  const siloGroup=page.locator('#'+MUSEUM_SILO_GROUP.id),siloEntries=siloGroup.locator('[data-site-id]');
@@ -198,12 +198,10 @@ try{
  assert.equal(await page.locator('#mythsAccordion .museum-menu-empty').count(),0);
  await openSection('traditionsAccordion');
  assert.equal(await page.locator('#traditionsAccordion [data-museum-action]').count(),1,'Recorded crew coin anecdote belongs to traditions');
- await openSection('heroesAccordion');
- assert.equal(await page.locator('#heroesAccordion [data-museum-action]').count(),7,'Design schools and six archival stories have their own section');
  await openSection('reconstructionsAccordion');
  assert.equal(await page.locator('#reconstructionsAccordion [data-museum-action]').count(),8,'Real animations are grouped separately from static exhibits');
  const archiveActions=await page.locator('.museum-section [data-museum-action^="story:"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.museumAction));
- assert.equal(archiveActions.length,12,'All reviewed stories remain accessible in the correct sections');
+ assert.equal(archiveActions.length,6,'Six themed archive stories remain in the navigation; other records stay in site knowledge');
  assert.equal(new Set(archiveActions).size,archiveActions.length,'No archival story is listed twice');
  await openSection('equipmentAccordion');
  assert.equal(await page.locator('#traditionsAccordion').evaluate(element=>element.open),false);
