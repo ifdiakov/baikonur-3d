@@ -98,7 +98,9 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    const a=p[i-1],b=p[i],n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/2.2));
    for(let k=1;k<=n;k++)out.push(a.clone().lerp(b,k/n));
   }
-  out.forEach(v=>{v.y=Math.max(v.y,surfaceAt(v.x,v.z)+.04);});
+  // Control points have already been projected onto the actual scene.
+  // Do not perform a costly raycast against the million-triangle OSM layer
+  // for each subdivided segment or for every edit/Undo/Redo.
   return out;
  }
  function roadStrip(points,width,lift=0){
@@ -138,9 +140,14 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  function applyMask(){
   maskContext.clearRect(0,0,maskCanvas.width,maskCanvas.height);
   if(!state.hidden.length){maskEnabled.value=0;mask.needsUpdate=true;return;}
-  const all=state.hidden.flatMap(r=>r.points),spread=12;
-  const minX=Math.min(...all.map(p=>p[0]))-spread,maxX=Math.max(...all.map(p=>p[0]))+spread;
-  const minZ=Math.min(...all.map(p=>p[2]))-spread,maxZ=Math.max(...all.map(p=>p[2]))+spread;
+  // Compute bounds without materializing arrays/spreading tens of thousands
+  // of edited coordinates (which could otherwise hit the argument limit).
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(const road of state.hidden)for(const p of road.points){
+   minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
+   minZ=Math.min(minZ,p[2]);maxZ=Math.max(maxZ,p[2]);
+  }
+  const spread=12;minX-=spread;maxX+=spread;minZ-=spread;maxZ+=spread;
   const centerX=(minX+maxX)/2,centerZ=(minZ+maxZ)/2;
   const sizeX=Math.max(32,maxX-minX),sizeZ=Math.max(32,maxZ-minZ);
   const left=centerX-sizeX/2,top=centerZ+sizeZ/2;
