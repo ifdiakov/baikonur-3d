@@ -167,10 +167,19 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    for(const r of items){
     ctx.lineWidth=r.width+(r.materialKind==='added'?.05:.20);
     for(let j=1;j<r.points.length;j++){
-     const a=r.points[j-1],b=r.points[j];
-     const altitude=(a[1]+b[1])/2,grade=Math.round(255*Math.max(0,Math.min(1,(altitude+16)/48)));
-     ctx.strokeStyle='rgb(255,'+grade+',0)';
-     ctx.beginPath();ctx.moveTo(a[0],a[2]);ctx.lineTo(b[0],b[2]);ctx.stroke();
+     const a=r.points[j-1],b=r.points[j],horizontal=Math.hypot(b[0]-a[0],b[2]-a[2]);
+     // Long sloping removals must retain their source elevation along the
+     // WHOLE stroke; one mean-grade color would leave tears at both ends.
+     const steps=Math.max(1,Math.ceil(Math.abs(b[1]-a[1])/.25),Math.ceil(horizontal/16));
+     for(let k=0;k<steps;k++){
+      const t=k/steps,u=(k+1)/steps,m=(t+u)/2;
+      const altitude=a[1]+(b[1]-a[1])*m,grade=Math.round(255*Math.max(0,Math.min(1,(altitude+16)/48)));
+      ctx.strokeStyle='rgb(255,'+grade+',0)';
+      ctx.beginPath();
+      ctx.moveTo(a[0]+(b[0]-a[0])*t,a[2]+(b[2]-a[2])*t);
+      ctx.lineTo(a[0]+(b[0]-a[0])*u,a[2]+(b[2]-a[2])*u);
+      ctx.stroke();
+     }
     }
    }
    ctx.setTransform(1,0,0,1,0,0);tile.texture.needsUpdate=true;
