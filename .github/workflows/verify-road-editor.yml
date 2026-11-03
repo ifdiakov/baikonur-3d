@@ -6,6 +6,8 @@ on:
       - 'src/road-editor.js'
       - 'src/road-editor-core.js'
       - 'src/road-editor-mesh.js'
+      - 'src/road-junction-repair.js'
+      - 'tests/road-junction-repair.mjs'
       - 'src/road-geometry-cut.js'
       - 'tests/road-geometry-cut.mjs'
       - 'src/road-editor-style.js'
@@ -36,6 +38,7 @@ jobs:
         run: |
           node --check src/road-editor.js
           node --check src/road-editor-core.js
+          node --check src/road-junction-repair.js
           node --check src/road-mask-tiles.js
           node --check src/road-editor-style.js
           node tests/road-editor-style.mjs
@@ -48,6 +51,7 @@ jobs:
       - name: Verify repaired road mesh topology and physical source cutouts
         run: |
           node tests/road-editor-mesh.mjs
+          node tests/road-junction-repair.mjs
           node tests/road-geometry-cut.mjs
       - name: Serve checkout
         run: |
