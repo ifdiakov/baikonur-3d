@@ -48,6 +48,7 @@ for(const r of owner.added){
  }
 }
 assert(ownerMesh.stats.overlaps>0,'Owner junctions should be unioned into one continuous pavement');
+assert(ownerMesh.stats.endCaps>0,'At least one owner access terminus should have a clean rounded cap');
 assert(owner.added.some(r=>r.id==='road-31'&&r.points.some(p=>p[1]>20)),'Elevated road-31 is not loaded');
 const ramp=ownerMesh.paths.find(p=>p.id==='road-31').points;
 assert(ramp.length>70,'The steep owner road has too few vertical samples');
