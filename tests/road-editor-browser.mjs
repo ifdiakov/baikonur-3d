@@ -22,6 +22,20 @@ try{
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats());
  assert(initial.sourceRoadPaths>100);
  assert.equal(initial.added,19,'19 owner roads including road-31 must be published');assert.equal(initial.hidden,302,'302 owner cuts must be published');
+ assert.equal(initial.styleVersion,'neighbour-road-parity-v1');
+ assert.equal(initial.sourceMaterialColors.asphalt,'#adb2b3','New asphalt must match OSM grey');
+ assert.equal(initial.sourceMaterialColors.shoulder,'#c5c1b4','New shoulders must match old shoulders');
+ assert.equal(initial.sourceMaterialColors.ground,'#b2a58d','Ground access must match OSM dirt');
+ assert.equal(initial.sourceMaterialColors.highway,'#42494c','Highways must use the same asphalt material');
+ assert.equal(initial.roadStyles.length,19);
+ assert(initial.mesh.markedRoads>=1,'New marked access roads have no white/yellow lines');
+ const northern=initial.roadStyles.find(r=>r.id==='road-31');
+ assert(northern&&northern.sourceStart,'Elevated road must inherit actual original entry from OSM');
+ assert(['asphalt','highway'].includes(northern.kind));
+ assert(initial.maskedMeshNames.includes('OSM · единые обочины'));
+ assert(initial.maskedMeshNames.includes('OSM · единое дорожное полотно'));
+ assert(initial.maskedMeshNames.includes('OSM · разметка'));
+
  assert(initial.maskTiles.length===5&&initial.maskTiles.some(t=>t.enabled));
  assert(initial.maskTiles.every(t=>!t.enabled||t.worldUnitsPerPixel<.5),'Mask must not tear a 1.6-unit service road');
  assert(initial.mask.duplicateCuts>=10,'Exact duplicate owner cuts must be coalesced in rendering');
