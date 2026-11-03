@@ -202,7 +202,7 @@ export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart
   if(follow){
    entry.holder.updateWorldMatrix(true,false);
    const rocket=entry.holder.getWorldPosition(V());
-   if(lastFollowPosition&&sample.airborne){
+   if(lastFollowPosition){
     const shift=rocket.clone().sub(lastFollowPosition);
     camera.position.add(shift);controls.target.add(shift);
    }
@@ -266,14 +266,18 @@ export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart
   apply();return true;
  }
  function pause(){if(!active)return false;paused=true;lastNow=null;apply();return true;}
+ function restart(){
+  if(!active)return false;
+  const id=siteId;stop({releaseCamera:true});return start(id);
+ }
  function play(){
   if(!active)return false;
-  if(time>=SOYUZ_END){time=SOYUZ_START;speed=6;byId('soyuzSpeed').value='6';lastFollowPosition=null;}
+  if(time>=SOYUZ_END)return restart();
   paused=false;lastNow=null;apply();return true;
  }
  function seek(value){
   if(!active)return false;
-  time=clamp(Number(value)||0,SOYUZ_START,SOYUZ_END);pause();lastFollowPosition=null;return true;
+  time=clamp(Number(value)||0,SOYUZ_START,SOYUZ_END);lastFollowPosition=follow?entry?.holder.getWorldPosition(V()):null;pause();return true;
  }
  function update(now){
   if(!active)return;
@@ -287,7 +291,7 @@ export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart
  }
  byId('soyuzClose').onclick=()=>stop();
  byId('soyuzPlay').onclick=()=>time>=SOYUZ_END?play():paused?play():pause();
- byId('soyuzRestart').onclick=()=>{if(active)start(siteId);};
+ byId('soyuzRestart').onclick=restart;
  byId('soyuzSeek').oninput=e=>seek(e.target.value);
  byId('soyuzSpeed').onchange=e=>{speed=Number(e.target.value)||1;lastNow=null;};
  byId('soyuzFollow').onclick=()=>{follow=true;lastFollowPosition=entry?.holder.getWorldPosition(V())||null;apply();};
