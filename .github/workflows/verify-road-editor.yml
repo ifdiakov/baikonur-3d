@@ -6,6 +6,7 @@ on:
       - 'src/road-editor.js'
       - 'src/road-editor-core.js'
       - 'src/road-editor-mesh.js'
+      - 'data/road-edits-authoritative-20261103.json'
       - 'src/road-editor.css'
       - 'src/osm-transport.js'
       - 'tests/road-editor-*.mjs'
@@ -13,7 +14,7 @@ on:
       - 'index.html'
   workflow_dispatch:
 concurrency:
-  group: rockettrip-road-editor-${{ github.ref }}
+  group: rockettrip-road-editor-${{ github.sha }}
   cancel-in-progress: true
 permissions:
   contents: read
