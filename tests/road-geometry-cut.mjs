@@ -65,6 +65,48 @@ const fullyRemoved=physicallyCutRoadGeometry(strip(-.6,.6,-1.8,1.8),withoutCross
  {surfaceName:'OSM · единое дорожное полотно'});
 assert(!rays(fullyRemoved.geometry,[0,0]).length,
  'Do not leave old road fragments in the steppe when no live crossing exists');
+
+// Restore the ACTUAL adjoining through-road, while still removing an old
+// spur on both sides of its junction. The owner edit can cross in the
+// middle of a long segment: its midpoint need not be at the intersection.
+const mainRoad={id:'osm-road-521',width:3.6,points:[[-12,0,8],[12,0,8]]};
+const obsoleteRoad={id:'osm-road-520',width:2.2,points:[[0,0,-15],[0,0,15]]};
+const removeSpur=[{sourceId:obsoleteRoad.id,width:obsoleteRoad.width,points:obsoleteRoad.points}];
+const indexRestored=makeRoadSurfaceCutIndex(removeSpur,[],{sourceRoads:[mainRoad,obsoleteRoad]});
+assert(indexRestored.restoredCrossings>=1,'Source cross-road protection was not built');
+const crossingPavement=strip(-12,12,6.2,9.8);
+const crossingGeometry=physicallyCutRoadGeometry(crossingPavement,indexRestored,
+ {surfaceName:'OSM · единое дорожное полотно'});
+for(const x of [-1.0,-.5,0,.5,1.0])
+ assert(rays(crossingGeometry.geometry,[x,8]).length>0,
+  'Adjoining through road must be continuous at the deleted side-road junction, x='+x);
+const erasedSpurMesh=strip(-1.1,1.1,-15,15);
+const erasedSpur=physicallyCutRoadGeometry(erasedSpurMesh,indexRestored,
+ {surfaceName:'OSM · единое дорожное полотно'});
+for(const z of [-9,-5,-2,12])
+ assert(rays(erasedSpur.geometry,[0,z]).length===0,
+  'The obsolete spur must remain removed away from the active junction, z='+z);
+assert(rays(erasedSpur.geometry,[0,8]).length>0,
+ 'The original junction may remain filled inside the protected through road');
+
+// If BOTH source ways were removed by the owner, do not reconstruct either
+// road at their crossing.
+const bothHidden=makeRoadSurfaceCutIndex([...removeSpur,
+ {sourceId:mainRoad.id,width:mainRoad.width,points:mainRoad.points}],[],
+ {sourceRoads:[mainRoad,obsoleteRoad]});
+const bothPavements=physicallyCutRoadGeometry(crossingPavement,bothHidden,
+ {surfaceName:'OSM · единое дорожное полотно'});
+assert(!rays(bothPavements.geometry,[0,8]).length,
+ 'Do not reintroduce a crossing when its main road was also explicitly removed');
+
+// An elevated road does not protect a missing lower road just because their
+// X/Z centerlines intersect.
+const highRoad={...mainRoad,id:'osm-road-bridge',points:mainRoad.points.map(p=>[p[0],p[1]+5,p[2]])};
+const underpassCuts=makeRoadSurfaceCutIndex(removeSpur,[],{sourceRoads:[obsoleteRoad,highRoad]});
+assert.equal(underpassCuts.restoredCrossings,0,'A five-unit bridge is not a ground-level junction');
+const exposedDeleted=physicallyCutRoadGeometry(erasedSpurMesh,underpassCuts,
+ {surfaceName:'OSM · единое дорожное полотно'});
+assert(!rays(exposedDeleted.geometry,[0,8]).length,'The cut must remain beneath an elevated bridge');
 console.log('ROAD_PHYSICAL_GEOMETRY_PASS',JSON.stringify({
  version:ROAD_GEOMETRY_CUT_VERSION,clips:r.stats.clipped,triangles:r.stats.outputTriangles,
  remainder:rr.stats.outputTriangles,gradePreserved:true,uvPreserved:true
