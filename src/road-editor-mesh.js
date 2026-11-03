@@ -1,11 +1,12 @@
 import * as THREE from 'three';
 import {subtractRoadPolygon} from './road-surface.js?v=20261103-road-mesh-v2';
+import {repairRoadTriangleMesh,ROAD_JUNCTION_REPAIR_VERSION} from './road-junction-repair.js?v=20261103-road-seam-v1';
 import {applyEditedRoadEndpointGrades,widthAtEditedRoad,ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,
  ROAD_EDIT_SURFACE_LIFT,ROAD_EDIT_HIGHWAY_LIFT,ROAD_EDIT_PAINT_LIFT,ROAD_EDIT_WHITE_EDGE_WIDTH,
  ROAD_EDIT_WHITE_EDGE_INSET,ROAD_EDIT_CENTER_LINE_WIDTH,ROAD_EDIT_YELLOW_WIDTH,ROAD_EDIT_YELLOW_OFFSET}
  from './road-editor-style.js?v=20261103-road-parity-v3';
 
-export const ROAD_EDIT_MESH_VERSION='stitched-roads-source-materials-v4';
+export const ROAD_EDIT_MESH_VERSION='stitched-road-union-welded-v5';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const planar=(a,b)=>Math.hypot(b[0]-a[0],b[2]-a[2]);
 const lerp=(a,b,t)=>a.map((v,k)=>v+(b[k]-v)*t);
@@ -218,9 +219,50 @@ function terminusCap(point,width,lift,terrainHeightAt){
  });
  return signArea(p[0],p[1],p[2])>0?p:p.reverse();
 }
-export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
+function appendJunctionAprons(roads,paths,buckets,terrainHeightAt){
+ let joined=0;
+ // Only actual close contacts are filled. Roads at different heights remain
+ // independent and keep proper clearance at flyovers / rail bridges.
+ const contacts=new Set();
+ for(const path of paths){
+  const owner=roads.find(r=>r.id===path.id),profile=owner?.profile||{};
+  if(!owner)continue;
+  for(const [index,ordinal]of [[0,0],[path.points.length-1,1]]){
+   const p=path.points[index],width=path.widths?.[index]??path.width;
+   let best=null;
+   for(const host of paths){
+    if(host.id===path.id)continue;
+    const q=closest(host.points,p);
+    const hostWidth=host.widths?.[q.segment]??host.width;
+    if(q.distance>Math.max(.85,(width+hostWidth)*.43)||Math.abs(q.point[1]-p[1])>.60)continue;
+    if(!best||q.distance<best.distance)best={...q,width:hostWidth,kind:host.style,source:host.id};
+   }
+   // Also preserve T-junctions where a new road ends on the original OSM
+   // road, which is cut by the source layer rather than in these buckets.
+   const oldMatch=ordinal?profile.matching?.end:profile.matching?.start;
+   if(!best&&oldMatch?.distance<=Math.max(.85,(width+oldMatch.width)*.42)){
+    best={point:p,distance:oldMatch.distance,width:oldMatch.width,kind:profile.classId,source:oldMatch.id};
+   }
+   if(!best)continue;
+   const classId=profile.classId==='highway'?'highway':profile.classId==='ground'?'ground':'asphalt';
+   if(best.kind&&best.kind!==classId&&best.source?.startsWith('road-'))continue;
+   const x=(p[0]+best.point[0])*.5,z=(p[2]+best.point[2])*.5,y=(p[1]+best.point[1])*.5;
+   const radius=Math.max(width,best.width)*.5+Math.min(.55,best.distance*.47)+.13;
+   const key=classId+':'+Math.round(x/.6)+':'+Math.round(z/.6);
+   if(contacts.has(key))continue;contacts.add(key);
+   const point=[x,y,z],lift=classId==='highway'?ROAD_EDIT_HIGHWAY_LIFT:ROAD_EDIT_SURFACE_LIFT;
+   buckets[classId].push(terminusCap(point,radius*2,lift,terrainHeightAt));
+   buckets.shoulder.push(terminusCap(point,radius*2+ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,terrainHeightAt));
+   joined++;
+  }
+ }
+ return joined;
+}
+export function buildEditedRoadMeshes(roads,{terrainHeightAt=null,existingRoads=[]}={}){
  const buckets={asphalt:[],highway:[],ground:[],shoulder:[],paintWhite:[],paintYellow:[]},paths=[];
- const stats={segments:0,joins:0,overlaps:0,endCaps:0,markedRoads:0,sourceClasses:{asphalt:0,highway:0,ground:0}};let sourceQuads=0;
+ const stats={segments:0,joins:0,overlaps:0,endCaps:0,markedRoads:0,
+  junctionRepairVersion:ROAD_JUNCTION_REPAIR_VERSION,seamWelds:0,gradeAligned:0,smallHolesSealed:0,
+  sourceClasses:{asphalt:0,highway:0,ground:0}};let sourceQuads=0;
  for(const r of roads){
   const points=sampleEditedRoad(r,{terrainHeightAt}),profile=r.profile||{classId:r.surface==='ground'?'ground':'asphalt'};
   const lengths=[0];for(let i=1;i<points.length;i++)lengths.push(lengths[i-1]+planar(points[i-1],points[i]));
@@ -248,9 +290,17 @@ export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
    emitEditedRoadPaint(buckets,r,points,terrainHeightAt);stats.markedRoads++;
   }
  }
+ stats.joins=appendJunctionAprons(roads,paths,buckets,terrainHeightAt);
  const geometries={};
  for(const [kind,quads]of Object.entries(buckets)){
-  const union=unionQuads(quads);geometries[kind]=polygonGeometry(union.polygons);stats.overlaps+=union.overlaps;
+  const union=unionQuads(quads),raw=polygonGeometry(union.polygons);
+  const finished=repairRoadTriangleMesh(raw);
+  raw.dispose();
+  geometries[kind]=finished.geometry;
+  stats.overlaps+=union.overlaps;
+  stats.seamWelds+=finished.stats.welded;
+  stats.gradeAligned+=finished.stats.gradeAligned;
+  stats.smallHolesSealed+=finished.stats.holesSealed;
  }
  return {geometries,paths,stats:{...stats,sourceRoads:roads.length,sourceQuads}};
 }
