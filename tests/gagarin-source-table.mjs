@@ -26,7 +26,11 @@ fail=false;assert.deepEqual(await Promise.all([result.table.load(),result.table.
 assert.equal(result.table.stats().status,'ready');assert.equal(fallback.parent,null);assert.equal(rocket.parent,root);
 assert.equal(root.userData.gagarinModel.ductPlan,duct);assert.equal(root.userData.gagarinModel.railPort,ports);
 assert.deepEqual(ports,GAGARIN_RAIL_PORT);assert.equal(terrain.stats().count,1);
-assert(yard.every(o=>o.parent===legacy));assert(event.removed.length>10);assert.equal(event.added.length,2);
+assert(yard.every(o=>o.parent===legacy));
+const apron=yard.find(o=>o.userData.museumComponent==='western-forecourt');root.updateWorldMatrix(true,true);
+const apronBounds=new THREE.Box3().setFromObject(apron);
+const nearTable=new THREE.Raycaster(root.localToWorld(new THREE.Vector3(8,2,10)),new THREE.Vector3(0,-1,0));
+assert.equal(nearTable.intersectObject(apron,false).length,0,'Old yard does not cover the copied launch chamber');assert(event.removed.length>10);assert.equal(event.added.length,2);
 assert(event.added.every(o=>o.userData.museumComponent==='gagarin-site31-table'));
 root.updateWorldMatrix(true,true);
 const hit=(x,z,y=3)=>new THREE.Raycaster(root.localToWorld(new THREE.Vector3(x,y,z)),new THREE.Vector3(0,-1,0)).intersectObjects(root.children,true).map(h=>root.worldToLocal(h.point.clone()).y);

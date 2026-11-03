@@ -42,6 +42,7 @@ jobs:
       - name: Serve checkout
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
       - name: Test full museum, load recovery, views and mobile
+        timeout-minutes: 7
         run: node tests/site31-source-browser.mjs
       - name: Verify published version and repeat browser checks
         if: github.event_name != 'pull_request'

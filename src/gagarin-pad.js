@@ -148,7 +148,9 @@ export function buildGagarinPad(root,options={}) {
 
   // 01 / WEST RAIL AXIS — separate bridge approach, track ballast,
   // two low side utility yards with blue-roofed service buildings.
-  surface([[-43,140],[43,140],[56,85],[45,15],[-45,15],[-57,86]],.12,'oldConcrete','western-forecourt');
+  // The copied source table reaches z=31.96m. Start the retained yard at
+  // z=32m so its old solid apron cannot cover the source launch opening.
+  surface([[-43,140],[43,140],[56,85],[53,64],[-53,64],[-57,86]],.12,'oldConcrete','western-forecourt');
   // The complete approach now uses the shared metric cross-section. Its
   // actual running surface meets the external head-level socket exactly.
   const railAt=()=>({gauge:RAIL_PROFILE.gauge/MUSEUM_METRE,y:GAGARIN_RAIL_PORT[1],

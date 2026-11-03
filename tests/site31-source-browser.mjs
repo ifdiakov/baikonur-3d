@@ -2,15 +2,19 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-site31',prefix=process.env.QA_PREFIX||'local';await mkdir(out,{recursive:true});
-const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
-const page=await browser.newPage({viewport:{width:1600,height:1000}});page.setDefaultTimeout(90000);
-const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0;
-// Exercise failure + recovery against the real asset loader in the full museum.
-await page.route('**/assets/models/site31/model-v1.glb*',route=>{if(new URL(route.request().url()).searchParams.get('consumer')==='gagarin')return route.continue();requests++;return requests===1?route.abort():route.continue();});
-await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__SITE31_FRAME=()=>{const fn=pending;pending=null;fn?.(performance.now());};});
+const errors=[];let requests=0;
 let phase='startup';
 const checkpoint=async name=>{phase=name;console.log('BROWSER_PHASE',prefix,name);await writeFile(`${out}/${prefix}-progress.json`,JSON.stringify({phase,errors,requests,time:new Date().toISOString()}));};
 const watchdog=setTimeout(()=>{console.error('BROWSER_WATCHDOG',JSON.stringify({phase,errors,requests}));process.exit(1);},420000);watchdog.unref();
+await checkpoint('launch-browser');
+const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
+await checkpoint('new-page');
+const page=await browser.newPage({viewport:{width:1600,height:1000}});page.setDefaultTimeout(90000);
+page.on('pageerror',e=>errors.push(e.message));
+await checkpoint('route-init');
+// Exercise failure + recovery against the real asset loader in the full museum.
+await page.route('**/assets/models/site31/model-v1.glb*',route=>{if(new URL(route.request().url()).searchParams.get('consumer')==='gagarin')return route.continue();requests++;return requests===1?route.abort():route.continue();});
+await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__SITE31_FRAME=()=>{const fn=pending;pending=null;fn?.(performance.now());};});
 const frame=()=>page.evaluate(()=>window.__SITE31_FRAME());
 try{
  await checkpoint('navigate');
