@@ -2,12 +2,21 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  ROAD_MASK_TILE_COUNT,roadMaskTileIndex,
- partitionRoadMaskStrokes,roadMaskTileBounds
+ partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth
 } from '../src/road-mask-tiles.js';
 
 const owner=JSON.parse(readFileSync(new URL('../data/road-edits-authoritative-20261103.json',import.meta.url),'utf8'));
 assert.equal(owner.added.length,19);
 assert.equal(owner.hidden.length,302);
+assert(roadMaskCoverageWidth(1.6,'hidden')>=2.37,
+ 'Deleted road mask must erase both 30 cm shoulders, not leave two pale contours');
+assert(roadMaskCoverageWidth(3.6,'added')>3.6+.6,
+ 'Replacement roads must own their full new asphalt and shoulder footprint');
+const widths=partitionRoadMaskStrokes([],[{id:'widening',width:3.6,widths:[3.6,2.8,1.6],
+ points:[[0,.72,0],[20,.72,0],[40,.72,0]]}]).tiles.flat();
+assert(widths.some(t=>Math.abs(t.width-3.2)<1e-6));
+assert(widths.some(t=>Math.abs(t.width-2.2)<1e-6));
+
 assert(owner.added.some(r=>r.id==='road-31'&&r.points.some(p=>p[1]>20)));
 const joined=partitionRoadMaskStrokes(owner.hidden,owner.added);
 assert.equal(joined.tiles.length,ROAD_MASK_TILE_COUNT);
