@@ -1,53 +1,57 @@
-/* Short, interruptible museum onboarding. Does not block canvas or loading. */
+/* Lightweight, camera-led tour: no large instructional plaque. */
 #museumOnboarding[hidden]{display:none!important}
 #museumOnboarding{position:fixed;inset:0;z-index:1100;pointer-events:none;font-family:Montserrat,Arial,sans-serif}
 #museumOnboarding *{box-sizing:border-box}
-#museumOnboarding .museum-tour__panel{
- position:absolute;right:clamp(14px,2.3vw,34px);bottom:clamp(98px,13vh,160px);
- width:min(405px,calc(100vw - 28px));padding:20px 22px 18px;
- pointer-events:auto;color:#eaf3f4;background:rgba(14,34,45,.94);
- border:1px solid rgba(209,227,229,.25);border-left:3px solid #e7a86a;
- box-shadow:0 20px 60px rgba(0,0,0,.28);border-radius:10px;
- backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)
+#museumOnboarding .museum-tour__hint{
+ position:absolute;top:clamp(20px,3.5vh,44px);left:50%;transform:translateX(-50%);
+ display:flex;flex-direction:column;align-items:center;gap:6px;width:min(570px,calc(100vw - 330px));
+ color:#f6f6ee;text-align:center;line-height:1.5;
+ text-shadow:0 2px 8px rgba(0,0,0,.97),0 4px 26px rgba(0,0,0,.95);
+ pointer-events:none
 }
-#museumOnboarding .museum-tour__top{display:flex;align-items:center;justify-content:space-between;gap:12px}
-#museumOnboarding .museum-tour__eyebrow{font-size:10px;letter-spacing:.14em;font-weight:800;color:#f0b783}
+#museumOnboarding .museum-tour__title{
+ display:block;font-size:clamp(13px,1.2vw,17px);font-weight:800;letter-spacing:.11em;
+}
+#museumOnboarding .museum-tour__text{
+ display:block;font-size:clamp(11px,1vw,13px);font-weight:600;letter-spacing:.015em;color:#f0f1e9
+}
+#museumOnboarding .museum-tour__actions{
+ position:absolute;top:clamp(16px,2.6vh,30px);right:clamp(14px,2.3vw,30px);
+ display:flex;align-items:center;gap:12px;pointer-events:auto
+}
+#museumOnboarding .museum-tour__step{font-size:10px;font-weight:800;letter-spacing:.12em;color:#e9cbb0;text-shadow:0 2px 7px #07131b}
 #museumOnboarding .museum-tour__skip{
- font:700 11px/1.4 Montserrat,Arial,sans-serif;color:inherit;background:transparent;border:1px solid currentColor;
- opacity:.85;border-radius:5px;padding:8px 10px;cursor:pointer;white-space:nowrap
+ display:inline-flex;gap:8px;align-items:center;justify-content:center;min-height:40px;
+ border:1px solid rgba(238,236,225,.48);border-radius:22px;padding:7px 14px;
+ background:rgba(10,24,31,.55);color:#f5f3e9;
+ font:700 11px/1.4 Montserrat,Arial,sans-serif;cursor:pointer;
+ backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)
 }
-#museumOnboarding .museum-tour__skip:hover,#museumOnboarding .museum-tour__skip:focus-visible{opacity:1;background:rgba(255,255,255,.1);outline:2px solid #f4c49a;outline-offset:2px}
-#museumOnboarding .museum-tour__title{margin:15px 0 7px;font:800 clamp(18px,1.6vw,23px)/1.2 Montserrat,Arial,sans-serif;letter-spacing:-.025em}
-#museumOnboarding .museum-tour__text{margin:0;min-height:55px;font-size:13px;font-weight:500;line-height:1.6;color:#c3d4d9}
-#museumOnboarding .museum-tour__meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:15px;font-size:10px;letter-spacing:.07em;font-weight:700;color:#e8b888}
-#museumOnboarding .museum-tour__track{height:4px;background:rgba(255,255,255,.17);border-radius:4px;overflow:hidden;margin-top:9px}
-#museumOnboarding .museum-tour__fill{display:block;width:0;height:100%;background:linear-gradient(90deg,#e5a56e,#f8dfb7);border-radius:4px;transition:none}
-#museumOnboarding .museum-tour__foot{margin:11px 0 0;color:#adbdc3;font:600 10px/1.5 Montserrat,Arial,sans-serif}
-#museumOnboarding .museum-tour__glyph{display:inline-flex;justify-content:center;align-items:center;width:26px;height:26px;margin-right:7px;border-radius:6px;background:rgba(232,176,117,.16);font-size:17px;color:#f8c697}
-#museumOnboarding .museum-tour__body{display:flex;align-items:center;gap:10px}
-#museumOnboarding .museum-tour__copy{flex:1}
-#museumOnboarding[data-ready="false"] .museum-tour__panel{color:#172a32;background:rgba(246,242,231,.98);border-color:#d8cdc0;border-left-color:#b76946;box-shadow:0 20px 60px rgba(23,34,37,.14)}
-#museumOnboarding[data-ready="false"] .museum-tour__eyebrow,#museumOnboarding[data-ready="false"] .museum-tour__meta{color:#995b3c}
-#museumOnboarding[data-ready="false"] .museum-tour__text{color:#47585c}
-#museumOnboarding[data-ready="false"] .museum-tour__track{background:#d4d4ca}
-#museumOnboarding[data-ready="false"] .museum-tour__foot{color:#66767a}
-#museumOnboarding[data-ready="false"] .museum-tour__glyph{background:#e9d9c9;color:#995b3c}
-#museumOnboarding[data-ready="false"] .museum-tour__skip:hover{background:#eaded4}
-.museum-tour-spotlight{outline:2px solid #f0bb7e!important;outline-offset:3px;box-shadow:0 0 0 6px rgba(240,183,126,.13)!important}
+#museumOnboarding .museum-tour__skip:hover,#museumOnboarding .museum-tour__skip:focus-visible{
+ background:rgba(16,42,51,.9);border-color:#f3c18c;outline:2px solid #f3c18c;outline-offset:2px
+}
+#museumOnboarding .museum-tour__track{
+ position:absolute;top:clamp(94px,12vh,125px);left:50%;transform:translateX(-50%);
+ width:clamp(110px,13vw,170px);height:2px;border-radius:3px;background:rgba(247,246,236,.29);
+ overflow:hidden;pointer-events:none
+}
+#museumOnboarding .museum-tour__fill{
+ display:block;width:0;height:100%;background:#ebae7c;border-radius:3px
+}
+.museum-tour-spotlight{outline:2px solid rgba(241,181,119,.85)!important;outline-offset:3px;box-shadow:0 0 0 5px rgba(240,183,126,.1)!important}
 .museum-tour-replay{display:block;width:100%;padding:9px 11px;margin-top:9px;border:1px solid rgba(191,211,220,.25);background:rgba(68,95,109,.2);color:inherit;text-align:left;border-radius:7px;font:700 11px/1.45 Montserrat,Arial,sans-serif;cursor:pointer}
 .museum-tour-replay:hover,.museum-tour-replay:focus-visible{border-color:#efb880;outline-color:#efb880}
-@media(max-width:800px){
- #museumOnboarding .museum-tour__panel{left:12px;right:12px;bottom:clamp(70px,12vh,110px);width:auto;padding:15px 17px}
- #museumOnboarding .museum-tour__title{font-size:18px;margin:10px 0 5px}
- #museumOnboarding .museum-tour__text{font-size:12px;min-height:38px}
- #museumOnboarding .museum-tour__meta{margin-top:10px}
+@media(max-width:850px){
+ #museumOnboarding .museum-tour__hint{top:auto;bottom:clamp(115px,15vh,155px);width:calc(100vw - 30px);gap:5px}
+ #museumOnboarding .museum-tour__title{font-size:13px}
+ #museumOnboarding .museum-tour__text{font-size:11px;line-height:1.45;max-width:460px}
+ #museumOnboarding .museum-tour__track{top:auto;bottom:clamp(104px,13vh,140px)}
+ #museumOnboarding .museum-tour__actions{top:12px;right:12px}
 }
-@media(max-height:600px){
- #museumOnboarding .museum-tour__panel{bottom:12px;padding:12px 15px}
- #museumOnboarding .museum-tour__title{margin:8px 0 5px}
- #museumOnboarding .museum-tour__text{min-height:0}
- #museumOnboarding .museum-tour__foot{margin-top:6px}
+@media(max-height:540px) and (min-width:851px){
+ #museumOnboarding .museum-tour__hint{top:8px}
+ #museumOnboarding .museum-tour__track{top:67px}
 }
 @media(prefers-reduced-motion:reduce){
- #museumOnboarding .museum-tour__fill{transition:none}
+ #museumOnboarding .museum-tour__skip{backdrop-filter:none;-webkit-backdrop-filter:none}
 }
