@@ -114,29 +114,32 @@
 }
 
 
-/* v13: compositor-only preloader motion. These opacity/transform animations
-   continue independently of Three.js parsing and model construction. */
-@keyframes preloaderPhraseCycleV13{
-  0%,11.7%{opacity:1;transform:translate3d(0,0,0)}
-  14.285%,100%{opacity:0;transform:translate3d(0,-10px,0)}
+/* v14: soft native crossfades. Motion stays compositor-only so the
+   preloader remains fluid while Three.js parses and builds the museum. */
+@keyframes preloaderPhraseCycleV14{
+  0%{opacity:0;transform:translate3d(0,6px,0);animation-timing-function:cubic-bezier(.22,1,.36,1)}
+  1.9%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:linear}
+  12.1%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:cubic-bezier(.4,0,.2,1)}
+  16%{opacity:0;transform:translate3d(0,-5px,0)}
+  100%{opacity:0;transform:translate3d(0,-5px,0)}
 }
-@keyframes preloaderImageCycleV13{
-  0%,21.5%{opacity:1;transform:translate3d(0,0,0) scale(1)}
-  25%,100%{opacity:0;transform:translate3d(0,0,0) scale(.998)}
+@keyframes preloaderImageCycleV14{
+  0%{opacity:0;transform:translate3d(0,0,0);animation-timing-function:cubic-bezier(.22,1,.36,1)}
+  4%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:linear}
+  20.5%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:cubic-bezier(.4,0,.2,1)}
+  29%{opacity:0;transform:translate3d(0,0,0)}
+  100%{opacity:0;transform:translate3d(0,0,0)}
 }
-@keyframes preloaderProgressCruiseV13{
+@keyframes preloaderProgressCruiseV14{
   0%{transform:scaleX(.015)}
   38%{transform:scaleX(.48)}
   72%{transform:scaleX(.76)}
   100%{transform:scaleX(.93)}
 }
 #museumLoading .preloader__phrase{
-  opacity:0;
-  transform:translate3d(0,10px,0);
-  transition:none;
-  will-change:opacity,transform;
-  animation:preloaderPhraseCycleV13 28s linear infinite;
-  animation-fill-mode:none;
+  opacity:0;transform:translate3d(0,6px,0);transition:none;
+  will-change:opacity,transform;backface-visibility:hidden;
+  animation:preloaderPhraseCycleV14 28s linear infinite;animation-fill-mode:none;
 }
 #museumLoading .preloader__phrase:nth-child(1){animation-delay:0s}
 #museumLoading .preloader__phrase:nth-child(2){animation-delay:4s}
@@ -146,49 +149,25 @@
 #museumLoading .preloader__phrase:nth-child(6){animation-delay:20s}
 #museumLoading .preloader__phrase:nth-child(7){animation-delay:24s}
 #museumLoading .preloader__image{
-  opacity:0;
-  transition:none;
-  will-change:opacity,transform;
-  backface-visibility:hidden;
+  opacity:0;transition:none;will-change:opacity;backface-visibility:hidden;
   transform:translate3d(0,0,0);
-  animation:preloaderImageCycleV13 20s linear infinite;
-  animation-fill-mode:none;
+  animation:preloaderImageCycleV14 20s linear infinite;animation-fill-mode:none;
 }
 #museumLoading .preloader__image:nth-child(1){animation-delay:0s}
 #museumLoading .preloader__image:nth-child(2){animation-delay:5s}
 #museumLoading .preloader__image:nth-child(3){animation-delay:10s}
 #museumLoading .preloader__image:nth-child(4){animation-delay:15s}
 #museumLoading .preloader__progress-fill{
-  transform:scaleX(.015);
-  will-change:transform;
-  transition:transform 110ms linear;
-  animation:preloaderProgressCruiseV13 42s cubic-bezier(.16,.62,.24,1) forwards;
+  transform:scaleX(.015);will-change:transform;
+  transition:transform 160ms cubic-bezier(.2,.7,.2,1);
+  animation:preloaderProgressCruiseV14 42s cubic-bezier(.16,.62,.24,1) forwards;
 }
-#museumLoading[data-preview="true"] .preloader__progress-fill{
-  animation-duration:12s;
-  animation-iteration-count:infinite;
-}
-#museumLoading.is-complete .preloader__progress-fill{
-  animation:none!important;
-  transform:scaleX(1)!important;
-}
-#museumLoading:is(.is-paused,.is-stopped,.has-error,[data-state="error"]) :is(.preloader__phrase,.preloader__image,.preloader__progress-fill){
-  animation-play-state:paused!important;
-}
-#museumLoading.is-finishing .preloader__phrase{
-  animation-play-state:paused!important;
-}
+#museumLoading[data-preview="true"] .preloader__progress-fill{animation-duration:12s;animation-iteration-count:infinite}
+#museumLoading.is-complete .preloader__progress-fill{animation:none!important;transform:scaleX(1)!important}
+#museumLoading:is(.is-paused,.is-stopped,.has-error,[data-state="error"]) :is(.preloader__phrase,.preloader__image,.preloader__progress-fill){animation-play-state:paused!important}
+#museumLoading.is-finishing .preloader__phrase{animation-play-state:paused!important}
 #museumLoading.is-reduced .preloader__phrase,
-#museumLoading.is-reduced .preloader__image{
-  animation:none!important;
-  opacity:0!important;
-  transform:none!important;
-}
+#museumLoading.is-reduced .preloader__image{animation:none!important;opacity:0!important;transform:none!important}
 #museumLoading.is-reduced .preloader__phrase:first-child,
-#museumLoading.is-reduced .preloader__image:first-child{
-  opacity:1!important;
-}
-#museumLoading.is-reduced .preloader__progress-fill{
-  animation:none!important;
-  transform:scaleX(.12);
-}
+#museumLoading.is-reduced .preloader__image:first-child{opacity:1!important}
+#museumLoading.is-reduced .preloader__progress-fill{animation:none!important;transform:scaleX(.12)}
