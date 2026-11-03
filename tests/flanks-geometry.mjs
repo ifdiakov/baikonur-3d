@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {projectOsm,MUSEUM_DISPLAY_OFFSETS} from '../src/osm-geography.js';
 import {FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_REFERENCE,FLANK_COORDINATE_SYSTEM,FLANK_CENTERS,FLANK_BOUNDS,FLANK_REFERENCE_OUTLINE,FLANK_REFERENCE_DIVIDERS,referenceToPlan,containsFlankPoint} from '../src/flank-boundaries.js';
 import {buildFlankDistricts,FLANK_DISTRICTS} from '../src/flank-districts.js';
+import {CITY_TERRITORY_OUTLINE,CITY_TERRITORY_REFERENCE,CITY_TERRITORY_COLOR} from '../src/city-territory.js';
 import {buildTerrainRelief} from '../src/terrain-relief.js';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample,saturnTerrainMeshHeight} from '../src/saturn-access.js';
 
@@ -20,6 +21,22 @@ assert.equal(districts.state().city.vertices,67);
 assert(districts.state().city.solidBoundary,'The city outline must not be rendered as dashed sections');
 assert.equal(districts.state().city.visible,true,'City appears with flank territory zoom');
 assert(districts.state().city.fillOpacity>.1,'City fill is actually visible');
+assert.equal(districts.state().city.color,CITY_TERRITORY_COLOR);
+assert.equal(CITY_TERRITORY_REFERENCE.version,'owner-baikonur-city-screenshot-20261103-v1');
+// Georeferenced screenshot must include the airport, city and Akai but leave
+// adjacent Tyuratam and the river's opposite bank outside its boundary.
+function cityContains([lon,lat]){
+ const [x,y]=projectOsm([lon,lat]);let inside=false;
+ for(let i=0,j=CITY_TERRITORY_OUTLINE.length-1;i<CITY_TERRITORY_OUTLINE.length;j=i++){
+  const a=CITY_TERRITORY_OUTLINE[j],b=CITY_TERRITORY_OUTLINE[i];
+  if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])inside=!inside;
+ }return inside;
+}
+for(const point of [[63.3209201,45.6321977],[63.1941252,45.6143654],[63.2272132,45.6294972],[63.2649836,45.6148609]])
+ assert(cityContains(point),'The owner's city perimeter covers Baikonur, Krayniy and Akai');
+for(const point of [[63.315601,45.650665],[63.286,45.591]])
+ assert(!cityContains(point),'Tyuratam and territory across Syr Darya remain outside the city polygon');
+
 
 const zones=root.children.filter(o=>o.isMesh&&o.geometry.type==='ShapeGeometry');
 assert.equal(zones.length,3);assert.equal(FLANK_OUTLINE.length,14);

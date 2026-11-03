@@ -18,7 +18,7 @@ export const CITY_TERRITORY_REFERENCE=Object.freeze({
  registration:'Approximate local image-to-WGS84 alignment via Krayniy runway 05/23 and Tyuratam',
  referenceRunway:'https://www.openstreetmap.org/way/37591623',
  referenceTown:'https://www.openstreetmap.org/node/3653353377',
- coverage:'City and Krayniy airfield, south to Syr Darya; does not include Akai or Tyuratam proper',
+ coverage:'Baikonur city, Krayniy airfield and Akai; north rail/industrial area to Syr Darya; outside Tyuratam proper',
  status:'cartographic reconstruction, not a surveyed cadastral boundary'
 });
 // Screen-coordinate contour, stored so the owner's reference can be inspected
