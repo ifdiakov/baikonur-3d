@@ -53,6 +53,8 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'silo',title:'Шахтная пусковая установка',description:'Площадка №109'}
  ]},
  {id:'reconstructionsAccordion',title:'ЦИФРОВЫЕ РЕКОНСТРУКЦИИ',items:[
+  {action:'soyuz-launch-1',title:'Запуск «Союза» · Гагаринский старт',description:'Площадка №1 · механизмы «тюльпана», двигатели и газоотвод'},
+  {action:'soyuz-launch-31',title:'Запуск «Союза» · площадка №31',description:'Площадка №31/6 · предстартовые операции и отрыв'},
   {action:'energia-reconstruction',title:'Запуск «Энергии — Полюс» · 1987',description:'УКСС · открыть карточку и запустить реконструкцию'},
   {action:'buran-landing-reconstruction',title:'Посадка «Бурана» · 1988',description:'Юбилейный · запуск реконструкции в карточке аэродрома'},
   {action:'buran-loading-reconstruction',title:'Погрузка «Бурана» · ПУА-100',description:'Юбилейный · анимация погрузки в карточке'},
