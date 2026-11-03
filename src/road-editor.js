@@ -117,7 +117,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    if(child===previewGroup)continue;editingGroup.remove(child);
    child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
   }
-  const joined=stitchEditedRoads(state.added);
+  const joined=stitchEditedRoads(state.added,{existingRoads:base});
   joinReport=joined.adjustments;
   const built=buildEditedRoadMeshes(joined.roads,{terrainHeightAt});
   joinedPaths=built.paths;
