@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {buildSite31Pad,SITE31_PIT} from './site31-pad.js?v=20261103-site31-source-v1';
+import {buildSite31Pad,SITE31_PIT} from './site31-pad.js?v=20261103-site31-duct-v2';
 import {registerFacilityBeacon,registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 export const SITE31_ASSET_VERSION='site31-drive-v1';
 export const SITE31_VIEWS=Object.freeze({all:{target:[0,15,-10],eye:[-160,135,180]},structure:{target:[0,20,0],eye:[-48,37,62]},duct:{target:[-3,-6,-54],eye:[-150,125,-230]},connections:{target:[0,2,66],eye:[170,150,235]},top:{target:[0,0,-35],eye:[0,260,-34.99]}});
@@ -63,7 +63,7 @@ export function buildSite31Exhibit(root,{autoLoad=typeof window!=='undefined',lo
    const added=meshes(candidate);root.dispatchEvent({type:'museum-exhibit-loaded',removed,added});release(current);current=candidate;candidate=null;
    Object.assign(state,{status:'ready',error:null,bytes:manifest.asset.bytes,triangles:manifest.asset.triangles,drawCalls:manifest.asset.primitives,sourceSha256:manifest.sourceSha256});
    Object.assign(root.userData.site31Model,{...built.site31,version:SITE31_ASSET_VERSION,asset:state,views:SITE31_VIEWS,
-    status:'Конструкции стартового комплекса — предоставленная 3D-модель; контур газоотвода и разворот — по спутниковому снимку. Высоты и привязка остаются музейной реконструкцией.',
+    status:'Конструкции стартового комплекса — предоставленная 3D-модель. Газоотвод выровнен и увеличен на 20% по ширине, длине и глубине; направление по спутнику сохранено. Форма и высоты — музейная реконструкция.',
     sources:[...built.site31.sources,manifest.sourceUrl],sourceCredit:{author:manifest.author,url:manifest.sourceUrl,license:manifest.license,licenseUrl:manifest.licenseUrl},sourceStructureBounds:manifest.bounds});
    const archive=root.userData.archiveModel;if(archive){archive.features.site31=root.userData.site31Model;archive.features.meshCount=added.length;const b=new THREE.Box3().setFromObject(root);archive.bounds=b.getSize(new THREE.Vector3()).toArray();archive.centre=b.getCenter(new THREE.Vector3()).toArray();}
    return true;

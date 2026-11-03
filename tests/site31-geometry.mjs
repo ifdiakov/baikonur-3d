@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
 import {buildSite31Pad,SITE31_VERSION,SITE31_PIT,SITE31_PORTS} from '../src/site31-pad.js';
-import {SITE31_YAW,SITE31_REFERENCE,SITE31_RIM,site31RimAt} from '../src/site31-trench-profile.js';
+import {SITE31_YAW,SITE31_REFERENCE,SITE31_RIM,SITE31_TRACED_RIM,SITE31_FLOOR_Y,site31RimAt} from '../src/site31-trench-profile.js';
 import {FACILITY_PORTS} from '../src/facility-ports.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
 import {buildArchiveModel} from '../src/archive-models.js';
@@ -18,9 +18,9 @@ const root=new THREE.Group();root.scale.setScalar(manifest.scale);root.rotation.
 root.position.copy(point(site.x,site.y,-2.72));
 const result=buildSite31Pad(root);root.updateMatrixWorld(true);
 const model=result.site31;
-assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-metric-soyuz-v5');
+assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-metric-soyuz-v6');
 assert.equal(model.siteId,'pad-31');assert.equal(model.orientationVerified,true);
-assert.equal(model.orientationScope,'local-plan-from-satellite');
+assert.equal(model.orientationScope,'satellite-axis-adjusted-outline');
 assert.equal(model.heightsVerified,false,'The satellite plan does not establish elevations');
 assert.equal(model.globalMapAnchorSurveyed,false,'The museum map anchor is still schematic');
 assert.equal(model.satellite.imageryDate,'2025-08-09');assert.equal(model.satellite.satellite,'WorldView-3');
@@ -76,11 +76,14 @@ for(let i=0;i<polygon.length;i++)for(let j=i+2;j<polygon.length;j++){
 for(const p of [[0,0],[-5,-35],[0,-100],[4,-145]])assert.ok(inside(p,polygon),'Traced basin contains '+p);
 for(const p of [[0,45],[80,-90],[-100,-100],[60,133]])assert.ok(!inside(p,polygon),'Cutout excludes '+p);
 const minZ=Math.min(...polygon.map(p=>p[1])),maxZ=Math.max(...polygon.map(p=>p[1]));
-assert.ok(minZ<-140&&minZ>-165,'The mouth follows the approximately 152 m satellite trace');
+assert.ok(minZ<-180&&minZ>-185,'The outlet is 20% longer than the former 152 m trace');
+const extent=(points,axis)=>Math.max(...points.map(p=>p[axis]))-Math.min(...points.map(p=>p[axis]));
+for(const axis of [0,1])assert.ok(Math.abs(extent(SITE31_RIM,axis)/extent(SITE31_TRACED_RIM,axis)-1.2)<1e-10,'The visible width and length are exactly 20% larger');
+assert.ok(Math.abs(SITE31_FLOOR_Y/-24-1.2)<1e-12,'Depth is exactly 20% larger');
 assert.equal(site31RimAt(minZ-1),null);assert.equal(site31RimAt(maxZ+1),null);
 for(let z=minZ+.25;z<maxZ;z+=1.7){
  const span=site31RimAt(z);assert.ok(span?.every(Number.isFinite)&&span[1]>span[0]);
- assert.ok(inside([(span[0]+span[1])/2,z],polygon),'Each cutout scanline is inside the traced basin');
+ assert.ok(inside([(span[0]+span[1])/2,z],polygon),'Each cutout scanline is inside the basin');assert.ok(Math.abs(span[0]+span[1])<1e-8,'Banks mirror around one straight axis');
 }
 
 // The shader uses these world-to-local uniforms. Verify the actual rotated
@@ -112,12 +115,15 @@ function down(x,z,objects=meshes,y=10){
  return hit?{...hit,local:root.worldToLocal(hit.point.clone())}:null;
 }
 const launchHit=down(0,0);assert.ok(launchHit,'Open chamber floor is present');
-assert.ok(Math.abs(launchHit.local.y+24)<1e-5,'The launch axis is open through the table and bridge down to the chamber');
+assert.ok(Math.abs(launchHit.local.y+28.8)<1e-5,'The launch axis is open through the table and bridge down to the chamber');
 assert.ok(Math.abs(launchHit.local.y-model.pitFloorY)<1e-5);
 
 // Cast at both sides and between section seams. A missing triangle, flipped
 // face or solid cover must fail even if the descriptive metadata is correct.
 const sections=model.trench.sections;assert.ok(sections.length>40);
+assert.ok(sections.every(s=>s.center===0&&Math.abs(s.floorLeft+s.floorRight)<1e-10),'Floor remains straight and symmetric');
+for(const mesh of [floor,banks]){assert.ok(mesh.geometry.index,'Smooth concrete shares vertices');assert.ok([...mesh.geometry.attributes.normal.array].every(Number.isFinite));}
+
 let floorProbes=0,clearanceProbes=0,maxFloorError=0;
 for(let i=1;i<sections.length;i++){
  const a=sections[i-1],b=sections[i];assert.ok(a.z>b.z,'Duct sections advance towards the mouth');
@@ -136,8 +142,8 @@ for(let i=1;i<sections.length;i++){
   }
  }
 }
-let previousY=-24;
-for(let z=-22;z>minZ+.25;z-=1){
+let previousY=-28.8;
+for(let z=-26.4;z>minZ+.25;z-=1){
  const i=sections.findIndex((s,j)=>j&&sections[j-1].z>=z&&s.z<=z),a=sections[i-1],b=sections[i],t=(a.z-z)/(a.z-b.z);
  const hit=down(THREE.MathUtils.lerp(a.center,b.center,t),z,[floor]);assert.ok(hit);
  assert.ok(hit.local.y>=previousY-1e-4,'The exhaust floor rises continuously towards its mouth');

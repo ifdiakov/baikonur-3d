@@ -15,7 +15,7 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA.site31.stats().asset.status==='error');
  assert.equal(await page.locator('#site31Views button').count(),5);await page.locator('#site31LoadStatus button').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.site31.stats().asset.status==='ready',null,{timeout:120000});await frame();
- const state=await page.evaluate(()=>window.__BAIKONUR_QA.site31.stats());assert.equal(state.asset.triangles,109604);assert.equal(state.asset.drawCalls,2);assert.equal(requests,2);
+ const state=await page.evaluate(()=>window.__BAIKONUR_QA.site31.stats());assert.equal(state.asset.triangles,109604);assert.equal(state.asset.drawCalls,2);assert.equal(requests,2);assert.equal(state.trench.version,'site31-straight-duct-v2');assert.equal(state.trench.dimensionScale,1.2);assert.ok(Math.abs(state.pitFloorY+28.8)<1e-8);
  await page.waitForFunction(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31')?.status==='ready',null,{timeout:120000});
  const before=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31').visible);
  await page.locator('#rocketExhibitToggle').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31').visible),!before);await page.locator('#rocketExhibitToggle').click();

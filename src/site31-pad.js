@@ -2,16 +2,16 @@ import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
-import {buildSite31Trench} from './site31-trench.js?v=20261028-museum4-osm-live-v2';
-import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
-export {SITE31_PIT} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
+import {buildSite31Trench} from './site31-trench.js?v=20261103-site31-duct-v2';
+import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW,site31RimAt} from './site31-trench-profile.js?v=20261103-site31-duct-v2';
+export {SITE31_PIT} from './site31-trench-profile.js?v=20261103-site31-duct-v2';
 
 // Site 31 is its own exhibit, not Site 1's traced excavation transplanted to
 // a different map point. Photographs establish the two opening service masts,
 // four supporting arms, open bridge, lined excavation and lightning towers.
 // The local plan and compass orientation now follow north-up WV03 imagery.
 // Heights and the museum diagram's global anchor remain approximate.
-export const SITE31_VERSION='site31-metric-soyuz-v5';
+export const SITE31_VERSION='site31-metric-soyuz-v6';
 export const SITE31_SOURCES=Object.freeze([
  SITE31_REFERENCE.sourceUrl,
  SITE31_REFERENCE.metadataUrl,
@@ -48,7 +48,7 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
   const m=k.direct(new THREE.TorusGeometry(radius,tube,8,64),material,tag,parent);m.rotation.x=Math.PI/2;m.position.y=y;return m;
  }
 
- // One georeferenced outline drives both the actual concrete banks and the
+ // One adjusted outline drives both the actual concrete banks and the
  // terrain cutout. The floor continues under the table and rises to the mouth.
  const trench=buildSite31Trench(k),floorY=trench.floorY;
  // Service yards sit behind/beside the launch position, outside its wide bowl.
@@ -62,7 +62,7 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
  // axial launch passage and the space beneath the launch ring unobstructed.
  for(const s of [-1,1]){
   k.box(14,2.2,65,s*28,-.9,4,'concrete','launch-bridge-side');
-  k.box(11,24,11,s*27,-13,-20,'concrete','bridge-foundation-pier');
+  k.box(11,-floorY,11,s*27,(floorY-2)/2,-20,'concrete','bridge-foundation-pier');
   k.box(11,20,10,s*27,-11,24,'concrete','bridge-foundation-pier');
   k.box(.45,2,65,s*35.3,.3,4,'rust','bridge-edge-girder');
   for(let z=-26;z<=32;z+=3.1)k.box(.16,5.8,.23,s*34.9,-4.0,z,'light','bridge-corrugated-underside');
@@ -91,11 +91,11 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
   const fl=at('floorLeft'),fr=at('floorRight'),y=at('floorY');
   if(x>=fl&&x<=fr)return y;
   const fraction=x<fl?(x-fl)/(left-fl):(x-fr)/(right-fr);
-  const rise=fraction<.18?fraction*.72:.1296+(fraction-.18)*(.8704/.82);
+  const rise=fraction;
   return y*(1-rise);
  }
  for(const s of [-1,1]){
-  const start=s<0?V(-52,0,1):V(43,0,9),end=sourceStructure?(s<0?V(-29,0,-34):V(26,0,-34)):(s<0?V(-20,0,-20):V(10,0,-20)),count=58;
+  const start=s<0?V(site31RimAt(1)[0]-2,0,1):V(site31RimAt(9)[1]+2,0,9),end=sourceStructure?(s<0?V(-29,0,-34):V(26,0,-34)):(s<0?V(-20,0,-20):V(10,0,-20)),count=58;
   const direction=end.clone().sub(start),yaw=Math.atan2(direction.x,direction.z),normal=V(direction.z,0,-direction.x).normalize();
   const steps=Array.from({length:count+1},(_,i)=>{const p=start.clone().lerp(end,i/count);p.y=bankHeight(p.x,p.z)+.19;return p;});
   for(const p of steps)k.box(2.2,.26,1.05,p.x,p.y,p.z,'concrete','excavation-stair-tread',yaw);
@@ -270,9 +270,9 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
   meshCount:layoutResult.meshCount+machineryResult.meshCount,batches:layoutResult.batches+machineryResult.batches,
   boundsSize:new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).toArray()};
  const metadata={version:SITE31_VERSION,siteId:'pad-31',name:'Стартовая позиция 31/6 · семейство «Союз»',
-  status:'Контур газоотвода и разворот сверены по спутниковому снимку WorldView-3 от 09.08.2025. Высоты и скрытые под мостом участки реконструированы приблизительно.',
-  referenceBasis:'Esri World Imagery / Vantor Vivid: плановая обводка; фотографии КЦ «Южный» / ЦЭНКИ: конструкции. Не инженерный обмер.',
-  sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'local-plan-from-satellite',
+  status:'Газоотвод выровнен и увеличен на 20% по ширине, длине и глубине. Направление оси сохранено по спутниковому снимку; форма и высоты — музейная реконструкция.',
+  referenceBasis:'Esri World Imagery / Vantor Vivid: исходная обводка и направление; текущий лоток выровнен и увеличен на 20%. Не инженерный обмер.',
+  sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'satellite-axis-adjusted-outline',
   units:'metres',machineryMetresPerUnit:sourceStructure?1:SITE31_MACHINERY_METRE,
   heightsVerified:false,globalMapAnchorSurveyed:false,yaw:SITE31_YAW,satellite:SITE31_REFERENCE,
   groundDatum:0,pitFloorY:floorY,pit:SITE31_PIT,trench,
