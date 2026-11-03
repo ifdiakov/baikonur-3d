@@ -2,7 +2,13 @@
 // precise elevation changes at hills, overpasses or road-edge junctions.
 // The 2048px mask is split into five local atlases; each atlas covers a much
 // smaller range than the original continent-sized set of erasures.
+import {ROAD_EDIT_SHOULDER_EXTRA} from './road-editor-style.js?v=20261103-road-parity-v1';
 export const ROAD_MASK_TILE_COUNT=5;
+export const ROAD_MASK_VISIBLE_MARGIN=.18;
+export const ROAD_MASK_REPLACEMENT_MARGIN=.26;
+export function roadMaskCoverageWidth(width,kind){
+ return width+ROAD_EDIT_SHOULDER_EXTRA+(kind==='added'?ROAD_MASK_REPLACEMENT_MARGIN:ROAD_MASK_VISIBLE_MARGIN);
+}
 export const ROAD_MASK_GRADE_MIN=-16;
 export const ROAD_MASK_GRADE_RANGE=48;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -46,7 +52,8 @@ export function partitionRoadMaskStrokes(hidden=[],added=[],{step=8,gradeStep=.2
     for(let k=0;k<pieces;k++){
      const a=lerp(start,end,k/pieces),b=lerp(start,end,(k+1)/pieces);
      const index=roadMaskTileIndex([(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2]);
-     segment(tiles[index],a,b,road.width,kind,
+     const width=Array.isArray(road.widths)?(road.widths[j-1]+road.widths[j])*.5:road.width;
+     segment(tiles[index],a,b,width,kind,
       kind==='hidden'?road.sourceId:road.id,j===1&&k===0,j===road.points.length-1&&k===pieces-1);
      partCount++;
     }
