@@ -204,22 +204,19 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   }
  }
  function render(){
-  for(const child of [...editingGroup.children]){
-   if(child===previewGroup)continue;
-   editingGroup.remove(child);child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
-  }
-  const added=state.added.map(r=>({id:r.id,width:r.width,points:sampled(r).map(p=>p.toArray())}));
-  routes=[...base,...added];
-  for(const record of state.added)editingGroup.add(renderPath(record));
-  applyMask();renderDraft();
-  panel.querySelector('#roadEditorCount').textContent='Добавлено: '+state.added.length+' · Скрыто участков: '+state.hidden.length+' · Точек: '+draft.length;
+  const freshAdded=JSON.stringify(state.added),freshHidden=JSON.stringify(state.hidden);
+  let changed=false;
+  if(freshAdded!==addedSignature){addedSignature=freshAdded;rebuildAdded();changed=true;}
+  if(changed||freshHidden!==maskSignature){maskSignature=freshHidden;applyMask();changed=true;}
+  renderDraft();
+  panel.querySelector('#roadEditorCount').textContent='Добавлено: '+state.added.length+' · Удалено участков: '+state.hidden.length+' · Точек: '+draft.length;
   buttons.undo.disabled=!history.length;buttons.redo.disabled=!future.length;
   buttons.finish.disabled=draft.length<2;buttons.cancel.disabled=!draft.length;
   panel.querySelector('#roadEditorEraseSpan').disabled=mode!=='erase';
   panel.querySelector('#roadEditorWidth').disabled=mode!=='draw';
   panel.querySelector('#roadEditorSurface').disabled=mode!=='draw';
   if(button)button.setAttribute('aria-pressed',String(active));
-  persist();
+  persist();if(changed)onChange();
  }
  function setMode(value){
   if(!['draw','erase'].includes(value))return;
