@@ -21,11 +21,19 @@ function closest(points,p){
 
 // Only join genuinely coincident proposed roads. Never bridge an arbitrary
 // gap across a rail line, building or a deliberately separate compound.
-export function stitchEditedRoads(input,{tolerance=5.5}={}){
+export function stitchEditedRoads(input,{tolerance=5.5,existingRoads=[]}={}){
  const roads=input.map(r=>({...r,points:r.points.map(p=>[...p])})),adjustments=[];
  const lengths=roads.map(r=>segmentsLength(r.points));
  for(let i=0;i<roads.length;i++)for(const end of [0,roads[i].points.length-1]){
   const p=roads[i].points[end];let chosen=null;
+  // Owner-selected endpoints anchored to an OSM carriageway must never be
+  // pulled off that surveyed route merely to align two adjacent overlays.
+  let anchored=false;
+  for(const source of existingRoads){
+   const q=closest(source.points,p);
+   if(q.distance<=1.05&&Math.abs(q.point[1]-p[1])<1.2){anchored=true;break;}
+  }
+  if(anchored)continue;
   for(let j=0;j<roads.length;j++){
    if(i===j||lengths[j]<=lengths[i]+4)continue;
    const q=closest(roads[j].points,p);
