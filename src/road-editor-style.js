@@ -56,7 +56,7 @@ export function deriveEditedRoadStyle(road,sources,{maxDistance=7}={}){
  const end=nearestSourceRoad(road.points.at(-1),sources,{maxDistance});
  const primary=(!start||end&&end.distance+.25<start.distance)?end:start;
  const source=primary?.road||null,style=styleOf(source);
- const type=road.surface==='ground'?'ground':style.classId==='ground'?'asphalt':style.classId;
+ const type=road.surface==='ground'?'ground':style.classId;
  const widthStart=start?.road.width||road.width,widthEnd=end?.road.width||start?.road.width||road.width;
  const length=road.points.reduce((n,p,i)=>n+(i?dist(p,road.points[i-1]):0),0);
  return {
