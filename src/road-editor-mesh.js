@@ -197,9 +197,30 @@ function unionQuads(quads){
  }
  return {polygons:result,overlaps};
 }
+function terminusConnected(road,point,roads){
+ for(const other of roads){
+  if(other.id===road.id)continue;
+  for(let i=1;i<other.points.length;i++){
+   const a=other.points[i-1],b=other.points[i],dx=b[0]-a[0],dz=b[2]-a[2],d=dx*dx+dz*dz;
+   if(d<1e-8)continue;
+   const t=clamp(((point[0]-a[0])*dx+(point[2]-a[2])*dz)/d,0,1);
+   if(Math.hypot(point[0]-a[0]-dx*t,point[2]-a[2]-dz*t)<Math.max(1.5,other.width*.5)
+      &&Math.abs(point[1]-(a[1]+(b[1]-a[1])*t))<1.1)return true;
+  }
+ }
+ return false;
+}
+function terminusCap(point,width,lift,terrainHeightAt){
+ const p=Array.from({length:14},(_,i)=>{
+  const rad=i*Math.PI*2/14,x=point[0]+Math.cos(rad)*width*.5,z=point[2]+Math.sin(rad)*width*.5;
+  const minY=terrainHeightAt?.(x,z);
+  return {x,y:Number.isFinite(minY)?Math.max(point[1]+lift,minY+(lift<0?.008:.013)):point[1]+lift,z};
+ });
+ return signArea(p[0],p[1],p[2])>0?p:p.reverse();
+}
 export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
  const buckets={asphalt:[],highway:[],ground:[],shoulder:[],paintWhite:[],paintYellow:[]},paths=[];
- const stats={segments:0,joins:0,overlaps:0,markedRoads:0,sourceClasses:{asphalt:0,highway:0,ground:0}};let sourceQuads=0;
+ const stats={segments:0,joins:0,overlaps:0,endCaps:0,markedRoads:0,sourceClasses:{asphalt:0,highway:0,ground:0}};let sourceQuads=0;
  for(const r of roads){
   const points=sampleEditedRoad(r,{terrainHeightAt}),profile=r.profile||{classId:r.surface==='ground'?'ground':'asphalt'};
   const lengths=[0];for(let i=1;i<points.length;i++)lengths.push(lengths[i-1]+planar(points[i-1],points[i]));
@@ -211,6 +232,17 @@ export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
   const shoulder=ribbonQuads(points,i=>widthAt(i)+ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,terrainHeightAt);
   const surface=ribbonQuads(points,widthAt,classId==='highway'?ROAD_EDIT_HIGHWAY_LIFT:ROAD_EDIT_SURFACE_LIFT,terrainHeightAt);
   buckets.shoulder.push(...shoulder);buckets[classId].push(...surface);
+  // Square-ended strips leave arrow-like spikes after tiny clipped triangles
+  // at isolated termini. Only truly unconnected ends receive rounded caps;
+  // surveyed and owner-to-owner junctions keep their exact original shape.
+  for(const [end,ordinal] of [[points[0],0],[points.at(-1),1]]){
+   const matched=ordinal?profile.matching?.end:profile.matching?.start;
+   if(matched||terminusConnected(r,end,roads))continue;
+   const actualWidth=ordinal?widths.at(-1):widths[0];
+   buckets.shoulder.push(terminusCap(end,actualWidth+ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,terrainHeightAt));
+   buckets[classId].push(terminusCap(end,actualWidth,classId==='highway'?ROAD_EDIT_HIGHWAY_LIFT:ROAD_EDIT_SURFACE_LIFT,terrainHeightAt));
+   stats.endCaps++;
+  }
   stats.sourceClasses[classId]++;sourceQuads+=surface.length;stats.segments+=points.length-1;
   if(profile.marked&&classId!=='ground'){
    emitEditedRoadPaint(buckets,r,points,terrainHeightAt);stats.markedRoads++;
