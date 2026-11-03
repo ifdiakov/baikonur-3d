@@ -61,16 +61,18 @@ export function buildGagarinPad(root,options={}) {
   const rodGeometry=new THREE.CylinderGeometry(1,1,1,6,1);
   const boxGeometry=new THREE.BoxGeometry(1,1,1);
   const buckets=new Map(),features={};
+  const kineticTags=new Set(['tulip-arm','tulip-inner-bracing','tulip-gripper']);
   const structureRoot=new THREE.Group();structureRoot.name='Пл.1 · резервный стартовый стол';root.add(structureRoot);
   let structure=false;
   let primitiveCount=0,renderMeshCount=0;
   const tmpP=new THREE.Vector3(),tmpQ=new THREE.Vector3(),tmpMid=new THREE.Vector3();
   const tmpQuat=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0),tmpS=new THREE.Vector3(),tmpM=new THREE.Matrix4();
   const V=(...coords)=>new THREE.Vector3(...coords);
-  function bucket(mat,kind) {
-    const key=(structure?'table:':'site:')+mat+':'+kind;
+  function bucket(mat,kind,name) {
+    const tag=kineticTags.has(name)?name:null;
+    const key=(structure?'table:':'site:')+mat+':'+kind+(tag?':'+tag:'');
     let item=buckets.get(key);
-    if(!item){item={material:mats[mat],kind,matrices:[],parent:structure?structureRoot:root};buckets.set(key,item)}
+    if(!item){item={material:mats[mat],kind,tag,matrices:[],parent:structure?structureRoot:root};buckets.set(key,item)}
     return item;
   }
   function mark(name){if(name)features[name]=(features[name]||0)+1;primitiveCount++}
@@ -79,7 +81,7 @@ export function buildGagarinPad(root,options={}) {
     if(atGrade.has(name))y+=GAGARIN_LEGACY_RIM_Y;
     tmpQuat.setFromAxisAngle(up,rotate);tmpS.set(w,h,d);
     tmpM.compose(tmpP.set(x,y,z),tmpQuat,tmpS);
-    bucket(material,'box').matrices.push(tmpM.clone());mark(name);
+    bucket(material,'box',name).matrices.push(tmpM.clone());mark(name);
   }
   function bar(a,b,r,material,name){
     if(atGrade.has(name)){a=[a[0],a[1]+GAGARIN_LEGACY_RIM_Y,a[2]];b=[b[0],b[1]+GAGARIN_LEGACY_RIM_Y,b[2]];}
@@ -89,7 +91,7 @@ export function buildGagarinPad(root,options={}) {
     tmpQuat.setFromUnitVectors(up,dir.multiplyScalar(1/dist));
     tmpS.set(r,dist,r);tmpMid.copy(tmpP).add(tmpQ).multiplyScalar(.5);
     tmpM.compose(tmpMid,tmpQuat,tmpS);
-    bucket(material,'rod').matrices.push(tmpM.clone());mark(name);
+    bucket(material,'rod',name).matrices.push(tmpM.clone());mark(name);
   }
   function direct(mesh,material,key,parent=structure?structureRoot:root) {
     mesh.material=mats[material];mesh.userData.museumComponent=key;
@@ -506,6 +508,7 @@ export function buildGagarinPad(root,options={}) {
     const geo=batch.kind==='rod'?rodGeometry:boxGeometry;
     const mesh=new THREE.InstancedMesh(geo,batch.material,batch.matrices.length);
     mesh.name='Пл.1 / '+batch.kind+' / '+batch.material.color.getHexString();
+    mesh.userData.museumComponent=batch.tag||'gagarin-instanced-structure';
     for(let i=0;i<batch.matrices.length;i++)mesh.setMatrixAt(i,batch.matrices[i]);
     mesh.instanceMatrix.needsUpdate=true;
     mesh.frustumCulled=false;
