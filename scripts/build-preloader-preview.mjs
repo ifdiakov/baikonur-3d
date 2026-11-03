@@ -8,6 +8,8 @@ const match = entry.match(/<!-- MUSEUM_PRELOADER_START -->\s*([\s\S]*?)\s*<!-- M
 if (!match) throw new Error('Production preloader markup is missing');
 const font = entry.match(/@font-face\{font-family:'Bounded';[^}]+\}/)?.[0];
 if (!font) throw new Error('Museum headline font is missing');
+const imagePreload = entry.match(/<link\b(?=[^>]*\brel="preload")(?=[^>]*\bas="image")(?=[^>]*\bhref="\.\/assets\/preloader\/)[^>]*>/)?.[0];
+if (!imagePreload) throw new Error('Production preloader image preload is missing');
 if (!match[1].includes('<!-- PRELOADER_PREVIEW_ACTIONS -->')) throw new Error('Preview action slot is missing');
 const markup = match[1]
   .replace('<section id="museumLoading"', '<section id="museumLoading" data-preview="true"')
@@ -22,7 +24,7 @@ const html = `<!doctype html>
 <meta name="robots" content="noindex"><meta name="theme-color" content="#f3f0e7">
 <title>Гранд-макет Байконур — экран загрузки</title>
 <meta name="description" content="Гранд-макет Байконур: интерактивный музей 3D. Предпросмотр экрана загрузки с тематической галереей.">
-<link rel="preload" as="image" href="./assets/preloader/soyuz-v1.webp?v=20261103-preloader-gallery-v12" type="image/webp" fetchpriority="high">
+${imagePreload}
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&amp;display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <style>${font}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
