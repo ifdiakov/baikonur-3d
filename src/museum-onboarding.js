@@ -1,249 +1,324 @@
 (function () {
   'use strict';
 
-  // The tour runs alongside the preloader. It has no minimum loading time and
-  // never prevents an already rendered museum from becoming interactive.
+  // A lightweight, camera-led tour. It starts only AFTER the museum preloader
+  // has disappeared and never delays access to the actual interactive map.
   const TOTAL_MS = 26000;
   const STORAGE_KEY = 'baikonur-museum-onboarding-v1';
-  const query = new URLSearchParams(location.search);
-  const forced = query.get('tour') === '1';
-  const deepLink = ['view', 'site', 'station', 'detail'].some(key => query.has(key));
-  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const mobile = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-  const steps = [
-    { until: 5000, glyph: '↔', title: 'ПЕРЕМЕЩАЙТЕСЬ ПО КАРТЕ',
-      description: mobile ? 'Проведите одним пальцем по экрану, чтобы исследовать весь космодром.' : 'Удерживайте левую кнопку мыши и двигайте карту в любую сторону.' },
-    { until: 11000, glyph: '◎', title: 'ПРИБЛИЖАЙТЕ И ВРАЩАЙТЕ',
-      description: mobile ? 'Сводите и разводите два пальца для масштаба. Двумя пальцами меняйте ракурс.' : 'Колёсико приближает объекты. Правая кнопка мыши вращает камеру.' },
-    { until: 17000, glyph: '⌖', title: 'ВЫБИРАЙТЕ ПЛОЩАДКИ',
-      description: 'Нажмите на сооружение или его название — откроются карточка, 3D-модель и интересные факты.' },
-    { until: 22000, glyph: '▤', title: 'ИССЛЕДУЙТЕ РАЗДЕЛЫ',
-      description: 'В меню собраны ракеты, стартовые комплексы, герои, легенды и история Байконура.' },
-    { until: 26000, glyph: '▶', title: 'ОЖИВЛЯЙТЕ ИСТОРИЮ',
-      description: 'Раздел «Цифровые реконструкции»: запуски, посадка «Бурана» и другие события в 3D.' }
+  const params = new URLSearchParams(location.search);
+  const forced = params.get('tour') === '1';
+  const deepLink = ['view', 'site', 'station', 'detail'].some(key => params.has(key));
+  const reducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  const mobile = Boolean(window.matchMedia?.('(pointer: coarse)').matches);
+  const stages = [
+    { end: 5000, title: 'ПЕРЕМЕЩЕНИЕ ПО КАРТЕ',
+      hint: mobile ? 'Проведите одним пальцем, чтобы перемещаться.' : 'Удерживайте левую кнопку мыши и двигайте карту.' },
+    { end: 11000, title: 'МАСШТАБ И РАКУРС',
+      hint: mobile ? 'Два пальца — масштаб и вращение.' : 'Колёсико — масштаб. Правая кнопка — поворот.' },
+    { end: 17000, title: 'СТАРТОВЫЕ ПЛОЩАДКИ',
+      hint: 'Выберите объект на карте, чтобы открыть его историю и 3D-модель.' },
+    { end: 22000, title: 'ИССЛЕДУЙТЕ ОБЪЕКТЫ',
+      hint: 'Камеру можно вращать вокруг выбранного сооружения.' },
+    { end: 26000, title: 'ЦИФРОВЫЕ РЕКОНСТРУКЦИИ',
+      hint: 'В меню доступны старты ракет, посадка «Бурана» и другие события.' }
   ];
-  let root, title, description, glyph, counter, countdown, fill, stateLabel, skip;
-  let active = false, mapReady = false, api = null, frame = 0, elapsed = 0, lastFrame = 0;
-  let stepIndex = -1, spotlight = null, tween = null, original = null, highlightedAccordion = null;
-  let focusDemonstrated = false;
+  let root, title, hint, counter, skip, progress;
+  let api = null, ready = false, active = false, pendingStart = false;
+  let elapsed = 0, lastNow = 0, currentStage = -1;
+  let move = null, orbit = null, initiallyFocused = false, originalControls = null;
+  let selectedDuringDemo = false, spotlight = null, openedMenu = null;
 
-  function seen() {
-    try { return localStorage.getItem(STORAGE_KEY) === 'yes'; } catch (_) { return false; }
+  function hasSeen() {
+    try { return localStorage.getItem(STORAGE_KEY) === 'yes'; }
+    catch (_) { return false; }
   }
-  function recordSeen() {
+  function markSeen() {
     try { localStorage.setItem(STORAGE_KEY, 'yes'); } catch (_) {}
   }
+  const autoPlay = forced || (
+    !navigator.webdriver && !deepLink && !hasSeen() && params.get('tour') !== '0' && !reducedMotion
+  );
+
   function build() {
     root = document.createElement('section');
     root.id = 'museumOnboarding';
     root.hidden = true;
-    root.dataset.ready = 'false';
-    root.setAttribute('aria-label', 'Краткое обучение 3D-музею');
+    root.setAttribute('aria-label', 'Короткая экскурсия по управлению музеем');
+    // Intentionally NO instruction card/panel: a restrained text overlay only.
     root.innerHTML = [
-      '<div class="museum-tour__panel">',
-      '<div class="museum-tour__top"><span class="museum-tour__eyebrow">КАК ИССЛЕДОВАТЬ БАЙКОНУР</span>',
-      '<button class="museum-tour__skip" type="button">Пропустить ✕</button></div>',
-      '<div class="museum-tour__body"><span class="museum-tour__glyph" aria-hidden="true">↔</span>',
-      '<div class="museum-tour__copy"><h2 class="museum-tour__title">ПЕРЕМЕЩАЙТЕСЬ ПО КАРТЕ</h2>',
-      '<p class="museum-tour__text" aria-live="polite"></p></div></div>',
-      '<div class="museum-tour__meta"><span class="museum-tour__step">01 / 05</span><span class="museum-tour__countdown">26 СЕК</span></div>',
-      '<div class="museum-tour__track" role="progressbar" aria-label="Ход обучения" aria-valuemin="0" aria-valuemax="26" aria-valuenow="0"><span class="museum-tour__fill"></span></div>',
-      '<p class="museum-tour__foot">Подготавливаем 3D-макет параллельно с обучением…</p>',
-      '</div>'
+      '<div class="museum-tour__hint" aria-live="polite" aria-atomic="true">',
+      '<span class="museum-tour__title"></span>',
+      '<span class="museum-tour__text"></span>',
+      '</div>',
+      '<div class="museum-tour__actions">',
+      '<span class="museum-tour__step" aria-hidden="true">01 / 05</span>',
+      '<button class="museum-tour__skip" type="button">Пропустить <span aria-hidden="true">×</span></button>',
+      '</div>',
+      '<div class="museum-tour__track" role="progressbar" aria-label="Прогресс обучения" aria-valuemin="0" aria-valuemax="26" aria-valuenow="0">',
+      '<span class="museum-tour__fill"></span></div>'
     ].join('');
     document.body.appendChild(root);
     title = root.querySelector('.museum-tour__title');
-    description = root.querySelector('.museum-tour__text');
-    glyph = root.querySelector('.museum-tour__glyph');
+    hint = root.querySelector('.museum-tour__text');
     counter = root.querySelector('.museum-tour__step');
-    countdown = root.querySelector('.museum-tour__countdown');
-    fill = root.querySelector('.museum-tour__fill');
-    stateLabel = root.querySelector('.museum-tour__foot');
     skip = root.querySelector('.museum-tour__skip');
-    skip.addEventListener('click', () => stop(true));
-    // The tour is an optional coachmark, not a modal. The real map remains
-    // directly usable; any first gesture immediately gives control to the user.
+    progress = root.querySelector('.museum-tour__fill');
+    skip.addEventListener('click', () => stop());
+    // Cancel BEFORE OrbitControls receives the first pointer/wheel gesture,
+    // and return the live camera without snapping back to an earlier position.
     document.addEventListener('pointerdown', event => {
-      if (active && mapReady && !root.contains(event.target)) stop(false);
+      if (active && !root.contains(event.target)) stop();
     }, true);
     document.addEventListener('wheel', event => {
-      if (active && mapReady && !root.contains(event.target)) stop(false);
+      if (active && !root.contains(event.target)) stop();
     }, { capture: true, passive: true });
     document.addEventListener('keydown', event => {
-      if (!active || event.target.closest?.('input,textarea,select,[contenteditable="true"]')) return;
+      if (!active || event.target?.closest?.('input,textarea,select,[contenteditable="true"]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
-        stop(true);
-      } else if (mapReady && (/^Arrow/.test(event.key) || /^[wasd]$/i.test(event.key))) {
-        stop(false);
+        stop();
+      } else if (/^Arrow/.test(event.key) || /^[wasd]$/i.test(event.key)) {
+        stop();
       }
     }, true);
   }
 
-  function spotlightOn(target) {
-    if (spotlight) spotlight.classList.remove('museum-tour-spotlight');
-    spotlight = target || null;
-    if (spotlight && spotlight.getClientRects().length) spotlight.classList.add('museum-tour-spotlight');
-  }
   function pose() {
-    return api ? { position: api.camera.position.clone(), target: api.controls.target.clone() } : null;
+    if (!api) return null;
+    return { eye: api.camera.position.clone(), target: api.controls.target.clone() };
   }
-  function restorePose(saved) {
-    if (!api || !saved) return;
-    api.camera.position.copy(saved.position);
-    api.controls.target.copy(saved.target);
+  function setPose(p) {
+    if (!api || !p) return;
+    api.camera.position.copy(p.eye);
+    api.controls.target.copy(p.target);
     api.camera.lookAt(api.controls.target);
     api.camera.updateMatrixWorld(true);
   }
-  function transition(end, duration) {
-    if (!mapReady || !api || reducedMotion || !end) return;
-    tween = { from: pose(), to: end, start: performance.now(), duration: duration || 2000 };
+  function ease(t) {
+    const u = Math.max(0, Math.min(1, t));
+    return u * u * u * (u * (6 * u - 15) + 10); // 5th-order ease: zero velocity and acceleration at ends
   }
-  function applyStep(index) {
-    if (index < 0 || index >= steps.length) return;
-    stepIndex = index;
-    const step = steps[index];
-    title.textContent = step.title;
-    description.textContent = step.description;
-    glyph.textContent = step.glyph;
-    counter.textContent = String(index + 1).padStart(2, '0') + ' / 05';
-    spotlightOn(null);
-    if (!mapReady || !api) return;
+  function tweenTo(destination, duration, travelArc = 0) {
+    if (!destination || reducedMotion) return;
+    move = { from: pose(), to: destination, at: elapsed, duration, travelArc };
+    orbit = null;
+  }
+  function panDestination() {
+    const p = pose(), dx = p.eye.x - p.target.x, dz = p.eye.z - p.target.z;
+    const horizontal = Math.max(1, Math.hypot(dx, dz));
+    const shift = Math.min(170, Math.max(45, p.eye.distanceTo(p.target) * .065));
+    const x = shift * dz / horizontal, z = -shift * dx / horizontal;
+    p.eye.x += x; p.eye.z += z;
+    p.target.x += x; p.target.z += z;
+    return p;
+  }
+  function zoomDestination() {
+    const p = pose();
+    const dx = p.eye.x - p.target.x, dz = p.eye.z - p.target.z;
+    const angle = .19, scale = .80;
+    p.eye.x = p.target.x + (dx * Math.cos(angle) - dz * Math.sin(angle)) * scale;
+    p.eye.z = p.target.z + (dx * Math.sin(angle) + dz * Math.cos(angle)) * scale;
+    p.eye.y = p.target.y + (p.eye.y - p.target.y) * scale;
+    return p;
+  }
+  function startOrbit(startAt = elapsed, focused = false) {
+    if (reducedMotion) return;
+    const p = pose();
+    if (!p) return;
+    orbit = { base: p, at: startAt, focused };
+    move = null;
+  }
+  function runOrbit() {
+    if (!orbit) return;
+    const seconds = Math.max(0, (elapsed - orbit.at) / 1000);
+    const b = orbit.base, dx = b.eye.x - b.target.x, dz = b.eye.z - b.target.z;
+    const radians = seconds * (orbit.focused ? .075 : .070);
+    // On a focused site, remain centered on that SAME site as we orbit.
+    // No circular camera teleport or change of pivot across menu stages.
+    let scale = 1;
+    if (orbit.focused && seconds >= 5) scale = 1 - .10 * ease((seconds - 5) / 6);
+    const c = Math.cos(radians), s = Math.sin(radians);
+    api.controls.target.copy(b.target);
+    api.camera.position.set(
+      b.target.x + (dx * c - dz * s) * scale,
+      b.target.y + (b.eye.y - b.target.y) * scale,
+      b.target.z + (dx * s + dz * c) * scale
+    );
+    api.camera.lookAt(api.controls.target);
+    api.camera.updateMatrixWorld(true);
+  }
+  function runMove() {
+    if (!move) return;
+    const t = Math.max(0, Math.min(1, (elapsed - move.at) / move.duration));
+    const u = ease(t);
+    api.camera.position.copy(move.from.eye).lerp(move.to.eye, u);
+    api.controls.target.copy(move.from.target).lerp(move.to.target, u);
+    // Take a graceful elevated arc when moving across the cosmodrome.
+    if (move.travelArc) api.camera.position.y += move.travelArc * Math.sin(Math.PI * u);
+    api.camera.lookAt(api.controls.target);
+    api.camera.updateMatrixWorld(true);
+    if (t >= 1) move = null;
+  }
+  function highlight(target) {
+    if (spotlight) spotlight.classList.remove('museum-tour-spotlight');
+    spotlight = target || null;
+    if (spotlight?.getClientRects().length) spotlight.classList.add('museum-tour-spotlight');
+  }
+  function enterStage(i) {
+    currentStage = i;
+    const s = stages[i];
+    title.textContent = s.title;
+    hint.textContent = s.hint;
+    counter.textContent = String(i + 1).padStart(2, '0') + ' / 05';
+    highlight(null);
 
-    if (index === 0 && !reducedMotion) {
-      const end = pose();
-      const shift = Math.min(160, Math.max(35, end.position.distanceTo(end.target) * .045));
-      end.position.x += shift;
-      end.target.x += shift;
-      transition(end, 2400);
-    } else if (index === 1 && !reducedMotion) {
-      const end = pose();
-      const x = end.position.x - end.target.x, z = end.position.z - end.target.z;
-      const angle = .11, scale = .77;
-      end.position.x = end.target.x + (x * Math.cos(angle) - z * Math.sin(angle)) * scale;
-      end.position.z = end.target.z + (x * Math.sin(angle) + z * Math.cos(angle)) * scale;
-      end.position.y = end.target.y + (end.position.y - end.target.y) * scale;
-      transition(end, 2800);
-    } else if (index === 2) {
-      // A genuine site selection and real 3D camera journey; no video/mockup.
-      if (!focusDemonstrated && typeof api.focusGagarin === 'function') {
-        const start = pose();
+    if (i === 0) {
+      if (initiallyFocused) startOrbit(0, true);
+      else tweenTo(panDestination(), 5000);
+    } else if (i === 1 && !initiallyFocused) {
+      tweenTo(zoomDestination(), 6000);
+    } else if (i === 2) {
+      if (!initiallyFocused && typeof api?.focusGagarin === 'function') {
+        // Focus updates the real site card. Capture its destination pose,
+        // then instantly restore the current camera BEFORE the next render.
+        const from = pose();
         try {
           api.focusGagarin();
-          focusDemonstrated = true;
-          const end = pose();
-          restorePose(start);
-          transition(end, 1800);
+          selectedDuringDemo = true;
+          const destination = pose();
+          setPose(from);
+          const distance = from.target.distanceTo(destination.target);
+          tweenTo(destination, 6000, Math.min(400, distance * .17));
         } catch (error) {
-          console.warn('Museum onboarding focus unavailable:', error);
+          setPose(from);
+          console.warn('Tour: could not focus Gagarin launch site', error);
         }
       }
-      spotlightOn(document.getElementById('info'));
-    } else if (index === 3) {
-      spotlightOn((mobile ? document.getElementById('mobileMenuToggle') : null) ||
-        document.getElementById('sitesAccordion'));
-    } else if (index === 4) {
+      highlight(document.getElementById('info'));
+    } else if (i === 3) {
+      if (!initiallyFocused) startOrbit(elapsed, false);
+      highlight(mobile ? document.getElementById('mobileMenuToggle') : document.getElementById('sitesAccordion'));
+    } else if (i === 4) {
       const menu = document.getElementById('reconstructionsAccordion');
       if (menu && !mobile) {
-        highlightedAccordion = { element: menu, wasOpen: menu.open };
+        openedMenu = { element: menu, wasOpen: menu.open };
         menu.open = true;
       }
-      spotlightOn(mobile ? document.getElementById('mobileMenuToggle') : menu);
+      highlight(mobile ? document.getElementById('mobileMenuToggle') : menu);
     }
   }
-
-  function tick(now) {
-    if (!active) return;
-    if (lastFrame && !document.hidden) elapsed += Math.max(0, now - lastFrame);
-    lastFrame = now;
-    if (tween && mapReady && api) {
-      const t = Math.max(0, Math.min(1, (now - tween.start) / tween.duration));
-      const eased = t * t * (3 - 2 * t);
-      api.camera.position.copy(tween.from.position).lerp(tween.to.position, eased);
-      api.controls.target.copy(tween.from.target).lerp(tween.to.target, eased);
-      api.camera.lookAt(api.controls.target);
-      api.camera.updateMatrixWorld(true);
-      if (t >= 1) tween = null;
+  function update(now) {
+    if (!active || !api || document.hidden) {
+      lastNow = 0;
+      return;
     }
-    const next = steps.findIndex(step => elapsed < step.until);
-    if (next === -1) { stop(false); return; }
-    if (next !== stepIndex) applyStep(next);
-    countdown.textContent = Math.ceil((TOTAL_MS - elapsed) / 1000) + ' СЕК';
-    fill.style.width = (elapsed / TOTAL_MS * 100).toFixed(1) + '%';
+    if (lastNow > 0) elapsed += Math.max(0, now - lastNow);
+    lastNow = now;
+    if (elapsed >= TOTAL_MS) {
+      stop();
+      return;
+    }
+    const i = stages.findIndex(s => elapsed < s.end);
+    if (i !== currentStage) enterStage(i);
+    if (!reducedMotion) {
+      if (move) runMove();
+      else if (orbit) runOrbit();
+    }
+    progress.style.width = (elapsed / TOTAL_MS * 100).toFixed(2) + '%';
     root.querySelector('[role="progressbar"]').setAttribute('aria-valuenow', String(Math.floor(elapsed / 1000)));
-    frame = requestAnimationFrame(tick);
   }
-
   function start() {
-    if (!root || active) return;
-    // A replay starts at the current view. Skipping restores that view.
-    original = pose();
+    if (!ready || !api || active || document.hidden) return false;
+    const loader = document.getElementById('museumLoading');
+    if (!loader?.hidden || !document.body.classList.contains('museum-ready')) return false;
+    pendingStart = false;
     active = true;
     elapsed = 0;
-    lastFrame = 0;
-    stepIndex = -1;
-    focusDemonstrated = false;
-    highlightedAccordion = null;
-    tween = null;
-    root.dataset.ready = String(mapReady);
+    lastNow = 0;
+    currentStage = -1;
+    selectedDuringDemo = false;
+    openedMenu = null;
+    move = null;
+    orbit = null;
+    initiallyFocused = Boolean(api.isObjectFocused?.());
+    originalControls = { enabled: api.controls.enabled, damping: api.controls.enableDamping };
+    // Suppress scripted-tour vs. wheel/damping competition. The first real
+    // interaction restores OrbitControls before its event handler executes.
+    api.controls.enableDamping = false;
+    api.controls.update();
+    api.controls.enabled = false;
     root.hidden = false;
-    stateLabel.textContent = mapReady ? 'Макет готов. Можно прервать обучение в любой момент.' :
-      'Подготавливаем 3D-макет параллельно с обучением…';
-    frame = requestAnimationFrame(tick);
+    return true;
   }
-
-  function stop(restore) {
-    if (!active) return;
-    active = false;
-    if (frame) cancelAnimationFrame(frame);
-    frame = 0;
-    tween = null;
-    spotlightOn(null);
-    root.hidden = true;
-    if (restore && original) {
-      restorePose(original);
-      if (typeof api?.clearDemo === 'function' && focusDemonstrated) api.clearDemo();
-      if (highlightedAccordion && !highlightedAccordion.wasOpen) highlightedAccordion.element.open = false;
+  function stop() {
+    if (!active) {
+      pendingStart = false;
+      return;
     }
-    recordSeen();
+    active = false;
+    pendingStart = false;
+    move = null;
+    orbit = null;
+    highlight(null);
+    root.hidden = true;
+    if (openedMenu && !openedMenu.wasOpen) openedMenu.element.open = false;
+    openedMenu = null;
+    if (api && originalControls) {
+      api.controls.enabled = originalControls.enabled;
+      api.controls.enableDamping = originalControls.damping;
+      api.camera.lookAt(api.controls.target);
+      api.camera.updateMatrixWorld(true);
+    }
+    // Keep the current camera view: skipping must never snap the visitor back.
+    originalControls = null;
+    markSeen();
   }
   function attach(options) {
     api = options;
-    if (mapReady && !active) return;
   }
-  function ready() {
-    mapReady = true;
-    if (!root) return;
-    root.dataset.ready = 'true';
-    stateLabel.textContent = 'Макет готов. Можно прервать обучение в любой момент.';
-    if (active) {
-      original = pose();
-      // The preloader may have occupied some of the tour. Demonstrate the
-      // currently shown step on the actual scene when it becomes available.
-      const stage = stepIndex;
-      stepIndex = -1;
-      applyStep(stage >= 0 ? stage : 0);
-    }
+  function readyAfterPreloader() {
+    ready = true;
+    if (!autoPlay || !api) return;
+    pendingStart = true;
+    // Defer to a NEW painted frame; neither the exit animation nor its last
+    // compositor frame should overlap the first frame of the camera tour.
+    const schedule = () => {
+      if (!pendingStart) return;
+      if (document.hidden) return;
+      requestAnimationFrame(() => {
+        if (!pendingStart) return;
+        if (!start()) requestAnimationFrame(schedule);
+      });
+    };
+    requestAnimationFrame(schedule);
   }
-  function fail() { if (active) stop(false); }
+  function fail() {
+    pendingStart = false;
+    if (active) stop();
+  }
   function installReplay() {
     const host = document.querySelector('#navigationGuide .navigation-guide-content');
     if (!host || host.querySelector('.museum-tour-replay')) return;
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'museum-tour-replay';
-    button.textContent = '↻  ПОВТОРИТЬ ОБУЧЕНИЕ · 26 СЕК';
+    button.textContent = '↻  ПОВТОРИТЬ ЭКСКУРСИЮ · 26 СЕК';
     button.addEventListener('click', () => start());
     host.appendChild(button);
   }
 
   build();
-  document.addEventListener('DOMContentLoaded', installReplay, { once: true });
-  // Paused/hidden tabs must not consume the visitor's 26 seconds of learning.
-  document.addEventListener('visibilitychange', () => { lastFrame = 0; });
-  window.__MUSEUM_ONBOARDING = Object.freeze({
-    attach, ready, fail, replay: start, skip: () => stop(true),
-    stats: () => ({ active, ready: mapReady, elapsedMs: Math.round(elapsed), step: stepIndex, durationMs: TOTAL_MS })
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installReplay, { once: true });
+  else installReplay();
+  document.addEventListener('visibilitychange', () => {
+    lastNow = 0;
+    if (!document.hidden && pendingStart) requestAnimationFrame(() => start());
   });
-  if (forced || (!navigator.webdriver && !deepLink && !seen() && query.get('tour') !== '0')) start();
+  window.__MUSEUM_ONBOARDING = Object.freeze({
+    attach, ready: readyAfterPreloader, update, fail, replay: start, skip: stop,
+    stats: () => ({
+      active, ready, pendingStart, elapsedMs: Math.round(elapsed), step: currentStage,
+      durationMs: TOTAL_MS, focused: initiallyFocused, moving: Boolean(move), orbiting: Boolean(orbit)
+    })
+  });
 })();
