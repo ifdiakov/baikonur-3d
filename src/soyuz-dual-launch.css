@@ -1,0 +1,25 @@
+/* Dual-site Soyuz launch reconstruction — compact cinematic dock. */
+.soyuz-launch-panel{position:fixed;z-index:36;right:16px;bottom:132px;width:min(390px,calc(100vw - 28px));max-height:min(72vh,620px);overflow:auto;padding:17px 19px 15px;color:#f4f0e7;background:rgba(9,21,30,.96);border:1px solid rgba(240,211,158,.45);border-radius:15px;box-shadow:0 18px 60px #000b;backdrop-filter:blur(18px);font:500 12px/1.45 Montserrat,Arial,sans-serif}
+.soyuz-launch-panel[hidden]{display:none!important}
+.soyuz-launch-head,.soyuz-launch-actions,.soyuz-launch-telemetry{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.soyuz-launch-head{border-bottom:1px solid #ffffff2b;padding-bottom:12px;margin-bottom:13px}
+.soyuz-launch-eyebrow{display:block;margin-bottom:4px;color:#d7a978;font-size:9px;letter-spacing:.15em;font-weight:800}
+#soyuzTitle{font-size:15px;font-weight:800;line-height:1.25;display:block;letter-spacing:.015em}
+#soyuzClose{width:32px;height:32px;padding:0;border:1px solid #fff3;border-radius:50%;color:#dce3e2;background:#1d323d;font-size:23px;cursor:pointer}
+.soyuz-launch-telemetry{margin:6px 0 12px}
+#soyuzClock{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+#soyuzAltitude{font-size:10px;color:#d8d3c7;text-align:right;white-space:nowrap}
+.soyuz-launch-stage{min-height:18px;color:#efc196;font-weight:800;letter-spacing:.035em;font-size:11px}
+.soyuz-launch-detail{margin:8px 0 10px;min-height:46px;line-height:1.52;color:#d0d8da;font-size:11px}
+#soyuzSeek{width:100%;accent-color:#ea9b58;margin:4px 0 13px;cursor:pointer}
+.soyuz-launch-actions{justify-content:flex-start;flex-wrap:wrap;margin-bottom:9px}
+.soyuz-launch-actions button{cursor:pointer;padding:8px 10px;border:1px solid #b8c3c34a;border-radius:7px;color:#dfe9ec;background:#243b47;font:700 10px Montserrat,Arial,sans-serif;letter-spacing:.025em}
+.soyuz-launch-actions button:hover,.soyuz-launch-actions button[aria-pressed=true]{background:#b26b44;color:#fff;border-color:#ca9776}
+.soyuz-launch-actions label{margin-left:auto;color:#a8c0c7;font-size:9px;letter-spacing:.06em}
+#soyuzSpeed{margin-left:5px;background:#203743;color:#f3f3ed;border:1px solid #ffffff36;padding:5px;border-radius:6px;font:700 11px Montserrat,Arial,sans-serif}
+.soyuz-launch-note{display:block;color:#a5bac1;font-size:9px;line-height:1.55;margin-top:8px;border-top:1px solid #ffffff24;padding-top:9px}
+#soyuzLaunchStart{display:block;width:100%;margin:9px 0;background:#234a3a;border:1px solid #739c7a8c;color:#f1eee5;padding:10px 11px;border-radius:8px;font:700 10px Montserrat,Arial,sans-serif;cursor:pointer;text-align:center}
+#soyuzLaunchStart[hidden]{display:none!important}
+#soyuzLaunchStart:hover{background:#30624e}
+body.soyuz-launch-active .soyuz-launch-panel{pointer-events:auto}
+@media(max-width:850px){.soyuz-launch-panel{left:9px;right:9px;bottom:76px;width:auto;max-height:min(48dvh,380px);padding:11px 14px}.soyuz-launch-head{margin-bottom:8px;padding-bottom:7px}#soyuzClock{font-size:20px}.soyuz-launch-detail{min-height:0;margin:5px 0;font-size:10px}.soyuz-launch-note{display:none}.soyuz-launch-actions{margin-bottom:6px}}
