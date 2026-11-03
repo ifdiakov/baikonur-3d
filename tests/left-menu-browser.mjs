@@ -4,9 +4,9 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261102-energia-polyus-v2';
-const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261103-smooth-free-map-camera-v1';
+const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -96,6 +96,7 @@ try{
  assert.equal(await page.locator('#museumIdentity .museum-subtitle').textContent(),'ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D');
  assert.equal(await page.locator('#museumIdentity .museum-dimension').textContent(),'3D');
  assert.equal(await page.locator('#toursAccordion').count(),0,'Tours are removed rather than visually hidden');
+ assert.equal(await page.locator('#roadEditorToggle,#roadEditorPanel,#energiaLaunchQuickStart').count(),0,'Removed editors and floating launch CTA do not render');
  assert.equal(await page.locator('#museumRightStack').isVisible(),true);
  assert.equal(await page.locator('#nextLaunchPanel .next-launch__eyebrow').textContent(),'СЛЕДУЮЩИЙ ЗАПУСК');
  assert.equal(await page.locator('#nextLaunchPanel .next-launch__name').textContent(),'ПРОГРЕСС МС-37');
@@ -194,7 +195,10 @@ try{
  await page.waitForFunction(()=>document.getElementById('mythsAccordion').open);
  assert.equal(await page.locator('#mythsAccordion [data-museum-action]').count(),12);
  assert.equal(await page.locator('#mythsAccordion .museum-menu-empty').count(),0);
+ await openSection('traditionsAccordion');
+ assert.equal(await page.locator('#traditionsAccordion .museum-menu-empty').count(),1,'Traditions category opens its honest pending-content state');
  await openSection('equipmentAccordion');
+ assert.equal(await page.locator('#traditionsAccordion').evaluate(element=>element.open),false);
  assert.equal(await page.locator('#mythsAccordion').evaluate(element=>element.open),false);
  const equipmentActions=MUSEUM_SECTIONS.find(section=>section.id==='equipmentAccordion').items.map(item=>item.action);
  assert.deepEqual(await page.locator('#equipmentAccordion [data-museum-action]').evaluateAll(elements=>elements.map(element=>element.dataset.museumAction)),equipmentActions,
