@@ -2240,8 +2240,12 @@ async function requestSoyuzLaunch(siteId){
  const button=document.getElementById('soyuzLaunchStart');
  if(button&&!button.hidden){button.disabled=true;button.textContent='ЗАГРУЗКА «СОЮЗА»…';}
  try{
-  if(entry.status==='error')await rocketExhibits.setModel(key,'soyuz');
-  else if(entry.status!=='ready')await entry.pending;
+  // Wait for both actual sourced launch-table geometries before masking them.
+  const rocketReady=entry.status==='error'?rocketExhibits.setModel(key,'soyuz'):entry.pending;
+  const structureReady=siteId==='pad-1'
+    ?gagarinExhibit.table?.load?.()
+    :portalArchive.loadSite31?.();
+  await Promise.all([rocketReady,structureReady]);
   if(generation!==soyuzRequestGeneration)return false;
   entry=rocketExhibits.get(key);
   if(entry?.status!=='ready')return false;
