@@ -1,0 +1,25 @@
+name: Verify Baikonur city territory
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/city-territory.js'
+      - 'src/flank-districts.js'
+      - 'tests/flanks-geometry.mjs'
+      - '.github/workflows/verify-city-territory.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install geometry dependency
+        run: npm install --no-save three@0.160.1
+      - name: Validate actual city and three-flank geometry, fills and DEM draping
+        run: node tests/flanks-geometry.mjs
