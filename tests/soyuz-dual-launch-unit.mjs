@@ -17,7 +17,8 @@ assert.ok(sampleSoyuzLaunch(1).supportOpen>0,'Arms open under decreasing rocket 
 assert.equal(sampleSoyuzLaunch(3).supportOpen,1,'Arms fully open early in ascent');
 assert.ok(sampleSoyuzLaunch(-19).enginePower>0);
 assert.ok(sampleSoyuzLaunch(-15).enginePower>sampleSoyuzLaunch(-19).enginePower);
-assert.ok(sampleSoyuzLaunch(0).enginePower>sampleSoyuzLaunch(-3).enginePower);
+assert.equal(sampleSoyuzLaunch(-5).enginePower,1);
+assert.equal(sampleSoyuzLaunch(0).enginePower,1);
 assert.equal(sampleSoyuzLaunch(-60).firstColumnOpen,0);
 assert.ok(sampleSoyuzLaunch(-54).firstColumnOpen>0);
 assert.equal(sampleSoyuzLaunch(-45).firstColumnOpen,1);
