@@ -2,12 +2,13 @@ import * as THREE from 'three';
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v4';
+export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v5-natural-patches';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
 const MASK_RESOLUTION=512;
 const TEXTURE_SIZE=256;
+const FIELD_RESOLUTION=256;
 const hash=(x,y,seed=1)=>{
  let n=Math.imul((x|0)+seed*137,374761393)^Math.imul((y|0)-seed*29,668265263);
  n=Math.imul(n^(n>>>13),1274126177);
@@ -55,6 +56,104 @@ function makeMaterialTextures(renderer){
   normal:make(normal,'Game terrain · ground normal'),
   roughness:make(roughness,'Game terrain · dry roughness')};
 }
+
+// One non-tiling, world-registered soil field across both sites. Larger masks
+// are sampled at roughly 2.4 world units/texel; only the small PBR grain tiles.
+// The DEM changes where deposits gather, not the shape of the underlying mesh.
+function naturalNoise(x,z,cell,seed){
+ const u=x/cell,v=z/cell,ix=Math.floor(u),iz=Math.floor(v);
+ const fx=smooth(0,1,u-ix),fz=smooth(0,1,v-iz);
+ return THREE.MathUtils.lerp(
+  THREE.MathUtils.lerp(hash(ix,iz,seed),hash(ix+1,iz,seed),fx),
+  THREE.MathUtils.lerp(hash(ix,iz+1,seed),hash(ix+1,iz+1,seed),fx),fz);
+}
+function makeLandcoverField(bounds,heightAt,renderer){
+ const n=FIELD_RESOLUTION,bytes=new Uint8Array(n*n*4);
+ for(let row=0;row<n;row++)for(let col=0;col<n;col++){
+  const x=bounds.minX+(col+.5)/n*worldMaskSize;
+  const z=bounds.minZ+(row+.5)/n*worldMaskSize;
+  // Broad irregular warps prevent parallel striations and regular blobs.
+  const wx=x+(naturalNoise(x,z,158,131)-.5)*37+(naturalNoise(x,z,44,137)-.5)*11;
+  const wz=z+(naturalNoise(x+71,z-89,143,139)-.5)*33+(naturalNoise(x,z,51,149)-.5)*9;
+  const sediment=.57*naturalNoise(wx,wz,112,17)+.29*naturalNoise(wx,wz,43,19)+
+   .14*naturalNoise(wx,wz,13,23);
+  const rock=.51*naturalNoise(wx+91,wz-43,74,31)+.34*naturalNoise(wx,wz,26,37)+
+   .15*naturalNoise(wx,wz,9,41);
+  const dryWash=.63*naturalNoise(wx-113,wz+67,96,53)+
+   .27*naturalNoise(wx,wz,34,59)+.10*naturalNoise(wx,wz,11,61);
+  const scrubField=.67*naturalNoise(wx+163,wz+41,48,71)+
+   .33*naturalNoise(wx,wz,16,73);
+  const h=heightAt(x,z);
+  const dx=(heightAt(x+7,z)-heightAt(x-7,z))/14;
+  const dz=(heightAt(x,z+7)-heightAt(x,z-7))/14;
+  const slope=clamp(Math.hypot(dx,dz)/.085);
+  const rise=smooth(.15,2.5,Math.max(0,h+2.755));
+  const sand=smooth(.40,.70,sediment-.055*slope);
+  const gravel=smooth(.44,.72,rock+.095*slope+.06*rise)*(1-.38*sand);
+  const salt=smooth(.61,.81,dryWash+.025*(1-slope))*(1-.76*slope)*(1-.48*rise);
+  const scrub=smooth(.51,.79,scrubField)*(1-.72*salt)*(1-.30*gravel);
+  const i=(row*n+col)*4;
+  bytes[i]=Math.round(sand*255);
+  bytes[i+1]=Math.round(gravel*255);
+  bytes[i+2]=Math.round(salt*255);
+  bytes[i+3]=Math.round(scrub*255);
+ }
+ const texture=new THREE.DataTexture(bytes,n,n,THREE.RGBAFormat);
+ texture.name='Game terrain · non-repeating sand/clay/gravel/salt field';
+ texture.colorSpace=THREE.NoColorSpace;
+ texture.wrapS=texture.wrapT=THREE.ClampToEdgeWrapping;
+ texture.generateMipmaps=true;texture.minFilter=THREE.LinearMipmapLinearFilter;
+ texture.magFilter=THREE.LinearFilter;
+ texture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
+ texture.needsUpdate=true;
+ const sample=(x,z)=>{
+  const col=clamp(Math.floor((x-bounds.minX)/worldMaskSize*n),0,n-1);
+  const row=clamp(Math.floor((z-bounds.minZ)/worldMaskSize*n),0,n-1);
+  const i=(row*n+col)*4;
+  return {sand:bytes[i]/255,gravel:bytes[i+1]/255,
+   salt:bytes[i+2]/255,scrub:bytes[i+3]/255};
+ };
+ return {texture,sample,resolution:n};
+}
+
+const GAME_SOIL_GLSL=/* glsl */`
+uniform sampler2D gameClearance,gameGrains,gameLandcover;
+uniform vec4 gameRect;
+// Decorrelate every 11-unit patch. Smooth four-way crossfades avoid seams and
+// the repeating texture grid while the texture itself keeps its PBR mipmaps.
+vec2 gameHash2(vec2 cell){
+ return fract(sin(vec2(dot(cell,vec2(127.1,311.7)),dot(cell,vec2(269.5,183.3))))*43758.5453);
+}
+vec3 gameStochasticGrain(vec2 p){
+ vec2 tile=p/11.0,cell=floor(tile),fade=fract(tile);
+ fade=fade*fade*(3.0-2.0*fade);
+ vec2 uv=mat2(.866,-.5,.5,.866)*p/3.2;
+ vec3 a=texture2D(gameGrains,uv+gameHash2(cell)*17.0).rgb;
+ vec3 b=texture2D(gameGrains,uv+gameHash2(cell+vec2(1.0,0.0))*17.0).rgb;
+ vec3 c=texture2D(gameGrains,uv+gameHash2(cell+vec2(0.0,1.0))*17.0).rgb;
+ vec3 d=texture2D(gameGrains,uv+gameHash2(cell+vec2(1.0,1.0))*17.0).rgb;
+ return mix(mix(a,b,fade.x),mix(c,d,fade.x),fade.y);
+}
+`;
+const GAME_SOIL_SHADE=/* glsl */`
+// Unique patches follow DEM slope and the photo's existing light/dark cues.
+// All source landmarks stay in the satellite: color is only gently modulated.
+vec2 gameLandUv=(vSteppeWorld.xz-gameRect.xy)/gameRect.zw;
+vec4 gameSoil=texture2D(gameLandcover,gameLandUv);
+float gamePhotoLight=smoothstep(.055,.45,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
+vec3 gameWeather=mix(vec3(.970,.965,.958),vec3(1.058,1.031,.985),gameSoil.r*.77);
+gameWeather=mix(gameWeather,vec3(.91,.91,.89),gameSoil.g*.23);
+gameWeather=mix(gameWeather,vec3(1.085,1.09,1.065),gameSoil.b*(.13+.18*gamePhotoLight));
+gameWeather*=1.0+(gameSoil.a-.5)*.025;
+float gamePixelSize=max(length(dFdx(vSteppeWorld.xz)),length(dFdy(vSteppeWorld.xz)));
+float gamePatchFade=1.0-smoothstep(3.0,15.0,gamePixelSize);
+diffuseColor.rgb*=mix(vec3(1.0),gameWeather,gamePatchFade);
+float gameMicroFade=1.0-smoothstep(.22,1.65,gamePixelSize);
+vec3 gameMicro=gameStochasticGrain(vSteppeWorld.xz);
+diffuseColor.rgb*=mix(vec3(1.0),
+ clamp(vec3(1.0)+(gameMicro-vec3(.5))*.35,vec3(.83),vec3(1.17)),gameMicroFade);
+`;
+
 function createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point,pad,site2}){
  const canvas=document.createElement('canvas');
  canvas.width=canvas.height=MASK_RESOLUTION;
@@ -132,7 +231,7 @@ function makeGroundGeometry(bounds,heightAt){
   const px=bounds.minX+x/segments*size,pz=bounds.minZ+z/segments*size;
   const base=heightAt(px,pz);
   // Keep the DEM shape; tiny sub-metre irregularities are visible only in close-ups.
-  const bump=.019*Math.sin(px*.17+pz*.07)+.013*Math.cos(px*.11-pz*.23);
+  const bump=.040*(naturalNoise(px,pz,23,211)-.5)+.018*(naturalNoise(px,pz,11,213)-.5);
   positions.push(px,(Number.isFinite(base)?base:-2.755)+.048+bump,pz);
   uv.push(px/3.2,pz/3.2);
  }
@@ -147,7 +246,7 @@ function makeGroundGeometry(bounds,heightAt){
  geometry.computeBoundingSphere();
  return geometry;
 }
-function makePebbles({bounds,mask,heightAt,root}){
+function makePebbles({bounds,mask,heightAt,landcover,root}){
  const geometry=new THREE.IcosahedronGeometry(1,0);
  const material=new THREE.MeshStandardMaterial({
   color:0xb6a083,roughness:.97,metalness:0,transparent:true,depthWrite:false,opacity:0
@@ -162,6 +261,8 @@ function makePebbles({bounds,mask,heightAt,root}){
   const x=bounds.minX+hash(i,83,19)*worldMaskSize;
   const z=bounds.minZ+hash(i,39,31)*worldMaskSize;
   if(mask.pixelAt(x,z)<.78)continue;
+  const soil=landcover.sample(x,z);
+  if(hash(i,97,19)>.36+soil.gravel*.48-soil.salt*.16)continue;
   const height=heightAt(x,z);
   if(!Number.isFinite(height))continue;
   const scale=.042+Math.pow(hash(i,7,97),2)*.19;
@@ -170,7 +271,8 @@ function makePebbles({bounds,mask,heightAt,root}){
   dummy.scale.set(scale*(.75+hash(i,11,43)*.7),scale*(.35+hash(i,17,47)*.5),scale*(.7+hash(i,19,59)*.6));
   dummy.updateMatrix();stones.setMatrixAt(accepted,dummy.matrix);
   const variation=.74+hash(i,23,13)*.37;
-  color.setRGB(.78*variation,.69*variation,.55*variation);
+  color.setRGB((.75+.10*soil.sand)*variation,(.67+.08*soil.sand)*variation,
+   (.54+.06*soil.sand+.03*soil.salt)*variation);
   stones.setColorAt(accepted,color);accepted++;
  }
  stones.count=accepted;
@@ -180,7 +282,7 @@ function makePebbles({bounds,mask,heightAt,root}){
  return {stones,accepted};
 }
 // A small number of low, desaturated steppe shrubs share one draw call.
-function makeSparseShrubs({bounds,mask,heightAt,root}){
+function makeSparseShrubs({bounds,mask,heightAt,landcover,root}){
  const geometry=new THREE.IcosahedronGeometry(1,0);
  const material=new THREE.MeshStandardMaterial({
   color:0x938b68,roughness:1,transparent:true,depthWrite:false,opacity:0
@@ -193,7 +295,9 @@ function makeSparseShrubs({bounds,mask,heightAt,root}){
  for(let i=0;i<max*9&&count<max;i++){
   const x=bounds.minX+hash(i,113,73)*worldMaskSize;
   const z=bounds.minZ+hash(i,131,71)*worldMaskSize;
-  if(mask.pixelAt(x,z)<.94||hash(i,17,79)<.35)continue;
+  if(mask.pixelAt(x,z)<.94)continue;
+  const soil=landcover.sample(x,z);
+  if(hash(i,17,79)>.14+soil.scrub*.54||soil.salt>.72)continue;
   const y=heightAt(x,z);
   if(!Number.isFinite(y))continue;
   const width=.18+hash(i,23,83)*.25,height=.08+hash(i,31,89)*.20;
@@ -216,9 +320,10 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
  const bounds={minX:mid.x-worldMaskSize/2,minZ:mid.z-worldMaskSize/2};
  const mask=createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point,pad,site2});
  const maps=makeMaterialTextures(renderer);
+ const landcover=makeLandcoverField(bounds,terrainRelief.heightAt,renderer);
  const material=new THREE.MeshStandardMaterial({
   color:0xffffff,roughness:.96,metalness:0,normalMap:maps.normal,roughnessMap:maps.roughness,
-  normalScale:new THREE.Vector2(.82,.82),transparent:true,opacity:0,depthWrite:false,
+  normalScale:new THREE.Vector2(.38,.38),transparent:true,opacity:0,depthWrite:false,
   polygonOffset:true,polygonOffsetFactor:-2
  });
  steppeSurface.apply(material);
@@ -227,13 +332,18 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
   prev.call(this,shader,webglRenderer);
   shader.uniforms.gameClearance={value:mask.texture};
   shader.uniforms.gameGrains={value:maps.albedo};
+  shader.uniforms.gameLandcover={value:landcover.texture};
   shader.uniforms.gameRect={value:new THREE.Vector4(bounds.minX,bounds.minZ,worldMaskSize,worldMaskSize)};
   shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-   '#include <common>\nuniform sampler2D gameClearance,gameGrains;\nuniform vec4 gameRect;');
+   '#include <common>\n'+GAME_SOIL_GLSL);
   shader.fragmentShader=shader.fragmentShader.replace('#include <alphamap_fragment>',
    '#include <alphamap_fragment>\nvec2 gameUV=vec2((vSteppeWorld.x-gameRect.x)/gameRect.z,1.0-(vSteppeWorld.z-gameRect.y)/gameRect.w);\ndiffuseColor.a*=texture2D(gameClearance,gameUV).r;');
-  shader.fragmentShader=shader.fragmentShader.replace('diffuseColor.rgb*=steppeTone;',
-   'diffuseColor.rgb*=steppeTone;\nvec3 gameGrain=texture2D(gameGrains,vSteppeWorld.xz/3.2).rgb;\ndiffuseColor.rgb*=clamp(vec3(1.0)+(gameGrain-vec3(.5))*.68,vec3(.72),vec3(1.26));');
+  const satelliteHook='diffuseColor.rgb*=steppeTone;';
+  const fallbackHook='diffuseColor.rgb*=steppeSurfaceTone(vSteppeWorld.xz);';
+  const soilHook=shader.fragmentShader.includes(satelliteHook)?satelliteHook:fallbackHook;
+  if(!shader.fragmentShader.includes(soilHook))
+   throw new Error('Game terrain requires shared steppe surface shader');
+  shader.fragmentShader=shader.fragmentShader.replace(soilHook,soilHook+'\n'+GAME_SOIL_SHADE);
  };
  const beforeCache=material.customProgramCacheKey.bind(material);
  material.customProgramCacheKey=()=>beforeCache()+'|'+GAME_TERRAIN_VERSION;
@@ -244,8 +354,8 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
  terrain.name='Песок, гравий, сухая глина · PBR';
  terrain.renderOrder=4;terrain.receiveShadow=true;
  terrain.visible=false;terrain.userData.pickable=false;root.add(terrain);
- const {stones,accepted}=makePebbles({bounds,mask,heightAt:terrainRelief.heightAt,root});
- const {mesh:shrubs,count:shrubCount}=makeSparseShrubs({bounds,mask,heightAt:terrainRelief.heightAt,root});
+ const {stones,accepted}=makePebbles({bounds,mask,heightAt:terrainRelief.heightAt,landcover,root});
+ const {mesh:shrubs,count:shrubCount}=makeSparseShrubs({bounds,mask,heightAt:terrainRelief.heightAt,landcover,root});
  scene.add(root);
  let altitude=-1,strength=0,stonesStrength=0;
  function update(){
@@ -269,7 +379,8 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
   height:altitude,blend:strength,stonesBlend:stonesStrength,
   stones:accepted,shrubs:shrubCount,triangles:terrain.geometry.index.count/3,
   geometry:'DEM-aligned mesh',material:'PBR MeshStandardMaterial',
-  textures:['grain','normal','roughness'],satellitePreserved:true,
+  textures:['stochastic-grain','normal','roughness','non-repeating-landcover'],
+  satellitePreserved:true,soilFieldResolution:landcover.resolution,soilFieldPeriod:'unique-620-unit-area',
   clearance:'launch pads, roads and rails are left visible',
   bounds:{...bounds,size:worldMaskSize}})};
 }
