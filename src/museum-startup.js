@@ -268,8 +268,8 @@
   // network priority leaves the rendering engine first; callers reuse these
   // exact promises rather than issuing a second round of requests.
   if (document.body.dataset.preloadMuseum === 'true') {
-    ['./data/catalog.json', './data/osm/catalog-matches.json', './data/osm/roads.geojson',
-      './data/osm/railways.geojson', './data/terrain/baikonur-dem.json?v=20261101-relief-v1',
+    ['./data/catalog.json', './data/osm/catalog-matches.json', './data/osm/roads.geojson?v=8681815663cf',
+      './data/osm/railways.geojson?v=6652ccc2127c', './data/terrain/baikonur-dem.json?v=20261101-relief-v1',
       './data/road-signs.json'].forEach(function (path) {
       var pending = requestJSON(path, { priority: 'low' });
       pending.catch(function () {});

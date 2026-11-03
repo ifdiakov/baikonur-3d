@@ -587,7 +587,7 @@ mapAttribution.append(attribution,terrainAttribution,modelCreditsLink);document.
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261103-loading-optimization-v1';
+const MUSEUM_REVISION='20261103-loading-optimization-v2';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
@@ -597,8 +597,8 @@ const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-202
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,ownerRoadEdits]=await Promise.all([
- './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson','./data/osm/railways.geojson',
- './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson','./data/osm/places.geojson','./data/transport-network.json',ownerRoadEditsReady
+ './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson?v=8681815663cf','./data/osm/railways.geojson?v=6652ccc2127c',
+ './data/osm/rail-points.geojson?v=b1676d9b3ec7','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson?v=65f8a2f3f082','./data/osm/places.geojson','./data/transport-network.json',ownerRoadEditsReady
 ].map(x=>typeof x==='string'?loadMuseumData(x):x));
 const museumKnowledge=createDeferredKnowledge({startup,onNavigate:action=>openMuseumAction(action)});
 const nextLaunchHost=document.getElementById('nextLaunchPanel');
