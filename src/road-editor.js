@@ -110,76 +110,88 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   return ray.intersectObjects(groundMeshes,false)[0]?.point??null;
  }
  const horizontal=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
- function sampled(r){
-  const p=r.points.map(v=>new THREE.Vector3(...v)),out=[p[0].clone()];
-  // Preserve intentional corner vertices. Only insert samples to follow terrain.
-  for(let i=1;i<p.length;i++){
-   const a=p[i-1],b=p[i],n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/2.2));
-   for(let k=1;k<=n;k++)out.push(a.clone().lerp(b,k/n));
+ let joinedPaths=[],joinReport=[],geometryStats={segments:0,sourceRoads:0,overlaps:0};
+ let addedSignature=null,maskSignature=null,erasedIndex=new Map(),baselineData=null;
+ function rebuildAdded(){
+  for(const child of [...editingGroup.children]){
+   if(child===previewGroup)continue;editingGroup.remove(child);
+   child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
   }
-  // Control points have already been projected onto the actual scene.
-  // Do not perform a costly raycast against the million-triangle OSM layer
-  // for each subdivided segment or for every edit/Undo/Redo.
-  return out;
- }
- function roadStrip(points,width,lift=0){
-  const xyz=[];
-  for(let i=1;i<points.length;i++){
-   const a=points[i-1],b=points[i],p=points[Math.max(0,i-2)],q=points[Math.min(points.length-1,i+1)];
-   const d1=b.clone().sub(p).setY(0).normalize(),d2=q.clone().sub(a).setY(0).normalize();
-   const n1=new THREE.Vector3(-d1.z,0,d1.x).multiplyScalar(width/2),n2=new THREE.Vector3(-d2.z,0,d2.x).multiplyScalar(width/2);
-   const c=[a.clone().sub(n1),a.clone().add(n1),b.clone().sub(n2),b.clone().add(n2)];
-   c.forEach(v=>v.y+=lift);
-   for(const j of [0,2,1,1,2,3])xyz.push(...c[j].toArray());
+  const joined=stitchEditedRoads(state.added);
+  joinReport=joined.adjustments;
+  const built=buildEditedRoadMeshes(joined.roads,{terrainHeightAt});
+  joinedPaths=built.paths;
+  geometryStats=built.stats;
+  routes=[...base,...joinedPaths];
+  for(const [type,g]of Object.entries(built.geometries)){
+   if(!g.attributes.position.count){g.dispose();continue;}
+   const material=type==='asphalt'?asphalt:type==='ground'?dirt:shoulder;
+   const mesh=new THREE.Mesh(g,material);mesh.name='Единое полотно редактора · '+type;
+   mesh.receiveShadow=true;editingGroup.add(mesh);
   }
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
-  geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
- }
- function renderPath(record){
-  const points=sampled(record),road=new THREE.Group();road.name='Новая дорога · '+record.id;
-  const edge=new THREE.Mesh(roadStrip(points,record.width+.72,.005),shoulder);
-  edge.name='Обочина · '+record.id;edge.receiveShadow=true;road.add(edge);
-  const surface=new THREE.Mesh(roadStrip(points,record.width,.032),record.surface==='ground'?dirt:asphalt);
-  surface.name='Покрытие · '+record.id;surface.receiveShadow=true;road.add(surface);
-  if(record.surface==='asphalt'&&record.width>=5){
-   const dashes=[];
-   for(let i=1;i<points.length;i++){
-    const a=points[i-1],b=points[i],dx=b.x-a.x,dz=b.z-a.z,dist=Math.hypot(dx,dz);
-    if(dist<.01||Math.floor(i/3)%2)continue;
-    const center=a.clone().lerp(b,.5);
-    const normal=new THREE.Vector3(-dz/dist,0,dx/dist).multiplyScalar(.045);
-    const v=[a.clone().sub(normal),a.clone().add(normal),b.clone().sub(normal),b.clone().add(normal)];
-    v.forEach(p=>p.y+=.055);for(const j of [0,2,1,1,2,3])dashes.push(...v[j].toArray());
-   }
-   if(dashes.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(dashes,3));g.computeVertexNormals();
-    const m=new THREE.Mesh(g,white);m.name='Разметка · '+record.id;road.add(m);}
-  }
-  road.userData.roadEditorId=record.id;return road;
  }
  function applyMask(){
-  maskContext.clearRect(0,0,maskCanvas.width,maskCanvas.height);
-  if(!state.hidden.length){maskEnabled.value=0;mask.needsUpdate=true;return;}
-  // Compute bounds without materializing arrays/spreading tens of thousands
-  // of edited coordinates (which could otherwise hit the argument limit).
-  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-  for(const road of state.hidden)for(const p of road.points){
-   minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
-   minZ=Math.min(minZ,p[2]);maxZ=Math.max(maxZ,p[2]);
+  const strokes=[[],[],[]];
+  const addStroke=(s,sourceId,materialKind)=>{
+   if(!s.points||s.points.length<2)return;
+   const i=maskWorld(s.points[Math.floor(s.points.length/2)]);
+   strokes[i].push({...s,sourceId,materialKind});
+  };
+  for(const h of state.hidden)addStroke(h,h.sourceId,'hidden');
+  for(const r of joinedPaths)addStroke({points:r.points,width:Math.max(1,r.width-.16)},r.id,'added');
+  erasedIndex=new Map();
+  const cellSize=16;
+  for(const h of state.hidden)for(let j=1;j<h.points.length;j++){
+   const a=h.points[j-1],b=h.points[j],margin=h.width/2+2.5;
+   const record={a,b,sourceId:h.sourceId,width:h.width};
+   for(let ix=Math.floor((Math.min(a[0],b[0])-margin)/cellSize);ix<=Math.floor((Math.max(a[0],b[0])+margin)/cellSize);ix++)
+    for(let iz=Math.floor((Math.min(a[2],b[2])-margin)/cellSize);iz<=Math.floor((Math.max(a[2],b[2])+margin)/cellSize);iz++){
+     const key=ix+':'+iz,list=erasedIndex.get(key)||[];list.push(record);erasedIndex.set(key,list);
+    }
   }
-  const spread=12;minX-=spread;maxX+=spread;minZ-=spread;maxZ+=spread;
-  const centerX=(minX+maxX)/2,centerZ=(minZ+maxZ)/2;
-  const sizeX=Math.max(32,maxX-minX),sizeZ=Math.max(32,maxZ-minZ);
-  const left=centerX-sizeX/2,top=centerZ+sizeZ/2;
-  const sx=maskCanvas.width/sizeX,sz=maskCanvas.height/sizeZ;
-  maskContext.setTransform(sx,0,0,-sz,-left*sx,top*sz);
-  maskContext.lineCap='round';maskContext.lineJoin='round';maskContext.strokeStyle='#ffffff';
-  for(const r of state.hidden){
-   maskContext.beginPath();maskContext.moveTo(r.points[0][0],r.points[0][2]);
-   for(const p of r.points.slice(1))maskContext.lineTo(p[0],p[2]);
-   maskContext.lineWidth=r.width+.85;maskContext.stroke();
+  for(let i=0;i<TILE_COUNT;i++){
+   const tile=tiles[i],ctx=tile.context,items=strokes[i];
+   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,MASK_SIZE,MASK_SIZE);
+   tile.enabled.value=items.length?1:0;tile.strokes=items.length;
+   if(!items.length){tile.texture.needsUpdate=true;continue;}
+   let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+   for(const r of items)for(const p of r.points){
+    minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
+    minZ=Math.min(minZ,p[2]);maxZ=Math.max(maxZ,p[2]);
+   }
+   const side=Math.max(40,maxX-minX+10,maxZ-minZ+10);
+   const left=(minX+maxX-side)/2,bottom=(minZ+maxZ-side)/2,top=bottom+side,scale=MASK_SIZE/side;
+   tile.bounds.value.set(left,bottom,side,side);tile.worldUnitsPerPixel=side/MASK_SIZE;
+   ctx.setTransform(scale,0,0,-scale,-left*scale,top*scale);
+   ctx.lineCap='round';ctx.lineJoin='round';
+   for(const r of items){
+    ctx.lineWidth=r.width+(r.materialKind==='added'?.05:.20);
+    for(let j=1;j<r.points.length;j++){
+     const a=r.points[j-1],b=r.points[j];
+     const altitude=(a[1]+b[1])/2,grade=Math.round(255*Math.max(0,Math.min(1,(altitude+16)/48)));
+     ctx.strokeStyle='rgb(255,'+grade+',0)';
+     ctx.beginPath();ctx.moveTo(a[0],a[2]);ctx.lineTo(b[0],b[2]);ctx.stroke();
+    }
+   }
+   ctx.setTransform(1,0,0,1,0,0);tile.texture.needsUpdate=true;
   }
-  maskContext.setTransform(1,0,0,1,0,0);
-  maskBounds.value.set(left,top-sizeZ,sizeX,sizeZ);maskEnabled.value=1;mask.needsUpdate=true;
+ }
+ function roadLightRemoved(record){
+  const p=record.center||[record.x,record.y,record.z],x=p[0],y=p[1],z=p[2],size=16;
+  const list=erasedIndex.get(Math.floor(x/size)+':'+Math.floor(z/size))||[];
+  let hidden=false;
+  for(const h of list){
+   if(record.roadId&&h.sourceId!==record.roadId)continue;
+   const a=h.a,b=h.b,dx=b[0]-a[0],dz=b[2]-a[2],den=dx*dx+dz*dz;
+   if(den<1e-9)continue;
+   const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/den));
+   const px=a[0]+t*dx,pz=a[2]+t*dz,py=a[1]+t*(b[1]-a[1]);
+   if(Math.hypot(x-px,z-pz)<h.width/2+.9&&Math.abs(py-y)<1.1){hidden=true;break;}
+  }
+  if(!hidden)return false;
+  // Do not orphan a useful pole when the user has repaved this exact road.
+  const near=nearestRoadSegment(joinedPaths,[x,y,z],{maxDistance:2.5});
+  return !near||Math.abs(near.point[1]-y)>1.1;
  }
  function renderDraft(){
   for(const child of [...previewGroup.children]){previewGroup.remove(child);if(child.geometry!==draftPointGeometry)child.geometry.dispose();}
