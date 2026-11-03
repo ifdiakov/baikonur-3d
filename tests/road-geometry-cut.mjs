@@ -36,6 +36,25 @@ assert(rays(elevatedResult.geometry,[0,0],5).length>0,'Cutting the road must not
 const reversion=physicallyCutRoadGeometry(pavement,makeRoadSurfaceCutIndex([],[]));
 assert.equal(reversion.stats.clipped,0);
 assert.equal(reversion.geometry.getAttribute('position').count,6,'An Undo must restore original geometry');
+
+// A removed cross-road must not chop a hole across the *still active*
+// perpendicular mainline. Directional ownership is inferred from the
+// batched source mesh, which no longer contains per-way metadata.
+const sourceCut=makeRoadSurfaceCutIndex([{sourceId:'osm-road-spur',width:2.2,
+ points:[[0,0,-3],[0,0,3]]}],[]);
+const strip=(loX,hiX,loZ,hiZ)=>{
+ const a=[loX,0,loZ],b=[hiX,0,loZ],c=[hiX,0,hiZ],d=[loX,0,hiZ];
+ const g=new THREE.BufferGeometry();
+ g.setAttribute('position',new THREE.Float32BufferAttribute([...a,...c,...b,...a,...d,...c],3));
+ return g;
+};
+const through=physicallyCutRoadGeometry(strip(-.6,.6,-1.8,1.8),sourceCut,
+ {surfaceName:'OSM · единое дорожное полотно'});
+assert(rays(through.geometry,[0,0]).length>0,
+ 'A deleted spur must not leave a hole through the perpendicular through-road');
+const spur=physicallyCutRoadGeometry(strip(-1.3,1.3,-.6,.6),sourceCut,
+ {surfaceName:'OSM · единое дорожное полотно'});
+assert(rays(spur.geometry,[0,0]).length===0,'The requested source road must still be removed');
 console.log('ROAD_PHYSICAL_GEOMETRY_PASS',JSON.stringify({
  version:ROAD_GEOMETRY_CUT_VERSION,clips:r.stats.clipped,triangles:r.stats.outputTriangles,
  remainder:rr.stats.outputTriangles,gradePreserved:true,uvPreserved:true
