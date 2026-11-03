@@ -29,8 +29,8 @@ for(const [kind,g] of Object.entries(geometries)){
 
 // Exercise the actual uploaded owner scheme, not only a synthetic junction.
 const owner=JSON.parse(readFileSync(new URL('../data/road-edits-authoritative-20261103.json',import.meta.url),'utf8'));
-assert.equal(owner.added.length,18);
-assert.equal(owner.hidden.length,289);
+assert.equal(owner.added.length,19);
+assert.equal(owner.hidden.length,302);
 const mapped=stitchEditedRoads(owner.added).roads;
 const ownerMesh=buildEditedRoadMeshes(mapped,{terrainHeightAt:()=>-2.72});
 let roadSamples=0;
@@ -47,5 +47,21 @@ for(const r of owner.added){
  }
 }
 assert(ownerMesh.stats.overlaps>0,'Owner junctions should be unioned into one continuous pavement');
+assert(owner.added.some(r=>r.id==='road-31'&&r.points.some(p=>p[1]>20)),'Elevated road-31 is not loaded');
+const ramp=ownerMesh.paths.find(p=>p.id==='road-31').points;
+assert(ramp.length>100,'The steep owner road has too few vertical samples');
+for(let i=1;i<ramp.length;i++){
+ assert(Math.hypot(ramp[i][0]-ramp[i-1][0],ramp[i][2]-ramp[i-1][2])<=1.36);
+ assert(Math.abs(ramp[i][1]-ramp[i-1][1])<1.0,
+  'Abrupt elevation step along the northern access road at sample '+i);
+}
+// The outer shoulder must not cut into a rising terrain bank at an outside turn.
+const hillside=x=>x*.25;
+const terrainWay={id:'terrain-bank',surface:'asphalt',width:4,points:[[10,1,0],[30,1,0]]};
+const bank=buildEditedRoadMeshes([terrainWay],{terrainHeightAt:(x,z)=>hillside(x)});
+const verts=bank.geometries.shoulder.attributes.position;
+for(let i=0;i<verts.count;i++)assert(verts.getY(i)>=hillside(verts.getX(i))+.07,
+ 'Road edge is under the hillside');
+
 console.log('ROAD_EDITOR_MESH_PASS',JSON.stringify({segments:stats.segments,overlapCuts:stats.overlaps,ownerOverlapCuts:ownerMesh.stats.overlaps,ownerSamples:roadSamples,
  topTriangles:geometries.asphalt.attributes.position.count/3}));
