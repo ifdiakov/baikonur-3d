@@ -22,7 +22,7 @@ jobs:
           npm install --no-save playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Probe published app startup and capture errors
-        run: node tests/live-startup-diagnostic.mjs
+        run: timeout --signal=TERM --kill-after=8s 85s node tests/live-startup-diagnostic.mjs
       - if: always()
         uses: actions/upload-artifact@v4
         with:
