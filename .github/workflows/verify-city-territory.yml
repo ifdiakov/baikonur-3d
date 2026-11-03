@@ -61,3 +61,6 @@ jobs:
             git push -f origin HEAD:refs/heads/city-territory-qa-diagnostics
           fi
           exit "$result"
+      - name: Remove temporary city QA diagnostic branch after a clean test
+        if: success()
+        run: git push origin --delete city-territory-qa-diagnostics || true

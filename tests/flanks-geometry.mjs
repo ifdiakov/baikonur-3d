@@ -33,7 +33,7 @@ function cityContains([lon,lat]){
  }return inside;
 }
 for(const point of [[63.3209201,45.6321977],[63.1941252,45.6143654],[63.2272132,45.6294972],[63.2649836,45.6148609]])
- assert(cityContains(point),'The owner's city perimeter covers Baikonur, Krayniy and Akai');
+ assert(cityContains(point),"The owner\'s city perimeter covers Baikonur, Krayniy and Akai");
 for(const point of [[63.315601,45.650665],[63.286,45.591]])
  assert(!cityContains(point),'Tyuratam and territory across Syr Darya remain outside the city polygon');
 
