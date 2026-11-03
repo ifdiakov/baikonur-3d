@@ -5,8 +5,8 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261103-soyuz-pits-v1';
-import * as buildings from './archive-buildings.js?v=20261103-site2-main-road-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261103-checkpoint7-road-v1';
+import * as buildings from './archive-buildings.js?v=20261103-checkpoint7-road-v1';
 import * as launches from './archive-launches.js?v=20261102-site2-photo-v3';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
 import {buildSite31Exhibit,site31Controller,SITE31_VIEWS} from './site31-exhibit.js?v=20261103-soyuz-pits-v1';
@@ -24,12 +24,18 @@ export function buildArchiveModel(root,entry){
  if(!builders[entry.kind])throw Error('Unknown archive model '+entry.kind);
  return builders[entry.kind](root);
 }
-export function installArchiveModels({objects,clickable,voids}){
+export function installArchiveModels({objects,clickable,voids,checkpoint7Placement}){
  const records=[],silos=[],sdiGates=[];
  for(const spec of ARCHIVE_MAP){
   const i=objects.findIndex(o=>o.record.id===spec.id);if(i<0)throw Error('Missing archive site '+spec.id);
   const o=objects[i],root=o.g;root.clear();root.scale.setScalar(spec.scale);root.rotation.y=spec.yaw;root.position.y=-2.72;
   for(let n=clickable.length-1;n>=0;n--)if(clickable[n].userData.idx===i)clickable.splice(n,1);
+  if(spec.id==='kpp-7'){
+   if(!checkpoint7Placement)throw Error('КПП №7: отсутствует привязка к дороге');
+   root.position.fromArray(checkpoint7Placement.position);root.rotation.y=checkpoint7Placement.yaw;
+   root.userData.checkpoint7Placement=checkpoint7Placement;
+   [o.record.x,o.record.y]=checkpoint7Placement.map;
+  }
   root.name=spec.title;
   const built=buildArchiveModel(root,spec);
   // Builder handles belong to the live scene, not the serializable catalogue
@@ -51,6 +57,7 @@ export function installArchiveModels({objects,clickable,voids}){
   o.archive=entry;o.type='archive-'+spec.kind;root.userData.archiveModel=entry;records.push(entry);
  }
  function focus(index,camera,controls){const o=objects[index];if(!o?.archive)return false;
+  if(o.record.id==='kpp-7')return inspectCheckpoint7('all',camera,controls);
   if(o.archive.kind==='seven-winds')return inspectHotel('all',camera,controls);
   if(o.record.id==='pad-31')return inspectSite31('all',camera,controls);
   if(o.record.id==='pad-110')return inspectSite110('all',camera,controls);
@@ -94,6 +101,19 @@ export function installArchiveModels({objects,clickable,voids}){
   controls.target.copy(root.localToWorld(new THREE.Vector3(...v.target)));
   camera.position.copy(root.localToWorld(new THREE.Vector3(...v.eye)));controls.update();return true;
  }
+ function inspectCheckpoint7(view,camera,controls){
+  const root=objects.find(o=>o.record.id==='kpp-7')?.g;if(!root)return false;root.updateWorldMatrix(true,false);
+  let target,eye;
+  if(view==='road'){
+   const p=root.userData.checkpoint7Placement,bridge=new THREE.Vector3(...p.bridge),turn=new THREE.Vector3(...p.turnoff),span=bridge.distanceTo(turn);
+   target=bridge.lerp(turn,.5);eye=target.clone().add(new THREE.Vector3(span*.65,span*.9,span*.55).multiplyScalar(Math.max(1,.8/camera.aspect)));
+  }else{
+   const v=root.userData.checkpoint7Model.views[view]||root.userData.checkpoint7Model.views.all;
+   target=new THREE.Vector3(...v.target);eye=new THREE.Vector3(...v.eye);eye.sub(target).multiplyScalar(Math.max(1,.85/camera.aspect)).add(target);
+   root.localToWorld(target);root.localToWorld(eye);
+  }
+  controls.target.copy(target);camera.position.copy(eye);controls.update();camera.updateMatrixWorld(true);return true;
+ }
  function inspectSite250a(view,camera,controls){
   const root=objects.find(o=>o.record.id==='pad-250a')?.g;if(!root)return false;
   const v=root.userData.site250aModel.views[view]||root.userData.site250aModel.views.all;
@@ -128,5 +148,5 @@ export function installArchiveModels({objects,clickable,voids}){
   return true;
  }
  const site2=()=>objects.find(o=>o.record.id==='pad-2')?.g;
- return {inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
+ return {inspectCheckpoint7,checkpoint7Stats:()=>objects.find(o=>o.record.id==='kpp-7')?.g.userData.checkpoint7Model,inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
 }

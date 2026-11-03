@@ -1,3 +1,4 @@
+import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-road-v1';
 import {SITE250A_YAW,SITE250A_REFERENCE,SITE250A_VERSION} from './site250a-layout.js?v=20261103-site250a-photo-v1';
 import {SITE254_YAW,SITE254_REFERENCE,SITE254_VERSION} from './site254-layout.js?v=20261103-site254-e10s5';
 import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=20261101-hotel-v3';
@@ -10,6 +11,7 @@ import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-fa
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';
 export const ARCHIVE_MAP=[
+ {id:'kpp-7',kind:'checkpoint',title:'КПП №7',scale:MUSEUM_METRE,yaw:0,folder:CHECKPOINT7_REFERENCE.folder,modelVersion:CHECKPOINT7_VERSION,orientation:'owner-directed-road-axis-between-bridge-and-saturn'},
  {id:'pad-250a',kind:'site250a',title:'Криогенный центр и командный пункт · пл.250А',scale:MUSEUM_METRE,yaw:SITE250A_YAW,folder:SITE250A_REFERENCE.folder,satellite:SITE250A_REFERENCE.satellite,orientation:SITE250A_REFERENCE.registration,modelVersion:SITE250A_VERSION},
  {id:'pad-254',kind:'site254',title:'МИК РКК «Энергия» · пл.254',scale:MUSEUM_METRE,yaw:SITE254_YAW,folder:SITE254_REFERENCE.folder,orientation:SITE254_REFERENCE.registration,modelVersion:SITE254_VERSION},
  {id:'pad-90',kind:'cyclone',title:'Два старта «Циклона-2» · пл.90',scale:MUSEUM_METRE,yaw:CYCLONE_YAW,orientation:'rail-terminal-inferred-on-osm-compound',modelVersion:'cyclone-v1'},
@@ -31,7 +33,7 @@ export const ARCHIVE_MAP=[
 ];
 export const ARCHIVE_GALLERY=[
  {id:'np-rockettrip',kind:'observation',title:'НП RocketTrip',folder:'1WO0cKko5TsAK26X1xpR9-sOo5auDDtGR',photo:'1X6ZPCmt5y2xr0dQnyc2rFHyljd8r9eF_',note:'Модель двух укрытий. Точная точка и азимут на карте не подтверждены.'},
- {id:'kpp-7',kind:'checkpoint',title:'КПП №7',folder:'1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl',photo:'1WS2Ofp7NbMl4CV65HqNEWpfST-bfzivk',note:'Видимый фасад по фотографии. Привязка к карте ожидает опорных точек.'},
+ {id:'kpp-7',kind:'checkpoint',title:'КПП №7',folder:'1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl',photo:'1WS2Ofp7NbMl4CV65HqNEWpfST-bfzivk',note:'Фасад и проезды по пяти фотографиям. На карте — дорога от города между мостом и поворотом на «Сатурн».'},
  {id:'pad-41-study',kind:'nedelin',title:'Площадка №41 · мемориал и руины',folder:SITE41_REFERENCE.folder,photo:'17h2xzjy84ZlM5vUu2FIYGV-iuH2UyhNI',note:'План комплекса по спутниковому снимку и семи наземным фотографиям: мемориал, командный пост, стартовые площадки и сохранившиеся сооружения.'},
  {id:'pad-2-study',kind:'buran',title:'Площадка №2 · музейный «Буран»',folder:'1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO',photo:'1Qtezy9yYrK5Fvv4ZBtlRCB8FvomKeYlO',note:'Отдельный экспонат. Не смешивается с обозначениями площадок 2А и 2Б.'},
  {id:'interior-study',kind:'cleanroom',title:'Интерьеры · сборочный зал',folder:'1zyWfNQ5x8PKWMVAsWbUQWiZkx2GYy036',photo:'1iIiV9eThfoMOy36tcHijib0awmCsTBcK',note:'Один интерьерный фотоэтюд. Принадлежность помещения конкретному зданию не установлена.'}
