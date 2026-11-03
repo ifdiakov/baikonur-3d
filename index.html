@@ -493,7 +493,8 @@ import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/O
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-soyuz-pits-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261103-soyuz-pits-v1';
-import {installArchiveModels} from './src/archive-models.js?v=20261103-soyuz-pits-v1';
+import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-road-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261103-checkpoint7-road-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-photo-v3';
@@ -592,6 +593,10 @@ startup.stage('Создаём ландшафт…',2);
 await startup.paint();
 const geography=createMuseumGeography({catalog,matches:osmMatches});
 const siteRecords=geography.sites.filter(record=>!record.aliasOf&&record.render!==false);
+const checkpointAnchor=checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography});
+const checkpointRecord=siteRecords.find(record=>record.id==='kpp-7');
+[checkpointRecord.x,checkpointRecord.y]=checkpointAnchor.map;
+checkpointRecord.geoSource={kind:'owner-directed-display',status:'between-named-landmarks',refs:[{type:'way',id:173082916,url:'https://www.openstreetmap.org/way/173082916'}],modelAnchor:'illustrative',reason:checkpointRecord.positionBasis};
 // Site 2: museum display location southwest of Gagarin's launch pad.
 // The map uses X east and Y south. Keep all of Site 2's attached exhibits together.
 // Do not modify the source OSM position or the road/rail network.
@@ -1574,7 +1579,7 @@ saturnGroup.traverse(o=>{
 });
 // Coordinates are provisional — the numbered facility itself is documented.
 // PORTAL_ARCHIVE_INTEGRATION: owner folder only; unlocated studies stay off the map.
-const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids});
+const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids,checkpoint7Placement:checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography,roadPaths:transport.roadPaths()})});
 for(const o of objects.filter(o=>o.g.userData.airport)){
  o.g.rotation.y=o.record.runtimeYaw;o.g.userData.airport.heading=o.record.runtimeYaw;
  o.g.userData.airport.osmRunwayId=o.record.runwaySource?.osmId;o.g.updateWorldMatrix(true,true);
@@ -1892,6 +1897,9 @@ function focus(i){
  let site250aViews=document.getElementById('site250aViews');if(!site250aViews){site250aViews=document.createElement('div');site250aViews.id='site250aViews';site250aViews.className='detail-views';document.getElementById('description').after(site250aViews);}
  site250aViews.replaceChildren();site250aViews.hidden=r.id!=='pad-250a';site250aViews.style.display=site250aViews.hidden?'none':'flex';
  if(r.id==='pad-250a')for(const [label,view]of [['Вся площадка','all'],['Бункер · 60','bunker'],['Вход в командный пункт','entrance'],['Криогенное хозяйство','cryo'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.onclick=()=>portalArchive.inspectSite250a(view,camera,ctl);site250aViews.append(b);}
+ let checkpoint7Views=document.getElementById('checkpoint7Views');if(!checkpoint7Views){checkpoint7Views=document.createElement('div');checkpoint7Views.id='checkpoint7Views';checkpoint7Views.className='detail-views';document.getElementById('description').after(checkpoint7Views);}
+ checkpoint7Views.replaceChildren();checkpoint7Views.hidden=r.id!=='kpp-7';checkpoint7Views.style.display=checkpoint7Views.hidden?'none':'flex';
+ if(r.id==='kpp-7')for(const [label,view]of [['КПП целиком','all'],['Фасад','front'],['Проезды','lanes'],['На дороге','road']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.onclick=()=>portalArchive.inspectCheckpoint7(view,camera,ctl);checkpoint7Views.append(b);}
  let site254Views=document.getElementById('site254Views');if(!site254Views){site254Views=document.createElement('div');site254Views.id='site254Views';site254Views.className='detail-views';document.getElementById('description').after(site254Views);}
  site254Views.replaceChildren();site254Views.hidden=r.id!=='pad-254';site254Views.style.display=site254Views.hidden?'none':'flex';
  if(r.id==='pad-254')for(const [label,view]of [['Весь МИК','all'],['Вход и площадь','entrance'],['Крыша','roof'],['Ж/д ворота','rail'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.onclick=()=>portalArchive.inspectSite254(view,camera,ctl);site254Views.append(b);}
@@ -2153,7 +2161,7 @@ function syncMuseumLightButtons(isNight){
 }
 eveningScene=buildEveningScene({scene,camera,renderer,sun,layers,objects,roads:transport.roadPaths(),airfield:airportObject.g,groundMeshes:lightingGroundMeshes,
  isLightAllowed:lightBank.contains,isPoleAllowed:(x,z)=>exhibitClearance.isPoleAllowed(x,z)&&transport.isBridgePoleAllowed(x,z),isLightPowered:eastLightingZone.isPowered,bankRule:lightBank.version,
- button:null,onModeChange:value=>{highwaySigns.setEvening(value);transport.setBridgeEvening(value);objects.find(o=>o.record.id==='pad-75')?.g.userData.setHotelEvening?.(value);lightingEditor.setEvening(value);groundTraffic?.setEvening(value);arrivalFlight?.setEvening(value);syncMuseumLightButtons(value);}});
+ button:null,onModeChange:value=>{highwaySigns.setEvening(value);transport.setBridgeEvening(value);objects.find(o=>o.record.id==='kpp-7')?.g.userData.setCheckpointEvening?.(value);objects.find(o=>o.record.id==='pad-75')?.g.userData.setHotelEvening?.(value);lightingEditor.setEvening(value);groundTraffic?.setEvening(value);arrivalFlight?.setEvening(value);syncMuseumLightButtons(value);}});
 eveningScene.refreshRoadEditor(roadEditor);
 for(const btn of document.querySelectorAll('#museumLightSwitch [data-light]')){
  btn.addEventListener('click',()=>eveningScene.setEvening(btn.dataset.light==='night'));
@@ -2461,7 +2469,7 @@ function syncGagarinTableStatus(){
  const retry=document.createElement('button');retry.type='button';retry.textContent='Повторить';
  retry.onclick=()=>gagarinExhibit.table.load();el.append(retry);
 }
-window.__BAIKONUR_QA={gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
+window.__BAIKONUR_QA={checkpoint7:{stats:portalArchive.checkpoint7Stats,inspect(view="all"){openMenuSite("kpp-7");portalArchive.inspectCheckpoint7(view,camera,ctl);}},gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
  const sources={main:ground,regional:outerTerrain.planes[0],intermediate:outerTerrain.planes[1],satellite:satelliteGround,relief:terrainRelief.mesh};
  if(visibility){
   for(const [id,value]of Object.entries(visibility))if(!Object.hasOwn(sources,id)||typeof value!=='boolean')throw new Error('Unknown terrain visibility entry');
@@ -2638,6 +2646,7 @@ window.__BAIKONUR_QA={gagarinTable:{stats:gagarinExhibit.table.stats,load:gagari
  if(!energiaLaunch?.isActive()&&!soyuzLaunch?.isActive())constrainMuseumCamera();eveningScene.update(now);portalArchive.update(now,camera,ctl.target);mriyaController?.update(camera);gameTerrain?.update();if(camera.position.y<250&&!terrainDetailRequested){terrainDetailRequested=true;steppeSurface.requestDetail();}updateLabels();portalVoids.update();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;buranLanding.syncOverlay();renderer.render(scene,camera)}if(new URLSearchParams(location.search).get('view')==='motovoz')groundTraffic.setFollowing(true);if(new URLSearchParams(location.search).get('view')==='cars')groundTraffic.focusCars();if(new URLSearchParams(location.search).get('view')==='sprinter')groundTraffic.focusSprinter();if(new URLSearchParams(location.search).get('view')==='flanks')showFlanks();if(new URLSearchParams(location.search).get('view')==='silo'){const requested=new URLSearchParams(location.search).get('site')||'pad-109';const id=objects.some(o=>o.record.id===requested&&o.archive?.kind==='silo')?requested:'pad-109';focus(objects.findIndex(o=>o.record.id===id));if(new URLSearchParams(location.search).get('detail')==='1')portalArchive.inspectSilo('close',camera,ctl,id);}if(new URLSearchParams(location.search).get('view')==='ukss'){focus(ukssIndex);inspectUkss(new URLSearchParams(location.search).get('detail')||'overview');}if(new URLSearchParams(location.search).get('view')==='krayniy')inspectKrayniyTerminal(new URLSearchParams(location.search).get('detail')||'airside');if(new URLSearchParams(location.search).get('view')==='mzk'){focus(objects.findIndex(o=>o.record.id==='pad-112a'));const detail=new URLSearchParams(location.search).get('detail');if(['mzk','sdi'].includes(detail))portalArchive.inspectMzkSdi(detail,camera,ctl);if(new URLSearchParams(location.search).get('doors')==='open')portalArchive.setSdiGateOpen(true);}if(new URLSearchParams(location.search).get('view')==='hotel')focus(objects.findIndex(o=>o.record.id==='pad-75'));if(new URLSearchParams(location.search).get('view')==='site41'){focus(objects.findIndex(o=>o.record.id==='pad-41'));portalArchive.inspectSite41(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='mriya'){const i=objects.findIndex(o=>o.record.id==='pad-251');if(i>=0){focus(i);document.querySelector('#airportViews button:last-child')?.click();document.getElementById('info').style.display='none';}}if(new URLSearchParams(location.search).get('view')==='site110'){openMenuSite('pad-110');portalArchive.inspectSite110(new URLSearchParams(location.search).get('detail')||'left',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='buran-landing'){openMenuSite('pad-251');requestBuranLanding();}
 if(new URLSearchParams(location.search).get('view')==='gagarin')window.__BAIKONUR_QA.gagarinTable.inspect(new URLSearchParams(location.search).get('detail')||'structure');
 if(new URLSearchParams(location.search).get('view')==='site31'){openMenuSite('pad-31');portalArchive.inspectSite31(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
+if(new URLSearchParams(location.search).get('view')==='kpp7'){openMenuSite('kpp-7');portalArchive.inspectCheckpoint7(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site250a'){openMenuSite('pad-250a');portalArchive.inspectSite250a(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site254'){openMenuSite('pad-254');portalArchive.inspectSite254(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site2'){openMenuSite('pad-2');portalArchive.inspectSite2(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}

@@ -3213,6 +3213,32 @@
       ],
       "purposeShort": "Командно-измерительный комплекс «Сатурн-МС» (ИП-5)",
       "contentSource": "reviewed-sites-workbook-20261028"
+    },
+    {
+      "id": "kpp-7",
+      "name": "КПП №7",
+      "titleShort": "КПП №7",
+      "titleFull": "КПП №7 · въезд на космодром",
+      "x": 613,
+      "y": 791,
+      "model": "checkpoint",
+      "firstYear": null,
+      "legacySchematicAnchor": false,
+      "status": "owner-directed-display",
+      "positionVerified": false,
+      "positionBasis": "Указание владельца: дорога от города на космодром, между мостом и поворотом на Сатурн.",
+      "purpose": "Контрольно-пропускной пункт на дороге из города на космодром.",
+      "purposeShort": "Въезд на космодром со стороны города",
+      "purposeLong": "КПП №7 на дороге из Байконура на космодром, между мостом и поворотом на «Сатурн».",
+      "note": "Светлый фасад с синими полосами и надписью «Космодром Байконур», пост охраны, два проезда и отдельный стеклянный павильон воссозданы по фотографиям.",
+      "organisation": {
+        "org": "ЦЭНКИ",
+        "role": ""
+      },
+      "contentSource": "owner-checkpoint7-photos-20261103",
+      "publicReferences": [
+        "https://drive.google.com/drive/folders/1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl"
+      ]
     }
   ],
   "notes": "Номера добавлены по визуальному чтению схем, указанные координаты относительные и требуют индивидуальной проверки. Новые площадки имеют условные 3D-макеты, не реальные размеры зданий.",

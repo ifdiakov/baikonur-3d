@@ -1,0 +1,59 @@
+name: Checkpoint 7 road placement
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/checkpoint7*'
+      - 'src/archive-models.js'
+      - 'src/archive-manifest.js'
+      - 'src/archive-buildings.js'
+      - 'data/catalog.json'
+      - 'tests/checkpoint7*'
+      - '.github/workflows/verify-checkpoint7.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/checkpoint7*'
+      - 'tests/checkpoint7*'
+      - '.github/workflows/verify-checkpoint7.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: checkpoint7-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      BAIKONUR_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:8765/' || 'https://ifdiakov.github.io/baikonur-3d/' }}
+      QA_PREFIX: ${{ github.event_name == 'pull_request' && 'local' || 'public' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Geometry, road placement and traffic clearance
+        run: |
+          node tests/checkpoint7-geometry.mjs
+          node tests/road-editor-startup.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Wait for publication
+        if: github.event_name != 'pull_request'
+        run: node scripts/verify-checkpoint7-published.mjs
+      - name: Museum day, night, details and mobile
+        timeout-minutes: 7
+        run: node tests/checkpoint7-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: checkpoint7-evidence
+          path: |
+            qa-checkpoint7/*.png
+            qa-checkpoint7/*.json

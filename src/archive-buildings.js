@@ -29,9 +29,8 @@ export function mik42Facade(root){
 }
 export function mzk112a(root){return buildMzkSdi(root);}
 export function yubileiny(root){return buildAirport(root,'yubileiny');}
-export function checkpoint7(root){
- const k=archiveKit(root);k.hall({w:28,d:12,h:6.3,wall:'light',roof:'blue',windows:false,gates:0,tag:'checkpoint-gatehouse'});k.box(5,3,.18,-8,2.3,6.15,'blue','entry-door');for(const x of[0,6,12])k.box(3.8,2,.18,x,3.3,6.15,'glass','checkpoint-window');k.box(32,2.1,4,0,8,1,'light','sign-canopy');k.sign('КОСМОДРОМ БАЙКОНУР',0,8.2,3.1,29,1.6);k.path([[-40,20],[40,20]],12,.1);for(const x of[-34,34]){k.box(.55,7,.55,x,3.5,13,'steel','barrier-post');k.box(16,.24,.32,x+(x<0?8:-8),3.5,13,'red','barrier-arm');}for(let x=-55;x<=55;x+=4)if(Math.abs(x)>19)k.box(.12,2.5,.12,x,1.25,-5,'steel','fence-post');return k.finish();
-}
+export {buildCheckpoint7 as checkpoint7} from './checkpoint7.js?v=20261103-checkpoint7-road-v1';
+
 export function observationPoint(root){
  const k=archiveKit(root);function tent(cx,cz,w,d){const r=w/2,y=2.6,segments=24;for(let i=0;i<segments;i++){const a=i/segments*Math.PI,b=(i+1)/segments*Math.PI;k.quad([cx+r*Math.cos(a),y+r*.47*Math.sin(a),cz-d/2],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),cz-d/2],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),cz+d/2],[cx+r*Math.cos(a),y+r*.47*Math.sin(a),cz+d/2],'white','shelter-fabric');}for(let z=cz-d/2;z<=cz+d/2+.1;z+=d/6){for(let i=0;i<12;i++){const a=i/12*Math.PI,b=(i+1)/12*Math.PI;k.rod([cx+r*Math.cos(a),y+r*.47*Math.sin(a),z],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),z],.07,'steel','arched-frame');}for(const s of[-1,1])k.rod([cx+s*r,0,z],[cx+s*r,y,z],.08,'steel','shelter-post');}for(const s of[-1,1])k.box(.05,2.4,d,cx+s*r,1.2,cz,'light','shelter-side-screen');}
  tent(-15,0,15,20);tent(13,0,20,25);for(const x of[-18,-12,8,15])for(const z of[-5,3]){k.box(3,.18,1,x,1.2,z,'light','buffet-table');for(const dx of[-1,1])k.rod([x+dx,0,z],[x+dx,1.2,z],.055,'steel','table-leg');}for(const x of[-34,34]){k.cyl(.1,8,x,4,-15,'steel','flagpole');k.box(3,1.8,.04,x+1.5,6.8,-15,'blue','flag');}return k.finish();
