@@ -93,6 +93,7 @@ jobs:
           node tests/transport-pruning.mjs
           node tests/osm-transport-geometry.mjs
           node tests/gagarin-site2-road.mjs
+          node tests/road-editor-core.mjs
           node tests/interchange-bridge-geometry.mjs
           node tests/highway-surface-geometry.mjs
           node tests/highway-horizon.mjs
@@ -191,7 +192,7 @@ jobs:
       max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi, energia, site2, labels]
+        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi, energia, site2, labels, road-editor]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -212,6 +213,9 @@ jobs:
       - name: Verify the Site 2 museum, source Buran and starboard stairs
         if: matrix.suite == 'site2'
         run: node tests/site2-browser.mjs
+      - name: Verify interactive road editing and saved local changes
+        if: matrix.suite == 'road-editor'
+        run: node tests/road-editor-browser.mjs
       - name: Verify the Zenit model, orbit controls and mobile views
         if: matrix.suite == 'zenit'
         run: node tests/zenit-browser.mjs
