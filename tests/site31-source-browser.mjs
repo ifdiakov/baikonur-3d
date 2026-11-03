@@ -11,6 +11,7 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-g
 await checkpoint('new-page');
 const page=await browser.newPage({viewport:{width:1600,height:1000}});page.setDefaultTimeout(90000);
 page.on('pageerror',e=>errors.push(e.message));
+page.on('console',message=>{if(message.type()==='error'&&!/net::ERR_FAILED|Failed to load resource/.test(message.text())){errors.push(message.text());console.error('BROWSER_CONSOLE_ERROR',message.text());}});
 await checkpoint('route-init');
 // Exercise failure + recovery against the real asset loader in the full museum.
 await page.route('**/assets/models/site31/model-v1.glb*',route=>{if(new URL(route.request().url()).searchParams.get('consumer')==='gagarin')return route.continue();requests++;return requests===1?route.abort():route.continue();});
@@ -25,7 +26,7 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA.site31.stats().asset.status==='error');
  assert.equal(await page.locator('#site31Views button').count(),5);await page.locator('#site31LoadStatus button').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.site31.stats().asset.status==='ready',null,{timeout:120000});await frame();
- const state=await page.evaluate(()=>window.__BAIKONUR_QA.site31.stats());assert.equal(state.asset.triangles,109604);assert.equal(state.asset.drawCalls,2);assert.equal(requests,2);assert.equal(state.trench.version,'site31-satellite-duct-v3');assert.equal(state.trench.dimensionScale,1.2);assert.ok(Math.abs(state.pitFloorY+28.8)<1e-8);
+ const state=await page.evaluate(()=>window.__BAIKONUR_QA.site31.stats());assert.equal(state.asset.triangles,109604);assert.equal(state.asset.drawCalls,2);assert.equal(requests,2);assert.equal(state.trench.version,'site31-gagarin-duct-v4');assert.equal(state.trench.dimensionScale,1.2);assert.ok(Math.abs(state.pitFloorY+28.8)<1e-8);
  await page.waitForFunction(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31')?.status==='ready',null,{timeout:120000});
  const before=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31').visible);
  await page.locator('#rocketExhibitToggle').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31').visible),!before);await page.locator('#rocketExhibitToggle').click();
@@ -35,6 +36,8 @@ try{
  }
  assert(new Set(poses.map(p=>p.position.join(','))).size===5);for(const p of poses)assert([...p.target,...p.position].every(Number.isFinite));
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-structure-day.png`});
+ await page.locator('#site31Views button').filter({hasText:'Газоотвод'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-duct-day.png`});
+ await page.locator('#site31Views button').filter({hasText:'Сверху'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-top-day.png`});
  await page.locator('#detailMore').click();assert(await page.getByRole('link',{name:'Soviet Model Magic',exact:true}).isVisible());await page.locator('#detailMore').click();
  await checkpoint('site31-mobile');await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
  const buttons=await page.locator('#site31Views button').evaluateAll(xs=>xs.map(x=>{const b=x.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom};}));assert(buttons.every(b=>b.left>=0&&b.right<=390&&b.bottom<=844));

@@ -489,10 +489,10 @@ body.following-arrival #labelLayer{display:none!important}
  </div>
 </details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261102-preloader-progress-v5"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
-import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-launch-table-v1';
+import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-soyuz-pits-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
-import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261031-rocket-exhibits-v1';
-import {installArchiveModels} from './src/archive-models.js?v=20261103-site250a-photo-v1';
+import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261103-soyuz-pits-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261103-soyuz-pits-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-photo-v3';
@@ -2103,6 +2103,18 @@ function setMuseumYear(year){
  camera.updateMatrixWorld(true);updateLabels();
 }
 setMuseumYear(2026);
+const saturnCameraSample=new THREE.Vector3();
+function museumTerrainHeightAt(x,z){
+ let height=Math.max(terrainRelief.heightAt(x,z),sharedSiloHill.heightAt(x,z));
+ if(!saturnHill)return height;
+ for(let object=saturnHill;object;object=object.parent)if(!object.visible)return height;
+ saturnGroup.worldToLocal(saturnCameraSample.set(x,0,z));
+ const {x:localX,z:localZ}=saturnCameraSample,b=SATURN_TERRAIN_BOUNDS;
+ if(localX<b.minX||localX>b.maxX||localZ<b.minZ||localZ>b.maxZ||saturnTerrainSample(localX,localZ).opacity<=.001)return height;
+ saturnCameraSample.y=saturnTerrainMeshHeight(localX,localZ);
+ return Math.max(height,saturnGroup.localToWorld(saturnCameraSample).y);
+}
+
 const lightingGroundMeshes=[ground,satelliteGround,...outerTerrain.planes,terrainRelief.mesh,sharedSiloHill.mesh];
 layers.roads.traverse(mesh=>{if(mesh.isMesh&&mesh.userData.groundSurface!==false&&!mesh.name.startsWith('road-center-dash'))lightingGroundMeshes.push(mesh)});
 saturnGroup.traverse(mesh=>{if(mesh.userData.museumComponent==='murguduk-hill')lightingGroundMeshes.push(mesh)});
@@ -2356,17 +2368,6 @@ function moveCamera(dt){
  ctl.target.x+=mx;ctl.target.z+=mz;
 }// SCENE_SELECTION_NO_TERRAIN_JUMP_V1: do not interpret navigation as a click.
 const museumCameraBounds={minX:(Math.min(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,maxX:(Math.max(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,minZ:(Math.min(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S,maxZ:(Math.max(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S};
-const saturnCameraSample=new THREE.Vector3();
-function museumTerrainHeightAt(x,z){
- let height=Math.max(terrainRelief.heightAt(x,z),sharedSiloHill.heightAt(x,z));
- if(!saturnHill)return height;
- for(let object=saturnHill;object;object=object.parent)if(!object.visible)return height;
- saturnGroup.worldToLocal(saturnCameraSample.set(x,0,z));
- const {x:localX,z:localZ}=saturnCameraSample,b=SATURN_TERRAIN_BOUNDS;
- if(localX<b.minX||localX>b.maxX||localZ<b.minZ||localZ>b.maxZ||saturnTerrainSample(localX,localZ).opacity<=.001)return height;
- saturnCameraSample.y=saturnTerrainMeshHeight(localX,localZ);
- return Math.max(height,saturnGroup.localToWorld(saturnCameraSample).y);
-}
 function constrainMuseumCamera(){
  // Bound the eye as well as its pivot after all navigation has run. Explicit
  // aircraft shots retain their route; free navigation is bounded on release.
