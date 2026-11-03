@@ -6,6 +6,8 @@ on:
       - 'src/road-editor.js'
       - 'src/road-editor-core.js'
       - 'src/road-editor-mesh.js'
+      - 'src/road-geometry-cut.js'
+      - 'tests/road-geometry-cut.mjs'
       - 'src/road-editor-style.js'
       - 'src/road-mask-tiles.js'
       - 'tests/road-mask-tiles.mjs'
@@ -43,8 +45,10 @@ jobs:
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1
           npx playwright install --with-deps chromium
-      - name: Verify repaired road mesh topology
-        run: node tests/road-editor-mesh.mjs
+      - name: Verify repaired road mesh topology and physical source cutouts
+        run: |
+          node tests/road-editor-mesh.mjs
+          node tests/road-geometry-cut.mjs
       - name: Serve checkout
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-road-editor.log 2>&1 &
