@@ -19,10 +19,10 @@ page.on('requestfailed',r=>{events.failed.push({url:r.url(),reason:r.failure()?.
 page.on('response',r=>{if(r.status()>=400){events.httpErrors.push({url:r.url(),status:r.status()});if(events.httpErrors.length<=25)report({kind:'http',url:r.url(),status:r.status()});}});
 let response;
 try{
- response=await page.goto(url,{waitUntil:'domcontentloaded',timeout:90000});
- report({kind:'document',requested:url,final:page.url(),status:response?.status(),title:await page.title()});
- for(const ms of [1000,3000,7000,15000,25000,40000,60000,80000]){
-  await page.waitForTimeout(ms===1000?1000:ms-[1000,3000,7000,15000,25000,40000,60000,80000][[1000,3000,7000,15000,25000,40000,60000,80000].indexOf(ms)-1]);
+ response=await page.goto(url,{waitUntil:'commit',timeout:25000});
+ report({kind:'document',requested:url,final:page.url(),status:response?.status()});
+ for(const ms of [1000,3000,6500,13000,22000,35000]){
+  await page.waitForTimeout(ms===1000?1000:ms-[1000,3000,6500,13000,22000,35000][[1000,3000,6500,13000,22000,35000].indexOf(ms)-1]);
   const state=await page.evaluate(()=>{
    const loader=document.querySelector('#museumLoading'),progress=document.querySelector('#museumStageProgress');
    const stat=window.__MUSEUM_STARTUP?.stats?.();
@@ -42,7 +42,7 @@ try{
   if(state.state==='ready'||state.state==='error')break;
  }
  await mkdir('qa-live-startup',{recursive:true});
- await page.screenshot({path:'qa-live-startup/production.png',timeout:70000}).catch(()=>{});
+ await page.screenshot({path:'qa-live-startup/production.png',timeout:16000}).catch(()=>{});
  const status=await page.evaluate(()=>document.querySelector('#museumLoading')?.dataset.state);
  report({kind:'summary',state:status,events});
  if(status!=='ready')process.exitCode=2;
