@@ -240,7 +240,7 @@ function appendJunctionAprons(roads,paths,buckets,terrainHeightAt){
    // Also preserve T-junctions where a new road ends on the original OSM
    // road, which is cut by the source layer rather than in these buckets.
    const oldMatch=ordinal?profile.matching?.end:profile.matching?.start;
-   if(!best&&oldMatch?.distance<=Math.max(.85,(width+oldMatch.width)*.42)){
+   if(!best&&oldMatch&&oldMatch.distance<=Math.max(.85,(width+oldMatch.width)*.42)){
     best={point:p,distance:oldMatch.distance,width:oldMatch.width,kind:profile.classId,source:oldMatch.id};
    }
    if(!best)continue;
