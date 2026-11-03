@@ -203,7 +203,8 @@ export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
   const widthAt=i=>r.profile?widthAtEditedRoad(profile,lengths[i]):r.width;
   const classId=profile.classId==='highway'?'highway':profile.classId==='ground'?'ground':'asphalt';
   const width=r.profile?profile.widthStart:r.width;
-  paths.push({id:r.id,width,points,style:classId});
+  const widths=points.map((_,i)=>widthAt(i));
+  paths.push({id:r.id,width,widths,points,style:classId});
   const shoulder=ribbonQuads(points,i=>widthAt(i)+ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,terrainHeightAt);
   const surface=ribbonQuads(points,widthAt,classId==='highway'?ROAD_EDIT_HIGHWAY_LIFT:ROAD_EDIT_SURFACE_LIFT,terrainHeightAt);
   buckets.shoulder.push(...shoulder);buckets[classId].push(...surface);
