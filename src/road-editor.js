@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-v1';
 import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v5';
+import {partitionRoadMaskStrokes,roadMaskTileBounds,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-qa-v3';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
@@ -25,7 +26,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  // Three medium-sized atlases keep even the narrow service-road cuts
  // subpixel-free across the far-flung OSM map; source altitude prevents a
  // removed bridge from puncturing the road below it.
- const MASK_SIZE=2048,TILE_COUNT=3;
+ const MASK_SIZE=2048,TILE_COUNT=ROAD_MASK_TILE_COUNT;
  const tiles=Array.from({length:TILE_COUNT},()=>{
   const canvas=document.createElement('canvas');canvas.width=canvas.height=MASK_SIZE;
   const context=canvas.getContext('2d',{alpha:true});
@@ -33,7 +34,6 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;
   return {canvas,context,texture,bounds:{value:new THREE.Vector4(0,0,1,1)},enabled:{value:0},strokes:0,worldUnitsPerPixel:0};
  });
- const maskWorld=pos=>pos[2]>600?2:pos[0]>175?1:0;
  const targets=new Set(['OSM · единые обочины','OSM · единое дорожное полотно','OSM · асфальт трассы',
    'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки']);
  for(const mesh of roadMeshes){
@@ -66,7 +66,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
     '#include <clipping_planes_fragment>\n'+clip);
   };
-  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v2';
+  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v3';
   material.needsUpdate=true;
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
@@ -111,7 +111,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  }
  const horizontal=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
  let joinedPaths=[],joinReport=[],geometryStats={segments:0,sourceRoads:0,overlaps:0};
- let addedSignature=null,maskSignature=null,erasedIndex=new Map(),baselineData=null;
+ let addedSignature=null,maskSignature=null,erasedIndex=new Map(),baselineData=null,maskStats={partCount:0,duplicateCuts:0,invalidSegments:0,sectorParts:[]};
  function rebuildAdded(){
   for(const child of [...editingGroup.children]){
    if(child===previewGroup)continue;editingGroup.remove(child);
@@ -131,14 +131,11 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   }
  }
  function applyMask(){
-  const strokes=[[],[],[]];
-  const addStroke=(s,sourceId,materialKind)=>{
-   if(!s.points||s.points.length<2)return;
-   const i=maskWorld(s.points[Math.floor(s.points.length/2)]);
-   strokes[i].push({...s,sourceId,materialKind});
-  };
-  for(const h of state.hidden)addStroke(h,h.sourceId,'hidden');
-  for(const r of joinedPaths)addStroke({points:r.points,width:Math.max(1,r.width-.16)},r.id,'added');
+  // Source cuts and replacement pavement use identical spatial/grade sampling;
+  // only their end caps differ. Butt caps on new roads prevent crescent-shaped
+  // holes in the original roadway immediately beyond a new T-junction.
+  const partition=partitionRoadMaskStrokes(state.hidden,joinedPaths);
+  maskStats=partition.stats;
   erasedIndex=new Map();
   const cellSize=16;
   for(const h of state.hidden)for(let j=1;j<h.points.length;j++){
@@ -150,35 +147,28 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
     }
   }
   for(let i=0;i<TILE_COUNT;i++){
-   const tile=tiles[i],ctx=tile.context,items=strokes[i];
+   const tile=tiles[i],ctx=tile.context,parts=partition.tiles[i];
    ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,MASK_SIZE,MASK_SIZE);
-   tile.enabled.value=items.length?1:0;tile.strokes=items.length;
-   if(!items.length){tile.texture.needsUpdate=true;continue;}
-   let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-   for(const r of items)for(const p of r.points){
-    minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
-    minZ=Math.min(minZ,p[2]);maxZ=Math.max(maxZ,p[2]);
-   }
-   const side=Math.max(40,maxX-minX+10,maxZ-minZ+10);
-   const left=(minX+maxX-side)/2,bottom=(minZ+maxZ-side)/2,top=bottom+side,scale=MASK_SIZE/side;
-   tile.bounds.value.set(left,bottom,side,side);tile.worldUnitsPerPixel=side/MASK_SIZE;
-   ctx.setTransform(scale,0,0,-scale,-left*scale,top*scale);
-   ctx.lineCap='round';ctx.lineJoin='round';
-   for(const r of items){
-    ctx.lineWidth=r.width+(r.materialKind==='added'?.05:.20);
-    for(let j=1;j<r.points.length;j++){
-     const a=r.points[j-1],b=r.points[j],horizontal=Math.hypot(b[0]-a[0],b[2]-a[2]);
-     // Long sloping removals must retain their source elevation along the
-     // WHOLE stroke; one mean-grade color would leave tears at both ends.
-     const steps=Math.max(1,Math.ceil(Math.abs(b[1]-a[1])/.25),Math.ceil(horizontal/16));
-     for(let k=0;k<steps;k++){
-      const t=k/steps,u=(k+1)/steps,m=(t+u)/2;
-      const altitude=a[1]+(b[1]-a[1])*m,grade=Math.round(255*Math.max(0,Math.min(1,(altitude+16)/48)));
-      ctx.strokeStyle='rgb(255,'+grade+',0)';
-      ctx.beginPath();
-      ctx.moveTo(a[0]+(b[0]-a[0])*t,a[2]+(b[2]-a[2])*t);
-      ctx.lineTo(a[0]+(b[0]-a[0])*u,a[2]+(b[2]-a[2])*u);
-      ctx.stroke();
+   tile.enabled.value=parts.length?1:0;tile.strokes=parts.length;
+   if(!parts.length){tile.texture.needsUpdate=true;tile.worldUnitsPerPixel=0;continue;}
+   const {left,bottom,side,metersPerPixel}=roadMaskTileBounds(parts);
+   const scale=MASK_SIZE/side;
+   tile.bounds.value.set(left,bottom,side,side);tile.worldUnitsPerPixel=metersPerPixel;
+   ctx.setTransform(scale,0,0,-scale,-left*scale,(bottom+side)*scale);
+   ctx.lineCap='butt';ctx.lineJoin='round';
+   for(const segment of parts){
+    const {a,b,grade}=segment;
+    const width=segment.width+(segment.kind==='added'?.38:.14);
+    const ink='rgb(255,'+grade+',0)';
+    ctx.strokeStyle=ink;ctx.lineWidth=width;
+    ctx.beginPath();ctx.moveTo(a[0],a[2]);ctx.lineTo(b[0],b[2]);ctx.stroke();
+    // Only fill interior joins. Rounding an outer end used to chew a visible
+    // semicircle out of the original OSM road beyond the edited endpoint.
+    if(segment.capStart||segment.capEnd){
+     ctx.fillStyle=ink;
+     for(const [valid,p] of [[segment.capStart,a],[segment.capEnd,b]]){
+      if(!valid)continue;
+      ctx.beginPath();ctx.arc(p[0],p[2],width*.5,0,Math.PI*2);ctx.fill();
      }
     }
    }
@@ -354,6 +344,6 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
    joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
-   mesh:geometryStats,maskApplied:tiles.some(t=>t.enabled.value===1),
+   mesh:geometryStats,mask:maskStats,maskApplied:tiles.some(t=>t.enabled.value===1),
    maskTiles:tiles.map(t=>({strokes:t.strokes,worldUnitsPerPixel:t.worldUnitsPerPixel,enabled:t.enabled.value===1}))})};
 }
