@@ -1,3 +1,4 @@
+import {installGagarinTable} from './gagarin-source-table.js?v=20261103-launch-table-v1';
 import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {createSurfacePalette} from './surface-materials.js';
@@ -29,7 +30,7 @@ export {GAGARIN_RIM_Y,GAGARIN_RAIL_PORT,GAGARIN_ROCKET_MOUNT} from './gagarin-me
  */
 
 // GAGARIN_GROUND_DATUM: the rim is terrain level; the channel stays below it.
-export function buildGagarinPad(root) {
+export function buildGagarinPad(root,options={}) {
   const metricRoot=root,legacyRoot=new THREE.Group();
   legacyRoot.name='Гагаринский старт · фотографическая архитектура в метрах';
   legacyRoot.userData.metricArchitecture='gagarin';
@@ -58,14 +59,16 @@ export function buildGagarinPad(root) {
   const rodGeometry=new THREE.CylinderGeometry(1,1,1,6,1);
   const boxGeometry=new THREE.BoxGeometry(1,1,1);
   const buckets=new Map(),features={};
+  const structureRoot=new THREE.Group();structureRoot.name='Пл.1 · резервный стартовый стол';root.add(structureRoot);
+  let structure=false;
   let primitiveCount=0,renderMeshCount=0;
   const tmpP=new THREE.Vector3(),tmpQ=new THREE.Vector3(),tmpMid=new THREE.Vector3();
   const tmpQuat=new THREE.Quaternion(),up=new THREE.Vector3(0,1,0),tmpS=new THREE.Vector3(),tmpM=new THREE.Matrix4();
   const V=(...coords)=>new THREE.Vector3(...coords);
   function bucket(mat,kind) {
-    const key=mat+':'+kind;
+    const key=(structure?'table:':'site:')+mat+':'+kind;
     let item=buckets.get(key);
-    if(!item){item={material:mats[mat],kind,matrices:[]};buckets.set(key,item)}
+    if(!item){item={material:mats[mat],kind,matrices:[],parent:structure?structureRoot:root};buckets.set(key,item)}
     return item;
   }
   function mark(name){if(name)features[name]=(features[name]||0)+1;primitiveCount++}
@@ -86,7 +89,7 @@ export function buildGagarinPad(root) {
     tmpM.compose(tmpMid,tmpQuat,tmpS);
     bucket(material,'rod').matrices.push(tmpM.clone());mark(name);
   }
-  function direct(mesh,material,key,parent=root) {
+  function direct(mesh,material,key,parent=structure?structureRoot:root) {
     mesh.material=mats[material];mesh.userData.museumComponent=key;
     if(atGrade.has(key))mesh.position.y+=GAGARIN_LEGACY_RIM_Y;
     mesh.receiveShadow=true;parent.add(mesh);mark(key);renderMeshCount++;return mesh;
@@ -145,7 +148,9 @@ export function buildGagarinPad(root) {
 
   // 01 / WEST RAIL AXIS — separate bridge approach, track ballast,
   // two low side utility yards with blue-roofed service buildings.
-  surface([[-43,140],[43,140],[56,85],[45,15],[-45,15],[-57,86]],.12,'oldConcrete','western-forecourt');
+  // The copied source table reaches z=31.96m. Start the retained yard at
+  // z=32m so its old solid apron cannot cover the source launch opening.
+  surface([[-43,140],[43,140],[56,85],[53,64],[-53,64],[-57,86]],.12,'oldConcrete','western-forecourt');
   // The complete approach now uses the shared metric cross-section. Its
   // actual running surface meets the external head-level socket exactly.
   const railAt=()=>({gauge:RAIL_PROFILE.gauge/MUSEUM_METRE,y:GAGARIN_RAIL_PORT[1],
@@ -162,6 +167,7 @@ export function buildGagarinPad(root) {
   railLine([[-25,40],[-25,94],[-30,138]],.3,'asphalt',1.2,'service-road');
   railLine([[26,39],[28,104],[34,138]],.3,'asphalt',1.2,'service-road');
 
+  structure=true;
   // 02 / PRIMARY CONCRETE ARCHITECTURE. A deep open undercroft held between
   // long concrete support piers; NOT a solid cuboid under the launch stand.
   const deckY=18,piers=[-36,36];
@@ -207,6 +213,7 @@ export function buildGagarinPad(root) {
     block(side*20,22,-3,5,.8,41,'paleConcrete','launch-podium-rim');
   }
 
+  structure=false;
   // 03 / EAST DUCT — plan traced from the owner's overhead screenshot
   // 2026-10-27 20:41:25. Broad shoulders beside the launch bridge taper
   // EAST to a finite-width apron; the perimeter road returns around it.
@@ -314,6 +321,7 @@ export function buildGagarinPad(root) {
     root.add(mesh);renderMeshCount++;
   }
 
+  structure=true;
   // 04 / R-7 SUPPORT RING, TULIP FLOWER, yellow roller drums.
   // Distinguish lower outward arms from central maintenance tower.
   const torus=new THREE.Mesh(new THREE.TorusGeometry(10.4,1.35,9,48),mats.steel);
@@ -450,6 +458,7 @@ export function buildGagarinPad(root) {
   rungLadder([-38,2,-37],[-42,18,-20],2.2,'paleSteel','concrete-bridge-stairs',22);
   rungLadder([38,1,-41],[40,19,-19],2.2,'paleSteel','concrete-bridge-stairs',22);
 
+  structure=false;
   // 06 / PHOTOGRAPHIC CONTEXT: Light masts away from the tower,
   // compact blue-roof utility sheds, stairs, pipes, vents and guardrails.
   function floodTower(x,z,h){
@@ -483,6 +492,7 @@ export function buildGagarinPad(root) {
   outbuilding(-63,106,23,26,9);
   outbuilding(57,96,18,22,7);
   outbuilding(-73,45,10,12,6);
+  structure=true;
   for(const sx of [-1,1]){
     for(const z of [10,17,24,32]){
       bar([sx*44,21,z],[sx*61,21,z],.3,'steel','fuel-utility-lines');
@@ -515,7 +525,7 @@ export function buildGagarinPad(root) {
     for(let i=0;i<batch.matrices.length;i++)mesh.setMatrixAt(i,batch.matrices[i]);
     mesh.instanceMatrix.needsUpdate=true;
     mesh.frustumCulled=false;
-    root.add(mesh);renderMeshCount++;
+    batch.parent.add(mesh);renderMeshCount++;
   }
   const metadata={
     version:'4.0-metric-soyuz',units:'metres',legacyMetresPerUnit:GAGARIN_LEGACY_METRE,
@@ -539,6 +549,7 @@ export function buildGagarinPad(root) {
   };
   metricRoot.name=root.name;metricRoot.userData.gagarinModel=metadata;
   metricRoot.userData.surfaceMaterials=root.userData.surfaceMaterials;
-  return {rocket,rocketMount:GAGARIN_ROCKET_MOUNT,features,meshCount:primitiveCount};
+  const table=installGagarinTable(metricRoot,structureRoot,options);
+  return {rocket,rocketMount:GAGARIN_ROCKET_MOUNT,features,meshCount:primitiveCount,table};
 }
 

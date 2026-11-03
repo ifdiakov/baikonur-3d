@@ -1,5 +1,5 @@
 // Site 31/6: source trace from north-up WorldView-3 imagery, 2025-08-09.
-// The displayed rim is straightened and enlarged below, per owner request.
+// The displayed rim preserves the trace shape at the owner-requested 1.2 scale.
 // Local +Z follows the incoming railway towards the south-east; -Z follows
 // the flame duct towards the north-west. +X is the north-east side of the pad.
 // Plan coordinates below are metres before the museum model's parent scale.
@@ -38,7 +38,7 @@ export const SITE31_REFERENCE=Object.freeze({
  planBasis:'Manual trace of the visible outer concrete rim, approximately 3–6 image pixels; the table centre is partly obscured by structures and shadow.',
  inferredRimPixelSegment:frozenPoints([[451,325],[435,339],[415,355],[392,368]]),
  heightBasis:'The original approximate 24 m depth is enlarged by 20% to 28.8 m at the owner’s request; the satellite image does not measure heights.',
- displayedPlanBasis:'Straightened symmetric outline, enlarged by 20% in width and length relative to the traced bounds; the satellite compass axis is retained.',
+ displayedPlanBasis:'The independently traced asymmetric outline is uniformly enlarged by 20% about the launch axis; satellite proportions and compass axis are retained.',
  globalMapAnchorBasis:'The museum diagram anchor and satellite compass orientation are retained; the enlarged displayed outline is an owner adjustment.'
 });
 
@@ -62,22 +62,15 @@ export const SITE31_TRACED_RIM=frozenPoints(SITE31_RIM_PIXELS.map(([u,v])=>{
  return [(du*cosine-dv*sine)*metresPerPixel,(du*sine+dv*cosine)*metresPerPixel];
 }));
 
-// Keep the trace as provenance. The displayed basin is deliberately straight
-// and symmetric, with exactly 1.2 times its original width and length.
-const traceMinZ=Math.min(...SITE31_TRACED_RIM.map(p=>p[1]));
-const traceMaxZ=Math.max(...SITE31_TRACED_RIM.map(p=>p[1]));
-const traceWidth=Math.max(...SITE31_TRACED_RIM.map(p=>p[0]))-Math.min(...SITE31_TRACED_RIM.map(p=>p[0]));
-const mouthZ=traceMinZ*SITE31_DUCT_SCALE,rearZ=traceMaxZ*SITE31_DUCT_SCALE;
-const peak=1.4/2.15,normalization=peak**1.4*(1-peak)**.75;
-const samples=[0,.03,.06,.10,.14,.19,.24,.29,.34,.40,.46,.52,.58,.64,peak,.70,.76,.82,.87,.91,.94,.965,.985,1];
-const side=samples.map(t=>[traceWidth*SITE31_DUCT_SCALE*.5*t**1.4*(1-t)**.75/normalization,mouthZ+(rearZ-mouthZ)*t]);
-export const SITE31_RIM=frozenPoints([...side,...side.slice(1,-1).reverse().map(([x,z])=>[-x,z])]);
+// Preserve both independently traced shoulders and the narrow offset mouth.
+// Enlargement is uniform about the launch axis, without forcing symmetry.
+export const SITE31_RIM=frozenPoints(SITE31_TRACED_RIM.map(([x,z])=>[x*SITE31_DUCT_SCALE,z*SITE31_DUCT_SCALE]));
 
 export const SITE31_PIT=Object.freeze({
  polygon:SITE31_RIM,
  shape:'polygon',
  rimY:0,
- source:'WV03 compass axis; owner-requested straightening and 20% enlargement'
+ source:'WV03 asymmetric rim and compass axis; owner-requested 20% enlargement'
 });
 
 const minZ=Math.min(...SITE31_RIM.map(point=>point[1]));
@@ -86,7 +79,7 @@ const tolerance=1e-9;
 
 // Inclusive intersection with a local constant-Z line. At either extreme
 // vertex the result is [x,x], so a tip can be built without NaN or a gap.
-// The symmetric rim has one interval at each Z; return null outside its extent.
+// The traced rim has one interval at each Z; return null outside its extent.
 export function site31RimAt(z){
  if(!Number.isFinite(z)||z<minZ-tolerance||z>maxZ+tolerance)return null;
  const sampleZ=Math.max(minZ,Math.min(maxZ,z)),hits=[];

@@ -189,8 +189,11 @@ function unionQuads(quads){
   }
   for(const p of pieces){
    result.push(p);
-   for(const key of keys(p)){let group=cells.get(key);if(!group){group=[];cells.set(key,group);}group.push(p);}
   }
+  // Subtract each original ribbon once. Re-indexing clipped fragments makes
+  // nearly coincident strip edges multiply tolerance slivers exponentially.
+  // Their union is still exactly the union of the original accepted ribbons.
+  for(const key of cellKeys){let group=cells.get(key);if(!group){group=[];cells.set(key,group);}group.push(polygon);}
  }
  return {polygons:result,overlaps};
 }

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {SITE31_FLOOR_Y,SITE31_DUCT_SCALE,SITE31_PIT,SITE31_REFERENCE,SITE31_RIM,site31RimAt} from './site31-trench-profile.js?v=20261103-site31-duct-v2';
+import {SITE31_FLOOR_Y,SITE31_DUCT_SCALE,SITE31_PIT,SITE31_REFERENCE,SITE31_RIM,site31RimAt} from './site31-trench-profile.js?v=20261103-launch-table-v1';
 
-// Straight, symmetric owner-adjusted basin. The original WV03 compass axis
-// is retained; the displayed outline and heights are museum reconstruction.
+// Smooth concrete sections inside the asymmetric WV03 trace, enlarged by 20%.
+// Heights remain a museum reconstruction, independent of the satellite plan.
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 
@@ -16,7 +16,10 @@ export function buildSite31Trench(k){
   ...Array.from({length:Math.ceil((zMax-zMin)/2.5)},(_,i)=>Math.max(zMin,zMax-i*2.5))])].sort((a,b)=>b-a);
  const sections=ends.map(z=>{
   const [left,right]=site31RimAt(z),span=right-left;
-  const center=0,halfWidth=Math.min(17*SITE31_DUCT_SCALE,span*.30);
+  const mouthX=site31RimAt(zMin)[0];
+  const axis=mouthX*clamp((rampStart-z)/(rampStart-zMin),0,1);
+  const center=clamp(axis,left+span*.30,right-span*.30);
+  const halfWidth=Math.min(17*SITE31_DUCT_SCALE,center-left,right-center);
   const rise=clamp((rampStart-z)/(rampStart-zMin),0,1);
   let floorY=SITE31_FLOOR_Y*(1-rise);
   if(z>rearStart)floorY=SITE31_FLOOR_Y*(1-clamp((z-rearStart)/(zMax-rearStart),0,1));
@@ -92,7 +95,7 @@ export function buildSite31Trench(k){
   }
  }
  group.userData.satelliteTrace={source:SITE31_REFERENCE.sourceUrl,imageryDate:SITE31_REFERENCE.imageryDate,heightsVerified:false,displayedOutlineAdjusted:true,dimensionScale:SITE31_DUCT_SCALE};
- return {version:'site31-straight-duct-v2',planShape:'symmetric-straight-basin-tapering-to-northwest-mouth',dimensionScale:SITE31_DUCT_SCALE,
+ return {version:'site31-satellite-duct-v3',planShape:'asymmetric-satellite-outline-tapering-to-northwest-mouth',dimensionScale:SITE31_DUCT_SCALE,
   floorY:SITE31_FLOOR_Y,rimY:0,axisUnderLaunchTable:true,openMouth:true,
   mouth:{z:zMin,centerX:sections.at(-1).center,floorY:sections.at(-1).floorY},
   lengthMetresApprox:zMax-zMin,exhaustRunMetresApprox:-zMin,maxWidthMetresApprox:Math.max(...sections.map(s=>s.right-s.left)),

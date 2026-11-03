@@ -20,7 +20,7 @@ const result=buildSite31Pad(root);root.updateMatrixWorld(true);
 const model=result.site31;
 assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-metric-soyuz-v6');
 assert.equal(model.siteId,'pad-31');assert.equal(model.orientationVerified,true);
-assert.equal(model.orientationScope,'satellite-axis-adjusted-outline');
+assert.equal(model.orientationScope,'satellite-outline-scaled-1.2');
 assert.equal(model.heightsVerified,false,'The satellite plan does not establish elevations');
 assert.equal(model.globalMapAnchorSurveyed,false,'The museum map anchor is still schematic');
 assert.equal(model.satellite.imageryDate,'2025-08-09');assert.equal(model.satellite.satellite,'WorldView-3');
@@ -79,11 +79,12 @@ const minZ=Math.min(...polygon.map(p=>p[1])),maxZ=Math.max(...polygon.map(p=>p[1
 assert.ok(minZ<-180&&minZ>-185,'The outlet is 20% longer than the former 152 m trace');
 const extent=(points,axis)=>Math.max(...points.map(p=>p[axis]))-Math.min(...points.map(p=>p[axis]));
 for(const axis of [0,1])assert.ok(Math.abs(extent(SITE31_RIM,axis)/extent(SITE31_TRACED_RIM,axis)-1.2)<1e-10,'The visible width and length are exactly 20% larger');
+for(let i=0;i<SITE31_TRACED_RIM.length;i++)for(let axis=0;axis<2;axis++)assert.ok(Math.abs(SITE31_RIM[i][axis]-SITE31_TRACED_RIM[i][axis]*1.2)<1e-10,'Each satellite trace point is preserved under enlargement');
 assert.ok(Math.abs(SITE31_FLOOR_Y/-24-1.2)<1e-12,'Depth is exactly 20% larger');
 assert.equal(site31RimAt(minZ-1),null);assert.equal(site31RimAt(maxZ+1),null);
 for(let z=minZ+.25;z<maxZ;z+=1.7){
  const span=site31RimAt(z);assert.ok(span?.every(Number.isFinite)&&span[1]>span[0]);
- assert.ok(inside([(span[0]+span[1])/2,z],polygon),'Each cutout scanline is inside the basin');assert.ok(Math.abs(span[0]+span[1])<1e-8,'Banks mirror around one straight axis');
+ assert.ok(inside([(span[0]+span[1])/2,z],polygon),'Each cutout scanline is inside the basin');
 }
 
 // The shader uses these world-to-local uniforms. Verify the actual rotated
@@ -121,7 +122,8 @@ assert.ok(Math.abs(launchHit.local.y-model.pitFloorY)<1e-5);
 // Cast at both sides and between section seams. A missing triangle, flipped
 // face or solid cover must fail even if the descriptive metadata is correct.
 const sections=model.trench.sections;assert.ok(sections.length>40);
-assert.ok(sections.every(s=>s.center===0&&Math.abs(s.floorLeft+s.floorRight)<1e-10),'Floor remains straight and symmetric');
+assert.ok(sections.every(s=>s.floorLeft>=s.left-1e-8&&s.floorRight<=s.right+1e-8),'Floor fits independently traced banks');
+assert.ok(Math.abs(site31RimAt(-20)[0]+site31RimAt(-20)[1])>10,'Satellite shoulders retain their asymmetry');
 for(const mesh of [floor,banks]){assert.ok(mesh.geometry.index,'Smooth concrete shares vertices');assert.ok([...mesh.geometry.attributes.normal.array].every(Number.isFinite));}
 
 let floorProbes=0,clearanceProbes=0,maxFloorError=0;
