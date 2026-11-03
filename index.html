@@ -1,5 +1,6 @@
 <!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>БАЙКОНУР 3D — виртуальный музей</title>
 <link rel="preload" as="image" href="./assets/preloader/soyuz-launch-20261103.webp" type="image/webp" fetchpriority="high">
+<link rel="stylesheet" href="./src/museum-mobile.css?v=20261103-mobile-v1">
 <link rel="stylesheet" href="./src/museum-preloader.css?v=20261103-preloader-copy-v15">
 <link rel="modulepreload" href="./src/vendor/three-r160/build/three.module.js" fetchpriority="low">
 <link rel="preload" as="image" href="./assets/terrain/satellite-single-pass-preview-v1.jpg" crossorigin="anonymous" fetchpriority="low">
@@ -2701,7 +2702,7 @@ window.__MUSEUM_ONBOARDING?.attach({camera,controls:ctl,focusGagarin:()=>focus(0
 animate();startup.ready();
 if(new URLSearchParams(location.search).get('view')==='pua'){openMenuSite('pad-251');let puaAttempts=0;const startPua=()=>{if(puaLoading.start())return;const state=puaLoading.stats();if(!state.ready&&puaAttempts++<180)setTimeout(startPua,500);};startPua();}
 }catch(err){window.__MUSEUM_STARTUP?.fail(err);document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}
-</script></body></html>
+</script><script src="./src/museum-mobile.js?v=20261103-mobile-v1"></script></body></html>
 
 
 
