@@ -191,7 +191,7 @@ jobs:
       max-parallel: 20
       matrix:
         target: [local, public]
-        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi, energia, site2]
+        suite: [progressive-loading, terrain-relief, startup-menu, bridge-exhibits, road-markings, facility-access, facility-lighting, site41, museum, transport, silos, zenit, landing-camera, model-inspector, sdi, energia, site2, labels]
     env:
       BAIKONUR_URL: ${{ matrix.target == 'public' && format('https://ifdiakov.github.io/baikonur-3d/?release={0}', github.sha) || '' }}
       QA_PREFIX: ${{ matrix.target }}
@@ -240,6 +240,9 @@ jobs:
       - name: Verify the menu and flight status
         if: matrix.suite == 'startup-menu'
         run: node tests/left-menu-browser.mjs
+      - name: Verify hover-wheel, left-drag and right-orbit over object labels
+        if: matrix.suite == 'labels'
+        run: node tests/label-map-gestures-browser.mjs
       - name: Verify camera movement after leaving aircraft follow
         if: matrix.suite == 'landing-camera'
         run: node tests/camera-navigation-browser.mjs
