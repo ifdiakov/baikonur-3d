@@ -31,7 +31,9 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   const canvas=document.createElement('canvas');canvas.width=canvas.height=MASK_SIZE;
   const context=canvas.getContext('2d',{alpha:true});
   const texture=new THREE.CanvasTexture(canvas);texture.generateMipmaps=false;
-  texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;
+  // Binary discard stencils need exact grade samples: bilinear color
+  // interpolation against transparent pixels used to tear the cut edges.
+  texture.minFilter=THREE.NearestFilter;texture.magFilter=THREE.NearestFilter;
   return {canvas,context,texture,bounds:{value:new THREE.Vector4(0,0,1,1)},enabled:{value:0},strokes:0,worldUnitsPerPixel:0};
  });
  const targets=new Set(['OSM · единые обочины','OSM · единое дорожное полотно','OSM · асфальт трассы',
@@ -66,7 +68,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
     '#include <clipping_planes_fragment>\n'+clip);
   };
-  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v3';
+  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v4';
   material.needsUpdate=true;
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
