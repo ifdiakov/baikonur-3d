@@ -251,6 +251,11 @@ function makeVehicleRoute(id,label,graphRoute,conform=points=>points){
 
 export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,checkpoint7RoadGrade=null}){
  const started=Date.now(),roadGraph=buildOsmGraph(data.roads.features,{geography,point}),railGraph=buildOsmGraph(data.railways.features,{geography,point,rail:true});
+ const buildPhases=[],checkpoint=name=>{
+  const elapsed=Date.now()-started;buildPhases.push({name,elapsedMs:elapsed});
+  if(typeof performance!=='undefined'&&performance.mark)performance.mark('museum:transport-'+name);
+ };
+ checkpoint('graphs');
  const saturnSite=siteRecords.find(s=>s.id==='pad-23'),saturnCenter=saturnSite?point(saturnSite.x,saturnSite.y,0):null;
  function terrainAt(x,z){
   if(!saturnCenter)return -Infinity;
@@ -586,6 +591,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  exhibitRoadFilter.stats.removedEdgeCount=exhibitRoadFilter.removed.size;
  // Junction surfaces follow only retained source roads. Paint is planned
  // after all paving is assembled, using the same retained road corridors.
+ checkpoint('pruned');
  const junctionWidths=new Map();
  const protectedRoadWays=new Set([...roadProtected].map(e=>e.wayId));
  function clipKrayniyCampus(points,wayId){
@@ -672,6 +678,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(major)visibleRuns.forEach((run,i)=>roadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap',highway:isHighwayRoad(way.tags),
     tags:{...way.tags},marked:true,surface:way.tags.highway==='track'||['ground','unpaved','dirt','sand'].includes(way.tags.surface)?'ground':'asphalt'}));
  }
+ checkpoint('roads');
  let junctionCount=0;
  for(const n of roadGraph.nodes.values())if(n.edges.filter(e=>edgeKept(roadGraph,e)&&renderedRoadWays.has(e.wayId)&&!settlementHidden(n.position,e.tags,e.wayId)).length>2){
   const width=junctionWidths.get(n.id)||1.6;
@@ -998,12 +1005,15 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    positionBasis:station.positionBasis,positionConfidence:'scheme-yard-identification',
    geoSource:{kind:'railway-scheme',status:'existing-track-anchor',sourceLonLat:[...station.coordinates],displayLonLat:[...station.coordinates],refs:publicReferences.map(url=>({url})),modelAnchor:'illustrative'},publicReferences}});
  }
+ checkpoint('rails');
  const lowerAprons=createInterchangeAprons(roadGraph);
  for(const apron of lowerAprons){
   highwayAsphalt.patch(apron.triangles,apron.mask);
   for(const curb of apron.curbs)shoulder.ribbon(curb,ROAD_STYLE.shoulderExtra,-.055-HIGHWAY_ASPHALT_LIFT);
  }
+ checkpoint('aprons');
  batches.forEach(b=>b.flush());
+ checkpoint('batches');
  // The short retained return between these source junctions surrounds one
  // tiny flat void. Its bounded fill cannot reach an outer curb or a lane.
  const returnStart=roadGraph.nodes.get('1833467924'),returnEnd=roadGraph.nodes.get('1833467955');
@@ -1022,6 +1032,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const pavementY=pavementHeightSampler([highwayAsphalt.mesh,bridgeAsphalt]);
  for(const route of roadPlan.routes)route.surfaceHeightAt=p=>pavementY(p)??p.y;
  const markingPavementY=pavementHeightSampler([asphalt.mesh,highwayAsphalt.mesh,bridgeAsphalt]);
+ checkpoint('surface-height');
  const roadMarkingPlan=buildRoadMarkings({roads:markingRoads,graph:roadGraph,surfaceHeightAt:markingPavementY,surfaceTrianglesAt:markingPavementY.trianglesAt,directionAt:highwayDirectionAt,
   extraEdges:lowerAprons.flatMap(apron=>apron.edgeLines.map((edge,i)=>({...edge,id:'apron-'+apron.spec.nodeId+'-'+i,family:'highway',width:HIGHWAY_MARKINGS.edgeWidth}))),
   excludePoint:(p,{kind,road,family})=>lowerAprons.some(apron=>apron.contains(p)&&(apron.spec.connectorWayIds.includes(String(road.wayId))||family==='highway'&&kind==='edge'&&road.tags?.highway?.endsWith('_link')))});
@@ -1030,6 +1041,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   target.quad(...quad.vertices);
  }
  markingSegments=roadMarkingPlan.quads.length;
+ checkpoint('markings');
  paint.flush();highwayYellow.flush();highwayWhite.flush();batches.push(highwayYellow,highwayWhite);
  // Display scenery continues beyond the source extract. Do not extend OSM
  // topology, traffic routes, geography bounds or the museum's camera bounds.
@@ -1058,6 +1070,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    destinationRoutes:mikRailSourcePlan.destinationRoutes.map(({edges,points,...route})=>route),replacedSourceEdges:mikRailSourcePlan.replacedEdges.size,displayReplacements:mikRailSourcePlan.displayReplacements,
    railGauge:RAIL_PROFILE.gauge,railProfile:RAIL_PROFILE};
  }
+ checkpoint('complete');
  const buildMilliseconds=Date.now()-started;
  return {roadPaths:()=>roadPaths,
   editableRoadPaths:()=>[...editableRoadPaths,...roadPaths.filter(r=>r.source!=='OpenStreetMap'&&r.points?.length>1&&!r.id.startsWith('r-south-'))],
@@ -1067,7 +1080,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   setBridgeEvening:value=>interchangeBridge?.setEvening(value),
   isBridgePoleAllowed:(x,z)=>interchangeBridge?.isPoleAllowed(x,z)??true,
   routes:{road:roadPaths.map(r=>({id:r.id,points:r.points.map(p=>[(p.x/3.4)+650,(p.z/3.4)+522.5])})),rail:railPaths},
-  stats:()=>({version:'osm-transport-v1',source:'OpenStreetMap',sourceTimestamp:data.roads.osmBaseTimestamp,confidence:'osm-source-node-topology',roadFeatureCount:data.roads.features.length,railFeatureCount:data.railways.features.length,
+  stats:()=>({buildPhases:buildPhases.map(p=>({...p})),version:'osm-transport-v1',source:'OpenStreetMap',sourceTimestamp:data.roads.osmBaseTimestamp,confidence:'osm-source-node-topology',roadFeatureCount:data.roads.features.length,railFeatureCount:data.railways.features.length,
    roadRoutes:roadGraph.ways.length,railRoutes:railGraph.ways.length,roadNodes:roadGraph.nodes.size,railNodes:railGraph.nodes.size,roadComponents:roadGraph.components.length,railComponents:railGraph.components.length,
    roadSurface:{version:'osm-batched-upward-terrain-surfaces-v2',junctionCount,markingSegments,roads:renderedRoadWays.size,paintLift:HIGHWAY_MARKINGS.lift-HIGHWAY_ASPHALT_LIFT,sampleStep:1.4,normalDirection:'upward',terrainClearance:.38,
     markings:roadMarkingPlan.stats,local:roadGraph.localRoadSurface,

@@ -15,7 +15,8 @@ try{
   const get=name=>marks.find(x=>x.name===name).at;
   return {firstFrameMs:Math.round(get('first-frame')-get('startup')),interactiveMs:Math.round(get('interactive')-get('startup')),
    firstSceneReady:!!window.__BAIKONUR_QA,loaderHidden:document.getElementById('museumLoading')?.hidden,
-   stages:marks.filter(x=>x.name.startsWith('stage-')).map(x=>({stage:x.name,ms:Math.round(x.at-get('startup'))}))};
+   stages:marks.filter(x=>x.name.startsWith('stage-')).map(x=>({stage:x.name,ms:Math.round(x.at-get('startup'))})),
+   transportPhases:window.__BAIKONUR_QA.stats().transport.buildPhases};
  });
  assert(stats.firstSceneReady&&stats.loaderHidden);
  const gallery=requests.filter(x=>x.includes('/assets/preloader/'));
