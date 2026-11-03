@@ -103,7 +103,7 @@ export async function loadTuaExhibit(root,exhibit,{timeoutMs=MAX_WAIT_MS}={}){
  try{
   if(typeof location!=='undefined'&&(assetUrl.origin!==location.origin||manifestUrl.origin!==location.origin))throw new Error('TUA assets must be same-origin');
   const fetchAsset=async(url,binary)=>{
-   const response=await fetch(url,{signal:controller.signal,mode:'same-origin',credentials:'same-origin',redirect:'error',cache:'no-cache'});
+   const response=await fetch(url,{signal:controller.signal,mode:'same-origin',credentials:'same-origin',redirect:'error',cache:'default'});
    if(!response.ok)throw new Error('TUA '+(binary?'model':'manifest')+' HTTP '+response.status);
    return binary?response.arrayBuffer():response.json();
   };

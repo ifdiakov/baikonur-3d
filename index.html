@@ -460,9 +460,9 @@ body.following-arrival #labelLayer{display:none!important}
         </header>
         <div id="museumPreloaderGallery" class="preloader__gallery" aria-hidden="true">
           <img class="preloader__image is-active" data-image="0" src="./assets/preloader/soyuz-launch-20261103.webp" width="1152" height="768" alt="" decoding="async" loading="eager" fetchpriority="high">
-          <img class="preloader__image" data-image="1" src="./assets/preloader/energia-buran-20261103.webp" width="1152" height="781" alt="" decoding="async" fetchpriority="low">
-          <img class="preloader__image" data-image="2" src="./assets/preloader/tracking-station-20261103.webp" width="1152" height="576" alt="" decoding="async" fetchpriority="low">
-          <img class="preloader__image" data-image="3" src="./assets/preloader/proton-rollout-20261103.webp" width="1152" height="768" alt="" decoding="async" fetchpriority="low">
+          <img class="preloader__image" data-image="1" data-src="./assets/preloader/energia-buran-20261103.webp" width="1152" height="781" alt="" decoding="async" fetchpriority="low">
+          <img class="preloader__image" data-image="2" data-src="./assets/preloader/tracking-station-20261103.webp" width="1152" height="576" alt="" decoding="async" fetchpriority="low">
+          <img class="preloader__image" data-image="3" data-src="./assets/preloader/proton-rollout-20261103.webp" width="1152" height="768" alt="" decoding="async" fetchpriority="low">
         </div>
       </div>
       <p id="museumPreloaderSlogan" class="preloader__claim">КОСМОС НАЧИНАЕТСЯ С НАЗЕМКИ</p>
@@ -535,7 +535,6 @@ import {buildExtendedTerrain, sampleSteppe, LARGE_TERRAIN_SEGMENTS} from './src/
 import {buildMuseumTerrainRelief} from './src/museum-terrain.js?v=20261102-progressive-v1';
 import {buildSharedSiloHill} from './src/shared-silo-hill.js?v=20261103-shared-silo-hill-v1';
 import {createSteppeSurface} from './src/steppe-surface.js?v=20261103-game-terrain-pbr-v1';
-import {createGameTerrainPilot} from './src/terrain-game-detail.js?v=20261103-game-terrain-natural-patches-v5';
 import {loadSatelliteReference,SATELLITE_REFERENCE} from './src/satellite-reference.js?v=20261102-progressive-v1';
 import {getMriyaInstallation} from './src/mriya-exhibit.js?v=buran-paint-20261102-v1';
 import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-signs-v1';
@@ -564,8 +563,7 @@ import {installLabelMapGestures} from './src/label-map-gestures.js?v=20261103-la
 import {createMapCameraSmoothing,smoothingAlpha,MUSEUM_DAMPING_AT_60FPS} from './src/map-camera-smoothing.js?v=20261103-smooth-map-camera-v1';
 import {installModelInspector} from './src/model-inspector.js?v=20261102-site2-photo-v3';
 import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261102-site2-photo-v3';
-import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261103-seven-sections-v10';
-import {createComplexHistoryPanel} from './src/complex-history.js?v=20261103-foundation-v1';
+import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261103-lean-startup-v1';
 import {MUSEUM_METRE,MUSEUM_MAP_SCALE} from './src/museum-scale.js?v=20261102-silo-height-v1';
 import {CYCLONE_MOUNTS} from './src/cyclone-launch.js?v=20261102-site2-photo-v3';
 import {SITE41_R16_MOUNT} from './src/site41-profile.js?v=20261101-r16-exhibit-v1';
@@ -589,7 +587,7 @@ mapAttribution.append(attribution,terrainAttribution,modelCreditsLink);document.
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261103-history-foundation-v1';
+const MUSEUM_REVISION='20261103-loading-optimization-v1';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
@@ -1638,8 +1636,9 @@ scene.userData.terrainStyle.surface=steppeSurface.stats();
 // Optional high-detail earth loads after the first interactive frame.
 // A failed enhancement never blocks navigation or the original satellite surface.
 let gameTerrain=null,gameTerrainStatus='queued',gameTerrainError=null;
-const gameTerrainReady=startup.defer(()=>{
+const gameTerrainReady=startup.defer(async()=>{
  gameTerrainStatus='loading';
+ const {createGameTerrainPilot}=await import('./src/terrain-game-detail.js?v=20261103-lazy-soil-v1');
  gameTerrain=createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,osmRails,transport,
   point,terrainRelief,steppeSurface,sceneScale:SCENE_SCALE});
  gameTerrainStatus='ready';
@@ -2354,7 +2353,24 @@ function showArchiveStory(id){
  document.getElementById('mik112Controls').hidden=true;document.getElementById('rocketExhibitToggle').hidden=true;
  syncUkssControls();syncTuaControls();syncRocketLoadStatus();return true;
 }
-let complexHistoryPanel=null;
+let complexHistoryPanel=null,complexHistoryLoading=null;
+function openComplexHistory(id){
+ if(complexHistoryPanel)return complexHistoryPanel.open(id);
+ // The full ten-chapter archive and its drawer are nonessential to the first
+ // 3D frame. Load only on a visitor's explicit history selection.
+ if(!complexHistoryLoading)complexHistoryLoading=import('./src/complex-history.js?v=20261103-lazy-history-v1').then(({createComplexHistoryPanel})=>{
+  complexHistoryPanel=createComplexHistoryPanel({
+   onMap:siteId=>{setMuseumYear(2026);return openMenuSite(siteId);},
+   onYear:year=>setMuseumYear(year)
+  });
+  return complexHistoryPanel;
+ });
+ return complexHistoryLoading.then(panel=>panel.open(id)).catch(error=>{
+  complexHistoryLoading=null;
+  console.warn('History drawer could not load:',error);
+  return false;
+ });
+}
 function openMuseumAction(action){
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
  document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open');
@@ -2362,7 +2378,7 @@ function openMuseumAction(action){
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
  setMobileMenu(false);setGagarinDetailView(false);
  document.getElementById('info').style.display='none';
- if(action.startsWith('history:'))return complexHistoryPanel?.open(action.slice(8))??false;
+ if(action.startsWith('history:'))return openComplexHistory(action.slice(8));
  if(action.startsWith('story:'))return showArchiveStory(action.slice(6));
  if(action.startsWith('rocket:')){
   const id=action.slice(7),direct={soyuz:'r7',energia:'energia','energia-polyus':'energia-polyus','energia-buran':'energia-buran','energia-m':'energia-m',tua:'tua'};
@@ -2401,10 +2417,6 @@ function openMuseumAction(action){
  ctl.update();camera.updateMatrixWorld(true);updateLabels();return true;
 }
 const museumMenu=installMuseumMenu({container:document.getElementById('ui'),onAction:openMuseumAction,stories:museumKnowledge.storiesMenu()});
-complexHistoryPanel=createComplexHistoryPanel({
- onMap:id=>{setMuseumYear(2026);return openMenuSite(id);},
- onYear:year=>setMuseumYear(year)
-});
 const INTERCHANGE_SELECTION_INDEX=-1;
 function focusInterchange(view='bridge'){
  const bridge=transport.stats().interchange?.bridges.find(b=>b.osmWayId==='172422627');
