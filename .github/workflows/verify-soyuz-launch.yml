@@ -7,7 +7,6 @@ on:
       - 'src/soyuz-launch-columns.js'
       - 'src/soyuz-launch-effects.js'
       - 'src/energia-plasma-shader.js'
-      - 'index.html'
       - 'tests/soyuz-dual-launch-*.mjs'
       - '.github/workflows/verify-soyuz-launch.yml'
   workflow_dispatch:
@@ -15,7 +14,7 @@ permissions:
   contents: read
 concurrency:
   group: soyuz-launch-main
-  cancel-in-progress: true
+  cancel-in-progress: false
 jobs:
   verify:
     runs-on: ubuntu-24.04
