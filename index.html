@@ -554,7 +554,10 @@ try{
 const attribution=document.createElement('a');attribution.id='osmAttribution';attribution.href='https://www.openstreetmap.org/copyright';attribution.target='_blank';attribution.rel='noopener';attribution.textContent='© OpenStreetMap contributors';
 const mapAttribution=document.createElement('div');mapAttribution.id='mapAttribution';
 const terrainAttribution=document.createElement('a');terrainAttribution.id='terrainAttribution';terrainAttribution.href='https://registry.opendata.aws/terrain-tiles/';terrainAttribution.target='_blank';terrainAttribution.rel='noopener';terrainAttribution.textContent='Рельеф: Mapzen / USGS';terrainAttribution.title='SRTM data courtesy of the U.S. Geological Survey. Высоты адаптированы для музейного макета.';
-mapAttribution.append(attribution,terrainAttribution);document.body.append(mapAttribution);
+const modelCreditsLink=document.createElement('a');modelCreditsLink.id='modelCreditsLink';
+modelCreditsLink.href='./credits.html';modelCreditsLink.target='_blank';modelCreditsLink.rel='noopener noreferrer';
+modelCreditsLink.textContent='Авторы и лицензии';modelCreditsLink.title='Сведения о 3D-моделях, авторах и лицензиях';
+mapAttribution.append(attribution,terrainAttribution,modelCreditsLink);document.body.append(mapAttribution);
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
@@ -2003,12 +2006,6 @@ document.getElementById("detailMore").onclick=()=>{
  if(currentObject===krayniyIndex)document.getElementById('info').classList.toggle('terminal-details-open',isHidden);
  if(isHidden){
   museumKnowledge.renderSite(r.id,el);
-  if(r.id==='pad-31'){
-   const credit=document.createElement('p');credit.append('3D-модель: ');
-   const author=document.createElement('a');author.href='https://sketchfab.com/3d-models/baikonur-cosmodrome-site-31-pad-6-1b505f3a9cfd4df7a4746d1c66b53671';author.textContent='Soviet Model Magic';author.target='_blank';author.rel='noopener noreferrer';credit.append(author,' · ');
-   const license=document.createElement('a');license.href='https://creativecommons.org/licenses/by/4.0/';license.textContent='CC BY 4.0';license.target='_blank';license.rel='noopener noreferrer';credit.append(license,' · адаптация для макета RocketTrip');el.append(credit);
-  }
-
   // Editorial copy belongs in the site card; this expanded area adds
   // sourced background instead of repeating source-position or model warnings.
   if(r.organisation?.org){const organisation=document.createElement("div");organisation.textContent="Организация: "+r.organisation.org;el.appendChild(organisation)}
@@ -2403,10 +2400,13 @@ await startup.paint();
 window.__MUSEUM_ROCKETS_READY=initialRocketModels;
 window.__MUSEUM_CONTENT_READY=Promise.all([museumKnowledge.ready,historicalDataReady,nextLaunchDataReady]);
 function syncGagarinTableStatus(){
- const el=document.getElementById('gagarinTableStatus');if(!el)return;const state=gagarinExhibit.table.stats();el.replaceChildren();
- el.append(document.createTextNode(state.status==='ready'?'Стартовый стол — копия с площадки №31. ':state.status==='error'?'Стартовый стол не загрузился. ':'Загружаем стартовый стол с площадки №31… '));
- if(state.status==='error'){const b=document.createElement('button');b.type='button';b.textContent='Повторить';b.onclick=()=>gagarinExhibit.table.load();el.append(b);}
- if(state.status==='ready'){const credit=padGroup.userData.gagarinModel.sourceCredit,a=document.createElement('a');a.textContent=credit.author+' · '+credit.license;a.href=credit.url;a.target='_blank';a.rel='noopener';el.append(a);}
+ const el=document.getElementById('gagarinTableStatus');if(!el)return;
+ const failed=gagarinExhibit.table.stats().status==='error';
+ el.replaceChildren();el.hidden=!failed;el.style.display=failed?'block':'none';
+ if(!failed)return;
+ el.append(document.createTextNode('Не удалось загрузить стартовый стол. '));
+ const retry=document.createElement('button');retry.type='button';retry.textContent='Повторить';
+ retry.onclick=()=>gagarinExhibit.table.load();el.append(retry);
 }
 window.__BAIKONUR_QA={gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
  const sources={main:ground,regional:outerTerrain.planes[0],intermediate:outerTerrain.planes[1],satellite:satelliteGround,relief:terrainRelief.mesh};
