@@ -17,7 +17,7 @@ export const MUSEUM_DISPLAY_OFFSETS = Object.freeze({
   'pad-23': Object.freeze([20,0]),
   'pad-3': Object.freeze([0,10]),
   'pad-42': Object.freeze([0,10]),
-  'pad-254': Object.freeze([10+3/Math.SQRT2,5+3/Math.SQRT2]),
+  'pad-254': Object.freeze([7+3/Math.SQRT2,5+3/Math.SQRT2]),
   'pad-41': SITE41_DISPLAY_OFFSET
 });
 const X_METRES_PER_DEGREE = EARTH_RADIUS * DEG * Math.cos(REFERENCE_LAT * DEG);
@@ -246,7 +246,7 @@ export function createMuseumGeography({catalog,matches,sourceElements}={}){
       result.geoSource.displayOffset=[...displayAdjustment];
       result.geoSource.displayOffsetBasis=record.id==='pad-254'?'owner-request-20261103':record.id==='pad-41'?'owner-request-20261031':record.id==='pad-3'||record.id==='pad-42'?'owner-request-20261102':'owner-request-20261030';
       result.positionConfidence='owner-adjusted-display';
-      result.positionBasis+='; музейное смещение по указанию владельца: '+(record.id==='pad-254'?'3 единицы на юго-восток, затем 10 на восток и 5 на юг':record.id==='pad-41'?SITE41_DISPLAY_SHIFT_MAP+' единиц схемы вдоль дороги от площадки 42':record.id==='pad-3'||record.id==='pad-42'?'+10 единиц на юг':'+20 вправо');
+      result.positionBasis+='; музейное смещение по указанию владельца: '+(record.id==='pad-254'?'3 единицы на юго-восток, затем 10 на восток и 5 на юг, затем 3 на запад':record.id==='pad-41'?SITE41_DISPLAY_SHIFT_MAP+' единиц схемы вдоль дороги от площадки 42':record.id==='pad-3'||record.id==='pad-42'?'+10 единиц на юг':'+20 вправо');
     }
     result.x=p[0];result.y=p[1];
     return result;
