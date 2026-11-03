@@ -3,6 +3,8 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {stitchEditedRoads,sampleEditedRoad,buildEditedRoadMeshes} from '../src/road-editor-mesh.js';
 import {deriveEditedRoadStyle} from '../src/road-editor-style.js';
+import {projectOsm,MUSEUM_DISPLAY_OFFSETS} from '../src/osm-geography.js';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainMeshHeight} from '../src/saturn-access.js';
 
 const a={id:'road-main',surface:'asphalt',width:4.5,points:[[0,.72,0],[45,.72,0],[90,-2.7,0]]};
 const b={id:'road-spur',surface:'asphalt',width:3,points:[[45,.72,0],[45,.72,24]]};
@@ -126,5 +128,40 @@ assert(fine.junctions>=2,'No owner T junctions were checked at road-pixel scale'
 assert(fine.checks>=20,'Insufficient test pixels around edited road joints');
 assert(ownerMesh.stats.seamWelds>0,'Road fragments must share welded GPU vertices');
 assert(ownerMesh.stats.joins>=1,'Road junctions should receive unified fillet aprons');
+// Regression: owner road-31 is a FOUR-point steep approach to the north-west
+// Saturn gate. Sampling only its stored Y coordinates hides large portions
+// inside the world-registered hill, even though the satellite soil is correct.
+const osmMatches=JSON.parse(readFileSync(new URL('../data/osm/catalog-matches.json',import.meta.url),'utf8'));
+const saturnMatch=osmMatches.matches.find(m=>m.siteId==='pad-23');
+assert(saturnMatch?.representativeLonLat,'Saturn needs its registered OSM position');
+const [mapX,mapZ]=projectOsm(...saturnMatch.representativeLonLat);
+const [offsetX,offsetZ]=MUSEUM_DISPLAY_OFFSETS['pad-23'];
+const saturnWorldX=(mapX+offsetX-650)*3.4,saturnWorldZ=(mapZ+offsetZ-522.5)*3.4;
+function saturnRoadTerrainAt(x,z){
+ const localX=(x-saturnWorldX)/SATURN_ACCESS.scale,localZ=(z-saturnWorldZ)/SATURN_ACCESS.scale;
+ const b=SATURN_TERRAIN_BOUNDS;
+ if(localX<b.minX||localX>b.maxX||localZ<b.minZ||localZ>b.maxZ)return -2.755;
+ return Math.max(-2.755,SATURN_ACCESS.elevation+SATURN_ACCESS.scale*saturnTerrainMeshHeight(localX,localZ));
+}
+const road31=owner.added.find(r=>r.id==='road-31');
+assert(road31,'Missing approved road-31 approach');
+const originalRamp=sampleEditedRoad(road31);
+const beforeClearance=Math.max(...originalRamp.map(p=>saturnRoadTerrainAt(p[0],p[2])-p[1]));
+assert(beforeClearance>.12,'Regression fixture no longer crosses the Saturn hill');
+const gradeFixture={...road31,profile:{startY:road31.points[0][1],endY:road31.points.at(-1)[1]-.7}};
+const correctedRamp=sampleEditedRoad(gradeFixture,{terrainHeightAt:saturnRoadTerrainAt});
+assert.equal(correctedRamp.length,originalRamp.length);
+let minimumClearance=Infinity;
+for(let i=0;i<correctedRamp.length;i++){
+ const p=correctedRamp[i],original=originalRamp[i];
+ assert.equal(p[0],original[0]);assert.equal(p[2],original[2]);
+ const clearance=p[1]-saturnRoadTerrainAt(p[0],p[2]);
+ minimumClearance=Math.min(minimumClearance,clearance);
+ assert(clearance>=.034999,'Saturn road-31 still penetrates hill at sample '+i);
+}
+const indexHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert(indexHtml.includes('terrainHeightAt:(x,z)=>museumTerrainHeightAt(x,z),defaultEdits:ownerRoadEdits'),
+ 'Published road editor must receive the actual raised terrain, not the flat DEM');
+
 console.log('ROAD_EDITOR_MESH_PASS',JSON.stringify({segments:stats.segments,overlapCuts:stats.overlaps,ownerOverlapCuts:ownerMesh.stats.overlaps,ownerSamples:roadSamples,junctionChecks:fine.checks,junctions:fine.junctions,welds:ownerMesh.stats.seamWelds,
  topTriangles:geometries.asphalt.attributes.position.count/3}));
