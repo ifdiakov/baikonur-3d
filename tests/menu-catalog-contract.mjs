@@ -10,8 +10,8 @@ const [html,catalogue,field,history,railPoints]=await Promise.all([
   readFile(new URL('../index.html',import.meta.url),'utf8'),
   ...['catalog.json','field-research.json','history.json','osm/rail-points.geojson'].map(file=>readFile(new URL('../data/'+file,import.meta.url),'utf8').then(JSON.parse))
 ]);
-const ids=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+const ids=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','complexHistoryAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','ИСТОРИЯ КОСМОДРОМА','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.id),ids);
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.title),titles);
 const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html.indexOf('</aside>',asideStart));

@@ -1,6 +1,7 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
+import {COMPLEX_HISTORY_CHAPTERS} from './complex-history-content.js?v=20261103-foundation-v1';
 
-export const MUSEUM_MENU_VERSION='museum-six-sections-v9';
+export const MUSEUM_MENU_VERSION='museum-seven-sections-v10';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -64,6 +65,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'aircraft',title:'Сопровождение самолёта',description:'Камера следует за воздушным судном'},
   {action:'train',title:'Сопровождение локомотива',description:'Камера следует за поездом'}
  ]},
+ {id:'complexHistoryAccordion',title:'ИСТОРИЯ КОСМОДРОМА',items:COMPLEX_HISTORY_CHAPTERS.map(item=>({action:'history:'+item.id,title:item.title,description:item.period+' · '+item.subtitle}))},
  {id:'mythsAccordion',title:'МИФЫ И ЛЕГЕНДЫ',items:[],empty:'Материалы раздела пока не добавлены.'},
  {id:'traditionsAccordion',title:'ТРАДИЦИИ И СУЕВЕРИЯ',items:[],empty:'Истории о традициях и суевериях космодрома готовятся к публикации.'},
  {id:'graveyardAccordion',title:'КОСМИЧЕСКОЕ КЛАДБИЩЕ',items:[

@@ -1,0 +1,32 @@
+/* Baikonur foundation history — independent editorial drawer. */
+.complex-history[hidden]{display:none!important}
+.complex-history{position:fixed;z-index:19;right:14px;top:15px;bottom:112px;width:min(470px,calc(100vw - 350px));min-width:350px;display:flex;flex-direction:column;overflow:hidden;background:linear-gradient(160deg,rgba(9,26,39,.98),rgba(17,40,52,.97));border:1px solid rgba(169,198,210,.4);box-shadow:0 20px 70px #000c;border-radius:17px;color:#e8f0f2;font-family:Montserrat,Arial,sans-serif;backdrop-filter:blur(12px)}
+body.complex-history-open #hero{display:none!important}
+.complex-history__header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:18px 20px 10px}
+.complex-history__identity>span{display:block;font-size:8px;font-weight:700;letter-spacing:.15em;color:#e7a38f}
+.complex-history__identity h2{font-size:20px;line-height:1.15;margin:6px 0 0;letter-spacing:-.025em}
+.complex-history__close{background:#ffffff14;color:#fff;border:1px solid #ffffff31;border-radius:9px;padding:7px 10px;cursor:pointer;font-weight:700}
+.complex-history__nav{display:flex;gap:6px;overflow-x:auto;padding:7px 17px 13px;scrollbar-width:thin;flex:none}
+.complex-history__tab{white-space:nowrap;border:1px solid #426070;background:#132c3c;color:#b9ced9;border-radius:7px;font:600 9px/1.4 Montserrat,Arial;padding:9px 10px;cursor:pointer}
+.complex-history__tab.is-current{border-color:#e0a088;background:#603c39;color:#fff}
+.complex-history__article{min-height:0;flex:1;overflow-y:auto;padding:8px 23px 16px;scrollbar-width:thin}
+.complex-history__date{display:inline-block;font:800 12px Montserrat,Arial;color:#e7a38f;margin-right:9px}
+.complex-history__badge{font-size:9px;letter-spacing:.1em;color:#a7c1cf}
+.complex-history__title{font:700 23px/1.2 Bounded,Montserrat,Arial;margin:12px 0 6px;color:white}
+.complex-history__subtitle{font-size:12px;color:#9db8c7;margin:0 0 16px}
+.complex-history__lead{font-size:13px;font-weight:700;line-height:1.65;color:#fff;margin:0 0 16px}
+.complex-history__paragraphs p{font-size:12px;line-height:1.75;color:#d5e0e7;margin:0 0 12px}
+.complex-history__fact{border-left:3px solid #e6a58b;padding:10px 13px;background:#ffffff0a;color:#f5dbc8;font-size:11px;font-weight:600;line-height:1.55;margin:18px 0}
+.complex-history__controls{display:flex;gap:8px;flex-wrap:wrap;margin:13px 0 18px}
+.complex-history__button{cursor:pointer;border-radius:8px;border:1px solid #df9b7e;background:#9a4d3e;color:#fff;font:700 9px Montserrat,Arial;padding:11px}
+.complex-history__button--ghost{background:#19313e;border-color:#5b7888}
+.complex-history__button:disabled{opacity:.4;cursor:not-allowed}
+.complex-history__article h4{font-size:9px;letter-spacing:.1em;color:#a9c4d1;margin:18px 0 8px}
+.complex-history__sources{display:flex;flex-direction:column;gap:8px}
+.complex-history__sources a{color:#a9dfef;font-size:10px;text-decoration:underline;text-underline-offset:3px}
+.complex-history__footer{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-top:1px solid #ffffff24}
+.complex-history__footer button{background:none;border:0;color:#f0b09b;font:700 10px Montserrat,Arial;cursor:pointer}
+.complex-history__footer button:disabled{color:#667a85;cursor:default}
+.complex-history__footer span{color:#a1bac8;font-size:10px}
+@media(max-width:850px){.complex-history{right:10px;left:10px;top:72px;bottom:95px;width:auto;min-width:0}.complex-history__header{padding:14px 15px 7px}.complex-history__article{padding:8px 16px 15px}.complex-history__title{font-size:20px}body.complex-history-open #ui{pointer-events:none}}
+@media(max-width:480px){.complex-history{top:63px;bottom:86px}.complex-history__nav{padding:6px 11px 11px}.complex-history__header h2{font-size:17px}.complex-history__paragraphs p{font-size:11px}}
