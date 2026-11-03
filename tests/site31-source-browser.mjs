@@ -11,7 +11,7 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-g
 await checkpoint('new-page');
 const page=await browser.newPage({viewport:{width:1600,height:1000}});page.setDefaultTimeout(90000);
 page.on('pageerror',e=>errors.push(e.message));
-page.on('console',message=>{if(message.type()==='error'&&!/net::ERR_FAILED|Failed to load resource/.test(message.text()))errors.push(message.text());});
+page.on('console',message=>{if(message.type()==='error'&&!/net::ERR_FAILED|Failed to load resource/.test(message.text())){errors.push(message.text());console.error('BROWSER_CONSOLE_ERROR',message.text());}});
 await checkpoint('route-init');
 // Exercise failure + recovery against the real asset loader in the full museum.
 await page.route('**/assets/models/site31/model-v1.glb*',route=>{if(new URL(route.request().url()).searchParams.get('consumer')==='gagarin')return route.continue();requests++;return requests===1?route.abort():route.continue();});

@@ -3,7 +3,7 @@ import {buildSite31Pad,SITE31_PIT} from './site31-pad.js?v=20261103-soyuz-pits-v
 import {registerFacilityBeacon,registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {loadSite31Source,SITE31_ASSET_VERSION} from './site31-source.js?v=20261103-soyuz-pits-v1';
 export {validateSite31Glb,SITE31_ASSET_VERSION} from './site31-source.js?v=20261103-soyuz-pits-v1';
-export const SITE31_VIEWS=Object.freeze({all:{target:[0,15,-10],eye:[-160,135,180]},structure:{target:[0,20,0],eye:[-48,37,62]},duct:{target:[-3,-6,-54],eye:[-150,125,-230]},connections:{target:[0,2,66],eye:[170,150,235]},top:{target:[0,0,-60],eye:[0,360,-59.99]}});
+export const SITE31_VIEWS=Object.freeze({all:{target:[0,15,-30],eye:[-210,175,220]},structure:{target:[0,20,0],eye:[-48,37,62]},duct:{target:[-3,-6,-54],eye:[-150,125,-230]},connections:{target:[0,2,66],eye:[170,150,235]},top:{target:[0,0,-30],eye:[0,460,-29.99]}});
 const controllers=new WeakMap();
 export const site31Controller=root=>controllers.get(root);
 const meshes=root=>{const out=[];root.traverse(o=>{if(o.isMesh)out.push(o);});return out;};

@@ -543,7 +543,7 @@ import {SITE41_R16_MOUNT} from './src/site41-profile.js?v=20261101-r16-exhibit-v
 import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=20261102-site2-photo-v3';
 import {createTuaRocketControls} from './src/rocket-controls.js?v=20261102-site2-photo-v3';
 import {createDeferredKnowledge} from './src/deferred-knowledge.js?v=20261102-progressive-v1';
-import {museumCardCopy} from './src/museum-card-copy.js?v=20261103-clean-site-copy-v1';
+import {museumCardCopy} from './src/museum-card-copy.js?v=20261103-clean-site-copy-v4';
 import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261102-site2-photo-v3';
 import {createExhibitClearance} from './src/exhibit-clearance.js?v=20261031-rocket-exhibits-v1';
 import {createInterchangeControls,INTERCHANGE_VIEWS} from './src/interchange-controls.js?v=20261031-interchange-bridge-v1';
@@ -2103,6 +2103,18 @@ function setMuseumYear(year){
  camera.updateMatrixWorld(true);updateLabels();
 }
 setMuseumYear(2026);
+const saturnCameraSample=new THREE.Vector3();
+function museumTerrainHeightAt(x,z){
+ let height=Math.max(terrainRelief.heightAt(x,z),sharedSiloHill.heightAt(x,z));
+ if(!saturnHill)return height;
+ for(let object=saturnHill;object;object=object.parent)if(!object.visible)return height;
+ saturnGroup.worldToLocal(saturnCameraSample.set(x,0,z));
+ const {x:localX,z:localZ}=saturnCameraSample,b=SATURN_TERRAIN_BOUNDS;
+ if(localX<b.minX||localX>b.maxX||localZ<b.minZ||localZ>b.maxZ||saturnTerrainSample(localX,localZ).opacity<=.001)return height;
+ saturnCameraSample.y=saturnTerrainMeshHeight(localX,localZ);
+ return Math.max(height,saturnGroup.localToWorld(saturnCameraSample).y);
+}
+
 const lightingGroundMeshes=[ground,satelliteGround,...outerTerrain.planes,terrainRelief.mesh,sharedSiloHill.mesh];
 layers.roads.traverse(mesh=>{if(mesh.isMesh&&mesh.userData.groundSurface!==false&&!mesh.name.startsWith('road-center-dash'))lightingGroundMeshes.push(mesh)});
 saturnGroup.traverse(mesh=>{if(mesh.userData.museumComponent==='murguduk-hill')lightingGroundMeshes.push(mesh)});
@@ -2356,17 +2368,6 @@ function moveCamera(dt){
  ctl.target.x+=mx;ctl.target.z+=mz;
 }// SCENE_SELECTION_NO_TERRAIN_JUMP_V1: do not interpret navigation as a click.
 const museumCameraBounds={minX:(Math.min(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,maxX:(Math.max(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,minZ:(Math.min(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S,maxZ:(Math.max(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S};
-const saturnCameraSample=new THREE.Vector3();
-function museumTerrainHeightAt(x,z){
- let height=Math.max(terrainRelief.heightAt(x,z),sharedSiloHill.heightAt(x,z));
- if(!saturnHill)return height;
- for(let object=saturnHill;object;object=object.parent)if(!object.visible)return height;
- saturnGroup.worldToLocal(saturnCameraSample.set(x,0,z));
- const {x:localX,z:localZ}=saturnCameraSample,b=SATURN_TERRAIN_BOUNDS;
- if(localX<b.minX||localX>b.maxX||localZ<b.minZ||localZ>b.maxZ||saturnTerrainSample(localX,localZ).opacity<=.001)return height;
- saturnCameraSample.y=saturnTerrainMeshHeight(localX,localZ);
- return Math.max(height,saturnGroup.localToWorld(saturnCameraSample).y);
-}
 function constrainMuseumCamera(){
  // Bound the eye as well as its pivot after all navigation has run. Explicit
  // aircraft shots retain their route; free navigation is bounded on release.

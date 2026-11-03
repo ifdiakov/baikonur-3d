@@ -7,6 +7,8 @@ import {buildEditedRoadMeshes} from '../src/road-editor-mesh.js';
 // First three owner roads with the actual inherited OSM profiles reproduce
 // the startup stall. Unprofiled roads do not expose the fragment explosion.
 if(!process.argv.includes('--worker')){
+ const entry=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.ok(entry.indexOf('const saturnCameraSample=')<entry.indexOf('roadEditor=createRoadEditor('),'Real terrain sampler must be initialized before synchronous saved-road construction');
  const output=execFileSync(process.execPath,[fileURLToPath(import.meta.url),'--worker'],{timeout:5000,encoding:'utf8'});
  console.log(output.trim());
 }else{
