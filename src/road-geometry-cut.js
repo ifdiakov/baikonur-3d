@@ -153,7 +153,7 @@ function existingRoadSegmentIndex(roads){
   const sourceRoot=id=>String(id||'').match(/^osm-road-(\d+)/)?.[1]||String(id||'');
   const protection=[];
   const protectionsSeen=new Set();
-  const cross=(x,z,y,w)=>x*y-z*w;
+  const cross=(x,z,y,w)=>x*w-z*y;
   for(const host of candidates){
    if(sourceRoot(host.id)===sourceRoot(sourceId))continue;
    const ex=host.b[0]-host.a[0],ez=host.b[2]-host.a[2],elen=Math.hypot(ex,ez);
