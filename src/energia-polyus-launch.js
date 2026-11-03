@@ -4,7 +4,7 @@ import {nozzleFlameMaterial} from './energia-plasma-shader.js?v=20261103-plasma-
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v11-ground-hugging-steam';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v12-original-view-camera';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_CAMERA_DETACH_UNITS=100;
@@ -709,6 +709,8 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  let active=false,paused=false,speed=8,seconds=ENERGIA_LAUNCH_START,lastNow=null,mode='follow',saved=null,sceneRestore=null;
  let effects=null,lastPhase=-1,originalRocket=null,lastFrame=null,modelReady=false,preview=null;
  let cameraDetached=false,detachedAt=null;
+ const followStartingTarget=new THREE.Vector3();
+ let initialCameraPose=null;
  const cinematicHiddenSelectors=['.energia-cameras','.energia-camera-hint','.energia-timeline',
   '.energia-actions','.energia-rate','.energia-disclaimer'];
  function resetCinematicPanel(){
@@ -731,9 +733,9 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
    mode='detached';
    controls.enablePan=true;
   }else{
-   const preservedAngle=camera.position.clone().sub(controls.target);
+   // Seeking back under the H=100 threshold must never teleport the view.
    detachedAt=null;mode='follow';controls.enablePan=false;
-   alignFollowFromCurrentAngle(s,preservedAngle);
+   followStartingTarget.copy(controls.target);
   }
  }
  const source=()=>getEntry?.();
@@ -799,9 +801,15 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  const updateCamera=s=>{
   if(cameraDetached||mode==='manual')return;
   if(mode==='follow'){
-   // Add the SAME translation to eye and pivot. OrbitControls can therefore
-   // rotate/zoom around the rocket while the rocket accelerates upward.
-   const target=rocketOrbitTarget(s),delta=target.clone().sub(controls.target);
+   // Keep the visitor's EXACT existing eye/target through prelaunch.
+   // Starting an animation must not zoom, pan, or change the view angle.
+   if(s.time<=0)return;
+   // Once airborne, blend the orbit target into the moving rocket over
+   // eight flight seconds. Shift eye and target together so rotation and
+   // zoom stay user-controlled, with no abrupt camera jump at liftoff.
+   const blend=smooth(0,8,s.time);
+   const target=followStartingTarget.clone().lerp(rocketOrbitTarget(s),blend);
+   const delta=target.clone().sub(controls.target);
    camera.position.add(delta);controls.target.copy(target);controls.update();
    return;
   }
@@ -866,7 +874,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  function start(){
   if(!ensure())return false;
   const entry=source();
-  const launchViewDirection=camera.position.clone().sub(controls.target);
+  const launchEye=camera.position.clone(),launchTarget=controls.target.clone();
   if(!active){
     saved={camera:camera.position.clone(),target:controls.target.clone(),
     enabled:controls.enabled,damping:controls.enableDamping,pan:controls.enablePan,
@@ -881,12 +889,23 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
    controls.enablePan=false;
    controls.mouseButtons={LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};
    controls.touches={ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_ROTATE};
-   controls.minDistance=12;controls.maxDistance=300;
+   controls.minDistance=12;
+   // Existing detailed views can be farther than 300 world units. Do
+   // not clamp the visitor's distance when beginning the animation.
+   controls.maxDistance=Math.max(300,launchEye.distanceTo(launchTarget)+10);
    createPayloadProxy();
   }
   seconds=ENERGIA_LAUNCH_START;paused=false;speed=8;$('energiaSpeed').value='8';lastNow=null;lastPhase=-1;mode='follow';
+  resetCinematicPanel();
+  followStartingTarget.copy(launchTarget);
+  initialCameraPose={position:launchEye.toArray(),target:launchTarget.toArray()};
   controls.enablePan=false;
-  render();alignFollowFromCurrentAngle(sampleEnergiaLaunch(seconds),launchViewDirection);
+  // Flush any damped prelaunch gesture and then restore the exact original
+  // shot. No orbit preset or range clamp can change the opening frame.
+  controls.enableDamping=false;controls.update();
+  camera.position.copy(launchEye);controls.target.copy(launchTarget);
+  camera.updateMatrixWorld(true);
+  render();
   return true;
  }
  function stop({releaseCamera=true}={}){
@@ -951,7 +970,9 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  window.addEventListener('resize',()=>{lastNow=null;});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
  return {start,stop,pause,play,seek,setManualCamera,isActive:()=>active,stats:()=>({version:ENERGIA_LAUNCH_VERSION,active,paused,speed,time:seconds,mode,phase:lastPhase,telemetry:sampleEnergiaLaunch(seconds),
-   modelReady,cameraDetached,detachAtHeightH:ENERGIA_CAMERA_DETACH_UNITS,
+   modelReady,cameraDetached,initialCameraPose:initialCameraPose?{
+    position:[...initialCameraPose.position],target:[...initialCameraPose.target]}:null,
+   detachAtHeightH:ENERGIA_CAMERA_DETACH_UNITS,
    visualHeightH:energiaCameraHeightUnits(sampleEnergiaLaunch(seconds).altitudeKm),
    cinematicPanel:panel.classList.contains('energia-cinematic-ascent'),
    detachedAt:detachedAt?{...detachedAt}:null,
