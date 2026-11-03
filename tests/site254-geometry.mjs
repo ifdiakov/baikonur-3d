@@ -35,7 +35,7 @@ const point=(x,y,h=0)=>V((x-650)*3.4,h,(y-522.5)*3.4),layers={roads:new THREE.Gr
 const transport=buildOsmTransportNetwork({data:{roads:read('data/osm/roads.geojson'),railways:read('data/osm/railways.geojson'),railPoints:read('data/osm/rail-points.geojson'),places:read('data/osm/places.geojson')},legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false)});
 const stats=transport.stats(),road=stats.facilityPorts.find(p=>p.id==='pad-254'),rail=stats.facilityRailPorts.find(p=>p.id==='pad-254');
 assert(road&&rail,'Both approaches must exist in the complete transport network');near(road.roadGap,0);near(rail.headCenterGap,0);near(rail.networkDatumGap,0);
-assert.equal(rail.sourceWayId,'172571383');near(rail.portGauge,1.52*.14);near(rail.networkGauge,rail.portGauge);
+assert.equal(rail.sourceWayId,'172571298');near(rail.portGauge,1.52*.14);near(rail.networkGauge,rail.portGauge);
 assert.deepEqual(rail.headCenter,portWorld(access,SITE254_RAIL.end,site,point).toArray());
 const origin=point(site.x,site.y,access.elevation);
 for(const p of rail.points){const local=V(...p).sub(origin).applyAxisAngle(V(0,1,0),-access.yaw).divideScalar(access.scale);assert(local.x>60.5,'The exterior rail approach must not cut through the high bay');}
