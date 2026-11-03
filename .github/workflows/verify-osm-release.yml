@@ -92,6 +92,7 @@ jobs:
           node tests/osm-geography.mjs
           node tests/transport-pruning.mjs
           node tests/osm-transport-geometry.mjs
+          node tests/gagarin-site2-road.mjs
           node tests/interchange-bridge-geometry.mjs
           node tests/highway-surface-geometry.mjs
           node tests/highway-horizon.mjs
