@@ -12,6 +12,15 @@ const point=(x,y,h=0)=>new THREE.Vector3((x-650)*3.4,h,(y-522.5)*3.4);
 const scene=new THREE.Scene(),districts=buildFlankDistricts(scene,point,1300,1045,{mapTransform:()=>{throw new Error('The OSM contour must never be warped through the old museum scheme');}});
 const root=scene.getObjectByName('Фланги · тематические территории');
 assert.ok(root);districts.setOpacity(1);scene.updateMatrixWorld(true);
+const cityRoot=scene.getObjectByName('Город Байконур · территория');
+assert(cityRoot&&cityRoot.parent===root,'City has a separate group in the flank layer');
+assert.equal(cityRoot.children.filter(m=>m.userData.museumComponent==='city-territory-boundary').length,3,'City has the same three luminous, continuous border bands as the flanks');
+assert.equal(cityRoot.children.filter(m=>m.userData.museumComponent==='city-territory-fill').length,1,'City has an independently coloured fill');
+assert.equal(districts.state().city.vertices,67);
+assert(districts.state().city.solidBoundary,'The city outline must not be rendered as dashed sections');
+assert.equal(districts.state().city.visible,true,'City appears with flank territory zoom');
+assert(districts.state().city.fillOpacity>.1,'City fill is actually visible');
+
 const zones=root.children.filter(o=>o.isMesh&&o.geometry.type==='ShapeGeometry');
 assert.equal(zones.length,3);assert.equal(FLANK_OUTLINE.length,14);
 assert.deepEqual(FLANK_BORDERS.map(p=>p.length),[2,2]);assert.equal(FLANK_POLYGONS.length,3);

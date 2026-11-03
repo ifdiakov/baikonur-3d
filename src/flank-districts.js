@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import * as FLANK_GEOMETRY from './flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
+import {CITY_TERRITORY_COLOR,CITY_TERRITORY_OUTLINE,CITY_TERRITORY_REFERENCE} from './city-territory.js?v=20261103-solid-city-v1';
 export {FLANK_BORDERS} from './flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 const {FLANK_BOUNDARY_VERSION,FLANK_REFERENCE,FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_COORDINATE_SYSTEM}=FLANK_GEOMETRY;
 
@@ -33,7 +34,8 @@ export const FLANK_DISTRICTS = [
 export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const root=new THREE.Group();root.name='Фланги · тематические территории';scene.add(root);
  const overviewRoot=new THREE.Group();overviewRoot.name='Космодром · общий контур';scene.add(overviewRoot);
- const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[],overviewReliefSurfaces=[],boundaryMeshes=[];
+ const cityRoot=new THREE.Group();cityRoot.name='Город Байконур · территория';root.add(cityRoot);
+ const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[],overviewReliefSurfaces=[],boundaryMeshes=[],cityReliefSurfaces=[];
  const terrainPatches=[],regionalFills=[],boundaryRestPositions=new WeakMap();
  let localTerrainBoundaryVertices=0;
  const mapped=new Map();
@@ -43,6 +45,7 @@ export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const borders=FLANK_BORDERS.map(p=>p.map(transform));
  const outline=FLANK_OUTLINE.map(transform);
  const outerFragments=FLANK_PERIMETER.map(p=>({...p,points:p.points.map(transform)}));
+ const cityOutline=CITY_TERRITORY_OUTLINE;
  function polygonPredicate(name,polygon){
   const f=n=>Number(n).toFixed(6);let shader=`bool ${name}(vec2 p){bool inside=false;`;
   polygon.forEach((a,j)=>{const b=polygon[(j+1)%polygon.length];if(Math.abs(b[1]-a[1])<1e-9)return;
@@ -87,6 +90,48 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   mesh.name='Тематическая зона · '+FLANK_DISTRICTS[i].name;mesh.userData.pickable=false;root.add(mesh);zones.push(mesh);
   mesh.userData.flank=FLANK_DISTRICTS[i].key;
  }
+
+ // The city's mapped perimeter is a fourth, independent district on the
+ // FLANK zoom level. Reuse the district fill shader and the 32/8/2.2
+ // glowing edge sizes, but not the launch-site ownership colours.
+ const cityShape=new THREE.Shape();
+ cityOutline.forEach(([x,z],i)=>{const p=point(x,z);i?cityShape.lineTo(p.x,-p.z):cityShape.moveTo(p.x,-p.z);});
+ cityShape.closePath();
+ const cityFlatFill=new THREE.Mesh(new THREE.ShapeGeometry(cityShape),ink(CITY_TERRITORY_COLOR,.21));
+ cityFlatFill.rotation.x=-Math.PI/2;cityFlatFill.position.y=-2.56;cityFlatFill.renderOrder=3;
+ cityFlatFill.name='Город Байконур · цветная заливка';cityFlatFill.userData={pickable:false,museumComponent:'city-territory-fill'};
+ cityRoot.add(cityFlatFill);
+ // Shared miter joins close the perimeter without overlapping glow fragments,
+ // unlike a separately placed panel per road/shoreline segment.
+ function closedCityRibbon(width,height,material){
+  const nodes=cityOutline.map(([x,z])=>point(x,z,height)),sampled=[];
+  for(let i=0;i<nodes.length;i++){
+   const a=nodes[i],b=nodes[(i+1)%nodes.length],steps=Math.max(1,Math.ceil(a.distanceTo(b)/12));
+   for(let j=0;j<steps;j++)sampled.push(a.clone().lerp(b,j/steps));
+  }
+  const v=[],idx=[];
+  for(let i=0;i<sampled.length;i++){
+   const prev=sampled[(i+sampled.length-1)%sampled.length],curr=sampled[i],next=sampled[(i+1)%sampled.length];
+   const d0=curr.clone().sub(prev).setY(0).normalize(),d1=next.clone().sub(curr).setY(0).normalize();
+   const n0=new THREE.Vector3(-d0.z,0,d0.x),n1=new THREE.Vector3(-d1.z,0,d1.x),miter=n0.clone().add(n1);
+   if(miter.lengthSq()<1e-12)miter.copy(n1);else miter.normalize();
+   const reach=Math.min(width*2,width*.5/Math.max(.25,Math.abs(miter.dot(n1))));
+   for(const sign of [-1,1])v.push(curr.x+sign*reach*miter.x,curr.y,curr.z+sign*reach*miter.z);
+   const a=2*i,b=2*((i+1)%sampled.length);idx.push(a,a+1,b,a+1,b+1,b);
+  }
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+  geometry.setIndex(idx);geometry.computeVertexNormals();geometry.computeBoundingSphere();
+  const mesh=new THREE.Mesh(geometry,material);
+  mesh.name='Город Байконур · сплошная граница';mesh.renderOrder=5;
+  mesh.userData={pickable:false,museumComponent:'city-territory-boundary',continuous:true};
+  cityRoot.add(mesh);boundaryMeshes.push(mesh);return mesh;
+ }
+ const cityBoundaryMeshes=[
+  closedCityRibbon(32,-1.85,ink(CITY_TERRITORY_COLOR,.14,true)),
+  closedCityRibbon(8,-1.65,ink(CITY_TERRITORY_COLOR,.58,true)),
+  closedCityRibbon(2.2,-1.42,ink(0xecfbff,1,true))
+ ];
+
  function ribbon(parent,points,width,material,height,offset=0){
   for(let j=1;j<points.length;j++){
    const a=point(...points[j-1],height),b=point(...points[j],height),delta=b.clone().sub(a);
@@ -296,6 +341,13 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   const {mesh:source}=terrain,geometry=continuousReliefGeometry(terrain);
   regionalTerrain=terrain;for(const patch of terrainPatches)adaptTerrainPatch(patch,terrain);
   for(const district of FLANK_DISTRICTS)addTerrainSurface(source,district.key,{sharedGeometry:geometry});
+  // Draped tint follows the same DEM surface and exact polygon clipping as
+  // the three flanks. The planar sheet is retained only where DEM has no data.
+  const cityDraped=new THREE.Mesh(boundedGeometry(geometry,cityOutline,source),ink(CITY_TERRITORY_COLOR,.21,false,false,cityOutline));
+  cityDraped.name='Город Байконур · заливка на рельефе';cityDraped.renderOrder=4;
+  cityDraped.userData={pickable:false,museumComponent:'city-territory-relief',clipToDistrict:true};
+  source.add(cityDraped);cityReliefSurfaces.push(cityDraped);
+  regionalFills.push({material:cityDraped.material,key:'city'});applyTerrainPatchMask(cityDraped.material,'city');
   const overlay=new THREE.Mesh(boundedGeometry(geometry,outline,source),ink(0xa8bcc1,.025,false,false,outline,overviewMaterials));
   overlay.name='Космодром · обзорная заливка на рельефе';overlay.renderOrder=4;
   overlay.userData={pickable:false,museumComponent:'overview-relief-overlay',clipToDistrict:true};
@@ -364,6 +416,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   for(const{mat,strength}of materials)mat.uniforms.uOpacity.value=alpha*strength;
   for(const{mat,strength}of overviewMaterials)mat.uniforms.uOpacity.value=overviewAlpha*strength;
   for(const mesh of reliefSurfaces)mesh.visible=root.visible;
+  for(const mesh of cityReliefSurfaces)mesh.visible=root.visible;
   for(const mesh of overviewReliefSurfaces)mesh.visible=overviewRoot.visible;
  }
  function setOpacity(level){alpha=THREE.MathUtils.clamp(Number.isFinite(level)?level:0,0,1);syncOpacity();}
@@ -381,5 +434,10 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   continuousReliefFill,flatFillMeshesVisible:root.visible?zones.filter(mesh=>mesh.visible).length:0,
   continuousTerrainPatches:terrainPatches.length,
   boundaryTerrainSources:terrainPatches.filter(patch=>patch.heightAt).length,localTerrainBoundaryVertices,
-  thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length)})};
+  thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length),
+  city:{visible:root.visible,reference:CITY_TERRITORY_REFERENCE,color:CITY_TERRITORY_COLOR,
+   polygon:cityOutline,vertices:cityOutline.length,fillOpacity:cityFlatFill.material.uniforms.uOpacity.value,
+   terrainReliefOverlays:cityReliefSurfaces.length,terrainOverlayVisible:cityReliefSurfaces.some(m=>m.visible&&m.parent.visible),
+   solidBoundary:true,continuousBoundaryMeshes:cityBoundaryMeshes.length,
+   terrainDraped:cityBoundaryMeshes.every(m=>m.userData.terrainDraped===true)}})};
 }
