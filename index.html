@@ -497,7 +497,7 @@ import {installArchiveModels} from './src/archive-models.js?v=20261103-soyuz-pit
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-photo-v3';
-import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261103-city-solid-fill-v1';
+import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261103-territory-ground-coverage-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
 import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261103-site250a-photo-v1';
@@ -1588,6 +1588,11 @@ const terrainRelief=buildMuseumTerrainRelief({dem:await terrainDemReady,objects:
  satelliteCanvas,renderer,steppeSurface,scene,registerGroundSurface});
 // One continuous low hillside carries both shafts in the shared 106/109 compound.
 const sharedSiloHill=buildSharedSiloHill({scene,objects,terrainRelief,steppeSurface,registerGroundSurface});
+// Raised local hill and airport top faces must receive their own thematic
+// colours, since both are physically higher than the shared DEM overlay.
+flankDistricts.addTerrainSurface(sharedSiloHill.mesh,'right');
+const krayniyAirport=objects.find(o=>o.record.id==='airfield')?.g;
+if(krayniyAirport)flankDistricts.addAirportCitySurface(krayniyAirport);
 flankDistricts.addTerrainRelief(terrainRelief);
 scene.userData.terrainStyle.relief=terrainRelief.stats();
 scene.userData.terrainStyle.sharedSiloHill=sharedSiloHill.stats();

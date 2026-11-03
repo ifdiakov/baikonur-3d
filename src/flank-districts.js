@@ -35,7 +35,7 @@ export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const root=new THREE.Group();root.name='Фланги · тематические территории';scene.add(root);
  const overviewRoot=new THREE.Group();overviewRoot.name='Космодром · общий контур';scene.add(overviewRoot);
  const cityRoot=new THREE.Group();cityRoot.name='Город Байконур · территория';root.add(cityRoot);
- const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[],overviewReliefSurfaces=[],boundaryMeshes=[],cityReliefSurfaces=[];
+ const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[],overviewReliefSurfaces=[],boundaryMeshes=[],cityReliefSurfaces=[],airportTerritorySurfaces=[];
  const terrainPatches=[],regionalFills=[],boundaryRestPositions=new WeakMap();
  let localTerrainBoundaryVertices=0;
  const mapped=new Map();
@@ -333,10 +333,61 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   overlay.userData={pickable:false,groundSurface:false,museumComponent:'flank-relief-overlay',flank:key,clipToDistrict:true};
   overlay.visible=alpha>.035;source.add(overlay);reliefSurfaces.push(overlay);
   overlay.material.uniforms.uOpacity.value=alpha*.19;
+  // The raised 106/109 soil has a depth offset; its colour must be above it.
+  if(source.userData.museumComponent==='shared-silo-hill'){
+   overlay.material.polygonOffset=true;overlay.material.polygonOffsetFactor=-4;overlay.material.polygonOffsetUnits=-2;
+   overlay.userData.localTerrainTint=true;
+  }
   if(sharedGeometry){regionalFills.push({material:overlay.material,key});applyTerrainPatchMask(overlay.material,key);}
   if(patch){overlay.userData.continuousTintPatch=true;clipTerrainPatch(overlay.material,patch.footprint);registerTerrainPatch(source,key,patch,heightAt);syncOpacity();}
   return overlay;
  }
+
+ // Actual Krayniy pavement lies above the DEM city tint. Paint the airport's
+ // top surfaces in model-local coordinates, clipped to the city polygon.
+ // Close-up labels, runway markings, aircraft and buildings remain untouched.
+ function addAirportCitySurface(airport){
+  if(!airport?.isGroup||!airport.userData.airport)throw new TypeError('Krayniy airport model expected');
+  if(airportTerritorySurfaces.length)throw new Error('Krayniy city tint already installed');
+  const spec=airport.userData.airport,half=spec.length*.5;
+  function cover(geometry,name){
+   const overlay=new THREE.Mesh(geometry,ink(CITY_TERRITORY_COLOR,.21,false,false,cityOutline));
+   overlay.name='Крайний · заливка города · '+name;overlay.renderOrder=5;
+   overlay.material.polygonOffset=true;overlay.material.polygonOffsetFactor=-2;overlay.material.polygonOffsetUnits=-2;
+   overlay.material.uniforms.uOpacity.value=alpha*.21;
+   overlay.userData={pickable:false,museumComponent:'city-airport-territory-surface',pavement:name};
+   overlay.visible=alpha>.035;airport.add(overlay);airportTerritorySurfaces.push(overlay);return overlay;
+  }
+  function slab(name,w,l,x,z,top){
+   const overlay=cover(new THREE.PlaneGeometry(w,l),name);
+   overlay.rotation.x=-Math.PI/2;overlay.position.set(x,top+.018,z);return overlay;
+  }
+  // The runway shoulder is a frame rather than a second full slab; this
+  // avoids darker double-painted bands inside the runway proper.
+  for(const side of [-1,1])slab('shoulder-side-'+side,9,spec.length+120,side*(spec.width/2+4.5),0,1.4);
+  for(const side of [-1,1])slab('shoulder-end-'+side,spec.width,60,0,side*(half+30),1.4);
+  slab('runway',spec.width,spec.length,0,0,1.75);
+  slab('apron',spec.apronWidth,spec.apronLength,spec.apron[0],spec.apron[1],1.75);
+  function taxiway(name,points,width,top){
+   const v=[],indices=[];
+   for(let i=0;i<points.length;i++){
+    const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)];
+    const dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz)||1;
+    for(const sign of [-1,1])v.push(points[i][0]-dz/length*sign*width/2,top+.012,points[i][1]+dx/length*sign*width/2);
+    if(i+1<points.length){const j=2*i;indices.push(j,j+1,j+2,j+1,j+3,j+2);}
+   }
+   const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+   geo.setIndex(indices);geo.computeVertexNormals();geo.computeBoundingSphere();return cover(geo,name);
+  }
+  taxiway('parallel-taxiway',[[spec.taxiX,-half+60],[spec.taxiX,half-60]],18,1.76);
+  for(const z of [-half+80,half-80,spec.apron[1]-130,spec.apron[1]+130]){
+   const path=[[0,z],[spec.taxiX*.28,z],[spec.taxiX*.7,z+Math.sign(z)*22],[spec.taxiX,z+Math.sign(z)*22]];
+   const curve=new THREE.CatmullRomCurve3(path.map(([x,zz])=>new THREE.Vector3(x,0,zz)));
+   taxiway('connecting-taxiway',curve.getPoints(30).map(p=>[p.x,p.z]),18,1.78);
+  }
+  return airportTerritorySurfaces;
+ }
+
  function addTerrainRelief(terrain){
   const {mesh:source}=terrain,geometry=continuousReliefGeometry(terrain);
   regionalTerrain=terrain;for(const patch of terrainPatches)adaptTerrainPatch(patch,terrain);
@@ -417,12 +468,13 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   for(const{mat,strength}of overviewMaterials)mat.uniforms.uOpacity.value=overviewAlpha*strength;
   for(const mesh of reliefSurfaces)mesh.visible=root.visible;
   for(const mesh of cityReliefSurfaces)mesh.visible=root.visible;
+  for(const mesh of airportTerritorySurfaces)mesh.visible=root.visible;
   for(const mesh of overviewReliefSurfaces)mesh.visible=overviewRoot.visible;
  }
  function setOpacity(level){alpha=THREE.MathUtils.clamp(Number.isFinite(level)?level:0,0,1);syncOpacity();}
  function setOverviewOpacity(level){overviewRequestedAlpha=THREE.MathUtils.clamp(Number.isFinite(level)?level:0,0,1);syncOpacity();}
  syncOpacity();
- return {setOpacity,setOverviewOpacity,addTerrainSurface,addTerrainRelief,state:()=>({version:FLANK_BOUNDARY_VERSION,alpha,zoneCount:zones.length,
+ return {setOpacity,setOverviewOpacity,addTerrainSurface,addAirportCitySurface,addTerrainRelief,state:()=>({version:FLANK_BOUNDARY_VERSION,alpha,zoneCount:zones.length,
   visibleZones:root.visible?zones.length:0,visibleBoundaries:root.visible?boundaries.length:0,
   visibleOuterBoundaries:root.visible?1:0,outerBoundarySegments:FLANK_PERIMETER.reduce((n,p)=>n+p.points.length-1,0),
   overviewAlpha,overviewRequestedAlpha,visibleOverviewBoundary:overviewRoot.visible?1:0,visibleOverviewFill:overviewRoot.visible?1:0,
@@ -432,6 +484,8 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   reliefCount:reliefSurfaces.length,reliefFlanks:reliefSurfaces.map(m=>m.userData.flank),visibleReliefSurfaces:reliefSurfaces.filter(m=>m.visible&&m.parent.visible).length,
   overviewReliefCount:overviewReliefSurfaces.length,terrainDraped:overviewBoundary.userData.terrainDraped===true,
   continuousReliefFill,flatFillMeshesVisible:root.visible?zones.filter(mesh=>mesh.visible).length:0,
+  localHillTintCount:reliefSurfaces.filter(m=>m.userData.localTerrainTint).length,
+  airportTintCount:airportTerritorySurfaces.length,visibleAirportTintCount:airportTerritorySurfaces.filter(m=>m.visible&&m.parent.visible).length,
   continuousTerrainPatches:terrainPatches.length,
   boundaryTerrainSources:terrainPatches.filter(patch=>patch.heightAt).length,localTerrainBoundaryVertices,
   thematicOnly:true,informationPlane:'screen',groundTextPanels:0,boundaryVertices:FLANK_BORDERS.map(p=>p.length),

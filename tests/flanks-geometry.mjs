@@ -4,6 +4,7 @@ import {readFile} from 'node:fs/promises';
 import {projectOsm,MUSEUM_DISPLAY_OFFSETS} from '../src/osm-geography.js';
 import {FLANK_OUTLINE,FLANK_BORDERS,FLANK_POLYGONS,FLANK_PERIMETER,FLANK_REFERENCE,FLANK_COORDINATE_SYSTEM,FLANK_CENTERS,FLANK_BOUNDS,FLANK_REFERENCE_OUTLINE,FLANK_REFERENCE_DIVIDERS,referenceToPlan,containsFlankPoint} from '../src/flank-boundaries.js';
 import {buildFlankDistricts,FLANK_DISTRICTS} from '../src/flank-districts.js';
+import {CITY_TERRITORY_COLOR} from '../src/city-territory.js';
 import {CITY_TERRITORY_OUTLINE,CITY_TERRITORY_REFERENCE,CITY_TERRITORY_COLOR} from '../src/city-territory.js';
 import {buildTerrainRelief} from '../src/terrain-relief.js';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample,saturnTerrainMeshHeight} from '../src/saturn-access.js';
@@ -37,6 +38,40 @@ for(const point of [[63.3209201,45.6321977],[63.1941252,45.6143654],[63.2272132,
 for(const point of [[63.315601,45.650665],[63.286,45.591]])
  assert(!cityContains(point),'Tyuratam and territory across Syr Darya remain outside the city polygon');
 
+
+// Raised 106/109 hill keeps its true source geometry but receives the right
+// flank colour on the actual visible upper soil surface.
+{
+ const scene2=new THREE.Scene(),d=buildFlankDistricts(scene2,point,1300,1045);
+ const geo=new THREE.PlaneGeometry(180,180,3,3);geo.rotateX(-Math.PI/2);
+ const alpha=new Float32Array(geo.attributes.position.count*4);for(let i=0;i<alpha.length;i+=4){alpha[i]=alpha[i+1]=alpha[i+2]=1;alpha[i+3]=.7;}
+ geo.setAttribute('color',new THREE.BufferAttribute(alpha,4));geo.computeVertexNormals();
+ const hill=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({transparent:true,vertexColors:true}));
+ hill.userData.museumComponent='shared-silo-hill';hill.position.copy(point(...FLANK_CENTERS.right,3));
+ scene2.add(hill);const original=geo.attributes.position.array.slice();
+ const tint=d.addTerrainSurface(hill,'right');
+ assert.deepEqual(Array.from(geo.attributes.position.array),Array.from(original));
+ assert.equal(tint.userData.localTerrainTint,true);
+ assert.equal(tint.material.polygonOffset,true);
+ assert.equal(d.state().localHillTintCount,1);
+ d.setOpacity(1);assert.equal(tint.visible,true);d.setOpacity(0);assert.equal(tint.visible,false);
+}
+// The city cover is attached to Krayniy's actual model coordinates, not a
+// flat polygon under the airport. Runway stripe heights remain above it.
+{
+ const scene2=new THREE.Scene(),d=buildFlankDistricts(scene2,point,1300,1045);
+ const airport=new THREE.Group();airport.scale.setScalar(.28);airport.rotation.y=2.06;
+ airport.userData.airport={length:1380,width:45,apronWidth:195,apronLength:400,taxiX:-100,apron:[-132.5,0]};
+ scene2.add(airport);const patches=d.addAirportCitySurface(airport);
+ assert.equal(patches.length,11);
+ assert.equal(d.state().airportTintCount,11);
+ assert(patches.every(m=>m.material.uniforms.uColor.value.getHex()===CITY_TERRITORY_COLOR));
+ assert(patches.every(m=>m.material.depthTest&&!m.material.depthWrite));
+ assert(patches.every(m=>m.material.fragmentShader.includes('insideFlank')));
+ assert.equal(patches.find(m=>m.userData.pavement==='runway').position.y,1.768);
+ d.setOpacity(1);assert.equal(d.state().visibleAirportTintCount,11);
+ d.setOpacity(0);assert.equal(d.state().visibleAirportTintCount,0);
+}
 
 const zones=root.children.filter(o=>o.isMesh&&o.geometry.type==='ShapeGeometry');
 assert.equal(zones.length,3);assert.equal(FLANK_OUTLINE.length,14);
