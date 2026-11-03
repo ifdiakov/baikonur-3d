@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {subtractRoadPolygon} from './road-surface.js?v=20261103-road-mesh-v2';
 
-export const ROAD_EDIT_MESH_VERSION='stitched-roads-v2';
+export const ROAD_EDIT_MESH_VERSION='stitched-roads-terrain-rims-v3';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const planar=(a,b)=>Math.hypot(b[0]-a[0],b[2]-a[2]);
 const lerp=(a,b,t)=>a.map((v,k)=>v+(b[k]-v)*t);
@@ -82,13 +82,20 @@ export function sampleEditedRoad(road,{step=1.35,terrainHeightAt=null}={}){
  return out;
 }
 
-function ribbonQuads(points,width,lift=0){
+function ribbonQuads(points,width,lift=0,terrainHeightAt=null){
  const rim=[];
  for(let i=0;i<points.length;i++){
   const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
   const dx=next[0]-prev[0],dz=next[2]-prev[2],len=Math.hypot(dx,dz)||1,nx=-dz/len*width/2,nz=dx/len*width/2;
-  rim.push([{x:points[i][0]-nx,y:points[i][1]+lift,z:points[i][2]-nz},
-   {x:points[i][0]+nx,y:points[i][1]+lift,z:points[i][2]+nz}]);
+  const left={x:points[i][0]-nx,y:points[i][1]+lift,z:points[i][2]-nz};
+  const right={x:points[i][0]+nx,y:points[i][1]+lift,z:points[i][2]+nz};
+  // Sample terrain under the two actual edges, not just under the centerline.
+  // The road can now cross natural side slopes without burying one shoulder.
+  if(terrainHeightAt)for(const edge of [left,right]){
+   const ground=terrainHeightAt(edge.x,edge.z);
+   if(Number.isFinite(ground))edge.y=Math.max(edge.y,ground+.075+lift);
+  }
+  rim.push([left,right]);
  }
  const result=[];
  for(let i=1;i<rim.length;i++){
@@ -145,7 +152,7 @@ export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
  for(const r of roads){
   const points=sampleEditedRoad(r,{terrainHeightAt});
   paths.push({id:r.id,width:r.width,points});
-  const shoulder=ribbonQuads(points,r.width+.54,.005),surface=ribbonQuads(points,r.width,.045);
+  const shoulder=ribbonQuads(points,r.width+.54,.005,terrainHeightAt),surface=ribbonQuads(points,r.width,.045,terrainHeightAt);
   buckets.shoulder.push(...shoulder);buckets[r.surface].push(...surface);
   sourceQuads+=surface.length;stats.segments+=points.length-1;
  }
