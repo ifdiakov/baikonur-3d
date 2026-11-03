@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js';
-import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-road-v1';
+import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
 
 /** Photo interpretation in metres. +Z faces the city, +X is the east shoulder. */
 export function buildCheckpoint7(root){
@@ -13,20 +13,6 @@ export function buildCheckpoint7(root){
  k.mat.roof=new THREE.MeshStandardMaterial({color:0x819292,roughness:.85,side:THREE.DoubleSide});
  const buildingX=edge+13,front=4.5,lamps=[],signMaterials=[];
  const box=(w,h,d,x,y,z,mat,tag)=>k.box(w,h,d,x,y,z,mat,tag);
- if(placement){
-  // Continuous soil below the road, with a rounded, eased transition to the
-  // museum ground datum. The existing asphalt remains the only road surface.
-  const a=-edge-9,b=edge+40,depth=(placement.position[1]+2.755)/.14,run=42,positions=[],indices=[],step=2;
-  const nx=Math.ceil((b-a+2*run)/step),nz=Math.ceil((26+2*run)/step);
-  for(let iz=0;iz<=nz;iz++)for(let ix=0;ix<=nx;ix++){
-   const x=a-run+(b-a+2*run)*ix/nx,z=-13-run+(26+2*run)*iz/nz;
-   const distance=Math.hypot(Math.max(a-x,0,x-b),Math.max(Math.abs(z)-13,0)),t=Math.min(1,distance/run);
-   positions.push(x,-.25-(depth-.25)*t*t*(3-2*t),z);
-  }
-  for(let iz=0;iz<nz;iz++)for(let ix=0;ix<nx;ix++){const i=iz*(nx+1)+ix;indices.push(i,i+nx+1,i+1,i+1,i+nx+1,i+nx+2);}
-  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setIndex(indices);geo.computeVertexNormals();
-  k.direct(geo,'soil','checkpoint-ground-transition');
- }
  // Raised shoulders meet the existing road. They never cover its asphalt or markings.
  for(const side of [-1,1]){
   const inner=side*(edge+.3),outer=side*(edge+(side===1?40:9)),a=Math.min(inner,outer),b=Math.max(inner,outer);
@@ -43,7 +29,7 @@ export function buildCheckpoint7(root){
  for(let row=0;row<6;row++)for(let column=0;column<29;column++){
   const x=buildingX-10.62+column*.76,y=.84+row*.59;
   const accent=column===9||row===5&&column>9||row===4&&column>16||row===3&&column>23;
-  box(.735,.565,.055,x,y,front+.055,accent?'accent':'light','facade-tile');
+  box(.735,.565,.055,x,y,front+.09,accent?'accent':'light','facade-tile');
  }
  box(1.5,2.05,.12,buildingX-9.7,2.15,front+.12,'blue','window-frame');
  box(1.22,1.78,.13,buildingX-9.7,2.15,front+.19,'glass','entry-window');
@@ -56,14 +42,14 @@ export function buildCheckpoint7(root){
   c.fillStyle=color;c.textAlign='center';c.textBaseline='middle';
   lines.forEach((line,i)=>{c.font=`700 ${Array.isArray(size)?size[i]:size}px Arial, sans-serif`;c.fillText(line,768,384*(i+.5)/lines.length,1460);});
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
-  const mat=new THREE.MeshStandardMaterial({map:texture,transparent:true,roughness:.8,emissiveMap:texture,emissive:0xffffff,emissiveIntensity:0,depthWrite:false});
+  const mat=new THREE.MeshStandardMaterial({map:texture,transparent:true,alphaTest:.025,roughness:.8,emissiveMap:texture,emissive:0xffffff,emissiveIntensity:0,depthWrite:true});
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);mesh.position.set(x,y,z);mesh.name=lines.join(' ');root.add(mesh);signMaterials.push(mat);
  };
  text(['КОСМОДРОМ','БАЙКОНУР'],buildingX,5.83,front+.19,15.3,2.05,{size:[110,165]});
  // The same approved organisation marks already used by the museum.
  if(typeof document!=='undefined')for(const [side,file]of [[-1,'roscosmos'],[1,'tsenki']]){
   const disc=k.direct(new THREE.CircleGeometry(.95,32),'white','round-organisation-badge');disc.position.set(buildingX+side*9.8,5.8,front+.20);
-  const logo=new THREE.Mesh(new THREE.PlaneGeometry(1.7,.8),new THREE.MeshBasicMaterial({color:blue,map:new THREE.TextureLoader().load(new URL(`../assets/org-logos/${file}.png`,import.meta.url).href,t=>{t.colorSpace=THREE.SRGBColorSpace;}),transparent:true,depthWrite:false}));
+  const logo=new THREE.Mesh(new THREE.PlaneGeometry(1.7,.8),new THREE.MeshBasicMaterial({color:blue,map:new THREE.TextureLoader().load(new URL(`../assets/org-logos/${file}.png`,import.meta.url).href,t=>{t.colorSpace=THREE.SRGBColorSpace;}),transparent:true,alphaTest:.025,depthWrite:true}));
   logo.position.set(buildingX+side*9.8,5.8,front+.23);logo.name=file+' · фасад КПП';root.add(logo);
  }
  // Glazed pedestrian pavilion to the right, detached from the main block.

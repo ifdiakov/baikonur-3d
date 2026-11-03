@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {MUSEUM_METRE} from './museum-scale.js';
-export const CHECKPOINT7_VERSION='20261103-checkpoint7-road-v1';
+export const CHECKPOINT7_VERSION='20261103-checkpoint7-flat-v2';
 export const CHECKPOINT7_REFERENCE={folder:'1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl',photos:['1ZEcU0Q7ZI8zvrOe6cYQSVbC8DnUS3nuM','1IYqqXhfc0FlV0ndoFKCkkTavtdE0Ox4L','1_UfDgK5uSlx9mVbdQxBUbWpmxHSdrXho','1TAgzSQTwvd4TBE-omKUVG9yzjtvFbGUN','1WS2Ofp7NbMl4CV65HqNEWpfST-bfzivk'],dimensionsSurveyed:false};
 const V=p=>p.isVector3?p.clone():new THREE.Vector3(...p);
 export function checkpointRoadProjection(points,position){
@@ -34,6 +34,9 @@ export function checkpoint7Placement({roads,ownerRoadEdits,geography,roadPaths})
   const rendered=candidates[0];if(rendered.tangent.dot(at.tangent)<0)rendered.tangent.negate();at=rendered;
  }
  const cityDirection=at.tangent.clone().negate();
+ const roadAxis=[from.point.toArray()];let distance=0;
+ for(let i=1;i<spine.length;i++){distance+=spine[i].distanceTo(spine[i-1]);if(distance>from.along&&distance<to.along)roadAxis.push(spine[i].toArray());}
+ roadAxis.push(to.point.toArray());
  return {version:CHECKPOINT7_VERSION,position:at.point.toArray(),map:[at.point.x/3.4+650,at.point.z/3.4+522.5],yaw:Math.atan2(cityDirection.x,cityDirection.z),scale:MUSEUM_METRE,roadWidth:at.width,
-  placementBasis:'owner-directed-between-bridge-and-saturn-turnoff',surveyed:false,roadWayId:'173082916',bridgeWayId:'172422627',turnoffId:'road-31',bridge:from.point.toArray(),turnoff:to.point.toArray(),bridgeStation:from.along,turnoffStation:to.along,station,fraction:.5};
+  placementBasis:'owner-directed-between-bridge-and-saturn-turnoff',surveyed:false,roadWayId:'173082916',bridgeWayId:'172422627',turnoffId:'road-31',bridge:from.point.toArray(),turnoff:to.point.toArray(),bridgeStation:from.along,turnoffStation:to.along,station,fraction:.5,roadAxis};
 }

@@ -29,7 +29,7 @@ export function mik42Facade(root){
 }
 export function mzk112a(root){return buildMzkSdi(root);}
 export function yubileiny(root){return buildAirport(root,'yubileiny');}
-export {buildCheckpoint7 as checkpoint7} from './checkpoint7.js?v=20261103-checkpoint7-road-v1';
+export {buildCheckpoint7 as checkpoint7} from './checkpoint7.js?v=20261103-checkpoint7-flat-v2';
 
 export function observationPoint(root){
  const k=archiveKit(root);function tent(cx,cz,w,d){const r=w/2,y=2.6,segments=24;for(let i=0;i<segments;i++){const a=i/segments*Math.PI,b=(i+1)/segments*Math.PI;k.quad([cx+r*Math.cos(a),y+r*.47*Math.sin(a),cz-d/2],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),cz-d/2],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),cz+d/2],[cx+r*Math.cos(a),y+r*.47*Math.sin(a),cz+d/2],'white','shelter-fabric');}for(let z=cz-d/2;z<=cz+d/2+.1;z+=d/6){for(let i=0;i<12;i++){const a=i/12*Math.PI,b=(i+1)/12*Math.PI;k.rod([cx+r*Math.cos(a),y+r*.47*Math.sin(a),z],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),z],.07,'steel','arched-frame');}for(const s of[-1,1])k.rod([cx+s*r,0,z],[cx+s*r,y,z],.08,'steel','shelter-post');}for(const s of[-1,1])k.box(.05,2.4,d,cx+s*r,1.2,cz,'light','shelter-side-screen');}

@@ -2,24 +2,27 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
 import {checkpoint7Placement,CHECKPOINT7_VERSION} from '../src/checkpoint7-layout.js';
+import {createCheckpoint7RoadGrade} from '../src/checkpoint7-road-grade.js';
 import {buildCheckpoint7} from '../src/checkpoint7.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {roadVehiclePose} from '../src/road-vehicles.js';
 const read=p=>JSON.parse(fs.readFileSync(p,'utf8')),catalog=read('data/catalog.json'),matches=read('data/osm/catalog-matches.json'),geography=createMuseumGeography({catalog,matches});
 const roads=read('data/osm/roads.geojson'),ownerRoadEdits=read('data/road-edits-authoritative-20261103.json'),options={roads,ownerRoadEdits,geography};
-const before=checkpoint7Placement(options),record=geography.sites.find(s=>s.id==='kpp-7');[record.x,record.y]=before.map;
+const before=checkpoint7Placement(options),grade=createCheckpoint7RoadGrade(before),record=geography.sites.find(s=>s.id==='kpp-7');[record.x,record.y]=before.map;
 const without=createMuseumGeography({catalog:{...catalog,sites:catalog.sites.filter(s=>s.id!=='kpp-7')},matches});
 for(const s of without.sites){const same=geography.sites.find(r=>r.id===s.id);assert.deepEqual([same.x,same.y],[s.x,s.y],'Adding a checkpoint cannot move another site');}
 const V=(...v)=>new THREE.Vector3(...v),point=(x,y,h=0)=>V((x-650)*3.4,h,(y-522.5)*3.4),layers={roads:new THREE.Group(),rails:new THREE.Group()};
 const pad1=geography.sites.find(s=>s.id==='pad-1'),pad2=geography.sites.find(s=>s.id==='pad-2');pad2.x=pad1.x-19;pad2.y=pad1.y+7;
-const transport=buildOsmTransportNetwork({data:{roads,railways:read('data/osm/railways.geojson'),railPoints:read('data/osm/rail-points.geojson'),places:read('data/osm/places.geojson')},legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false)});
+const transport=buildOsmTransportNetwork({data:{roads,railways:read('data/osm/railways.geojson'),railPoints:read('data/osm/rail-points.geojson'),places:read('data/osm/places.geojson')},legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false),checkpoint7RoadGrade:grade});
 const placement=checkpoint7Placement({...options,roadPaths:transport.roadPaths()});
 assert(placement.station>placement.bridgeStation+50&&placement.station<placement.turnoffStation-50,'The checkpoint is between the bridge and Saturn turnoff');
 assert(Math.abs(placement.position[0]-before.position[0])<.2);assert(Math.abs(placement.position[2]-before.position[2])<.2);
 const root=new THREE.Group();root.position.fromArray(placement.position);root.rotation.y=placement.yaw;root.scale.setScalar(placement.scale);root.userData.checkpoint7Placement=placement;
 const built=buildCheckpoint7(root);root.updateWorldMatrix(true,true);layers.roads.updateMatrixWorld(true);
 assert.equal(built.checkpoint7.version,CHECKPOINT7_VERSION);assert.equal(built.checkpoint7.references.photos.length,5);
+assert(!built.features['checkpoint-ground-transition']&&!built.features['checkpoint-foundation'],'No hill or raised soil remains on the live checkpoint');
+assert(Math.abs(root.position.y-(-2.755+.025))<1e-8,'Checkpoint sits on flat ground');
 assert(!built.features['gallery-road'],'The live model must not cover or duplicate the existing pavement');assert.equal(built.features['main-gatehouse'],1);
 assert(built.meshCount<35,'Static façade details remain batched');assert.equal(built.checkpoint7.throughLanes,2);
 assert(root.localToWorld(V(0,0,1)).sub(root.position).normalize().dot(V(...placement.bridge).sub(root.position).setY(0).normalize())>.99,'The facade faces the city/bridge');
@@ -41,4 +44,13 @@ for(const direction of [-1,1])for(let s=nearest-3;s<=nearest+3;s+=.4){
 const ray=new THREE.Raycaster(V(root.position.x,100,root.position.z),V(0,-1,0));
 const pavement=ray.intersectObject(layers.roads,true).find(h=>h.object.name.includes('полотно')||h.object.name.includes('асфальт'));
 assert(pavement,'The checkpoint is placed on rendered asphalt');assert(Math.abs(pavement.point.y-root.position.y)<.15,'Island and shoulders meet the pavement');
+// Check the real pavement and both verges along the lowered approach. There
+// must be one asphalt owner, a positive ground gap, and no floating segments.
+for(let dz=-25;dz<=25;dz+=.8)for(const dx of [-1.7,-.9,.9,1.7]){
+ const p=root.localToWorld(V(dx/placement.scale,0,dz/placement.scale));
+ const hits=new THREE.Raycaster(V(p.x,5,p.z),V(0,-1,0)).intersectObject(layers.roads,true).filter(h=>h.object.name.includes('полотно'));
+ assert(hits.length>0,'Continuous pavement through the flat checkpoint');
+ const surface=hits[0].point.y;assert(surface>grade.baseY+.02&&surface<grade.baseY+.03,'Road follows the flat earth surface');
+}
+for(const p of [before.bridge,before.turnoff,[0,0,0]])assert.equal(grade.roadAt(p[0],p[2]),null,'Bridge, Saturn turnoff and unrelated roads keep their elevation');
 console.log(JSON.stringify({passed:true,placement,triangles,meshCount:built.meshCount,pavementY:pavement.point.y,vehicleDistance:best},null,2));

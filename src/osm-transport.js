@@ -249,7 +249,7 @@ function makeVehicleRoute(id,label,graphRoute,conform=points=>points){
   widthAt(distance){distance*=at/path.length;let lo=0,hi=boundaries.length-1;while(hi-lo>1){const mid=(lo+hi)>>1;if(boundaries[mid].at<=distance)lo=mid;else hi=mid;}return boundaries[lo]?.width||4.8;}};
 }
 
-export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords}){
+export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,checkpoint7RoadGrade=null}){
  const started=Date.now(),roadGraph=buildOsmGraph(data.roads.features,{geography,point}),railGraph=buildOsmGraph(data.railways.features,{geography,point,rail:true});
  const saturnSite=siteRecords.find(s=>s.id==='pad-23'),saturnCenter=saturnSite?point(saturnSite.x,saturnSite.y,0):null;
  function terrainAt(x,z){
@@ -321,7 +321,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  function conformRoadPath(points,width){
   const samples=conformPath(points,width);
   for(const p of samples)p.y=roadGraph.highwaySurfaceHeight(p,width);
-  return samples;
+  return checkpoint7RoadGrade?checkpoint7RoadGrade.conform(samples):samples;
  }
  const interchangeBridgePlan=createInterchangeBridgePlan({roadGraph,railGraph});
  const highwayDirections=new Map(),wayDirections=new Map(),directionPriorities=new Map(),directionKey=p=>[p.x,p.y,p.z].map(n=>n.toFixed(7)).join(':');
@@ -454,7 +454,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const pavingRuns=highway?highwayRunsOutsideBridge(run,interchangeBridgePlan,wayId):[run];
    for(const ps of pavingRuns){
     if(highway)for(const side of [-1,1])shoulder.ribbon(ps,ROAD_STYLE.shoulderExtra/2,-.055,side*(width/2+ROAD_STYLE.shoulderExtra/4),0,directions);
-    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-.055,0,0,directions);
+    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-.055,0,0,directions,checkpoint7RoadGrade?p=>{const y=checkpoint7RoadGrade.roadAt(p.x,p.z);return y===null?p.y:y-.012;}:null);
     pavement.ribbon(ps,widthAt,highway?HIGHWAY_ASPHALT_LIFT:0,0,tags.highway?.endsWith('_link')?1:0,directions);
     markingRoads.push({id:'marking-road-'+(wayId??'display')+'-'+markingRoads.length,wayId,points:ps.map(p=>p.clone()),width,tags,marked:marked||highway,connections,
      directionAt:directions,widthAt,surfaceSmoothed:true});
