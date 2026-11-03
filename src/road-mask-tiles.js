@@ -2,7 +2,7 @@
 // precise elevation changes at hills, overpasses or road-edge junctions.
 // The 2048px mask is split into five local atlases; each atlas covers a much
 // smaller range than the original continent-sized set of erasures.
-import {ROAD_EDIT_SHOULDER_EXTRA} from './road-editor-style.js?v=20261103-road-parity-v2';
+import {ROAD_EDIT_SHOULDER_EXTRA} from './road-editor-style.js?v=20261103-road-parity-v3';
 export const ROAD_MASK_TILE_COUNT=5;
 export const ROAD_MASK_VISIBLE_MARGIN=.18;
 export const ROAD_MASK_REPLACEMENT_MARGIN=.26;
