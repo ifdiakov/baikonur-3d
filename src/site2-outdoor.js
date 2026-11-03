@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {site2Point as P} from './site2-layout.js?v=20261102-site2-photo-v3';
+import {site2Point as P} from './site2-layout.js?v=20261103-site2-main-road-v1';
 
 // Photo-derived exhibit silhouettes. The source photographs are not engineering
 // drawings; their unknown internal parts and exact mechanical dimensions are omitted.
