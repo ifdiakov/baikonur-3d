@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {loadSite31Source} from './site31-source.js?v=20261103-launch-table-v1';
+import {loadSite31Source} from './site31-source.js?v=20261103-soyuz-pits-v1';
 
 // The optimized asset joins its source nodes by material. Nodes 3–253 are
 // the complete central launch table (88,524 triangles, x=-22.40…22.70m).

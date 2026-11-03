@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
 import {buildSite31Pad,SITE31_VERSION,SITE31_PIT,SITE31_PORTS} from '../src/site31-pad.js';
-import {SITE31_YAW,SITE31_REFERENCE,SITE31_RIM,SITE31_TRACED_RIM,SITE31_FLOOR_Y,site31RimAt} from '../src/site31-trench-profile.js';
+import {SITE31_YAW,SITE31_REFERENCE,SITE31_RIM,SITE31_FLOOR_Y,site31RimAt} from '../src/site31-trench-profile.js';
+import {GAGARIN_RIM_METRES} from '../src/soyuz-excavation-profile.js';
 import {FACILITY_PORTS} from '../src/facility-ports.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
 import {buildArchiveModel} from '../src/archive-models.js';
@@ -18,9 +19,9 @@ const root=new THREE.Group();root.scale.setScalar(manifest.scale);root.rotation.
 root.position.copy(point(site.x,site.y,-2.72));
 const result=buildSite31Pad(root);root.updateMatrixWorld(true);
 const model=result.site31;
-assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-metric-soyuz-v6');
+assert.equal(model.version,SITE31_VERSION);assert.equal(SITE31_VERSION,'site31-gagarin-pit-v7');
 assert.equal(model.siteId,'pad-31');assert.equal(model.orientationVerified,true);
-assert.equal(model.orientationScope,'satellite-outline-scaled-1.2');
+assert.equal(model.orientationScope,'rail-heading-preserved-gagarin-pit-scaled-1.2');
 assert.equal(model.heightsVerified,false,'The satellite plan does not establish elevations');
 assert.equal(model.globalMapAnchorSurveyed,false,'The museum map anchor is still schematic');
 assert.equal(model.satellite.imageryDate,'2025-08-09');assert.equal(model.satellite.satellite,'WorldView-3');
@@ -65,7 +66,7 @@ function inside(p,polygon){
 }
 const crosses=(a,b,c,d)=>cross(a,b,c)*cross(a,b,d)<-1e-8&&cross(c,d,a)*cross(c,d,b)<-1e-8;
 const polygon=SITE31_PIT.polygon;
-assert.equal(SITE31_PIT.shape,'polygon');assert.deepEqual(polygon,SITE31_RIM);
+assert.equal(SITE31_PIT.shape,'polygon');assert.ok(SITE31_RIM.every(p=>inside(p,polygon)),'Terrain is cut beyond the bank beneath its concrete collar');
 assert.ok(polygon.length>=20&&polygon.flat().every(Number.isFinite));
 const area=Math.abs(polygon.reduce((sum,a,i)=>{const b=polygon[(i+1)%polygon.length];return sum+a[0]*b[1]-b[0]*a[1];},0))/2;
 assert.ok(area>5000,'The cutout retains the broad asymmetric basin');
@@ -75,11 +76,11 @@ for(let i=0;i<polygon.length;i++)for(let j=i+2;j<polygon.length;j++){
 }
 for(const p of [[0,0],[-5,-35],[0,-100],[4,-145]])assert.ok(inside(p,polygon),'Traced basin contains '+p);
 for(const p of [[0,45],[80,-90],[-100,-100],[60,133]])assert.ok(!inside(p,polygon),'Cutout excludes '+p);
-const minZ=Math.min(...polygon.map(p=>p[1])),maxZ=Math.max(...polygon.map(p=>p[1]));
-assert.ok(minZ<-180&&minZ>-185,'The outlet is 20% longer than the former 152 m trace');
+const minZ=Math.min(...SITE31_RIM.map(p=>p[1])),maxZ=Math.max(...SITE31_RIM.map(p=>p[1]));
+assert.ok(Math.abs(minZ+232.8)<1e-9,'Gagarin outline is enlarged by 20%');
 const extent=(points,axis)=>Math.max(...points.map(p=>p[axis]))-Math.min(...points.map(p=>p[axis]));
-for(const axis of [0,1])assert.ok(Math.abs(extent(SITE31_RIM,axis)/extent(SITE31_TRACED_RIM,axis)-1.2)<1e-10,'The visible width and length are exactly 20% larger');
-for(let i=0;i<SITE31_TRACED_RIM.length;i++)for(let axis=0;axis<2;axis++)assert.ok(Math.abs(SITE31_RIM[i][axis]-SITE31_TRACED_RIM[i][axis]*1.2)<1e-10,'Each satellite trace point is preserved under enlargement');
+for(const axis of [0,1])assert.ok(Math.abs(extent(SITE31_RIM,axis)/extent(GAGARIN_RIM_METRES,axis)-1.2)<1e-10,'The visible width and length are exactly 20% larger');
+for(let i=0;i<GAGARIN_RIM_METRES.length;i++)for(let axis=0;axis<2;axis++)assert.ok(Math.abs(SITE31_RIM[i][axis]-GAGARIN_RIM_METRES[i][axis]*1.2)<1e-10,'Each Gagarin rim point is preserved under enlargement');
 assert.ok(Math.abs(SITE31_FLOOR_Y/-24-1.2)<1e-12,'Depth is exactly 20% larger');
 assert.equal(site31RimAt(minZ-1),null);assert.equal(site31RimAt(maxZ+1),null);
 for(let z=minZ+.25;z<maxZ;z+=1.7){
@@ -115,7 +116,8 @@ function down(x,z,objects=meshes,y=10){
  const hit=new THREE.Raycaster(origin,new THREE.Vector3(0,-1,0)).intersectObjects(objects,false)[0];
  return hit?{...hit,local:root.worldToLocal(hit.point.clone())}:null;
 }
-const launchHit=down(0,0);assert.ok(launchHit,'Open chamber floor is present');
+const launchHit=down(0,0,[floor]);
+assert.ok(down(0,0).local.y<-28.7,'The table and bridge leave the deep chamber open');assert.ok(launchHit,'Open chamber floor is present');
 assert.ok(Math.abs(launchHit.local.y+28.8)<1e-5,'The launch axis is open through the table and bridge down to the chamber');
 assert.ok(Math.abs(launchHit.local.y-model.pitFloorY)<1e-5);
 
@@ -123,7 +125,7 @@ assert.ok(Math.abs(launchHit.local.y-model.pitFloorY)<1e-5);
 // face or solid cover must fail even if the descriptive metadata is correct.
 const sections=model.trench.sections;assert.ok(sections.length>40);
 assert.ok(sections.every(s=>s.floorLeft>=s.left-1e-8&&s.floorRight<=s.right+1e-8),'Floor fits independently traced banks');
-assert.ok(Math.abs(site31RimAt(-20)[0]+site31RimAt(-20)[1])>10,'Satellite shoulders retain their asymmetry');
+assert.ok(Math.abs(site31RimAt(-20)[0]+site31RimAt(-20)[1])>1,'Gagarin shoulders retain their asymmetric contour');
 for(const mesh of [floor,banks]){assert.ok(mesh.geometry.index,'Smooth concrete shares vertices');assert.ok([...mesh.geometry.attributes.normal.array].every(Number.isFinite));}
 
 let floorProbes=0,clearanceProbes=0,maxFloorError=0;
@@ -154,7 +156,8 @@ for(let z=-26.4;z>minZ+.25;z-=1){
 assert.ok(previousY>-.1,'The visible floor reaches ground level at the mouth');
 // Above-grade rays cross the entire mouth, including its centre. The side
 // coping is lower than these probes; a transverse wall would obstruct them.
-const mouthX=site31RimAt(minZ)[0],mouthDirection=new THREE.Vector3(0,0,1).transformDirection(root.matrixWorld);
+assert.ok(site31RimAt(minZ)[1]-site31RimAt(minZ)[0]>20,'The outlet retains its full width');
+const mouthX=model.trench.mouth.centerX,mouthDirection=new THREE.Vector3(0,0,1).transformDirection(root.matrixWorld);
 for(const y of [.35,1.5,3])for(const dx of [-.2,0,.2]){
  const origin=root.localToWorld(new THREE.Vector3(mouthX+dx,y,minZ-4));
  const hits=new THREE.Raycaster(origin,mouthDirection,0,root.scale.x*20).intersectObjects(meshes,false);
@@ -166,7 +169,10 @@ function triangles(mesh){
  for(let i=0;i<(index?.count??p.count);i+=3)out.push([0,1,2].map(j=>new THREE.Vector3().fromBufferAttribute(p,index?index.getX(i+j):i+j).applyMatrix4(transform)));
  return out;
 }
+assert.equal(model.roadLayout,'single-rear-access-no-side-branches');
+assert.equal(result.features['southwestern-service-yard'],undefined);assert.equal(result.features['northeastern-service-yard'],undefined);
 const road=component('continuous-site31-access-road'),roadTriangles=triangles(road);
+assert.ok(roadTriangles.flat().every(p=>p.z>110&&p.x<64&&p.x>20),'Internal access stays behind the complex without side branches');
 for(const tri of roadTriangles){
  const t=tri.map(p=>[p.x,p.z]);
  assert.ok(!t.some(p=>inside(p,polygon)),'The full road width stays outside the excavation');

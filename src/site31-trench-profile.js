@@ -1,5 +1,7 @@
+import {GAGARIN_RIM_METRES,excavationCutout} from './soyuz-excavation-profile.js?v=20261103-soyuz-pits-v1';
 // Site 31/6: source trace from north-up WorldView-3 imagery, 2025-08-09.
-// The displayed rim preserves the trace shape at the owner-requested 1.2 scale.
+// Displayed excavation now follows Gagarin’s plan at the owner-requested 1.2 scale.
+// The earlier Site 31 trace remains here as source documentation only.
 // Local +Z follows the incoming railway towards the south-east; -Z follows
 // the flame duct towards the north-west. +X is the north-east side of the pad.
 // Plan coordinates below are metres before the museum model's parent scale.
@@ -38,7 +40,7 @@ export const SITE31_REFERENCE=Object.freeze({
  planBasis:'Manual trace of the visible outer concrete rim, approximately 3–6 image pixels; the table centre is partly obscured by structures and shadow.',
  inferredRimPixelSegment:frozenPoints([[451,325],[435,339],[415,355],[392,368]]),
  heightBasis:'The original approximate 24 m depth is enlarged by 20% to 28.8 m at the owner’s request; the satellite image does not measure heights.',
- displayedPlanBasis:'The independently traced asymmetric outline is uniformly enlarged by 20% about the launch axis; satellite proportions and compass axis are retained.',
+ displayedPlanBasis:'Owner request 2026-11-03: Gagarin-style excavation, enlarged by 20%; existing Site 31 railway heading retained.',
  globalMapAnchorBasis:'The museum diagram anchor and satellite compass orientation are retained; the enlarged displayed outline is an owner adjustment.'
 });
 
@@ -62,16 +64,10 @@ export const SITE31_TRACED_RIM=frozenPoints(SITE31_RIM_PIXELS.map(([u,v])=>{
  return [(du*cosine-dv*sine)*metresPerPixel,(du*sine+dv*cosine)*metresPerPixel];
 }));
 
-// Preserve both independently traced shoulders and the narrow offset mouth.
-// Enlargement is uniform about the launch axis, without forcing symmetry.
-export const SITE31_RIM=frozenPoints(SITE31_TRACED_RIM.map(([x,z])=>[x*SITE31_DUCT_SCALE,z*SITE31_DUCT_SCALE]));
-
-export const SITE31_PIT=Object.freeze({
- polygon:SITE31_RIM,
- shape:'polygon',
- rimY:0,
- source:'WV03 asymmetric rim and compass axis; owner-requested 20% enlargement'
-});
+// Both sites use the same photographic bank contour. Site 31 retains its
+// owner-requested enlargement, 28.8m depth and existing railway orientation.
+export const SITE31_RIM=frozenPoints(GAGARIN_RIM_METRES.map(([x,z])=>[x*SITE31_DUCT_SCALE,z*SITE31_DUCT_SCALE]));
+export const SITE31_PIT=Object.freeze({...excavationCutout(SITE31_RIM),source:'Owner-requested Gagarin excavation; +20% plan and concealed terrain seam'});
 
 const minZ=Math.min(...SITE31_RIM.map(point=>point[1]));
 const maxZ=Math.max(...SITE31_RIM.map(point=>point[1]));

@@ -2,16 +2,15 @@ import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
-import {buildSite31Trench} from './site31-trench.js?v=20261103-launch-table-v1';
-import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW,site31RimAt} from './site31-trench-profile.js?v=20261103-launch-table-v1';
-export {SITE31_PIT} from './site31-trench-profile.js?v=20261103-launch-table-v1';
+import {buildSite31Trench} from './site31-trench.js?v=20261103-soyuz-pits-v1';
+import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW,site31RimAt} from './site31-trench-profile.js?v=20261103-soyuz-pits-v1';
+export {SITE31_PIT} from './site31-trench-profile.js?v=20261103-soyuz-pits-v1';
 
-// Site 31 is its own exhibit, not Site 1's traced excavation transplanted to
-// a different map point. Photographs establish the two opening service masts,
-// four supporting arms, open bridge, lined excavation and lightning towers.
-// The local plan and compass orientation now follow north-up WV03 imagery.
+// Site 31 keeps its source launch structures and railway heading. The owner
+// requested the same excavation shape as Gagarin, with the earlier 20%
+// enlargement and deeper floor retained.
 // Heights and the museum diagram's global anchor remain approximate.
-export const SITE31_VERSION='site31-metric-soyuz-v6';
+export const SITE31_VERSION='site31-gagarin-pit-v7';
 export const SITE31_SOURCES=Object.freeze([
  SITE31_REFERENCE.sourceUrl,
  SITE31_REFERENCE.metadataUrl,
@@ -28,7 +27,7 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
  let k=archiveKit(root);const apertures=[];
  let machineryResult={features:{},primitiveCount:0,meshCount:0,batches:0};const mastAngles=[],serviceDecks=[];
  root.name='Пл. 31 · «Союз» · детализированная музейная реконструкция';
- k.mat.green.color.set(0x426851);k.mat.steel.color.set(0x69736b);
+ k.mat.green.color.set(0x234b36);k.mat.steel.color.set(0x69736b);
  // Components use the same textured concrete/paint/metal palette and static
  // instancing as the detailed Gagarin model. There are no stacked decal planes.
  function railings(points,y,h=1.2,parent=root,tag='service-safety-railing'){
@@ -52,10 +51,7 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
  // terrain cutout. The floor continues under the table and rises to the mouth.
  const trench=buildSite31Trench(k),floorY=trench.floorY;
  // Service yards sit behind/beside the launch position, outside its wide bowl.
- const forecourtRight=z=>47+(z-44)*3/106;
  k.poly([[-47,44],[47,44],[50,150],[-50,150]],.06,'concrete','rail-forecourt');
- k.poly([[-177,1],[-130,3],[-105,38],[-98,79],[-58,81],[-52,115],[-87,126],[-124,100],[-156,52]],.06,'concrete','southwestern-service-yard');
- k.poly([[113,21],[174,18],[188,42],[172,68],[132,96],[106,121],[forecourtRight(122),122],[forecourtRight(59),59],[82,59]],.06,'concrete','northeastern-service-yard');
 
  if(!sourceStructure){
  // Open concrete bridge: separate cheeks and a rear crosswalk leave the
@@ -253,13 +249,11 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
   k.rod([x,.7,36],[s*34,1.4,18+j*.7],.13,'light','utility-pipe-gallery');
  }
 
- // The real network ports are unchanged: road [60,.1,133], track [0,.48,174].
- // The two service courts connect behind the pad, as in the image. There is
- // no U-road across the exhaust outlet. The south edge of the straight rear
- // section is the existing port at [60,133], forming one clean T-junction.
- const accessControlPoints=[[-158,14],[-143,24],[-131,42],[-122,65],[-118,89],[-109,109],[-93,123],[-72,130],[-40,130],[-8,130],[24,130],[48,130],[72,130],[79,130],[88,126],[97,116],[109,100],[116,80],[128,61],[149,49],[171,44]];
+ // One rear approach reaches the retained external port. Side branches and
+ // their broad auxiliary aprons were removed at the owner's request.
+ const accessControlPoints=[[60,133],[60,125],[56,120],[47,118],[23,118]];
  const roadCurve=new THREE.CatmullRomCurve3(accessControlPoints.map(([x,z])=>V(x,0,z)),false,'centripetal');
- const roadPoints=roadCurve.getSpacedPoints(240).map(p=>[p.x,p.z]);
+ const roadPoints=roadCurve.getSpacedPoints(48).map(p=>[p.x,p.z]);
  k.path(roadPoints,6,.10,'asphalt','continuous-site31-access-road');
  k.rail([[0,174],[0,42],[0,9]],{gauge:1.52,y:.30,tag:'site31-incoming-rail'});
  // Keep the centreline over the deck clear. The high erector sides do not
@@ -270,16 +264,16 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
   meshCount:layoutResult.meshCount+machineryResult.meshCount,batches:layoutResult.batches+machineryResult.batches,
   boundsSize:new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).toArray()};
  const metadata={version:SITE31_VERSION,siteId:'pad-31',name:'Стартовая позиция 31/6 · семейство «Союз»',
-  status:'Газоотвод повторяет асимметричный контур спутникового снимка с увеличением на 20%. Поверхности ровные; глубина 28,8 м — музейная реконструкция.',
-  referenceBasis:'Esri World Imagery / Vantor Vivid: асимметричная обводка и направление; контур равномерно увеличен на 20%. Не инженерный обмер.',
-  sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'satellite-outline-scaled-1.2',
+  status:'Котлован по образцу Гагаринского старта: широкая камера, наклонные бетонные стенки и открытый лоток. Сохранены увеличение на 20% и глубина 28,8 м. Боковые дороги убраны.',
+  referenceBasis:'Фотографический план Гагаринского старта по просьбе владельца; направление железной дороги пл.31 сохранено. Не инженерный обмер.',
+  sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'rail-heading-preserved-gagarin-pit-scaled-1.2',
   units:'metres',machineryMetresPerUnit:sourceStructure?1:SITE31_MACHINERY_METRE,
   heightsVerified:false,globalMapAnchorSurveyed:false,yaw:SITE31_YAW,satellite:SITE31_REFERENCE,
   groundDatum:0,pitFloorY:floorY,pit:SITE31_PIT,trench,
   launchPassage:sourceStructure?{configuration:'source-service-platforms',openBelowDeck:false}:{radius:6.8*SITE31_MACHINERY_METRE,openBelowDeck:true},serviceMasts:2,serviceDecks:sourceStructure?null:serviceDecks.length,mastAngles:sourceStructure?[0,0]:mastAngles,
   serviceMastLengths:sourceStructure?[39.41,37.0]:[61,52].map(h=>h*SITE31_MACHINERY_METRE),rocketMount:SITE31_ROCKET_MOUNT,
   supportingArms:4,rocketExhibit:true,rocketState:'illustrative-prelaunch',
-  roadPort:[...SITE31_PORTS.road],railPort:[...SITE31_PORTS.rail],roadLayout:'two-service-yards-connected-behind-launch-pad',
+  roadPort:[...SITE31_PORTS.road],railPort:[...SITE31_PORTS.rail],roadLayout:'single-rear-access-no-side-branches',
   railGauge:1.52,networkGaugeWorld:RAIL_PROFILE.gauge,railTransition:'external-feeder',featureCounts:result.features,primitiveCount:result.primitiveCount,drawCalls:result.meshCount};
  root.userData.site31Model=metadata;root.userData.orientationNote=metadata.status;
  root.userData.site31Apertures=apertures;

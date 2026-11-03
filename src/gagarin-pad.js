@@ -1,4 +1,6 @@
-import {installGagarinTable} from './gagarin-source-table.js?v=20261103-launch-table-v1';
+import {GAGARIN_DUCT_PLAN,GAGARIN_DUCT_ORIGIN,GAGARIN_SHOULDERS,GAGARIN_RIM_METRES} from './soyuz-excavation-profile.js?v=20261103-soyuz-pits-v1';
+import {buildExcavationRim} from './soyuz-excavation-rim.js?v=20261103-soyuz-pits-v1';
+import {installGagarinTable} from './gagarin-source-table.js?v=20261103-soyuz-pits-v1';
 import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {createSurfacePalette} from './surface-materials.js';
@@ -42,7 +44,7 @@ export function buildGagarinPad(root,options={}) {
     concrete:0x9d9c94, oldConcrete:0x817f76, paleConcrete:0xc0b9ac,
     cutFace:0x756e64, soot:0x44403a, duct:0x4e473e,
     soil:0x988b78, asphalt:0x77746d, rust:0x924e37,
-    green:0x426e57, brightGreen:0x659078, olive:0x324b3b,
+    green:0x234b36, brightGreen:0x315c43, olive:0x203e2e,
     steel:0x4b5e56, shadowSteel:0x2f3d37,
     paleSteel:0xa3b5ad, white:0xd1d2c8,
     yellow:0xd3b04d, fadedYellow:0xa98539, warning:0xc66843,
@@ -218,24 +220,11 @@ export function buildGagarinPad(root,options={}) {
   // 2026-10-27 20:41:25. Broad shoulders beside the launch bridge taper
   // EAST to a finite-width apron; the perimeter road returns around it.
   // These are image proportions, not a metric survey. Heights are schematic.
-  const planScale=.50,planOrigin=[674,546];
+  const planScale=.50,planOrigin=GAGARIN_DUCT_ORIGIN;
   const fromPixel=(px,py,y)=>[(py-planOrigin[1])*planScale,y,-(px-planOrigin[0])*planScale];
   // px, north/south upper rim, north/south floor edge, floor elevation.
   // Both sides are traced independently; the satellite view is asymmetric.
-  const ductPlan=[
-    [750,267,810,455,580,.35],
-    [780,271,813,447,590,.40],
-    [825,278,814,442,600,.55],
-    [880,290,806,445,606,.80],
-    [950,313,783,461,609,1.40],
-    [1030,346,750,482,604,2.60],
-    [1110,379,714,503,593,4.40],
-    [1190,410,677,515,582,7.10],
-    [1260,435,650,518,578,10.10],
-    [1340,466,623,516,579,13.80],
-    [1405,487,608,506,581,16.60],
-    [1435,505,593,507,581,18.00]
-  ];
+  const ductPlan=GAGARIN_DUCT_PLAN;
   const bankY=18.1,ductBatches=new Map();
   function ductQuad(a,b,c,d,material,key){
     const id=material+':'+key;
@@ -267,21 +256,14 @@ export function buildGagarinPad(root,options={}) {
       ductQuad(innerA,innerB,middleA,middleB,side?'oldConcrete':'paleConcrete','flame-duct-bank');
       ductQuad(middleA,middleB,rimA,rimB,side?'concrete':'paleConcrete','flame-duct-bank');
       bar(middleA,middleB,.10,'cutFace','concrete-tile-seam');
-      bar(rimA,rimB,.24,'oldConcrete','flame-duct-upper-coping');
       bar(innerA,innerB,.12,'cutFace','flame-duct-discolored-seam');
       // Radial panel seams run up each bank.
       bar(innerA,rimA,.06,'oldConcrete','concrete-tile-seam');
-      const outerA=fromPixel(a[0],a[side+1]+(side?22:-22),bankY);
-      const outerB=fromPixel(b[0],b[side+1]+(side?22:-22),bankY);
-      ductQuad(rimA,rimB,outerA,outerB,'soil','flame-duct-embankment');
     }
   }
   // Curved western shoulders wrap around the bridge cheeks; they account
   // for the broad end of the excavation being beside the pad, not at its exit.
-  const shoulders=[
-    {rim:[[620,487],[619,355],[665,328],[715,310],[750,267]],inner:[750,455]},
-    {rim:[[612,616],[613,711],[632,765],[686,796],[750,810]],inner:[750,580]}
-  ];
+  const shoulders=GAGARIN_SHOULDERS;
   for(const [side,shoulder] of shoulders.entries()){
     const anchor=fromPixel(...shoulder.inner,.35);
     for(let i=0;i<shoulder.rim.length-1;i++){
@@ -289,7 +271,6 @@ export function buildGagarinPad(root,options={}) {
       // One triangle in the merged bank mesh for each headwall sector.
       const id=(side?'concrete':'paleConcrete')+':flame-duct-bank';
       const batch=ductBatches.get(id);batch.vertices.push(...a,...b,...anchor);mark('flame-duct-bank');
-      bar(a,b,.24,'oldConcrete','flame-duct-upper-coping');
     }
   }
   // The far apron has an open, straight edge of nonzero width. It does not
@@ -320,6 +301,9 @@ export function buildGagarinPad(root,options={}) {
     mesh.userData.museumComponent=batch.key;mesh.receiveShadow=true;
     root.add(mesh);renderMeshCount++;
   }
+
+  // A real raised collar replaces the coplanar soil strip over the terrain.
+  buildExcavationRim(metricRoot,GAGARIN_RIM_METRES,mats.oldConcrete);renderMeshCount++;
 
   structure=true;
   // 04 / R-7 SUPPORT RING, TULIP FLOWER, yellow roller drums.

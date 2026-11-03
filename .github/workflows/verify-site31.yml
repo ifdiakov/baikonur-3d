@@ -10,6 +10,9 @@ on:
       - 'assets/models/site31/**'
       - 'src/site31-*.js'
       - 'src/gagarin-*.js'
+      - 'src/soyuz-*.js'
+      - 'src/terrain-voids.js'
+      - 'tests/soyuz-*.mjs'
       - 'tests/gagarin-source-table.mjs'
       - 'tests/site31-geometry.mjs'
       - 'tests/site31-source-*.mjs'
@@ -40,6 +43,7 @@ jobs:
           node tests/site31-geometry.mjs
           node tests/gagarin-source-table.mjs
           node tests/soyuz-launch-scale.mjs
+          node tests/soyuz-excavation-rim.mjs
       - name: Serve checkout
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
       - name: Test full museum, load recovery, views and mobile

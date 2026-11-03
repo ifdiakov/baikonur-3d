@@ -1,3 +1,4 @@
+import {applySoyuzLaunchPaint} from './soyuz-launch-paint.js?v=20261103-dark-green-v1';
 import * as THREE from 'three';
 export const SITE31_ASSET_VERSION='site31-drive-v1';
 function release(root){
@@ -24,6 +25,7 @@ export async function loadSite31Source({consumer='site31'}={}){
    const gltf=await new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes,base.href);
    const bounds=new THREE.Box3().setFromObject(gltf.scene),size=bounds.getSize(new THREE.Vector3()).toArray();
    if(size.some((n,i)=>!Number.isFinite(n)||Math.abs(n-manifest.bounds.size[i])>.04)){release(gltf.scene);throw Error('Размеры площадки 31 не прошли проверку');}
+   applySoyuzLaunchPaint(gltf.scene);
    return {scene:gltf.scene,manifest};
   }finally{clearTimeout(timer);}
  }
