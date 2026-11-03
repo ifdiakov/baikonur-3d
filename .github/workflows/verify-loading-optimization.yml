@@ -6,6 +6,7 @@ on:
       - 'src/museum-menu.js'
       - 'src/complex-history-menu.js'
       - 'src/osm-transport.js'
+      - 'src/road-surface.js'
       - 'index.html'
       - 'src/ukss-exhibit.js'
       - 'src/tua-exhibit.js'
