@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import {ROAD_EDITOR_VERSION,validateRoadEdits,nearestRoadSegment,roadSection} from '../src/road-editor-core.js';
+import {ROAD_EDITOR_VERSION,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from '../src/road-editor-core.js';
 
 const trunk={id:'osm-road-123',width:3.6,points:[[0,.72,0],[10,.72,0],[10,.72,10],[30,.72,10]]};
 const nearby={id:'road-12',width:4.5,points:[[80,1,10],[100,1,10]]};
@@ -20,4 +20,18 @@ assert.throws(()=>validateRoadEdits({version:ROAD_EDITOR_VERSION,added:[],hidden
 assert.throws(()=>validateRoadEdits({version:1,added:[{id:'road-1',width:4.5,surface:'asphalt',points:[[0,0,0],[5,0,0]]},
  {id:'road-1',width:4.5,surface:'asphalt',points:[[0,0,0],[5,0,0]]}],hidden:[]}));
 assert.throws(()=>validateRoadEdits({version:2,added:[],hidden:[]}));
+
+const localOld={version:1,added:[{id:'manual-road',surface:'asphalt',width:2,points:[[2,0,1],[5,0,4]]}],
+ hidden:[{sourceId:'osm-road-45',width:1.6,points:[[10.00048,.72043,20.00031],[15.00021,.7197,25.00042]]}]};
+const baseline={version:1,added:[{id:'road-31',surface:'asphalt',width:3,points:[[0,1,0],[20,8,0]]}],
+ hidden:[
+  {sourceId:'osm-road-45',width:1.6,points:[[10,.72,20],[15,.72,25]]},
+  {sourceId:'osm-road-45',width:1.6,points:[[10,.72,20],[15,.72,25]]},
+  {sourceId:'osm-road-46',width:2,points:[[30,12,40],[50,16,42]]}
+ ]};
+const upgraded=reconcileRoadEdits(localOld,baseline);
+assert.equal(upgraded.added.length,2,'New owner road and local custom road must coexist');
+assert.equal(upgraded.hidden.length,3,'Near-identical raw vs compact endpoint cuts must not multiply');
+assert.equal(reconcileRoadEdits(upgraded,baseline).hidden.length,3,'Migration is idempotent');
+assert.deepEqual(localOld.added.map(r=>r.id),['manual-road'],'Migration must not mutate local input');
 console.log('ROAD_EDITOR_CORE_PASS',{nearest:n.at,cutPoints:cut.points.length});
