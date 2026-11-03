@@ -144,6 +144,7 @@ jobs:
           node tests/buran-landing-aircraft.mjs
           node tests/buran-overview-camera.mjs
           node tests/camera-navigation.mjs
+          node tests/map-camera-smoothing.mjs
           node tests/menu-catalog-contract.mjs
       - name: Preserve the detailed Site 31, road, rail and flank invariants
         run: |
@@ -246,7 +247,9 @@ jobs:
         run: node tests/left-menu-browser.mjs
       - name: Verify hover-wheel, left-drag and right-orbit over object labels
         if: matrix.suite == 'labels'
-        run: node tests/label-map-gestures-browser.mjs
+        run: |
+          node tests/label-map-gestures-browser.mjs
+          node tests/map-camera-smoothing-browser.mjs
       - name: Verify camera movement after leaving aircraft follow
         if: matrix.suite == 'landing-camera'
         run: node tests/camera-navigation-browser.mjs
