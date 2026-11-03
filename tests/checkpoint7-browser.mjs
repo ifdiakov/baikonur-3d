@@ -23,6 +23,10 @@ try{
  await checkpoint('night');await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.checkpoint7.inspect('all');q.evening.setEvening(true);});await frame();await page.screenshot({path:`${out}/${prefix}-night.png`});
  await checkpoint('mobile');await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.checkpoint7.inspect('all');});await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
  assert(await page.locator('#checkpoint7Views').isVisible());
+ assert.equal(await page.locator('#description').isVisible(),false,'Mobile card initially leaves the model visible');
+ const panel=await page.locator('#info').boundingBox(),header=await page.locator('#ui').boundingBox();
+ assert(panel.y-header.y-header.height>180,'Mobile controls leave at least 180 pixels for the scene');
+ await page.locator('#detailMore').click();assert(await page.locator('#description').isVisible());await page.locator('#detailMore').click();
  for(const button of await page.locator('#checkpoint7Views button').all()){const r=await button.boundingBox();assert(r.x>=0&&r.x+r.width<=390);}
  assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));assert.deepEqual(errors,[]);
  assert(!consoleErrors.some(e=>/ReferenceError|TypeError|SyntaxError|shader error/i.test(e)),consoleErrors.join('\n'));

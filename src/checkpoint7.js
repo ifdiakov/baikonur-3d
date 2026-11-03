@@ -9,18 +9,29 @@ export function buildCheckpoint7(root){
  for(const [key,color]of Object.entries({light:0xe0dfd3,wall:0xc4c8c6,blue,white:0xf0eee3,glass:0x547984,steel:0x707d7d,red:0xc8463b,roof:0x819292,soil:0xaa9e85}))k.mat[key].color.setHex(color);
  k.mat.glass.roughness=.25;k.mat.glass.metalness=.3;
  k.mat.lamp=new THREE.MeshStandardMaterial({color:0xffefcf,emissive:0xffd58d,emissiveIntensity:0});
+ k.mat.accent=new THREE.MeshStandardMaterial({color:0xa6b3ba,roughness:.9});
+ k.mat.roof=new THREE.MeshStandardMaterial({color:0x819292,roughness:.85,side:THREE.DoubleSide});
  const buildingX=edge+13,front=4.5,lamps=[],signMaterials=[];
  const box=(w,h,d,x,y,z,mat,tag)=>k.box(w,h,d,x,y,z,mat,tag);
+ if(placement){
+  // Continuous soil below the road, with a rounded, eased transition to the
+  // museum ground datum. The existing asphalt remains the only road surface.
+  const a=-edge-9,b=edge+40,depth=(placement.position[1]+2.755)/.14,run=42,positions=[],indices=[],step=2;
+  const nx=Math.ceil((b-a+2*run)/step),nz=Math.ceil((26+2*run)/step);
+  for(let iz=0;iz<=nz;iz++)for(let ix=0;ix<=nx;ix++){
+   const x=a-run+(b-a+2*run)*ix/nx,z=-13-run+(26+2*run)*iz/nz;
+   const distance=Math.hypot(Math.max(a-x,0,x-b),Math.max(Math.abs(z)-13,0)),t=Math.min(1,distance/run);
+   positions.push(x,-.25-(depth-.25)*t*t*(3-2*t),z);
+  }
+  for(let iz=0;iz<nz;iz++)for(let ix=0;ix<nx;ix++){const i=iz*(nx+1)+ix;indices.push(i,i+nx+1,i+1,i+1,i+nx+1,i+nx+2);}
+  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setIndex(indices);geo.computeVertexNormals();
+  k.direct(geo,'soil','checkpoint-ground-transition');
+ }
  // Raised shoulders meet the existing road. They never cover its asphalt or markings.
  for(const side of [-1,1]){
   const inner=side*(edge+.3),outer=side*(edge+(side===1?40:9)),a=Math.min(inner,outer),b=Math.max(inner,outer);
   box(b-a,.22,26,(a+b)/2,-.11,0,'concrete','checkpoint-walk');
-  const depth=placement?Math.max(0,(placement.position[1]+2.755)/.14):.6;
-  box(b-a,depth,26,(a+b)/2,-depth/2-.12,0,'soil','checkpoint-foundation');
-  // The apron has a sloping outer bank instead of an unsupported floating slab.
-  const run=placement?Math.max(5,depth*.6):2;
-  k.quad([outer,0,-13],[outer,0,13],[outer+side*run,-depth,18],[outer+side*run,-depth,-18],'soil','checkpoint-bank');
-  for(const z of [-13,13])k.quad([a,0,z],[b,0,z],[b+side*run,-depth,z+Math.sign(z)*run],[a,-depth,z+Math.sign(z)*run],'soil','checkpoint-bank');
+  if(!placement)box(b-a,.6,26,(a+b)/2,-.42,0,'soil','checkpoint-foundation');
   for(let z=-12.5;z<13;z+=1)box(.35,.22,.98,inner,.11,z,Math.round(z+.5)%2?'white':'blue','blue-white-curb');
  }
  box(22,6.9,9,buildingX,3.45,0,'light','main-gatehouse');
@@ -31,7 +42,8 @@ export function buildCheckpoint7(root){
  // Pale square cladding with the stepped grey band visible in all five references.
  for(let row=0;row<6;row++)for(let column=0;column<29;column++){
   const x=buildingX-10.62+column*.76,y=.84+row*.59;
-  box(.735,.565,.055,x,y,front+.055,(row===1&&column>8||row===2&&column<9)?'wall':'light','facade-tile');
+  const accent=column===9||row===5&&column>9||row===4&&column>16||row===3&&column>23;
+  box(.735,.565,.055,x,y,front+.055,accent?'accent':'light','facade-tile');
  }
  box(1.5,2.05,.12,buildingX-9.7,2.15,front+.12,'blue','window-frame');
  box(1.22,1.78,.13,buildingX-9.7,2.15,front+.19,'glass','entry-window');
@@ -41,17 +53,18 @@ export function buildCheckpoint7(root){
   if(typeof document==='undefined')return;
   const canvas=document.createElement('canvas');canvas.width=1536;canvas.height=384;const c=canvas.getContext('2d');
   if(background){c.fillStyle=background;c.fillRect(0,0,canvas.width,canvas.height);}
-  c.fillStyle=color;c.font=`700 ${size}px Arial, sans-serif`;c.textAlign='center';c.textBaseline='middle';
-  lines.forEach((line,i)=>c.fillText(line,768,384*(i+.5)/lines.length,1460));
+  c.fillStyle=color;c.textAlign='center';c.textBaseline='middle';
+  lines.forEach((line,i)=>{c.font=`700 ${Array.isArray(size)?size[i]:size}px Arial, sans-serif`;c.fillText(line,768,384*(i+.5)/lines.length,1460);});
   const texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;
   const mat=new THREE.MeshStandardMaterial({map:texture,transparent:true,roughness:.8,emissiveMap:texture,emissive:0xffffff,emissiveIntensity:0,depthWrite:false});
   const mesh=new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);mesh.position.set(x,y,z);mesh.name=lines.join(' ');root.add(mesh);signMaterials.push(mat);
  };
- text(['КОСМОДРОМ','БАЙКОНУР'],buildingX,5.83,front+.19,15.3,2.05,{size:150});
+ text(['КОСМОДРОМ','БАЙКОНУР'],buildingX,5.83,front+.19,15.3,2.05,{size:[110,165]});
  // The same approved organisation marks already used by the museum.
  if(typeof document!=='undefined')for(const [side,file]of [[-1,'roscosmos'],[1,'tsenki']]){
-  const logo=new THREE.Mesh(new THREE.PlaneGeometry(1.9,1.9),new THREE.MeshBasicMaterial({map:new THREE.TextureLoader().load(new URL(`../assets/org-logos/${file}.png`,import.meta.url).href,t=>{t.colorSpace=THREE.SRGBColorSpace;}),transparent:true,depthWrite:false}));
-  logo.position.set(buildingX+side*9.8,5.8,front+.21);logo.name=file+' · фасад КПП';root.add(logo);
+  const disc=k.direct(new THREE.CircleGeometry(.95,32),'white','round-organisation-badge');disc.position.set(buildingX+side*9.8,5.8,front+.20);
+  const logo=new THREE.Mesh(new THREE.PlaneGeometry(1.7,.8),new THREE.MeshBasicMaterial({color:blue,map:new THREE.TextureLoader().load(new URL(`../assets/org-logos/${file}.png`,import.meta.url).href,t=>{t.colorSpace=THREE.SRGBColorSpace;}),transparent:true,depthWrite:false}));
+  logo.position.set(buildingX+side*9.8,5.8,front+.23);logo.name=file+' · фасад КПП';root.add(logo);
  }
  // Glazed pedestrian pavilion to the right, detached from the main block.
  const pavilionX=buildingX+17.2;

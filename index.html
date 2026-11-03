@@ -398,6 +398,20 @@ body.following-arrival #labelLayer{display:none!important}
  #info.site250a-active>p:last-child{display:none}
  #info.site250a-active.site250a-details-open{max-height:calc(100dvh - 350px)!important}
 }
+#checkpoint7Views{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0}
+#checkpoint7Views button{min-width:0;max-width:100%;padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}
+#checkpoint7Views button:hover{background:#3b5969}#checkpoint7Views button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
+@media(max-width:850px){
+ body:has(#info.checkpoint7-active) #museumIdentity{display:none!important}
+ #info.checkpoint7-active{top:auto!important;bottom:var(--museum-dock-reserve,200px)!important;z-index:14;height:auto;max-height:235px!important;padding:12px}
+ #info.checkpoint7-active #title{display:block;padding-right:28px;line-height:1.4}
+ #info.checkpoint7-active .close{position:absolute;right:10px;top:8px;min-width:28px;min-height:28px}
+ #info.checkpoint7-active:not(.checkpoint7-details-open) .orgrow,#info.checkpoint7-active:not(.checkpoint7-details-open) #infoPurpose,#info.checkpoint7-active:not(.checkpoint7-details-open) #description{display:none}
+ #info.checkpoint7-active #checkpoint7Views{gap:5px;margin:8px 0}#info.checkpoint7-active #checkpoint7Views button{font-size:10px;padding:8px}
+ #info.checkpoint7-active #detailMore{padding:8px 10px;font-size:9px}
+ #info.checkpoint7-active>p:last-child{display:none}
+ #info.checkpoint7-active.checkpoint7-details-open{max-height:calc(100dvh - 350px)!important}
+}
 #site31Views,#site254Views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 #site2Views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}#site2Views button{padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#site2Views button:hover{background:#3b5969}#site2Views button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}#site2LoadStatus{font-size:11px;line-height:1.5;color:#bed0ce;margin:10px 0}
 </style><link rel="stylesheet" href="./src/soyuz-dual-launch.css?v=20261103-launch-v1"><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261031-museum-menu-v1"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261101-proton-launch-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/camera-altitude.css?v=20261101-altitude-v1"><link rel="stylesheet" href="./src/museum-ui-polish.css?v=20261103-logo-compact-v6"><link rel="stylesheet" href="./src/museum-onboarding.css?v=20261103-tour-v3"></head><body data-preload-museum="true"><div id="view"></div>
@@ -648,7 +662,7 @@ ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MUSEUM_METRE;ctl.maxDistance=3300
 const steppeSurfaceReady=loadSatelliteReference().then(satellite=>createSteppeSurface({renderer,satellite}));
 let overviewAltitudeLimit=1650,overviewTopDown=false;
 function applyOverviewFrame(topDown=false){
- document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open');
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open');
  const ui=document.getElementById('ui').getBoundingClientRect(),hero=document.getElementById('hero');
  const rightBounds=getComputedStyle(hero).display==='none'?null:hero.getBoundingClientRect();
  const fit=fitOverviewCamera({width:innerWidth,height:innerHeight,outline:FLANK_OUTLINE,uiRect:ui,heroRect:rightBounds,dockTop:museumDockTop(),topDown});
@@ -1396,7 +1410,7 @@ const flanks=[
 // Restore the readable flank cards while retaining the colored terrain zones.
 const flankCards=createFlankTerritories({flanks,point,camera,container:labelLayer});
 function showFlanks(){
- document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open');
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open');
  puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});setMobileMenu(false);
  arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();fly=false;
  labelsVisible=true;document.getElementById('info').style.display='none';
@@ -1580,6 +1594,7 @@ saturnGroup.traverse(o=>{
 // Coordinates are provisional — the numbered facility itself is documented.
 // PORTAL_ARCHIVE_INTEGRATION: owner folder only; unlocated studies stay off the map.
 const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids,checkpoint7Placement:checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography,roadPaths:transport.roadPaths()})});
+objects.find(o=>o.record.id==='kpp-7').g.traverse(mesh=>{if(mesh.isMesh&&mesh.material?.name==='museum / soil'){steppeSurface.apply(mesh.material);registerGroundSurface(mesh);}});
 for(const o of objects.filter(o=>o.g.userData.airport)){
  o.g.rotation.y=o.record.runtimeYaw;o.g.userData.airport.heading=o.record.runtimeYaw;
  o.g.userData.airport.osmRunwayId=o.record.runwaySource?.osmId;o.g.updateWorldMatrix(true,true);
@@ -1897,6 +1912,7 @@ function focus(i){
  let site250aViews=document.getElementById('site250aViews');if(!site250aViews){site250aViews=document.createElement('div');site250aViews.id='site250aViews';site250aViews.className='detail-views';document.getElementById('description').after(site250aViews);}
  site250aViews.replaceChildren();site250aViews.hidden=r.id!=='pad-250a';site250aViews.style.display=site250aViews.hidden?'none':'flex';
  if(r.id==='pad-250a')for(const [label,view]of [['Вся площадка','all'],['Бункер · 60','bunker'],['Вход в командный пункт','entrance'],['Криогенное хозяйство','cryo'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.onclick=()=>portalArchive.inspectSite250a(view,camera,ctl);site250aViews.append(b);}
+ document.getElementById('info').classList.toggle('checkpoint7-active',r.id==='kpp-7');document.getElementById('info').classList.remove('checkpoint7-details-open');
  let checkpoint7Views=document.getElementById('checkpoint7Views');if(!checkpoint7Views){checkpoint7Views=document.createElement('div');checkpoint7Views.id='checkpoint7Views';checkpoint7Views.className='detail-views';document.getElementById('description').after(checkpoint7Views);}
  checkpoint7Views.replaceChildren();checkpoint7Views.hidden=r.id!=='kpp-7';checkpoint7Views.style.display=checkpoint7Views.hidden?'none':'flex';
  if(r.id==='kpp-7')for(const [label,view]of [['КПП целиком','all'],['Фасад','front'],['Проезды','lanes'],['На дороге','road']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.onclick=()=>portalArchive.inspectCheckpoint7(view,camera,ctl);checkpoint7Views.append(b);}
@@ -1967,7 +1983,7 @@ function showResearch(item){
  arrivalFlight?.stopFollowing();
  groundTraffic?.stopFollowing();
  setGagarinDetailView(false);
- document.getElementById('info').classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open');
+ document.getElementById('info').classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open');
  currentResearch=item;activeKnowledge=null;syncRocketLoadStatus();
  syncUkssControls();syncTuaControls();syncTerminalControls();
  document.getElementById('mik112Controls').hidden=true;
@@ -2015,6 +2031,7 @@ document.getElementById("detailMore").onclick=()=>{
  const o=cardObjects[currentObject],r=o.record;
  const isHidden=el.style.display!=="block";el.replaceChildren();
  if(r.id==='pad-250a')document.getElementById('info').classList.toggle('site250a-details-open',isHidden);
+ if(r.id==='kpp-7')document.getElementById('info').classList.toggle('checkpoint7-details-open',isHidden);
  if(r.id==='pad-31')document.getElementById('info').classList.toggle('site31-details-open',isHidden);
  if(r.id==='pad-250')document.getElementById('info').classList.toggle('ukss-details-open',isHidden);
  if(r.id==='pad-112')document.getElementById('info').classList.toggle('tua-details-open',isHidden);
@@ -2248,8 +2265,12 @@ async function requestSoyuzLaunch(siteId){
  const button=document.getElementById('soyuzLaunchStart');
  if(button&&!button.hidden){button.disabled=true;button.textContent='ЗАГРУЗКА «СОЮЗА»…';}
  try{
-  if(entry.status==='error')await rocketExhibits.setModel(key,'soyuz');
-  else if(entry.status!=='ready')await entry.pending;
+  // Wait for both actual sourced launch-table geometries before masking them.
+  const rocketReady=entry.status==='error'?rocketExhibits.setModel(key,'soyuz'):entry.pending;
+  const structureReady=siteId==='pad-1'
+    ?gagarinExhibit.table?.load?.()
+    :portalArchive.loadSite31?.();
+  await Promise.all([rocketReady,structureReady]);
   if(generation!==soyuzRequestGeneration)return false;
   entry=rocketExhibits.get(key);
   if(entry?.status!=='ready')return false;
@@ -2321,7 +2342,7 @@ function showArchiveStory(id){
 }
 function openMuseumAction(action){
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
- document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open');
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open');
  ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
  setMobileMenu(false);setGagarinDetailView(false);
