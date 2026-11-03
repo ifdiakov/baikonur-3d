@@ -35,6 +35,10 @@ try{
  assert(initial.maskedMeshNames.includes('OSM · единые обочины'));
  assert(initial.maskedMeshNames.includes('OSM · единое дорожное полотно'));
  assert(initial.maskedMeshNames.includes('OSM · разметка'));
+ assert.equal(initial.physicalCuts.version,'physical-road-cuts-v1');
+ assert(initial.physicalCuts.meshes>=7,'Physical cutouts must cover the original asphalt, shoulder and paint batches');
+ assert(initial.physicalCuts.clipped>0,'The old source road triangles were not physically deleted');
+ assert(initial.physicalCuts.sourceCuts>=250,'Most owner cuts were not loaded as physical removal corridors');
  const erasedRoadAudit=await page.evaluate(()=>{
   const editor=window.__BAIKONUR_QA.roadEditor,cuts=editor.snapshot().hidden;
   let checked=0,covered=0,shoulderChecked=0,shoulderCovered=0;
