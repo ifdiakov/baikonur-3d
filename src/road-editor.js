@@ -81,7 +81,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   +'<div class="road-editor-actions"><button type="button" data-action="finish">Завершить дорогу</button><button type="button" data-action="cancel">Сбросить точки</button>'
   +'<button type="button" data-action="undo">↶ Отменить</button><button type="button" data-action="redo">↷ Повторить</button>'
   +'<button type="button" data-action="export">Экспорт JSON</button><button type="button" data-action="import">Импорт JSON</button>'
-  +'<button type="button" data-action="clear">Очистить правки</button></div>'
+  +'<button type="button" data-action="baseline">Восстановить эталонную схему</button><button type="button" data-action="clear">Очистить правки</button></div>'
   +'<input id="roadEditorImport" type="file" accept=".json,application/json" hidden>'
   +'<p class="road-editor-hint">Изменения сохраняются только в этом браузере. Экспортируйте JSON, чтобы перенести дороги в общий макет. Исходник OpenStreetMap не изменяется.</p>'
   +'<p id="roadEditorStatus" role="status" aria-live="polite"></p>';
@@ -296,6 +296,12 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    case 'undo':undo();break;
    case 'redo':redo();break;
    case 'clear':clear();break;
+   case 'baseline':{
+    if(!baselineData){status.textContent='Эталонная схема ещё не загружена.';break;}
+    checkpoint();Object.assign(state,validateRoadEdits(baselineData));draft=[];
+    nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
+    render();status.textContent='Эталонная дорожная схема восстановлена.';break;
+   }
    case 'export':{
     const url=URL.createObjectURL(new Blob([JSON.stringify({...clone(),coordinateSystem:'baikonur-museum-world'},null,2)],{type:'application/json'}));
     const a=document.createElement('a');a.href=url;a.download='rockettrip-roads.json';a.click();
@@ -322,12 +328,19 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(e.shiftKey)redo();else undo();}
  });
  try{
+  baselineData=defaultEdits?validateRoadEdits(defaultEdits):null;
   const saved=localStorage.getItem(ROAD_EDITOR_STORAGE);
-  if(saved){Object.assign(state,validateRoadEdits(JSON.parse(saved)));nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));}
+  if(saved){Object.assign(state,validateRoadEdits(JSON.parse(saved)));}
+  else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}
+  nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
  }catch{status.textContent='Сохранённая схема повреждена. Импортируйте её из JSON или очистите правки.';}
  button?.addEventListener('click',()=>setActive(!active));
  setMode('draw');
  return {get active(){return active;},setActive,undo,redo,finish,
-  snapshot:clone,stats:()=>({version:ROAD_EDITOR_VERSION,active,mode,added:state.added.length,hidden:state.hidden.length,
-   draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,maskApplied:maskEnabled.value===1,selectedRoads:routes.length})};
+  snapshot:clone,roadLightRemoved,stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,active,mode,
+   added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,
+   draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
+   joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
+   mesh:geometryStats,maskApplied:tiles.some(t=>t.enabled.value===1),
+   maskTiles:tiles.map(t=>({strokes:t.strokes,worldUnitsPerPixel:t.worldUnitsPerPixel,enabled:t.enabled.value===1}))})};
 }
