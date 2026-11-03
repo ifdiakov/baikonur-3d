@@ -9,7 +9,7 @@ on:
       - '.github/workflows/verify-city-territory.yml'
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   geometry:
     runs-on: ubuntu-24.04
@@ -45,5 +45,19 @@ jobs:
           assert.equal(districts.state().city.fillOpacity,.21);
           console.log('CITY_MESH_PASS');
           JS
-      - name: Validate actual city and three-flank geometry, fills and DEM draping
-        run: node tests/flanks-geometry.mjs
+      - name: Validate full flank geometry and preserve diagnostic on failure
+        run: |
+          set +e
+          node tests/flanks-geometry.mjs > /tmp/flank-geometry.log 2>&1
+          result=$?
+          cat /tmp/flank-geometry.log
+          if [ "$result" -ne 0 ]; then
+            git config user.name "RocketTrip QA"
+            git config user.email "actions@users.noreply.github.com"
+            git checkout -B city-territory-qa-diagnostics
+            cp /tmp/flank-geometry.log city-territory-qa.log
+            git add -f city-territory-qa.log
+            git commit -m "Capture city QA diagnostic for repair"
+            git push -f origin HEAD:refs/heads/city-territory-qa-diagnostics
+          fi
+          exit "$result"
