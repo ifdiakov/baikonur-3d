@@ -38,6 +38,6 @@ assert(road&&rail,'Both approaches must exist in the complete transport network'
 assert.equal(rail.sourceWayId,'172571298');near(rail.portGauge,1.52*.14);near(rail.networkGauge,rail.portGauge);
 assert.deepEqual(rail.headCenter,portWorld(access,SITE254_RAIL.end,site,point).toArray());
 const origin=point(site.x,site.y,access.elevation);
-for(const p of rail.points){const local=V(...p).sub(origin).applyAxisAngle(V(0,1,0),-access.yaw).divideScalar(access.scale);assert(local.x>60.5,'The exterior rail approach must not cut through the high bay');}
+for(const p of rail.points){const local=V(...p).sub(origin).applyAxisAngle(V(0,1,0),-access.yaw).divideScalar(access.scale);assert(local.x < -135 || local.x > 75 || local.z < -69 || local.z > 205,'The exterior rail approach must skirt the hall and annexes');}
 assert.equal(JSON.stringify(catalog),source,'The catalogue and geographic anchor remain unchanged');
 console.log('SITE254_GEOMETRY_PASS',JSON.stringify({drawCalls:built.meshCount,triangles,primitives:built.primitiveCount,roadGap:road.roadGap,railGap:rail.headCenterGap,railGauge:rail.physicalGaugeMetres}));

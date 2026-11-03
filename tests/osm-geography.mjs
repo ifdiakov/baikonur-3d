@@ -65,8 +65,8 @@ for(const match of matches.matches.filter(m=>m.status.startsWith('exact-'))){
     assert.equal(site.positionConfidence,'owner-adjusted-display');
   }else if(site.id==='pad-254'){
     const [dx,dy]=site.geoSource.displayOffset;
-    assert(Math.abs(Math.hypot(dx,dy)-3)<1e-9);
-    assert(dx>0&&dy>0&&Math.abs(dx-dy)<1e-9,'Site 254 moves southeast');
+    assert(Math.abs(dx-(3/Math.SQRT2+10))<1e-9,'Site 254 moves another 10 units east');
+    assert(Math.abs(dy-(3/Math.SQRT2+5))<1e-9,'Site 254 moves another 5 units south');
     assert(Math.hypot(site.x-expected[0]-dx,site.y-expected[1]-dy)<1e-9);
     assert.equal(site.geoSource.displayOffsetBasis,'owner-request-20261103');
     assert.equal(site.positionConfidence,'owner-adjusted-display');
