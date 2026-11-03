@@ -9,7 +9,7 @@ on:
       - '.github/workflows/verify-city-territory.yml'
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 jobs:
   geometry:
     runs-on: ubuntu-24.04
@@ -47,6 +47,3 @@ jobs:
           JS
       - name: Validate city and existing flank relief geometry
         run: node tests/flanks-geometry.mjs
-      - name: Clean temporary diagnostic ref
-        if: success()
-        run: git push origin --delete city-hill-qa-diagnostics || true
