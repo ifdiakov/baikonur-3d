@@ -1,6 +1,6 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 
-export const MUSEUM_MENU_VERSION='museum-grouped-silos-v6';
+export const MUSEUM_MENU_VERSION='museum-traditions-v7';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -52,6 +52,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
  ]},
  {id:'infrastructureAccordion',title:'ИНФРАСТРУКТУРА',catalogue:true},
  {id:'mythsAccordion',title:'МИФЫ И ЛЕГЕНДЫ',items:[],empty:'Материалы раздела пока не добавлены.'},
+ {id:'traditionsAccordion',title:'ТРАДИЦИИ И СУЕВЕРИЯ',items:[],empty:'Истории о традициях и суевериях космодрома готовятся к публикации.'},
  {id:'graveyardAccordion',title:'КОСМИЧЕСКОЕ КЛАДБИЩЕ',items:[
   {action:'r16-memorial',title:'Катастрофа Р-16',description:'Площадка №41'},
   {action:'mik-ruins',title:'Разрушенные пролёты МИК',description:'Площадка №112'}
