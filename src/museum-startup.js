@@ -151,6 +151,9 @@
         }
       });
       document.body.classList.add('museum-ready');
+      // Let the walkthrough continue over the real interactive scene while
+      // optional 3D models are fetched in the existing background queue.
+      if (window.__MUSEUM_ONBOARDING) window.__MUSEUM_ONBOARDING.ready();
       mark('interactive');
       // Resolve the presentation first. Optional parsing must not occupy the
       // same browser turn as the first visible, interactive overview.
@@ -187,6 +190,7 @@
     if (error && error.name === 'TimeoutError') message += ' Сервер не ответил вовремя.';
     setMessage(message);
     showRetry();
+    if (window.__MUSEUM_ONBOARDING) window.__MUSEUM_ONBOARDING.fail();
     preloader('fail');
   }
 
