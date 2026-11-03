@@ -1,3 +1,4 @@
+import {SITE250A_YAW,SITE250A_REFERENCE,SITE250A_VERSION} from './site250a-layout.js?v=20261103-site250a-photo-v1';
 import {SITE254_YAW,SITE254_REFERENCE,SITE254_VERSION} from './site254-layout.js?v=20261103-site254-e10s5';
 import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import {CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
@@ -9,6 +10,7 @@ import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-fa
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';
 export const ARCHIVE_MAP=[
+ {id:'pad-250a',kind:'site250a',title:'Криогенный центр и командный пункт · пл.250А',scale:MUSEUM_METRE,yaw:SITE250A_YAW,folder:SITE250A_REFERENCE.folder,satellite:SITE250A_REFERENCE.satellite,orientation:SITE250A_REFERENCE.registration,modelVersion:SITE250A_VERSION},
  {id:'pad-254',kind:'site254',title:'МИК РКК «Энергия» · пл.254',scale:MUSEUM_METRE,yaw:SITE254_YAW,folder:SITE254_REFERENCE.folder,orientation:SITE254_REFERENCE.registration,modelVersion:SITE254_VERSION},
  {id:'pad-90',kind:'cyclone',title:'Два старта «Циклона-2» · пл.90',scale:MUSEUM_METRE,yaw:CYCLONE_YAW,orientation:'rail-terminal-inferred-on-osm-compound',modelVersion:'cyclone-v1'},
  {id:'pad-75',kind:'seven-winds',title:'Гостиница «7 ветров»',scale:SEVEN_WINDS_LAYOUT.scale,yaw:SEVEN_WINDS_LAYOUT.yaw,modelOffset:SEVEN_WINDS_LAYOUT.modelOffset,folder:'1P7P9qFCcGwdm4-FG0s_WsdAcrHIfByRf',orientation:'owner-rotation-180-in-place',modelVersion:SEVEN_WINDS_VERSION},

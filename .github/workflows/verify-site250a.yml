@@ -1,0 +1,58 @@
+name: Site 250A reference model
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/site250a*'
+      - 'src/archive-models.js'
+      - 'src/archive-manifest.js'
+      - 'src/facility-ports.js'
+      - 'tests/site250a*'
+      - '.github/workflows/verify-site250a.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/site250a*'
+      - 'tests/site250a*'
+      - '.github/workflows/verify-site250a.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: site250a-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    env:
+      BAIKONUR_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:8765/' || 'https://ifdiakov.github.io/baikonur-3d/' }}
+      QA_PREFIX: ${{ github.event_name == 'pull_request' && 'local' || 'public' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Geometry and road connection
+        run: |
+          node tests/site250a-geometry.mjs
+          node tests/road-editor-startup.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Wait for publication
+        if: github.event_name != 'pull_request'
+        run: node scripts/verify-site250a-published.mjs
+      - name: Museum day, night, details and mobile
+        timeout-minutes: 7
+        run: node tests/site250a-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site250a-evidence
+          path: |
+            qa-site250a/*.png
+            qa-site250a/*.json

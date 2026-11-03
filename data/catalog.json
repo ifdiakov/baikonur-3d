@@ -272,7 +272,9 @@
         "folder": "1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO",
         "orientation": "owner-placement-between-north-station-and-pad1"
       },
-      "publicReferences": ["https://www.360pano.eu/space/baikonur/site2/"],
+      "publicReferences": [
+        "https://www.360pano.eu/space/baikonur/site2/"
+      ],
       "contentSource": "owner-correction-2026-11-02"
     },
     {
@@ -626,14 +628,16 @@
       "status": "label-read",
       "positionBasis": "Коррекция RocketTrip 02.11.2026: бывший северо-центральный сектор",
       "sources": [
-        "original-plan-3993x3208"
+        "original-plan-3993x3208",
+        "owner-site250a-satellite-and-photo-plan-20261103"
       ],
-      "note": "Идентифицировано владельцем макета как площадка №250А — криогенный центр. Положение модели сохраняет существующий сектор макета.",
+      "note": "Криогенный центр ЦЭНКИ. В состав площадки входит сооружение 60 — командный пункт пуска РН «Энергия». План комплекса, обвалованный бункер, входной корпус, надземная галерея и хозяйственные здания восстановлены по спутниковому снимку, фотографиям и схеме площадки из папки владельца от 3 ноября 2026 года. Размеры модели приблизительные.",
       "purpose": "Криогенный центр",
-      "purposeLong": "Площадка №250А · криогенный центр",
+      "purposeLong": "Криогенный центр и командный пункт пуска РН «Энергия» (сооружение 60)",
       "purposeShort": "Криогенный центр",
       "publicReferences": [
-        "https://github.com/ifdiakov/baikonur-3d/blob/bacdceeb26fa7b6806440cd08dc16e0f9cda9c3b/data/catalog.json"
+        "https://travel.russian.space/cosmodromes/kosmodrom-bajkonur/infrastruktura_ba/",
+        "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38"
       ],
       "contentSource": "reviewed-sites-workbook-20261028",
       "number": "250А",
@@ -643,7 +647,13 @@
         "org": "ЦЭНКИ",
         "role": ""
       },
-      "attributionSource": "owner-correction-2026-11-02"
+      "attributionSource": "owner-correction-2026-11-02",
+      "sourceFolder": {
+        "driveId": "1VR-1c2uUQAI2rdH_Sn8g7gyq_GKeeVHr",
+        "url": "https://drive.google.com/drive/folders/1VR-1c2uUQAI2rdH_Sn8g7gyq_GKeeVHr"
+      },
+      "modelVersion": "20261103-site250a-photo-v1",
+      "photoSetDate": "2026-11-03"
     },
     {
       "id": "pad-32",
@@ -2183,7 +2193,9 @@
         "role": "",
         "attributionSource": "owner-correction-museum4-2026-10-28"
       },
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "aliasOf": "pad-250a",
+      "render": false
     },
     {
       "id": "pad-192",
