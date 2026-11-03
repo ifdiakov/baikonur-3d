@@ -21,5 +21,29 @@ jobs:
           node-version: '22'
       - name: Install geometry dependency
         run: npm install --no-save three@0.160.1
+      - name: Check city polygon source and OSM projection
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import {CITY_TERRITORY_OUTLINE,CITY_TERRITORY_COLOR} from './src/city-territory.js';
+          assert.equal(CITY_TERRITORY_OUTLINE.length,67);
+          assert(CITY_TERRITORY_OUTLINE.every(p=>p.every(Number.isFinite)));
+          assert.equal(CITY_TERRITORY_COLOR,0x9e78df);
+          console.log('CITY_POLYGON_PASS');
+          JS
+      - name: Check city mesh and district builder
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import * as THREE from 'three';
+          import {buildFlankDistricts} from './src/flank-districts.js';
+          const scene=new THREE.Scene(),point=(x,y,h=0)=>new THREE.Vector3((x-650)*3.4,h,(y-522.5)*3.4);
+          const districts=buildFlankDistricts(scene,point,1300,1045);
+          districts.setOpacity(1);
+          const city=scene.getObjectByName('Город Байконур · территория');
+          assert(city);assert.equal(city.children.filter(m=>m.userData.museumComponent==='city-territory-boundary').length,3);
+          assert.equal(districts.state().city.fillOpacity,.21);
+          console.log('CITY_MESH_PASS');
+          JS
       - name: Validate actual city and three-flank geometry, fills and DEM draping
         run: node tests/flanks-geometry.mjs
