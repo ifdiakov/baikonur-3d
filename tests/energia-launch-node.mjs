@@ -72,9 +72,18 @@ assert.deepEqual(sampleEnergiaPadDissipation(800),{fire:0,smoke:0});
 assert.deepEqual(sampleEnergiaPadDissipation(4000),{fire:0,smoke:0});
 
 const early=sampleEnergiaSteamSpread(-90),near=sampleEnergiaSteamSpread(-1);
-assert.ok(near.radius>early.radius*3,'Prelaunch steam expands across the apron before ignition');
-assert.ok(near.drift>early.drift*4,'Prelaunch steam gains chaotic lateral motion');
-assert.ok(near.transparency<early.transparency,'A larger cloud must also become more transparent');
+const firstVents=sampleEnergiaSteamSpread(-65),laterVents=sampleEnergiaSteamSpread(-25);
+assert.equal(early.presence,0,'T-90 must begin without steam around the rocket');
+assert.ok(firstVents.presence>0&&firstVents.presence<laterVents.presence,
+ 'Steam must appear gradually rather than popping in at scene start');
+assert.ok(laterVents.presence<near.presence,'Vapor still builds approaching T=0');
+assert.ok(near.radius>early.radius*3,'Steam spreads laterally across the apron');
+assert.ok(near.radius<65,'The cloud must remain smaller than the old 148-unit halo');
+assert.ok(near.drift>early.drift*4,'Ground-level flow gradually becomes more irregular');
+assert.ok(near.rise<=23&&near.groundBias>2,
+ 'Most of the steam must hug the ground rather than surrounding the rocket');
+assert.ok(near.transparency<early.transparency&&near.transparency<=.36,
+ 'Final vent cloud must be more transparent than the old version');
 assert.ok(sampleEnergiaPlumeBottomFade(.25,280,8)>sampleEnergiaPlumeBottomFade(.96,280,8),
  'The oldest, low end of a smoke plume must dissolve irregularly');
 assert.equal(sampleEnergiaPlumeBottomFade(.7,-80,4),0,'The plume cannot leave a hard smoke plane underground');
