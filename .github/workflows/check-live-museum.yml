@@ -1,0 +1,27 @@
+name: Verify public museum connectivity
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/check-live-museum.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - name: Check exact live HTTP resources
+        env:
+          SITE_URL: https://ifdiakov.github.io/baikonur-3d/
+        run: |
+          set -euo pipefail
+          for path in "" src/museum-startup.js src/museum-preloader.js src/map-camera-smoothing.js assets/preloader/soyuz-v1.webp assets/preloader/_source-04.webp; do
+            echo "PROBE $path"
+            curl -L --max-time 20 --retry 1 -sS -o /tmp/museum-response \
+              -w 'HTTP %{http_code}, BYTES %{size_download}, TIME %{time_total}, MIME %{content_type}\n' \
+              "${SITE_URL}${path}?diagnostic=20261103"
+            if [ "$path" = "" ]; then
+              grep -q 'id="museumLoading"' /tmp/museum-response && echo 'DOCUMENT_SHELL_PRESENT'
+            fi
+          done
