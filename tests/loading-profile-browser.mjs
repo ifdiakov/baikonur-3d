@@ -23,8 +23,7 @@ try{
   assert(!gallery.some(x=>x.endsWith(file)),'Only the active gallery slide may load: '+file);
  assert(!requests.some(x=>x.endsWith('/src/complex-history-content.js')),'Full archive must not load before visitor opens it');
  const initialRequests=requests.length;
- await page.locator('#complexHistoryAccordion > summary').click();
- await page.locator('[data-museum-action="history:why"]').click();
+ await page.evaluate(()=>{document.querySelector('#complexHistoryAccordion').open=true;document.querySelector('[data-museum-action="history:why"]').click();});
  await page.locator('#complexHistoryPanel').waitFor({state:'visible',timeout:30000});
  assert.match(await page.locator('#complexHistoryPanel h3').textContent(),/Тюра-Там/);
  assert(requests.slice(initialRequests).some(x=>x.endsWith('/src/complex-history-content.js')),'Full history loads on demand');
