@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-v1';
+import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
 import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v7';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-qa-v3';
 
@@ -340,26 +340,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    // whose browser still holds edits from the preceding release.
    // Preserve their local roads/cuts; merge only missing baseline records.
    if(baselineData?.revision&&snapshot.baselineRevision!==baselineData.revision){
-    const ids=new Set(state.added.map(r=>r.id));
-    for(const r of baselineData.added)if(!ids.has(r.id)&&state.added.length<ROAD_EDITOR_LIMITS.roads){
-     state.added.push({...r,points:r.points.map(p=>[...p])});ids.add(r.id);
-    }
-    const ends=h=>{
-     const p=h.points,a=p[0],b=p.at(-1),quant=v=>v.map(x=>Math.round(x*100)/100).join(',');
-     const e=[quant(a),quant(b)].sort().join('~');
-     let len=0;for(let i=1;i<p.length;i++)len+=Math.hypot(p[i][0]-p[i-1][0],p[i][2]-p[i-1][2]);
-     return h.sourceId+'|'+h.width+'|'+e+'|'+Math.round(len*10)/10;
-    };
-    const counts=new Map();
-    for(const h of state.hidden)counts.set(ends(h),(counts.get(ends(h))||0)+1);
-    const addedCounts=new Map();
-    for(const h of baselineData.hidden){
-     const key=ends(h),required=(addedCounts.get(key)||0)+1;
-     addedCounts.set(key,required);
-     if((counts.get(key)||0)>=required||state.hidden.length>=ROAD_EDITOR_LIMITS.hidden)continue;
-     state.hidden.push({...h,points:h.points.map(p=>[...p])});
-     counts.set(key,(counts.get(key)||0)+1);
-    }
+    Object.assign(state,reconcileRoadEdits(local,baselineData));
    }
   }else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}
   nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
