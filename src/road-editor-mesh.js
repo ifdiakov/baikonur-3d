@@ -97,8 +97,8 @@ function polygonGeometry(polygons){
  for(const polygon of polygons)for(let i=1;i<polygon.length-1;i++){
   const tri=[polygon[0],polygon[i],polygon[i+1]];
   if(Math.abs(signArea(...tri))<1e-7)continue;
-  if(signArea(...tri)<0)tri.reverse();
-  // X/Z counterclockwise produces an upward facing normal in Three's X/Y/Z.
+  if(signArea(...tri)>0)tri.reverse();
+  // X/Z clockwise gives +Y normals in Three's right-handed X/Y/Z frame.
   for(const v of tri)positions.push(v.x,v.y,v.z);
  }
  const geometry=new THREE.BufferGeometry();
