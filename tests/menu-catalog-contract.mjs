@@ -10,18 +10,19 @@ const [html,catalogue,field,history,railPoints]=await Promise.all([
   readFile(new URL('../index.html',import.meta.url),'utf8'),
   ...['catalog.json','field-research.json','history.json','osm/rail-points.geojson'].map(file=>readFile(new URL('../data/'+file,import.meta.url),'utf8').then(JSON.parse))
 ]);
-const ids=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','graveyardAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+const ids=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.id),ids);
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.title),titles);
 const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html.indexOf('</aside>',asideStart));
-assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the five requested sections in order');
+assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the six requested sections in order');
 assert.deepEqual([...aside.matchAll(/<span class="sites-accordion-title">([^<]+)<\/span>/g)].map(match=>match[1]),titles);
 assert.match(aside,/<div class="museum-name">БАЙКОНУР<\/div>/);
-assert.match(aside,/<div class="museum-subtitle">ИНТЕРАКТИВНЫЙ МУЗЕЙ\s+<span class="museum-dimension">3D<\/span><\/div>/);
+assert.match(aside,/<span class="museum-subtitle-label">ИНТЕРАКТИВНЫЙ МУЗЕЙ<\/span><span class="museum-dimension">3D<\/span>/);
 assert.doesNotMatch(html,/id="toursAccordion"/,'The removed tours section must not remain hidden in the document');
 for(const id of ['museumRightStack','nextLaunchPanel'])assert.equal([...html.matchAll(new RegExp('id="'+id+'"','g'))].length,1,'One shared next-launch panel: '+id);
-assert.doesNotMatch(aside,/rockettrip-logo|RocketTrip|ЦИКЛОГРАММЫ|ПЛОЩАДКИ И ОБЪЕКТЫ/);
+assert.match(aside,/assets\/rockettrip-logo\.svg/,'RocketTrip brand stays in the menu header');
+assert.doesNotMatch(aside,/ЦИКЛОГРАММЫ|ПЛОЩАДКИ И ОБЪЕКТЫ/);
 const dock=html.slice(html.indexOf('<footer id="timeDock"'),html.indexOf('</footer>'));
 assert.match(dock,/id="year"[^>]+type="range"[^>]+min="1955"[^>]+max="2026"/);
 assert.match(dock,/id="yearVal"/);assert.doesNotMatch(dock,/timeline-event|СОБЫТИЯ|timelineYearHint/);
@@ -32,10 +33,11 @@ for(const record of sites){
   const before=JSON.stringify(record),section=museumCatalogueSection(record);
   assert.ok(Object.hasOwn(groups,section));groups[section].push(record.id);assert.equal(JSON.stringify(record),before,'Grouping does not rewrite the source catalogue');
 }
-assert.equal(groups.sitesAccordion.length,40);assert.equal(groups.infrastructureAccordion.length,59);
+assert.equal(groups.sitesAccordion.length,40);assert.equal(groups.infrastructureAccordion.length,58);
 assert.equal(new Set(Object.values(groups).flat()).size,sites.length,'Every existing displayed site belongs to exactly one catalogue section');
+assert.equal(catalogue.sites.find(s=>s.id==='pad-250а').aliasOf,'pad-250a','The old Cyrillic ID resolves to the single 250A compound');
 const expectedLaunch=['pad-1','pad-31','pad-45','pad-81','pad-200','pad-90','pad-250','pad-110','pad-41'];
-const expectedInfrastructure=['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-182','pad-110a','pad-250а','city','pad-130','pad-175'];
+const expectedInfrastructure=['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-182','pad-110a','pad-250a','city','pad-130','pad-175'];
 assert.deepEqual(MUSEUM_LAUNCH_ENTRIES.map(entry=>entry.id),expectedLaunch,'The nine named launch complexes retain the requested order');
 assert.equal(MUSEUM_SILO_GROUP.id,'siloInstallations');assert.equal(MUSEUM_SILO_GROUP.title,'Шахтные установки');
 assert.deepEqual(MUSEUM_SILO_GROUP.siteIds,SILO_SITE_IDS,'The grouped menu uses the same silo roster as the existing models');
@@ -51,12 +53,13 @@ for(const station of stations)assert.equal(museumCatalogueSection({id:'osm-stati
 assert.equal(field.objects.length,7);assert.equal(new Set(field.objects.map(record=>record.id)).size,7);
 assert.match(aside,/<details id="graveyardAccordion"[\s\S]*id="graveyardList"/);
 const equipment=MUSEUM_SECTIONS.find(section=>section.id==='equipmentAccordion'),actions=equipment.items.map(item=>item.action);
-assert.deepEqual([...actions].sort(),['cyclone-2','proton','n1','r16','mig25','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','aircraft','train','silo','flight-cycle','train-cycle','silo-cycle'].sort(),'All original exhibits and three animations remain available');
+assert.deepEqual([...actions].sort(),['cyclone-2','proton','n1','r16','mig25','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','aircraft','sprinter','train','silo','flight-cycle','train-cycle','silo-cycle'].sort(),'All original exhibits and three animations remain available');
 assert.equal(MODEL_CATALOG.r16.asset,'rockets/r16.glb');assert.equal(MODEL_CATALOG.r16.kind,'rocket');assert(ROCKET_MODELS.r16,'The site exhibit loader accepts the same R-16 as the viewer');
 assert.deepEqual(modelsForObject({id:'pad-41'}),['r16']);assert.deepEqual(modelsForKnowledge('r16'),['r16']);
 assert(MUSEUM_SECTIONS.find(section=>section.id==='graveyardAccordion').items.some(item=>item.action==='r16-memorial'),'The memorial entry remains separate from the rocket exhibit');
 assert.equal(actions[0],'zenit-3sl','The independently added source model is preserved as the first equipment item');
 assert.ok(html.includes("case 'zenit-3sl':openMenuSite('pad-45');portalArchive.inspectSite45('rocket',camera,ctl);break;"),'Zenit opens its site card and the universal model inspector');
+assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='traditionsAccordion').items.length,0);
 assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='toursAccordion'),undefined,'The menu data no longer publishes a tours section');
 
 // Run the actual extracted year setter, not a duplicate of its logic. Removing

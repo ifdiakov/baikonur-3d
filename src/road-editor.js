@@ -8,7 +8,7 @@ import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERS
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
 // replacing each source way with thousands of individual draw calls.
-export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange,onChange=()=>{},terrainHeightAt=null,defaultEdits=null}){
+export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange,onChange=()=>{},terrainHeightAt=null,defaultEdits=null,readOnly=false}){
  const base=roads.filter(r=>r?.points?.length>1).map(r=>({
   id:String(r.id),width:Math.max(1,Number(r.width)||2),
   points:r.points.map(p=>Array.isArray(p)?[...p]:[p.x,p.y,p.z]),
@@ -103,7 +103,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   +'<input id="roadEditorImport" type="file" accept=".json,application/json" hidden>'
   +'<p class="road-editor-hint">Изменения сохраняются только в этом браузере. Экспортируйте JSON, чтобы перенести дороги в общий макет. Исходник OpenStreetMap не изменяется.</p>'
   +'<p id="roadEditorStatus" role="status" aria-live="polite"></p>';
- document.body.append(panel);
+ if(!readOnly)document.body.append(panel);
  const status=panel.querySelector('#roadEditorStatus');
  const hint=panel.querySelector('#roadEditorHelp');
  const buttons={finish:panel.querySelector('[data-action="finish"]'),cancel:panel.querySelector('[data-action="cancel"]'),
@@ -273,6 +273,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   status.textContent='';render();
  }
  function setActive(value){
+  if(readOnly)return false;
   active=!!value;panel.hidden=!active;button?.setAttribute('aria-pressed',String(active));
   canvas.style.cursor=active?'crosshair':'';
   if(!active){draft=[];renderDraft();}
@@ -307,6 +308,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   }
   return [hit.x,hit.y+.045,hit.z];
  }
+ if(!readOnly){
  canvas.addEventListener('pointerdown',e=>{mouseDown={x:e.clientX,y:e.clientY,button:e.button};});
  canvas.addEventListener('click',e=>{
   if(!active)return;
@@ -372,6 +374,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   else if(e.key==='Backspace'&&draft.length){e.preventDefault();draft.pop();renderDraft();buttons.finish.disabled=draft.length<2;buttons.cancel.disabled=!draft.length;}
   else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(e.shiftKey)redo();else undo();}
  });
+ }
  try{
   baselineData=defaultEdits?{...validateRoadEdits(defaultEdits),revision:defaultEdits.revision||null}:null;
   const saved=localStorage.getItem(ROAD_EDITOR_STORAGE);
@@ -387,10 +390,10 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   }else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}
   nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
  }catch{status.textContent='Сохранённая схема повреждена. Импортируйте её из JSON или очистите правки.';}
- button?.addEventListener('click',()=>setActive(!active));
+ if(!readOnly)button?.addEventListener('click',()=>setActive(!active));
  setMode('draw');
  return {get active(){return active;},setActive,undo,redo,finish,
-  snapshot:clone,maskAt,roadLightRemoved,path:id=>{const r=joinedPaths.find(r=>r.id===id);return r?{id:r.id,width:r.width,points:r.points.map(p=>[...p])}:null;},stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,active,mode,
+  snapshot:clone,maskAt,roadLightRemoved,path:id=>{const r=joinedPaths.find(r=>r.id===id);return r?{id:r.id,width:r.width,points:r.points.map(p=>[...p])}:null;},stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,readOnly,active,mode,
    added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,styleVersion:ROAD_EDIT_STYLE_VERSION,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
    joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
