@@ -3,7 +3,7 @@ import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=
 import {CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
+import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261103-site31-duct-v2';
 import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-facilities-rails-lighting-v1';
 // Scope is ONLY the confirmed owner folder, never the whole Google Drive.
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
@@ -20,7 +20,7 @@ export const ARCHIVE_MAP=[
  {id:'pad-110',kind:'energia',title:'Два старта «Энергии» · пл.110',scale:MUSEUM_METRE,yaw:0,satellite:'1eYjF4gq89TBHBkKu_1r8VZt9xRU5EI8F',folder:'1G7BvhrGYZrnXHjuHsDiGsnVBxi7jrnn7',orientation:'image-traced',reviewImage:[1125,1000]},
  {id:'pad-251',kind:'yubileiny',title:'Аэродром Юбилейный',scale:.28,yaw:1.948,satellite:'19t1sFdi7uFk5tAe7gQ5AAYEUjvyTnHIE',folder:'15WuQR5kx9kWrsKp-DORaRxWapXQolNPl',orientation:'image-traced',axis:'WSW-ENE'},
  {id:'pad-2',kind:'buran',title:'Площадка №2 · музейный «Буран»',scale:MUSEUM_METRE,yaw:0,folder:'1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO',orientation:'owner-anchor-photo-plan-and-panorama',modelVersion:'20261102-site2-photo-v3'},
- {id:'pad-31',kind:'soyuz',title:'Стартовый комплекс «Союз» · пл.31/6',scale:MUSEUM_METRE,yaw:SITE31_YAW,folder:'17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII',orientation:'satellite-traced-local-plan',satelliteReference:SITE31_REFERENCE,photo:'1zSC1DyLBfQotgBUz5G8gKS1yrfcly4LO',modelVersion:'site31-drive-v1'},
+ {id:'pad-31',kind:'soyuz',title:'Стартовый комплекс «Союз» · пл.31/6',scale:MUSEUM_METRE,yaw:SITE31_YAW,folder:'17i2Dk4D9D5tjRDXTI1tmO15UzhlqTWII',orientation:'satellite-axis-adjusted-duct',satelliteReference:SITE31_REFERENCE,photo:'1zSC1DyLBfQotgBUz5G8gKS1yrfcly4LO',modelVersion:'site31-drive-duct-v2'},
  {id:'pad-45',kind:'zenit',title:'СК «Зенит» / «Байтерек» · пл.45',scale:MUSEUM_METRE,yaw:0,folder:'1UD2cFm-qIJjWK6CcjF7V7zGnjVpS5H3i',orientation:'not-verified-no-overhead',photo:'1H4sLmBqg1EbUZ0jWRNFC72T0FtQ0X7lp',modelVersion:'site45-photo-v2',photoSetDate:'2026-10-31'},
  {id:'pad-41',kind:'nedelin',title:'Площадка №41 · исторический старт Р-16',scale:MUSEUM_METRE,yaw:0,folder:SITE41_REFERENCE.folder,satellite:SITE41_REFERENCE.satellite,photo:'17h2xzjy84ZlM5vUu2FIYGV-iuH2UyhNI',orientation:'satellite-plan-and-owner-ground-photographs',modelVersion:SITE41_VERSION,photoSetDate:'2026-10-31'},
  {id:'pad-42',kind:'mik42',title:'Технический комплекс · пл.42',scale:.28,yaw:0,folder:'1nhy66WCjZaGYK8VsVlEQHRre4IjkzzDZ',orientation:'not-verified-no-overhead',photo:'1r6uD1fJtqkjFbk6eoR4rrJ981SVr8whK'},
