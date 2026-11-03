@@ -57,3 +57,31 @@ export function roadSection(road,centerAt,span=30){
  path.push(at(right));
  return {sourceId:String(road.id),width:road.width,points:path};
 }
+
+
+// Bring an older browser's road overlay forward to a new published owner
+// scheme without discarding manual edits or multiplying the same cut due to
+// a few millimetres of file-coordinate rounding.
+export function reconcileRoadEdits(localInput,baselineInput){
+ const local=validateRoadEdits(localInput),baseline=validateRoadEdits(baselineInput);
+ const ids=new Set(local.added.map(r=>r.id));
+ for(const r of baseline.added)if(!ids.has(r.id)&&local.added.length<ROAD_EDITOR_LIMITS.roads){
+  local.added.push({...r,points:r.points.map(p=>[...p])});ids.add(r.id);
+ }
+ const close=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])<.015;
+ const sameCut=(a,b)=>a.sourceId===b.sourceId&&Math.abs(a.width-b.width)<.01&&(
+  close(a.points[0],b.points[0])&&close(a.points.at(-1),b.points.at(-1))||
+  close(a.points[0],b.points.at(-1))&&close(a.points.at(-1),b.points[0])
+ );
+ const used=new Set();
+ for(const h of baseline.hidden){
+  let matchingIndex=-1;
+  for(let i=0;i<local.hidden.length;i++){
+   if(!used.has(i)&&sameCut(h,local.hidden[i])){matchingIndex=i;break;}
+  }
+  if(matchingIndex>=0){used.add(matchingIndex);continue;}
+  if(local.hidden.length>=ROAD_EDITOR_LIMITS.hidden)break;
+  local.hidden.push({...h,points:h.points.map(p=>[...p])});used.add(local.hidden.length-1);
+ }
+ return local;
+}
