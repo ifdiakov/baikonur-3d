@@ -125,6 +125,7 @@ jobs:
           node tests/sdi-gate-geometry.mjs
           node tests/site2-geometry.mjs
           node tests/energia-launch-node.mjs
+          node tests/soyuz-dual-launch-unit.mjs
           node tests/ukss-source-model.mjs
           node tests/tua-source-model.mjs
           node tests/mik112-metric-geometry.mjs
