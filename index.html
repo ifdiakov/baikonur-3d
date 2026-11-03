@@ -487,7 +487,7 @@ body.following-arrival #labelLayer{display:none!important}
   <div class="guide-item"><svg class="guide-art" viewBox="0 0 66 50" width="66" height="50" fill="none" aria-hidden="true"><rect class="guide-art__plate" x="1" y="1" width="64" height="48" rx="9"/><rect class="guide-art__key" x="26" y="6" width="17" height="17" rx="4"/><rect class="guide-art__key" x="7" y="26" width="17" height="17" rx="4"/><rect class="guide-art__key" x="26" y="26" width="17" height="17" rx="4"/><rect class="guide-art__key" x="45" y="26" width="14" height="17" rx="4"/><text class="guide-art__key-label" x="34.5" y="18">W</text><text class="guide-art__key-label" x="15.5" y="38">A</text><text class="guide-art__key-label" x="34.5" y="38">S</text><text class="guide-art__key-label" x="52" y="38">D</text></svg><span><b>WASD / СТРЕЛКИ</b><small>Полёт по карте · Shift ускоряет</small></span></div>
   <div class="guide-note">Нажмите на объект, чтобы открыть его карточку. Камера сохраняет ограничение по высоте.</div>
  </div>
-</details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div><p style="font-size:9px;color:#ff9992">Схематическая модель · проверяй статус атрибуции объекта</p></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261102-preloader-progress-v5"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
+</details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261102-preloader-progress-v5"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-launch-table-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
@@ -543,6 +543,7 @@ import {SITE41_R16_MOUNT} from './src/site41-profile.js?v=20261101-r16-exhibit-v
 import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=20261102-site2-photo-v3';
 import {createTuaRocketControls} from './src/rocket-controls.js?v=20261102-site2-photo-v3';
 import {createDeferredKnowledge} from './src/deferred-knowledge.js?v=20261102-progressive-v1';
+import {museumCardCopy} from './src/museum-card-copy.js?v=20261103-clean-site-copy-v1';
 import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261102-site2-photo-v3';
 import {createExhibitClearance} from './src/exhibit-clearance.js?v=20261031-rocket-exhibits-v1';
 import {createInterchangeControls,INTERCHANGE_VIEWS} from './src/interchange-controls.js?v=20261031-interchange-bridge-v1';
@@ -1220,25 +1221,11 @@ const stationObjects=transport.stationLabels().map((st,n)=>{
  return {name:st.name,record,g:st.anchor,geometryRoot:st.group,isStation:true};
 });
 const cardObjects=[...objects,...stationObjects];
-function positionDescription(record){
- const source=record.geoSource;
- if(source?.kind==='osm'){
-  if(source.status==='runway-centerline')return 'Расположение и направление аэродрома привязаны к оси ВПП OpenStreetMap.';
-  if(record.positionConfidence==='shared-territory-relative')return 'Объект размещён в пределах общей территории по OpenStreetMap; положение модели внутри комплекса приблизительное.';
-  return 'Расположение привязано к OpenStreetMap.';
- }
- if(source?.kind==='schematic-registration')return 'Положение приблизительное: перенесено с музейной схемы по соседним объектам с известными координатами.';
- if(source?.kind==='railway-scheme')return 'Название определено по железнодорожной схеме; маркер привязан к существующим путям OpenStreetMap приблизительно.';
- return 'Точное положение объекта уточняется.';
-}
 function museumNote(record){
- return (record.note||'')
-  .replace(/Положение точки сохранено[^.]*\./gu,'')
-  .replace(/Координаты\s*\([^)]*\)[^.]*\./gu,'')
-  .replace(/Геометрия и положение на музейной схеме приблизительны\./gu,'Геометрия модели приблизительная.')
-  .replace(/Привязка к исторической схеме ориентировочная, не геодезическая\./gu,'')
-  .replace(/МИК установлен на контуре площадки №112 исходной схемы, а не на площадке 2Б\./gu,'Монтажно-испытательный корпус площадки №112.')
-  .replace(/\s+/gu,' ').trim();
+ return museumCardCopy((record.note||'').replace(
+  /МИК установлен на контуре площадки №112 исходной схемы, а не на площадке 2Б\./gu,
+  'Монтажно-испытательный корпус площадки №112.'
+ ));
 }
 function cardIsVisible(o){
  for(let parent=o.g;parent;parent=parent.parent)if(!parent.visible)return false;
@@ -1423,7 +1410,7 @@ detailCards=cardObjects.map((o,i)=>{
  const names=document.createElement("div");const title=document.createElement("div");title.className="detail-title";title.textContent=displaySiteName(o);
  const orgName=document.createElement("div");orgName.className="detail-org";orgName.textContent=o.isStation?"Железнодорожная сеть":org;
  names.append(title,orgName);head.append(names);
- const purpose=document.createElement("p");purpose.textContent=r.purposeLong||r.purpose||"Назначение и профиль объекта уточняются по архивным материалам";
+ const purpose=document.createElement("p");purpose.textContent=museumCardCopy(r.purposeLong||r.purpose)||museumCardCopy(r.purposeShort)||"Объект космодрома";
  const more=document.createElement("button");more.type="button";more.className="more";more.textContent="ПОДРОБНЕЕ ↗";more.addEventListener("click",()=>{selectSiteCard(i);focus(i)});
  const mini=makeSiteMini(i,"detail-mini-number");
  el.append(makeSiteEye(i),mini,head,purpose,more);labelLayer.append(el);return {i,el,world:new THREE.Vector3()};
@@ -1932,13 +1919,16 @@ function focus(i){
  document.getElementById("mik112Controls").hidden=i!==mik112Index;
  document.getElementById("title").textContent=displaySiteName(o);
  setInfoOrganisation(o.isStation?null:r.organisation?.org,o.isStation?"Железнодорожная сеть":r.organisation?.role);
- document.getElementById("infoPurpose").textContent=r.purposeLong||r.purpose||"Назначение объекта уточняется";
+ document.getElementById("infoPurpose").textContent=museumCardCopy(r.purposeLong||r.purpose)||museumCardCopy(r.purposeShort)||"Объект космодрома";
  const rocketToggle=document.getElementById("rocketExhibitToggle");
  rocketToggle.hidden=!['pad-1','pad-31'].includes(r.id);
  const soyuz=rocketExhibits.get(r.id==='pad-31'?'site31':'gagarin');
  if(!rocketToggle.hidden)rocketToggle.textContent=soyuz?.holder.visible?"УБРАТЬ «СОЮЗ» · ЭКСПОНАТ":"ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ";
  const knowledge= museumKnowledge.getSite(r.id);
- document.getElementById("description").textContent=knowledge?knowledge.summary:(i===0?"Первый пилотируемый орбитальный полёт человека — 12 апреля 1961 года. ":"")+positionDescription(r)+' '+museumNote(r);
+ document.getElementById("description").textContent=(
+  knowledge?museumCardCopy(knowledge.summary):
+  museumCardCopy([(i===0?"Первый пилотируемый орбитальный полёт человека — 12 апреля 1961 года.":""),museumNote(r)].filter(Boolean).join(" "))
+ )||museumCardCopy(r.purposeShort||r.purpose)||"Объект космодрома";
  document.getElementById("infoExtra").style.display="none";
  document.getElementById("detailMore").textContent="ПОДРОБНЕЕ ↗";
  document.getElementById("info").style.display="block";
@@ -1962,8 +1952,8 @@ function showResearch(item){
  document.getElementById("infoPurpose").textContent=item.description;
  const coords=item.latitude!=null&&item.longitude!=null
    ?'Координаты: '+item.latitude.toFixed(6)+', '+item.longitude.toFixed(6)+'. '
-   :'Точные координаты пока не извлечены из ссылки на карту. ';
- document.getElementById("description").textContent=coords+'Расположение на трёхмерной схеме не установлено. Предположение: '+item.hypothesis+'.';
+   :'';
+ document.getElementById("description").textContent=coords+'Гипотеза: '+item.hypothesis.replace(/[.\\s]+$/u,'')+'.';
  document.getElementById("infoExtra").style.display="none";
  document.getElementById("detailMore").textContent="ПОДРОБНЕЕ ↗";
  document.getElementById("info").style.display="block";
@@ -1989,10 +1979,9 @@ document.getElementById("detailMore").onclick=()=>{
    for(const line of [
     "Номер исследовательской записи: "+record.id,
     "Описание: "+record.description,
-    "Версия назначения (не подтверждена): "+record.hypothesis,
-    record.latitude!=null&&record.longitude!=null?"GPS: "+record.latitude.toFixed(6)+", "+record.longitude.toFixed(6):"GPS пока неизвестен",
-    "Точка не размещена на 3D-схеме до проверки геопривязки"
-   ]){const p=document.createElement("div");p.textContent=line;el.append(p)}
+    "Гипотеза: "+record.hypothesis,
+    record.latitude!=null&&record.longitude!=null?"GPS: "+record.latitude.toFixed(6)+", "+record.longitude.toFixed(6):null
+   ].filter(Boolean)){const p=document.createElement("div");p.textContent=line;el.append(p)}
    const a=document.createElement("a");a.href=record.source;a.target="_blank";a.rel="noopener noreferrer";
    a.style.display="block";a.style.marginTop="10px";a.textContent="Исходная ссылка на карту ↗";el.append(a);
   }
@@ -2014,9 +2003,9 @@ document.getElementById("detailMore").onclick=()=>{
    const license=document.createElement('a');license.href='https://creativecommons.org/licenses/by/4.0/';license.textContent='CC BY 4.0';license.target='_blank';license.rel='noopener noreferrer';credit.append(license,' · адаптация для макета RocketTrip');el.append(credit);
   }
 
-  const metric=['pad-1','pad-31','pad-45','pad-81','pad-200','pad-110','pad-250','pad-112','pad-251'].includes(r.id);
-  const lines=["Номер и название: "+displaySiteName(o),"Источник позиции: "+(r.positionBasis||"не указан"),"Привязка: "+positionDescription(r),"Назначение: "+(r.purposeLong||r.purpose||"не установлено"),"Предприятие: "+(r.organisation?.org||"не подтверждено"),metric?"3D-модель: общий масштаб по физическим размерам; неподтверждённые детали реконструкции остаются приблизительными.":"3D-модель: музейная реконструкция; обмерные размеры не подтверждены."];
-  for(const text of lines){const p=document.createElement("div");p.textContent=text;el.appendChild(p)}
+  // Editorial copy belongs in the site card; this expanded area adds
+  // sourced background instead of repeating source-position or model warnings.
+  if(r.organisation?.org){const organisation=document.createElement("div");organisation.textContent="Организация: "+r.organisation.org;el.appendChild(organisation)}
   const refs=[...new Set([...(r.geoSource?.refs||[]).map(ref=>ref.url),...(r.publicReferences||[]),...(r.organisation?.source?[r.organisation.source]:[])].filter(Boolean))];
   if(refs.length){const heading=document.createElement("div");heading.style.marginTop="9px";heading.textContent="Публичные источники:";el.appendChild(heading);}
   for(let k=0;k<refs.length;k++){const link=document.createElement("a");link.href=refs[k];link.target="_blank";link.rel="noopener noreferrer";link.style.display="block";link.textContent=(k+1)+". "+(new URL(refs[k]).hostname)+" ↗";el.appendChild(link)}
@@ -2031,14 +2020,14 @@ document.getElementById("detailMore").onclick=()=>{
     const link=document.createElement('a');link.href='./workshop/saturn.html';link.target='_blank';link.rel='noopener';link.style.display='block';link.style.marginTop='10px';link.textContent='Рассмотреть «Сатурн-МС» в 3D ↗';el.append(link);
   }
   if(r.photoArchive?.length){
-    const heading=document.createElement("div");heading.textContent=r.id==='pad-23'?"Фотоархив RocketTrip · ИП-5 «Сатурн-МС»:":r.id==='pad-250'?"Фотоархив RocketTrip · УКСС, площадка №250:":r.id==='airfield'?"Фотоархив RocketTrip · аэровокзал Крайнего:":"Фотоархив RocketTrip · референсы архитектуры Р-7 (атрибуция площадки уточняется):";
+    const heading=document.createElement("div");heading.textContent=r.id==='pad-23'?"Фотоархив RocketTrip · ИП-5 «Сатурн-МС»:":r.id==='pad-250'?"Фотоархив RocketTrip · УКСС, площадка №250:":r.id==='airfield'?"Фотоархив RocketTrip · аэровокзал Крайнего:":"Фотоархив RocketTrip · стартовые сооружения:";
     heading.style.marginTop="10px";el.append(heading);
     for(const photo of r.photoArchive){
       const a=document.createElement("a");a.href="https://drive.google.com/file/d/"+photo.driveId+"/view";a.target="_blank";a.rel="noopener noreferrer";a.style.display="block";
       a.textContent=photo.fileName+" · "+photo.subject+" ↗";el.append(a);
     }
   }
-  if(!refs.length){const note=document.createElement("div");note.textContent="Идентификация пока основана на исходной исторической схеме.";el.appendChild(note)}
+  
  }
  el.style.display=isHidden?"block":"none";document.getElementById("detailMore").textContent=isHidden?"СВЕРНУТЬ":"ПОДРОБНЕЕ ↗";
  };
@@ -2062,7 +2051,7 @@ function renderList(){
   const b=document.createElement('button');b.className='entry';b.type='button';b.dataset.siteId=o.record.id;
   if(o.isStation){b.classList.add('entry-station');b.dataset.stationId=o.record.id;}
   const main=document.createElement('span');main.textContent=launchMenuLabels.get(o.record.id)||displaySiteName(o);
-  const sm=document.createElement('small');sm.textContent=o.record.purposeShort||(o.record.status==='label-read'?'Номер прочитан на схеме':'Рабочий сектор — требует идентификации');
+  const sm=document.createElement('small');sm.textContent=museumCardCopy(o.record.purposeShort)||'Объект космодрома';
   b.append(main,sm);b.onclick=()=>focus(i);
   if(isSilo){
    if(!siloGroup){
