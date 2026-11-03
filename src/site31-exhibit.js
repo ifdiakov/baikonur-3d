@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {buildSite31Pad,SITE31_PIT} from './site31-pad.js?v=20261103-site31-duct-v2';
 import {registerFacilityBeacon,registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 export const SITE31_ASSET_VERSION='site31-drive-v1';
-export const SITE31_VIEWS=Object.freeze({all:{target:[0,15,-10],eye:[-160,135,180]},structure:{target:[0,20,0],eye:[-48,37,62]},duct:{target:[-3,-6,-54],eye:[-150,125,-230]},connections:{target:[0,2,66],eye:[170,150,235]},top:{target:[0,0,-35],eye:[0,260,-34.99]}});
+export const SITE31_VIEWS=Object.freeze({all:{target:[0,15,-10],eye:[-160,135,180]},structure:{target:[0,20,0],eye:[-48,37,62]},duct:{target:[-3,-6,-54],eye:[-150,125,-230]},connections:{target:[0,2,66],eye:[170,150,235]},top:{target:[0,0,-60],eye:[0,360,-59.99]}});
 const controllers=new WeakMap();
 export const site31Controller=root=>controllers.get(root);
 const meshes=root=>{const out=[];root.traverse(o=>{if(o.isMesh)out.push(o);});return out;};
