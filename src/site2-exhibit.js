@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {loadRocketSource} from './rocket-exhibits.js?v=20261102-site2-photo-v3';
-import {SITE2_BURAN,SITE2_VERSION} from './site2-layout.js?v=20261102-site2-photo-v3';
+import {SITE2_BURAN,SITE2_VERSION} from './site2-layout.js?v=20261103-site2-main-road-v1';
 const controllers=new WeakMap();
 export const site2Controller=root=>controllers.get(root);
 
