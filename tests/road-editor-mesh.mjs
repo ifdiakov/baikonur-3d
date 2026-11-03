@@ -38,9 +38,11 @@ const surfaces={asphalt:new THREE.Mesh(ownerMesh.geometries.asphalt,new THREE.Me
  ground:new THREE.Mesh(ownerMesh.geometries.ground,new THREE.MeshBasicMaterial({side:THREE.DoubleSide}))};
 for(const r of owner.added){
  const way=ownerMesh.paths.find(p=>p.id===r.id),mesh=surfaces[r.surface];
- for(let i=0;i<way.points.length;i+=Math.max(1,Math.floor(way.points.length/15))){
-  const p=way.points[i],ray=new THREE.Raycaster(new THREE.Vector3(p[0],100,p[2]),new THREE.Vector3(0,-1,0),0,200);
-  assert(ray.intersectObject(mesh,false).length>0,'Owner '+r.id+' has a hole at point '+i);
+ for(let i=0;i<way.points.length-1;i+=Math.max(1,Math.floor(way.points.length/15))){
+  // Probe INSIDE each strip, not precisely on a Float32 triangle end edge.
+  const a=way.points[i],b=way.points[i+1],p=[(a[0]+b[0])/2,(a[1]+b[1])/2,(a[2]+b[2])/2];
+  const ray=new THREE.Raycaster(new THREE.Vector3(p[0],100,p[2]),new THREE.Vector3(0,-1,0),0,200);
+  assert(ray.intersectObject(mesh,false).length>0,'Owner '+r.id+' has a hole inside segment '+i);
   roadSamples++;
  }
 }
