@@ -102,7 +102,7 @@ export function sampleEnergiaSteamSpread(time){
  const stage=smooth(-90,0,t),late=smooth(-38,-1,t);
  // T-90 begins without a cloud. Thin vent steam gradually crawls outward.
  const presence=smooth(-84,-12,t);
- return {stage,late,presence,radius:mix(17,62,stage),drift:mix(2.8,11,stage),
+ return {stage,late,presence,radius:mix(17,62,stage),drift:mix(2.3,10.5,stage),
   rise:mix(17,23,stage),puffScale:mix(.75,1.04,late),
   transparency:mix(.55,.35,stage),groundBias:2.3};
 }
