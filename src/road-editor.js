@@ -69,7 +69,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  const originals=new Map(sourceMeshes.map(m=>[m,m.geometry]));
  let physicalCutStats={version:ROAD_GEOMETRY_CUT_VERSION,meshes:0,clipped:0,removed:0,examined:0,triangles:0};
  function replaceSourceGeometry(){
-  const edits=makeRoadSurfaceCutIndex(state.hidden,joinedPaths);
+  const edits=makeRoadSurfaceCutIndex(state.hidden,joinedPaths,{sourceRoads:base});
   let clipped=0,removed=0,examined=0,triangles=0;
   for(const mesh of sourceMeshes){
    const original=originals.get(mesh);
@@ -85,7 +85,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    examined+=result.stats.examined;triangles+=result.stats.outputTriangles;
   }
   physicalCutStats={version:ROAD_GEOMETRY_CUT_VERSION,meshes:sourceMeshes.length,clipped,removed,examined,triangles,
-   clipPolygons:edits.clips,sourceCuts:edits.sourceCuts,replacementCuts:edits.replacementCuts};
+   clipPolygons:edits.clips,sourceCuts:edits.sourceCuts,replacementCuts:edits.replacementCuts,skippedOffRoad:edits.skippedOffRoad};
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
  panel.setAttribute('aria-label','Редактор автомобильных дорог');
