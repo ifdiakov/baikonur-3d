@@ -1,7 +1,11 @@
 import * as THREE from 'three';
 import {subtractRoadPolygon} from './road-surface.js?v=20261103-road-mesh-v2';
+import {applyEditedRoadEndpointGrades,widthAtEditedRoad,ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,
+ ROAD_EDIT_SURFACE_LIFT,ROAD_EDIT_HIGHWAY_LIFT,ROAD_EDIT_PAINT_LIFT,ROAD_EDIT_WHITE_EDGE_WIDTH,
+ ROAD_EDIT_WHITE_EDGE_INSET,ROAD_EDIT_CENTER_LINE_WIDTH,ROAD_EDIT_YELLOW_WIDTH,ROAD_EDIT_YELLOW_OFFSET}
+ from './road-editor-style.js?v=20261103-road-parity-v1';
 
-export const ROAD_EDIT_MESH_VERSION='stitched-roads-terrain-rims-v3';
+export const ROAD_EDIT_MESH_VERSION='stitched-roads-source-materials-v4';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const planar=(a,b)=>Math.hypot(b[0]-a[0],b[2]-a[2]);
 const lerp=(a,b,t)=>a.map((v,k)=>v+(b[k]-v)*t);
@@ -78,22 +82,24 @@ export function sampleEditedRoad(road,{step=1.35,terrainHeightAt=null}={}){
   cursor=exit;
  }
  line(cursor,control.at(-1));
- if(terrainHeightAt)for(const p of out){const terrain=terrainHeightAt(p[0],p[2]);if(Number.isFinite(terrain))p[1]=Math.max(p[1],terrain+.07);}
- return out;
+ if(terrainHeightAt)for(const p of out){const terrain=terrainHeightAt(p[0],p[2]);if(Number.isFinite(terrain))p[1]=Math.max(p[1],terrain+.035);}
+ return road.profile?applyEditedRoadEndpointGrades(out,road.profile):out;
 }
 
 function ribbonQuads(points,width,lift=0,terrainHeightAt=null){
  const rim=[];
  for(let i=0;i<points.length;i++){
   const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
-  const dx=next[0]-prev[0],dz=next[2]-prev[2],len=Math.hypot(dx,dz)||1,nx=-dz/len*width/2,nz=dx/len*width/2;
+  const dx=next[0]-prev[0],dz=next[2]-prev[2],len=Math.hypot(dx,dz)||1;
+  const actualWidth=typeof width==='function'?width(i):width;
+  const nx=-dz/len*actualWidth/2,nz=dx/len*actualWidth/2;
   const left={x:points[i][0]-nx,y:points[i][1]+lift,z:points[i][2]-nz};
   const right={x:points[i][0]+nx,y:points[i][1]+lift,z:points[i][2]+nz};
   // Sample terrain under the two actual edges, not just under the centerline.
   // The road can now cross natural side slopes without burying one shoulder.
   if(terrainHeightAt)for(const edge of [left,right]){
    const ground=terrainHeightAt(edge.x,edge.z);
-   if(Number.isFinite(ground))edge.y=Math.max(edge.y,ground+.075+lift);
+   if(Number.isFinite(ground))edge.y=Math.max(edge.y,ground+(lift<0?.008:.013));
   }
   rim.push([left,right]);
  }
@@ -106,6 +112,47 @@ function ribbonQuads(points,width,lift=0,terrainHeightAt=null){
   result.push(polygon);
  }
  return result;
+}
+
+// Sample station-aware painted stripes on the exact same road alignment as
+// the asphalt. Dash policy/widths match the OSM road-marking implementation;
+// the first/last few metres stay unpainted at legacy road junction mouths.
+function emitEditedRoadPaint(buckets,road,points,terrainHeightAt){
+ const profile=road.profile;
+ if(!profile?.marked||profile.classId==='ground'||points.length<2)return;
+ let length=0;
+ const stations=[0];
+ for(let i=1;i<points.length;i++){length+=planar(points[i-1],points[i]);stations.push(length);}
+ if(length<4)return;
+ const widthAt=d=>widthAtEditedRoad(profile,profile.length?(d/length)*profile.length:d);
+ function at(d){
+  let j=1;
+  while(j<stations.length-1&&stations[j]<d)j++;
+  const delta=stations[j]-stations[j-1]||1,t=clamp((d-stations[j-1])/delta,0,1);
+  const p=lerp(points[j-1],points[j],t),a=points[Math.max(0,j-2)],b=points[Math.min(points.length-1,j+1)];
+  const dx=b[0]-a[0],dz=b[2]-a[2],l=Math.hypot(dx,dz)||1;
+  return {p,n:[-dz/l,dx/l],width:widthAt(d)};
+ }
+ function stripe(start,end,offset,lineWidth,color){
+  if(end-start<.18)return;
+  const stops=[start];
+  for(let i=1;i<stations.length-1;i++)if(stations[i]>start+1e-4&&stations[i]<end-1e-4)stops.push(stations[i]);
+  stops.push(end);
+  const line=stops.map(d=>{
+   const {p,n,width}=at(d),displacement=offset(width);
+   return [p[0]+n[0]*displacement,p[1],p[2]+n[1]*displacement];
+  });
+  buckets[color].push(...ribbonQuads(line,lineWidth,ROAD_EDIT_PAINT_LIFT,terrainHeightAt));
+ }
+ const entrance=Math.min(2.5,length*.16),exit=length-entrance;
+ // White roadside paint on 2+ lane asphalt follows the original OSM inset.
+ for(const side of [-1,1])stripe(entrance,exit,w=>side*Math.max(.1,w/2-ROAD_EDIT_WHITE_EDGE_INSET),ROAD_EDIT_WHITE_EDGE_WIDTH,'paintWhite');
+ if(profile.marking==='double-yellow'){
+  for(const side of [-1,1])stripe(entrance,exit,()=>side*ROAD_EDIT_YELLOW_OFFSET,ROAD_EDIT_YELLOW_WIDTH,'paintYellow');
+ }else if(profile.marking==='dashed-white'){
+  const period=13,dash=4.7;
+  for(let from=2;from<exit-.2;from+=period)stripe(Math.max(entrance,from),Math.min(exit,from+dash),()=>0,ROAD_EDIT_CENTER_LINE_WIDTH,'paintWhite');
+ }
 }
 function polygonGeometry(polygons){
  const positions=[];
@@ -148,13 +195,22 @@ function unionQuads(quads){
  return {polygons:result,overlaps};
 }
 export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
- const buckets={asphalt:[],ground:[],shoulder:[]},paths=[],stats={segments:0,joins:0,overlaps:0};let sourceQuads=0;
+ const buckets={asphalt:[],highway:[],ground:[],shoulder:[],paintWhite:[],paintYellow:[]},paths=[];
+ const stats={segments:0,joins:0,overlaps:0,markedRoads:0,sourceClasses:{asphalt:0,highway:0,ground:0}};let sourceQuads=0;
  for(const r of roads){
-  const points=sampleEditedRoad(r,{terrainHeightAt});
-  paths.push({id:r.id,width:r.width,points});
-  const shoulder=ribbonQuads(points,r.width+.54,.005,terrainHeightAt),surface=ribbonQuads(points,r.width,.045,terrainHeightAt);
-  buckets.shoulder.push(...shoulder);buckets[r.surface].push(...surface);
-  sourceQuads+=surface.length;stats.segments+=points.length-1;
+  const points=sampleEditedRoad(r,{terrainHeightAt}),profile=r.profile||{classId:r.surface==='ground'?'ground':'asphalt'};
+  const lengths=[0];for(let i=1;i<points.length;i++)lengths.push(lengths[i-1]+planar(points[i-1],points[i]));
+  const widthAt=i=>r.profile?widthAtEditedRoad(profile,lengths[i]):r.width;
+  const classId=profile.classId==='highway'?'highway':profile.classId==='ground'?'ground':'asphalt';
+  const width=r.profile?profile.widthStart:r.width;
+  paths.push({id:r.id,width,points,style:classId});
+  const shoulder=ribbonQuads(points,i=>widthAt(i)+ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,terrainHeightAt);
+  const surface=ribbonQuads(points,widthAt,classId==='highway'?ROAD_EDIT_HIGHWAY_LIFT:ROAD_EDIT_SURFACE_LIFT,terrainHeightAt);
+  buckets.shoulder.push(...shoulder);buckets[classId].push(...surface);
+  stats.sourceClasses[classId]++;sourceQuads+=surface.length;stats.segments+=points.length-1;
+  if(profile.marked&&classId!=='ground'){
+   emitEditedRoadPaint(buckets,r,points,terrainHeightAt);stats.markedRoads++;
+  }
  }
  const geometries={};
  for(const [kind,quads]of Object.entries(buckets)){
