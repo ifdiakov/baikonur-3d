@@ -141,7 +141,7 @@ function unionQuads(quads){
  return {polygons:result,overlaps};
 }
 export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
- const buckets={asphalt:[],ground:[],shoulder:[]},paths=[],sourceQuads=0,stats={segments:0,joins:0,overlaps:0};
+ const buckets={asphalt:[],ground:[],shoulder:[]},paths=[],stats={segments:0,joins:0,overlaps:0};let sourceQuads=0;
  for(const r of roads){
   const points=sampleEditedRoad(r,{terrainHeightAt});
   paths.push({id:r.id,width:r.width,points});
