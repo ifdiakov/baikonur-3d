@@ -3,7 +3,7 @@ import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadE
 import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-union-weld-v6';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-parity-v3';
 import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v3';
-import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261103-road-intersection-limited-v4';
+import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261103-restore-live-road-v5';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
@@ -85,7 +85,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    examined+=result.stats.examined;triangles+=result.stats.outputTriangles;
   }
   physicalCutStats={version:ROAD_GEOMETRY_CUT_VERSION,meshes:sourceMeshes.length,clipped,removed,examined,triangles,
-   clipPolygons:edits.clips,sourceCuts:edits.sourceCuts,replacementCuts:edits.replacementCuts,skippedOffRoad:edits.skippedOffRoad};
+   clipPolygons:edits.clips,sourceCuts:edits.sourceCuts,replacementCuts:edits.replacementCuts,skippedOffRoad:edits.skippedOffRoad,restoredCrossings:edits.restoredCrossings,protectedClipParts:edits.protectedClipParts};
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
  panel.setAttribute('aria-label','Редактор автомобильных дорог');
