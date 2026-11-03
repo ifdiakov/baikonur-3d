@@ -293,11 +293,14 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return top;
  }
  function conformRailPath(points,width){
-  const samples=samplesWithVertices(points,1.4);for(const p of samples)p.y=railTerrainDatum(p,width);return samples;
+  const samples=samplesWithVertices(points,1.4);for(const p of samples)p.y=railTerrainDatum(p,width);return checkpoint7RoadGrade?checkpoint7RoadGrade.conformRails(samples):samples;
  }
  for(const graph of [roadGraph,railGraph])for(const n of graph.nodes.values()){
   const width=Math.max(1,...n.edges.map(e=>e.width));
   n.position.y=(graph===railGraph?railTerrainDatum:terrainDatum)(n.position.clone().add(V(0,-n.raise,0)),width)+n.raise;
+  // Junction discs and every connected branch share the lowered road datum.
+  // Grading only ribbon samples would leave an old raised disc at a junction.
+  if(graph===roadGraph&&checkpoint7RoadGrade){const y=checkpoint7RoadGrade.roadAt(n.position.x,n.position.z);if(y!==null)n.position.y=y;}
  }
  smoothHighwayGraph(roadGraph);
  smoothLocalRoadGraph(roadGraph);
@@ -454,7 +457,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const pavingRuns=highway?highwayRunsOutsideBridge(run,interchangeBridgePlan,wayId):[run];
    for(const ps of pavingRuns){
     if(highway)for(const side of [-1,1])shoulder.ribbon(ps,ROAD_STYLE.shoulderExtra/2,-.055,side*(width/2+ROAD_STYLE.shoulderExtra/4),0,directions);
-    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-.055,0,0,directions,checkpoint7RoadGrade?p=>{const y=checkpoint7RoadGrade.roadAt(p.x,p.z);return y===null?p.y:y-.012;}:null);
+    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-.055,0,0,directions,checkpoint7RoadGrade?p=>p.y+.043*checkpoint7RoadGrade.weightAt(p.x,p.z):null);
     pavement.ribbon(ps,widthAt,highway?HIGHWAY_ASPHALT_LIFT:0,0,tags.highway?.endsWith('_link')?1:0,directions);
     markingRoads.push({id:'marking-road-'+(wayId??'display')+'-'+markingRoads.length,wayId,points:ps.map(p=>p.clone()),width,tags,marked:marked||highway,connections,
      directionAt:directions,widthAt,surfaceSmoothed:true});

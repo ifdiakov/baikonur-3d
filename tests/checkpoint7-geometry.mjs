@@ -53,4 +53,20 @@ for(let dz=-25;dz<=25;dz+=.8)for(const dx of [-1.7,-.9,.9,1.7]){
  const surface=hits[0].point.y;assert(surface>grade.baseY+.02&&surface<grade.baseY+.03,'Road follows the flat earth surface');
 }
 for(const p of [before.bridge,before.turnoff,[0,0,0]])assert.equal(grade.roadAt(p[0],p[2]),null,'Bridge, Saturn turnoff and unrelated roads keep their elevation');
+const branchNode=point(...geography.project(63.3188757,45.6875817));
+const junctionHits=new THREE.Raycaster(V(branchNode.x,5,branchNode.z),V(0,-1,0)).intersectObject(layers.roads,true).filter(h=>h.object.name.includes('полотно'));
+assert(junctionHits.length>0);assert(junctionHits.every(h=>Math.abs(h.point.y+2.73)<.002),'The nearby side-road junction has no old floating disc');
+const branch=transport.roadPaths().find(r=>r.osmWayIds?.includes('1469999659'));assert(branch,'The existing side road is preserved');
+for(let i=1;i<branch.points.length;i++){
+ const a=branch.points[i-1],b=branch.points[i],horizontal=Math.hypot(b.x-a.x,b.z-a.z);
+ if(grade.weightAt(a.x,a.z)>0&&horizontal>.001)assert(Math.abs(b.y-a.y)/horizontal<.55,'The existing branch joins with a smooth grade');
+}
+const tracks=transport.terrainPaths().rails.filter(r=>String(r.sourceWayId)==='37545112');assert(tracks.length);
+let checkedRails=0;
+for(const r of tracks)for(const p of r.points){const local=root.worldToLocal(p.clone());if(Math.abs(local.z*placement.scale)>15)continue;
+ assert(local.x*placement.scale<-3.8,'The parallel track clears both the road and west guard booths');checkedRails++;
+}assert(checkedRails>20);
+const train=transport.trainPath().path;let trainAt=null,trainDistance=Infinity;
+for(let s=0;s<train.length;s+=.2){const p=train.position(s),dz=Math.abs(root.worldToLocal(p.clone()).z);if(dz<trainDistance){trainDistance=dz;trainAt=p;}}
+assert(root.worldToLocal(trainAt.clone()).x*placement.scale<-3.8,'The train uses the displayed west-side track, not the road');
 console.log(JSON.stringify({passed:true,placement,triangles,meshCount:built.meshCount,pavementY:pavement.point.y,vehicleDistance:best},null,2));
