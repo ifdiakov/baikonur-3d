@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'meshoptimizer';
+import {createSprinterVehicle,validateSprinterGlb} from '../src/sprinter-source.js';
+const binary=await readFile('assets/models/sprinter/model-v1.glb'),bytes=binary.buffer.slice(binary.byteOffset,binary.byteOffset+binary.byteLength),manifest=JSON.parse(await readFile('assets/models/sprinter/manifest-v1.json'));
+validateSprinterGlb(bytes);assert.equal(createHash('sha256').update(binary).digest('hex'),manifest.asset.sha256);assert.ok(binary.length<2000000);assert.ok(manifest.asset.triangles<300000);
+const {scene}=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes,'');scene.updateMatrixWorld(true);
+const bounds=new THREE.Box3().setFromObject(scene);assert.ok(Math.abs(bounds.min.y)<.001);assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).z-6.706)<.003);
+for(const w of manifest.wheels){const part=scene.getObjectByName(w.name);assert.ok(part);const box=new THREE.Box3().setFromObject(part);assert.ok(Math.abs(box.min.y)<.002,'Tyre rests on ground');assert.ok(Math.abs(box.max.y-.70078)<.003);}
+let fail=true;const root=new THREE.Group(),fallbackMesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshStandardMaterial());root.add(fallbackMesh);root.scale.setScalar(.64);
+const fallback={root,wheels:[new THREE.Group()],update(pose){root.position.copy(pose.position);}};
+const vehicle=createSprinterVehicle(fallback,{loadSource:async()=>{if(fail)throw Error('Test network failure');return {scene,manifest};}});
+assert.equal(await vehicle.loadDetail(),false);assert.equal(vehicle.sourceState.status,'error');assert.equal(fallbackMesh.visible,true);fail=false;
+assert.equal(await vehicle.loadDetail(),true);assert.equal(fallbackMesh.visible,false);assert.equal(vehicle.wheels.length,4);
+const pose={position:new THREE.Vector3(10,2,4),tangent:new THREE.Vector3(0,0,1),opacity:1,distance:0,direction:1};vehicle.update(pose,false);root.updateMatrixWorld(true);
+const centers=vehicle.wheels.map(w=>w.getWorldPosition(new THREE.Vector3()));
+pose.distance=.35039*.64*Math.PI/2;vehicle.update(pose,true);root.updateMatrixWorld(true);
+vehicle.wheels.forEach((w,i)=>{assert.ok(w.getWorldPosition(new THREE.Vector3()).distanceTo(centers[i])<1e-6,'Pivots do not orbit');assert.ok(Math.abs(w.rotation.x-Math.PI/2)<1e-8,'Wheel rotation accounts for scene scale');});
+assert.deepEqual(root.position.toArray(),[10,2,4]);pose.opacity=0;vehicle.update(pose,false);assert.equal(root.visible,false);
+console.log('SPRINTER_SOURCE_PASS',JSON.stringify({bytes:binary.length,triangles:manifest.asset.triangles,wheels:vehicle.wheels.length,bounds:manifest.bounds.size}));

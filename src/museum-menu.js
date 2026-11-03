@@ -43,6 +43,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'mig25',title:'МиГ-25',description:'Рассмотреть самолёт в 3D'},
   {action:'mriya',title:'«Мрия» с «Бураном»',description:'Экспонат на Юбилейном'},
   {action:'aircraft',title:'Самолёт',description:'Сопровождение текущего рейса'},
+  {action:'sprinter',title:'Mercedes-Benz Sprinter',description:'Экскурсионный микроавтобус RocketTrip'},
   {action:'train',title:'М62 и вагоны',description:'Локомотив и четыре вагона'},
   {action:'silo',title:'Шахтная пусковая установка',description:'Площадка №109'},
   {action:'flight-cycle',title:'Москва — Крайний — Москва',description:'Посадка · стоянка · вылет'},

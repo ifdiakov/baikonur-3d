@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
 import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
+import {createSprinterVehicle} from './sprinter-source.js?v=20261103-sprinter-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -65,7 +66,7 @@ export function buildRoadVehicleRoutes(roads){
 
 export function roadVehiclePose(route,elapsed,vehicle){
  const s=((vehicle.phase*route.length+vehicle.direction*vehicle.speed*elapsed)%route.length+route.length)%route.length;
- const at=route.sample(s,1.5),right=V(-at.tangent.z,0,at.tangent.x).normalize(),width=route.widthAt(s),halfCar=.9*(route.vehicleScale||1);
+ const at=route.sample(s,1.5),right=V(-at.tangent.z,0,at.tangent.x).normalize(),width=route.widthAt(s),halfCar=(vehicle.halfWidth||.9)*(route.vehicleScale||1);
  const laneOffset=vehicle.direction*(route.source==='OpenStreetMap'?Math.min(width/4,Math.max(0,width/2-halfCar-.035)):width/4);
  const position=at.position.clone().addScaledVector(right,laneOffset);let tangent=at.tangent;
  if(route.surfaceHeightAt){
@@ -162,10 +163,16 @@ export function createRoadVehicles({parent,roads,camera,controls}){
    configs.push({route,phase,direction,speed:routeIndex===0?16:routeIndex===1?13:10});
   }
  });
- const cars=configs.map((_,i)=>createCar(parent,i)),states=[];let night=true;
+ const cars=configs.map((_,i)=>{const car=createCar(parent,i);return car.type==='van'?createSprinterVehicle(car):car;}),states=[];let night=true;
+ cars.forEach((car,i)=>{configs[i].halfWidth=car.halfWidth||.9;});
  cars.forEach((car,i)=>car.root.scale.setScalar(configs[i].route.vehicleScale||1));
  const museumBounds=new THREE.Box3().setFromPoints(roads.flatMap(r=>r.points)).expandByScalar(15),junction=plan.highway.position(plan.highway.bridgeDistance);
  function update(elapsed){configs.forEach((config,i)=>{const state=roadVehiclePose(config.route,elapsed,config);states[i]=state;cars[i].update(state,night);});}
+ let pending=null;const loadSprinters=()=>pending||(pending=Promise.all(cars.filter(c=>c.type==='sprinter').map(c=>c.loadDetail())).then(results=>results.every(Boolean)).finally(()=>{pending=null;}));
+ if(typeof window!=='undefined'){
+  const startup=globalThis.__MUSEUM_STARTUP;
+  if(startup?.defer)startup.defer(loadSprinters,{key:'sprinter',priority:3});else Promise.resolve().then(loadSprinters);
+ }
  function focus(index=null){
   if(index===null){let nearest=Infinity;index=0;cars.forEach((car,i)=>{if(!museumBounds.containsPoint(car.root.position)||states[i]?.opacity<.95)return;const distance=car.root.position.distanceToSquared(junction);if(distance<nearest){nearest=distance;index=i;}});}
   const car=cars[clamp(index,0,cars.length-1)],target=car.root.position.clone().add(V(0,.65,0));controls.target.copy(target);camera.position.copy(target).add(V(16,14,21));controls.update();
@@ -173,8 +180,16 @@ export function createRoadVehicles({parent,roads,camera,controls}){
   // the selected car in the free area, without changing global camera bounds.
   if(globalThis.innerWidth<700){camera.updateMatrixWorld();const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),halfWidth=camera.position.distanceTo(target)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect;camera.position.addScaledVector(right,-halfWidth*.62);controls.target.addScaledVector(right,-halfWidth*.62);controls.update();}
  }
- return {update,focus,setEvening(value){night=!!value;extension.setEvening(night);},cars,highway:plan.highway,
+ function focusSprinter(){
+  const candidates=cars.map((car,i)=>({car,i})).filter(({car})=>car.type==='sprinter');
+  const selected=candidates.find(({i})=>configs[i].route.id!=='highway'&&states[i]?.opacity>.95)||candidates[0];if(!selected)return null;
+  const {car,i}=selected,target=car.root.position.clone().add(V(0,1.2*car.root.scale.x,0));controls.target.copy(target);camera.position.copy(target).add(V(8,5,10).multiplyScalar(car.root.scale.x));controls.update();
+  if(globalThis.innerWidth<700){camera.updateMatrixWorld();const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),halfWidth=camera.position.distanceTo(target)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect;camera.position.addScaledVector(right,-halfWidth*.35);controls.target.addScaledVector(right,-halfWidth*.35);controls.update();}
+  globalThis.__MUSEUM_STARTUP?.promote?.('sprinter',100);return i;
+ }
+ return {update,focus,focusSprinter,loadSprinters,setEvening(value){night=!!value;extension.setEvening(night);},cars,highway:plan.highway,
   stats:()=>({version:'road-vehicles-v2',cars:cars.length,routeCount:plan.routes.length,extensionLength:extension.length,extensionLamps:extension.poles,joins:plan.joins,
    routes:plan.routes.map(r=>({id:r.id,label:r.label,length:r.length,rampStart:r.rampStart,rampEnd:r.rampEnd})),
-   carStates:states.map((s,i)=>({...s,position:s.position.toArray(),tangent:s.tangent.toArray(),index:i,type:cars[i].type,lightCount:4,wheelRotation:cars[i].wheels[0].rotation.x}))})};
+   sprinters:cars.flatMap((car,index)=>car.type==='sprinter'?[{index,...car.sourceState}]:[]),
+   carStates:states.map((s,i)=>({...s,position:s.position.toArray(),tangent:s.tangent.toArray(),index:i,type:cars[i].type,lightCount:4,wheelRotation:cars[i].wheels[0].rotation.x,scale:cars[i].root.scale.x}))})};
 }
