@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
-import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-terminus-caps-v1';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-union-weld-v5';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-parity-v3';
 import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v3';
-import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261103-road-physical-v3';
+import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261103-road-physical-crossings-v3';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
@@ -78,7 +78,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
     if(mesh.geometry!==original){mesh.geometry.dispose();mesh.geometry=original;}
     continue;
    }
-   const result=physicallyCutRoadGeometry(original,edits,{gradeTolerance:1.05});
+   const result=physicallyCutRoadGeometry(original,edits,{gradeTolerance:1.05,surfaceName:mesh.name});
    if(mesh.geometry!==original)mesh.geometry.dispose();
    mesh.geometry=result.geometry;
    clipped+=result.stats.clipped;removed+=result.stats.removed;
@@ -142,7 +142,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    widthStart:r.profile.widthStart,widthEnd:r.profile.widthEnd,
    marking:r.profile.marking,marked:r.profile.marked,
    sourceStart:r.profile.matching.start,sourceEnd:r.profile.matching.end}));
-  const built=buildEditedRoadMeshes(styled,{terrainHeightAt});
+  const built=buildEditedRoadMeshes(styled,{terrainHeightAt,existingRoads:base});
   joinedPaths=built.paths;
   geometryStats=built.stats;
   routes=[...base,...joinedPaths];
