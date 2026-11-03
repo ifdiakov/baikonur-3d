@@ -40,8 +40,12 @@ assert.equal(reversion.geometry.getAttribute('position').count,6,'An Undo must r
 // A removed cross-road must not chop a hole across the *still active*
 // perpendicular mainline. Directional ownership is inferred from the
 // batched source mesh, which no longer contains per-way metadata.
+const sourceRoads=[
+ {id:'osm-road-spur',width:2.2,points:[[0,0,-3],[0,0,3]]},
+ {id:'osm-road-main',width:3.6,points:[[-10,0,0],[10,0,0]]}
+];
 const sourceCut=makeRoadSurfaceCutIndex([{sourceId:'osm-road-spur',width:2.2,
- points:[[0,0,-3],[0,0,3]]}],[]);
+ points:[[0,0,-3],[0,0,3]]}],[],{sourceRoads});
 const strip=(loX,hiX,loZ,hiZ)=>{
  const a=[loX,0,loZ],b=[hiX,0,loZ],c=[hiX,0,hiZ],d=[loX,0,hiZ];
  const g=new THREE.BufferGeometry();
@@ -55,6 +59,12 @@ assert(rays(through.geometry,[0,0]).length>0,
 const spur=physicallyCutRoadGeometry(strip(-1.3,1.3,-.6,.6),sourceCut,
  {surfaceName:'OSM · единое дорожное полотно'});
 assert(rays(spur.geometry,[0,0]).length===0,'The requested source road must still be removed');
+const withoutCrossing=makeRoadSurfaceCutIndex([{sourceId:'osm-road-spur',width:2.2,
+ points:[[0,0,-3],[0,0,3]]}],[],{sourceRoads:[sourceRoads[0]]});
+const fullyRemoved=physicallyCutRoadGeometry(strip(-.6,.6,-1.8,1.8),withoutCrossing,
+ {surfaceName:'OSM · единое дорожное полотно'});
+assert(!rays(fullyRemoved.geometry,[0,0]).length,
+ 'Do not leave old road fragments in the steppe when no live crossing exists');
 console.log('ROAD_PHYSICAL_GEOMETRY_PASS',JSON.stringify({
  version:ROAD_GEOMETRY_CUT_VERSION,clips:r.stats.clipped,triangles:r.stats.outputTriangles,
  remainder:rr.stats.outputTriangles,gradePreserved:true,uvPreserved:true
