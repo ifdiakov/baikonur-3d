@@ -9,13 +9,16 @@ on:
       - 'src/archive-models.js'
       - 'assets/models/site31/**'
       - 'src/site31-*.js'
+      - 'src/gagarin-*.js'
+      - 'tests/gagarin-source-table.mjs'
+      - 'tests/site31-geometry.mjs'
       - 'tests/site31-source-*.mjs'
       - '.github/workflows/verify-site31.yml'
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: site31-source-model
+  group: site31-source-model-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   verify:
@@ -34,6 +37,8 @@ jobs:
         run: |
           node tests/site31-source-model.mjs
           node tests/site31-geometry.mjs
+          node tests/gagarin-source-table.mjs
+          node tests/soyuz-launch-scale.mjs
       - name: Serve checkout
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
       - name: Test full museum, load recovery, views and mobile

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import {buildSite31Pad,SITE31_PIT} from './site31-pad.js?v=20261103-site31-duct-v2';
+import {buildSite31Pad,SITE31_PIT} from './site31-pad.js?v=20261103-launch-table-v1';
 import {registerFacilityBeacon,registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-export const SITE31_ASSET_VERSION='site31-drive-v1';
+import {loadSite31Source,SITE31_ASSET_VERSION} from './site31-source.js?v=20261103-launch-table-v1';
+export {validateSite31Glb,SITE31_ASSET_VERSION} from './site31-source.js?v=20261103-launch-table-v1';
 export const SITE31_VIEWS=Object.freeze({all:{target:[0,15,-10],eye:[-160,135,180]},structure:{target:[0,20,0],eye:[-48,37,62]},duct:{target:[-3,-6,-54],eye:[-150,125,-230]},connections:{target:[0,2,66],eye:[170,150,235]},top:{target:[0,0,-60],eye:[0,360,-59.99]}});
 const controllers=new WeakMap();
 export const site31Controller=root=>controllers.get(root);
@@ -9,13 +10,6 @@ const meshes=root=>{const out=[];root.traverse(o=>{if(o.isMesh)out.push(o);});re
 function release(root){
  const geometry=new Set(),materials=new Set(),textures=new Set();root.traverse(o=>{if(!o.isMesh)return;geometry.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material]){materials.add(m);for(const t of Object.values(m))if(t?.isTexture)textures.add(t);}});
  geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
-}
-export function validateSite31Glb(bytes){
- const v=new DataView(bytes);if(bytes.byteLength<20||v.getUint32(0,true)!==0x46546c67||v.getUint32(4,true)!==2||v.getUint32(8,true)!==bytes.byteLength)throw Error('Неверный файл площадки 31');
- const size=v.getUint32(12,true);if(v.getUint32(16,true)!==0x4e4f534a||20+size>bytes.byteLength)throw Error('Повреждена структура площадки 31');
- const json=JSON.parse(new TextDecoder().decode(new Uint8Array(bytes,20,size)));
- const inspect=o=>{if(!o||typeof o!=='object')return;for(const [k,v]of Object.entries(o)){if(k==='uri'&&typeof v==='string'&&!v.startsWith('data:'))throw Error('Внешние ресурсы в модели площадки 31');inspect(v);}};inspect(json);
- if(json.asset?.version!=='2.0')throw Error('Неизвестная версия модели площадки 31');return json;
 }
 function finalLighting(root){
  // Source towers are grounded separately, without scaling their lattice.
@@ -34,22 +28,7 @@ export function buildSite31Exhibit(root,{autoLoad=typeof window!=='undefined',lo
  root.userData.site31Model={...result.site31,asset:state,views:SITE31_VIEWS};root.userData.archiveCutouts=[SITE31_PIT];finalLighting(root);
  let current=fallback,pending=null;
  const changed=()=>root.dispatchEvent({type:'site31-exhibit-change'});
- const readSource=loadSource||async function(){
-  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),25000);
-  try{
-   const base=new URL('../assets/models/site31/',import.meta.url),url=new URL('model-v1.glb',base),meta=new URL('manifest-v1.json',base);url.searchParams.set('v',SITE31_ASSET_VERSION);meta.searchParams.set('v',SITE31_ASSET_VERSION);
-   if(url.origin!==location.origin)throw Error('Модель должна загружаться с сайта музея');
-   const part=async(u,binary)=>{const r=await fetch(u,{signal:controller.signal,mode:'same-origin',credentials:'same-origin',redirect:'error'});if(!r.ok)throw Error('Площадка 31: HTTP '+r.status);return binary?r.arrayBuffer():r.json();};
-   const [bytes,manifest,{GLTFLoader},{MeshoptDecoder}]=await Promise.all([part(url,true),part(meta,false),import('three/addons/loaders/GLTFLoader.js'),import('./vendor/meshopt_decoder-v1.mjs')]);
-   validateSite31Glb(bytes);
-   if(manifest.version!==SITE31_ASSET_VERSION||manifest.normalization?.unit!=='metre'||manifest.normalization.scale!==1||manifest.asset.bytes!==bytes.byteLength)throw Error('Неверная версия или масштаб площадки 31');
-   const manager=new THREE.LoadingManager();manager.setURLModifier(u=>{if(u.startsWith('data:')||(u.startsWith('blob:')&&new URL(u).origin===location.origin))return u;throw Error('Внешний ресурс модели заблокирован');});
-   const gltf=await new GLTFLoader(manager).setMeshoptDecoder(MeshoptDecoder).parseAsync(bytes,base.href);
-   const bounds=new THREE.Box3().setFromObject(gltf.scene),size=bounds.getSize(new THREE.Vector3()).toArray();
-   if(size.some((n,i)=>!Number.isFinite(n)||Math.abs(n-manifest.bounds.size[i])>.04)){release(gltf.scene);throw Error('Размеры площадки 31 не прошли проверку');}
-   return {scene:gltf.scene,manifest};
-  }finally{clearTimeout(timer);}
- };
+ const readSource=loadSource||loadSite31Source;
  async function load(){
   if(state.status==='ready')return true;if(pending)return pending;
   state.status='loading';state.error=null;changed();
@@ -63,7 +42,7 @@ export function buildSite31Exhibit(root,{autoLoad=typeof window!=='undefined',lo
    const added=meshes(candidate);root.dispatchEvent({type:'museum-exhibit-loaded',removed,added});release(current);current=candidate;candidate=null;
    Object.assign(state,{status:'ready',error:null,bytes:manifest.asset.bytes,triangles:manifest.asset.triangles,drawCalls:manifest.asset.primitives,sourceSha256:manifest.sourceSha256});
    Object.assign(root.userData.site31Model,{...built.site31,version:SITE31_ASSET_VERSION,asset:state,views:SITE31_VIEWS,
-    status:'Конструкции стартового комплекса — предоставленная 3D-модель. Газоотвод выровнен и увеличен на 20% по ширине, длине и глубине; направление по спутнику сохранено. Форма и высоты — музейная реконструкция.',
+    status:'Конструкции стартового комплекса — предоставленная 3D-модель. Контур газоотвода повторяет асимметрию спутникового снимка с увеличением на 20%. Глубина 28,8 м — музейная реконструкция.',
     sources:[...built.site31.sources,manifest.sourceUrl],sourceCredit:{author:manifest.author,url:manifest.sourceUrl,license:manifest.license,licenseUrl:manifest.licenseUrl},sourceStructureBounds:manifest.bounds});
    const archive=root.userData.archiveModel;if(archive){archive.features.site31=root.userData.site31Model;archive.features.meshCount=added.length;const b=new THREE.Box3().setFromObject(root);archive.bounds=b.getSize(new THREE.Vector3()).toArray();archive.centre=b.getCenter(new THREE.Vector3()).toArray();}
    return true;

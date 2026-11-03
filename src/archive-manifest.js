@@ -3,7 +3,7 @@ import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=
 import {CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261103-site31-duct-v2';
+import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261103-launch-table-v1';
 import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-facilities-rails-lighting-v1';
 // Scope is ONLY the confirmed owner folder, never the whole Google Drive.
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};

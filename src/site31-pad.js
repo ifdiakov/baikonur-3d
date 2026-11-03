@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
-import {buildSite31Trench} from './site31-trench.js?v=20261103-site31-duct-v2';
-import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW,site31RimAt} from './site31-trench-profile.js?v=20261103-site31-duct-v2';
-export {SITE31_PIT} from './site31-trench-profile.js?v=20261103-site31-duct-v2';
+import {buildSite31Trench} from './site31-trench.js?v=20261103-launch-table-v1';
+import {SITE31_PIT,SITE31_REFERENCE,SITE31_YAW,site31RimAt} from './site31-trench-profile.js?v=20261103-launch-table-v1';
+export {SITE31_PIT} from './site31-trench-profile.js?v=20261103-launch-table-v1';
 
 // Site 31 is its own exhibit, not Site 1's traced excavation transplanted to
 // a different map point. Photographs establish the two opening service masts,
@@ -270,9 +270,9 @@ export function buildSite31Pad(root,{sourceStructure=null}={}){
   meshCount:layoutResult.meshCount+machineryResult.meshCount,batches:layoutResult.batches+machineryResult.batches,
   boundsSize:new THREE.Box3().setFromObject(root).getSize(new THREE.Vector3()).toArray()};
  const metadata={version:SITE31_VERSION,siteId:'pad-31',name:'Стартовая позиция 31/6 · семейство «Союз»',
-  status:'Газоотвод выровнен и увеличен на 20% по ширине, длине и глубине. Направление оси сохранено по спутниковому снимку; форма и высоты — музейная реконструкция.',
-  referenceBasis:'Esri World Imagery / Vantor Vivid: исходная обводка и направление; текущий лоток выровнен и увеличен на 20%. Не инженерный обмер.',
-  sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'satellite-axis-adjusted-outline',
+  status:'Газоотвод повторяет асимметричный контур спутникового снимка с увеличением на 20%. Поверхности ровные; глубина 28,8 м — музейная реконструкция.',
+  referenceBasis:'Esri World Imagery / Vantor Vivid: асимметричная обводка и направление; контур равномерно увеличен на 20%. Не инженерный обмер.',
+  sources:[...SITE31_SOURCES],orientationVerified:true,orientationScope:'satellite-outline-scaled-1.2',
   units:'metres',machineryMetresPerUnit:sourceStructure?1:SITE31_MACHINERY_METRE,
   heightsVerified:false,globalMapAnchorSurveyed:false,yaw:SITE31_YAW,satellite:SITE31_REFERENCE,
   groundDatum:0,pitFloorY:floorY,pit:SITE31_PIT,trench,
