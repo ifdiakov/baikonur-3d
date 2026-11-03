@@ -32,6 +32,8 @@ assert(Math.abs(res[0][1]-.72)<.001,'The asphalt at the OSM join must share its 
 assert.equal(res.at(-1)[1],1.4,'An unanchored end must retain its original height');
 const dirt=deriveEditedRoadStyle({id:'road-dirt',width:1.5,surface:'ground',points:[[12,.76,80],[12,-2,110]]},source);
 assert.equal(dirt.classId,'ground');assert.equal(dirt.marking,null);assert.equal(dirt.widthStart,1.2);
+const matchingDirt=deriveEditedRoadStyle({id:'originally-paved',width:1.5,surface:'asphalt',points:[[16,.72,80],[16,-2,110]]},source);
+assert.equal(matchingDirt.classId,'ground','Editor surface matches adjacent OSM unpaved road, not a mismatched default');
 const h=deriveEditedRoadStyle({id:'r-hwy',width:4.5,surface:'asphalt',points:[[160,.72,0],[160,-1,25]]},source);
 assert.equal(h.classId,'highway');assert.equal(h.marking,'double-yellow');
 const cut=deriveEditedRoadStyle({id:'r-service',width:1.8,surface:'asphalt',points:[[88,.72,20],[88,-2,37]]},source);
