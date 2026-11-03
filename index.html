@@ -506,6 +506,7 @@ import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=
 import {fitOverviewCamera} from './src/overview-camera.js?v=20261102-museum10-v1';
 import {buildExtendedTerrain, sampleSteppe, LARGE_TERRAIN_SEGMENTS} from './src/terrain-extent.js?v=20261102-progressive-v1';
 import {buildMuseumTerrainRelief} from './src/museum-terrain.js?v=20261102-progressive-v1';
+import {buildSharedSiloHill} from './src/shared-silo-hill.js?v=20261103-shared-silo-hill-v1';
 import {createSteppeSurface} from './src/steppe-surface.js?v=20261103-game-terrain-pbr-v1';
 import {createGameTerrainPilot} from './src/terrain-game-detail.js?v=20261103-game-terrain-natural-patches-v5';
 import {loadSatelliteReference,SATELLITE_REFERENCE} from './src/satellite-reference.js?v=20261102-progressive-v1';
@@ -1597,8 +1598,11 @@ startup.stage('Формируем рельеф степи…',6);
 await startup.paint();
 const terrainRelief=buildMuseumTerrainRelief({dem:await terrainDemReady,objects:cardObjects,transport,riverWater,riverCorePts,point,geography,places:osmPlaces,
  satelliteCanvas,renderer,steppeSurface,scene,registerGroundSurface});
+// One continuous low hillside carries both shafts in the shared 106/109 compound.
+const sharedSiloHill=buildSharedSiloHill({scene,objects,terrainRelief,steppeSurface,registerGroundSurface});
 flankDistricts.addTerrainRelief(terrainRelief);
 scene.userData.terrainStyle.relief=terrainRelief.stats();
+scene.userData.terrainStyle.sharedSiloHill=sharedSiloHill.stats();
 scene.userData.terrainStyle.surface=steppeSurface.stats();
 // Optional high-detail earth loads after the first interactive frame.
 // A failed enhancement never blocks navigation or the original satellite surface.
@@ -2110,7 +2114,7 @@ function setMuseumYear(year){
  camera.updateMatrixWorld(true);updateLabels();
 }
 setMuseumYear(2026);
-const lightingGroundMeshes=[ground,satelliteGround,...outerTerrain.planes,terrainRelief.mesh];
+const lightingGroundMeshes=[ground,satelliteGround,...outerTerrain.planes,terrainRelief.mesh,sharedSiloHill.mesh];
 layers.roads.traverse(mesh=>{if(mesh.isMesh&&mesh.userData.groundSurface!==false&&!mesh.name.startsWith('road-center-dash'))lightingGroundMeshes.push(mesh)});
 saturnGroup.traverse(mesh=>{if(mesh.userData.museumComponent==='murguduk-hill')lightingGroundMeshes.push(mesh)});
 if(kazIndex>=0)objects[kazIndex].g.traverse(mesh=>{
@@ -2361,7 +2365,7 @@ function moveCamera(dt){
 const museumCameraBounds={minX:(Math.min(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,maxX:(Math.max(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,minZ:(Math.min(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S,maxZ:(Math.max(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S};
 const saturnCameraSample=new THREE.Vector3();
 function museumTerrainHeightAt(x,z){
- let height=terrainRelief.heightAt(x,z);
+ let height=Math.max(terrainRelief.heightAt(x,z),sharedSiloHill.heightAt(x,z));
  if(!saturnHill)return height;
  for(let object=saturnHill;object;object=object.parent)if(!object.visible)return height;
  saturnGroup.worldToLocal(saturnCameraSample.set(x,0,z));
@@ -2412,7 +2416,7 @@ window.__BAIKONUR_QA={gagarinTable:{stats:gagarinExhibit.table.stats,load:gagari
  }
  return {visible:Object.fromEntries(Object.entries(sources).map(([id,mesh])=>[id,mesh.visible])),layers:Object.entries(sources).map(([id,mesh])=>({id,name:mesh.name,visible:mesh.visible,y:mesh.position.y,vertices:mesh.geometry.attributes.position.count,triangles:mesh.geometry.index.count/3,geometry:mesh.geometry.parameters}))};
 },mapCameraSmoothing:{stats:smoothMapCamera.stats,cancel:smoothMapCamera.cancel},
- labelMapGestures:{stats:labelMapGestures.stats},satelliteSurface:{stats:steppeSurface.stats,sample:steppeSurface.satelliteAt},gameTerrain:{stats:()=>gameTerrain?gameTerrain.stats():{status:gameTerrainStatus,error:gameTerrainError}},terrainRelief:{stats:terrainRelief.stats,sample:terrainRelief.sample,heightAt:terrainRelief.heightAt},inspectTerrainRelief(view='wide'){
+ labelMapGestures:{stats:labelMapGestures.stats},satelliteSurface:{stats:steppeSurface.stats,sample:steppeSurface.satelliteAt},gameTerrain:{stats:()=>gameTerrain?gameTerrain.stats():{status:gameTerrainStatus,error:gameTerrainError}},terrainRelief:{stats:terrainRelief.stats,sample:terrainRelief.sample,heightAt:terrainRelief.heightAt},sharedSiloHill:{stats:sharedSiloHill.stats,heightAt:sharedSiloHill.heightAt,offsetAt:sharedSiloHill.offsetAt},inspectTerrainRelief(view='wide'){
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
  document.getElementById('info').style.display='none';
  const vertices=terrainRelief.mesh.geometry.attributes.position,ridge=new THREE.Vector3();
