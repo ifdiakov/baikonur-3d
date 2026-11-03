@@ -13,6 +13,7 @@ export function archiveKit(root){
  const sleeperIndex=[];for(let i=0;i<geos.sleeper.index.count;i+=3){const indices=[0,1,2].map(j=>geos.sleeper.index.getX(i+j));if(geos.sleeper.attributes.normal.getY(indices[0])>-.99)sleeperIndex.push(...indices);}
  geos.sleeper.setIndex(sleeperIndex);geos.sleeper.clearGroups();
  const batches=new Map(),counts={},meshes=[],cutouts=[],up=new THREE.Vector3(0,1,0),q0=new THREE.Quaternion();
+ const kineticTags=new Set(['tulip-support-main','tulip-cross-brace','support-arm-gripper','support-arm-actuator','tulip-counterweight']);
  function count(tag){counts[tag]=(counts[tag]||0)+1;}
  // STATIC_ARCHIVE_BATCHES: bake static hall-local transforms into exhibit space.
  function add(geo,m,p,q,size,tag,parent=root){
@@ -21,8 +22,9 @@ export function archiveKit(root){
   let cursor=parent;
   while(cursor&&cursor!==root){cursor.updateMatrix();transform.premultiply(cursor.matrix);cursor=cursor.parent;}
   if(cursor!==root)throw Error('Archive primitive has an unrelated parent');
-  const key=geo.uuid+':'+m;
-  let batch=batches.get(key);if(!batch){batch={geo,m,parent:root,matrices:[]};batches.set(key,batch);}
+  const kineticTag=kineticTags.has(tag)?tag:null;
+  const key=geo.uuid+':'+m+(kineticTag?':'+kineticTag:'');
+  let batch=batches.get(key);if(!batch){batch={geo,m,tag:kineticTag,parent:root,matrices:[]};batches.set(key,batch);}
   batch.matrices.push(transform);count(tag);
  }
  function box(w,h,d,x,y,z,m='wall',tag='block',yaw=0,parent=root){add(geos.box,m,[x,y,z],new THREE.Quaternion().setFromAxisAngle(up,yaw),[w,h,d],tag,parent);}
@@ -66,12 +68,12 @@ export function archiveKit(root){
  function finish(){root.userData.archiveCutouts=cutouts;
   // Merge static custom faces by material: petal lining is hundreds of faces,
   // but must cost a handful of draw calls rather than a mesh per slab.
-  const groups=new Map();for(const o of [...meshes]){if(o.parent!==root||!o.geometry?.attributes?.position||!o.material)continue;const key=o.material.uuid;let b=groups.get(key);if(!b){b={material:o.material,items:[]};groups.set(key,b);}b.items.push(o);}
+  const groups=new Map();for(const o of [...meshes]){if(o.parent!==root||!o.geometry?.attributes?.position||!o.material||kineticTags.has(o.userData.museumComponent))continue;const key=o.material.uuid;let b=groups.get(key);if(!b){b={material:o.material,items:[]};groups.set(key,b);}b.items.push(o);}
   for(const b of groups.values()){if(b.items.length<2)continue;const positions=[],normals=[],uvs=[];
    for(const o of b.items){o.updateMatrix();const g=o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone();g.applyMatrix4(o.matrix);const pa=g.attributes.position,na=g.attributes.normal,uv=g.attributes.uv;positions.push(...pa.array);normals.push(...(na?na.array:new Float32Array(pa.count*3)));uvs.push(...(uv?uv.array:new Float32Array(pa.count*2)));root.remove(o);meshes.splice(meshes.indexOf(o),1);o.geometry.dispose();g.dispose();}
    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));g.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));const m=new THREE.Mesh(g,b.material);m.name='Архив · объединённые поверхности';root.add(m);meshes.push(m);
   }
-for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,mat[b.m],b.matrices.length);b.matrices.forEach((a,i)=>im.setMatrixAt(i,a));im.instanceMatrix.needsUpdate=true;im.computeBoundingBox();im.computeBoundingSphere();im.receiveShadow=true;im.name='Архив · '+b.m;im.userData.museumComponent='archive-instanced-structure';b.parent.add(im);meshes.push(im);}root.updateWorldMatrix(true,true);const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());return {features:counts,primitiveCount:Object.values(counts).reduce((s,n)=>s+n,0),meshCount:meshes.length,batches:batches.size,cutouts,boundsSize:size.toArray()};}
+for(const b of batches.values()){const im=new THREE.InstancedMesh(b.geo,mat[b.m],b.matrices.length);b.matrices.forEach((a,i)=>im.setMatrixAt(i,a));im.instanceMatrix.needsUpdate=true;im.computeBoundingBox();im.computeBoundingSphere();im.receiveShadow=true;im.name='Архив · '+b.m;im.userData.museumComponent=b.tag||'archive-instanced-structure';b.parent.add(im);meshes.push(im);}root.updateWorldMatrix(true,true);const bounds=new THREE.Box3().setFromObject(root),size=bounds.getSize(new THREE.Vector3());return {features:counts,primitiveCount:Object.values(counts).reduce((s,n)=>s+n,0),meshCount:meshes.length,batches:batches.size,cutouts,boundsSize:size.toArray()};}
  const beaconRoles=new Set(['proton-service-tower','lightning-mast','soyuz-lightning-mast','soyuz-service-gantry','zenit-lightning-tower','energia-service-pylon']);
  function latticeWithBeacon(x,z,h=50,w=5,d=w,options={}){
   lattice(x,z,h,w,d,options);
