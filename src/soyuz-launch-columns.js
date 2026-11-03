@@ -10,14 +10,15 @@ import * as THREE from 'three';
 export const SOYUZ_COLUMN_VERSION='soyuz-retracting-pneumatic-columns-v2';
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const sharedRodGeometry=new THREE.CylinderGeometry(1,1,1,7);
 function beam(group,a,b,r,material,segments=7){
  const start=V(...a),end=V(...b),axis=end.clone().sub(start),length=axis.length();
  if(length<.01)return;
- const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,length,segments),material);
- mesh.position.copy(start).add(end).multiplyScalar(.5);
- mesh.quaternion.setFromUnitVectors(V(0,1,0),axis.normalize());
- mesh.castShadow=true;mesh.receiveShadow=true;mesh.userData.pickable=false;group.add(mesh);
- return mesh;
+ const matrix=new THREE.Matrix4().compose(start.add(end).multiplyScalar(.5),
+  new THREE.Quaternion().setFromUnitVectors(V(0,1,0),axis.normalize()),V(r,length,r));
+ const batches=group.userData.soyuzRodBatches||(group.userData.soyuzRodBatches=new Map());
+ if(!batches.has(material))batches.set(material,[]);
+ batches.get(material).push(matrix);
 }
 function hatch(group,w,d,y,x,z,material){
  const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,.16,d),material);
@@ -64,8 +65,15 @@ function buildColumn(root,side,which,siteId){
  }
  const head=new THREE.Mesh(new THREE.BoxGeometry(4.5,2.5,4.1),paint);
  head.position.set(topX-side*1.0,height-1.5,0);head.castShadow=true;pivot.add(head);
- const tip=beam(pivot,[topX-side*1.3,height-1.8,0],[topX-side*5.6,height-1.3,0],.22,steel);
- tip.userData.museumComponent='pneumatic-umbilical-head';
+ beam(pivot,[topX-side*1.3,height-1.8,0],[topX-side*5.6,height-1.3,0],.22,steel);
+ // One instanced truss per paint material instead of hundreds of draw calls.
+ for(const [material,matrices] of pivot.userData.soyuzRodBatches){
+  const model=new THREE.InstancedMesh(sharedRodGeometry,material,matrices.length);
+  matrices.forEach((matrix,i)=>model.setMatrixAt(i,matrix));
+  model.instanceMatrix.needsUpdate=true;model.frustumCulled=false;model.castShadow=true;
+  model.receiveShadow=true;model.userData.pickable=false;pivot.add(model);
+ }
+ delete pivot.userData.soyuzRodBatches;
  // Pneumatic cylinder / hydraulic linkage extends towards the hinge.
  beam(pivot,[side*2.1,1.7,-2.5],[topX*.41,height*.43,-2.5],.33,steel);
  const counter=new THREE.Mesh(new THREE.CylinderGeometry(.95,.95,3.6,20),brass);
