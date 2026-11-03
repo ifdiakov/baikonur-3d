@@ -56,9 +56,12 @@ const through=physicallyCutRoadGeometry(strip(-.6,.6,-1.8,1.8),sourceCut,
  {surfaceName:'OSM · единое дорожное полотно'});
 assert(rays(through.geometry,[0,0]).length>0,
  'A deleted spur must not leave a hole through the perpendicular through-road');
-const spur=physicallyCutRoadGeometry(strip(-1.3,1.3,-.6,.6),sourceCut,
+const spur=physicallyCutRoadGeometry(strip(-1.3,1.3,-6,6),sourceCut,
  {surfaceName:'OSM · единое дорожное полотно'});
-assert(rays(spur.geometry,[0,0]).length===0,'The requested source road must still be removed');
+assert(rays(spur.geometry,[0,5]).length===0,
+ 'The requested obsolete road must remain removed beyond the through-road crossing');
+assert(rays(spur.geometry,[0,0]).length>0,
+ 'The protected junction core must stay level and continuous with the live main road');
 const withoutCrossing=makeRoadSurfaceCutIndex([{sourceId:'osm-road-spur',width:2.2,
  points:[[0,0,-3],[0,0,3]]}],[],{sourceRoads:[sourceRoads[0]]});
 const fullyRemoved=physicallyCutRoadGeometry(strip(-.6,.6,-1.8,1.8),withoutCrossing,
