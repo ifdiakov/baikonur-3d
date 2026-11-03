@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {createSoyuzExhaust} from './soyuz-launch-effects.js?v=20261103-soyuz-fbm-v2';
+import {createSoyuzPneumaticColumns} from './soyuz-launch-columns.js?v=20261103-pneumatic-v2';
 
 /**
  * Two launch-site reconstructions sharing the museum's metric Soyuz exhibit.
@@ -6,21 +8,22 @@ import * as THREE from 'three';
  * The four R-7 primary support arms release only as the rocket unloads at T=0.
  * No camera reposition is performed when the sequence starts.
  */
-export const SOYUZ_DUAL_LAUNCH_VERSION='soyuz-dual-site-first-pass-v1';
+export const SOYUZ_DUAL_LAUNCH_VERSION='soyuz-dual-site-hinged-columns-plasma-v2';
 export const SOYUZ_START=-75;
 export const SOYUZ_END=70;
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,t)=>{const q=clamp((t-a)/(b-a),0,1);return q*q*(3-2*q);};
 export const SOYUZ_EVENTS=Object.freeze([
- {at:-75,title:'РАКЕТА НА СТАРТОВОМ СТОЛЕ',detail:'Ракета удерживается четырьмя опорами «тюльпана». Идёт проверка готовности наземного комплекса.'},
- {at:-58,title:'ОТВОД ОБСЛУЖИВАНИЯ',detail:'Площадки обслуживания отводятся от ракеты. Время операции условно сжато для музейного показа.'},
- {at:-35,title:'ПОДГОТОВКА К ОТРЫВУ',detail:'Обслуживающие конструкции отведены. Опоры «тюльпана» продолжают удерживать носитель.'},
- {at:-15,title:'ПРЕДСТАРТОВЫЕ ПРОЦЕССЫ',detail:'У основания ракеты заметны испарения и газовые потоки. Их объём визуализирован условно.'},
- {at:-5,title:'ЗАПУСК ДВИГАТЕЛЕЙ',detail:'Появляется факел двигателей, газоотводный лоток заполняется ярким потоком.'},
- {at:-2,title:'НАБОР ТЯГИ',detail:'Тяга возрастает. Четыре силовые опоры всё ещё удерживают ракету.'},
- {at:0,title:'ОТРЫВ · РАСКРЫТИЕ «ТЮЛЬПАНА»',detail:'При движении ракеты вверх нагрузка на четыре опоры уменьшается; противовесы раскрывают их наружу.'},
- {at:6,title:'ВЫХОД СО СТАРТОВОГО КОМПЛЕКСА',detail:'Ракета набирает высоту. Факел остаётся под двигателями, дым и пыль распространяются по земле.'},
- {at:28,title:'НАБОР ВЫСОТЫ',detail:'Показана иллюстративная траектория начального участка выведения. Скорости и высоты не являются телеметрией.'}
+ {at:-75,title:'РАКЕТА НА СТАРТОВОМ СТОЛЕ',detail:'Стартовая команда проводит заключительные проверки. Ракета удерживается четырьмя опорами «тюльпана».'},
+ {at:-60,title:'ОТХОД ПЕРВОЙ ПНЕВМОКОЛОННЫ',detail:'Первая колонна наземных коммуникаций отклоняется от ракеты на боковом шарнире.'},
+ {at:-40,title:'ОТКЛЮЧЕНИЕ ЛИНИЙ ТРЕТЬЕЙ СТУПЕНИ',detail:'Наземное электропитание третьей ступени отключено. Первая колонна находится в отведённом положении.'},
+ {at:-20,title:'ЗАЖИГАНИЕ ДВИГАТЕЛЕЙ',detail:'Реальный факел формируется прямо под соплами. Горячие газы уходят в лоток, около площадки растут облака пара.'},
+ {at:-15,title:'ОТХОД ВТОРОЙ ПНЕВМОКОЛОННЫ',detail:'Вторая колонна отходит в вертикальной плоскости; пламя усиливается, ракета ещё удерживается опорами.'},
+ {at:-10,title:'ВЫХОД ТУРБОНАСОСОВ НА РЕЖИМ',detail:'Двигатели набирают тягу, газоотвод и бетонные конструкции освещаются факелом.'},
+ {at:-5,title:'МАКСИМАЛЬНАЯ ТЯГА',detail:'Четыре грузонесущие опоры остаются замкнутыми до момента разгрузки.'},
+ {at:0,title:'ОТРЫВ · РАСКРЫТИЕ «ТЮЛЬПАНА»',detail:'Ракета начинает подниматься. Противовесы раскрывают четыре опоры вслед за уменьшением нагрузки.'},
+ {at:6,title:'ВЫХОД СО СТАРТОВОГО КОМПЛЕКСА',detail:'Факел остаётся привязанным к соплам поднимающейся ракеты. Дым и пыль стелются вдоль газоотвода.'},
+ {at:28,title:'НАБОР ВЫСОТЫ',detail:'Показана иллюстративная траектория начального участка выведения, не телеметрия конкретного пуска.'}
 ]);
 
 export function sampleSoyuzLaunch(time){
@@ -30,11 +33,13 @@ export function sampleSoyuzLaunch(time){
  let phase=0;for(let i=1;i<SOYUZ_EVENTS.length;i++)if(t>=SOYUZ_EVENTS[i].at)phase=i;
  return Object.freeze({
   time:t,phase,event:SOYUZ_EVENTS[phase],
-  altitudeMetres,enginePower:smooth(-5,-1,t),
+  altitudeMetres,enginePower:smooth(-20,-5,t),
   supportOpen:smooth(.1,2.8,t),
-  serviceRetraction:smooth(-58,-36,t),
-  umbilicalRelease:smooth(-8,-1,t),
-  venting:smooth(-45,-8,t)*(1-smooth(4,18,t)),
+  serviceRetraction:smooth(-60,-47,t),
+  firstColumnOpen:smooth(-60,-49,t),
+  secondColumnOpen:smooth(-15,-7,t),
+  umbilicalRelease:smooth(-40,-30,t),
+  venting:smooth(-45,-16,t)*(1-smooth(3,21,t)),
   smoke:t<0?0:smooth(0,5,t)*(1-smooth(48,80,t)),
   airborne:t>0
  });
@@ -91,73 +96,6 @@ function createKinematics(holder,siteId){
  group.userData.pickable=false;
  return {group,armRoots,umbilicals,service};
 }
-function createExhaust(holder){
- const local=new THREE.Group();local.name='Союз · факел двигателя';
- holder.parent.add(local);local.position.copy(holder.position);local.userData.pickable=false;
- const white=new THREE.MeshBasicMaterial({color:0xfff8e4,transparent:true,opacity:.76,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
- const blue=new THREE.MeshBasicMaterial({color:0xdbeaf7,transparent:true,opacity:.46,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
- const orange=new THREE.MeshBasicMaterial({color:0xffa85e,transparent:true,opacity:.24,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide});
- const flames=[];
- for(const [x,z,r] of [[0,0,1.06],[-2.55,-2.55,.63],[2.55,-2.55,.63],[-2.55,2.55,.63],[2.55,2.55,.63]]){
-  const layers=[];
-  for(const [mat,mult,rad] of [[orange,1.4,1.65],[blue,1,1.1],[white,.66,.67]]){
-   // Flame is confined strictly BELOW its nozzle: it never obscures the rocket.
-   const mesh=new THREE.Mesh(new THREE.CylinderGeometry(r*rad*.45,r*rad*1.25,1,14,1,true),mat);
-   mesh.position.set(x,-1,z);mesh.visible=false;mesh.userData.pickable=false;local.add(mesh);
-   layers.push({mesh,mult});
-  }
-  flames.push(layers);
- }
- const light=new THREE.PointLight(0xffe3b4,0,65,2);light.position.set(0,-3,0);local.add(light);
- const ground=new THREE.Group();ground.name='Союз · пар и газоотвод';
- holder.parent.add(ground);ground.position.copy(holder.position);ground.userData.pickable=false;
- const sphere=new THREE.IcosahedronGeometry(1,1);
- const gray=new THREE.MeshBasicMaterial({color:0xb3aa9b,transparent:true,opacity:.27,depthWrite:false,side:THREE.DoubleSide});
- const mistMat=new THREE.MeshBasicMaterial({color:0xe0e8e6,transparent:true,opacity:.18,depthWrite:false,side:THREE.DoubleSide});
- const smoke=new THREE.InstancedMesh(sphere,gray,120),mist=new THREE.InstancedMesh(sphere,mistMat,68);
- for(const mesh of [smoke,mist]){
-  mesh.frustumCulled=false;mesh.userData.pickable=false;
-  mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);ground.add(mesh);
- }
- const mtx=new THREE.Matrix4(),q=new THREE.Quaternion(),scale=V(),p=V();
- function puff(mesh,i,x,y,z,r){
-  if(r<=0.001){scale.setScalar(.00001);p.set(0,-10000,0);}
-  else{scale.set(r*1.35,r*.56,r*1.35);p.set(x,y,z);}
-  mtx.compose(p,q,scale);mesh.setMatrixAt(i,mtx);
- }
- function render(sample){
-  const power=sample.enginePower,shake=.91+.09*Math.sin(sample.time*11);
-  local.position.copy(holder.position);
-  for(const layers of flames)for(const {mesh,mult} of layers){
-   mesh.visible=power>.002;
-   if(!mesh.visible)continue;
-   const length=(7+power*6)*mult*shake;
-   mesh.scale.set(1,length,1);
-   mesh.position.y=-.45-length/2;
-  }
-  light.intensity=power*6.5;local.visible=power>.002;
-  const t=sample.time;
-  for(let i=0;i<120;i++){
-   const age=t-i*.37,live=age>=0&&age<44,life=live?1-smooth(26,44,age):0;
-   const radius=life*(1.5+age*.48)*sample.smoke*(.75+.32*Math.sin(i*4.85));
-   const x=Math.sin(i*2.39996)*Math.min(18,3+age*.55)+(Math.sin(age*.7+i)*.85);
-   const z=-4-age*1.85+Math.cos(i*2.17)*Math.min(12,3+age*.45);
-   puff(smoke,i,x,-.1+radius*.25,z,radius);
-  }
-  for(let i=0;i<68;i++){
-   const age=t+45-i*.72,live=age>=0&&age<32,fade=live?(1-smooth(19,32,age)):0;
-   const radius=fade*sample.venting*(.7+age*.17)*(1+.22*Math.sin(i*1.71));
-   const sign=i%2?1:-1;
-   puff(mist,i,sign*(1.5+age*.21+Math.sin(i*4)*.9),
-      1.2+Math.min(6,age*.24)+Math.sin(age+i)*.45,
-      (i%4-1.5)*1.4-age*.38,radius);
-  }
-  smoke.instanceMatrix.needsUpdate=true;mist.instanceMatrix.needsUpdate=true;
-  gray.opacity=.28*sample.smoke;mistMat.opacity=.18*sample.venting;
-  ground.visible=sample.venting>.001||sample.smoke>.001;
- }
- return {local,ground,render};
-}
 function cleanup(root){
  if(!root)return;
  const geos=new Set(),mats=new Set();
@@ -184,7 +122,7 @@ function ensurePanel(){
 export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart=()=>null,onStop=()=>{}}){
  const panel=ensurePanel(),byId=id=>panel.querySelector('#'+id);
  let active=false,paused=false,siteId=null,time=SOYUZ_START,speed=6,lastNow=null;
- let original=null,saved=null,restoreScene=null,kinematics=null,effects=null,entry=null;
+ let original=null,saved=null,restoreScene=null,kinematics=null,effects=null,columns=null,entry=null;
  let hidden=[],follow=true,lastFollowPosition=null;
  function apply(){
   if(!active||!entry)return;
@@ -195,9 +133,9 @@ export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart
   const root=kinematics?.group;
   if(root){
    for(const arm of kinematics.armRoots)arm.pivot.quaternion.setFromAxisAngle(arm.axis,-sample.supportOpen*.62);
-   for(const mast of kinematics.umbilicals)mast.pivot.rotation.y=mast.side*sample.umbilicalRelease*.75;
-   for(const mast of kinematics.service)mast.pivot.rotation.y=mast.side*sample.serviceRetraction*1.12;
+    // Pneumatic columns are animated around side-mounted horizontal hinges.
   }
+  columns?.render(sample);
   effects?.render(sample);
   if(follow){
    entry.holder.updateWorldMatrix(true,false);
@@ -223,8 +161,8 @@ export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart
   document.body.classList.remove('soyuz-launch-active');
   for(const pair of hidden)pair[0].visible=pair[1];hidden=[];
   if(entry&&original){entry.holder.position.copy(original.position);entry.holder.rotation.copy(original.rotation);entry.holder.visible=original.visible;}
-  cleanup(kinematics?.group);cleanup(effects?.local);cleanup(effects?.ground);
-  kinematics=null;effects=null;
+  columns?.stop();effects?.stop();cleanup(kinematics?.group);
+  kinematics=null;columns=null;effects=null;
   restoreScene?.();restoreScene=null;
   if(saved){
    controls.enabled=saved.enabled;controls.enablePan=saved.pan;
@@ -252,7 +190,12 @@ export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart
   byId('soyuzSpeed').value='6';
   entry.holder.visible=true;
   kinematics=createKinematics(entry.holder,id);
-  effects=createExhaust(entry.holder);
+  // The source mesh is static; animated columns replace its fixed masts only
+  // during playback, then the original materials are restored untouched.
+  columns=createSoyuzPneumaticColumns({siteRoot:padRoots[id],siteId:id});
+  // Retain the four support-arm proxy, but not the older Y-rotating fake masts.
+  for(const tower of [...kinematics.service,...kinematics.umbilicals])tower.pivot.visible=false;
+  effects=createSoyuzExhaust({holder:entry.holder,siteRoot:padRoots[id],camera});
   const markers=id==='pad-1'
    ?new Set(['tulip-arm','tulip-inner-bracing','tulip-gripper','yellow-counterweight'])
    :new Set(['tulip-support-main','tulip-cross-brace','support-arm-gripper','support-arm-actuator','tulip-counterweight']);
@@ -298,5 +241,5 @@ export function createSoyuzDualLaunch({camera,controls,padRoots,getEntry,onStart
  byId('soyuzFree').onclick=()=>{follow=false;lastFollowPosition=null;apply();};
  document.addEventListener('keydown',e=>{if(active&&e.key==='Escape'&&!/INPUT|SELECT|TEXTAREA/.test(e.target?.tagName||'')){e.preventDefault();stop();}});
  document.addEventListener('visibilitychange',()=>{lastNow=null;});
- return {start,stop,pause,play,seek,update,isActive:()=>active,stats:()=>({version:SOYUZ_DUAL_LAUNCH_VERSION,active,paused,siteId,time,speed,follow,sourceReady:entry?.status==='ready',sample:sampleSoyuzLaunch(time),staticArmsHidden:hidden.length})};
+ return {start,stop,pause,play,seek,update,isActive:()=>active,stats:()=>({version:SOYUZ_DUAL_LAUNCH_VERSION,active,paused,siteId,time,speed,follow,sourceReady:entry?.status==='ready',sample:sampleSoyuzLaunch(time),staticArmsHidden:hidden.length,pneumaticColumns:columns?.columns.map(c=>({which:c.which,rotationZ:c.pivot.rotation.z,hinge:c.hinge})),sourceMasks:columns?.sourceMasks,exhaust:effects?.stats()})};
 }
