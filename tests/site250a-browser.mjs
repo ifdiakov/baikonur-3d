@@ -22,6 +22,12 @@ try{
  await checkpoint('night');await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.site250a.inspect('bunker');q.evening.setEvening(true);});await frame();await page.screenshot({path:`${out}/${prefix}-night.png`});
  await checkpoint('mobile');await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.site250a.inspect('all');});await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
  assert(await page.locator('#site250aViews').isVisible());
+ const panel=await page.locator('#info').boundingBox(),header=await page.locator('#ui').boundingBox();
+ assert(panel.y-header.y-header.height>180,'Mobile controls leave a visible model viewport');
+ assert.equal(await page.locator('#description').isVisible(),false,'Long description is collapsed on mobile');
+ for(const button of await page.locator('#site250aViews button').all()){const r=await button.boundingBox();assert(r.x>=panel.x&&r.x+r.width<=panel.x+panel.width,'Every camera button fits inside the card');}
+ await page.locator('#detailMore').click();assert(await page.locator('#description').isVisible());await page.locator('#detailMore').click();
+
  assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));assert.deepEqual(errors,[]);
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(stats.portalArchive.models.filter(s=>s.id==='pad-250a').length,1);assert(stats.catalogAliases.some(s=>s.id==='pad-250а'&&s.aliasOf==='pad-250a'));
  await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,model,errors,consoleErrors,failedRequests,roads:stats.transport.facilityPorts.filter(s=>s.id.startsWith('pad-250a'))},null,2));console.log('SITE250A_BROWSER_PASS');
