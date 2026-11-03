@@ -65,6 +65,24 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.roadEditor,null,{timeout:300000});
  assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats())).added,20);
  assert.equal(await page.locator('#roadEditorPanel').isVisible(),false);
+ // The road audit covers the real museum camera, not just off-screen meshes.
+ // Save three close-up images for source geometry / rendered-pavement review.
+ for(const [id,range,label] of [
+  ['road-3',75,'gagarin-junction'],
+  ['road-26',75,'ground-hairpin'],
+  ['road-31',155,'northern-elevated-road']
+ ]){
+  const view=await page.evaluate(({id,range})=>{
+   const qa=window.__BAIKONUR_QA,road=qa.inspectEditedRoad(id,{range});
+   if(!road)return null;
+   return {...road,projected:qa.projectWorld(...road.position)};
+  },{id,range});
+  assert(view&&view.points>20,'Road '+id+' missing or insufficiently sampled in the live scene');
+  assert(view.projected.x>0&&view.projected.x<1600,'Road '+id+' outside QA view horizontally');
+  assert(view.projected.y>0&&view.projected.y<1000,'Road '+id+' outside QA view vertically');
+  await frame();
+  await page.screenshot({path:out+'/'+prefix+'-'+label+'.png'});
+ }
  assert.deepEqual(errors,[]);
  console.log('ROAD_EDITOR_BROWSER_PASS',JSON.stringify({sourcePaths:initial.sourceRoadPaths,importVersion:exported.version,download:downloaded.suggestedFilename()}));
 }finally{
