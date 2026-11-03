@@ -1,0 +1,149 @@
+import * as THREE from 'three';
+import {subtractRoadPolygon} from './road-surface.js?v=20261103-road-mesh-v2';
+
+export const ROAD_EDIT_MESH_VERSION='stitched-roads-v2';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const planar=(a,b)=>Math.hypot(b[0]-a[0],b[2]-a[2]);
+const lerp=(a,b,t)=>a.map((v,k)=>v+(b[k]-v)*t);
+const signArea=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
+
+function segmentsLength(points){let n=0;for(let i=1;i<points.length;i++)n+=planar(points[i-1],points[i]);return n;}
+function closest(points,p){
+ let best={distance:Infinity};
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[2]-a[2],den=dx*dx+dz*dz;
+  if(den<1e-12)continue;
+  const t=clamp(((p[0]-a[0])*dx+(p[2]-a[2])*dz)/den,0,1),q=lerp(a,b,t),d=planar(p,q);
+  if(d<best.distance)best={distance:d,point:q,segment:i,interior:t>1e-3&&t<1-1e-3};
+ }
+ return best;
+}
+
+// Only join genuinely coincident proposed roads. Never bridge an arbitrary
+// gap across a rail line, building or a deliberately separate compound.
+export function stitchEditedRoads(input,{tolerance=5.5}={}){
+ const roads=input.map(r=>({...r,points:r.points.map(p=>[...p])})),adjustments=[];
+ const lengths=roads.map(r=>segmentsLength(r.points));
+ for(let i=0;i<roads.length;i++)for(const end of [0,roads[i].points.length-1]){
+  const p=roads[i].points[end];let chosen=null;
+  for(let j=0;j<roads.length;j++){
+   if(i===j||lengths[j]<=lengths[i]+4)continue;
+   const q=closest(roads[j].points,p);
+   if(q.distance>Math.min(tolerance,(roads[i].width+roads[j].width)*.75)||Math.abs(q.point[1]-p[1])>.8)continue;
+   if(!chosen||q.distance<chosen.distance)chosen={...q,id:roads[j].id};
+  }
+  if(chosen&&chosen.distance>.001){
+   const before=[...p];roads[i].points[end]=[...chosen.point];
+   adjustments.push({roadId:roads[i].id,endpoint:end===0?'start':'end',targetId:chosen.id,
+    distance:chosen.distance,before,after:[...chosen.point]});
+  }
+ }
+ return {roads,adjustments};
+}
+
+// Rounded 3D alignment without rounding away real corners or changing the
+// surveyed/owner-authored endpoints. Every ribbon shares the SAME samples.
+export function sampleEditedRoad(road,{step=1.35,terrainHeightAt=null}={}){
+ const control=road.points.map(p=>[...p]),width=road.width;
+ const out=[control[0]];
+ const push=p=>{if(planar(out.at(-1),p)>1e-6)out.push(p);else out[out.length-1]=p;};
+ const line=(a,b)=>{const n=Math.max(1,Math.ceil(planar(a,b)/step));for(let j=1;j<=n;j++)push(lerp(a,b,j/n));};
+ let cursor=control[0];
+ for(let i=1;i<control.length-1;i++){
+  const a=control[i-1],b=control[i],c=control[i+1],la=planar(a,b),lb=planar(b,c);
+  if(la<1e-6||lb<1e-6)continue;
+  const da=[(b[0]-a[0])/la,(b[2]-a[2])/la],db=[(c[0]-b[0])/lb,(c[2]-b[2])/lb];
+  const angle=Math.acos(clamp(da[0]*db[0]+da[1]*db[1],-1,1));
+  if(angle<.16){line(cursor,b);cursor=b;continue;}
+  const reach=Math.min(width*1.45,la*.32,lb*.32,7);
+  if(reach<.18){line(cursor,b);cursor=b;continue;}
+  const entry=[b[0]-da[0]*reach,b[1]-(b[1]-a[1])*reach/la,b[2]-da[1]*reach];
+  const exit=[b[0]+db[0]*reach,b[1]+(c[1]-b[1])*reach/lb,b[2]+db[1]*reach];
+  line(cursor,entry);
+  const arc=Math.max(3,Math.ceil((2*reach)/step));
+  for(let k=1;k<=arc;k++){
+   const t=k/arc,u=1-t;
+   push([u*u*entry[0]+2*u*t*b[0]+t*t*exit[0],
+    u*u*entry[1]+2*u*t*b[1]+t*t*exit[1],
+    u*u*entry[2]+2*u*t*b[2]+t*t*exit[2]]);
+  }
+  cursor=exit;
+ }
+ line(cursor,control.at(-1));
+ if(terrainHeightAt)for(const p of out){const terrain=terrainHeightAt(p[0],p[2]);if(Number.isFinite(terrain))p[1]=Math.max(p[1],terrain+.07);}
+ return out;
+}
+
+function ribbonQuads(points,width,lift=0){
+ const rim=[];
+ for(let i=0;i<points.length;i++){
+  const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
+  const dx=next[0]-prev[0],dz=next[2]-prev[2],len=Math.hypot(dx,dz)||1,nx=-dz/len*width/2,nz=dx/len*width/2;
+  rim.push([{x:points[i][0]-nx,y:points[i][1]+lift,z:points[i][2]-nz},
+   {x:points[i][0]+nx,y:points[i][1]+lift,z:points[i][2]+nz}]);
+ }
+ const result=[];
+ for(let i=1;i<rim.length;i++){
+  const [a,b]=rim[i-1],[c,d]=rim[i];
+  // Clipper expects CCW projected X/Z. Geo positions keep the 3D slope.
+  const polygon=[a,b,d,c];
+  if(signArea(a,b,d)<0)polygon.reverse();
+  result.push(polygon);
+ }
+ return result;
+}
+function polygonGeometry(polygons){
+ const positions=[];
+ for(const polygon of polygons)for(let i=1;i<polygon.length-1;i++){
+  const tri=[polygon[0],polygon[i],polygon[i+1]];
+  if(Math.abs(signArea(...tri))<1e-7)continue;
+  if(signArea(...tri)<0)tri.reverse();
+  // X/Z counterclockwise produces an upward facing normal in Three's X/Y/Z.
+  for(const v of tri)positions.push(v.x,v.y,v.z);
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
+ geometry.computeVertexNormals();geometry.computeBoundingSphere();
+ return geometry;
+}
+function unionQuads(quads){
+ const result=[],cells=new Map(),size=8;
+ const keys=p=>{const minX=Math.min(...p.map(v=>v.x)),maxX=Math.max(...p.map(v=>v.x)),
+  minZ=Math.min(...p.map(v=>v.z)),maxZ=Math.max(...p.map(v=>v.z)),rows=[];
+  for(let x=Math.floor(minX/size);x<=Math.floor(maxX/size);x++)for(let z=Math.floor(minZ/size);z<=Math.floor(maxZ/size);z++)rows.push(x+':'+z);
+  return rows;
+ };
+ let overlaps=0;
+ for(const polygon of quads){
+  const cellKeys=keys(polygon),previous=[...new Set(cellKeys.flatMap(k=>cells.get(k)||[]))];
+  let pieces=[polygon];
+  for(const p of previous){
+   if(pieces.length===0)break;
+   const a=p.reduce((sum,v)=>sum+v.y,0)/p.length,b=polygon.reduce((sum,v)=>sum+v.y,0)/polygon.length;
+   if(Math.abs(a-b)>.7)continue; // bridge crossing, not a junction
+   const next=pieces.flatMap(q=>subtractRoadPolygon(q,p));
+   if(next.length!==pieces.length||next.some((q,i)=>q.length!==(pieces[i]?.length||0)))overlaps++;
+   pieces=next;
+  }
+  for(const p of pieces){
+   result.push(p);
+   for(const key of keys(p)){let group=cells.get(key);if(!group){group=[];cells.set(key,group);}group.push(p);}
+  }
+ }
+ return {polygons:result,overlaps};
+}
+export function buildEditedRoadMeshes(roads,{terrainHeightAt=null}={}){
+ const buckets={asphalt:[],ground:[],shoulder:[]},paths=[],sourceQuads=0,stats={segments:0,joins:0,overlaps:0};
+ for(const r of roads){
+  const points=sampleEditedRoad(r,{terrainHeightAt});
+  paths.push({id:r.id,width:r.width,points});
+  const shoulder=ribbonQuads(points,r.width+.54,.005),surface=ribbonQuads(points,r.width,.045);
+  buckets.shoulder.push(...shoulder);buckets[r.surface].push(...surface);
+  sourceQuads+=surface.length;stats.segments+=points.length-1;
+ }
+ const geometries={};
+ for(const [kind,quads]of Object.entries(buckets)){
+  const union=unionQuads(quads);geometries[kind]=polygonGeometry(union.polygons);stats.overlaps+=union.overlaps;
+ }
+ return {geometries,paths,stats:{...stats,sourceRoads:roads.length,sourceQuads}};
+}
