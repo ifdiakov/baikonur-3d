@@ -151,14 +151,16 @@
         }
       });
       document.body.classList.add('museum-ready');
-      // Let the walkthrough continue over the real interactive scene while
-      // optional 3D models are fetched in the existing background queue.
-      if (window.__MUSEUM_ONBOARDING) window.__MUSEUM_ONBOARDING.ready();
       mark('interactive');
-      // Resolve the presentation first. Optional parsing must not occupy the
-      // same browser turn as the first visible, interactive overview.
-      paint().then(function () { interactive = true; pump(); });
       preloader('destroy');
+      // Trigger the camera-led tour only once the loader is GONE and the
+      // actual interactive scene has received its own rendered frame.
+      // Optional heavy assets still start in the same background queue.
+      paint().then(function () {
+        interactive = true;
+        pump();
+        if (window.__MUSEUM_ONBOARDING) window.__MUSEUM_ONBOARDING.ready();
+      });
       if (focusWasInside) {
         var target = document.querySelector('#sitesAccordion > summary');
         // A collapsed mobile menu is not a valid focus destination.
