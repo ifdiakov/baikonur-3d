@@ -1,0 +1,23 @@
+#roadEditorToggle{display:block;width:100%;margin:8px 0 5px;border:1px solid #cddce044;border-radius:9px;background:#20384ae8;color:#edf6f8;padding:11px;font:700 10px/1.45 Montserrat,Arial,sans-serif;letter-spacing:.075em;cursor:pointer;text-align:left;transition:background .18s,border-color .18s}
+#roadEditorToggle:hover,#roadEditorToggle[aria-pressed=true]{background:#3d5564;border-color:#ef8e80}
+#roadEditorToggle:focus-visible{outline:2px solid #f4aaa0;outline-offset:2px}
+#roadEditorPanel{position:fixed;z-index:26;right:18px;top:16px;width:344px;max-width:calc(100vw - 22px);max-height:calc(100dvh - 130px);overflow:auto;padding:17px;border:1px solid #e4eef438;border-radius:13px;background:#071825f4;color:#eaf3f8;box-shadow:0 15px 60px #0009;backdrop-filter:blur(16px);font:12px/1.5 Montserrat,Arial,sans-serif;scrollbar-width:thin}
+#roadEditorPanel[hidden]{display:none}
+.road-editor-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;letter-spacing:.12em;font-weight:700}
+#roadEditorPanel button{background:#1c3646;border:1px solid #e7eff431;border-radius:7px;padding:9px 11px;color:#eaf3f8;font:600 10px Montserrat,Arial,sans-serif;cursor:pointer}
+#roadEditorPanel button:hover{background:#3b5969;border-color:#ee887f}
+#roadEditorPanel button[aria-pressed=true]{background:#a94942;border-color:#ee8c83}
+#roadEditorPanel button:disabled{opacity:.4;cursor:default}
+#roadEditorPanel .road-editor-heading button{font-size:20px;border:0;background:transparent;padding:0 4px;line-height:1}
+.road-editor-modes{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.road-editor-fields{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:14px 0}
+.road-editor-fields label{display:flex;flex-direction:column;gap:4px;color:#bed0dc;font-size:10px}
+#roadEditorPanel input[type=number],#roadEditorPanel select{width:100%;min-height:36px;padding:8px;border:1px solid #e7eef43c;border-radius:7px;background:#152c3c;color:white;font:11px Montserrat,Arial}
+#roadEditorPanel input:disabled,#roadEditorPanel select:disabled{opacity:.45}
+.road-editor-help{min-height:58px;color:#bacbd8;margin:12px 0;font-size:11px}
+.road-editor-count{padding:10px 0;color:#fff0de;font-weight:700}
+.road-editor-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.road-editor-actions [data-action=clear]{grid-column:1/-1;border-color:#e87a6d88!important;background:#663730!important}
+.road-editor-hint{margin:13px 0 6px;color:#9db0bd;font-size:10px;line-height:1.6}
+#roadEditorStatus{min-height:19px;color:#e8b3a2;margin:7px 0 0;font-size:11px;line-height:1.45}
+@media(max-width:850px){#roadEditorPanel{right:7px;top:7px;width:min(320px,calc(100vw - 14px));max-height:calc(100dvh - 106px);padding:12px}#roadEditorToggle{font-size:9px}}
