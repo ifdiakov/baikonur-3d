@@ -6,7 +6,7 @@ import {applyEditedRoadEndpointGrades,widthAtEditedRoad,ROAD_EDIT_SHOULDER_EXTRA
  ROAD_EDIT_WHITE_EDGE_INSET,ROAD_EDIT_CENTER_LINE_WIDTH,ROAD_EDIT_YELLOW_WIDTH,ROAD_EDIT_YELLOW_OFFSET}
  from './road-editor-style.js?v=20261103-road-parity-v3';
 
-export const ROAD_EDIT_MESH_VERSION='stitched-road-union-welded-v5';
+export const ROAD_EDIT_MESH_VERSION='stitched-road-union-welded-v6-terrain-clearance';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const planar=(a,b)=>Math.hypot(b[0]-a[0],b[2]-a[2]);
 const lerp=(a,b,t)=>a.map((v,k)=>v+(b[k]-v)*t);
@@ -83,8 +83,15 @@ export function sampleEditedRoad(road,{step=1.35,terrainHeightAt=null}={}){
   cursor=exit;
  }
  line(cursor,control.at(-1));
- if(terrainHeightAt)for(const p of out){const terrain=terrainHeightAt(p[0],p[2]);if(Number.isFinite(terrain))p[1]=Math.max(p[1],terrain+.035);}
- return road.profile?applyEditedRoadEndpointGrades(out,road.profile):out;
+ // Endpoint-grade matching can pull the newly sampled centreline down again.
+ // Apply the ground clearance AFTER it so a steep edited approach (road-31
+ // to Saturn) cannot sink into the curved hill between saved anchor points.
+ const graded=road.profile?applyEditedRoadEndpointGrades(out,road.profile):out;
+ if(terrainHeightAt)for(const p of graded){
+  const terrain=terrainHeightAt(p[0],p[2]);
+  if(Number.isFinite(terrain))p[1]=Math.max(p[1],terrain+.035);
+ }
+ return graded;
 }
 
 function ribbonQuads(points,width,lift=0,terrainHeightAt=null){
