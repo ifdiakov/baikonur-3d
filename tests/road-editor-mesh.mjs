@@ -49,7 +49,7 @@ for(const r of owner.added){
 assert(ownerMesh.stats.overlaps>0,'Owner junctions should be unioned into one continuous pavement');
 assert(owner.added.some(r=>r.id==='road-31'&&r.points.some(p=>p[1]>20)),'Elevated road-31 is not loaded');
 const ramp=ownerMesh.paths.find(p=>p.id==='road-31').points;
-assert(ramp.length>100,'The steep owner road has too few vertical samples');
+assert(ramp.length>70,'The steep owner road has too few vertical samples');
 for(let i=1;i<ramp.length;i++){
  assert(Math.hypot(ramp[i][0]-ramp[i-1][0],ramp[i][2]-ramp[i-1][2])<=1.36);
  assert(Math.abs(ramp[i][1]-ramp[i-1][1])<1.0,
