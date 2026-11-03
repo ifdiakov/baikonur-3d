@@ -10,12 +10,12 @@ const [html,catalogue,field,history,railPoints]=await Promise.all([
   readFile(new URL('../index.html',import.meta.url),'utf8'),
   ...['catalog.json','field-research.json','history.json','osm/rail-points.geojson'].map(file=>readFile(new URL('../data/'+file,import.meta.url),'utf8').then(JSON.parse))
 ]);
-const ids=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','infrastructureAccordion','heroesAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','ИНФРАСТРУКТУРА','ГЕРОИ И ИСТОРИИ','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+const ids=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.id),ids);
 assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.title),titles);
 const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html.indexOf('</aside>',asideStart));
-assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the eight requested sections in order');
+assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the six remaining menu sections in order');
 assert.deepEqual([...aside.matchAll(/<span class="sites-accordion-title">([^<]+)<\/span>/g)].map(match=>match[1]),titles);
 assert.match(aside,/<div class="museum-name">БАЙКОНУР<\/div>/);
 assert.match(aside,/<span class="museum-subtitle-label">ИНТЕРАКТИВНЫЙ МУЗЕЙ<\/span><span class="museum-dimension">3D<\/span>/);
@@ -26,7 +26,7 @@ assert.doesNotMatch(aside,/ЦИКЛОГРАММЫ|ПЛОЩАДКИ И ОБЪЕК
 const dock=html.slice(html.indexOf('<footer id="timeDock"'),html.indexOf('</footer>'));
 assert.match(dock,/id="year"[^>]+type="range"[^>]+min="1955"[^>]+max="2026"/);
 assert.match(dock,/id="yearVal"/);assert.doesNotMatch(dock,/timeline-event|СОБЫТИЯ|timelineYearHint/);
-for(const id of ['search','infrastructureSearch','graveyardSearch','list','infrastructureList','graveyardList'])assert.equal([...html.matchAll(new RegExp('id="'+id+'"','g'))].length,1,'One accessible catalogue control: '+id);
+for(const id of ['search','graveyardSearch','list','graveyardList'])assert.equal([...html.matchAll(new RegExp('id="'+id+'"','g'))].length,1,'One accessible catalogue control: '+id);
 
 const sites=catalogue.sites.filter(record=>!record.aliasOf),groups={sitesAccordion:[],infrastructureAccordion:[]};
 for(const record of sites){
@@ -64,10 +64,12 @@ assert.ok(html.includes("case 'buran-landing-reconstruction':openMenuSite('pad-2
 assert.ok(html.includes("case 'buran-loading-reconstruction':openMenuSite('pad-251');break;"));
 assert.equal(new Set([...actions,...reconstructionActions]).size,actions.length+reconstructionActions.length,'Physical exhibits and animated actions have no duplicates');
 const groupedStories=Object.values(MUSEUM_STORY_GROUPS).flat();
-assert.equal(groupedStories.length,12,'All reviewed archival stories are assigned a section');
-assert.equal(new Set(groupedStories).size,12,'Each archival story has one unique home');
-assert.deepEqual(Object.keys(MUSEUM_STORY_GROUPS),['heroesAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion']);
-assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='heroesAccordion').items[0].action,'flanks-history');
+assert.equal(groupedStories.length,6,'Six themed archival stories remain in visible categories');
+assert.equal(new Set(groupedStories).size,6,'Visible archival stories have one unique home');
+assert.deepEqual(Object.keys(MUSEUM_STORY_GROUPS),['mythsAccordion','traditionsAccordion','graveyardAccordion']);
+assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='heroesAccordion'),undefined);
+assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='infrastructureAccordion'),undefined);
+assert.doesNotMatch(aside,/id="(?:heroesAccordion|infrastructureAccordion|infrastructureSearch|infrastructureList)"/,'Removed categories and their controls must be absent');
 assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='mythsAccordion').items.length,0,'Myths are injected from the reviewed story index');
 assert.equal(MODEL_CATALOG.r16.asset,'rockets/r16.glb');assert.equal(MODEL_CATALOG.r16.kind,'rocket');assert(ROCKET_MODELS.r16,'The site exhibit loader accepts the same R-16 as the viewer');
 assert.deepEqual(modelsForObject({id:'pad-41'}),['r16']);assert.deepEqual(modelsForKnowledge('r16'),['r16']);
