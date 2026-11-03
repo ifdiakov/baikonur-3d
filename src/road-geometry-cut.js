@@ -85,9 +85,34 @@ function gridIndex(clips){
   return [...out];
  },cells:map.size};
 }
-export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edgeMargin=.19}={}){
+function existingRoadSegmentIndex(roads){
+ const grid=new Map();
+ for(const r of roads)for(let i=1;i<r.points.length;i++){
+  const a=r.points[i-1],b=r.points[i];
+  const radius=(r.width||2)*.5+11,entry={a,b,width:r.width||2};
+  const loX=Math.floor((Math.min(a[0],b[0])-radius)/CELL),hiX=Math.floor((Math.max(a[0],b[0])+radius)/CELL);
+  const loZ=Math.floor((Math.min(a[2],b[2])-radius)/CELL),hiZ=Math.floor((Math.max(a[2],b[2])+radius)/CELL);
+  for(let x=loX;x<=hiX;x++)for(let z=loZ;z<=hiZ;z++){
+   const key=x+':'+z,list=grid.get(key)||[];list.push(entry);grid.set(key,list);
+  }
+ }
+ return (a,b,width)=>{
+  const x=(a[0]+b[0])/2,z=(a[2]+b[2])/2,y=(a[1]+b[1])/2;
+  for(const r of grid.get(Math.floor(x/CELL)+':'+Math.floor(z/CELL))||[]){
+   const dx=r.b[0]-r.a[0],dz=r.b[2]-r.a[2],den=dx*dx+dz*dz;
+   if(den<1e-8)continue;
+   const t=Math.max(0,Math.min(1,((x-r.a[0])*dx+(z-r.a[2])*dz)/den));
+   const distance=Math.hypot(x-(r.a[0]+dx*t),z-(r.a[2]+dz*t));
+   const height=r.a[1]+(r.b[1]-r.a[1])*t;
+   if(distance<=(width+r.width)*.5+1.2&&Math.abs(height-y)<1.25)return true;
+  }
+  return false;
+ };
+}
+export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edgeMargin=.19,sourceRoads=[]}={}){
  const clips=[],seen=new Set();
- let duplicateCuts=0,sourceCuts=0,replacementCuts=0;
+ const nearOld=sourceRoads.length?existingRoadSegmentIndex(sourceRoads):null;
+ let duplicateCuts=0,sourceCuts=0,replacementCuts=0,skippedOffRoad=0;
  for(const [kind,roads]of [['hidden',hidden],['added',added]])for(const r of roads){
   if(r.points?.length<2)continue;
   if(kind==='hidden'){
@@ -98,17 +123,21 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
   for(let j=1;j<r.points.length;j++){
    const a=r.points[j-1],b=r.points[j],width=(widths?(widths[j-1]+widths[j])*.5:r.width)+shoulderExtra+edgeMargin;
    const section=rectangularCut(a,b,width);
-   if(!section)continue;clips.push(section);
+   if(!section)continue;
+   if(kind==='added'&&nearOld&&!nearOld(a,b,width)){skippedOffRoad++;continue;}
+   clips.push(section);
    if(kind==='hidden')sourceCuts++;else replacementCuts++;
   }
   // Only internal bends are rounded; outer butt ends preserve the adjoining
   // road right up to its surveyed / user-selected connecting vertex.
   for(let j=1;j<r.points.length-1;j++){
    const width=(widths?widths[j]:r.width)+shoulderExtra+edgeMargin;
+   if(kind==='added'&&nearOld&&!nearOld(r.points[j-1],r.points[j],width)
+      &&!nearOld(r.points[j],r.points[j+1],width))continue;
    clips.push(circleCut(r.points[j],width));
   }
  }
- return {...gridIndex(clips),clips:clips.length,sourceCuts,replacementCuts,duplicateCuts};
+ return {...gridIndex(clips),clips:clips.length,sourceCuts,replacementCuts,duplicateCuts,skippedOffRoad};
 }
 function triangleGeom(geo,index){
  const position=geo.getAttribute('position'),uv=geo.getAttribute('uv');
