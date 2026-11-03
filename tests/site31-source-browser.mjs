@@ -8,10 +8,16 @@ const errors=[];page.on('pageerror',e=>errors.push(e.message));let requests=0;
 // Exercise failure + recovery against the real asset loader in the full museum.
 await page.route('**/assets/models/site31/model-v1.glb*',route=>{if(new URL(route.request().url()).searchParams.get('consumer')==='gagarin')return route.continue();requests++;return requests===1?route.abort():route.continue();});
 await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__SITE31_FRAME=()=>{const fn=pending;pending=null;fn?.(performance.now());};});
+let phase='startup';
+const checkpoint=async name=>{phase=name;console.log('BROWSER_PHASE',prefix,name);await writeFile(`${out}/${prefix}-progress.json`,JSON.stringify({phase,errors,requests,time:new Date().toISOString()}));};
+const watchdog=setTimeout(()=>{console.error('BROWSER_WATCHDOG',JSON.stringify({phase,errors,requests}));process.exit(1);},420000);watchdog.unref();
 const frame=()=>page.evaluate(()=>window.__SITE31_FRAME());
 try{
+ await checkpoint('navigate');
  const url=new URL(base);url.searchParams.set('view','site31');url.searchParams.set('detail','structure');await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:120000});
+ await checkpoint('museum-ready');
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:300000});
+ await checkpoint('source-failure-retry');
  await page.waitForFunction(()=>window.__BAIKONUR_QA.site31.stats().asset.status==='error');
  assert.equal(await page.locator('#site31Views button').count(),5);await page.locator('#site31LoadStatus button').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.site31.stats().asset.status==='ready',null,{timeout:120000});await frame();
@@ -19,27 +25,28 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31')?.status==='ready',null,{timeout:120000});
  const before=await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31').visible);
  await page.locator('#rocketExhibitToggle').click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.rockets.stats().placements.find(p=>p.key==='site31').visible),!before);await page.locator('#rocketExhibitToggle').click();
+ await checkpoint('site31-views');
  const poses=[];for(const [label,id]of [['Стартовый стол','structure'],['Вся площадка','all'],['Газоотвод','duct'],['Подъезды','connections'],['Сверху','top']]){
-  await page.locator('#site31Views button').filter({hasText:label}).click();await frame();poses.push(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState()));await page.screenshot({path:`${out}/${prefix}-${id}-evening.png`});
+  await checkpoint('site31-'+id);await page.locator('#site31Views button').filter({hasText:label}).click();await frame();poses.push(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState()));await page.screenshot({path:`${out}/${prefix}-${id}-evening.png`});
  }
  assert(new Set(poses.map(p=>p.position.join(','))).size===5);for(const p of poses)assert([...p.target,...p.position].every(Number.isFinite));
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(false));await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-structure-day.png`});
  await page.locator('#detailMore').click();assert(await page.getByRole('link',{name:'Soviet Model Magic',exact:true}).isVisible());await page.locator('#detailMore').click();
- await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
+ await checkpoint('site31-mobile');await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
  const buttons=await page.locator('#site31Views button').evaluateAll(xs=>xs.map(x=>{const b=x.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom};}));assert(buttons.every(b=>b.left>=0&&b.right<=390&&b.bottom<=844));
  await page.locator('#close').click();assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await frame();await page.screenshot({path:`${out}/${prefix}-mobile-uncovered.png`});
- await page.setViewportSize({width:1600,height:1000});
+ await checkpoint('gagarin-source');await page.setViewportSize({width:1600,height:1000});
  await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.load());
  await page.waitForFunction(()=>window.__BAIKONUR_QA.gagarinTable.stats().status==='ready');
- await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('structure'));await frame();
- const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
+ await checkpoint('gagarin-structure');await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('structure'));await frame();
+ await checkpoint('gagarin-metadata');const gagarin=await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarin);
  assert.equal(gagarin.tableAsset.triangles,88524);assert.equal(gagarin.tableAsset.sourceSite,'pad-31');assert.equal(gagarin.tableAsset.sourceSha256,state.asset.sourceSha256);
  assert.equal(gagarin.version,'5.0-site31-table');assert.deepEqual(gagarin.railPort,[0,.55,85.5]);
  assert(await page.locator('#gagarinTableStatus').getByRole('link').isVisible());
- await page.screenshot({path:`${out}/${prefix}-gagarin-table-day.png`});
+ await checkpoint('gagarin-screenshots');await page.screenshot({path:`${out}/${prefix}-gagarin-table-day.png`});
  await page.locator('#rocketExhibitToggle').click();await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-table-empty.png`});await page.locator('#rocketExhibitToggle').click();
  await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('all'));await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-all.png`});
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('structure'));await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-table-evening.png`});
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('all'));await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-mobile.png`});
  assert.deepEqual(errors,[]);await writeFile(`${out}/${prefix}-evidence.json`,JSON.stringify({base,state,gagarin,poses,requests,buttons,errors},null,2));console.log('SITE31_BROWSER_PASS',JSON.stringify({base,requests,triangles:state.asset.triangles,drawCalls:state.asset.drawCalls,views:poses.length}));
-}catch(error){await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({error:error.message,errors},null,2));await page.screenshot({path:`${out}/${prefix}-failure.png`}).catch(()=>{});throw error;}finally{if(errors.length)console.log(JSON.stringify({errors}));await browser.close();}
+}catch(error){await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({error:error.message,phase,errors},null,2));await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:15000}).catch(()=>{});throw error;}finally{if(errors.length)console.log(JSON.stringify({errors}));await Promise.race([browser.close(),new Promise(resolve=>setTimeout(resolve,5000))]);clearTimeout(watchdog);}
