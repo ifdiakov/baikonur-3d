@@ -1,0 +1,116 @@
+{
+  "version": "sprinter-drive-v1",
+  "sourceFile": "mercedes-benz_sprinter.glb",
+  "sourceDriveId": "1F1kj8AVOg6CuLBLaOr1UXfm1OX4PfUud",
+  "sourceSha256": "241617fc8f73fab7334ebb45a8257a21878e6c4af65fea9f780e4a02472d6607",
+  "sourceBytes": 39476548,
+  "sourceTriangles": 1139826,
+  "author": "Res1n",
+  "authorUrl": "https://sketchfab.com/Res1n",
+  "sourceUrl": "https://sketchfab.com/3d-models/mercedes-benz-sprinter-573b461cf5cf43daaf33928a6c1b370d",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "model": "Mercedes-Benz Sprinter Mk1 facelift · 903 · L3H2 · 2000",
+  "normalization": {
+    "unit": "metre",
+    "sourceUnit": "centimetre",
+    "scale": 0.01,
+    "forward": "+Z",
+    "up": "+Y"
+  },
+  "adaptation": {
+    "paint": "white RocketTrip",
+    "geometrySimplified": true,
+    "wheelsSeparated": true,
+    "photoNote": "The supplied photos show newer Sprinters; this asset preserves the uploaded older-generation model."
+  },
+  "wheels": [
+    {
+      "name": "wheel-rear-right",
+      "center": [
+        0.844,
+        0.35039000000000003,
+        -1.636365
+      ],
+      "radius": 0.35039,
+      "sourceObjectIds": [
+        64,
+        76,
+        81,
+        82,
+        83
+      ]
+    },
+    {
+      "name": "wheel-rear-left",
+      "center": [
+        -0.8345000000000001,
+        0.35039000000000003,
+        -1.636365
+      ],
+      "radius": 0.35039,
+      "sourceObjectIds": [
+        65,
+        77,
+        78,
+        79,
+        80
+      ]
+    },
+    {
+      "name": "wheel-front-right",
+      "center": [
+        0.8440000000000002,
+        0.35039000000000003,
+        2.408915
+      ],
+      "radius": 0.35039,
+      "sourceObjectIds": [
+        66,
+        68,
+        73,
+        74,
+        75
+      ]
+    },
+    {
+      "name": "wheel-front-left",
+      "center": [
+        -0.8344999999999999,
+        0.35039000000000003,
+        2.408915
+      ],
+      "radius": 0.35039,
+      "sourceObjectIds": [
+        67,
+        69,
+        70,
+        71,
+        72
+      ]
+    }
+  ],
+  "bounds": {
+    "min": [
+      -1.1667855429333567,
+      -0.0000049493169784198265,
+      -3.352099895477295
+    ],
+    "max": [
+      1.1667456078213572,
+      2.5853645311018267,
+      3.3533999919891357
+    ],
+    "size": [
+      2.333531150754714,
+      2.585369480418805,
+      6.705499887466431
+    ]
+  },
+  "asset": {
+    "bytes": 1772316,
+    "sha256": "05a10f15549f95310044b91c1dc2473e6b8f7f2fabe0236a5c45f530d6c979d9",
+    "triangles": 253837,
+    "primitives": 20
+  }
+}
