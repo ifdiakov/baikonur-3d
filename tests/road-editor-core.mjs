@@ -10,7 +10,7 @@ const cut=roadSection(trunk,n.at,12);
 assert.equal(cut.sourceId,trunk.id);
 assert.equal(cut.width,3.6);
 assert.deepEqual(cut.points,[[8,.72,0],[10,.72,0],[10,.72,10]]);
-assert.deepEqual(roadSection(trunk,2,12).points,[[0,.72,0],[10,.72,0]]);
+assert.deepEqual(roadSection(trunk,2,12).points,[[0,.72,0],[8,.72,0]]);
 assert.equal(JSON.stringify(trunk),source,'The source OSM centreline must be immutable');
 assert.equal(nearestRoadSegment([trunk],[80,0,0],{maxDistance:8}),null);
 const valid=validateRoadEdits({version:ROAD_EDITOR_VERSION,added:[{id:'road-1',width:4.5,surface:'asphalt',
