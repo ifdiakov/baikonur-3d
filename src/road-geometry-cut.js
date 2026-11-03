@@ -1,9 +1,10 @@
 import * as THREE from 'three';
+import {subtractRoadPolygon} from './road-surface.js?v=20261103-restored-junctions-v1';
 
 // Physical cutouts for the displayed road geometry, instead of transparent
 // mask textures. Original centreline/OSM graph remains unmodified. This module
 // clips every surfaced triangle, including white paint and both shoulders.
-export const ROAD_GEOMETRY_CUT_VERSION='intersection-limited-crossing-v4';
+export const ROAD_GEOMETRY_CUT_VERSION='protected-through-roads-v5';
 const EPS=1e-8,CELL=14,TAU=Math.PI*2;
 const area=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
 const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,
@@ -132,13 +133,79 @@ function existingRoadSegmentIndex(roads){
   }
   return false;
  };
+ // Preserve the entire physical width of a live intersecting carriageway.
+ // A test of just the middle of a deleted road (the previous behaviour) can
+ // miss a junction halfway along a sampled segment. Search all intersecting
+ // centreline segments and build one short, level-compatible corridor per
+ // crossing. This protection is subtracted FROM THE CUTTER POLYGON, never
+ // rendered as a separate patch or a coplanar overlay.
+ nearAligned.protectorsFor=(a,b,sourceId,width,hiddenCuts=[])=>{
+  const dx=b[0]-a[0],dz=b[2]-a[2],len=Math.hypot(dx,dz);
+  if(len<1e-6)return [];
+  const radius=width*.5+7;
+  const minX=Math.floor((Math.min(a[0],b[0])-radius)/CELL),
+   maxX=Math.floor((Math.max(a[0],b[0])+radius)/CELL),
+   minZ=Math.floor((Math.min(a[2],b[2])-radius)/CELL),
+   maxZ=Math.floor((Math.max(a[2],b[2])+radius)/CELL);
+  const candidates=new Set();
+  for(let x=minX;x<=maxX;x++)for(let z=minZ;z<=maxZ;z++)
+   for(const entry of grid.get(x+':'+z)||[])candidates.add(entry);
+  const sourceRoot=id=>String(id||'').match(/^osm-road-(\d+)/)?.[1]||String(id||'');
+  const protection=[];
+  const protectionsSeen=new Set();
+  const cross=(x,z,y,w)=>x*y-z*w;
+  for(const host of candidates){
+   if(sourceRoot(host.id)===sourceRoot(sourceId))continue;
+   const ex=host.b[0]-host.a[0],ez=host.b[2]-host.a[2],elen=Math.hypot(ex,ez);
+   if(elen<1e-5)continue;
+   const cosine=Math.abs((dx*ex+dz*ez)/(len*elen));
+   if(cosine>.80)continue;
+   const determinant=cross(dx,dz,ex,ez);
+   if(Math.abs(determinant)<1e-7)continue;
+   const offsetX=host.a[0]-a[0],offsetZ=host.a[2]-a[2];
+   const t=cross(offsetX,offsetZ,ex,ez)/determinant,
+    u=cross(offsetX,offsetZ,dx,dz)/determinant;
+   const tMargin=(width+host.width)*.5/(len||1),uMargin=(width+host.width)*.5/elen;
+   if(t< -tMargin||t>1+tMargin||u< -uMargin||u>1+uMargin)continue;
+   const ax=a[0]+dx*t,az=a[2]+dz*t,
+    ay=a[1]+(b[1]-a[1])*Math.max(0,Math.min(1,t));
+   const hostY=host.a[1]+(host.b[1]-host.a[1])*Math.max(0,Math.min(1,u));
+   if(Math.abs(ay-hostY)>1.05)continue; // underpasses remain independent
+   const px=(ax+host.a[0]+ex*u)*.5,pz=(az+host.a[2]+ez*u)*.5;
+   // Both ways may be targeted for deletion. In that case there is no
+   // "live through road" to restore at this exact map location.
+   const hostRemoved=hiddenCuts.some(h=>{
+    if(sourceRoot(h.sourceId)!==sourceRoot(host.id))return false;
+    for(let j=1;j<h.points.length;j++){
+     const p=h.points[j-1],q=h.points[j],vx=q[0]-p[0],vz=q[2]-p[2],den=vx*vx+vz*vz;
+     if(den<1e-8)continue;
+     const ratio=Math.max(0,Math.min(1,((px-p[0])*vx+(pz-p[2])*vz)/den));
+     const d=Math.hypot(px-p[0]-vx*ratio,pz-p[2]-vz*ratio);
+     if(d<(h.width+host.width)*.5+.3&&Math.abs(hostY-p[1]-(q[1]-p[1])*ratio)<1.05)return true;
+    }
+    return false;
+   });
+   if(hostRemoved)continue;
+   const key=sourceRoot(host.id)+':'+Math.round(px*2)+':'+Math.round(pz*2);
+   if(protectionsSeen.has(key))continue;protectionsSeen.add(key);
+   const ux=ex/elen,uz=ez/elen,normalX=-uz,normalZ=ux;
+   const crossingSin=Math.max(.25,Math.sqrt(1-cosine*cosine));
+   const halfLength=width/(2*crossingSin)+host.width*.55+.85,
+    halfWidth=host.width*.5+.6*.5+.15;
+   const begin=[px-ux*halfLength,hostY,pz-uz*halfLength],
+    end=[px+ux*halfLength,hostY,pz+uz*halfLength];
+   const corridor=rectangularCut(begin,end,halfWidth*2);
+   if(corridor)protection.push(corridor);
+  }
+  return protection;
+ };
  nearAligned.crossingAt=crossingAt;
  return nearAligned;
 }
 export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edgeMargin=.19,sourceRoads=[]}={}){
  const clips=[],seen=new Set();
  const nearOld=sourceRoads.length?existingRoadSegmentIndex(sourceRoads):null;
- let duplicateCuts=0,sourceCuts=0,replacementCuts=0,skippedOffRoad=0;
+ let duplicateCuts=0,sourceCuts=0,replacementCuts=0,skippedOffRoad=0,restoredCrossings=0,protectedClipParts=0;
  for(const [kind,roads]of [['hidden',hidden],['added',added]])for(const r of roads){
   if(r.points?.length<2)continue;
   if(kind==='hidden'){
@@ -154,7 +221,21 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    section.gradeTolerance=kind==='hidden'?1.9:1.05;
    section.kind=kind;
    section.protectCrossing=kind==='hidden'&&Boolean(nearOld?.crossingAt?.(a,b,r.sourceId,width));
-   clips.push(section);
+   if(kind==='hidden'&&nearOld?.protectorsFor){
+    const originalPoly=section.points;
+    let pieces=[originalPoly];
+    for(const corridor of nearOld.protectorsFor(a,b,r.sourceId,width,hidden)){
+     const next=pieces.flatMap(p=>subtractRoadPolygon(p,corridor.points));
+     if(next.length!==pieces.length||next.some((p,i)=>p.length!==pieces[i]?.length))restoredCrossings++;
+     pieces=next;
+     if(!pieces.length)break;
+    }
+    for(const points of pieces){
+     if(points.length<3)continue;
+     clips.push({...section,points,bounds:bounds(points),protectCrossing:false});
+     protectedClipParts++;
+    }
+   }else clips.push(section);
    if(kind==='hidden')sourceCuts++;else replacementCuts++;
   }
   // Only internal bends are rounded; outer butt ends preserve the adjoining
@@ -168,10 +249,19 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    const a=r.points[j-1],b=r.points[j+1],dx=b[0]-a[0],dz=b[2]-a[2],d=Math.hypot(dx,dz);
    corner.protectCrossing=kind==='hidden'&&Boolean(nearOld?.crossingAt?.(a,b,r.sourceId,width));
    if(d>1e-6)corner.direction=[dx/d,dz/d];
-   clips.push(corner);
+   if(kind==='hidden'&&nearOld?.protectorsFor){
+    let pieces=[corner.points];
+    for(const corridor of nearOld.protectorsFor(a,b,r.sourceId,width,hidden)){
+     const next=pieces.flatMap(p=>subtractRoadPolygon(p,corridor.points));
+     if(next.length!==pieces.length||next.some((p,i)=>p.length!==pieces[i]?.length))restoredCrossings++;
+     pieces=next;
+     if(!pieces.length)break;
+    }
+    for(const points of pieces)if(points.length>=3)clips.push({...corner,points,bounds:bounds(points),protectCrossing:false});
+   }else clips.push(corner);
   }
  }
- return {...gridIndex(clips),clips:clips.length,sourceCuts,replacementCuts,duplicateCuts,skippedOffRoad};
+ return {...gridIndex(clips),clips:clips.length,sourceCuts,replacementCuts,duplicateCuts,skippedOffRoad,restoredCrossings,protectedClipParts};
 }
 // Batched OSM surfaces no longer retain an OSM way-id per GPU triangle.
 // Preserve an unrelated THROUGH road when the owner hides a crossing way:
