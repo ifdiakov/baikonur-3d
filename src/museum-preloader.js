@@ -194,21 +194,8 @@
   }
 
   function schedulePresentation() {
-    if (presentationTimer !== null) window.clearTimeout(presentationTimer);
-    presentationTimer = null;
-    if (motionPaused() || finishing || (!phrases.length && !images.length)) return;
-    // This is decoration only: neither its clock nor an image download is
-    // included in the museum's real progress or its reveal deadline.
-    presentationTimer = window.setTimeout(function () {
-      presentationTimer = null;
-      if (motionPaused() || finishing) return;
-      presentationTick += 1;
-      // Text and images use independent cadences: copy every 4 seconds,
-      // gallery artwork every 5 seconds.
-      if (phrases.length && presentationTick % 4 === 0) showFeature((featureIndex + 1) % phrases.length);
-      if (presentationTick % 5 === 0) advanceImage();
-      schedulePresentation();
-    }, 1000);
+    // Phrase and gallery motion is pure CSS/compositor work. Keeping this
+    // function as a no-op preserves the pause/reduced-motion controller API.
   }
 
   function syncMotion() {
@@ -231,7 +218,6 @@
     root.dataset.launchStep = String(launchStep);
     if (status) status.textContent = launchStatuses[launchStep];
     text('museumLaunchStep', String(launchStep + 1).padStart(2, '0') + ' / ' + String(launchStatuses.length).padStart(2, '0'));
-    if (preview && launchStep === 0) writeProgress(0);
     // Fast progress may change the phrase each frame. Fading every new string
     // in from opacity zero would keep the whole sequence invisible.
   }
@@ -313,61 +299,11 @@
     progressLastTime = 0;
   }
 
-  function canAnimateProgress() {
-    return fill && !failed && !destroyed && !reducedMotion &&
-      !document.hidden && !root.hidden &&
-      (finishing || (preview ? !manuallyPaused : activeStage > 0));
-  }
-
-  function animateProgress(now) {
-    progressFrame = null;
-    if (!canAnimateProgress()) { stopProgress(); return; }
-    if (progressLastTime && now - progressLastTime < 33 && !finishing) {
-      progressFrame = window.requestAnimationFrame(animateProgress);
-      return;
-    }
-    if (finishing) {
-      var fraction = progressFinishDuration > 0 ? Math.min(1, Math.max(0,
-        (now - progressFinishStartedAt) / progressFinishDuration)) : 1;
-      var eased = 1 - Math.pow(1 - fraction, 3);
-      writeProgress(Math.max(visualProgress, progressFinishFrom + (1 - progressFinishFrom) * eased));
-      if (fraction >= 1) { stopProgress(); return; }
-    } else if (preview) {
-      // A labelled demo follows only the standalone status clock. Its weighted
-      // segments keep an even speed across the longer first and last statuses.
-      var cycleDuration = 950 + (launchStatuses.length - 2) * 500 + 650;
-      var segmentEnd = launchStep === launchStatuses.length - 1 ? 1 : (950 + launchStep * 500) / cycleDuration;
-      var demoFraction = Math.min(1, Math.max(0, (now - demoStepStartedAt) / demoStepDuration));
-      writeProgress(Math.max(visualProgress, demoStepFrom + (segmentEnd - demoStepFrom) * demoFraction));
-    } else {
-      var elapsed = Math.max(0, now - stageStartedAt);
-      // Real stage boundaries are discrete. Between them, approach only 90%
-      // of the CURRENT unfinished stage, never the next unconfirmed boundary.
-      // This estimate is decorative; ARIA and startup retain the real counts.
-      var withinStage = .9 * (1 - Math.exp(-elapsed / 4000));
-      var target = Math.min((completed + withinStage) / totalStages, (totalStages - .1) / totalStages);
-      var delta = Math.min(64, Math.max(0, now - progressLastTime));
-      var next = visualProgress + Math.max(0, target - visualProgress) * (1 - Math.exp(-delta / 140));
-      writeProgress(Math.max(visualProgress, next));
-    }
-    progressLastTime = now;
-    progressFrame = window.requestAnimationFrame(animateProgress);
-  }
-
   function syncProgress() {
-    if (failed || destroyed) { stopProgress(); return; }
-    if (!canAnimateProgress()) {
-      stopProgress();
-      // No animation for reduced motion or a background tab. Preserve an
-      // already displayed fraction when preferences change; never rewind.
-      writeProgress(Math.max(visualProgress, completed / totalStages));
-      return;
-    }
-    if (progressFrame === null) {
-      progressLastTime = performance.now();
-      progressFrame = window.requestAnimationFrame(animateProgress);
-    }
+    // Visual motion is handled by a compositor animation in CSS. JS only
+    // exposes real completed stages to accessibility and finishes at 100%.
   }
+
 
   function paintProgress() {
     syncProgress();
@@ -421,6 +357,7 @@
   function finish(reveal) {
     if (destroyed || finishing || failed) return;
     finishing = true;
+    root.classList.add('is-finishing');
     stopCycle();
     stopPresentation();
     if (!reducedMotion) showFeature(phrases.length - 1);
@@ -431,6 +368,7 @@
     onExit = typeof reveal === 'function' ? reveal : null;
     targetStep = launchStatuses.length - 1;
     completed = totalStages;
+    root.classList.add('is-complete');
     paintProgress();
     root.classList.remove('is-slow');
     syncMotion();
@@ -470,13 +408,8 @@
     syncMotion();
     syncProgress();
     if (motionPaused() || finishing) stopPresentation();
-    else {
-      schedulePresentation();
-      preloadFollowingImage(1000);
-    }
+    else schedulePresentation();
     if (reducedMotion) {
-      showFeature(0);
-      showImage(0);
       imageCursor = 0;
       presentationTick = 0;
     }
