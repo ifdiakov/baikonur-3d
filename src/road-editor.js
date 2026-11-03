@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
 import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v7';
-import {partitionRoadMaskStrokes,roadMaskTileBounds,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-qa-v3';
-import {deriveEditedRoadStyle,ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v1';
+import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-parity-v1';
+import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v1';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
@@ -191,7 +191,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
     const {a,b,grade}=segment;
     // Hide the whole OSM section, including both shoulders and edge paint.
     // A .14-unit allowance used to leave two pale outlines along cuts.
-    const width=segment.width+(segment.kind==='added'?ROAD_EDIT_SHOULDER_EXTRA+.26:ROAD_EDIT_SHOULDER_EXTRA+.18);
+    const width=roadMaskCoverageWidth(segment.width,segment.kind);
     const ink='rgb(255,'+grade+',0)';
     ctx.strokeStyle=ink;ctx.lineWidth=width;
     ctx.beginPath();ctx.moveTo(a[0],a[2]);ctx.lineTo(b[0],b[2]);ctx.stroke();
