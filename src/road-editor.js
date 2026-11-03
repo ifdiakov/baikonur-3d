@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
 import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v7';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-qa-v3';
+import {deriveEditedRoadStyle,ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v1';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
@@ -9,17 +10,34 @@ import {partitionRoadMaskStrokes,roadMaskTileBounds,ROAD_MASK_TILE_COUNT} from '
 export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange,onChange=()=>{},terrainHeightAt=null,defaultEdits=null}){
  const base=roads.filter(r=>r?.points?.length>1).map(r=>({
   id:String(r.id),width:Math.max(1,Number(r.width)||2),
-  points:r.points.map(p=>Array.isArray(p)?[...p]:[p.x,p.y,p.z])
+  points:r.points.map(p=>Array.isArray(p)?[...p]:[p.x,p.y,p.z]),
+  source:r.source,tags:r.tags||{},marked:r.marked===true,highway:r.highway===true,
+  surface:r.surface||'asphalt'
  }));
  const state={version:ROAD_EDITOR_VERSION,added:[],hidden:[]};
  let active=false,mode='draw',draft=[],history=[],future=[],nextId=1,clearPending=false;
  let routes=base,mouseDown=null;
  const editingGroup=new THREE.Group();editingGroup.name='Автодороги · редактор RocketTrip';root.add(editingGroup);
  const previewGroup=new THREE.Group();previewGroup.name='Точки строящейся автодороги';editingGroup.add(previewGroup);
- const asphalt=new THREE.MeshStandardMaterial({color:0x969d9d,roughness:.93,metalness:0,side:THREE.DoubleSide});
- const dirt=new THREE.MeshStandardMaterial({color:0xada087,roughness:1,metalness:0,side:THREE.DoubleSide});
- const shoulder=new THREE.MeshStandardMaterial({color:0xc0b6a3,roughness:1,side:THREE.DoubleSide});
- const white=new THREE.MeshBasicMaterial({color:0xe9e7d9,depthWrite:false,side:THREE.DoubleSide});
+ // Reuse the precise source road palette (materials as configured by the OSM
+ // batches), rather than independently chosen editor colors. Copy before
+ // the source stencil shader is installed so the new pavement is not clipped.
+ const originalMaterial=(name,fallback)=>{
+  const match=roadMeshes.find(mesh=>mesh.name===name&&mesh.material?.isMaterial)?.material;
+  return match?match.clone():new THREE.MeshStandardMaterial({color:fallback,roughness:.96,metalness:0,side:THREE.DoubleSide});
+ };
+ const surfaceMaterials={
+  asphalt:originalMaterial('OSM · единое дорожное полотно',0xadb2b3),
+  ground:originalMaterial('OSM · грунтовые проезды',0xb2a58d),
+  highway:originalMaterial('OSM · асфальт трассы',0x42494c),
+  shoulder:originalMaterial('OSM · единые обочины',0xc5c1b4),
+  paintWhite:originalMaterial('OSM · разметка',0xf2f0e4),
+  paintYellow:originalMaterial('Трасса · двойная жёлтая',0xe2b746)
+ };
+ for(const key of ['paintWhite','paintYellow']){
+  const paint=surfaceMaterials[key];paint.polygonOffset=true;
+  paint.polygonOffsetFactor=-1;paint.polygonOffsetUnits=-1;paint.depthWrite=false;
+ }
  const draftMaterial=new THREE.LineBasicMaterial({color:0xffbd80,depthTest:false});
  const draftPointMaterial=new THREE.MeshBasicMaterial({color:0xffbd80,depthTest:false});
  const draftPointGeometry=new THREE.SphereGeometry(.8,8,6);
@@ -37,7 +55,10 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   return {canvas,context,texture,bounds:{value:new THREE.Vector4(0,0,1,1)},enabled:{value:0},strokes:0,worldUnitsPerPixel:0};
  });
  const targets=new Set(['OSM · единые обочины','OSM · единое дорожное полотно','OSM · асфальт трассы',
-   'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки']);
+   'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки',
+   'road-pavement-union','road-shoulder-union','road-center-dashes','road-edge-lines',
+   'Трасса · продолжение · shoulder','Трасса · продолжение · asphalt',
+   'Трасса · продолжение · white','Трасса · продолжение · yellow']);
  for(const mesh of roadMeshes){
   if(!mesh.isMesh||!targets.has(mesh.name))continue;
   const material=mesh.material;
@@ -121,13 +142,14 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   }
   const joined=stitchEditedRoads(state.added,{existingRoads:base});
   joinReport=joined.adjustments;
-  const built=buildEditedRoadMeshes(joined.roads,{terrainHeightAt});
+  const styled=joined.roads.map(r=>({...r,profile:deriveEditedRoadStyle(r,base)}));
+  const built=buildEditedRoadMeshes(styled,{terrainHeightAt});
   joinedPaths=built.paths;
   geometryStats=built.stats;
   routes=[...base,...joinedPaths];
   for(const [type,g]of Object.entries(built.geometries)){
    if(!g.attributes.position.count){g.dispose();continue;}
-   const material=type==='asphalt'?asphalt:type==='ground'?dirt:shoulder;
+   const material=surfaceMaterials[type];
    const mesh=new THREE.Mesh(g,material);mesh.name='Единое полотно редактора · '+type;
    mesh.receiveShadow=true;editingGroup.add(mesh);
   }
@@ -160,7 +182,9 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    ctx.lineCap='butt';ctx.lineJoin='round';
    for(const segment of parts){
     const {a,b,grade}=segment;
-    const width=segment.width+(segment.kind==='added'?.38:.14);
+    // Hide the whole OSM section, including both shoulders and edge paint.
+    // A .14-unit allowance used to leave two pale outlines along cuts.
+    const width=segment.width+(segment.kind==='added'?ROAD_EDIT_SHOULDER_EXTRA+.26:ROAD_EDIT_SHOULDER_EXTRA+.18);
     const ink='rgb(255,'+grade+',0)';
     ctx.strokeStyle=ink;ctx.lineWidth=width;
     ctx.beginPath();ctx.moveTo(a[0],a[2]);ctx.lineTo(b[0],b[2]);ctx.stroke();
@@ -351,7 +375,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  setMode('draw');
  return {get active(){return active;},setActive,undo,redo,finish,
   snapshot:clone,roadLightRemoved,path:id=>{const r=joinedPaths.find(r=>r.id===id);return r?{id:r.id,width:r.width,points:r.points.map(p=>[...p])}:null;},stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,active,mode,
-   added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,
+   added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,styleVersion:ROAD_EDIT_STYLE_VERSION,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
    joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
    mesh:geometryStats,mask:maskStats,maskApplied:tiles.some(t=>t.enabled.value===1),
