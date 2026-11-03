@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
-import {SITE2_VERSION,SITE2_REFERENCE,SITE2_ACCESS,SITE2_BURAN,SITE2_STAIR,SITE2_VIEWS,site2Point as P} from './site2-layout.js?v=20261102-site2-photo-v3';
+import {SITE2_VERSION,SITE2_REFERENCE,SITE2_ACCESS,SITE2_BURAN,SITE2_STAIR,SITE2_VIEWS,site2Point as P} from './site2-layout.js?v=20261103-site2-main-road-v1';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {createLightField} from './light-field.js?v=20261028-site41-v1';
 
