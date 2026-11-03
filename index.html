@@ -515,7 +515,7 @@ import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-sign
 import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261101-saturn-terrain-v5';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainSample,saturnTerrainMeshHeight} from './src/saturn-access.js?v=20261101-saturn-terrain-v5';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
-import {createRoadEditor} from './src/road-editor.js?v=20261103-road-no-holes-v10';
+import {createRoadEditor} from './src/road-editor.js?v=20261103-road-no-holes-v11-saturn-grade';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261102-site2-photo-v3';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261101-tu204-cpk-v1';
@@ -2128,7 +2128,7 @@ lightingEditor=createLightingEditor({scene,camera,canvas:renderer.domElement,
 const editorRoadMeshes=[];layers.roads.traverse(mesh=>{if(mesh.isMesh)editorRoadMeshes.push(mesh);});
 roadEditor=createRoadEditor({root:layers.roads,camera,canvas:renderer.domElement,groundMeshes:lightingGroundMeshes,
  roadMeshes:editorRoadMeshes,roads:transport.editableRoadPaths(),button:null,readOnly:true,
- terrainHeightAt:(x,z)=>terrainRelief.heightAt(x,z),defaultEdits:ownerRoadEdits,onChange(){eveningScene?.refreshRoadEditor(roadEditor);},
+ terrainHeightAt:(x,z)=>museumTerrainHeightAt(x,z),defaultEdits:ownerRoadEdits,onChange(){eveningScene?.refreshRoadEditor(roadEditor);},
  onActiveChange(active){if(active){lightingEditor?.setActive(false);arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();document.getElementById('info').style.display='none';selectSiteCard(null);}}
 });
 const airportObject=objects.find(o=>o.record.id==='airfield');
