@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {stitchEditedRoads,sampleEditedRoad,buildEditedRoadMeshes} from '../src/road-editor-mesh.js';
+import {deriveEditedRoadStyle} from '../src/road-editor-style.js';
 
 const a={id:'road-main',surface:'asphalt',width:4.5,points:[[0,.72,0],[45,.72,0],[90,-2.7,0]]};
 const b={id:'road-spur',surface:'asphalt',width:3,points:[[45,.72,0],[45,.72,24]]};
@@ -63,5 +64,30 @@ const verts=bank.geometries.shoulder.attributes.position;
 for(let i=0;i<verts.count;i++)assert(verts.getY(i)>=hillside(verts.getX(i))+.07,
  'Road edge is under the hillside');
 
+
+// Real OSM marking policy, geometric widths, shoulder-height and colour
+// buckets must be produced by the same mesh build used in the browser.
+const sources=[
+ {id:'primary',source:'OpenStreetMap',width:3.6,marked:true,tags:{highway:'primary'},points:[[0,.72,0],[100,.72,0]]},
+ {id:'service',source:'OpenStreetMap',width:1.6,marked:false,tags:{highway:'service'},points:[[30,.72,40],[100,.72,40]]},
+ {id:'trunk',source:'OpenStreetMap',width:3.6,marked:true,highway:true,tags:{highway:'trunk'},points:[[140,.72,0],[220,.72,0]]}
+];
+const samples=[
+ {id:'a-primary',surface:'asphalt',width:4.5,points:[[15,.76,0],[15,.72,28]]},
+ {id:'b-service',surface:'asphalt',width:3.6,points:[[72,.72,40],[72,.72,80]]},
+ {id:'c-highway',surface:'asphalt',width:4,points:[[168,.72,0],[168,.72,42]]}
+].map(r=>({...r,profile:deriveEditedRoadStyle(r,sources)}));
+const matched=buildEditedRoadMeshes(samples,{terrainHeightAt:()=>-3});
+assert.equal(matched.stats.sourceClasses.asphalt,2);
+assert.equal(matched.stats.sourceClasses.highway,1);
+assert.equal(matched.stats.sourceClasses.ground,0);
+assert(matched.stats.markedRoads>=2);
+assert(matched.geometries.paintYellow.attributes.position.count>0,'Primary and highway must carry double-yellow paint');
+assert(matched.geometries.paintWhite.attributes.position.count>0,'Marked roads require white edge stripes');
+const primaryMatched=matched.paths.find(p=>p.id==='a-primary');
+assert(Math.abs(primaryMatched.width-3.6)<.01);
+assert(Math.abs(primaryMatched.widths[0]-3.6)<.01);
+assert(Math.abs(primaryMatched.points[0][1]-.72)<.001,'Road surface must meet old height precisely at the join');
+assert.equal(matched.paths.find(p=>p.id==='c-highway').style,'highway');
 console.log('ROAD_EDITOR_MESH_PASS',JSON.stringify({segments:stats.segments,overlapCuts:stats.overlaps,ownerOverlapCuts:ownerMesh.stats.overlaps,ownerSamples:roadSamples,
  topTriangles:geometries.asphalt.attributes.position.count/3}));
