@@ -30,6 +30,10 @@ const point=(x,y,h=0)=>V((x-650)*3.4,h,(y-522.5)*3.4),layers={roads:new THREE.Gr
 const transport=buildOsmTransportNetwork({data:{roads:read('data/osm/roads.geojson'),railways:read('data/osm/railways.geojson'),railPoints:read('data/osm/rail-points.geojson'),places:read('data/osm/places.geojson')},legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false)});
 const stats=transport.stats(),road=stats.facilityPorts.find(p=>p.id==='pad-250a'),through=stats.facilityPorts.find(p=>p.id==='pad-250a-to-pad-250');
 assert(road&&through,'Both external access and owner-requested UKSS connection survive');near(road.roadGap,0);
+assert.equal(road.profile,'single-continuous-through-road','250A duplicate entrance spur was not removed');
+assert(!transport.roadPaths().some(r=>r.id==='osm-access-pad-250a'),'Duplicate 250A external road remains');
+const cryoCleanup=stats.exhibitRoadSimplification.regions.find(r=>r.id==='pad-250a');
+assert(cryoCleanup&&cryoCleanup.hiddenEdgeCount>0,'250A OSM service-road web was not cleaned');
 const gate=portWorld(access,access.road,site,point).toArray();
 const route=transport.roadPaths().find(r=>r.id==='museum-yubileiny-250a-ukss');
 const gateV=V(...gate);let gap=Infinity;for(let i=1;i<route.points.length;i++){const a=route.points[i-1].clone().setY(0),b=route.points[i].clone().setY(0);gap=Math.min(gap,new THREE.Line3(a,b).closestPointToPoint(gateV.clone().setY(0),true,V()).distanceTo(gateV.clone().setY(0)));}

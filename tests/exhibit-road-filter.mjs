@@ -67,7 +67,10 @@ const transport=buildOsmTransportNetwork({data,legacyData:read('data/transport-n
 const stats=transport.stats(),simplification=stats.exhibitRoadSimplification,roads=transport.roadPaths();
 assert.equal(JSON.stringify(data),sourceDataBefore,'Source GeoJSON was modified');
 assert.equal(simplification.version,'exhibit-access-only-v1');assert.equal(simplification.sourceGraphUnchanged,true);
-assert.deepEqual(simplification.regions.map(r=>r.id),['pad-75','napornaya','krayniy','yubileiny']);
+assert.deepEqual(simplification.regions.map(r=>r.id),['pad-75','napornaya','krayniy','yubileiny','pad-250a']);
+const cryoCleanup=simplification.regions.find(r=>r.id==='pad-250a');
+assert(cryoCleanup&&cryoCleanup.hiddenEdgeCount>0,'250A service-road web was not cleared');
+assert(!roads.some(r=>r.id==='osm-access-pad-250a'),'250A must have only one entrance ribbon');
 for(const region of simplification.regions){
  assert.equal(region.keptEdgeCount+region.hiddenEdgeCount,region.sourceEdgeCount);
  assert.equal(region.keptWayIds.length+region.hiddenWayIds.length,region.sourceWayCount);

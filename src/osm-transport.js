@@ -558,6 +558,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // without changing either the archived source node or the shared area spec.
  const exhibitAreas=EXHIBIT_ROAD_AREAS.map(area=>area.id==='krayniy'&&krayniyClearance?{...area,
   destinationNode:krayniyLayout.access.sourceNodeId,destinationSource:'way/'+krayniyLayout.access.sourceWayId}:area);
+ // The 250A museum reconstruction is deliberately registered independently
+ // of the obsolete OSM alias. Thin the OSM service-road spiderweb only around
+ // the actual 250A model; preserve main roads and physical access source ways.
+ const cryoRoadSite=siteRecords.find(s=>s.id==='pad-250a');
+ if(cryoRoadSite)exhibitAreas.push({id:'pad-250a',name:'Площадка 250А',source:'museum-display-anchor',
+  center:geography.inverseProject(cryoRoadSite.x,cryoRoadSite.y),radiusMeters:1600});
  // Remove short unnamed service webs on the left flank after protecting
  // traffic routes and every facility access. Source OSM topology stays intact.
  const leftWebEdges=new Set();
@@ -861,8 +867,23 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   }
   return null;
  }
+ // The cryogenic centre already has a dedicated through-route toward UKSS.
+ // Resolve that route BEFORE generic gate approaches so the museum never draws
+ // a second overlapping driveway into the same entrance.
+ const cryoThroughSite=siteRecords.find(s=>s.id==='pad-250a');
+ const ukssThroughSite=siteRecords.find(s=>s.id==='pad-250');
+ let cryoThrough=null;
+ if(cryoThroughSite&&ukssThroughSite){
+  const cryoSpec={...FACILITY_PORTS['pad-250a'],yaw:cryoThroughSite.runtimeYaw??FACILITY_PORTS['pad-250a'].yaw};
+  const ukssSpec={...FACILITY_PORTS['pad-250'],yaw:ukssThroughSite.runtimeYaw??FACILITY_PORTS['pad-250'].yaw};
+  const cryoGate=portWorld(cryoSpec,cryoSpec.road,cryoThroughSite,point);
+  const ukssGate=portWorld(ukssSpec,ukssSpec.road,ukssThroughSite,point);
+  const source=nearestSegment(roadGraph,cryoGate,e=>e.tags.highway!=='track'&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
+  if(source&&source.distance<420**2)cryoThrough={cryoGate,ukssGate,source,cryoSpec};
+ }
  for(const [id,baseSpec] of Object.entries(FACILITY_PORTS)){
   if(id==='pad-2'&&gagarinApproach)continue; // Site 2 already has its only road connection.
+  if(id==='pad-250a'&&cryoThrough)continue; // Dedicated through road is its only entrance.
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw),target=id==='pad-2'&&site2PrimaryNearby?gate.clone():gate.clone().addScaledVector(out,30);
   const near=id==='pad-41'&&site41Replacement.attachmentEdge?{
    edge:site41Replacement.attachmentEdge,point:site41Replacement.attachmentEdge.b.position.clone(),distance:0,
@@ -913,22 +934,25 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // One deliberate continuous service road: road to Yubileiny -> 250A
  // cryogenic centre -> UKSS. It is display geometry only; OSM topology is
  // not rewritten and all three endpoints retain their own source metadata.
- const cryoSite=siteRecords.find(s=>s.id==='pad-250a'),ukssSite=siteRecords.find(s=>s.id==='pad-250');
- if(cryoSite&&ukssSite){
-  const cryoSpec={...FACILITY_PORTS['pad-250a'],yaw:cryoSite.runtimeYaw??FACILITY_PORTS['pad-250a'].yaw};
-  const ukssSpec={...FACILITY_PORTS['pad-250'],yaw:ukssSite.runtimeYaw??FACILITY_PORTS['pad-250'].yaw};
-  const cryoGate=portWorld(cryoSpec,cryoSpec.road,cryoSite,point),ukssGate=portWorld(ukssSpec,ukssSpec.road,ukssSite,point);
-  const source=nearestSegment(roadGraph,cryoGate,e=>e.tags.highway!=='track'&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
-  if(source&&source.distance<420**2){
-   const sourceTangent=source.tangent.clone();if(sourceTangent.dot(cryoGate.clone().sub(source.point))<0)sourceTangent.negate();
-   const p0=source.point.clone(),p1=p0.clone().addScaledVector(sourceTangent,24);
-   const mid=cryoGate.clone().lerp(ukssGate,.52).add(V(18,0,-10));
-   const curve=new THREE.CatmullRomCurve3([p0,p1,cryoGate,mid,ukssGate],false,'centripetal');
-   const points=curve.getSpacedPoints(Math.max(48,Math.ceil(curve.getLength()/1.4))),runs=[];
-   drawRoad(points,6.5,{},false,true,null,runs);
-   roadPaths.push({id:'museum-yubileiny-250a-ukss',label:'Юбилейный · 250А · УКСС',points:runs.flat(),width:6.5,source:'owner-directed-museum-road',osmWayIds:[source.edge.wayId]});
-   accessReports.push({id:'pad-250a-to-pad-250',sourceWayId:source.edge.wayId,profile:'owner-directed-via-250a',roadGap:points.at(-1).distanceTo(ukssGate)});
-  }
+ if(cryoThrough){
+  const {cryoGate,ukssGate,source,cryoSpec}=cryoThrough;
+  const sourceTangent=source.tangent.clone();if(sourceTangent.dot(cryoGate.clone().sub(source.point))<0)sourceTangent.negate();
+  const p0=source.point.clone(),p1=p0.clone().addScaledVector(sourceTangent,24);
+  const mid=cryoGate.clone().lerp(ukssGate,.52).add(V(18,0,-10));
+  const curve=new THREE.CatmullRomCurve3([p0,p1,cryoGate,mid,ukssGate],false,'centripetal');
+  // An even sample count passes exactly through the 250A gate control point.
+  // There is now one ribbon instead of a through-road plus parallel gate spur.
+  const segments=2*Math.max(24,Math.ceil(curve.getLength()/2.8));
+  const points=curve.getPoints(segments),runs=[];
+  drawRoad(points,6.5,{},false,true,null,runs);
+  roadPaths.push({id:'museum-yubileiny-250a-ukss',label:'Юбилейный · 250А · УКСС',points:runs.flat(),width:6.5,source:'owner-directed-museum-road',osmWayIds:[source.edge.wayId]});
+  const outward=V(...(cryoSpec.roadOutward||[1,0,0])).normalize().applyAxisAngle(V(0,1,0),cryoSpec.yaw);
+  accessReports.push({id:'pad-250a',sourceWayId:source.edge.wayId,profile:'single-continuous-through-road',
+   roadGap:points[segments/2].distanceTo(cryoGate),gate:cryoGate.toArray(),
+   sourcePoint:source.point.toArray(),sourceTangent:sourceTangent.toArray(),
+   gateInward:outward.negate().toArray()});connections++;
+  accessReports.push({id:'pad-250a-to-pad-250',sourceWayId:source.edge.wayId,profile:'owner-directed-via-250a',
+   roadGap:points.at(-1).distanceTo(ukssGate)});
  }
  if(site110Fan)for(const link of site110Fan.joinedLinks){
   const first=link.points[0],last=link.points.at(-1),frame=(p,fallback)=>p.distanceToSquared(first)<1e-10?link.startTangent:p.distanceToSquared(last)<1e-10?link.endTangent:fallback;
