@@ -4,7 +4,7 @@ import {nozzleFlameMaterial} from './energia-plasma-shader.js?v=20261103-plasma-
 
 // Historical event boundaries are from Buran.ru. Interpolated values below
 // are ILLUSTRATIVE telemetry, not downloaded flight-recorder measurements.
-export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v10-confined-nozzle-glow';
+export const ENERGIA_LAUNCH_VERSION='energia-polyus-1987-v11-ground-hugging-steam';
 export const ENERGIA_LAUNCH_START=-90;
 export const ENERGIA_LAUNCH_END=600;
 export const ENERGIA_CAMERA_DETACH_UNITS=100;
@@ -98,9 +98,13 @@ export function sampleEnergiaEnginePlumes(time){
 // the scene's logarithmically compressed camera/visual ascent.
 // Pre-launch vents expand into irregular banks of semi-transparent steam.
 export function sampleEnergiaSteamSpread(time){
- const stage=smooth(-90,0,Number(time)||0),late=smooth(-42,-2,Number(time)||0);
- return {stage,late,radius:mix(31,148,stage),drift:mix(6,35,stage),
-  rise:mix(23,42,stage),puffScale:mix(1,1.58,late),transparency:mix(.64,.43,stage)};
+ const t=Number.isFinite(Number(time))?Number(time):ENERGIA_LAUNCH_START;
+ const stage=smooth(-90,0,t),late=smooth(-38,-1,t);
+ // T-90 begins without a cloud. Thin vent steam gradually crawls outward.
+ const presence=smooth(-84,-12,t);
+ return {stage,late,presence,radius:mix(17,62,stage),drift:mix(2.8,11,stage),
+  rise:mix(17,23,stage),puffScale:mix(.75,1.04,late),
+  transparency:mix(.55,.35,stage),groundBias:2.3};
 }
 // The older, lower tail of the plume dissolves in broken layers.
 export function sampleEnergiaPlumeBottomFade(age,groundHeight,seed=0){
@@ -235,7 +239,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
  const waterMat=glowMaterial(0xc7e4f0),waterGlow=makeGlow(290,125,waterMat);waterGlow.position.set(25,.7,0);root.add(waterGlow);
  const farDuctMat=glowMaterial(0xffa347),farDuctGlow=makeGlow(220,85,farDuctMat);farDuctGlow.position.set(220,.4,0);root.add(farDuctGlow);
 
- const innerSmoke=makeBillow(root,420,0xe4e9eb,.50,'Холодный криогенный пар · мягкие облака',smokeTexture);
+ const innerSmoke=makeBillow(root,420,0xe4e9eb,.38,'Холодный криогенный пар · мягкие облака',smokeTexture);
  const waterSpray=makeBillow(root,320,0xeaf3f3,.78,'Водяная завеса · испарение',smokeTexture);
  const ductSmoke=makeBillow(root,1050,0xaeb1b1,.76,'Газоход · турбулентный плотный пар',smokeTexture);
  const fieldSmoke=makeBillow(root,820,0x8d8d8d,.69,'Степь · стелющиеся клубы дыма',smokeTexture);
@@ -487,13 +491,17 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    const swirl=Math.sin(u*13+i*.91)*.63+Math.cos(u*6+i*.23)*.48;
    let x=0,y=0,z=0,size=0;
    if(kind==='steam'){
-    const a=Math.PI*2*r2+.4*Math.sin(time*.047+i*.57);
-    const radial=Math.pow(r3,.73)*steamState.radius;
-    const curl=steamState.drift*(Math.sin(time*.14+i*1.17)+.4*Math.cos(time*.09+i*.53));
-    x=-38+Math.cos(a)*radial+Math.sin(a*2.2)*curl+u*12;
-    z=2+Math.sin(a)*radial*.78+Math.cos(a*.7)*curl+swirl*8;
-    y=2.5+u*steamState.rise+Math.sin(i*.93+time*.17)*4*(.45+steamState.stage);
-    size=(11+u*31)*(1+.54*r2)*steamState.puffScale;
+    // Light wisps descend from the lower rocket and spread horizontally
+    // along the concrete. Most billows reside near ground level.
+    const a=Math.PI*2*r2+.26*Math.sin(time*.048+i*.57);
+    const descent=1-Math.pow(1-r1,steamState.groundBias);
+    const radial=Math.pow(r3,.74)*steamState.radius*(.12+.88*descent);
+    const curl=steamState.drift*(Math.sin(time*.13+i*1.17)+.35*Math.cos(time*.08+i*.53));
+    x=-11+Math.cos(a)*radial+Math.sin(a*1.7)*curl*descent;
+    z=-4+Math.sin(a)*radial*.79+Math.cos(a*1.2)*curl*descent;
+    y=1.3+steamState.rise*Math.pow(1-descent,1.23)
+     +1.3*u+Math.sin(i*.93+time*.16)*(.35+1.3*(1-descent));
+    size=(6.4+u*15.6)*(1+.32*r2)*steamState.puffScale;
    }else if(kind==='water'){
     x=-25+u*200+Math.sin(i*1.37)*11;
     y=1.4+u*27;
@@ -526,7 +534,9 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    let puffAlpha=.52+.45*r3;
    if(kind==='steam'){
     const chaos=.76+.18*Math.sin(time*.63+i*.71)+.13*Math.cos(time*1.27+i*1.37);
-    puffAlpha*=clamp(chaos,.28,1.05)*steamState.transparency;
+    // Higher suspended steam must remain much more translucent.
+    const nearGround=1-.78*smooth(3.5,26,y);
+    puffAlpha*=clamp(chaos,.28,1.05)*steamState.transparency*nearGround;
    }else if(kind==='plume'){
     const fading=sampleEnergiaPlumeBottomFade(u,y,i);
     x+=Math.sin(i*.41+time*.63)*Math.pow(u,1.7)*(10+24*r3);
@@ -566,7 +576,9 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
   const groundCloud=smooth(-9.4,3,t)*(1-smooth(115,290,t))*padDissipation.smoke;
   const ductCloud=clamp((exhaustAtGround*1.10+water*.43)*padDissipation.smoke,0,1);
   const plume=smooth(0,3,t)*(1-smooth(140,245,t));
-  const vapor=(.60+.37*smooth(-90,-23,t))*(1-smooth(42,153,t))*padDissipation.smoke;
+  const steamEnvelope=sampleEnergiaSteamSpread(t);
+  const vapor=(.64+.32*smooth(-90,-24,t))*steamEnvelope.presence
+   *(1-smooth(42,153,t))*padDissipation.smoke;
   const heat=clamp(exhaustAtGround*.85+pilot*.13,0,1);
   glow.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.08,0,1);
   trenchMat.uniforms.uPower.value=clamp(exhaustAtGround*1.12+pilot*.12,0,1);
@@ -633,7 +645,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[]){
    attachExhaustToRocket(rocketHolder);
   }
   flameRoot.scale.set(1,1,1);
-  return {smoke:groundCloud,water,steam:vapor,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,
+  return {smoke:groundCloud,water,steam:vapor,steamEnvelope,steamMaterialOpacity:innerSmoke.material.opacity,plume,padFireFade:padDissipation.fire,padSmokeFade:padDissipation.smoke,shadowLightIntensity:shadowSpot.intensity,shadowReceiverCount:shadowReceivers.length,shadowMapEnabled:!!renderer?.shadowMap?.enabled,shadowCasterCount:shadowToggles.length,shadowMapResolution:shadowResolution,engineCorePower:enginePower.core,engineBoosterPower:enginePower.boosters,engineJetCount:engineJets.length,
    enginePlasmaRibbonCount:0,
    engineNozzleGlowCount:engineJets.length,
    engineNozzleGlowVisible:engineJets.filter(jet=>jet.halo.visible).length,
@@ -943,7 +955,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
    visualHeightH:energiaCameraHeightUnits(sampleEnergiaLaunch(seconds).altitudeKm),
    cinematicPanel:panel.classList.contains('energia-cinematic-ascent'),
    detachedAt:detachedAt?{...detachedAt}:null,
-   orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,
+   orbitTarget:active?rocketOrbitTarget(sampleEnergiaLaunch(seconds)).toArray():null,clockMode:seconds>=0?'flight':'prelaunch',flightRate:speed,rocketVisible:source()?.holder.visible??false,rocketAtMount:!active,rocketVerticalWorld:visualHeight(sampleEnergiaLaunch(seconds).altitudeKm),effects:effects?{visible:effects.root.visible,gasChannel:'single +X petal',instancedSmokeCount:3335,smokeMode:'multi-octave-feathered-billboards',ductJetCount:7,steam:lastFrame?.steam,steamEnvelope:lastFrame?.steamEnvelope,steamMaterialOpacity:lastFrame?.steamMaterialOpacity,water:lastFrame?.water,plume:lastFrame?.plume,padFireFade:lastFrame?.padFireFade,padSmokeFade:lastFrame?.padSmokeFade,shadowMapEnabled:effects.shadowState().enabled,shadowLightIntensity:effects.shadowState().lightIntensity,shadowReceiverCount:effects.shadowState().receivers,shadowCasterCount:effects.shadowState().casters,shadowMapResolution:effects.shadowState().mapResolution,engineJetCount:lastFrame?.engineJetCount,engineFlameAttached:lastFrame?.engineFlameAttached,
    enginePlasmaRibbonCount:lastFrame?.enginePlasmaRibbonCount,
    engineNozzleGlowCount:lastFrame?.engineNozzleGlowCount,
    engineNozzleGlowVisible:lastFrame?.engineNozzleGlowVisible,
