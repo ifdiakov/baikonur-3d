@@ -14,7 +14,7 @@ const EDITORIAL_TAIL=/;\s*(?:индивидуальная история тре�
 export function museumCardCopy(raw) {
  if (typeof raw !== 'string') return '';
  return raw
-  .split(/(?<=[.!?])\s+|\n{2,}/u)
+  .split(/(?<=[.!?])\s+(?=[А-ЯЁA-Z«])|\n{2,}/u)
   .map(sentence => sentence.trim().replace(EDITORIAL_TAIL,'.'))
   .filter(sentence => sentence && !PROCESS_OPENING.test(sentence) && !PROCESS_NOTE.test(sentence) && !EDITORIAL_PREFIX.test(sentence) && !FINAL_EDITORIAL_PREFIX.test(sentence))
   .join(' ')
