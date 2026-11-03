@@ -34,6 +34,7 @@ await doc.transform(prune(),dedup({keepUniqueNames:false}),palette({min:2}),join
 scene.setName('Площадка 31/6 · исходный стартовый комплекс');
 scene.setExtras({museumAsset:'site31-drive-v1',unit:'metre',source:'baikonur_cosmodrome_site_31_pad_6.glb'});
 const output='assets/models/site31';await mkdir(output,{recursive:true});
+await mkdir('qa-site31',{recursive:true});
 await writeFile('qa-site31/normalized.glb',await io.writeBinary(doc));
 await doc.transform(meshopt({encoder:MeshoptEncoder,level:'high',quantizePosition:16,quantizeNormal:12}));
 const binary=await io.writeBinary(doc);await writeFile(output+'/model-v1.glb',binary);

@@ -29,4 +29,4 @@ try{
  const buttons=await page.locator('#site31Views button').evaluateAll(xs=>xs.map(x=>{const b=x.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom};}));assert(buttons.every(b=>b.left>=0&&b.right<=390&&b.bottom<=844));
  await page.locator('#close').click();await frame();await page.screenshot({path:`${out}/${prefix}-mobile-uncovered.png`});
  assert.deepEqual(errors,[]);await writeFile(`${out}/${prefix}-evidence.json`,JSON.stringify({base,state,poses,requests,buttons,errors},null,2));console.log('SITE31_BROWSER_PASS',JSON.stringify({base,requests,triangles:state.asset.triangles,drawCalls:state.asset.drawCalls,views:poses.length}));
-}finally{if(errors.length)console.log(JSON.stringify({errors}));await browser.close();}
+}catch(error){await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({error:error.message,errors},null,2));await page.screenshot({path:`${out}/${prefix}-failure.png`}).catch(()=>{});throw error;}finally{if(errors.length)console.log(JSON.stringify({errors}));await browser.close();}

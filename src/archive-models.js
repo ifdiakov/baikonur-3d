@@ -113,7 +113,7 @@ export function installArchiveModels({objects,clickable,voids}){
   const o=objects.find(o=>o.record.id==='pad-31');if(!o?.archive)return false;
   const root=o.g;root.updateWorldMatrix(true,false);
   globalThis.window?.__MUSEUM_STARTUP?.promote?.('site31-structure');
-  const v=SITE31_VIEWS[view]||SITE31_VIEWS.all;
+  const v=typeof innerWidth!=='undefined'&&innerWidth<=850&&view==='structure'?{target:[0,-4,0],eye:[-105,85,135]}:(SITE31_VIEWS[view]||SITE31_VIEWS.all);
   controls.target.copy(root.localToWorld(new THREE.Vector3(...v.target)));camera.position.copy(root.localToWorld(new THREE.Vector3(...v.eye)));controls.update();
   return true;
  }
