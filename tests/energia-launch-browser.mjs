@@ -49,10 +49,8 @@ try{
  await page.mouse.down({button:'right'});
  await page.mouse.move(820,415,{steps:5});
  await page.mouse.up({button:'right'});
- const inputDirection=await page.evaluate(()=>{
-  const s=window.__BAIKONUR_QA.cameraState();
-  return s.position.map((p,i)=>p-s.target[i]);
- });
+ const inputCamera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+ const inputDirection=inputCamera.position.map((p,i)=>p-inputCamera.target[i]);
  await page.locator('#energiaLaunchQuickStart').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.active===true,null,{timeout:100000});
  let s=await stats();assert.equal(s.time,-90);assert.equal(s.active,true);
@@ -68,8 +66,16 @@ try{
  const currentDirection=originalOrbit.position.map((p,i)=>p-originalOrbit.target[i]);
  const cosine=currentDirection.reduce((sum,v,i)=>sum+v*inputDirection[i],0)/
   (Math.hypot(...currentDirection)*Math.hypot(...inputDirection));
- assert.ok(cosine>.995,'Launch preserves current view angle, cosine='+cosine+', input='+JSON.stringify(inputDirection)+', camera='+JSON.stringify(currentDirection));
- assert.ok(Math.hypot(...originalOrbit.target.map((p,i)=>p-s.orbitTarget[i]))<.05,'Launch orbits the rocket center');
+ assert.ok(cosine>.99999,'Launch preserves the exact current view angle');
+ assert.ok(Math.hypot(...originalOrbit.position.map((p,i)=>p-inputCamera.position[i]))<.005,
+  'Starting the animation must not move or zoom the camera from its chosen viewpoint');
+ assert.ok(Math.hypot(...originalOrbit.target.map((p,i)=>p-inputCamera.target[i]))<.005,
+  'Starting the animation must not recenter the current orbital pivot');
+ assert.deepEqual(s.initialCameraPose.position,inputCamera.position,'The initial eye is retained for camera continuity');
+ assert.deepEqual(s.initialCameraPose.target,inputCamera.target,'The original target is retained without a forced preset');
+ assert.notEqual(s.mode,'detached');
+ assert.equal(s.effects.steam,0,'No vent cloud at T-90');
+ assert.equal(s.effects.steamEnvelope.presence,0);
  assert.equal(s.effects.smokeMode,'multi-octave-feathered-billboards');
  assert.equal(s.effects.instancedSmokeCount,3335);
  assert.equal(s.effects.shadowMapEnabled,true);
@@ -77,6 +83,17 @@ try{
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState().controlsEnabled),true,
   'OrbitControls must remain enabled during the launch');
  await shot('prelaunch');
+ const steamEarly=await seek(-70);
+ const steamLater=await seek(-24);
+ assert.ok(steamEarly.effects.steam>0&&steamLater.effects.steam>steamEarly.effects.steam,
+  'Steam builds progressively after a completely clear first frame');
+ assert.ok(steamLater.effects.steamEnvelope.radius<65,'Prelaunch vapor stays within the compact ground spread');
+ assert.ok(steamLater.effects.steamEnvelope.groundBias>2);
+ assert.ok(steamLater.effects.steamMaterialOpacity<.38,'Vapor remains translucent');
+ const prelaunchCamera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+ assert.ok(Math.hypot(...prelaunchCamera.position.map((p,i)=>p-inputCamera.position[i]))<.005,
+  'Prelaunch telemetry and steam do not move the visitor camera');
+ assert.ok(Math.hypot(...prelaunchCamera.target.map((p,i)=>p-inputCamera.target[i]))<.005);
  for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-10,'water-spray'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[6,'initial-ascent'],[20,'pad-disperse'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
   s=await seek(t);const e=s.effects;
   evidence.phases.push({t,phase:s.phase,gasPower:e.gasPower,flamePower:e.flamePower,ductJetVisible:e.ductJetVisible,rocketExhaustOffset:e.rocketExhaustOffset});
