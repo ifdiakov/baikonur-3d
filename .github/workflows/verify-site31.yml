@@ -35,6 +35,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Verify source geometry and preserved connections
         run: |
+          node tests/road-editor-startup.mjs
           node tests/site31-source-model.mjs
           node tests/site31-geometry.mjs
           node tests/gagarin-source-table.mjs

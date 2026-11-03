@@ -22,6 +22,45 @@ try{
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats());
  assert(initial.sourceRoadPaths>100);
  assert.equal(initial.added,19,'19 owner roads including road-31 must be published');assert.equal(initial.hidden,302,'302 owner cuts must be published');
+ assert.equal(initial.styleVersion,'neighbour-road-parity-v1');
+ assert.equal(initial.sourceMaterialColors.asphalt,'#adb2b3','New asphalt must match OSM grey');
+ assert.equal(initial.sourceMaterialColors.shoulder,'#c5c1b4','New shoulders must match old shoulders');
+ assert.equal(initial.sourceMaterialColors.ground,'#b2a58d','Ground access must match OSM dirt');
+ assert.equal(initial.sourceMaterialColors.highway,'#42494c','Highways must use the same asphalt material');
+ assert.equal(initial.roadStyles.length,19);
+ assert(initial.mesh.markedRoads>=1,'New marked access roads have no white/yellow lines');
+ const northern=initial.roadStyles.find(r=>r.id==='road-31');
+ assert(northern&&northern.sourceStart,'Elevated road must inherit actual original entry from OSM');
+ assert(['asphalt','highway'].includes(northern.kind));
+ assert(initial.maskedMeshNames.includes('OSM · единые обочины'));
+ assert(initial.maskedMeshNames.includes('OSM · единое дорожное полотно'));
+ assert(initial.maskedMeshNames.includes('OSM · разметка'));
+ const erasedRoadAudit=await page.evaluate(()=>{
+  const editor=window.__BAIKONUR_QA.roadEditor,cuts=editor.snapshot().hidden;
+  let checked=0,covered=0,shoulderChecked=0,shoulderCovered=0;
+  for(const h of cuts){
+   const p=h.points;
+   let length=0,index=1;
+   for(let i=1;i<p.length;i++){
+    const segment=Math.hypot(p[i][0]-p[i-1][0],p[i][2]-p[i-1][2]);
+    if(segment>length){length=segment;index=i;}
+   }
+   if(length<1.0)continue; // Source trace is below one world unit.
+   const a=p[index-1],b=p[index],x=(a[0]+b[0])/2,y=(a[1]+b[1])/2,z=(a[2]+b[2])/2;
+   const mask=editor.maskAt(x,z,y);
+   checked++;if(mask.cut)covered++;
+   const nx=-(b[2]-a[2])/length,nz=(b[0]-a[0])/length;
+   const xEdge=x+nx*(h.width/2+.22),zEdge=z+nz*(h.width/2+.22);
+   shoulderChecked++;if(editor.maskAt(xEdge,zEdge,y).cut)shoulderCovered++;
+  }
+  return {checked,covered,shoulderChecked,shoulderCovered};
+ });
+ assert(erasedRoadAudit.checked>=245,'Road erasure audit did not cover enough user cuts');
+ assert(erasedRoadAudit.covered>=erasedRoadAudit.checked*.97,
+  'Removed OSM asphalt is still visible in the editor stencil: '+JSON.stringify(erasedRoadAudit));
+ assert(erasedRoadAudit.shoulderCovered>=erasedRoadAudit.shoulderChecked*.95,
+  'Deleted OSM roads still leave outlines along the shoulders: '+JSON.stringify(erasedRoadAudit));
+
  assert(initial.maskTiles.length===5&&initial.maskTiles.some(t=>t.enabled));
  assert(initial.maskTiles.every(t=>!t.enabled||t.worldUnitsPerPixel<.5),'Mask must not tear a 1.6-unit service road');
  assert(initial.mask.duplicateCuts>=10,'Exact duplicate owner cuts must be coalesced in rendering');
@@ -84,7 +123,7 @@ try{
   await page.screenshot({path:out+'/'+prefix+'-'+label+'.png'});
  }
  assert.deepEqual(errors,[]);
- console.log('ROAD_EDITOR_BROWSER_PASS',JSON.stringify({sourcePaths:initial.sourceRoadPaths,importVersion:exported.version,download:downloaded.suggestedFilename()}));
+ console.log('ROAD_EDITOR_BROWSER_PASS',JSON.stringify({sourcePaths:initial.sourceRoadPaths,erasedRoadAudit,matchedStyles:initial.roadStyles.length,paintedRoads:initial.mesh.markedRoads,importVersion:exported.version,download:downloaded.suggestedFilename()}));
 }finally{
  if(errors.length)console.log('ROAD_EDITOR_PAGE_ERRORS',JSON.stringify(errors));
  await browser.close();

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
-import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v7';
-import {partitionRoadMaskStrokes,roadMaskTileBounds,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-qa-v3';
-import {deriveEditedRoadStyle,ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v1';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-union-startup-v1';
+import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-parity-v3';
+import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v3';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
@@ -191,7 +191,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
     const {a,b,grade}=segment;
     // Hide the whole OSM section, including both shoulders and edge paint.
     // A .14-unit allowance used to leave two pale outlines along cuts.
-    const width=segment.width+(segment.kind==='added'?ROAD_EDIT_SHOULDER_EXTRA+.26:ROAD_EDIT_SHOULDER_EXTRA+.18);
+    const width=roadMaskCoverageWidth(segment.width,segment.kind);
     const ink='rgb(255,'+grade+',0)';
     ctx.strokeStyle=ink;ctx.lineWidth=width;
     ctx.beginPath();ctx.moveTo(a[0],a[2]);ctx.lineTo(b[0],b[2]);ctx.stroke();
@@ -207,6 +207,22 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    }
    ctx.setTransform(1,0,0,1,0,0);tile.texture.needsUpdate=true;
   }
+ }
+ // Deterministic source-pavement cut audit: read the same mask pixels the
+ // fragment shader sees. Avoids mistaken geometric claims based only on
+ // centreline data while forgotten white edge stripes are still on screen.
+ function maskAt(x,z,y){
+  for(const tile of tiles){
+   if(!tile.enabled.value)continue;
+   const bounds=tile.bounds.value,u=(x-bounds.x)/bounds.z,v=(z-bounds.y)/bounds.w;
+   if(u<0||u>=1||v<0||v>=1)continue;
+   const px=Math.floor(u*MASK_SIZE),py=Math.floor((1-v)*MASK_SIZE);
+   const c=tile.context.getImageData(px,py,1,1).data;
+   if(c[3]<=123||c[0]<=128)continue;
+   const grade=c[1]/255*48-16;
+   if(Math.abs(grade-y)<.85)return {cut:true,grade,alpha:c[3]/255,worldUnitsPerPixel:tile.worldUnitsPerPixel};
+  }
+  return {cut:false};
  }
  function roadLightRemoved(record){
   const p=record.center||[record.x,record.y,record.z],x=p[0],y=p[1],z=p[2],size=16;
@@ -381,7 +397,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  button?.addEventListener('click',()=>setActive(!active));
  setMode('draw');
  return {get active(){return active;},setActive,undo,redo,finish,
-  snapshot:clone,roadLightRemoved,path:id=>{const r=joinedPaths.find(r=>r.id===id);return r?{id:r.id,width:r.width,points:r.points.map(p=>[...p])}:null;},stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,active,mode,
+  snapshot:clone,maskAt,roadLightRemoved,path:id=>{const r=joinedPaths.find(r=>r.id===id);return r?{id:r.id,width:r.width,points:r.points.map(p=>[...p])}:null;},stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,active,mode,
    added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,styleVersion:ROAD_EDIT_STYLE_VERSION,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
    joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),

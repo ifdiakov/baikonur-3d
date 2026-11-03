@@ -48,7 +48,11 @@ function styleOf(source){
  const highway=RENDER_HIGHWAY.has(String(tags.highway||''))||source?.highway===true;
  const marked=source?.marked===true||MAIN.has(type)||type==='unclassified'||highway;
  const classId=dirt?'ground':highway?'highway':'asphalt';
- const marking=dirt||!marked?null:MAIN.has(type)?'double-yellow':source?.oneway?null:Number(source?.width||0)>=2.4?'dashed-white':null;
+ const oneway=['yes','true','1','-1'].includes(String(tags.oneway||'').toLowerCase())||
+  tags.junction==='roundabout'&&tags.oneway!=='no';
+ const sourceLanes=Number(tags.lanes);
+ const lanes=Number.isInteger(sourceLanes)&&sourceLanes>0?sourceLanes:oneway||Number(source?.width||0)<2.4?1:2;
+ const marking=dirt||!marked||oneway||lanes<=1?null:MAIN.has(type)?'double-yellow':'dashed-white';
  return {classId,marked:!dirt&&marked,marking,sourceType:type,sourceId:source?.id||null};
 }
 export function deriveEditedRoadStyle(road,sources,{maxDistance=7}={}){
@@ -56,7 +60,7 @@ export function deriveEditedRoadStyle(road,sources,{maxDistance=7}={}){
  const end=nearestSourceRoad(road.points.at(-1),sources,{maxDistance});
  const primary=(!start||end&&end.distance+.25<start.distance)?end:start;
  const source=primary?.road||null,style=styleOf(source);
- const type=road.surface==='ground'?'ground':style.classId==='ground'?'asphalt':style.classId;
+ const type=road.surface==='ground'?'ground':style.classId;
  const widthStart=start?.road.width||road.width,widthEnd=end?.road.width||start?.road.width||road.width;
  const length=road.points.reduce((n,p,i)=>n+(i?dist(p,road.points[i-1]):0),0);
  return {

@@ -3,7 +3,7 @@ import {subtractRoadPolygon} from './road-surface.js?v=20261103-road-mesh-v2';
 import {applyEditedRoadEndpointGrades,widthAtEditedRoad,ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,
  ROAD_EDIT_SURFACE_LIFT,ROAD_EDIT_HIGHWAY_LIFT,ROAD_EDIT_PAINT_LIFT,ROAD_EDIT_WHITE_EDGE_WIDTH,
  ROAD_EDIT_WHITE_EDGE_INSET,ROAD_EDIT_CENTER_LINE_WIDTH,ROAD_EDIT_YELLOW_WIDTH,ROAD_EDIT_YELLOW_OFFSET}
- from './road-editor-style.js?v=20261103-road-parity-v1';
+ from './road-editor-style.js?v=20261103-road-parity-v3';
 
 export const ROAD_EDIT_MESH_VERSION='stitched-roads-source-materials-v4';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -189,8 +189,11 @@ function unionQuads(quads){
   }
   for(const p of pieces){
    result.push(p);
-   for(const key of keys(p)){let group=cells.get(key);if(!group){group=[];cells.set(key,group);}group.push(p);}
   }
+  // Subtract each original ribbon once. Re-indexing clipped fragments makes
+  // nearly coincident strip edges multiply tolerance slivers exponentially.
+  // Their union is still exactly the union of the original accepted ribbons.
+  for(const key of cellKeys){let group=cells.get(key);if(!group){group=[];cells.set(key,group);}group.push(polygon);}
  }
  return {polygons:result,overlaps};
 }
