@@ -249,7 +249,7 @@ function makeVehicleRoute(id,label,graphRoute,conform=points=>points){
   widthAt(distance){distance*=at/path.length;let lo=0,hi=boundaries.length-1;while(hi-lo>1){const mid=(lo+hi)>>1;if(boundaries[mid].at<=distance)lo=mid;else hi=mid;}return boundaries[lo]?.width||4.8;}};
 }
 
-export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords}){
+export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,checkpoint7RoadGrade=null}){
  const started=Date.now(),roadGraph=buildOsmGraph(data.roads.features,{geography,point}),railGraph=buildOsmGraph(data.railways.features,{geography,point,rail:true});
  const saturnSite=siteRecords.find(s=>s.id==='pad-23'),saturnCenter=saturnSite?point(saturnSite.x,saturnSite.y,0):null;
  function terrainAt(x,z){
@@ -293,11 +293,14 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return top;
  }
  function conformRailPath(points,width){
-  const samples=samplesWithVertices(points,1.4);for(const p of samples)p.y=railTerrainDatum(p,width);return samples;
+  const samples=samplesWithVertices(points,1.4);for(const p of samples)p.y=railTerrainDatum(p,width);return checkpoint7RoadGrade?checkpoint7RoadGrade.conformRails(samples):samples;
  }
  for(const graph of [roadGraph,railGraph])for(const n of graph.nodes.values()){
   const width=Math.max(1,...n.edges.map(e=>e.width));
   n.position.y=(graph===railGraph?railTerrainDatum:terrainDatum)(n.position.clone().add(V(0,-n.raise,0)),width)+n.raise;
+  // Junction discs and every connected branch share the lowered road datum.
+  // Grading only ribbon samples would leave an old raised disc at a junction.
+  if(graph===roadGraph&&checkpoint7RoadGrade){const y=checkpoint7RoadGrade.roadAt(n.position.x,n.position.z);if(y!==null)n.position.y=y;}
  }
  smoothHighwayGraph(roadGraph);
  smoothLocalRoadGraph(roadGraph);
@@ -321,7 +324,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  function conformRoadPath(points,width){
   const samples=conformPath(points,width);
   for(const p of samples)p.y=roadGraph.highwaySurfaceHeight(p,width);
-  return samples;
+  return checkpoint7RoadGrade?checkpoint7RoadGrade.conform(samples):samples;
  }
  const interchangeBridgePlan=createInterchangeBridgePlan({roadGraph,railGraph});
  const highwayDirections=new Map(),wayDirections=new Map(),directionPriorities=new Map(),directionKey=p=>[p.x,p.y,p.z].map(n=>n.toFixed(7)).join(':');
@@ -454,7 +457,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const pavingRuns=highway?highwayRunsOutsideBridge(run,interchangeBridgePlan,wayId):[run];
    for(const ps of pavingRuns){
     if(highway)for(const side of [-1,1])shoulder.ribbon(ps,ROAD_STYLE.shoulderExtra/2,-.055,side*(width/2+ROAD_STYLE.shoulderExtra/4),0,directions);
-    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-.055,0,0,directions);
+    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-.055,0,0,directions,checkpoint7RoadGrade?p=>p.y+.043*checkpoint7RoadGrade.weightAt(p.x,p.z):null);
     pavement.ribbon(ps,widthAt,highway?HIGHWAY_ASPHALT_LIFT:0,0,tags.highway?.endsWith('_link')?1:0,directions);
     markingRoads.push({id:'marking-road-'+(wayId??'display')+'-'+markingRoads.length,wayId,points:ps.map(p=>p.clone()),width,tags,marked:marked||highway,connections,
      directionAt:directions,widthAt,surfaceSmoothed:true});

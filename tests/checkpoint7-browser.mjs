@@ -11,15 +11,17 @@ page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()
 await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__CHECKPOINT7_FRAME=()=>pending?.(performance.now());});
 const frame=()=>page.evaluate(()=>window.__CHECKPOINT7_FRAME());
 try{
- await checkpoint('navigate');await page.goto(base+'?view=kpp7&v=20261103-checkpoint7-road-v1',{waitUntil:'domcontentloaded',timeout:120000});
+ await checkpoint('navigate');await page.goto(base+'?view=kpp7&v=20261103-checkpoint7-flat-v2',{waitUntil:'domcontentloaded',timeout:120000});
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:180000});
- const model=await page.evaluate(()=>window.__BAIKONUR_QA.checkpoint7.stats());assert.equal(model.version,'20261103-checkpoint7-road-v1');
+ const model=await page.evaluate(()=>window.__BAIKONUR_QA.checkpoint7.stats());assert.equal(model.version,'20261103-checkpoint7-flat-v2');assert(model.ground.flatGround);assert.equal(model.ground.addedTerrainMeshes,0);assert(Math.abs(model.placement.position[1]+2.73)<.001);
  assert.equal(await page.locator('#checkpoint7Views button').count(),4);assert.equal(await page.locator('#title').innerText(),'КПП №7');
  assert(model.placement.station>model.placement.bridgeStation&&model.placement.station<model.placement.turnoffStation);
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.setLabelsVisible(false);q.evening.setEvening(false);});
  for(const [view,label]of [['all','КПП целиком'],['front','Фасад'],['lanes','Проезды'],['road','На дороге']]){
   await checkpoint(view);await page.locator('#checkpoint7Views button').filter({hasText:label}).click();await frame();await page.screenshot({path:`${out}/${prefix}-${view}.png`});
  }
+ await checkpoint('oblique');await page.evaluate(()=>window.__BAIKONUR_QA.checkpoint7.inspect('front'));
+ await page.mouse.move(850,460);await page.mouse.down({button:'right'});await page.mouse.move(1000,480,{steps:12});await page.mouse.up({button:'right'});await page.mouse.wheel(0,-120);await frame();await page.screenshot({path:`${out}/${prefix}-oblique.png`});
  await checkpoint('night');await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.checkpoint7.inspect('all');q.evening.setEvening(true);});await frame();await page.screenshot({path:`${out}/${prefix}-night.png`});
  await checkpoint('mobile');await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.checkpoint7.inspect('all');});await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
  assert(await page.locator('#checkpoint7Views').isVisible());

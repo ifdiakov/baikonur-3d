@@ -1,4 +1,4 @@
-import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-road-v1';
+import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
 import {SITE250A_YAW,SITE250A_REFERENCE,SITE250A_VERSION} from './site250a-layout.js?v=20261103-site250a-photo-v1';
 import {SITE254_YAW,SITE254_REFERENCE,SITE254_VERSION} from './site254-layout.js?v=20261103-site254-e10s5';
 import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=20261101-hotel-v3';
