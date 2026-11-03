@@ -54,6 +54,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   texture.minFilter=THREE.NearestFilter;texture.magFilter=THREE.NearestFilter;
   return {canvas,context,texture,bounds:{value:new THREE.Vector4(0,0,1,1)},enabled:{value:0},strokes:0,worldUnitsPerPixel:0};
  });
+ const maskedMeshNames=[];
  const targets=new Set(['OSM · единые обочины','OSM · единое дорожное полотно','OSM · асфальт трассы',
    'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки',
    'road-pavement-union','road-shoulder-union','road-center-dashes','road-edge-lines',
@@ -61,10 +62,12 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    'Трасса · продолжение · white','Трасса · продолжение · yellow']);
  for(const mesh of roadMeshes){
   if(!mesh.isMesh||!targets.has(mesh.name))continue;
+  maskedMeshNames.push(mesh.name);
   const material=mesh.material;
   if(material.userData.roadEditorMaskApplied)continue;
   material.userData.roadEditorMaskApplied=true;
   const previous=material.onBeforeCompile;
+  const previousProgramCacheKey=material.customProgramCacheKey.bind(material);
   material.onBeforeCompile=shader=>{
    previous?.(shader);
    const uniforms=[];
@@ -89,7 +92,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
     '#include <clipping_planes_fragment>\n'+clip);
   };
-  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v4';
+  material.customProgramCacheKey=()=>previousProgramCacheKey()+'-rockettrip-road-editor-mask-v6';
   material.needsUpdate=true;
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
@@ -133,7 +136,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   return ray.intersectObjects(groundMeshes,false)[0]?.point??null;
  }
  const horizontal=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
- let joinedPaths=[],joinReport=[],geometryStats={segments:0,sourceRoads:0,overlaps:0};
+ let joinedPaths=[],joinReport=[],styleReport=[],geometryStats={segments:0,sourceRoads:0,overlaps:0};
  let addedSignature=null,maskSignature=null,erasedIndex=new Map(),baselineData=null,maskStats={partCount:0,duplicateCuts:0,invalidSegments:0,sectorParts:[]};
  function rebuildAdded(){
   for(const child of [...editingGroup.children]){
@@ -143,6 +146,10 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   const joined=stitchEditedRoads(state.added,{existingRoads:base});
   joinReport=joined.adjustments;
   const styled=joined.roads.map(r=>({...r,profile:deriveEditedRoadStyle(r,base)}));
+  styleReport=styled.map(r=>({id:r.id,sourceId:r.profile.sourceId,kind:r.profile.classId,
+   widthStart:r.profile.widthStart,widthEnd:r.profile.widthEnd,
+   marking:r.profile.marking,marked:r.profile.marked,
+   sourceStart:r.profile.matching.start,sourceEnd:r.profile.matching.end}));
   const built=buildEditedRoadMeshes(styled,{terrainHeightAt});
   joinedPaths=built.paths;
   geometryStats=built.stats;
@@ -378,6 +385,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,styleVersion:ROAD_EDIT_STYLE_VERSION,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
    joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
-   mesh:geometryStats,mask:maskStats,maskApplied:tiles.some(t=>t.enabled.value===1),
+   mesh:geometryStats,roadStyles:styleReport,sourceMaterialColors:Object.fromEntries(Object.entries(surfaceMaterials).map(([k,m])=>[k,'#'+m.color.getHexString()])),
+   maskedMeshNames,mask:maskStats,maskApplied:tiles.some(t=>t.enabled.value===1),
    maskTiles:tiles.map(t=>({strokes:t.strokes,worldUnitsPerPixel:t.worldUnitsPerPixel,enabled:t.enabled.value===1}))})};
 }
