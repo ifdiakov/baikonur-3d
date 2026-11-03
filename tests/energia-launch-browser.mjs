@@ -40,10 +40,12 @@ try{
  }));
  assert.equal(before.rocket.modelId,'energia-polyus');
  
- // Detail launch CTA must be available regardless of the viewing azimuth.
+ // The launch CTA must live only inside the UKSS site card, never above the map.
  await page.evaluate(()=>window.__BAIKONUR_QA.setAltitude(220,'pad-250'));
  await draw();
- assert(await page.locator('#energiaLaunchQuickStart').isVisible(),'Any UKSS detail view exposes launch CTA');
+ assert.equal(await page.locator('#energiaLaunchQuickStart').count(),0,'Floating launch shortcut has been removed');
+ assert(await page.locator('#energiaLaunchStart').isVisible(),'UKSS site card exposes launch CTA');
+ assert.equal(await page.locator('#energiaLaunchStart').evaluate(el=>Boolean(el.closest('#info'))),true,'Launch CTA belongs to the site card');
  // Pre-rotate around UKSS to verify we do not force an authored start camera.
  await page.mouse.move(735,375);
  await page.mouse.down({button:'right'});
@@ -51,7 +53,7 @@ try{
  await page.mouse.up({button:'right'});
  const inputCamera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
  const inputDirection=inputCamera.position.map((p,i)=>p-inputCamera.target[i]);
- await page.locator('#energiaLaunchQuickStart').click();
+ await page.locator('#energiaLaunchStart').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.active===true,null,{timeout:100000});
  let s=await stats();assert.equal(s.time,-90);assert.equal(s.active,true);
  assert.equal(await page.locator('#year').inputValue(),'1987');
