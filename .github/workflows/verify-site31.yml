@@ -1,0 +1,53 @@
+name: Site 31 source model
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/archive-models.js'
+      - 'assets/models/site31/**'
+      - 'src/site31-*.js'
+      - 'tests/site31-source-*.mjs'
+      - '.github/workflows/verify-site31.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: site31-source-model
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install checks
+        run: |
+          npm install --no-save three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 @gltf-transform/functions@4.5.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Verify source geometry and preserved connections
+        run: |
+          node tests/site31-source-model.mjs
+          node tests/site31-geometry.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Test full museum, load recovery, views and mobile
+        run: node tests/site31-source-browser.mjs
+      - name: Verify published version and repeat browser checks
+        if: github.event_name != 'pull_request'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+        run: |
+          node scripts/verify-site31-published.mjs
+          node tests/site31-source-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site31-source-evidence
+          path: qa-site31/

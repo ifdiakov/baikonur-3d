@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import * as THREE from 'three';
+import {NodeIO} from '@gltf-transform/core';
+import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
+import {dequantize,getBounds} from '@gltf-transform/functions';
+import {MeshoptDecoder} from 'meshoptimizer';
+import {buildSite31Exhibit,site31Controller,validateSite31Glb,SITE31_ASSET_VERSION} from '../src/site31-exhibit.js';
+import {SITE31_PIT,SITE31_PORTS} from '../src/site31-pad.js';
+import {SITE31_YAW} from '../src/site31-trench-profile.js';
+import {MUSEUM_METRE} from '../src/museum-scale.js';
+await MeshoptDecoder.ready;const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.decoder':MeshoptDecoder});
+const bytes=await readFile('assets/models/site31/model-v1.glb'),manifest=JSON.parse(await readFile('assets/models/site31/manifest-v1.json'));
+assert.equal(bytes.length,manifest.asset.bytes);assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.asset.sha256);assert(bytes.length<manifest.sourceBytes*.25);
+const json=validateSite31Glb(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength));assert.match(json.asset.copyright,/Soviet Model Magic.*CC BY 4.0/);
+const doc=await io.readBinary(bytes);await doc.transform(dequantize());const data=doc.getRoot(),bounds=getBounds(data.listScenes()[0]);
+assert.equal(data.listMeshes().length,2);assert.equal(data.listMaterials().length,2);assert.equal(data.listTextures().length,2);
+let triangles=0;const source=new THREE.Group();
+for(const node of data.listNodes())if(node.getMesh())for(const p of node.getMesh().listPrimitives()){
+ const g=new THREE.BufferGeometry(),pos=p.getAttribute('POSITION');g.setAttribute('position',new THREE.Float32BufferAttribute(pos.getArray(),3));
+ if(p.getIndices())g.setIndex(new THREE.BufferAttribute(p.getIndices().getArray(),1));g.applyMatrix4(new THREE.Matrix4().fromArray(node.getWorldMatrix()));
+ const m=new THREE.Mesh(g,new THREE.MeshBasicMaterial({side:THREE.DoubleSide}));source.add(m);triangles+=(g.index?.count||pos.getCount())/3;
+ assert([...g.attributes.position.array].every(Number.isFinite));
+}
+assert.equal(triangles,109604);assert.equal(triangles,manifest.asset.triangles);assert(manifest.adaptation.geometryDecimated===false);assert.equal(manifest.normalization.scale,1);
+for(const key of ['min','max'])bounds[key].forEach((v,i)=>assert(Math.abs(v-manifest.bounds[key][i])<.005));
+assert(bounds.max[2]<100,'No distant source terrain may cover another exhibit');
+const root=new THREE.Group();root.scale.setScalar(MUSEUM_METRE);root.rotation.y=SITE31_YAW;
+let fail=true,calls=0;buildSite31Exhibit(root,{autoLoad:false,loadSource:async()=>{calls++;if(fail)throw Error('test network interruption');return {scene:source.clone(true),manifest};}});
+const control=site31Controller(root),initial=root.children[0],cutouts=root.userData.archiveCutouts,lighting=root.userData.facilityLighting;
+const rocket=new THREE.Group();rocket.name='existing-source-rocket';root.add(rocket);
+let swaps=0,change=null;root.addEventListener('museum-exhibit-loaded',e=>{swaps++;change=e;});
+assert.equal(await control.load(),false);assert.equal(control.stats().asset.status,'error');assert(root.children.includes(initial));assert.equal(swaps,0);
+fail=false;assert.deepEqual(await Promise.all([control.load(),control.load()]),[true,true]);assert.equal(calls,2);assert.equal(swaps,1);
+assert.equal(control.stats().version,SITE31_ASSET_VERSION);assert.equal(control.stats().asset.status,'ready');assert.equal(root.children.length,2);assert(root.children.includes(rocket));assert(!root.children.includes(initial));
+assert.equal(root.userData.archiveCutouts,cutouts);assert.deepEqual(cutouts,[SITE31_PIT]);assert.equal(root.userData.facilityLighting,lighting);
+assert.equal(control.stats().rocketMount.position[1],0);assert.deepEqual(control.stats().roadPort,SITE31_PORTS.road);assert.deepEqual(control.stats().railPort,SITE31_PORTS.rail);
+assert(!change.added.some(o=>change.removed.includes(o)));assert.equal(change.added.filter(o=>o.userData.museumComponent==='site31-source-structure').length,2);
+assert.equal(await control.load(),true);assert.equal(swaps,1);assert.equal(calls,2);
+root.updateMatrixWorld(true);
+let cutoutOwners=0,sourceMeshes=0;root.traverse(o=>{if(o.userData.archiveCutouts?.length)cutoutOwners++;if(o.userData.museumComponent==='site31-source-structure')sourceMeshes++;if(o.isMesh)assert(o.matrixWorld.elements.every(Number.isFinite));});assert.equal(cutoutOwners,1);assert.equal(sourceMeshes,2);
+// The replacement must leave the road and rails exactly at the registered ports.
+const V=(x,y,z)=>root.localToWorld(new THREE.Vector3(x,y,z));
+const ray=(x,z)=>new THREE.Raycaster(V(x,2,z),new THREE.Vector3(0,-1,0)).intersectObjects(root.children,true).map(hit=>root.worldToLocal(hit.point.clone()).y);
+assert(ray(60,133).some(y=>Math.abs(y-.1)<.001));
+assert(ray(.76,174-.02).some(y=>Math.abs(y-.65)<.03),'The incoming rail meets the existing port at the rail head');
+console.log('SITE31_SOURCE_PASS',JSON.stringify({bytes:bytes.length,triangles,sourceDrawCalls:2,sourceMeshes,swaps,cutoutOwners,sourceBounds:manifest.bounds}));
