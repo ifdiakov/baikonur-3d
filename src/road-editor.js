@@ -61,7 +61,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
     'if(roadEditorEnabled'+i+'>0.5){vec2 uv=(vRoadEditorPosition.xz-roadEditorBounds'+i+'.xy)/roadEditorBounds'+i+'.zw;'+
     'if(all(greaterThanEqual(uv,vec2(0.0)))&&all(lessThanEqual(uv,vec2(1.0)))){'+
     'vec4 cut=texture2D(roadEditorMask'+i+',uv);'+
-    'if(cut.r>0.5&&abs(vRoadEditorPosition.y-(cut.g*48.0-16.0))<0.85)discard;}}'
+    'if(cut.a>0.48&&cut.r>0.5&&abs(vRoadEditorPosition.y-(cut.g*48.0-16.0))<0.85)discard;}}'
    ).join('\n');
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
     '#include <clipping_planes_fragment>\n'+clip);
@@ -190,7 +190,11 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   const list=erasedIndex.get(Math.floor(x/size)+':'+Math.floor(z/size))||[];
   let hidden=false;
   for(const h of list){
-   if(record.roadId&&h.sourceId!==record.roadId)continue;
+   // The highway light planner uses one long route named "highway",
+   // while editor cuts retain their individual OSM way IDs.
+   const sameSource=h.sourceId===record.roadId||
+    record.style==='highway'&&h.width>=3&&h.sourceId.startsWith('osm-road-');
+   if(record.roadId&&!sameSource)continue;
    const a=h.a,b=h.b,dx=b[0]-a[0],dz=b[2]-a[2],den=dx*dx+dz*dz;
    if(den<1e-9)continue;
    const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/den));
