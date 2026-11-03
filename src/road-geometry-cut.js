@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // Physical cutouts for the displayed road geometry, instead of transparent
 // mask textures. Original centreline/OSM graph remains unmodified. This module
 // clips every surfaced triangle, including white paint and both shoulders.
-export const ROAD_GEOMETRY_CUT_VERSION='physical-road-cuts-v1';
+export const ROAD_GEOMETRY_CUT_VERSION='physical-road-cuts-junction-protection-v2';
 const EPS=1e-8,CELL=14,TAU=Math.PI*2;
 const area=(a,b,c)=>(b.x-a.x)*(c.z-a.z)-(b.z-a.z)*(c.x-a.x);
 const lerp=(a,b,t)=>({x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t,
@@ -59,7 +59,7 @@ function rectangularCut(a,b,width){
  const nx=-dz/len*width*.5,nz=dx/len*width*.5;
  const pts=positive([{x:a[0]-nx,y:a[1],z:a[2]-nz},{x:b[0]-nx,y:b[1],z:b[2]-nz},
   {x:b[0]+nx,y:b[1],z:b[2]+nz},{x:a[0]+nx,y:a[1],z:a[2]+nz}]);
- return {points:pts,bounds:bounds(pts),
+ return {points:pts,bounds:bounds(pts),direction:[dx/len,dz/len],
   height:(x,z)=>{const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/(len*len)));return a[1]+(b[1]-a[1])*t;}};
 }
 function circleCut(p,width){
@@ -104,7 +104,13 @@ function existingRoadSegmentIndex(roads){
    const t=Math.max(0,Math.min(1,((x-r.a[0])*dx+(z-r.a[2])*dz)/den));
    const distance=Math.hypot(x-(r.a[0]+dx*t),z-(r.a[2]+dz*t));
    const height=r.a[1]+(r.b[1]-r.a[1])*t;
-   if(distance<=(width+r.width)*.5+1.2&&Math.abs(height-y)<1.25)return true;
+   // Only replace genuinely overlapping PARALLEL carriageways. A spur
+   // hitting a through road at 90 degrees must not punch a rectangle into
+   // the through lane and leave a hole alongside the spur's butt end.
+   const len=Math.hypot(b[0]-a[0],b[2]-a[2]);
+   const oldLen=Math.sqrt(den);
+   const parallel=len>1e-6?Math.abs(((b[0]-a[0])*dx+(b[2]-a[2])*dz)/(len*oldLen)):0;
+   if(parallel>=.76&&distance<=(width+r.width)*.5+1.2&&Math.abs(height-y)<1.25)return true;
   }
   return false;
  };
@@ -126,6 +132,7 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    if(!section)continue;
    if(kind==='added'&&nearOld&&!nearOld(a,b,width)){skippedOffRoad++;continue;}
    section.gradeTolerance=kind==='hidden'?1.9:1.05;
+   section.kind=kind;
    clips.push(section);
    if(kind==='hidden')sourceCuts++;else replacementCuts++;
   }
@@ -135,7 +142,11 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    const width=(widths?widths[j]:r.width)+shoulderExtra+edgeMargin;
    if(kind==='added'&&nearOld&&!nearOld(r.points[j-1],r.points[j],width)
       &&!nearOld(r.points[j],r.points[j+1],width))continue;
-   const corner=circleCut(r.points[j],width);corner.gradeTolerance=kind==='hidden'?1.9:1.05;clips.push(corner);
+   const corner=circleCut(r.points[j],width);corner.gradeTolerance=kind==='hidden'?1.9:1.05;
+   corner.kind=kind;
+   const a=r.points[j-1],b=r.points[j+1],dx=b[0]-a[0],dz=b[2]-a[2],d=Math.hypot(dx,dz);
+   if(d>1e-6)corner.direction=[dx/d,dz/d];
+   clips.push(corner);
   }
  }
  return {...gridIndex(clips),clips:clips.length,sourceCuts,replacementCuts,duplicateCuts,skippedOffRoad};
