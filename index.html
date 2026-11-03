@@ -2327,7 +2327,7 @@ window.addEventListener('blur',()=>{keys.clear();keyboardVelocity.set(0,0)});
 let terrainDetailRequested=false,lastFrame=performance.now();
 function moveCamera(dt){
  const step=Math.max(0,Math.min(.06,dt));if(!step)return;
- if(energiaLaunch?.isActive()||puaLoading?.isActive()||buranLanding?.isActive()||
+ if(energiaLaunch?.isActive()||puaLoading?.isActive()||document.body.classList.contains('buran-landing-active')||
    document.body.classList.contains('following-arrival')||document.body.classList.contains('following-train')){
   keyboardVelocity.set(0,0);return;
  }
@@ -2380,7 +2380,7 @@ const sceneSelection=installSceneSelection({element:renderer.domElement,camera,c
 const smoothMapCamera=createMapCameraSmoothing({
  canvas:renderer.domElement,camera,controls:ctl,
  canNavigate:()=>!modelInspector.isOpen()&&!energiaLaunch?.isActive()&&!puaLoading?.isActive()&&
-  !buranLanding?.isActive()&&!fly&&!lightingEditor?.active&&!roadEditor?.active&&
+  !document.body.classList.contains('buran-landing-active')&&!fly&&!lightingEditor?.active&&!roadEditor?.active&&
   !document.body.classList.contains('following-arrival')&&
   !document.body.classList.contains('following-train')&&
   !document.body.classList.contains('buran-landing-active')
