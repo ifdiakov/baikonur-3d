@@ -4,9 +4,9 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP} from '../src/museum-menu.js';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261103-smooth-free-map-camera-v1';
-const sections=['sitesAccordion','equipmentAccordion','infrastructureAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ИНФРАСТРУКТУРА','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+const prefix=process.env.QA_PREFIX||'local',out='qa-menu',revision='20261103-museum-eight-sections-v8';
+const sections=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','infrastructureAccordion','heroesAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','ИНФРАСТРУКТУРА','ГЕРОИ И ИСТОРИИ','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],actions:[],statuses:[]};
 await mkdir(out,{recursive:true});
 const browser=await chromium.launch({headless:true,
@@ -118,7 +118,8 @@ try{
   },countdownBefore.totalSeconds,{polling:100,timeout:5000});
  }else if(countdownBefore.deadline<=countdownBefore.now)assert.equal(countdownBefore.totalSeconds,0,'An elapsed launch must not produce a negative counter');
  evidence.nextLaunch={before:countdownBefore,after:await nextLaunchState()};
- assert.equal(await page.locator('#museumIdentity img,.rockettrip-logo,#cyclogramsAccordion,#timelineEvents,#timelineEventPanel').count(),0,'Removed branding and event UI do not remain hidden in the page');
+ assert.equal(await page.locator('#museumIdentity img').count(),1,'RocketTrip brand stays in the menu header');
+ assert.equal(await page.locator('#cyclogramsAccordion,#timelineEvents,#timelineEventPanel').count(),0,'Removed timeline and legacy menu UI stay absent');
  const catalogue=await page.evaluate(()=>{
   const q=window.__BAIKONUR_QA,s=q.stats();return{sections:q.menu.stats().sections,sites:s.sites,stations:s.stations,research:s.researchObjects,history:s.historyEvents};
  });
@@ -193,10 +194,17 @@ try{
  // Native details controls must work from the keyboard as well as the mouse.
  await page.locator('#mythsAccordion > summary').focus();await page.keyboard.press('Enter');
  await page.waitForFunction(()=>document.getElementById('mythsAccordion').open);
- assert.equal(await page.locator('#mythsAccordion [data-museum-action]').count(),12);
+ assert.equal(await page.locator('#mythsAccordion [data-museum-action]').count(),3,'Only documented legends and disputed stories belong to myths');
  assert.equal(await page.locator('#mythsAccordion .museum-menu-empty').count(),0);
  await openSection('traditionsAccordion');
- assert.equal(await page.locator('#traditionsAccordion .museum-menu-empty').count(),1,'Traditions category opens its honest pending-content state');
+ assert.equal(await page.locator('#traditionsAccordion [data-museum-action]').count(),1,'Recorded crew coin anecdote belongs to traditions');
+ await openSection('heroesAccordion');
+ assert.equal(await page.locator('#heroesAccordion [data-museum-action]').count(),7,'Design schools and six archival stories have their own section');
+ await openSection('reconstructionsAccordion');
+ assert.equal(await page.locator('#reconstructionsAccordion [data-museum-action]').count(),8,'Real animations are grouped separately from static exhibits');
+ const archiveActions=await page.locator('.museum-section [data-museum-action^="story:"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.museumAction));
+ assert.equal(archiveActions.length,12,'All reviewed stories remain accessible in the correct sections');
+ assert.equal(new Set(archiveActions).size,archiveActions.length,'No archival story is listed twice');
  await openSection('equipmentAccordion');
  assert.equal(await page.locator('#traditionsAccordion').evaluate(element=>element.open),false);
  assert.equal(await page.locator('#mythsAccordion').evaluate(element=>element.open),false);
@@ -204,6 +212,13 @@ try{
  assert.deepEqual(await page.locator('#equipmentAccordion [data-museum-action]').evaluateAll(elements=>elements.map(element=>element.dataset.museumAction)),equipmentActions,
   'The rendered equipment menu includes every current catalogue action in order');
  assert.equal(await page.locator('#equipmentAccordion [data-museum-action]').first().getAttribute('data-museum-action'),'zenit-3sl');
+ await action('energia-reconstruction','reconstructionsAccordion');await selectedSite('pad-250');
+ assert.equal(await page.locator('#energiaLaunchQuickStart').count(),0,'Only UKSS site card contains a launch trigger');
+ assert.equal(await page.locator('#energiaLaunchStart').isVisible(),true,'Digital reconstruction links to the actual UKSS launch control');
+ await action('buran-landing-reconstruction','reconstructionsAccordion');await selectedSite('pad-251');
+ assert.equal(await page.locator('#buranLandingStart').isVisible(),true,'Landing animation stays in Yubileiny site card');
+ await action('buran-loading-reconstruction','reconstructionsAccordion');await selectedSite('pad-251');
+ assert.equal(await page.locator('#puaLoadingStart').isVisible(),true,'Loading animation stays in Yubileiny site card');
  await shot('desktop-equipment');
  await action('r7');await selectedSite('pad-1');
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.stats().gagarinRocketVisible),true);
@@ -215,11 +230,11 @@ try{
  await action('mriya');await selectedSite('pad-251');
  await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().airports.find(a=>a.key==='yubileiny').mriya.status==='ready',null,{timeout:180000});
  await action('silo');await selectedSite('pad-109');
- const aircraft=await action('aircraft');assert.equal(aircraft.arrival,true);assert.equal(aircraft.train,false);
- const train=await action('train');assert.equal(train.train,true);assert.equal(train.arrival,false);
+ const aircraft=await action('aircraft','reconstructionsAccordion');assert.equal(aircraft.arrival,true);assert.equal(aircraft.train,false);
+ const train=await action('train','reconstructionsAccordion');assert.equal(train.train,true);assert.equal(train.arrival,false);
  await step();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().train.following),true,'Sidebar event bubbling must not cancel the selected following mode');
 
- const cycle=await action('flight-cycle');assert.equal(cycle.arrival,true);assert.equal(cycle.train,false);
+ const cycle=await action('flight-cycle','reconstructionsAccordion');assert.equal(cycle.arrival,true);assert.equal(cycle.train,false);
  const cases=[[0,'inbound',148],[147.1,'inbound',1],[148,'parking',20],[167.1,'parking',1],[168,'outbound',238],[405.1,'outbound',1],[406,'inbound',148],[554,'parking',20],[574,'outbound',238],[812,'inbound',148]];
  const labels={inbound:'МОСКВА-КРАЙНИЙ',parking:'СТОЯНКА',outbound:'КРАЙНИЙ-МОСКВА'};
  for(const [time,id,seconds]of cases){
@@ -238,9 +253,9 @@ try{
   const q=window.__BAIKONUR_QA;q.arrival.seek(148);q.arrival.resume();const now=performance.now();q.arrival.update(now);q.arrival.update(now+1100);
  });
  assert.equal(await page.locator('#arrivalClock').textContent(),'19 сек','The displayed countdown advances with simulation time');
- const trainCycle=await action('train-cycle');assert.equal(trainCycle.train,true);assert.equal(trainCycle.arrival,false);
+ const trainCycle=await action('train-cycle','reconstructionsAccordion');assert.equal(trainCycle.train,true);assert.equal(trainCycle.arrival,false);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats().elapsed),0);
- await action('silo-cycle');await selectedSite('pad-109');
+ await action('silo-cycle','reconstructionsAccordion');await selectedSite('pad-109');
  await action('r16-memorial','graveyardAccordion');await selectedSite('pad-41');
  await page.evaluate(()=>{document.getElementById('year').value='1990';document.getElementById('year').dispatchEvent(new Event('input',{bubbles:true}));});
  await action('mik-ruins','graveyardAccordion');await selectedSite('pad-112');
@@ -264,7 +279,13 @@ try{
  evidence.mobile=await menuBounds();checkLowerDocks(evidence.mobile,{stacked:true});
  assert.ok(evidence.mobile.stack.bottom<evidence.mobile.lowerDockTop,'The expanded mobile menu stays above both lower docks');
  assert.equal(await page.locator('#museumIdentity .museum-name').isVisible(),true);assert.equal(await page.locator('#museumIdentity .museum-subtitle').isVisible(),true);
- for(const h of evidence.mobile.headers){assert.ok(h.x>=0&&h.right<=390&&h.height>=40,h.id+' remains a full-width touch target');assert.ok(h.y>=0&&h.bottom<evidence.mobile.lowerDockTop,h.id+' is visible above the lower docks');}
+ for(const h of evidence.mobile.headers)assert.ok(h.x>=0&&h.right<=390&&h.height>=40,h.id+' remains a full-width touch target');
+ // All eight categories can scroll inside the sidebar without covering either
+ // bottom dock; the final category must be reachable even on narrow phones.
+ await page.locator('#graveyardAccordion > summary').scrollIntoViewIfNeeded();
+ const lastHeader=await page.locator('#graveyardAccordion > summary').boundingBox();
+ assert.ok(lastHeader.y>=0&&lastHeader.y+lastHeader.height<=evidence.mobile.lowerDockTop,'Last menu category can scroll into view above the docks');
+ await page.locator('#sitesAccordion > summary').scrollIntoViewIfNeeded();
  await shot('mobile-menu');
  await openSection('equipmentAccordion');await page.locator('[data-museum-action="tua"]').click();
  assert.equal(await toggle.getAttribute('aria-expanded'),'false');await selectedSite('pad-112');
@@ -272,7 +293,7 @@ try{
  assert.deepEqual(await selectedCardDockOverlaps(),{launch:0,timeline:0},'The phone TUA card does not cover either lower dock');
  assert.equal(await page.locator('#mik112Tua').getAttribute('aria-pressed'),'true');
  await shot('mobile-tua');
- await toggle.click();await openSection('equipmentAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();
+ await toggle.click();await openSection('reconstructionsAccordion');await page.locator('#reconstructionsAccordion [data-museum-action="flight-cycle"]').click();
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().following),true);
  assert.equal(await toggle.getAttribute('aria-expanded'),'false');
  assert.equal(await toggle.isVisible(),true,'Mobile following retains a visible exit to the menu');
@@ -288,7 +309,7 @@ try{
  // The existing compact following layout starts at 750px, above the normal
  // phone-menu breakpoint. Its escape control must also work in this band.
  await page.setViewportSize({width:700,height:900});
- await openSection('equipmentAccordion');await page.locator('[data-museum-action="flight-cycle"]').click();
+ await openSection('equipmentAccordion');await page.locator('#reconstructionsAccordion [data-museum-action="flight-cycle"]').click();
  assert.equal(await toggle.isVisible(),true);assert.equal(await page.locator('#arrivalPanel').isVisible(),true);
  await toggle.click();assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats().following),false);
  assert.deepEqual(evidence.errors,[]);assert.deepEqual(evidence.shaderErrors,[]);assert.deepEqual(evidence.failedResources,[]);
