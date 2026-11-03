@@ -1,0 +1,31 @@
+name: Diagnose live museum startup
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tests/live-startup-diagnostic.mjs'
+      - '.github/workflows/diagnose-live-startup.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright Chromium
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Probe published app startup and capture errors
+        run: node tests/live-startup-diagnostic.mjs
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: museum-live-startup-diagnostic-${{ github.run_id }}
+          path: qa-live-startup/
+          retention-days: 5
