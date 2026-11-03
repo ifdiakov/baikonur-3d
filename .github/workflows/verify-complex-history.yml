@@ -1,0 +1,34 @@
+name: Verify Baikonur foundation history
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/complex-history*'
+      - 'src/museum-menu.js'
+      - 'tests/complex-history*'
+      - '.github/workflows/verify-complex-history.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  history:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install viewer test dependencies
+        run: |
+          npm install --no-save three@0.160.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Verify history and sidebar data contracts
+        run: |
+          node tests/complex-history.mjs
+          node tests/menu-catalog-contract.mjs
+      - name: Verify history drawer, controls and year in live WebGL museum
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/complex-history-browser.mjs
