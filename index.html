@@ -1953,7 +1953,7 @@ function showResearch(item){
  const coords=item.latitude!=null&&item.longitude!=null
    ?'Координаты: '+item.latitude.toFixed(6)+', '+item.longitude.toFixed(6)+'. '
    :'';
- document.getElementById("description").textContent=coords+'Гипотеза: '+item.hypothesis.replace(/[.\\s]+$/u,'')+'.';
+ document.getElementById("description").textContent=coords+'Гипотеза: '+item.hypothesis.replace(/[.\s]+$/u,'')+'.';
  document.getElementById("infoExtra").style.display="none";
  document.getElementById("detailMore").textContent="ПОДРОБНЕЕ ↗";
  document.getElementById("info").style.display="block";
