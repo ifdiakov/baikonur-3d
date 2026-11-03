@@ -1,6 +1,6 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 
-export const MUSEUM_MENU_VERSION='museum-eight-sections-v8';
+export const MUSEUM_MENU_VERSION='museum-six-sections-v9';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -29,7 +29,6 @@ export function museumCatalogueSection(record){
 // Reconstruction links to UKSS/Yubileiny open their site cards: the actual
 // launch/landing/loading buttons remain in those cards.
 export const MUSEUM_STORY_GROUPS=Object.freeze({
- heroesAccordion:Object.freeze(['runway-profilometer','mriya-after-flight','energia-m-winter','jet-buran','evacuation-slide','which-buran']),
  mythsAccordion:Object.freeze(['dmb-inscription','landing-turn','baikal-secret-flight']),
  traditionsAccordion:Object.freeze(['coins-under-tua']),
  graveyardAccordion:Object.freeze(['abort-51','polyus-turn'])
@@ -63,10 +62,6 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'aircraft',title:'Сопровождение самолёта',description:'Камера следует за воздушным судном'},
   {action:'train',title:'Сопровождение локомотива',description:'Камера следует за поездом'}
  ]},
- {id:'infrastructureAccordion',title:'ИНФРАСТРУКТУРА',catalogue:true},
- {id:'heroesAccordion',title:'ГЕРОИ И ИСТОРИИ',items:[
-  {action:'flanks-history',title:'Конструкторы и инженерные школы',description:'Королёв, Челомей, Янгель · истории и территории'}
- ],empty:'Истории людей и инженерных достижений готовятся к публикации.'},
  {id:'mythsAccordion',title:'МИФЫ И ЛЕГЕНДЫ',items:[],empty:'Материалы раздела пока не добавлены.'},
  {id:'traditionsAccordion',title:'ТРАДИЦИИ И СУЕВЕРИЯ',items:[],empty:'Истории о традициях и суевериях космодрома готовятся к публикации.'},
  {id:'graveyardAccordion',title:'КОСМИЧЕСКОЕ КЛАДБИЩЕ',items:[
@@ -83,14 +78,12 @@ export function installMuseumMenu({container,onAction,stories=[]}){
    if(section.open)for(const other of sections)if(other!==section)other.open=false;
   });
  }
- // Archive entries are assigned exactly once; new unclassified stories are
- // surfaced under «Герои и истории», not silently dropped from navigation.
+ // Stories outside the visible sections remain in site knowledge cards;
+ // removing a navigation group does not delete their archival records.
  const storyById=new Map(stories.map(story=>[story.action.slice(6),story]));
- const assignedIds=new Set(Object.values(MUSEUM_STORY_GROUPS).flat());
  for(const baseSection of MUSEUM_SECTIONS){
   const assigned=MUSEUM_STORY_GROUPS[baseSection.id]||[];
   const archiveItems=assigned.map(id=>storyById.get(id)).filter(Boolean);
-  if(baseSection.id==='heroesAccordion')archiveItems.push(...stories.filter(item=>!assignedIds.has(item.action.slice(6))));
   const section={...baseSection,items:[...(baseSection.items||[]),...archiveItems]};
   const details=container.querySelector('#'+section.id);
   if(!details)throw new Error('Museum section is missing: '+section.id);
