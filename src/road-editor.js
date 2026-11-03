@@ -3,6 +3,7 @@ import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadE
 import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-union-startup-v1';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-parity-v3';
 import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v3';
+import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261103-road-physical-v1';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
@@ -54,46 +55,37 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   texture.minFilter=THREE.NearestFilter;texture.magFilter=THREE.NearestFilter;
   return {canvas,context,texture,bounds:{value:new THREE.Vector4(0,0,1,1)},enabled:{value:0},strokes:0,worldUnitsPerPixel:0};
  });
- const maskedMeshNames=[];
+ // The old renderer painted a texture mask on top of old roads. That left
+ // washed-out contours and damaged every other intersection in screenshots.
+ // Remove deleted sections from triangles themselves. Keep the originals
+ // for Undo/Redo and never alter the source OSM graph.
  const targets=new Set(['OSM · единые обочины','OSM · единое дорожное полотно','OSM · асфальт трассы',
-   'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки',
-   'road-pavement-union','road-shoulder-union','road-center-dashes','road-edge-lines',
-   'Трасса · продолжение · shoulder','Трасса · продолжение · asphalt',
-   'Трасса · продолжение · white','Трасса · продолжение · yellow']);
- for(const mesh of roadMeshes){
-  if(!mesh.isMesh||!targets.has(mesh.name))continue;
-  maskedMeshNames.push(mesh.name);
-  const material=mesh.material;
-  if(material.userData.roadEditorMaskApplied)continue;
-  material.userData.roadEditorMaskApplied=true;
-  const previous=material.onBeforeCompile;
-  const previousProgramCacheKey=material.customProgramCacheKey.bind(material);
-  material.onBeforeCompile=shader=>{
-   previous?.(shader);
-   const uniforms=[];
-   for(let i=0;i<TILE_COUNT;i++){
-    shader.uniforms['roadEditorMask'+i]={value:tiles[i].texture};
-    shader.uniforms['roadEditorBounds'+i]=tiles[i].bounds;
-    shader.uniforms['roadEditorEnabled'+i]=tiles[i].enabled;
-    uniforms.push('uniform sampler2D roadEditorMask'+i+'; uniform vec4 roadEditorBounds'+i+'; uniform float roadEditorEnabled'+i+';');
+  'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки',
+  'road-pavement-union','road-shoulder-union','road-center-dashes','road-edge-lines',
+  'Трасса · продолжение · shoulder','Трасса · продолжение · asphalt',
+  'Трасса · продолжение · white','Трасса · продолжение · yellow']);
+ const sourceMeshes=roadMeshes.filter(m=>m.isMesh&&targets.has(m.name));
+ const maskedMeshNames=sourceMeshes.map(m=>m.name);
+ const originals=new Map(sourceMeshes.map(m=>[m,m.geometry]));
+ let physicalCutStats={version:ROAD_GEOMETRY_CUT_VERSION,meshes:0,clipped:0,removed:0,examined:0,triangles:0};
+ function replaceSourceGeometry(){
+  const edits=makeRoadSurfaceCutIndex(state.hidden,joinedPaths);
+  let clipped=0,removed=0,examined=0,triangles=0;
+  for(const mesh of sourceMeshes){
+   const original=originals.get(mesh);
+   if(!original)continue;
+   if(!edits.clips){
+    if(mesh.geometry!==original){mesh.geometry.dispose();mesh.geometry=original;}
+    continue;
    }
-   shader.vertexShader=shader.vertexShader.replace('#include <common>',
-    '#include <common>\nvarying vec3 vRoadEditorPosition;');
-   shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
-    '#include <begin_vertex>\nvRoadEditorPosition = (modelMatrix * vec4(position,1.0)).xyz;');
-   shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-    '#include <common>\nvarying vec3 vRoadEditorPosition;\n'+uniforms.join('\n'));
-   const clip=Array.from({length:TILE_COUNT},(_,i)=>
-    'if(roadEditorEnabled'+i+'>0.5){vec2 uv=(vRoadEditorPosition.xz-roadEditorBounds'+i+'.xy)/roadEditorBounds'+i+'.zw;'+
-    'if(all(greaterThanEqual(uv,vec2(0.0)))&&all(lessThanEqual(uv,vec2(1.0)))){'+
-    'vec4 cut=texture2D(roadEditorMask'+i+',uv);'+
-    'if(cut.a>0.48&&cut.r>0.5&&abs(vRoadEditorPosition.y-(cut.g*48.0-16.0))<0.85)discard;}}'
-   ).join('\n');
-   shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
-    '#include <clipping_planes_fragment>\n'+clip);
-  };
-  material.customProgramCacheKey=()=>previousProgramCacheKey()+'-rockettrip-road-editor-mask-v6';
-  material.needsUpdate=true;
+   const result=physicallyCutRoadGeometry(original,edits,{gradeTolerance:1.05});
+   if(mesh.geometry!==original)mesh.geometry.dispose();
+   mesh.geometry=result.geometry;
+   clipped+=result.stats.clipped;removed+=result.stats.removed;
+   examined+=result.stats.examined;triangles+=result.stats.outputTriangles;
+  }
+  physicalCutStats={version:ROAD_GEOMETRY_CUT_VERSION,meshes:sourceMeshes.length,clipped,removed,examined,triangles,
+   clipPolygons:edits.clips,sourceCuts:edits.sourceCuts,replacementCuts:edits.replacementCuts};
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
  panel.setAttribute('aria-label','Редактор автомобильных дорог');
@@ -207,6 +199,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    }
    ctx.setTransform(1,0,0,1,0,0);tile.texture.needsUpdate=true;
   }
+  replaceSourceGeometry();
  }
  // Deterministic source-pavement cut audit: read the same mask pixels the
  // fragment shader sees. Avoids mistaken geometric claims based only on
@@ -401,7 +394,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,styleVersion:ROAD_EDIT_STYLE_VERSION,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
    joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
-   mesh:geometryStats,roadStyles:styleReport,sourceMaterialColors:Object.fromEntries(Object.entries(surfaceMaterials).map(([k,m])=>[k,'#'+m.color.getHexString()])),
+   mesh:geometryStats,physicalCuts:physicalCutStats,roadStyles:styleReport,sourceMaterialColors:Object.fromEntries(Object.entries(surfaceMaterials).map(([k,m])=>[k,'#'+m.color.getHexString()])),
    maskedMeshNames,mask:maskStats,maskApplied:tiles.some(t=>t.enabled.value===1),
    maskTiles:tiles.map(t=>({strokes:t.strokes,worldUnitsPerPixel:t.worldUnitsPerPixel,enabled:t.enabled.value===1}))})};
 }
