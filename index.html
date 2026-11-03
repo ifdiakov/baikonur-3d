@@ -2253,7 +2253,7 @@ function showArchiveStory(id){
  document.getElementById('description').textContent='Материал из архива buran.ru';
  const extra=document.getElementById('infoExtra');extra.replaceChildren();museumKnowledge.renderStory(id,extra,{includeTitle:false});extra.style.display='block';
  document.getElementById('detailMore').textContent='СВЕРНУТЬ';document.getElementById('info').style.display='block';
- for(const selector of ['#gagarinTableStatus','#site31Views','#site31LoadStatus','#airportViews','#buranLandingStart','#puaLoadingStart','#siloViews','#hotelViews','#site2Views','#site254Views','#site2LoadStatus','#mzkViews','#sdiGateToggle','#energiaViews','#site41Views','#site45Views','#cycloneViews','#protonViews']){const el=document.querySelector(selector);if(el){el.hidden=true;el.style.display='none';}}
+ for(const selector of ['#gagarinTableStatus','#site31Views','#site31LoadStatus','#airportViews','#buranLandingStart','#puaLoadingStart','#siloViews','#hotelViews','#site2Views','#site254Views','#site250aViews','#site2LoadStatus','#mzkViews','#sdiGateToggle','#energiaViews','#site41Views','#site45Views','#cycloneViews','#protonViews']){const el=document.querySelector(selector);if(el){el.hidden=true;el.style.display='none';}}
  document.getElementById('mik112Controls').hidden=true;document.getElementById('rocketExhibitToggle').hidden=true;
  syncUkssControls();syncTuaControls();syncRocketLoadStatus();return true;
 }
