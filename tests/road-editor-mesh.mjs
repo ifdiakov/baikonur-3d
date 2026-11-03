@@ -90,5 +90,41 @@ assert(Math.abs(primaryMatched.width-3.6)<.01);
 assert(Math.abs(primaryMatched.widths[0]-3.6)<.01);
 assert(Math.abs(primaryMatched.points[0][1]-.72)<.001,'Road surface must meet old height precisely at the join');
 assert.equal(matched.paths.find(p=>p.id==='c-highway').style,'highway');
-console.log('ROAD_EDITOR_MESH_PASS',JSON.stringify({segments:stats.segments,overlapCuts:stats.overlaps,ownerOverlapCuts:ownerMesh.stats.overlaps,ownerSamples:roadSamples,
+
+// Fine-grained physical coverage at the real owner-authored T junctions.
+// The earlier smoke tests checked 337 road centres but missed side cracks.
+const rayOn=(mesh,x,z)=>{
+ const caster=new THREE.Raycaster(new THREE.Vector3(x,150,z),new THREE.Vector3(0,-1,0),0,250);
+ return caster.intersectObject(mesh,false).length>0;
+};
+const fine={junctions:0,checks:0};
+for(const [shortId,hostId]of [['road-3','road-4'],['road-24','road-14'],['road-29','road-28']]){
+ const branch=ownerMesh.paths.find(p=>p.id===shortId),host=ownerMesh.paths.find(p=>p.id===hostId);
+ if(!branch||!host)continue;
+ const distanceTo=(p,points)=>{
+  let best=Infinity;
+  for(let k=1;k<points.length;k++){
+   const a=points[k-1],b=points[k],dx=b[0]-a[0],dz=b[2]-a[2],den=dx*dx+dz*dz;
+   const t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[2]-a[2])*dz)/(den||1)));
+   best=Math.min(best,Math.hypot(p[0]-a[0]-dx*t,p[2]-a[2]-dz*t));
+  }
+  return best;
+ };
+ const anchors=[branch.points[0],branch.points.at(-1)].sort((a,b)=>distanceTo(a,host.points)-distanceTo(b,host.points));
+ const center=anchors[0];
+ if(distanceTo(center,host.points)>3.0)continue;
+ fine.junctions++;
+ for(let dx=-1.15;dx<=1.16;dx+=.38)for(let dz=-1.15;dz<=1.16;dz+=.38){
+  const x=center[0]+dx,z=center[2]+dz;
+  const near=Math.min(distanceTo([x,center[1],z],branch.points),distanceTo([x,center[1],z],host.points));
+  if(near>Math.min(branch.width,host.width)*.38)continue;
+  assert(rayOn(surfaces.asphalt,x,z),shortId+'/'+hostId+' has a road hole at '+x.toFixed(2)+','+z.toFixed(2));
+  fine.checks++;
+ }
+}
+assert(fine.junctions>=2,'No owner T junctions were checked at road-pixel scale');
+assert(fine.checks>=20,'Insufficient test pixels around edited road joints');
+assert(ownerMesh.stats.seamWelds>0,'Road fragments must share welded GPU vertices');
+assert(ownerMesh.stats.joins>=1,'Road junctions should receive unified fillet aprons');
+console.log('ROAD_EDITOR_MESH_PASS',JSON.stringify({segments:stats.segments,overlapCuts:stats.overlaps,ownerOverlapCuts:ownerMesh.stats.overlaps,ownerSamples:roadSamples,junctionChecks:fine.checks,junctions:fine.junctions,welds:ownerMesh.stats.seamWelds,
  topTriangles:geometries.asphalt.attributes.position.count/3}));
