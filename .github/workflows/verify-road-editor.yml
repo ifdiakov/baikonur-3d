@@ -6,6 +6,7 @@ on:
       - 'src/road-editor.js'
       - 'src/road-editor-core.js'
       - 'src/road-editor-mesh.js'
+      - 'src/road-editor-style.js'
       - 'src/road-mask-tiles.js'
       - 'tests/road-mask-tiles.mjs'
       - 'data/road-edits-authoritative-20261103.json'
@@ -34,6 +35,8 @@ jobs:
           node --check src/road-editor.js
           node --check src/road-editor-core.js
           node --check src/road-mask-tiles.js
+          node --check src/road-editor-style.js
+          node tests/road-editor-style.mjs
           node tests/road-editor-core.mjs
           node tests/road-mask-tiles.mjs
       - name: Install 3D browser dependencies
