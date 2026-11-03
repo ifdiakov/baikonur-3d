@@ -1,0 +1,35 @@
+name: Smooth map camera regression
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/map-camera-smoothing.js'
+      - 'tests/map-camera-smoothing.mjs'
+      - 'tests/map-camera-smoothing-browser.mjs'
+      - '.github/workflows/verify-map-camera-smoothing.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  camera:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser test dependencies
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Check zoom easing at 60 and 120 fps
+        run: node tests/map-camera-smoothing.mjs
+      - name: Serve the 3D museum
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-smooth-camera.log 2>&1 &
+          curl --retry 8 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Verify real pan, orbit and smooth wheel zoom in Chromium
+        env:
+          BAIKONUR_URL: http://127.0.0.1:8765/
+        run: node tests/map-camera-smoothing-browser.mjs
