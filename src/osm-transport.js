@@ -357,7 +357,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const highwayYellow=geometryBatch(roadRoot,'Трасса · двойная жёлтая',createHighwayMarkingMaterial(HIGHWAY_MARKINGS.yellowColor));
  const highwayWhite=geometryBatch(roadRoot,'Трасса · белые кромки',createHighwayMarkingMaterial(HIGHWAY_MARKINGS.whiteColor));
  const ballast=geometryBatch(railRoot,'OSM · балласт',mat.ballast),ties=geometryBatch(railRoot,'OSM · шпалы',mat.ties,{solid:true}),steel=geometryBatch(railRoot,'OSM · рельсы',mat.steel,{solid:true}),abandoned=geometryBatch(railRoot,'OSM · бывшие пути',mat.abandoned);
- const batches=[shoulder,asphalt,highwayAsphalt,unpaved,paint,ballast,ties,steel,abandoned],roadPaths=[],railPaths=[],terrainRailPaths=[],stationLabels=[];
+ const batches=[shoulder,asphalt,highwayAsphalt,unpaved,paint,ballast,ties,steel,abandoned],roadPaths=[],editableRoadPaths=[],railPaths=[],terrainRailPaths=[],stationLabels=[];
  const markingRoads=[],highwayMarkedWays=new Set();let highwayMarkingRuns=0,rampMarkingRuns=0;
  let markingSegments=0,railTies=0,connections=0;const accessReports=[],railPortReports=[],renderedRoadWays=new Set(),renderedRailWays=new Set(),hiddenCityWays=new Set();
  let roadPruning=null,railPruning=null,exhibitRoadFilter=null;
@@ -652,6 +652,11 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    for(const n of [e.a,e.b])junctionWidths.set(n.id,Math.max(junctionWidths.get(n.id)||0,way.width));
   }
   render();
+  // Keep compact centre-lines for the interactive editor, including visible
+  // minor roads that are intentionally omitted from active vehicle routes.
+  // No extra road meshes are allocated: only sampled pickable coordinates.
+  visibleRuns.forEach((run,i)=>editableRoadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),
+   label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap'}));
   if(major)visibleRuns.forEach((run,i)=>roadPaths.push({id:'osm-road-'+way.osmId+(i?'-'+i:''),label:'Автодорога',width:way.width,points:run,osmWayIds:[way.osmId],source:'OpenStreetMap',highway:isHighwayRoad(way.tags)}));
  }
  let junctionCount=0;
@@ -1023,7 +1028,9 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    railGauge:RAIL_PROFILE.gauge,railProfile:RAIL_PROFILE};
  }
  const buildMilliseconds=Date.now()-started;
- return {roadPaths:()=>roadPaths,terrainPaths:()=>({roads:markingRoads,rails:terrainRailPaths}),trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,highwayDisplay,
+ return {roadPaths:()=>roadPaths,
+  editableRoadPaths:()=>[...editableRoadPaths,...roadPaths.filter(r=>r.source!=='OpenStreetMap'&&r.points?.length>1&&!r.id.startsWith('r-south-'))],
+  terrainPaths:()=>({roads:markingRoads,rails:terrainRailPaths}),trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,highwayDisplay,
   roadMarkingTarget(nodeId){const node=roadGraph.nodes.get(String(nodeId));return node?{nodeId:node.id,center:node.position.toArray(),sourceWayIds:[...new Set(node.edges.map(edge=>edge.wayId))]}:null;},
   bridgeObjects:()=>interchangeBridge?[interchangeBridge.root]:[],
   setBridgeEvening:value=>interchangeBridge?.setEvening(value),
