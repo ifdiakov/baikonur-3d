@@ -1,0 +1,42 @@
+name: Verify fast Baikonur loading
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/museum-menu.js'
+      - 'src/complex-history-menu.js'
+      - 'src/ukss-exhibit.js'
+      - 'src/tua-exhibit.js'
+      - 'tests/loading-*'
+      - '.github/workflows/verify-loading-optimization.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install geometry and browser tests
+        run: |
+          npm install --no-save three@0.160.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Verify optimized load path and history contracts
+        run: |
+          node tests/loading-optimization.mjs
+          node tests/complex-history.mjs
+          node tests/menu-catalog-contract.mjs
+      - name: Profile actual first frame and on-demand history
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node tests/loading-profile-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: loading-profile
+          path: qa-loading/

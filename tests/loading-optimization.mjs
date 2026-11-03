@@ -8,7 +8,7 @@ const [html,menu,history,ukss,tua]=await Promise.all([
 const gallery=['energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp'];
 for(const image of gallery){
  assert(html.includes('data-src="./assets/preloader/'+image+'"'));
- assert(!html.includes('src="./assets/preloader/'+image+'"'));
+ assert(!html.includes(' src="./assets/preloader/'+image+'"'));
 }
 assert(html.includes('src="./assets/preloader/soyuz-launch-20261103.webp"'));
 assert(!html.includes("import {createGameTerrainPilot}"));
