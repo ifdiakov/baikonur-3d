@@ -4,7 +4,7 @@
 export const ROAD_EDIT_STYLE_VERSION='neighbour-road-parity-v1';
 export const ROAD_EDIT_SHOULDER_EXTRA=.6;
 export const ROAD_EDIT_SHOULDER_LIFT=-.055;
-export const ROAD_EDIT_SURFACE_LIFT=.012;
+export const ROAD_EDIT_SURFACE_LIFT=.006;
 export const ROAD_EDIT_HIGHWAY_LIFT=.006;
 export const ROAD_EDIT_PAINT_LIFT=.017;
 export const ROAD_EDIT_WHITE_EDGE_WIDTH=.065;
