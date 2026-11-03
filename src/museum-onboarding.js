@@ -154,7 +154,7 @@
 
   function tick(now) {
     if (!active) return;
-    if (lastFrame && !document.hidden) elapsed += Math.min(now - lastFrame, 110);
+    if (lastFrame && !document.hidden) elapsed += Math.max(0, now - lastFrame);
     lastFrame = now;
     if (tween && mapReady && api) {
       const t = Math.max(0, Math.min(1, (now - tween.start) / tween.duration));
@@ -239,6 +239,8 @@
 
   build();
   document.addEventListener('DOMContentLoaded', installReplay, { once: true });
+  // Paused/hidden tabs must not consume the visitor's 26 seconds of learning.
+  document.addEventListener('visibilitychange', () => { lastFrame = 0; });
   window.__MUSEUM_ONBOARDING = Object.freeze({
     attach, ready, fail, replay: start, skip: () => stop(true),
     stats: () => ({ active, ready: mapReady, elapsedMs: Math.round(elapsed), step: stepIndex, durationMs: TOTAL_MS })
