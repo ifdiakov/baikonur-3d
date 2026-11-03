@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-v1';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-editor-v2';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
 // replacing each source way with thousands of individual draw calls.
-export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange}){
+export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange,onChange=()=>{},terrainHeightAt=null,defaultEdits=null}){
  const base=roads.filter(r=>r?.points?.length>1).map(r=>({
   id:String(r.id),width:Math.max(1,Number(r.width)||2),
   points:r.points.map(p=>Array.isArray(p)?[...p]:[p.x,p.y,p.z])
@@ -21,10 +22,18 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  const draftMaterial=new THREE.LineBasicMaterial({color:0xffbd80,depthTest:false});
  const draftPointMaterial=new THREE.MeshBasicMaterial({color:0xffbd80,depthTest:false});
  const draftPointGeometry=new THREE.SphereGeometry(.8,8,6);
- const maskCanvas=document.createElement('canvas');maskCanvas.width=maskCanvas.height=2048;
- const maskContext=maskCanvas.getContext('2d',{alpha:true});
- const mask=new THREE.CanvasTexture(maskCanvas);mask.generateMipmaps=false;mask.minFilter=THREE.LinearFilter;mask.magFilter=THREE.LinearFilter;
- const maskBounds={value:new THREE.Vector4(0,0,1,1)},maskEnabled={value:0};
+ // Three medium-sized atlases keep even the narrow service-road cuts
+ // subpixel-free across the far-flung OSM map; source altitude prevents a
+ // removed bridge from puncturing the road below it.
+ const MASK_SIZE=2048,TILE_COUNT=3;
+ const tiles=Array.from({length:TILE_COUNT},()=>{
+  const canvas=document.createElement('canvas');canvas.width=canvas.height=MASK_SIZE;
+  const context=canvas.getContext('2d',{alpha:true});
+  const texture=new THREE.CanvasTexture(canvas);texture.generateMipmaps=false;
+  texture.minFilter=THREE.LinearFilter;texture.magFilter=THREE.LinearFilter;
+  return {canvas,context,texture,bounds:{value:new THREE.Vector4(0,0,1,1)},enabled:{value:0},strokes:0,worldUnitsPerPixel:0};
+ });
+ const maskWorld=pos=>pos[2]>600?2:pos[0]>175?1:0;
  const targets=new Set(['OSM · единые обочины','OSM · единое дорожное полотно','OSM · асфальт трассы',
    'OSM · грунтовые проезды','OSM · разметка','Трасса · двойная жёлтая','Трасса · белые кромки']);
  for(const mesh of roadMeshes){
@@ -35,19 +44,29 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   const previous=material.onBeforeCompile;
   material.onBeforeCompile=shader=>{
    previous?.(shader);
-   shader.uniforms.roadEditorMask={value:mask};
-   shader.uniforms.roadEditorBounds=maskBounds;
-   shader.uniforms.roadEditorEnabled=maskEnabled;
+   const uniforms=[];
+   for(let i=0;i<TILE_COUNT;i++){
+    shader.uniforms['roadEditorMask'+i]={value:tiles[i].texture};
+    shader.uniforms['roadEditorBounds'+i]=tiles[i].bounds;
+    shader.uniforms['roadEditorEnabled'+i]=tiles[i].enabled;
+    uniforms.push('uniform sampler2D roadEditorMask'+i+'; uniform vec4 roadEditorBounds'+i+'; uniform float roadEditorEnabled'+i+';');
+   }
    shader.vertexShader=shader.vertexShader.replace('#include <common>',
-    '#include <common>\nvarying vec2 vRoadEditWorld;');
+    '#include <common>\nvarying vec3 vRoadEditorPosition;');
    shader.vertexShader=shader.vertexShader.replace('#include <begin_vertex>',
-    '#include <begin_vertex>\nvRoadEditWorld = (modelMatrix * vec4(position,1.0)).xz;');
+    '#include <begin_vertex>\nvRoadEditorPosition = (modelMatrix * vec4(position,1.0)).xyz;');
    shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-    '#include <common>\nvarying vec2 vRoadEditWorld;\nuniform sampler2D roadEditorMask;\nuniform vec4 roadEditorBounds;\nuniform float roadEditorEnabled;');
+    '#include <common>\nvarying vec3 vRoadEditorPosition;\n'+uniforms.join('\n'));
+   const clip=Array.from({length:TILE_COUNT},(_,i)=>
+    'if(roadEditorEnabled'+i+'>0.5){vec2 uv=(vRoadEditorPosition.xz-roadEditorBounds'+i+'.xy)/roadEditorBounds'+i+'.zw;'+
+    'if(all(greaterThanEqual(uv,vec2(0.0)))&&all(lessThanEqual(uv,vec2(1.0)))){'+
+    'vec4 cut=texture2D(roadEditorMask'+i+',uv);'+
+    'if(cut.r>0.5&&abs(vRoadEditorPosition.y-(cut.g*48.0-16.0))<0.85)discard;}}'
+   ).join('\n');
    shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',
-    '#include <clipping_planes_fragment>\nif(roadEditorEnabled > 0.5) {\n vec2 uv=(vRoadEditWorld-roadEditorBounds.xy)/roadEditorBounds.zw;\n if(all(greaterThanEqual(uv,vec2(0.0))) && all(lessThanEqual(uv,vec2(1.0))) && texture2D(roadEditorMask,uv).r > 0.48) discard;\n}');
+    '#include <clipping_planes_fragment>\n'+clip);
   };
-  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v1';
+  material.customProgramCacheKey=()=>String(material.type)+'-rockettrip-road-editor-mask-v2';
   material.needsUpdate=true;
  }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
@@ -62,7 +81,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   +'<div class="road-editor-actions"><button type="button" data-action="finish">Завершить дорогу</button><button type="button" data-action="cancel">Сбросить точки</button>'
   +'<button type="button" data-action="undo">↶ Отменить</button><button type="button" data-action="redo">↷ Повторить</button>'
   +'<button type="button" data-action="export">Экспорт JSON</button><button type="button" data-action="import">Импорт JSON</button>'
-  +'<button type="button" data-action="clear">Очистить правки</button></div>'
+  +'<button type="button" data-action="baseline">Восстановить эталонную схему</button><button type="button" data-action="clear">Очистить правки</button></div>'
   +'<input id="roadEditorImport" type="file" accept=".json,application/json" hidden>'
   +'<p class="road-editor-hint">Изменения сохраняются только в этом браузере. Экспортируйте JSON, чтобы перенести дороги в общий макет. Исходник OpenStreetMap не изменяется.</p>'
   +'<p id="roadEditorStatus" role="status" aria-live="polite"></p>';
@@ -91,76 +110,88 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   return ray.intersectObjects(groundMeshes,false)[0]?.point??null;
  }
  const horizontal=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
- function sampled(r){
-  const p=r.points.map(v=>new THREE.Vector3(...v)),out=[p[0].clone()];
-  // Preserve intentional corner vertices. Only insert samples to follow terrain.
-  for(let i=1;i<p.length;i++){
-   const a=p[i-1],b=p[i],n=Math.max(1,Math.ceil(Math.hypot(b.x-a.x,b.z-a.z)/2.2));
-   for(let k=1;k<=n;k++)out.push(a.clone().lerp(b,k/n));
+ let joinedPaths=[],joinReport=[],geometryStats={segments:0,sourceRoads:0,overlaps:0};
+ let addedSignature=null,maskSignature=null,erasedIndex=new Map(),baselineData=null;
+ function rebuildAdded(){
+  for(const child of [...editingGroup.children]){
+   if(child===previewGroup)continue;editingGroup.remove(child);
+   child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
   }
-  // Control points have already been projected onto the actual scene.
-  // Do not perform a costly raycast against the million-triangle OSM layer
-  // for each subdivided segment or for every edit/Undo/Redo.
-  return out;
- }
- function roadStrip(points,width,lift=0){
-  const xyz=[];
-  for(let i=1;i<points.length;i++){
-   const a=points[i-1],b=points[i],p=points[Math.max(0,i-2)],q=points[Math.min(points.length-1,i+1)];
-   const d1=b.clone().sub(p).setY(0).normalize(),d2=q.clone().sub(a).setY(0).normalize();
-   const n1=new THREE.Vector3(-d1.z,0,d1.x).multiplyScalar(width/2),n2=new THREE.Vector3(-d2.z,0,d2.x).multiplyScalar(width/2);
-   const c=[a.clone().sub(n1),a.clone().add(n1),b.clone().sub(n2),b.clone().add(n2)];
-   c.forEach(v=>v.y+=lift);
-   for(const j of [0,2,1,1,2,3])xyz.push(...c[j].toArray());
+  const joined=stitchEditedRoads(state.added,{existingRoads:base});
+  joinReport=joined.adjustments;
+  const built=buildEditedRoadMeshes(joined.roads,{terrainHeightAt});
+  joinedPaths=built.paths;
+  geometryStats=built.stats;
+  routes=[...base,...joinedPaths];
+  for(const [type,g]of Object.entries(built.geometries)){
+   if(!g.attributes.position.count){g.dispose();continue;}
+   const material=type==='asphalt'?asphalt:type==='ground'?dirt:shoulder;
+   const mesh=new THREE.Mesh(g,material);mesh.name='Единое полотно редактора · '+type;
+   mesh.receiveShadow=true;editingGroup.add(mesh);
   }
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(xyz,3));
-  geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
- }
- function renderPath(record){
-  const points=sampled(record),road=new THREE.Group();road.name='Новая дорога · '+record.id;
-  const edge=new THREE.Mesh(roadStrip(points,record.width+.72,.005),shoulder);
-  edge.name='Обочина · '+record.id;edge.receiveShadow=true;road.add(edge);
-  const surface=new THREE.Mesh(roadStrip(points,record.width,.032),record.surface==='ground'?dirt:asphalt);
-  surface.name='Покрытие · '+record.id;surface.receiveShadow=true;road.add(surface);
-  if(record.surface==='asphalt'&&record.width>=5){
-   const dashes=[];
-   for(let i=1;i<points.length;i++){
-    const a=points[i-1],b=points[i],dx=b.x-a.x,dz=b.z-a.z,dist=Math.hypot(dx,dz);
-    if(dist<.01||Math.floor(i/3)%2)continue;
-    const center=a.clone().lerp(b,.5);
-    const normal=new THREE.Vector3(-dz/dist,0,dx/dist).multiplyScalar(.045);
-    const v=[a.clone().sub(normal),a.clone().add(normal),b.clone().sub(normal),b.clone().add(normal)];
-    v.forEach(p=>p.y+=.055);for(const j of [0,2,1,1,2,3])dashes.push(...v[j].toArray());
-   }
-   if(dashes.length){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(dashes,3));g.computeVertexNormals();
-    const m=new THREE.Mesh(g,white);m.name='Разметка · '+record.id;road.add(m);}
-  }
-  road.userData.roadEditorId=record.id;return road;
  }
  function applyMask(){
-  maskContext.clearRect(0,0,maskCanvas.width,maskCanvas.height);
-  if(!state.hidden.length){maskEnabled.value=0;mask.needsUpdate=true;return;}
-  // Compute bounds without materializing arrays/spreading tens of thousands
-  // of edited coordinates (which could otherwise hit the argument limit).
-  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
-  for(const road of state.hidden)for(const p of road.points){
-   minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
-   minZ=Math.min(minZ,p[2]);maxZ=Math.max(maxZ,p[2]);
+  const strokes=[[],[],[]];
+  const addStroke=(s,sourceId,materialKind)=>{
+   if(!s.points||s.points.length<2)return;
+   const i=maskWorld(s.points[Math.floor(s.points.length/2)]);
+   strokes[i].push({...s,sourceId,materialKind});
+  };
+  for(const h of state.hidden)addStroke(h,h.sourceId,'hidden');
+  for(const r of joinedPaths)addStroke({points:r.points,width:Math.max(1,r.width-.16)},r.id,'added');
+  erasedIndex=new Map();
+  const cellSize=16;
+  for(const h of state.hidden)for(let j=1;j<h.points.length;j++){
+   const a=h.points[j-1],b=h.points[j],margin=h.width/2+2.5;
+   const record={a,b,sourceId:h.sourceId,width:h.width};
+   for(let ix=Math.floor((Math.min(a[0],b[0])-margin)/cellSize);ix<=Math.floor((Math.max(a[0],b[0])+margin)/cellSize);ix++)
+    for(let iz=Math.floor((Math.min(a[2],b[2])-margin)/cellSize);iz<=Math.floor((Math.max(a[2],b[2])+margin)/cellSize);iz++){
+     const key=ix+':'+iz,list=erasedIndex.get(key)||[];list.push(record);erasedIndex.set(key,list);
+    }
   }
-  const spread=12;minX-=spread;maxX+=spread;minZ-=spread;maxZ+=spread;
-  const centerX=(minX+maxX)/2,centerZ=(minZ+maxZ)/2;
-  const sizeX=Math.max(32,maxX-minX),sizeZ=Math.max(32,maxZ-minZ);
-  const left=centerX-sizeX/2,top=centerZ+sizeZ/2;
-  const sx=maskCanvas.width/sizeX,sz=maskCanvas.height/sizeZ;
-  maskContext.setTransform(sx,0,0,-sz,-left*sx,top*sz);
-  maskContext.lineCap='round';maskContext.lineJoin='round';maskContext.strokeStyle='#ffffff';
-  for(const r of state.hidden){
-   maskContext.beginPath();maskContext.moveTo(r.points[0][0],r.points[0][2]);
-   for(const p of r.points.slice(1))maskContext.lineTo(p[0],p[2]);
-   maskContext.lineWidth=r.width+.85;maskContext.stroke();
+  for(let i=0;i<TILE_COUNT;i++){
+   const tile=tiles[i],ctx=tile.context,items=strokes[i];
+   ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,MASK_SIZE,MASK_SIZE);
+   tile.enabled.value=items.length?1:0;tile.strokes=items.length;
+   if(!items.length){tile.texture.needsUpdate=true;continue;}
+   let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+   for(const r of items)for(const p of r.points){
+    minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
+    minZ=Math.min(minZ,p[2]);maxZ=Math.max(maxZ,p[2]);
+   }
+   const side=Math.max(40,maxX-minX+10,maxZ-minZ+10);
+   const left=(minX+maxX-side)/2,bottom=(minZ+maxZ-side)/2,top=bottom+side,scale=MASK_SIZE/side;
+   tile.bounds.value.set(left,bottom,side,side);tile.worldUnitsPerPixel=side/MASK_SIZE;
+   ctx.setTransform(scale,0,0,-scale,-left*scale,top*scale);
+   ctx.lineCap='round';ctx.lineJoin='round';
+   for(const r of items){
+    ctx.lineWidth=r.width+(r.materialKind==='added'?.05:.20);
+    for(let j=1;j<r.points.length;j++){
+     const a=r.points[j-1],b=r.points[j];
+     const altitude=(a[1]+b[1])/2,grade=Math.round(255*Math.max(0,Math.min(1,(altitude+16)/48)));
+     ctx.strokeStyle='rgb(255,'+grade+',0)';
+     ctx.beginPath();ctx.moveTo(a[0],a[2]);ctx.lineTo(b[0],b[2]);ctx.stroke();
+    }
+   }
+   ctx.setTransform(1,0,0,1,0,0);tile.texture.needsUpdate=true;
   }
-  maskContext.setTransform(1,0,0,1,0,0);
-  maskBounds.value.set(left,top-sizeZ,sizeX,sizeZ);maskEnabled.value=1;mask.needsUpdate=true;
+ }
+ function roadLightRemoved(record){
+  const p=record.center||[record.x,record.y,record.z],x=p[0],y=p[1],z=p[2],size=16;
+  const list=erasedIndex.get(Math.floor(x/size)+':'+Math.floor(z/size))||[];
+  let hidden=false;
+  for(const h of list){
+   if(record.roadId&&h.sourceId!==record.roadId)continue;
+   const a=h.a,b=h.b,dx=b[0]-a[0],dz=b[2]-a[2],den=dx*dx+dz*dz;
+   if(den<1e-9)continue;
+   const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/den));
+   const px=a[0]+t*dx,pz=a[2]+t*dz,py=a[1]+t*(b[1]-a[1]);
+   if(Math.hypot(x-px,z-pz)<h.width/2+.9&&Math.abs(py-y)<1.1){hidden=true;break;}
+  }
+  if(!hidden)return false;
+  // Do not orphan a useful pole when the user has repaved this exact road.
+  const near=nearestRoadSegment(joinedPaths,[x,y,z],{maxDistance:2.5});
+  return !near||Math.abs(near.point[1]-y)>1.1;
  }
  function renderDraft(){
   for(const child of [...previewGroup.children]){previewGroup.remove(child);if(child.geometry!==draftPointGeometry)child.geometry.dispose();}
@@ -173,22 +204,19 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   }
  }
  function render(){
-  for(const child of [...editingGroup.children]){
-   if(child===previewGroup)continue;
-   editingGroup.remove(child);child.traverse(o=>{if(o.geometry)o.geometry.dispose();});
-  }
-  const added=state.added.map(r=>({id:r.id,width:r.width,points:sampled(r).map(p=>p.toArray())}));
-  routes=[...base,...added];
-  for(const record of state.added)editingGroup.add(renderPath(record));
-  applyMask();renderDraft();
-  panel.querySelector('#roadEditorCount').textContent='Добавлено: '+state.added.length+' · Скрыто участков: '+state.hidden.length+' · Точек: '+draft.length;
+  const freshAdded=JSON.stringify(state.added),freshHidden=JSON.stringify(state.hidden);
+  let changed=false;
+  if(freshAdded!==addedSignature){addedSignature=freshAdded;rebuildAdded();changed=true;}
+  if(changed||freshHidden!==maskSignature){maskSignature=freshHidden;applyMask();changed=true;}
+  renderDraft();
+  panel.querySelector('#roadEditorCount').textContent='Добавлено: '+state.added.length+' · Удалено участков: '+state.hidden.length+' · Точек: '+draft.length;
   buttons.undo.disabled=!history.length;buttons.redo.disabled=!future.length;
   buttons.finish.disabled=draft.length<2;buttons.cancel.disabled=!draft.length;
   panel.querySelector('#roadEditorEraseSpan').disabled=mode!=='erase';
   panel.querySelector('#roadEditorWidth').disabled=mode!=='draw';
   panel.querySelector('#roadEditorSurface').disabled=mode!=='draw';
   if(button)button.setAttribute('aria-pressed',String(active));
-  persist();
+  persist();if(changed)onChange();
  }
  function setMode(value){
   if(!['draw','erase'].includes(value))return;
@@ -268,6 +296,12 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    case 'undo':undo();break;
    case 'redo':redo();break;
    case 'clear':clear();break;
+   case 'baseline':{
+    if(!baselineData){status.textContent='Эталонная схема ещё не загружена.';break;}
+    checkpoint();Object.assign(state,validateRoadEdits(baselineData));draft=[];
+    nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
+    render();status.textContent='Эталонная дорожная схема восстановлена.';break;
+   }
    case 'export':{
     const url=URL.createObjectURL(new Blob([JSON.stringify({...clone(),coordinateSystem:'baikonur-museum-world'},null,2)],{type:'application/json'}));
     const a=document.createElement('a');a.href=url;a.download='rockettrip-roads.json';a.click();
@@ -294,12 +328,19 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   else if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='z'){e.preventDefault();if(e.shiftKey)redo();else undo();}
  });
  try{
+  baselineData=defaultEdits?validateRoadEdits(defaultEdits):null;
   const saved=localStorage.getItem(ROAD_EDITOR_STORAGE);
-  if(saved){Object.assign(state,validateRoadEdits(JSON.parse(saved)));nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));}
+  if(saved){Object.assign(state,validateRoadEdits(JSON.parse(saved)));}
+  else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}
+  nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
  }catch{status.textContent='Сохранённая схема повреждена. Импортируйте её из JSON или очистите правки.';}
  button?.addEventListener('click',()=>setActive(!active));
  setMode('draw');
  return {get active(){return active;},setActive,undo,redo,finish,
-  snapshot:clone,stats:()=>({version:ROAD_EDITOR_VERSION,active,mode,added:state.added.length,hidden:state.hidden.length,
-   draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,maskApplied:maskEnabled.value===1,selectedRoads:routes.length})};
+  snapshot:clone,roadLightRemoved,stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,active,mode,
+   added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,
+   draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,
+   joinReport:joinReport.map(r=>({roadId:r.roadId,targetId:r.targetId,distance:r.distance})),
+   mesh:geometryStats,maskApplied:tiles.some(t=>t.enabled.value===1),
+   maskTiles:tiles.map(t=>({strokes:t.strokes,worldUnitsPerPixel:t.worldUnitsPerPixel,enabled:t.enabled.value===1}))})};
 }

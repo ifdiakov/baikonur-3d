@@ -500,11 +500,11 @@ import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-sign
 import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261101-saturn-terrain-v5';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainSample,saturnTerrainMeshHeight} from './src/saturn-access.js?v=20261101-saturn-terrain-v5';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
-import {createRoadEditor} from './src/road-editor.js?v=20261103-road-editor-v2';
+import {createRoadEditor} from './src/road-editor.js?v=20261103-road-editor-v3';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261102-site2-photo-v3';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261101-tu204-cpk-v1';
-import {buildEveningScene} from './src/evening-scene.js?v=20261102-site2-photo-v3';
+import {buildEveningScene} from './src/evening-scene.js?v=20261103-removed-road-lamps-v3';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261101-a320-tail-v2';
 import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT} from './src/camera-navigation.js?v=20261101-museum-view-v1';
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261101-altitude-v1';
@@ -540,18 +540,19 @@ mapAttribution.append(attribution,terrainAttribution);document.body.append(mapAt
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261103-road-editor-v2';
+const MUSEUM_REVISION='20261103-owner-road-audit-v4';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
 const nextLaunchDataReady=startup.defer(()=>startup.fetchJSON('./data/next-launch.json',{optional:true}),{key:'next-launch',priority:40});
 const roadSignDataReady=startup.fetchJSON('./data/road-signs.json');
+const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=roads-audit-v2',{optional:true});
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
-const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData]=await Promise.all([
+const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,ownerRoadEdits]=await Promise.all([
  './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson','./data/osm/railways.geojson',
- './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson','./data/osm/places.geojson','./data/transport-network.json'
-].map(loadMuseumData));
+ './data/osm/rail-points.geojson','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson','./data/osm/places.geojson','./data/transport-network.json',ownerRoadEditsReady
+].map(x=>typeof x==='string'?loadMuseumData(x):x));
 const museumKnowledge=createDeferredKnowledge({startup,onNavigate:action=>openMuseumAction(action)});
 const nextLaunchHost=document.getElementById('nextLaunchPanel');
 let nextLaunchController=createLaunchCountdown({element:nextLaunchHost,
@@ -1608,7 +1609,7 @@ function ensurePlanAssets(){
  plan.rotation.x=-Math.PI/2;plan.position.y=-.2;plan.renderOrder=4;layers.plan.add(plan);registerGroundSurface(plan);
  loadServiceReference();
 }
-let currentObject=0;let currentResearch=null;let lightingEditor=null;let roadEditor=null;let arrivalFlight=null;let groundTraffic=null;let buranLanding=null;let puaLoading=null;let energiaLaunch=null;
+let currentObject=0;let currentResearch=null;let lightingEditor=null;let roadEditor=null;let eveningScene=null;let arrivalFlight=null;let groundTraffic=null;let buranLanding=null;let puaLoading=null;let energiaLaunch=null;
 let buranRequestGeneration=0;
 function cancelBuranRequest(){
  buranRequestGeneration++;
@@ -2092,6 +2093,7 @@ lightingEditor=createLightingEditor({scene,camera,canvas:renderer.domElement,
 const editorRoadMeshes=[];layers.roads.traverse(mesh=>{if(mesh.isMesh)editorRoadMeshes.push(mesh);});
 roadEditor=createRoadEditor({root:layers.roads,camera,canvas:renderer.domElement,groundMeshes:lightingGroundMeshes,
  roadMeshes:editorRoadMeshes,roads:transport.editableRoadPaths(),button:document.getElementById('roadEditorToggle'),
+ terrainHeightAt:(x,z)=>terrainRelief.heightAt(x,z),defaultEdits:ownerRoadEdits,onChange(){eveningScene?.refreshRoadEditor(roadEditor);},
  onActiveChange(active){if(active){lightingEditor?.setActive(false);arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();document.getElementById('info').style.display='none';selectSiteCard(null);}}
 });
 const airportObject=objects.find(o=>o.record.id==='airfield');
@@ -2100,9 +2102,10 @@ function syncMuseumLightButtons(isNight){
   btn.setAttribute('aria-pressed',String((btn.dataset.light==='night')===isNight));
  }
 }
-const eveningScene=buildEveningScene({scene,camera,renderer,sun,layers,objects,roads:transport.roadPaths(),airfield:airportObject.g,groundMeshes:lightingGroundMeshes,
+eveningScene=buildEveningScene({scene,camera,renderer,sun,layers,objects,roads:transport.roadPaths(),airfield:airportObject.g,groundMeshes:lightingGroundMeshes,
  isLightAllowed:lightBank.contains,isPoleAllowed:(x,z)=>exhibitClearance.isPoleAllowed(x,z)&&transport.isBridgePoleAllowed(x,z),isLightPowered:eastLightingZone.isPowered,bankRule:lightBank.version,
  button:null,onModeChange:value=>{highwaySigns.setEvening(value);transport.setBridgeEvening(value);objects.find(o=>o.record.id==='pad-75')?.g.userData.setHotelEvening?.(value);lightingEditor.setEvening(value);groundTraffic?.setEvening(value);arrivalFlight?.setEvening(value);syncMuseumLightButtons(value);}});
+eveningScene.refreshRoadEditor(roadEditor);
 for(const btn of document.querySelectorAll('#museumLightSwitch [data-light]')){
  btn.addEventListener('click',()=>eveningScene.setEvening(btn.dataset.light==='night'));
 }

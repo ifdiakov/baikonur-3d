@@ -44,6 +44,17 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  const roadLights=roadLayout.records;
  excludedByBank.road=roadLayout.excludedByBank;excludedByClearance.road=roadLayout.excludedByClearance;
  const roadField=createRoadLightField(layers.roads,roadLights,{name:'Дороги · современные и винтажные фонари',minPixels:2.8});fields.push(roadField);
+ let excludedByRoadEditor=0;
+ function refreshRoadEditor(editor){
+  let removed=0;
+  for(let i=0;i<roadField.records.length;i++){
+   const r=roadField.records[i],hidden=Boolean(editor?.roadLightRemoved?.(r));
+   r.visible=!hidden;roadLights[i].visible=!hidden;
+   if(hidden)removed++;
+  }
+  excludedByRoadEditor=removed;roadField.sync();
+  return removed;
+ }
  const siteLights=[],cityLights=[],courtyardLights=[];
  scene.updateMatrixWorld(true);
  const groundQuery=createVerticalGroundQuery(groundMeshes);
@@ -106,12 +117,12 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  button?.addEventListener('click',()=>setEvening(!evening));setEvening(true);
  const stationaryLights=[...roadLights,...siteLights,...courtyardLights,...cityLights,...runway,...apron];
  const outsideBankCount=stationaryLights.filter(l=>!permitted(l)).length;
- return {setEvening,lightPositions:({poweredOnly=false}={})=>stationaryLights.filter(l=>!poweredOnly||l.powered!==false).map(l=>[l.x,l.y,l.z]),
+ return {setEvening,refreshRoadEditor,lightPositions:({poweredOnly=false}={})=>stationaryLights.filter(l=>l.visible!==false&&(!poweredOnly||l.powered!==false)).map(l=>[l.x,l.y,l.z]),
   airportLightPositions:key=>[...runway,...apron].filter(l=>!key||l.airport===key).map(l=>({airport:l.airport,kind:l.kind,position:[l.x,l.y,l.z],radius:l.radius||0,local:l.local})),
   get evening(){return evening;},update(now){sky.position.copy(camera.position);facilityLighting.update(now);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
   roadLightRecords:()=>roadLights.map(r=>({style:r.style,roadId:r.roadId,stationId:r.stationId,side:r.side,position:[r.x,r.y,r.z],center:r.center,color:r.color,height:r.height,powered:r.powered,brightness:r.brightness,poolRadiusX:r.poolRadiusX,poolRadiusY:r.poolRadiusY})),
   facilityLightRecords:()=>facilityLighting.records(),
-  stats:()=>({version:'evening-road-lighting-v4',evening,roadLights:roadLights.length,roadLighting:roadLightLayoutStats(roadLights),roadFixtures:roadField.stats(),facilityLighting:facilityLighting.stats(),siteLights:siteLights.length,runwayLights:runway.length,
+  stats:()=>({version:'evening-road-lighting-v4',evening,roadLights:roadLights.length,excludedByRoadEditor,roadLighting:roadLightLayoutStats(roadLights.filter(l=>l.visible!==false)),roadFixtures:roadField.stats(),facilityLighting:facilityLighting.stats(),siteLights:siteLights.length,runwayLights:runway.length,
    courtyardLights:courtyardLights.map(l=>({siteId:objects.find(o=>o.g===l.owner)?.record.id,position:[l.lightX,l.lightY,l.lightZ],base:[l.x,l.y,l.z],height:l.height})),
    powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered!==false).length,litSiteIds:[...new Set([...siteLights,...courtyardLights].filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
    airportLighting:{version:AIRPORT_LIGHT_LAYOUT_VERSION,airports:objects.filter(o=>o.g.userData.airport).map(o=>({key:o.g.userData.airport.key,length:o.g.userData.airport.length,approachLength:o.g.userData.airport.approachLength??480,
