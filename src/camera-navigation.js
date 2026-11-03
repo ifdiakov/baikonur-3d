@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {MUSEUM_MAP_SCALE} from './museum-scale.js';
 
 const ORBIT_SETTINGS=['minDistance','maxDistance','minPolarAngle','maxPolarAngle','enablePan','enableRotate','enableZoom','screenSpacePanning','panSpeed','rotateSpeed','zoomSpeed','autoRotate'];
 export function captureOrbitSettings(controls){
@@ -10,6 +11,10 @@ export function captureOrbitSettings(controls){
 // finite viewing apron around the interactive map so the desktop and narrow
 // portrait overview fits can still see the complete cosmodrome.
 export const MUSEUM_CAMERA_PADDING=4000;
+// Height H is the museum HUD's normalized camera altitude (camera.y / MUSEUM_MAP_SCALE).
+// Free navigation must never dip below H=1; local terrain clearance may raise it further.
+export const MUSEUM_CAMERA_MIN_HEIGHT=1;
+export const MUSEUM_CAMERA_MIN_Y=MUSEUM_CAMERA_MIN_HEIGHT*MUSEUM_MAP_SCALE;
 export const MUSEUM_CAMERA_MAX_HEIGHT=18000;
 export function cameraPositionBounds(bounds){
  const values=['minX','maxX','minZ','maxZ'];
@@ -23,7 +28,7 @@ export function cameraPositionBounds(bounds){
  * reduce its radius only when the entire orbit cannot fit. Do not update the
  * controls again or consume their pending damping/pointer deltas. Scripted
  * aircraft follows and the historical landing overview opt out at the caller. */
-export function constrainFreeCamera({camera,controls,bounds,minHeight=-1.74,maxHeight=MUSEUM_CAMERA_MAX_HEIGHT}){
+export function constrainFreeCamera({camera,controls,bounds,minHeight=MUSEUM_CAMERA_MIN_Y,maxHeight=MUSEUM_CAMERA_MAX_HEIGHT}){
  const positionBounds=cameraPositionBounds(bounds),upper=Math.min(MUSEUM_CAMERA_MAX_HEIGHT,maxHeight);
  if(!Number.isFinite(minHeight)||!Number.isFinite(upper)||upper<minHeight)throw new TypeError('A finite camera height interval is required');
  const oldPosition=camera.position.clone(),oldTarget=controls.target.clone(),offset=oldPosition.clone().sub(oldTarget);

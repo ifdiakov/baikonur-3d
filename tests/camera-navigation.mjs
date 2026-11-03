@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {captureOrbitSettings,releaseFollowCamera,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT} from '../src/camera-navigation.js';
+import {captureOrbitSettings,releaseFollowCamera,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT,MUSEUM_CAMERA_MIN_Y,MUSEUM_CAMERA_MIN_HEIGHT} from '../src/camera-navigation.js';
+import {MUSEUM_MAP_SCALE} from '../src/museum-scale.js';
 
 const bounds={minX:-1000,maxX:1000,minZ:-1000,maxZ:1000};let checks=0;
 for(const altitude of [2,80,450])for(const offset of [[15,8,18],[0,-15,6],[0,25,0]])for(const x of [0,1400]){
@@ -46,6 +47,18 @@ function checkBounds(state,maxHeight=MUSEUM_CAMERA_MAX_HEIGHT){
  assert(offset.length()>=controls.minDistance-1e-7&&offset.length()<=controls.maxDistance+1e-7);
  assert(Math.atan2(Math.hypot(offset.x,offset.z),offset.y)<=Math.PI/3+1e-8);
  boundedChecks++;
+}
+// The visible museum altitude display is H = world Y / MUSEUM_MAP_SCALE.
+assert.equal(MUSEUM_CAMERA_MIN_HEIGHT,1,'The requested camera floor is H=1.0');
+assert.equal(MUSEUM_CAMERA_MIN_Y,MUSEUM_MAP_SCALE,'H=1.0 converts to scene Y using the shared map scale');
+{
+ const low=freeState([0,-2.755,0],[0,1,1]);
+ const bounded=constrainFreeCamera({...low,bounds,maxHeight:4000});
+ assert.equal(bounded.minHeight,MUSEUM_CAMERA_MIN_Y);
+ assert(Math.abs(low.camera.position.y/MUSEUM_MAP_SCALE-1)<1e-7,'Free camera stops at displayed altitude H=1.0');
+ const eye=low.camera.position.clone(),pivot=low.controls.target.clone();
+ assert.equal(constrainFreeCamera({...low,bounds,maxHeight:4000}).changed,false,'Floor remains stable across successive frames');
+ assert(low.camera.position.distanceTo(eye)<1e-7&&low.controls.target.distanceTo(pivot)<1e-7,'Floor has no vertical jitter or anchor drift');
 }
 {
  const state=freeState(),oldPosition=state.camera.position.clone(),oldTarget=state.controls.target.clone();

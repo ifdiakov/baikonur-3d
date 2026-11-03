@@ -506,7 +506,7 @@ import {buildAirport} from './src/airport-models.js?v=20261102-site2-photo-v3';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261101-tu204-cpk-v1';
 import {buildEveningScene} from './src/evening-scene.js?v=20261103-removed-road-lamps-v5';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261101-a320-tail-v2';
-import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT} from './src/camera-navigation.js?v=20261101-museum-view-v1';
+import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT,MUSEUM_CAMERA_MIN_Y} from './src/camera-navigation.js?v=20261103-camera-min-h1-v1';
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261101-altitude-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261102-site2-photo-v3';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
@@ -605,7 +605,8 @@ const GAGARIN_SCALE=MUSEUM_METRE;
 const SATURN_SCALE=0.525;
 const UKSS_SCALE=MUSEUM_METRE;
 // Navigation clearances use the same physical scale as the metric exhibits.
-const CAMERA_MIN_Y=-2.72+7*MUSEUM_METRE;
+// H=Y/SCENE_SCALE: 1.0 normalized map unit is the free-camera floor.
+const CAMERA_MIN_Y=MUSEUM_CAMERA_MIN_Y;
 const groundMaterials=new Set();let ukssCutout=null;const portalVoids=createTerrainVoids();let portalVoidsReady=false;
 function registerGroundSurface(mesh){
  groundMaterials.add(mesh.material);
