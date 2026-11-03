@@ -1,6 +1,6 @@
 // Display-only, OSM-grounded approach to Gagarin's Start with one museum
 // junction to the relocated Site 2. Never mutate OSM source nodes or routes.
-export const GAGARIN_ROAD_VERSION='gagarin-site2-road-v4';
+export const GAGARIN_ROAD_VERSION='gagarin-site2-road-v5';
 export const GAGARIN_APPROACH_WAY_ID='54570611';
 export const GAGARIN_NORTH_FORK_WAY_ID='54569454';
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
@@ -9,6 +9,23 @@ const dist=(a,b)=>Math.hypot(a[0]-b[0],a[2]-b[2]);
 const lerp=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
 const xyz=p=>Array.isArray(p)?p:[p.x,p.y,p.z];
 const minClearance=26.5;
+// Keep the actual angular turn nearest Site 2. It is a physical road corner,
+// not a second parallel approach or a new OSM node.
+function site2Corner(points,entry,site2){
+ let best=null;
+ for(let i=1;i<points.length-1;i++){
+  const a=points[i-1],b=points[i],c=points[i+1];
+  const ab=[b[0]-a[0],b[2]-a[2]],bc=[c[0]-b[0],c[2]-b[2]];
+  const la=Math.hypot(...ab),lb=Math.hypot(...bc);
+  if(Math.min(la,lb)<1.2)continue;
+  const angle=Math.acos(clamp((ab[0]*bc[0]+ab[1]*bc[1])/(la*lb),-1,1));
+  const toGate=dist(b,entry);
+  if(angle<.24||toGate>48||dist(b,site2)>75)continue;
+  const score=toGate+12*(1-Math.min(angle/1.3,1));
+  if(!best||score<best.score)best={index:i,point:b,angle,score};
+ }
+ return best;
+}
 // Samples are in the scene's world units, not nominal OSM metres.
 export function planGagarinSite2Road({sourcePoints,gagarin,site2,site2Gate,metre=.14}){
  if(!Array.isArray(sourcePoints)||sourcePoints.length<3)throw new Error('Gagarin road requires the source OSM polyline');
@@ -33,10 +50,12 @@ export function planGagarinSite2Road({sourcePoints,gagarin,site2,site2Gate,metre
  if(!trimmed)throw new Error('OSM Gagarin road does not cross the model forecourt');
  if(dist(source.at(-1),gagarinGate)>.02)source.push(gagarinGate);
  else source[source.length-1]=gagarinGate;
- const dense=[source[0]];
+ const corner=site2Corner(source,entry,s);
+ const dense=[source[0]];let cornerIndex=-1;
  for(let i=1;i<source.length;i++){
   const a=source[i-1],b=source[i],pieces=Math.max(1,Math.ceil(dist(a,b)/1.15));
   for(let j=1;j<=pieces;j++)dense.push(lerp(a,b,j/pieces));
+  if(corner?.index===i)cornerIndex=dense.length-1;
  }
  // Shift only the tiny part of the road approaching the relocated museum
  // footprint; smooth radial clearance prevents clipping the building apron.
@@ -50,6 +69,8 @@ export function planGagarinSite2Road({sourcePoints,gagarin,site2,site2Gate,metre
  // A short 3-point smoothing pass removes elbows in the sampled OSM geometry.
  const smoothed=dense.map(p=>[...p]);
  for(let i=1;i<dense.length-1;i++){
+  // Preserve the source's characteristic elbow at the Site 2 turn.
+  if(cornerIndex>=0&&Math.abs(i-cornerIndex)<=2)continue;
   smoothed[i][0]=dense[i][0]*.62+(dense[i-1][0]+dense[i+1][0])*.19;
   smoothed[i][2]=dense[i][2]*.62+(dense[i-1][2]+dense[i+1][2])*.19;
  }
@@ -79,6 +100,18 @@ export function planGagarinSite2Road({sourcePoints,gagarin,site2,site2Gate,metre
   if(d<best.distance)best={distance:d,point:near,index:i,t,
    tangent:[dx,0,dz]};
  }
+ // The Site 2 entrance should attach at the road's angular turn rather
+ // than create an arbitrary T-junction half-way along the long approach.
+ let angularTurn=null;
+ if(cornerIndex>0&&cornerIndex<smoothed.length-1){
+  const bend=smoothed[cornerIndex],bendGap=dist(bend,entry);
+  if(bendGap<=32){
+   const before=smoothed[cornerIndex-1],after=smoothed[cornerIndex+1];
+   best={distance:bendGap,point:[...bend],index:cornerIndex,t:0,
+    tangent:[after[0]-before[0],0,after[2]-before[2]]};
+   angularTurn={point:[...bend],angleRadians:corner.angle,sourceVertex:corner.index};
+  }
+ }
  if(best.distance>32)throw new Error('Site 2 entrance has no nearby segment of the OSM approach road');
  const pointDistance=dist(smoothed[0],origin[0]);
  const maxStep=Math.max(...smoothed.slice(1).map((p,i)=>dist(p,smoothed[i])));
@@ -89,5 +122,6 @@ export function planGagarinSite2Road({sourcePoints,gagarin,site2,site2Gate,metre
    sourceJoinGap:pointDistance,site2BranchGap:best.distance,
    site2MinClearance:minBodyClearance,mainLength:length,
    maxSampleStep:maxStep,forecourtGap:dist(smoothed.at(-1),gagarinGate),
-   sourceNodeCount:sourcePoints.length,samples:smoothed.length}};
+   sourceNodeCount:sourcePoints.length,samples:smoothed.length,
+   angularTurn,approachFromMainRoad:true,parallelRoadsAdded:0}};
 }
