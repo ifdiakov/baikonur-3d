@@ -146,6 +146,7 @@ jobs:
           node tests/camera-navigation.mjs
           node tests/map-camera-smoothing.mjs
           node tests/menu-catalog-contract.mjs
+          node tests/museum-card-copy.mjs
       - name: Preserve the detailed Site 31, road, rail and flank invariants
         run: |
           node tests/site31-geometry.mjs
