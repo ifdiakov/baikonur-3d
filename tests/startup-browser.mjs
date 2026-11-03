@@ -11,13 +11,14 @@ const revision='20261102-energia-polyus-v2';
 const welcome='ГРАНД-МАКЕТ БАЙКОНУР ИНТЕРАКТИВНЫЙ МУЗЕЙ 3D';
 const slogan='КОСМОС НАЧИНАЕТСЯ С НАЗЕМКИ';
 const featurePhrases=[
- 'ИЗУЧАЙТЕ ГЛАВНУЮ КОСМИЧЕСКУЮ ГАВАНЬ ЗЕМЛИ',
+ 'ИЗУЧАЙТЕ ПЕРВУЮ КОСМИЧЕСКУЮ ГАВАНЬ ПЛАНЕТЫ',
  'ЗНАКОМЬТЕСЬ С ИСТОРИЕЙ И ГЕОГРАФИЕЙ КОСМОДРОМА',
  'ДЕТАЛЬНЫЕ МАКЕТЫ РАКЕТ И СТАРТОВЫХ КОМПЛЕКСОВ',
  'ДОСТОВЕРНАЯ СХЕМА ПЛОЩАДОК И ОБЪЕКТОВ',
- 'СОВЕРШИТЕ ПОЛЁТ НАД ЛЕГЕНДАРНЫМ КОМПЛЕКСОМ',
- 'ЧИТАЙТЕ МИФЫ И ЛЕГЕНДЫ, О КОТОРЫХ НЕ ПИШУТ',
- 'ПРИЯТНОГО ПУТЕШЕСТВИЯ'
+ 'ЦИФРОВЫЕ РЕКОНСТРУКЦИИ ЗАПУСКОВ И ПОЛЁТОВ',
+ 'ИСТОРИЯ СТРОИТЕЛЬСТВА И РАЗВИТИЯ КОМПЛЕКСА',
+ 'ТРАДИЦИИ, СУЕВЕРИЯ, МИФЫ И ЛЕГЕНДЫ',
+ 'ПРИЯТНОГО ПУТЕШЕСТВИЯ!'
 ];
 const launchStatusCount=20,finalLaunchStep=launchStatusCount-1,lastLoadingLaunchStep=finalLaunchStep-1;
 const launchStatuses=[
@@ -362,7 +363,7 @@ async function assertReducedMotion(page){
 async function exercisePreloader(page){
  const initial=await preloaderState(page);
  assert.equal(initial.welcome,welcome,'The museum identity preserves the requested wording and letter case');
- assert.deepEqual(initial.features.map(feature=>feature.text),featurePhrases,'All seven visitor phrases preserve the requested order');
+ assert.deepEqual(initial.features.map(feature=>feature.text),featurePhrases,'All eight visitor phrases preserve the requested order');
  assert.equal(initial.features.filter(feature=>feature.active).length,1,'The phrase carousel has one active slide');
  assert.ok(initial.features.every(feature=>feature.hidden===String(!feature.active)),'Only the current phrase is exposed to assistive technology');
  assert.equal(initial.images.length,4,'The scene uses the four thematic images');

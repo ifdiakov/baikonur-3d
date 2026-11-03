@@ -116,11 +116,12 @@
 
 /* v14: soft native crossfades. Motion stays compositor-only so the
    preloader remains fluid while Three.js parses and builds the museum. */
-@keyframes preloaderPhraseCycleV14{
+/* Eight phrases retain the 4-second cadence and the existing fade lengths. */
+@keyframes preloaderPhraseCycleV15{
   0%{opacity:0;transform:translate3d(0,6px,0);animation-timing-function:cubic-bezier(.22,1,.36,1)}
-  1.9%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:linear}
-  12.1%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:cubic-bezier(.4,0,.2,1)}
-  16%{opacity:0;transform:translate3d(0,-5px,0)}
+  1.6625%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:linear}
+  10.5875%{opacity:1;transform:translate3d(0,0,0);animation-timing-function:cubic-bezier(.4,0,.2,1)}
+  14%{opacity:0;transform:translate3d(0,-5px,0)}
   100%{opacity:0;transform:translate3d(0,-5px,0)}
 }
 @keyframes preloaderImageCycleV14{
@@ -136,10 +137,13 @@
   72%{transform:scaleX(.76)}
   100%{transform:scaleX(.93)}
 }
+#museumLoading .preloader__features{container-type:inline-size}
+#museumLoading .preloader__phrase-line{display:block;white-space:nowrap}
 #museumLoading .preloader__phrase{
+  font-size:min(var(--pl-feature),5.3cqw);
   opacity:0;transform:translate3d(0,6px,0);transition:none;
   will-change:opacity,transform;backface-visibility:hidden;
-  animation:preloaderPhraseCycleV14 28s linear infinite;animation-fill-mode:none;
+  animation:preloaderPhraseCycleV15 32s linear infinite;animation-fill-mode:none;
 }
 #museumLoading .preloader__phrase:nth-child(1){animation-delay:0s}
 #museumLoading .preloader__phrase:nth-child(2){animation-delay:4s}
@@ -148,6 +152,7 @@
 #museumLoading .preloader__phrase:nth-child(5){animation-delay:16s}
 #museumLoading .preloader__phrase:nth-child(6){animation-delay:20s}
 #museumLoading .preloader__phrase:nth-child(7){animation-delay:24s}
+#museumLoading .preloader__phrase:nth-child(8){animation-delay:28s}
 #museumLoading .preloader__image{
   opacity:0;transition:none;will-change:opacity;backface-visibility:hidden;
   transform:translate3d(0,0,0);

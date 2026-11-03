@@ -29,7 +29,7 @@ ${imagePreload}
 <style>${font}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
 </style>
-<link rel="stylesheet" href="./src/museum-preloader.css?v=20261103-preloader-native-v14">
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261103-preloader-copy-v15">
 
 </head><body>
 ${markup}
