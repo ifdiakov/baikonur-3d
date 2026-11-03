@@ -297,9 +297,18 @@ export function clipOrdinaryRoadMeshes(meshes,highwayMesh,ownershipPolygons=[],{
   if(!mesh)continue;const p=mesh.geometry.attributes.position,ix=mesh.geometry.index,positions=[];let clipped=0,removed=0;
   const append=(a,b,c)=>{for(const q of [a,b,c])positions.push(q.x,q.y,q.z);};
   for(let i=0;i<(ix?.count??p.count);i+=3){
-   const original=[0,1,2].map(k=>{const j=ix?ix.getX(i+k):i+k;return{x:p.getX(j),y:p.getY(j),z:p.getZ(j)};});
-   const box=bounds(original),near=index.near(box);
-   if(!near.length){append(...original);continue;}
+   // Most triangles never meet an owning highway/road. Check the exact X/Z
+   // bounds from Float32 attributes first, without allocating three vertex
+   // objects, an array or a generic polygon just to discard it afterwards.
+   const a=ix?ix.getX(i):i,b=ix?ix.getX(i+1):i+1,c=ix?ix.getX(i+2):i+2;
+   const ax=p.getX(a),ay=p.getY(a),az=p.getZ(a),
+    bx=p.getX(b),by=p.getY(b),bz=p.getZ(b),
+    cx=p.getX(c),cy=p.getY(c),cz=p.getZ(c);
+   const box={minX:Math.min(ax,bx,cx),maxX:Math.max(ax,bx,cx),
+    minZ:Math.min(az,bz,cz),maxZ:Math.max(az,bz,cz)};
+   const near=index.near(box);
+   if(!near.length){positions.push(ax,ay,az,bx,by,bz,cx,cy,cz);continue;}
+   const original=[{x:ax,y:ay,z:az},{x:bx,y:by,z:bz},{x:cx,y:cy,z:cz}];
    const subject=make(original);if(!subject){append(...original);continue;}
    let pieces=[subject.poly];
    for(const host of near){
