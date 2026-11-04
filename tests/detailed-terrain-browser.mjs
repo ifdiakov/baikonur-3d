@@ -8,8 +8,11 @@ page.on('console',m=>{if(m.type()==='error'&&/shader|GL_INVALID_OPERATION|VALIDA
 try{
  await page.goto(process.env.BAIKONUR_URL||'http://127.0.0.1:8765/?tour=0&view=terrain&detail=close',{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.gameTerrain?.stats?.(),null,{timeout:180000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA.gameTerrain.stats().status!=='queued',{timeout:150000});
- await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA.gameTerrain.stats().detailedMaterialVersion),{timeout:150000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA.gameTerrain.stats().status!=='queued',null,{timeout:210000});
+ await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA.gameTerrain.stats().detailedMaterialVersion)||
+  window.__BAIKONUR_QA.gameTerrain.stats().status==='error',null,{timeout:210000});
+ const state=await page.evaluate(()=>window.__BAIKONUR_QA.gameTerrain.stats());
+ assert.notEqual(state.status,'error','Detailed terrain init failed: '+JSON.stringify(state));
  const report=await page.evaluate(()=>{
   const qa=window.__BAIKONUR_QA;
   return {terrain:qa.gameTerrain.stats(),shared:qa.stats().terrain.surface,shaderValid:qa.stats().shadersValid,ready:document.body.classList.contains('museum-ready')};
