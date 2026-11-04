@@ -1,14 +1,15 @@
 import * as THREE from 'three';
+import {createDetailedSoilAtlases,DETAILED_SOIL_VERSION} from './terrain-material-atlas.js?v=20261105-five-soil-v1';
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-pilot-v5-natural-patches';
+export const GAME_TERRAIN_VERSION = 'game-terrain-v6-five-materials';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
 const MASK_RESOLUTION=512;
 const TEXTURE_SIZE=256;
-const FIELD_RESOLUTION=256;
+const FIELD_RESOLUTION=512;
 const hash=(x,y,seed=1)=>{
  let n=Math.imul((x|0)+seed*137,374761393)^Math.imul((y|0)-seed*29,668265263);
  n=Math.imul(n^(n>>>13),1274126177);
@@ -118,7 +119,33 @@ function makeLandcoverField(bounds,heightAt,renderer){
 
 const GAME_SOIL_GLSL=/* glsl */`
 uniform sampler2D gameClearance,gameGrains,gameLandcover;
+uniform sampler2D gameMaterialAlbedo,gameMaterialNormal,gameMaterialRoughness;
 uniform vec4 gameRect;
+
+vec2 gameAtlasUV(float id,vec2 worldPos){
+ // Four material columns, two rows, power-of-two atlas. A half texel inset
+ // prevents GPU bilinear filtering from bleeding into a neighbour's tile.
+ vec2 tile=vec2(mod(id,4.0),floor(id/4.0));
+ vec2 uv=fract(worldPos/3.2);
+ uv=mix(vec2(0.0015),vec2(0.9985),uv);
+ return (tile+uv)/vec2(4.0,2.0);
+}
+void gameTopMaterials(vec4 field,out float bestId,out float nextId,out float blend){
+ // ids: 0 clay, 1 sand, 2 gravel, 3 salt, 4 dry scrub
+ float weights[5];
+ weights[1]=field.r*.93;
+ weights[2]=field.g*.92;
+ weights[3]=field.b*.85;
+ weights[4]=field.a*.52;
+ weights[0]=max(.22,1.0-max(max(weights[1],weights[2]),max(weights[3],weights[4]))*.75);
+ float best=-1.0,runner=-1.0;bestId=0.0;nextId=0.0;
+ for(int i=0;i<5;i++){
+  if(weights[i]>best){runner=best;nextId=bestId;best=weights[i];bestId=float(i);}
+  else if(weights[i]>runner){runner=weights[i];nextId=float(i);}
+ }
+ blend=clamp(runner/max(best+runner,.0001),0.0,.5);
+}
+
 // Decorrelate every 11-unit patch. Smooth four-way crossfades avoid seams and
 // the repeating texture grid while the texture itself keeps its PBR mipmaps.
 vec2 gameHash2(vec2 cell){
@@ -140,6 +167,10 @@ const GAME_SOIL_SHADE=/* glsl */`
 // All source landmarks stay in the satellite: color is only gently modulated.
 vec2 gameLandUv=(vSteppeWorld.xz-gameRect.xy)/gameRect.zw;
 vec4 gameSoil=texture2D(gameLandcover,gameLandUv);
+float gameMaterialA,gameMaterialB,gameMaterialMix;
+gameTopMaterials(gameSoil,gameMaterialA,gameMaterialB,gameMaterialMix);
+vec2 gameMaterialUvA=gameAtlasUV(gameMaterialA,vSteppeWorld.xz);
+vec2 gameMaterialUvB=gameAtlasUV(gameMaterialB,vSteppeWorld.xz);
 float gamePhotoLight=smoothstep(.055,.45,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
 vec3 gameWeather=mix(vec3(.970,.965,.958),vec3(1.058,1.031,.985),gameSoil.r*.77);
 gameWeather=mix(gameWeather,vec3(.91,.91,.89),gameSoil.g*.23);
@@ -148,6 +179,11 @@ gameWeather*=1.0+(gameSoil.a-.5)*.025;
 float gamePixelSize=max(length(dFdx(vSteppeWorld.xz)),length(dFdy(vSteppeWorld.xz)));
 float gamePatchFade=1.0-smoothstep(3.0,15.0,gamePixelSize);
 diffuseColor.rgb*=mix(vec3(1.0),gameWeather,gamePatchFade);
+vec3 gameRealSoil=mix(texture2D(gameMaterialAlbedo,gameMaterialUvA).rgb,
+ texture2D(gameMaterialAlbedo,gameMaterialUvB).rgb,gameMaterialMix);
+// Preserve 65% of the georeferenced satellite photo colour, even in a
+// close-up. Soil atlas gives surface material identity, never new landmarks.
+diffuseColor.rgb=mix(diffuseColor.rgb,gameRealSoil,gamePatchFade*.35);
 float gameMicroFade=1.0-smoothstep(.22,1.65,gamePixelSize);
 vec3 gameMicro=gameStochasticGrain(vSteppeWorld.xz);
 diffuseColor.rgb*=mix(vec3(1.0),
@@ -313,13 +349,14 @@ function makeSparseShrubs({bounds,mask,heightAt,landcover,root}){
  mesh.renderOrder=5;mesh.visible=false;root.add(mesh);
  return {mesh,count};
 }
-export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,osmRails,transport,point,terrainRelief,steppeSurface,sceneScale=3.4}){
+export async function createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,osmRails,transport,point,terrainRelief,steppeSurface,sceneScale=3.4}){
  const g=siteRecords.find(item=>item.id==='pad-1'),s=siteRecords.find(item=>item.id==='pad-2');
  if(!g||!s)throw new Error('Game terrain pilot requires Gagarin and Site 2');
  const pad=point(g.x,g.y,0),site2=point(s.x,s.y,0),mid=pad.clone().add(site2).multiplyScalar(.5);
  const bounds={minX:mid.x-worldMaskSize/2,minZ:mid.z-worldMaskSize/2};
  const mask=createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point,pad,site2});
  const maps=makeMaterialTextures(renderer);
+ const atlas=await createDetailedSoilAtlases({renderer,tileSize:512});
  const landcover=makeLandcoverField(bounds,terrainRelief.heightAt,renderer);
  const material=new THREE.MeshStandardMaterial({
   color:0xffffff,roughness:.96,metalness:0,normalMap:maps.normal,roughnessMap:maps.roughness,
@@ -333,6 +370,9 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
   shader.uniforms.gameClearance={value:mask.texture};
   shader.uniforms.gameGrains={value:maps.albedo};
   shader.uniforms.gameLandcover={value:landcover.texture};
+  shader.uniforms.gameMaterialAlbedo={value:atlas.albedo};
+  shader.uniforms.gameMaterialNormal={value:atlas.normal};
+  shader.uniforms.gameMaterialRoughness={value:atlas.roughness};
   shader.uniforms.gameRect={value:new THREE.Vector4(bounds.minX,bounds.minZ,worldMaskSize,worldMaskSize)};
   shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
    '#include <common>\n'+GAME_SOIL_GLSL);
@@ -344,6 +384,16 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
   if(!shader.fragmentShader.includes(soilHook))
    throw new Error('Game terrain requires shared steppe surface shader');
   shader.fragmentShader=shader.fragmentShader.replace(soilHook,soilHook+'\n'+GAME_SOIL_SHADE);
+  shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+   vec3 gameAtlasN=mix(texture2D(gameMaterialNormal,gameMaterialUvA).xyz,
+    texture2D(gameMaterialNormal,gameMaterialUvB).xyz,gameMaterialMix)*2.0-1.0;
+   vec3 gameSide=normalize(vec3(1.0,0.0,0.0)-normal*normal.x+vec3(0.00001));
+   vec3 gameFront=normalize(cross(normal,gameSide));
+   normal=normalize(normal+(gameSide*gameAtlasN.x+gameFront*gameAtlasN.y)*.24*gameMicroFade);`);
+  shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
+   float gameAtlasR=mix(texture2D(gameMaterialRoughness,gameMaterialUvA).r,
+    texture2D(gameMaterialRoughness,gameMaterialUvB).r,gameMaterialMix);
+   roughnessFactor=mix(roughnessFactor,gameAtlasR,gamePatchFade*.66);`);
  };
  const beforeCache=material.customProgramCacheKey.bind(material);
  material.customProgramCacheKey=()=>beforeCache()+'|'+GAME_TERRAIN_VERSION;
@@ -379,7 +429,11 @@ export function createGameTerrainPilot({scene,renderer,camera,siteRecords,geogra
   height:altitude,blend:strength,stonesBlend:stonesStrength,
   stones:accepted,shrubs:shrubCount,triangles:terrain.geometry.index.count/3,
   geometry:'DEM-aligned mesh',material:'PBR MeshStandardMaterial',
-  textures:['stochastic-grain','normal','roughness','non-repeating-landcover'],
+  textures:['stochastic-grain','normal','roughness','non-repeating-landcover',
+   'five-material-albedo','five-material-normal','five-material-roughness'],
+  detailedMaterialVersion:DETAILED_SOIL_VERSION,materialFamilies:atlas.materials,
+  atlasResolution:[atlas.width,atlas.height],atlasTile:atlas.tileSize,
+  atlasGpuBytes:atlas.gpuBytes,
   satellitePreserved:true,soilFieldResolution:landcover.resolution,soilFieldPeriod:'unique-620-unit-area',
   clearance:'launch pads, roads and rails are left visible',
   bounds:{...bounds,size:worldMaskSize}})};
