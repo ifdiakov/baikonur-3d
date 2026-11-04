@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import {installGlobalSoilDetail,GLOBAL_SOIL_DETAIL_VERSION} from './global-steppe-detail.js?v=20261105-v1';
 import {STEPPE_VERSION,sampleSteppeFields} from './steppe-field.js?v=20261101-steppe-v7';
 
 export const STEPPE_BIOME_EXTENT=18000;
 export const STEPPE_BIOME_RESOLUTION=1024;
 // The generated field and the material program have separate revisions: an
 // image treatment must not silently claim that the fallback soil field changed.
-export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v12-pbr-pilot';
+export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v13-five-family-global';
 const installed=new WeakMap();
 
 function satelliteSurrounding(options){
@@ -393,6 +394,7 @@ export async function createSteppeSurface({renderer,satellite=null}={}){
  if(extensionConfig&&!(typeof extensionConfig.url==='string'&&extensionConfig.url.trim()))throw new Error('Satellite extension requires an image URL');
  const satelliteExtension=extensionConfig?createSatelliteExtensionProjection(satelliteProjection,extensionConfig):null;
  const loader=new THREE.TextureLoader(),materials=new Set();
+ let detailedAtlases=null;const detailedStrength={value:0};
  const loadTexture=url=>{
   let expired=false,timer;
   const pending=loader.loadAsync(url);
@@ -481,12 +483,31 @@ export async function createSteppeSurface({renderer,satellite=null}={}){
   const primary=primaryAt(x,z);
   return primary&&satelliteExtension?{...primary,extension:satelliteExtension.sample(x,z,primary)}:primary;
  };
- return {apply(material,options){installSteppeSurface(material,textures,options);materials.add(material);return material;},
+ return {apply(material,options){installSteppeSurface(material,textures,options);materials.add(material);
+   if(detailedAtlases)installGlobalSoilDetail(material,detailedAtlases,detailedStrength);
+   return material;},
+  enableDetailedMaterials(atlases){
+   if(detailedAtlases)return false;
+   if(!atlases?.albedo||!atlases?.normal||!atlases?.roughness)throw new Error('Detailed soil atlases not available');
+   detailedAtlases=atlases;
+   for(const material of materials)installGlobalSoilDetail(material,atlases,detailedStrength);
+   return true;
+  },
+  updateDetail(height){
+   if(!detailedAtlases||!Number.isFinite(height)){detailedStrength.value=0;return 0;}
+   const fraction=Math.min(1,Math.max(0,(280-height)/185));
+   detailedStrength.value=fraction*fraction*(3-2*fraction);
+   return detailedStrength.value;
+  },
   satelliteAt,ready,requestDetail(){
    globalThis.__MUSEUM_STARTUP?.promote?.('terrain-detail',100);
    globalThis.__MUSEUM_STARTUP?.promote?.('terrain-hd',100);return ready;
   },
   stats:()=>({version:STEPPE_VERSION,surfaceVersion:STEPPE_SURFACE_VERSION,projection:'world-xz',materials:materials.size,detailMaps:2,
+   globalDetailedVersion:detailedAtlases?GLOBAL_SOIL_DETAIL_VERSION:null,
+   detailedMaterials:detailedAtlases?.materials??null,
+   detailedAtlasSize:detailedAtlases?[detailedAtlases.width,detailedAtlases.height]:null,
+   detailedStrength:detailedStrength.value,
    textureSize:textures.microTexture.image?.width??1,biomeResolution:biomeFieldGenerated?STEPPE_BIOME_RESOLUTION:1,biomeExtent:STEPPE_BIOME_EXTENT,
    biomeFieldGenerated,loading:{...loading,errors:loading.errors.map(error=>({...error}))},
    mipmapped:true,derivativeFade:true,extraGeometry:0,types:['dry-steppe','sand','salt-crust','sparse-scrub'],

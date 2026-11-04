@@ -357,6 +357,7 @@ export async function createGameTerrainPilot({scene,renderer,camera,siteRecords,
  const mask=createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point,pad,site2});
  const maps=makeMaterialTextures(renderer);
  const atlas=await createDetailedSoilAtlases({renderer,tileSize:512});
+ steppeSurface.enableDetailedMaterials?.(atlas);
  const landcover=makeLandcoverField(bounds,terrainRelief.heightAt,renderer);
  const material=new THREE.MeshStandardMaterial({
   color:0xffffff,roughness:.96,metalness:0,normalMap:maps.normal,roughnessMap:maps.roughness,

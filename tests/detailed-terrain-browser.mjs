@@ -12,9 +12,11 @@ try{
  await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA.gameTerrain.stats().detailedMaterialVersion),{timeout:150000});
  const report=await page.evaluate(()=>{
   const qa=window.__BAIKONUR_QA;
-  return {terrain:qa.gameTerrain.stats(),shaderValid:qa.stats().shadersValid,ready:document.body.classList.contains('museum-ready')};
+  return {terrain:qa.gameTerrain.stats(),shared:qa.stats().terrain.surface,shaderValid:qa.stats().shadersValid,ready:document.body.classList.contains('museum-ready')};
  });
  assert.equal(report.terrain.materialFamilies.length,5);
+ assert.equal(report.shared.detailedMaterials.length,5);
+ assert.deepEqual(report.shared.detailedAtlasSize,[2048,1024]);
  assert.equal(report.terrain.atlasTile,512);
  assert.equal(report.terrain.atlasGpuBytes,2048*1024*4*3);
  assert(report.shaderValid,'Entire 3D museum must compile without shader failures');

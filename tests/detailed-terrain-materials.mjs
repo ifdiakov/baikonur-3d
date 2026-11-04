@@ -26,4 +26,10 @@ assert(source.includes('gameMaterialAlbedo')&&source.includes('gameMaterialNorma
 assert(source.includes('gameTopMaterials')&&source.includes('gameAtlasUV'));
 assert(source.includes('const FIELD_RESOLUTION=512'));
 assert(html.includes('gameTerrain=await createGameTerrainPilot('));
+const globalSource=await readFile(new URL('../src/global-steppe-detail.js',import.meta.url),'utf8');
+const steppeSource=await readFile(new URL('../src/steppe-surface.js',import.meta.url),'utf8');
+assert(globalSource.includes('globalSoilPair'));
+assert(steppeSource.includes('enableDetailedMaterials(atlases)'));
+assert(steppeSource.includes('updateDetail(height)'));
+assert(html.includes('steppeSurface.updateDetail(camera.position.y/SCENE_SCALE)'));
 console.log('FIVE_SOIL_MATERIALS_PASS');
