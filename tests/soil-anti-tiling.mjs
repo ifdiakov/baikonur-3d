@@ -93,7 +93,7 @@ assert(steppe.includes('!material.userData.skipGlobalSoilDetail'));
 assert(steppe.includes('vec3 steppeUntiledMicro(vec2 p)'), 'Baseline satellite micro grain still tiles');
 assert(!steppe.includes('steppeMicro,p/2.0'), 'Direct repeating satellite grain is forbidden');
 assert(index.includes('steppe-surface.js?v=20261105-seamless-v15'));
-assert(index.includes('terrain-game-detail.js?v=20261105-seamless-v8'));
+assert(index.includes('terrain-game-detail.js?v=20261105-seamless-v9'));
 console.log('SOIL_ANTI_TILING_PASS',JSON.stringify({version:SOIL_ANTI_TILING_VERSION,comparisons,
  diverse: different,percent:Math.round(100*different/comparisons),
  nearRepeatRemoved,nearRepeatRate:Math.round(100*nearRepeatRemoved/nearRepeat),boundaryJump,maxDiscontinuity}));
