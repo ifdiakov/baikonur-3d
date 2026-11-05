@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import {createDetailedSoilAtlases,DETAILED_SOIL_VERSION} from './terrain-material-atlas.js?v=20261105-five-soil-v1';
+import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling.js?v=20261105-dual-domain-v1';
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-v6-five-materials';
+export const GAME_TERRAIN_VERSION = 'game-terrain-v7-anti-tiling';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
@@ -122,14 +123,6 @@ uniform sampler2D gameClearance,gameGrains,gameLandcover;
 uniform sampler2D gameMaterialAlbedo,gameMaterialNormal,gameMaterialRoughness;
 uniform vec4 gameRect;
 
-vec2 gameAtlasUV(float id,vec2 worldPos){
- // Four material columns, two rows, power-of-two atlas. A half texel inset
- // prevents GPU bilinear filtering from bleeding into a neighbour's tile.
- vec2 tile=vec2(mod(id,4.0),floor(id/4.0));
- vec2 uv=fract(worldPos/3.2);
- uv=mix(vec2(0.0015),vec2(0.9985),uv);
- return (tile+uv)/vec2(4.0,2.0);
-}
 void gameTopMaterials(vec4 field,out float bestId,out float nextId,out float blend){
  // ids: 0 clay, 1 sand, 2 gravel, 3 salt, 4 dry scrub
  float weights[5];
@@ -169,8 +162,8 @@ vec2 gameLandUv=(vSteppeWorld.xz-gameRect.xy)/gameRect.zw;
 vec4 gameSoil=texture2D(gameLandcover,gameLandUv);
 float gameMaterialA,gameMaterialB,gameMaterialMix;
 gameTopMaterials(gameSoil,gameMaterialA,gameMaterialB,gameMaterialMix);
-vec2 gameMaterialUvA=gameAtlasUV(gameMaterialA,vSteppeWorld.xz);
-vec2 gameMaterialUvB=gameAtlasUV(gameMaterialB,vSteppeWorld.xz);
+vec2 gameCoordsA,gameCoordsB;float gameDomainMix;
+soilDetailDomains(vSteppeWorld.xz,gameCoordsA,gameCoordsB,gameDomainMix);
 float gamePhotoLight=smoothstep(.055,.45,dot(diffuseColor.rgb,vec3(.2126,.7152,.0722)));
 vec3 gameWeather=mix(vec3(.970,.965,.958),vec3(1.058,1.031,.985),gameSoil.r*.77);
 gameWeather=mix(gameWeather,vec3(.91,.91,.89),gameSoil.g*.23);
@@ -179,8 +172,11 @@ gameWeather*=1.0+(gameSoil.a-.5)*.025;
 float gamePixelSize=max(length(dFdx(vSteppeWorld.xz)),length(dFdy(vSteppeWorld.xz)));
 float gamePatchFade=1.0-smoothstep(3.0,15.0,gamePixelSize);
 diffuseColor.rgb*=mix(vec3(1.0),gameWeather,gamePatchFade);
-vec3 gameRealSoil=mix(texture2D(gameMaterialAlbedo,gameMaterialUvA).rgb,
- texture2D(gameMaterialAlbedo,gameMaterialUvB).rgb,gameMaterialMix);
+vec3 gameAlbedoA=mix(texture2D(gameMaterialAlbedo,soilDetailAtlasUV(gameMaterialA,gameCoordsA)).rgb,
+ texture2D(gameMaterialAlbedo,soilDetailAtlasUV(gameMaterialA,gameCoordsB)).rgb,gameDomainMix);
+vec3 gameAlbedoB=mix(texture2D(gameMaterialAlbedo,soilDetailAtlasUV(gameMaterialB,gameCoordsA)).rgb,
+ texture2D(gameMaterialAlbedo,soilDetailAtlasUV(gameMaterialB,gameCoordsB)).rgb,gameDomainMix);
+vec3 gameRealSoil=mix(gameAlbedoA,gameAlbedoB,gameMaterialMix);
 // Preserve 65% of the georeferenced satellite photo colour, even in a
 // close-up. Soil atlas gives surface material identity, never new landmarks.
 diffuseColor.rgb=mix(diffuseColor.rgb,gameRealSoil,gamePatchFade*.35);
@@ -360,10 +356,11 @@ export async function createGameTerrainPilot({scene,renderer,camera,siteRecords,
  steppeSurface.enableDetailedMaterials?.(atlas);
  const landcover=makeLandcoverField(bounds,terrainRelief.heightAt,renderer);
  const material=new THREE.MeshStandardMaterial({
-  color:0xffffff,roughness:.96,metalness:0,normalMap:maps.normal,roughnessMap:maps.roughness,
-  normalScale:new THREE.Vector2(.38,.38),transparent:true,opacity:0,depthWrite:false,
+  // The old 256px normal/roughness repeats are replaced by the atlas PBR channels.
+  color:0xffffff,roughness:.96,metalness:0,transparent:true,opacity:0,depthWrite:false,
   polygonOffset:true,polygonOffsetFactor:-2
  });
+ material.userData.skipGlobalSoilDetail=true;
  steppeSurface.apply(material);
  const prev=material.onBeforeCompile;
  material.onBeforeCompile=function(shader,webglRenderer){
@@ -376,7 +373,7 @@ export async function createGameTerrainPilot({scene,renderer,camera,siteRecords,
   shader.uniforms.gameMaterialRoughness={value:atlas.roughness};
   shader.uniforms.gameRect={value:new THREE.Vector4(bounds.minX,bounds.minZ,worldMaskSize,worldMaskSize)};
   shader.fragmentShader=shader.fragmentShader.replace('#include <common>',
-   '#include <common>\n'+GAME_SOIL_GLSL);
+   '#include <common>\n'+SOIL_ANTI_TILING_GLSL+'\n'+GAME_SOIL_GLSL);
   shader.fragmentShader=shader.fragmentShader.replace('#include <alphamap_fragment>',
    '#include <alphamap_fragment>\nvec2 gameUV=vec2((vSteppeWorld.x-gameRect.x)/gameRect.z,1.0-(vSteppeWorld.z-gameRect.y)/gameRect.w);\ndiffuseColor.a*=texture2D(gameClearance,gameUV).r;');
   const satelliteHook='diffuseColor.rgb*=steppeTone;';
@@ -386,18 +383,24 @@ export async function createGameTerrainPilot({scene,renderer,camera,siteRecords,
    throw new Error('Game terrain requires shared steppe surface shader');
   shader.fragmentShader=shader.fragmentShader.replace(soilHook,soilHook+'\n'+GAME_SOIL_SHADE);
   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
-   vec3 gameAtlasN=mix(texture2D(gameMaterialNormal,gameMaterialUvA).xyz,
-    texture2D(gameMaterialNormal,gameMaterialUvB).xyz,gameMaterialMix)*2.0-1.0;
+   vec3 gameNormalA=mix(texture2D(gameMaterialNormal,soilDetailAtlasUV(gameMaterialA,gameCoordsA)).rgb,
+    texture2D(gameMaterialNormal,soilDetailAtlasUV(gameMaterialA,gameCoordsB)).rgb,gameDomainMix);
+   vec3 gameNormalB=mix(texture2D(gameMaterialNormal,soilDetailAtlasUV(gameMaterialB,gameCoordsA)).rgb,
+    texture2D(gameMaterialNormal,soilDetailAtlasUV(gameMaterialB,gameCoordsB)).rgb,gameDomainMix);
+   vec3 gameAtlasN=mix(gameNormalA,gameNormalB,gameMaterialMix)*2.0-1.0;
    vec3 gameSide=normalize(vec3(1.0,0.0,0.0)-normal*normal.x+vec3(0.00001));
    vec3 gameFront=normalize(cross(normal,gameSide));
    normal=normalize(normal+(gameSide*gameAtlasN.x+gameFront*gameAtlasN.y)*.24*gameMicroFade);`);
   shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>',`#include <roughnessmap_fragment>
-   float gameAtlasR=mix(texture2D(gameMaterialRoughness,gameMaterialUvA).r,
-    texture2D(gameMaterialRoughness,gameMaterialUvB).r,gameMaterialMix);
+   float gameRoughA=mix(texture2D(gameMaterialRoughness,soilDetailAtlasUV(gameMaterialA,gameCoordsA)).r,
+    texture2D(gameMaterialRoughness,soilDetailAtlasUV(gameMaterialA,gameCoordsB)).r,gameDomainMix);
+   float gameRoughB=mix(texture2D(gameMaterialRoughness,soilDetailAtlasUV(gameMaterialB,gameCoordsA)).r,
+    texture2D(gameMaterialRoughness,soilDetailAtlasUV(gameMaterialB,gameCoordsB)).r,gameDomainMix);
+   float gameAtlasR=mix(gameRoughA,gameRoughB,gameMaterialMix);
    roughnessFactor=mix(roughnessFactor,gameAtlasR,gamePatchFade*.66);`);
  };
  const beforeCache=material.customProgramCacheKey.bind(material);
- material.customProgramCacheKey=()=>beforeCache()+'|'+GAME_TERRAIN_VERSION;
+ material.customProgramCacheKey=()=>beforeCache()+'|'+GAME_TERRAIN_VERSION+'|'+SOIL_ANTI_TILING_VERSION;
  material.needsUpdate=true;
  const root=new THREE.Group();root.name='Игровая земля · пилот пл. 1 и пл. 2';
  root.userData.pickable=false;
@@ -430,7 +433,7 @@ export async function createGameTerrainPilot({scene,renderer,camera,siteRecords,
   height:altitude,blend:strength,stonesBlend:stonesStrength,
   stones:accepted,shrubs:shrubCount,triangles:terrain.geometry.index.count/3,
   geometry:'DEM-aligned mesh',material:'PBR MeshStandardMaterial',
-  textures:['stochastic-grain','normal','roughness','non-repeating-landcover',
+  textures:['stochastic-grain','non-repeating-landcover',
    'five-material-albedo','five-material-normal','five-material-roughness'],
   detailedMaterialVersion:DETAILED_SOIL_VERSION,materialFamilies:atlas.materials,
   atlasResolution:[atlas.width,atlas.height],atlasTile:atlas.tileSize,
