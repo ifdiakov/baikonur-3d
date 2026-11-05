@@ -6,7 +6,7 @@ import {SITE250A_ACCESS as access} from '../src/site250a-layout.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork} from '../src/osm-transport.js';
-import {portWorld} from '../src/facility-ports.js';
+import {FACILITY_PORTS,portWorld} from '../src/facility-ports.js';
 const V=(...p)=>new THREE.Vector3(...p),near=(a,b,t=.001)=>assert(Math.abs(a-b)<t,`${a} differs from ${b}`);
 const root=new THREE.Group(),built=buildSite250a(root);root.updateMatrixWorld(true);
 const down=(x,z)=>new THREE.Raycaster(V(x,100,z),V(0,-1,0)).intersectObject(root,true);
@@ -30,7 +30,7 @@ const point=(x,y,h=0)=>V((x-650)*3.4,h,(y-522.5)*3.4),layers={roads:new THREE.Gr
 const transport=buildOsmTransportNetwork({data:{roads:read('data/osm/roads.geojson'),railways:read('data/osm/railways.geojson'),railPoints:read('data/osm/rail-points.geojson'),places:read('data/osm/places.geojson')},legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords:geography.sites.filter(s=>!s.aliasOf&&s.render!==false)});
 const stats=transport.stats(),road=stats.facilityPorts.find(p=>p.id==='pad-250a'),through=stats.facilityPorts.find(p=>p.id==='pad-250a-to-pad-250');
 assert(road&&through,'Both external access and owner-requested UKSS connection survive');near(road.roadGap,0);
-assert.equal(road.profile,'single-continuous-through-road','250A duplicate entrance spur was not removed');
+assert.equal(road.profile,'perimeter-bypass-with-gate-spur','250A requires a proper passing road with its own short entrance');
 assert(!transport.roadPaths().some(r=>r.id==='osm-access-pad-250a'),'Duplicate 250A external road remains');
 const cryoCleanup=stats.exhibitRoadSimplification.regions.find(r=>r.id==='pad-250a');
 assert(cryoCleanup&&cryoCleanup.hiddenEdgeCount>0,'250A OSM service-road web was not cleaned');
@@ -40,7 +40,38 @@ assert(!owner.hidden.some(h=>['museum-yubileiny-250a-ukss','osm-access-pad-250a'
  'Old 250A surface cutouts must not split the preserved through access');
 const gate=portWorld(access,access.road,site,point).toArray();
 const route=transport.roadPaths().find(r=>r.id==='museum-yubileiny-250a-ukss');
-const gateV=V(...gate);let gap=Infinity;for(let i=1;i<route.points.length;i++){const a=route.points[i-1].clone().setY(0),b=route.points[i].clone().setY(0);gap=Math.min(gap,new THREE.Line3(a,b).closestPointToPoint(gateV.clone().setY(0),true,V()).distanceTo(gateV.clone().setY(0)));}
-assert(gap<.3,'Through route meets the same rendered entrance');
+const gateSpur=transport.roadPaths().find(r=>r.id==='museum-pad-250a-gate-spur');
+assert(route&&gateSpur,'The single through road and Site 250A gate spur must both exist');
+assert(!transport.roadPaths().some(r=>r.id==='osm-access-pad-250'),
+ 'Do not draw a second UKSS driveway over the passing road');
+assert(!transport.editableRoadPaths().some(r=>/^osm-road-54568055(?:-|$)/.test(r.id)),
+ 'The obsolete OSM source ribbon must not remain under its reconstructed bypass');
+assert(route.points.length>110&&gateSpur.points.length>10,
+ 'Real through-road and gate approach must have densely sampled meshes');
+const gateV=V(...gate);
+assert(gateSpur.points.at(-1).distanceTo(gateV)<1e-7,'The gate spur stops exactly at the photographed 250A gate');
+const centre=point(site.x,site.y,0),c=Math.cos(access.yaw),s=Math.sin(access.yaw);
+let clearance=Infinity,nearestGate=Infinity,maxStep=0,maxSlope=0;
+for(let i=0;i<route.points.length;i++){
+ const p=route.points[i],dx=p.x-centre.x,dz=p.z-centre.z,
+  lx=c*dx-s*dz,lz=s*dx+c*dz;
+ nearestGate=Math.min(nearestGate,Math.hypot(p.x-gateV.x,p.z-gateV.z));
+ if(lz>=-138*access.scale-route.width/2&&lz<=160*access.scale+route.width/2)
+  clearance=Math.min(clearance,lx-160*access.scale-route.width/2);
+ if(i){
+  const prev=route.points[i-1],d=Math.hypot(p.x-prev.x,p.z-prev.z);
+  maxStep=Math.max(maxStep,d);if(d>0)maxSlope=Math.max(maxSlope,Math.abs(p.y-prev.y)/d);
+ }
+}
+assert(clearance>3,'The through carriageway cuts across the 250A compound perimeter');
+assert(nearestGate>5,'The main road must pass by 250A instead of turning through the gate');
+assert(maxStep<1.5,'Discontinuous road sampling leaves holes in the asphalt');
+assert(maxSlope<.22,'The 250A bypass contains a steep grade jump');
+const ukss=geography.sites.find(s=>s.id==='pad-250'),ukssSpec=FACILITY_PORTS['pad-250'];
+const ukssGate=portWorld(ukssSpec,ukssSpec.road,ukss,point);
+assert(route.points.at(-1).distanceTo(ukssGate)<1e-7,
+ 'The new road does not join the real UKSS gate');
+assert.equal(through.profile,'osm-centreline-perimeter-bypass');
+assert(through.minimumSiteClearance>3);
 assert.doesNotThrow(()=>JSON.stringify(built));
 console.log('SITE250A_GEOMETRY_PASS',JSON.stringify({drawCalls:built.meshCount,triangles,roadGap:road.roadGap,through,gate}));

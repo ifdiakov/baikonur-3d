@@ -71,6 +71,10 @@ assert.deepEqual(simplification.regions.map(r=>r.id),['pad-75','napornaya','kray
 const cryoCleanup=simplification.regions.find(r=>r.id==='pad-250a');
 assert(cryoCleanup&&cryoCleanup.hiddenEdgeCount>0,'250A service-road web was not cleared');
 assert(!roads.some(r=>r.id==='osm-access-pad-250a'),'250A must have only one entrance ribbon');
+assert(roads.some(r=>r.id==='museum-yubileiny-250a-ukss'),'The sole passing road must extend to UKSS');
+assert(roads.some(r=>r.id==='museum-pad-250a-gate-spur'),'The 250A gate requires one dedicated approach');
+assert(!transport.editableRoadPaths().some(r=>/^osm-road-54568055(?:-|$)/.test(r.id)),
+ 'The old 250A source pavement must not be double-rendered under its replacement');
 for(const region of simplification.regions){
  assert.equal(region.keptEdgeCount+region.hiddenEdgeCount,region.sourceEdgeCount);
  assert.equal(region.keptWayIds.length+region.hiddenWayIds.length,region.sourceWayCount);

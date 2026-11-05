@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
-const fingerprint='road-lod-prebuilt-v1;geometry-v2;owner-road-edits-20261103';
+const fingerprint='road-lod-prebuilt-v1;geometry-v3;site250a-ukss-passing-road-v1';
 export function transportSourceFingerprint({roads,railways,ownerRoadEdits,siteRecords}){
  // Fast deterministic FNV-1a of the EXACT topology and owner-specified
  // display anchors, so changed roads cannot silently use an obsolete bake.

@@ -6,6 +6,7 @@ on:
     paths:
       - 'src/transport-bake.js'
       - 'src/osm-transport.js'
+      - 'src/site250a-through-road.js'
       - 'src/road-surface.js'
       - 'data/osm/roads.geojson'
       - 'data/osm/railways.geojson'

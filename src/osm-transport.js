@@ -7,6 +7,7 @@ import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261103-site250a-photo-v1';
+import {planSite250aThroughRoad,SITE250A_THROUGH_WAY_ID,SITE250A_THROUGH_PROFILE} from './site250a-through-road.js?v=20261105-ukss-bypass-v1';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainHeight,saturnTerrainSample} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
@@ -651,7 +652,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    console.warn('Gagarin access reverts to OSM source:',error);
   }
  }
+ const site250aThroughWay=roadGraph.ways.find(w=>String(w.osmId)===SITE250A_THROUGH_WAY_ID);
+ const use250aBypass=Boolean(site250aThroughWay&&siteRecords.some(s=>s.id==='pad-250a')&&siteRecords.some(s=>s.id==='pad-250'));
  for(const way of roadGraph.ways){
+  // The source 54568055 road passes through the enlarged 250A footprint.
+  // Its entire rendered ribbon is replaced by one offset, connected ribbon.
+  if(use250aBypass&&way===site250aThroughWay)continue;
   if((gagarinApproach&&way.osmId===GAGARIN_APPROACH_WAY_ID)||isRedundantGagarinWay(way))continue;
   const major=MAIN.has(way.tags.highway?.replace('_link',''))||way.tags.highway==='unclassified',points=[];
   const visibleRuns=[];
@@ -893,17 +899,20 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const cryoThroughSite=siteRecords.find(s=>s.id==='pad-250a');
  const ukssThroughSite=siteRecords.find(s=>s.id==='pad-250');
  let cryoThrough=null;
- if(cryoThroughSite&&ukssThroughSite){
+ if(use250aBypass){
   const cryoSpec={...FACILITY_PORTS['pad-250a'],yaw:cryoThroughSite.runtimeYaw??FACILITY_PORTS['pad-250a'].yaw};
   const ukssSpec={...FACILITY_PORTS['pad-250'],yaw:ukssThroughSite.runtimeYaw??FACILITY_PORTS['pad-250'].yaw};
   const cryoGate=portWorld(cryoSpec,cryoSpec.road,cryoThroughSite,point);
   const ukssGate=portWorld(ukssSpec,ukssSpec.road,ukssThroughSite,point);
-  const source=nearestSegment(roadGraph,cryoGate,e=>e.tags.highway!=='track'&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
-  if(source&&source.distance<420**2)cryoThrough={cryoGate,ukssGate,source,cryoSpec};
+  const siteCenter=point(cryoThroughSite.x,cryoThroughSite.y,cryoSpec.elevation??-2.72);
+  const nodes=[site250aThroughWay.segments[0].a.position,...site250aThroughWay.segments.map(e=>e.b.position)];
+  const plan=planSite250aThroughRoad({sourcePoints:nodes.map(p=>p.toArray()),siteCenter:siteCenter.toArray(),
+   siteYaw:cryoSpec.yaw,cryoGate:cryoGate.toArray(),ukssGate:ukssGate.toArray()});
+  cryoThrough={cryoGate,ukssGate,cryoSpec,ukssSpec,sourceWay:site250aThroughWay,plan};
  }
  for(const [id,baseSpec] of Object.entries(FACILITY_PORTS)){
   if(id==='pad-2'&&gagarinApproach)continue; // Site 2 already has its only road connection.
-  if(id==='pad-250a'&&cryoThrough)continue; // Dedicated through road is its only entrance.
+  if((id==='pad-250a'||id==='pad-250')&&cryoThrough)continue; // This one through road and 250A gate spur replace parallel approaches.
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw),target=id==='pad-2'&&site2PrimaryNearby?gate.clone():gate.clone().addScaledVector(out,30);
   const near=id==='pad-41'&&site41Replacement.attachmentEdge?{
    edge:site41Replacement.attachmentEdge,point:site41Replacement.attachmentEdge.b.position.clone(),distance:0,
@@ -955,24 +964,31 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // cryogenic centre -> UKSS. It is display geometry only; OSM topology is
  // not rewritten and all three endpoints retain their own source metadata.
  if(cryoThrough){
-  const {cryoGate,ukssGate,source,cryoSpec}=cryoThrough;
-  const sourceTangent=source.tangent.clone();if(sourceTangent.dot(cryoGate.clone().sub(source.point))<0)sourceTangent.negate();
-  const p0=source.point.clone(),p1=p0.clone().addScaledVector(sourceTangent,24);
-  const mid=cryoGate.clone().lerp(ukssGate,.52).add(V(18,0,-10));
-  const curve=new THREE.CatmullRomCurve3([p0,p1,cryoGate,mid,ukssGate],false,'centripetal');
-  // An even sample count passes exactly through the 250A gate control point.
-  // There is now one ribbon instead of a through-road plus parallel gate spur.
-  const segments=2*Math.max(24,Math.ceil(curve.getLength()/2.8));
-  const points=curve.getPoints(segments),runs=[];
-  drawRoad(points,6.5,{},false,true,null,runs);
-  roadPaths.push({id:'museum-yubileiny-250a-ukss',label:'Юбилейный · 250А · УКСС',points:runs.flat(),width:6.5,source:'owner-directed-museum-road',osmWayIds:[source.edge.wayId]});
+  const {cryoGate,ukssGate,sourceWay,plan,cryoSpec}=cryoThrough,wayId=String(sourceWay.osmId);
+  const throughRuns=[],gateRuns=[];
+  drawRoad(plan.main.map(p=>V(...p)),SITE250A_THROUGH_PROFILE.width,
+   {highway:'unclassified',lanes:'2'},true,true,wayId,throughRuns);
+  drawRoad(plan.spur.map(p=>V(...p)),SITE250A_THROUGH_PROFILE.spurWidth,
+   {highway:'service'},false,true,null,gateRuns);
+  roadPaths.push({id:'museum-yubileiny-250a-ukss',label:'Юбилейный · мимо 250А · УКСС',
+   points:throughRuns.flat(),width:SITE250A_THROUGH_PROFILE.width,source:'owner-directed-museum-road',
+   tags:{highway:'unclassified',lanes:'2'},marked:true,osmWayIds:[wayId]});
+  roadPaths.push({id:'museum-pad-250a-gate-spur',label:'Подъезд к криогенному центру · 250А',
+   points:gateRuns.flat(),width:SITE250A_THROUGH_PROFILE.spurWidth,
+   source:'museum-model-port',osmWayIds:[wayId]});
   const outward=V(...(cryoSpec.roadOutward||[1,0,0])).normalize().applyAxisAngle(V(0,1,0),cryoSpec.yaw);
-  accessReports.push({id:'pad-250a',sourceWayId:source.edge.wayId,profile:'single-continuous-through-road',
-   roadGap:points[segments/2].distanceTo(cryoGate),gate:cryoGate.toArray(),
-   sourcePoint:source.point.toArray(),sourceTangent:sourceTangent.toArray(),
-   gateInward:outward.negate().toArray()});connections++;
-  accessReports.push({id:'pad-250a-to-pad-250',sourceWayId:source.edge.wayId,profile:'owner-directed-via-250a',
-   roadGap:points.at(-1).distanceTo(ukssGate)});
+  accessReports.push({id:'pad-250a',sourceWayId:wayId,profile:'perimeter-bypass-with-gate-spur',
+   roadGap:V(...plan.spur.at(-1)).distanceTo(cryoGate),gate:cryoGate.toArray(),
+   sourcePoint:plan.report.junction,gateInward:outward.negate().toArray(),
+   spurLength:plan.report.spurLength,minimumSiteClearance:plan.report.minimumSiteClearance});
+  accessReports.push({id:'pad-250',sourceWayId:wayId,profile:'single-through-road-to-ukss',
+   roadGap:V(...plan.main.at(-1)).distanceTo(ukssGate),gate:ukssGate.toArray(),
+   sourcePoint:plan.main.at(-2)});
+  accessReports.push({id:'pad-250a-to-pad-250',sourceWayId:wayId,profile:'osm-centreline-perimeter-bypass',
+   roadGap:V(...plan.main.at(-1)).distanceTo(ukssGate),length:plan.report.mainLength,
+   minimumSiteClearance:plan.report.minimumSiteClearance,maxGrade:plan.report.maxGrade,
+   throughVersion:plan.report.version});
+  connections+=2;
  }
  if(site110Fan)for(const link of site110Fan.joinedLinks){
   const first=link.points[0],last=link.points.at(-1),frame=(p,fallback)=>p.distanceToSquared(first)<1e-10?link.startTangent:p.distanceToSquared(last)<1e-10?link.endTangent:fallback;
