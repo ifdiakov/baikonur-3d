@@ -12,19 +12,19 @@
 - \`data/osm/transport-geometry-bake-v1.json.gz\` (463,071 bytes) replaces the
   first version's oversized 61 MB 3D JSON. This lean cache is conditionally
   restored by \`src/transport-bake.js\`.
-- In the ordinary entry screen, the map uses precompiled overview LOD and
-  restored transportation topology, without running the expensive full
-  \`buildOsmTransportNetwork\` call before the first scene frame.
+- The fast route-cache entrance runs in a tested **opt-in mode** (`?fastRoads=1`).
+  Normal visits still use full `buildOsmTransportNetwork` until the compiled
+  surface matches all exact owner road cutouts and material masks.
 - At close range, the exact source renderer can build the full geometric
   roads, railheads, terminals and bridges. The cinematic introduction must not
   be interrupted by this operation.
-- All deep links (\`view\`, \`site\`, \`station\`, \`detail\`) retain immediate
-  full-detail startup until every historical reconstruction and level crossing
-  has been exhaustively checked for snapshot fidelity.
+- Normal visits and direct links retain the original full-detail startup.
+  The first auto-enabled version was reverted when the road-editor browser
+  test detected absent source asphalt and shoulder cutouts.
 - If the gzip asset is unavailable, outdated, cannot be decompressed, or its
   metadata fails structural checks, startup automatically uses the original
   full road renderer.
-- Emergency rollback for home: \`?legacyRoads=1\`.
+- Emergency rollback for the experimental mode: \`?legacyRoads=1\`.
 - Debug fast path for direct inspection: \`?fastRoads=1\`.
 
 ## Verified baseline
