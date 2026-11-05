@@ -5,10 +5,10 @@ const [html,menu,history,ukss,tua,startup]=await Promise.all([
  file('index.html'),file('src/museum-menu.js'),file('src/complex-history-content.js'),
  file('src/ukss-exhibit.js'),file('src/tua-exhibit.js'),file('src/museum-startup.js')
 ]);
-const gallery=['energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp'];
+const gallery=['soyuz-launch-20261103.webp','energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp'];
 for(const image of gallery){
- assert(html.includes('data-src="./assets/preloader/'+image+'"'));
- assert(!html.includes(' src="./assets/preloader/'+image+'"'));
+ assert(html.includes(' src="./assets/preloader/'+image+'"'),'Each CSS carousel slide must have a loadable source: '+image);
+ assert(!html.includes('data-src="./assets/preloader/'+image+'"'));
 }
 assert(html.includes('src="./assets/preloader/soyuz-launch-20261103.webp"'));
 assert(!html.includes("import {createGameTerrainPilot}"));
@@ -33,4 +33,4 @@ assert(html.includes("roadLOD?.update("));
 assert(html.includes("key:'road-prebuilt-lod'"));
 assert(html.includes("roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'"));
 assert(html.includes("authoritativeLodReady=transportBakeModule.then("));
-console.log('MUSEUM_LOADING_OPTIMIZATION_PASS',JSON.stringify({galleryDeferred:gallery.length,historyInitiallyDeferred:true,soilInitiallyDeferred:true,versionedGlbCaching:true}));
+console.log('MUSEUM_LOADING_OPTIMIZATION_PASS',JSON.stringify({galleryAvailable:gallery.length,historyInitiallyDeferred:true,soilInitiallyDeferred:true,versionedGlbCaching:true}));
