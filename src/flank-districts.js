@@ -37,6 +37,10 @@ export function buildFlankDistricts(scene,point,W,H,{mapTransform=null}={}){
  const cityRoot=new THREE.Group();cityRoot.name='Город Байконур · территория';root.add(cityRoot);
  const zones=[],boundaries=[],materials=[],overviewMaterials=[],reliefSurfaces=[],overviewReliefSurfaces=[],boundaryMeshes=[],cityReliefSurfaces=[],airportTerritorySurfaces=[];
  const terrainPatches=[],regionalFills=[],boundaryRestPositions=new WeakMap();
+ // The shared 106/109 rise belongs to the detailed 3D scene, not to the
+ // thematic flat map. Keep its source mesh/geometry and original visibility
+ // intact, hiding only its raised soil while the flank territory is shown.
+ const mapOnlyLocalHills=[];
  let localTerrainBoundaryVertices=0;
  const mapped=new Map();
  const geographicBoundary=FLANK_COORDINATE_SYSTEM==='osm-map';
@@ -337,6 +341,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   if(source.userData.museumComponent==='shared-silo-hill'){
    overlay.material.polygonOffset=true;overlay.material.polygonOffsetFactor=-4;overlay.material.polygonOffsetUnits=-2;
    overlay.userData.localTerrainTint=true;
+   mapOnlyLocalHills.push({source,hidden:false,restoreVisible:source.visible});
   }
   if(sharedGeometry){regionalFills.push({material:overlay.material,key});applyTerrainPatchMask(overlay.material,key);}
   if(patch){overlay.userData.continuousTintPatch=true;clipTerrainPatch(overlay.material,patch.footprint);registerTerrainPatch(source,key,patch,heightAt);syncOpacity();}
@@ -461,6 +466,18 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   }
   if(terrainVisibilityChanged)drapeBoundaries();
   root.visible=alpha>.035;
+  // At flank zoom the DEM tint already covers this entire sector, but the
+  // local hill rises *above* it. A translucent tint cannot conceal that
+  // silhouette. Show the clean contiguous district plane instead, restoring
+  // the exact original 3D hill visibility on return to detailed map zoom.
+  for(const hill of mapOnlyLocalHills){
+   if(root.visible){
+    if(!hill.hidden){hill.restoreVisible=hill.source.visible;hill.hidden=true;}
+    hill.source.visible=false;
+   }else if(hill.hidden){
+    hill.source.visible=hill.restoreVisible;hill.hidden=false;
+   }
+  }
   // The overview perimeter never stacks on the bright district perimeter.
   // The camera LOD fades overview out before bringing the districts in.
   overviewAlpha=root.visible?0:overviewRequestedAlpha;overviewRoot.visible=overviewAlpha>.001;
@@ -485,6 +502,7 @@ gl_FragColor=vec4(uColor,uOpacity${surfaceAlpha?'*vSurfaceOpacity':''});
   overviewReliefCount:overviewReliefSurfaces.length,terrainDraped:overviewBoundary.userData.terrainDraped===true,
   continuousReliefFill,flatFillMeshesVisible:root.visible?zones.filter(mesh=>mesh.visible).length:0,
   localHillTintCount:reliefSurfaces.filter(m=>m.userData.localTerrainTint).length,
+  localHillHiddenOnFlankMap:mapOnlyLocalHills.filter(h=>h.hidden&&!h.source.visible).length,
   airportTintCount:airportTerritorySurfaces.length,visibleAirportTintCount:airportTerritorySurfaces.filter(m=>m.visible&&m.parent.visible).length,
   continuousTerrainPatches:terrainPatches.length,
   boundaryTerrainSources:terrainPatches.filter(patch=>patch.heightAt).length,localTerrainBoundaryVertices,
