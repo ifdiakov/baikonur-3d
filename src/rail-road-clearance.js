@@ -109,7 +109,7 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
   }
   let targetY=p.y;
   for(const c of around(p)){
-   const d=Math.hypot(p.x-c.x,p.z-c.z),top=c.y+.12-headY;
+   const d=Math.hypot(p.x-c.x,p.z-c.z),top=c.y+.014-headY;
    if(top<=p.y)continue;
    const span=Math.max(90,1.875*(top-p.y)/.08),alpha=1-smooth((d-c.radius)/span);
    if(alpha>0)targetY=Math.max(targetY,p.y+(top-p.y)*alpha);
