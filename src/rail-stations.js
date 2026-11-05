@@ -26,7 +26,8 @@ export function planRailStations(stations,paths){
    const dir=s.d.clone().setY(0).normalize();if(Math.abs(dir.dot(axis))<.94)continue;
    const a=s.a.clone().sub(nearest.p),b=s.b.clone().sub(nearest.p),x0=a.dot(axis),x1=b.dot(axis);
    if(Math.min(x0,x1)>halfLength||Math.max(x0,x1)<-halfLength)continue;
-   const t=THREE.MathUtils.clamp(-x0/(x1-x0||1),0,1),z=a.clone().lerp(b,t).dot(normal);if(Math.abs(z)<12)offsets.push(z);
+   const t0=THREE.MathUtils.clamp((-halfLength-x0)/(x1-x0||1),0,1),t1=THREE.MathUtils.clamp((halfLength-x0)/(x1-x0||1),0,1);
+   for(const t of [t0,t1]){const z=a.clone().lerp(b,t).dot(normal);if(Math.abs(z)<12)offsets.push(z);}
   }
   const sorted=offsets.sort((a,b)=>a-b).filter((z,i,a)=>!i||z-a[i-1]>.08),zero=sorted.reduce((best,z,i)=>Math.abs(z)<Math.abs(sorted[best])?i:best,0);
   let lo=zero,hi=zero;while(lo>0&&sorted[lo]-sorted[lo-1]<1.2)lo--;while(hi<sorted.length-1&&sorted[hi+1]-sorted[hi]<1.2)hi++;

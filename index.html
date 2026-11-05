@@ -2593,7 +2593,11 @@ function constrainMuseumCamera(){
  // Bound the eye as well as its pivot after all navigation has run. Explicit
  // aircraft shots retain their route; free navigation is bounded on release.
  if(document.body.classList.contains('following-arrival')||document.body.classList.contains('following-buran')||buranLanding?.isOverviewActive()||puaLoading?.isActive())return;
- constrainFreeCamera({camera,controls:ctl,bounds:museumCameraBounds,minHeight:CAMERA_MIN_Y,maxHeight:overviewAltitudeLimit*SCENE_SCALE});
+ // A selected railway station can lie south of the flank outline, in the city.
+ // Extend the bounded inspection area only while that station is selected.
+ const selected=Number.isInteger(currentObject)?cardObjects[currentObject]:null,stationPoint=selected?.isStation?selected.g.getWorldPosition(new THREE.Vector3()):null;
+ const activeBounds=stationPoint?{minX:Math.min(museumCameraBounds.minX,stationPoint.x-50),maxX:Math.max(museumCameraBounds.maxX,stationPoint.x+50),minZ:Math.min(museumCameraBounds.minZ,stationPoint.z-50),maxZ:Math.max(museumCameraBounds.maxZ,stationPoint.z+50)}:museumCameraBounds;
+ constrainFreeCamera({camera,controls:ctl,bounds:activeBounds,minHeight:CAMERA_MIN_Y,maxHeight:overviewAltitudeLimit*SCENE_SCALE});
  const minimum=Math.max(CAMERA_MIN_Y,museumTerrainHeightAt(camera.position.x,camera.position.z)+7*MUSEUM_METRE);
  if(camera.position.y<minimum){const lift=minimum-camera.position.y;camera.position.y+=lift;ctl.target.y+=lift;camera.lookAt(ctl.target);camera.updateMatrixWorld(true);}
 }
