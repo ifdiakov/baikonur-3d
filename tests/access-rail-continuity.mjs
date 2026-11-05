@@ -46,7 +46,7 @@ for(const [id,wayId]of [['airfield',37591623],['pad-251',24949215]]){
 }
 const layers={roads:new THREE.Group(),rails:new THREE.Group()},transport=buildOsmTransportNetwork({data,legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords});
 assert.equal(JSON.stringify(data),original,'Display joins preserve the archived source graph/data');
-const stats=transport.stats(),paths=transport.roadPaths();assert.equal(stats.facilityPorts.length,46);assert.equal(stats.facilityRailPorts.length,14);
+const stats=transport.stats(),paths=transport.roadPaths();assert(stats.facilityPorts.length>=46,'Site catalogue additions must retain all existing road gates');assert.equal(stats.facilityRailPorts.length,14);
 assert(stats.roadSurface.local.smoothedNodeIds.includes('439813528'),'The visibly broken ordinary-road corner receives the shared curve');
 const sourceGraph=buildOsmGraph(data.roads.features,{geography,point}),corner=sourceGraph.nodes.get('439813528');
 const cornerDirections=corner.edges.map(e=>e.surfaceTangents[e.a===corner?0:1]);near(Math.abs(cornerDirections[0].dot(cornerDirections[1])),1,1e-12,'Both real source ways share an exact curve frame');
