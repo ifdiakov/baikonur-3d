@@ -3,19 +3,36 @@ import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
 const fingerprint='road-lod-prebuilt-v1;geometry-v2;owner-road-edits-20261103';
-const packPath=path=>{
+const quantize=value=>Math.round(value*1000)/1000;
+function simplifyPoints(points,deviation){
+ if(!deviation||points.length<3)return points;
+ const sq=deviation*deviation,keep=new Set([0,points.length-1]),stack=[[0,points.length-1]];
+ while(stack.length){
+  const [first,last]=stack.pop(),a=points[first],b=points[last];
+  const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],den=dx*dx+dy*dy+dz*dz;
+  let best=-1,index=-1;
+  for(let i=first+1;i<last;i++){
+   const p=points[i],u=den?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy+(p[2]-a[2])*dz)/den)):0;
+   const x=p[0]-a[0]-u*dx,y=p[1]-a[1]-u*dy,z=p[2]-a[2]-u*dz;
+   const d=x*x+y*y+z*z;if(d>best){best=d;index=i;}
+  }
+  if(best>sq&&index>first&&index<last){keep.add(index);stack.push([first,index],[index,last]);}
+ }
+ return [...keep].sort((a,b)=>a-b).map(i=>points[i]);
+}
+const packPath=(path,deviation=0)=>{
  const props={};
  for(const key of ['id','label','width','source','vehicleScale','osmWayIds','nodeIds','bridgeDistance','routeIds','joinGap','rampStart','rampEnd','tags','marked','surface','highway','gauge','sections','joins','from','to']){
   if(path[key]!=null&&typeof path[key]!=='function')props[key]=path[key];
  }
- props.points=(path.points||[]).map(v=>v.isVector3?v.toArray():Array.isArray(v)?v:[v.x,v.y,v.z]);
+ props.points=simplifyPoints((path.points||[]).map(v=>(v.isVector3?v.toArray():Array.isArray(v)?v:[v.x,v.y,v.z]).map(quantize)),deviation);
  if(path.widthAt&&path.length>0){
   const n=Math.min(128,Math.max(4,Math.ceil(path.length/40)));
   props.widthSamples=Array.from({length:n+1},(_,i)=>path.widthAt(i/n*path.length));
  }
  return props;
 };
-const packMany=items=>(items||[]).map(packPath);
+const packMany=(items,deviation=0)=>(items||[]).map(p=>packPath(p,deviation));
 
 export function serializeTransport({transport,layers,mik112Rail}){
  const paths=transport.roadPaths(),plan=paths.osmVehiclePlan,train=transport.trainPath();
@@ -23,15 +40,15 @@ export function serializeTransport({transport,layers,mik112Rail}){
  const scene={
   version:TRANSPORT_BAKE_VERSION,fingerprint,
   cacheKind:'routes-only',
-  roads:packMany(paths),
-  vehicles:{routes:packMany(plan.routes),highway:plan.highway.id,source:plan.source,joins:plan.joins},
+  roads:packMany(paths,.02),
+  vehicles:{routes:packMany(plan.routes,.015),highway:plan.highway.id,source:plan.source,joins:plan.joins},
   extensions:packMany(paths.displayHighwayExtensions),
-  editable:packMany(transport.editableRoadPaths()),
-  terrain:{roads:packMany(transport.terrainPaths().roads),rails:packMany(transport.terrainPaths().rails)},
-  train:{...train,path:packPath(train.path)},
+  editable:packMany(transport.editableRoadPaths(),.06),
+  terrain:{roads:packMany(transport.terrainPaths().roads,.32),rails:packMany(transport.terrainPaths().rails,.16)},
+  train:{...train,path:packPath(train.path,.012)},
   stations:transport.stationLabels().map(s=>({id:s.id,name:s.name,osmUrl:s.osmUrl,record:s.record,
    position:s.group.position.toArray(),anchor:s.anchor.position.toArray()})),
-  rail:transport.routes,
+  rail:{road:(transport.routes.road||[]).map(r=>({id:r.id})),rail:(transport.routes.rail||[]).map(r=>({id:r.id}))},
   marking:{count:transport.roadMarkingPlan.quads.length,stats:transport.roadMarkingPlan.stats},
   highwayDisplay:transport.highwayDisplay.stats(),
   bridgeBounds:(()=>{
