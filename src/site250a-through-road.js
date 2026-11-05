@@ -1,7 +1,7 @@
 // Display-only bypass of the real OSM road beside Site 250A.
 // The underlying road/rail graphs and their source coordinates never change.
 export const SITE250A_THROUGH_WAY_ID='54568055';
-export const SITE250A_THROUGH_VERSION='osm-54568055-perimeter-bypass-v1';
+export const SITE250A_THROUGH_VERSION='osm-54568055-smooth-ukss-road-v2';
 export const SITE250A_THROUGH_PROFILE=Object.freeze({
  width:6.5,spurWidth:4.8,offset:13.5,
  halfX:160*.14,minZ:-138*.14,maxZ:160*.14
@@ -36,13 +36,11 @@ export function planSite250aThroughRoad({sourcePoints,siteCenter,siteYaw,cryoGat
  const shaped=original.map(p=>{
   const z=local(p)[1];
   const inBlend=smooth((42-z)/14),outBlend=smooth((z+55)/20);
-  const detour=13.5*inBlend*outBlend;
-  // Lower the north approach smoothly from the source network to the
-  // ground-level 250A perimeter BEFORE crossing its northern boundary.
-  const grade=smooth((startZ-z)/(startZ-30));
-  const late=smooth((-z-8)/125);
-  const y=interpolate(p,[p[0],cryoGate[1]+(ukssGate[1]-cryoGate[1])*late,p[2]],grade)[1];
-  return [p[0]+right[0]*detour,y,p[2]+right[2]*detour];
+  const detour=SITE250A_THROUGH_PROFILE.offset*inBlend*outBlend;
+  // Lateral shaping and grading are independent. A short local-Z height
+  // blend previously created a 12% ramp beside the cryogenic compound.
+  // Use true cumulative roadway distance for the smooth level transition.
+  return [p[0]+right[0]*detour,p[1],p[2]+right[2]*detour];
  });
  // The lateral shift briefly increases local arc length. Re-sample after
  // offsetting so the road's real geometric vertex spacing stays uniform.
@@ -70,6 +68,19 @@ export function planSite250aThroughRoad({sourcePoints,siteCenter,siteYaw,cryoGat
   if(d<distance){distance=d;nearest=i;}
  }
  if(nearest<0||distance<5||distance>23)throw Error('The bypass cannot connect to the 250A gate');
+ // A road passing beside the buildings must have a practical, continuous
+ // grade. Smooth between the original access datum, the 250A side-junction
+ // and the actual UKSS entry using travelled distance (not plan Z).
+ const stations=[0];
+ for(let i=1;i<main.length;i++)stations.push(stations.at(-1)+horizontal(main[i-1],main[i]));
+ const atGate=stations[nearest],total=stations.at(-1),startY=main[0][1];
+ if(atGate<50||total-atGate<10)throw Error('250A bypass is too short for a safe road grade');
+ for(let i=0;i<main.length;i++){
+  const at=stations[i];
+  main[i][1]=at<=atGate
+   ?startY+(cryoGate[1]-startY)*smooth(at/atGate)
+   :cryoGate[1]+(ukssGate[1]-cryoGate[1])*smooth((at-atGate)/(total-atGate));
+ }
  const junction=main[nearest],approach=unit(main[nearest-2],main[nearest+2]);
  const r=Math.min(3,distance*.32),p1=junction.map((v,i)=>v+approach[i]*r),p2=cryoGate.map((v,i)=>v+right[i]*r);
  const spur=[junction.slice()],steps=Math.max(10,Math.ceil(distance/.6));
@@ -88,5 +99,6 @@ export function planSite250aThroughRoad({sourcePoints,siteCenter,siteYaw,cryoGat
  if(minClearance<3)throw Error('The 250A bypass still clips the complex: '+minClearance);
  return {main,spur,report:{version:SITE250A_THROUGH_VERSION,sourceWayId:SITE250A_THROUGH_WAY_ID,
   sourceTopologyPreserved:true,mainLength:length,spurLength,mainSamples:main.length,spurSamples:spur.length,
-  minimumSiteClearance:minClearance,maxGrade,sourceStart:[...points[0]],junction:[...junction]}};
+  minimumSiteClearance:minClearance,maxGrade,sourceStart:[...points[0]],junction:[...junction],
+  slopeProfile:'arc-length-cubic-eased',endDatum:ukssGate[1]}};
 }

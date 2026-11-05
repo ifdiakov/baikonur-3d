@@ -66,12 +66,14 @@ for(let i=0;i<route.points.length;i++){
 assert(clearance>3,'The through carriageway cuts across the 250A compound perimeter');
 assert(nearestGate>5,'The main road must pass by 250A instead of turning through the gate');
 assert(maxStep<1.5,'Discontinuous road sampling leaves holes in the asphalt');
-assert(maxSlope<.22,'The 250A bypass contains a steep grade jump');
+assert(maxSlope<.085,'The 250A bypass must have a gentle road grade rather than a steep switchback');
 const ukss=geography.sites.find(s=>s.id==='pad-250'),ukssSpec=FACILITY_PORTS['pad-250'];
 const ukssGate=portWorld(ukssSpec,ukssSpec.road,ukss,point);
 assert(route.points.at(-1).distanceTo(ukssGate)<1e-7,
  'The new road does not join the real UKSS gate');
 assert.equal(through.profile,'osm-centreline-perimeter-bypass');
 assert(through.minimumSiteClearance>3);
+assert(through.maxGrade<.085,'The main and gate approach have an excessive slope');
+assert.equal(through.throughVersion,'osm-54568055-smooth-ukss-road-v2');
 assert.doesNotThrow(()=>JSON.stringify(built));
 console.log('SITE250A_GEOMETRY_PASS',JSON.stringify({drawCalls:built.meshCount,triangles,roadGap:road.roadGap,through,gate}));

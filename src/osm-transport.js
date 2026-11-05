@@ -7,7 +7,7 @@ import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261103-site250a-photo-v1';
-import {planSite250aThroughRoad,SITE250A_THROUGH_WAY_ID,SITE250A_THROUGH_PROFILE} from './site250a-through-road.js?v=20261105-ukss-bypass-v1';
+import {planSite250aThroughRoad,SITE250A_THROUGH_WAY_ID,SITE250A_THROUGH_PROFILE} from './site250a-through-road.js?v=20261105-smooth-ukss-road-v2';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainHeight,saturnTerrainSample} from './saturn-access.js?v=20261101-saturn-terrain-v5';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
@@ -967,9 +967,9 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const {cryoGate,ukssGate,sourceWay,plan,cryoSpec}=cryoThrough,wayId=String(sourceWay.osmId);
   const throughRuns=[],gateRuns=[];
   drawRoad(plan.main.map(p=>V(...p)),SITE250A_THROUGH_PROFILE.width,
-   {highway:'unclassified',lanes:'2'},true,true,wayId,throughRuns);
+   {highway:'unclassified',lanes:'2'},true,true,wayId,throughRuns,[],{directionAt:(_p,geometricTangent)=>geometricTangent});
   drawRoad(plan.spur.map(p=>V(...p)),SITE250A_THROUGH_PROFILE.spurWidth,
-   {highway:'service'},false,true,null,gateRuns);
+   {highway:'service'},false,true,null,gateRuns,[],{directionAt:(_p,geometricTangent)=>geometricTangent});
   roadPaths.push({id:'museum-yubileiny-250a-ukss',label:'Юбилейный · мимо 250А · УКСС',
    points:throughRuns.flat(),width:SITE250A_THROUGH_PROFILE.width,source:'owner-directed-museum-road',
    tags:{highway:'unclassified',lanes:'2'},marked:true,osmWayIds:[wayId]});
