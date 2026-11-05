@@ -598,13 +598,10 @@ const roadLodDataReady=startup.fetchJSON('./data/osm/road-lod-prebuilt-v1.json',
 // Opt-in until the compressed source snapshot has passed real browser tests.
 // The normal museum remains unchanged when the asset is unavailable.
 const transportQuery=new URLSearchParams(location.search);
-const transportDeepLink=['view','site','station','detail'].some(key=>transportQuery.has(key));
-// Default homepage uses the compact, precomputed OSM route cache. Deep links
-// retain the exact original road and rail mesh from the first scene frame,
-// so launch reconstructions and QA screenshots cannot lose their details.
-// ?legacyRoads=1 is a safe, instant rollback for any map-level discrepancy.
-const useBakedTransport=!transportQuery.has('bakeTransport')&&!transportQuery.has('legacyRoads')&&
- (transportQuery.get('fastRoads')==='1'||[...transportQuery.keys()].every(key=>key==='tour'));
+// Preserve the exact joined road, shoulder, marking and bridge geometry on
+// public visits. Precompiled overview topology is available for profiling
+// with ?fastRoads=1 until the ownership-cutout overlay is fully equivalent.
+const useBakedTransport=transportQuery.get('fastRoads')==='1'&&!transportQuery.has('bakeTransport')&&!transportQuery.has('legacyRoads');
 const transportBakeReady=useBakedTransport?import('./src/transport-bake.js?v=20261105-source-checked-v3')
  .then(module=>module.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz',{timeoutMs:7000}))
  .catch(error=>{console.warn('Optional transport cache not available:',error);return null;}):Promise.resolve(null);
