@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // Five independent, repeatable soil families packed into three GPU atlases:
 // albedo, tangent-space normals and roughness. They are generated once, after
 // the first interactive map, not downloaded for every terrain parcel.
-export const DETAILED_SOIL_VERSION='five-material-atlas-v1';
+export const DETAILED_SOIL_VERSION='five-material-atlas-v2-edge-gutters';
 export const SOIL_MATERIALS=Object.freeze([
  Object.freeze({id:'clay',name:'Степной суглинок',rgb:[155,132,103],roughness:.89,grain:1.1}),
  Object.freeze({id:'sand',name:'Песок',rgb:[197,173,131],roughness:.96,grain:.62}),
@@ -12,6 +12,7 @@ export const SOIL_MATERIALS=Object.freeze([
  Object.freeze({id:'scrub',name:'Сухая степная почва',rgb:[126,117,88],roughness:.94,grain:1.65})
 ]);
 export const SOIL_ATLAS_COLUMNS=4,SOIL_ATLAS_ROWS=2;
+export const SOIL_ATLAS_GUTTER_RATIO=1/16;
 const clamp=n=>Math.min(1,Math.max(0,n));
 const wrap=(v,n)=>(v%n+n)%n;
 function hash(x,y,seed){
@@ -39,6 +40,8 @@ function createTexture(bytes,width,height,kind,maxAnisotropy){
 const nextFrame=()=>new Promise(resolve=>setTimeout(resolve,0));
 export async function createDetailedSoilAtlases({renderer,tileSize=512}={}){
  if(!Number.isInteger(tileSize)||tileSize<64||tileSize>512)throw new RangeError('Invalid detailed soil atlas resolution');
+ const gutter=Math.round(tileSize*SOIL_ATLAS_GUTTER_RATIO),contentSize=tileSize-2*gutter;
+ if(contentSize<32)throw new RangeError('Soil atlas has insufficient usable texels');
  const width=SOIL_ATLAS_COLUMNS*tileSize,height=SOIL_ATLAS_ROWS*tileSize,pixels=width*height*4;
  const albedo=new Uint8Array(pixels),normals=new Uint8Array(pixels),roughness=new Uint8Array(pixels);
  // Each family has a unique periodic, multi-frequency PBR surface. Compute
@@ -47,7 +50,10 @@ export async function createDetailedSoilAtlases({renderer,tileSize=512}={}){
   const spec=SOIL_MATERIALS[material],field=new Float32Array(tileSize*tileSize);
   for(let y=0;y<tileSize;y++){
    for(let x=0;x<tileSize;x++){
-    const u=x/tileSize,v=y/tileSize;
+    // Periodic content repeats in a real gutter, not in the neighbouring
+    // material tile. At mip levels the renderer never sees another family's
+    // colours while sampling a wrap edge.
+    const u=wrap(x-gutter,contentSize)/contentSize,v=wrap(y-gutter,contentSize)/contentSize;
     field[y*tileSize+x]=.38*periodicSoilNoise(u,v,4,21+material*11)+
      .28*periodicSoilNoise(u,v,13,31+material*11)+
      .23*periodicSoilNoise(u,v,41,53+material*13)+
@@ -61,7 +67,7 @@ export async function createDetailedSoilAtlases({renderer,tileSize=512}={}){
     const i=y*tileSize+x,h=field[i];
     const left=field[y*tileSize+wrap(x-1,tileSize)],right=field[y*tileSize+wrap(x+1,tileSize)];
     const up=field[wrap(y-1,tileSize)*tileSize+x],down=field[wrap(y+1,tileSize)*tileSize+x];
-    const random=hash(x,y,101+material*17)-.5;
+    const random=hash(wrap(x-gutter,contentSize),wrap(y-gutter,contentSize),101+material*17)-.5;
     const pebble=material===2?Math.max(0,(h+random*.15-.54))*1.5:0;
     const saltCrack=material===3?Math.abs(h-.50)*.22:0;
     const grain=(h-.5)*spec.grain;
@@ -87,6 +93,7 @@ export async function createDetailedSoilAtlases({renderer,tileSize=512}={}){
  return {albedo:createTexture(albedo,width,height,'цвет',anisotropy),
   normal:createTexture(normals,width,height,'нормали',anisotropy),
   roughness:createTexture(roughness,width,height,'шероховатость',anisotropy),
-  tileSize,width,height,materialCount:SOIL_MATERIALS.length,
+  tileSize,width,height,gutterPixels:gutter,contentSize,gutterRatio:SOIL_ATLAS_GUTTER_RATIO,
+  materialCount:SOIL_MATERIALS.length,
   gpuBytes:pixels*3,materials:SOIL_MATERIALS.map(m=>m.id)};
 }
