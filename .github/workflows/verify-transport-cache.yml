@@ -6,6 +6,8 @@ on:
       - 'data/osm/transport-geometry-bake-v1.json.gz'
       - 'src/transport-bake.js'
       - 'src/road-lod.js'
+      - 'data/osm/road-lod-authoritative-v1.json.gz'
+      - 'tests/road-lod-authoritative.mjs'
       - 'tests/transport-cache-browser.mjs'
       - '.github/workflows/verify-transport-cache.yml'
   workflow_dispatch:
@@ -28,6 +30,7 @@ jobs:
         run: |
           node tests/transport-bake.mjs
           node tests/road-prebuilt-lod.mjs
+          node tests/road-lod-authoritative.mjs
       - name: Check real cached initialization
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 &
