@@ -41,7 +41,8 @@ assert.equal(cut.classId,'asphalt');assert.equal(cut.marking,null);assert.equal(
 assert(nearestSourceRoad([15,2.8,0],source,{maxDistance:4})===null,'High overpass must not use ground-road style/height');
 assert.equal(ROAD_EDIT_WHITE_EDGE_INSET,.22);
 const owner=JSON.parse(readFileSync(new URL('../data/road-edits-authoritative-20261103.json',import.meta.url),'utf8'));
-assert.equal(owner.added.length,19);assert.equal(owner.hidden.length,302);
+assert.equal(owner.added.length,18);assert.equal(owner.hidden.length,286);
+assert(!owner.added.some(r=>r.id==='road-7'),'250A duplicate road must stay removed');
 assert(owner.added.some(r=>r.id==='road-31'&&r.points.at(-1)[1]>20));
 console.log('ROAD_EDITOR_STYLE_PASS',JSON.stringify({version:ROAD_EDIT_STYLE_VERSION,source:p.sourceId,
  primaryWidth:p.widthStart,secondaryWidth:ramp.widthEnd,paint:p.marking,roads:owner.added.length}));
