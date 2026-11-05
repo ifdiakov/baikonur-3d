@@ -2,10 +2,10 @@ name: Lightweight railway stations
 on:
   pull_request:
     branches: [main]
-    paths: ['src/rail-stations.js', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', '.github/workflows/verify-rail-stations.yml']
+    paths: ['src/rail-stations.js', 'src/rail-road-clearance.js', 'src/osm-transport.js', 'index.html', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', 'tests/rail-road-clearance.mjs', '.github/workflows/verify-rail-stations.yml']
   push:
     branches: [main]
-    paths: ['src/rail-stations.js', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', '.github/workflows/verify-rail-stations.yml']
+    paths: ['src/rail-stations.js', 'src/rail-road-clearance.js', 'src/osm-transport.js', 'index.html', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', 'tests/rail-road-clearance.mjs', '.github/workflows/verify-rail-stations.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,7 +26,9 @@ jobs:
           npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Validate asset, track placement, shared model and recovery
-        run: node tests/rail-station-source.mjs
+        run: |
+          node tests/rail-road-clearance.mjs
+          node tests/rail-station-source.mjs
       - name: Serve checkout
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
       - name: Inspect stations in full museum and on mobile
