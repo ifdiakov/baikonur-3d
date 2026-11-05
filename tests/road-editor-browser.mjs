@@ -21,13 +21,15 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.roadEditor,null,{timeout:300000});
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats());
  assert(initial.sourceRoadPaths>100);
- assert.equal(initial.added,19,'19 owner roads including road-31 must be published');assert.equal(initial.hidden,302,'302 owner cuts must be published');
+ assert.equal(initial.added,18,'18 approved roads must remain without 250A road-7');assert.equal(initial.hidden,286,'286 valid cuts after 250A obsolete roads are cleaned');
  assert.equal(initial.styleVersion,'neighbour-road-parity-v1');
  assert.equal(initial.sourceMaterialColors.asphalt,'#adb2b3','New asphalt must match OSM grey');
  assert.equal(initial.sourceMaterialColors.shoulder,'#c5c1b4','New shoulders must match old shoulders');
  assert.equal(initial.sourceMaterialColors.ground,'#b2a58d','Ground access must match OSM dirt');
  assert.equal(initial.sourceMaterialColors.highway,'#42494c','Highways must use the same asphalt material');
- assert.equal(initial.roadStyles.length,19);
+ assert.equal(initial.roadStyles.length,18);
+ assert.equal(initial.baselineRevision,'rockettrip-roads-v4-20261105-site250a-asphalt-cleanup');
+ assert(!initial.roadStyles.some(r=>r.id==='road-7'),'Duplicate 250A asphalt is rendered');
  assert(initial.mesh.markedRoads>=1,'New marked access roads have no white/yellow lines');
  const northern=initial.roadStyles.find(r=>r.id==='road-31');
  assert(northern&&northern.sourceStart,'Elevated road must inherit actual original entry from OSM');
@@ -76,6 +78,9 @@ try{
  assert.equal(await page.locator('#roadEditorToggle,#roadEditorPanel,#roadEditorImport').count(),0,
   'No road editor controls or panel remain in the document');
  const original=await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.snapshot());
+ assert(!original.added.some(r=>r.id==='road-7'),'The rendered scheme still has 250A road-7');
+ assert(!original.hidden.some(h=>['museum-yubileiny-250a-ukss','osm-access-pad-250a','osm-road-54568055','osm-road-54568055-1'].includes(h.sourceId)),
+ 'Stale road cutouts remain at 250A');
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.setActive(true)),false,
   'Read-only road renderer must reject activation even through the QA reference');
  await page.mouse.click(850,680);await page.mouse.click(970,690);await frame();

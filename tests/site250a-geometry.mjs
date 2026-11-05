@@ -34,6 +34,10 @@ assert.equal(road.profile,'single-continuous-through-road','250A duplicate entra
 assert(!transport.roadPaths().some(r=>r.id==='osm-access-pad-250a'),'Duplicate 250A external road remains');
 const cryoCleanup=stats.exhibitRoadSimplification.regions.find(r=>r.id==='pad-250a');
 assert(cryoCleanup&&cryoCleanup.hiddenEdgeCount>0,'250A OSM service-road web was not cleaned');
+const owner=read('data/road-edits-authoritative-20261103.json');
+assert(!owner.added.some(r=>r.id==='road-7'),'Obsolete 250A asphalt strip is still published');
+assert(!owner.hidden.some(h=>['museum-yubileiny-250a-ukss','osm-access-pad-250a','osm-road-54568055','osm-road-54568055-1'].includes(h.sourceId)),
+ 'Old 250A surface cutouts must not split the preserved through access');
 const gate=portWorld(access,access.road,site,point).toArray();
 const route=transport.roadPaths().find(r=>r.id==='museum-yubileiny-250a-ukss');
 const gateV=V(...gate);let gap=Infinity;for(let i=1;i<route.points.length;i++){const a=route.points[i-1].clone().setY(0),b=route.points[i].clone().setY(0);gap=Math.min(gap,new THREE.Line3(a,b).closestPointToPoint(gateV.clone().setY(0),true,V()).distanceTo(gateV.clone().setY(0)));}

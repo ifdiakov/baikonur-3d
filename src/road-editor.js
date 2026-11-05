@@ -378,7 +378,12 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  try{
   baselineData=defaultEdits?{...validateRoadEdits(defaultEdits),revision:defaultEdits.revision||null}:null;
   const saved=localStorage.getItem(ROAD_EDITOR_STORAGE);
-  if(saved){
+  // The public museum is read-only. Its canonical GitHub scheme takes
+  // precedence over stale browser localStorage left by the old road editor.
+  // In particular, never resurrect road-7 or old Site 250A surface cuts.
+  // In the editable workshop, retain existing local roads as before.
+  if(readOnly&&baselineData){Object.assign(state,validateRoadEdits(baselineData));}
+  else if(saved){
    const snapshot=JSON.parse(saved),local=validateRoadEdits(snapshot);
    Object.assign(state,local);
    // A newer authoritative owner scheme must be visible even to visitors
