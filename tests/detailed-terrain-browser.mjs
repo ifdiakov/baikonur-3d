@@ -24,6 +24,22 @@ try{
  assert.equal(report.terrain.atlasGpuBytes,2048*1024*4*3);
  assert(report.shaderValid,'Entire 3D museum must compile without shader failures');
  assert(report.ready);
+ // A loaded-but-hidden local mesh does not compile its PBR fragment shader.
+ // Actually fly to Site 1 and render the material with the fading soil mask.
+ await page.evaluate(()=>{window.__BAIKONUR_QA.focusSite('pad-1');});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA.gameTerrain.stats().active===true,
+  null,{timeout:120000});
+ await page.waitForTimeout(500);
+ const close=await page.evaluate(()=>{
+  const qa=window.__BAIKONUR_QA;
+  return {terrain:qa.gameTerrain.stats(),valid:qa.stats().shadersValid,
+   rendered:qa.stats().render.drawCalls};
+ });
+ assert(close.terrain.blend>.3,'Near Site 1 the local soil overlay must be visible');
+ assert(close.valid,'Close-up soil shader failed WebGL compilation');
+ assert(close.rendered>0,'Close-up soil did not reach the GPU');
  assert.deepEqual(errors,[]);assert.deepEqual(shaders,[]);
- console.log('DETAILED_TERRAIN_BROWSER_PASS '+JSON.stringify(report));
+ console.log('DETAILED_TERRAIN_BROWSER_PASS '+JSON.stringify({...report,close:{
+  active:close.terrain.active,blend:close.terrain.blend,shaderValid:close.valid,
+  drawCalls:close.rendered}}));
 }catch(e){console.error('DETAILED_TERRAIN_BROWSER_FAIL '+e.message+'; page errors: '+JSON.stringify(errors)+'; shader errors: '+JSON.stringify(shaders));throw e;}finally{await browser.close();}
