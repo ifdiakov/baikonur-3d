@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {createDetailedSoilAtlases,DETAILED_SOIL_VERSION} from './terrain-material-atlas.js?v=20261105-five-soil-v1';
-import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling.js?v=20261105-dual-domain-v1';
+import {createDetailedSoilAtlases,DETAILED_SOIL_VERSION} from './terrain-material-atlas.js?v=20261105-gutters-v2';
+import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling.js?v=20261105-seamless-v2';
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
