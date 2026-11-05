@@ -11,6 +11,11 @@ try{
  const baked=JSON.parse(json);
  if(baked.version!=='transport-geometry-bake-v1'||baked.stats.roadFeatureCount<2000)
   throw Error('Invalid exact geometry cache');
+ const fields=Object.entries(baked).map(([key,value])=>{
+  const raw=Buffer.from(JSON.stringify(value));
+  return {key,rawBytes:raw.length,gzipBytes:gzipSync(raw,{level:6}).length};
+ }).sort((a,b)=>b.gzipBytes-a.gzipBytes);
+ console.log('TRANSPORT_BAKE_BREAKDOWN',JSON.stringify(fields));
  const compressed=gzipSync(Buffer.from(json),{level:9});
  fs.mkdirSync('data/osm',{recursive:true});
  fs.writeFileSync('data/osm/transport-geometry-bake-v1.json.gz',compressed);
