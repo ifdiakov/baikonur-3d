@@ -588,23 +588,26 @@ mapAttribution.append(attribution,terrainAttribution,modelCreditsLink);document.
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261105-site250a-asphalt-cleanup-v1';
+const MUSEUM_REVISION='20261105-owner-filtered-road-lod-v1';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
 const nextLaunchDataReady=startup.defer(()=>startup.fetchJSON('./data/next-launch.json',{optional:true}),{key:'next-launch',priority:40});
 const roadSignDataReady=startup.fetchJSON('./data/road-signs.json?v=20261105-dirmentobe-east-v2');
-const roadLodDataReady=startup.fetchJSON('./data/osm/road-lod-prebuilt-v1.json',{optional:true,timeoutMs:7000});
-// Opt-in until the compressed source snapshot has passed real browser tests.
-// The normal museum remains unchanged when the asset is unavailable.
 const transportQuery=new URLSearchParams(location.search);
-// Preserve the exact joined road, shoulder, marking and bridge geometry on
-// public visits. Precompiled overview topology is available for profiling
-// with ?fastRoads=1 until the ownership-cutout overlay is fully equivalent.
 const useBakedTransport=transportQuery.get('fastRoads')==='1'&&!transportQuery.has('bakeTransport')&&!transportQuery.has('legacyRoads');
-const transportBakeReady=useBakedTransport?import('./src/transport-bake.js?v=20261105-source-checked-v3')
- .then(module=>module.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz',{timeoutMs:7000}))
- .catch(error=>{console.warn('Optional transport cache not available:',error);return null;}):Promise.resolve(null);
+// Legacy raw OSM preview is available only for developer comparison. It can
+// include owner-deleted roads, so never display it in the public fast mode.
+const roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'
+ ?startup.fetchJSON('./data/osm/road-lod-prebuilt-v1.json',{optional:true,timeoutMs:7000})
+ :Promise.resolve(null);
+// The fast path uses two precompiled assets: stable authored route topology
+// and far/medium meshes created ONLY from the filtered final road display.
+const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261105-source-checked-v3'):Promise.resolve(null);
+const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz',{timeoutMs:10000}):null)
+ .catch(error=>{console.warn('Optional transport cache not available:',error);return null;});
+const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz',{timeoutMs:10000}):null)
+ .catch(error=>{console.warn('Authoritative road LOD not available:',error);return null;});
 const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=roads-v4-18-286-site250a',{optional:true});
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
@@ -942,11 +945,12 @@ startup.stage('Прокладываем дороги и железнодорож
 await startup.paint();
 let transport=null,transportFromBake=false;
 const preparedBake=await transportBakeReady;
-const preparedLOD=useBakedTransport?await roadLodDataReady:null;
+const preparedLOD=useBakedTransport?await authoritativeLodReady:null;
 if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
  try{
   const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261105-source-checked-v3');
   const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
+  if(preparedLOD.sourceFingerprint!==sourceFingerprint)throw Error('Compiled road LOD is stale after map edits');
   transport=restoreBakedTransport({bake:preparedBake,layers,sourceFingerprint});transportFromBake=true;
   startup.mark('prebaked-transport-ready');
  }catch(error){console.warn('Cached transport rejected, rebuilding source geometry:',error);}
