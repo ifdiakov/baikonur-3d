@@ -979,7 +979,7 @@ if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{
 if(new URLSearchParams(location.search).has('bakeTransport')){
  const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261105-site113-grade-v1');
  const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
- window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail,sourceFingerprint});
+ window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail,sourceFingerprint,displayGradeVersion:displayRoadGrade.version});
 }
 // Precompiled low/medium-distance OSM road geometry. The full network remains
 // authoritative for ground clearance, vehicles, site ports and the road editor.

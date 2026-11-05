@@ -28,7 +28,7 @@ const anchor={x:(site.x-650)*3.4,z:(site.y-522.5)*3.4},grade=createSite113RoadGr
 const bake=JSON.parse(gunzipSync(await readFile(new URL('../data/osm/transport-geometry-bake-v1.json.gz',import.meta.url))));
 const overlaps=[];
 for(const road of bake.terrain.roads){
- const w=road.width/.28*grade.widthScale(road.id)+.3;
+ const w=road.width/.28*(grade.isBaked(bake)?1:grade.widthScale(road.id))+.3;
  for(let i=1;i<road.points.length;i++){
   const a=road.points[i-1],b=road.points[i];
   if(Math.min(a[0],b[0])>anchor.x+15||Math.max(a[0],b[0])<anchor.x-45||Math.min(a[2],b[2])>anchor.z+45||Math.max(a[2],b[2])<anchor.z-15)continue;
@@ -59,5 +59,15 @@ const checkpoint=createCheckpoint7RoadGrade({position:[-125,.72,913],roadAxis:[[
 const composed=grade.withCheckpoint(checkpoint);
 const restored=restoreBakedTransport({bake,layers:{roads:new THREE.Group(),rails:new THREE.Group()},roadGrade:composed});
 const route=restored.roadPaths().find(r=>r.osmWayIds?.includes('173082916'));assert(route);
-const near=route.points.filter(p=>Math.abs(p.z-913)<2);assert(near.length);for(const p of near)assert(Math.abs(p.y+2.73)<.001,'Cached checkpoint road stays on the flat ground');
+const near=[];for(let s=0;s<=route.length;s+=.5){const p=route.position(s);if(Math.abs(p.z-913)<2)near.push(p);}assert(near.length);for(const p of near)assert(Math.abs(p.y+2.73)<.001,'Cached checkpoint road stays on the flat ground');
 console.log('SITE113_CHECKPOINT_CACHE_PASS');
+
+// Auto-rebuilding the route cache must not narrow roads or grade ramps twice.
+assert(grade.isBaked({displayGradeVersion:grade.version}));
+assert(grade.isBaked({editable:[{id:'osm-road-172571792',width:.9}]}));
+assert(!grade.isBaked({editable:[{id:'osm-road-172571792',width:2}]}));
+const pregraded=structuredClone(bake);pregraded.displayGradeVersion=grade.version;
+const sample=pregraded.roads[0];sample.width=.9;sample.points[0][1]=-1.234;
+const again=restoreBakedTransport({bake:pregraded,layers:{roads:new THREE.Group(),rails:new THREE.Group()},roadGrade:composed});
+assert.equal(again.roadPaths()[0].width,.9);assert.equal(again.roadPaths()[0].points[0].y,-1.234);
+console.log('SITE113_CACHE_IDEMPOTENCE_PASS');
