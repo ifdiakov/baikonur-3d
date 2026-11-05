@@ -2,6 +2,7 @@ import {SITE254_ACCESS,SITE254_MASK} from './site254-layout.js?v=20261103-site25
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
+import {pruneUnassignedRailTermini} from './rail-terminal-cleanup.js?v=20261106-site-matched-rail-ends-v1';
 import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectangleSegmentInterval,clipRoadOutsideRectangle,airportPerimeterBypass} from './exhibit-road-filter.js?v=20261030-river-roads-signs-v1';
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {RAIL_PROFILE,GAGARIN_RAIL_PORT} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
@@ -547,8 +548,9 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const infrastructure=e=>e.tags.name||e.tags.ref||e.tags.destination||e.tags.bridge&&e.tags.bridge!=='no'||e.tags.tunnel&&e.tags.tunnel!=='no';
  roadPruning=pruneTerminalBranches(roadGraph,{maxLength:160,protectedEdges:roadProtected,protectedNode:n=>protectedNode(n)||EXHIBIT_ACCESS_NODE_IDS.includes(n.id)||krayniyClearance&&n.id===krayniyLayout.access.sourceNodeId,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&!MAIN.has(e.tags.highway?.replace('_link',''))&&!['driveway','parking_aisle'].includes(e.tags.service)});
- railPruning=pruneTerminalBranches(railGraph,{maxLength:55,protectedEdges:railProtected,protectedNode,
-  eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&e.tags.usage!=='main'&&!['yard','siding','crossover'].includes(e.tags.service)});
+ railPruning=pruneUnassignedRailTermini({graph:railGraph,maxLength:85,protectedEdges:railProtected,
+  siteRecords,railPoints:data.railPoints?.features??[],schemeStations:railScheme.stations,
+  geography,point,eligible:e=>inCosmodrome(e)&&!infrastructure(e)});
  // Simplify the displayed road webs only. Source-node graphs continue to
  // define vehicle routes; the later airport rail clearance is display-only.
  const excludedAirportEdges=new Set();

@@ -24,7 +24,11 @@ assert.equal(stats.cityRoadSimplification.sourceBoundary,'way/39209179');assert(
 assert(stats.renderedRoadWays>1000&&stats.renderedRoadWays<stats.roadRoutes);
 assert.equal(stats.branchSimplification.version,'terminal-branches-v2');
 assert.equal(stats.branchSimplification.road.maxLength,80);
-assert.equal(stats.branchSimplification.rail.maxLength,55);
+assert.equal(stats.branchSimplification.rail.maxLength,85);
+assert.equal(stats.branchSimplification.rail.matchingVersion,'site-matched-rail-ends-v1');
+assert(stats.branchSimplification.rail.removedTerminalEnds>0,'Unassigned terminal sidings remain');
+assert(stats.branchSimplification.rail.keptMatchedSiteEnds>15,'Rail-serving site termini disappeared');
+assert(stats.branchSimplification.rail.sourceGraphUnchanged);
 assert(stats.branchSimplification.road.removedSegments>1000);
 assert.equal(stats.railScheme.protectedRemovedEdges,0,'Reference station yards and approaches must survive branch simplification');
 assert.equal(stats.railScheme.connectionCount,20);assert.equal(stats.railScheme.stations.length,4);
