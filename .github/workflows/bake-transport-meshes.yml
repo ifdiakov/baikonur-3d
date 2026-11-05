@@ -12,7 +12,6 @@ on:
       - 'data/osm/catalog-matches.json'
       - 'data/road-edits-authoritative-20261103.json'
       - 'data/catalog.json'
-      - 'index.html'
       - 'scripts/build-transport-bake.mjs'
       - 'scripts/build-authoritative-road-lod.mjs'
       - '.github/workflows/bake-transport-meshes.yml'

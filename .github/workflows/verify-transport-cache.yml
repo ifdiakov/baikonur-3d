@@ -6,6 +6,7 @@ on:
       - 'data/osm/transport-geometry-bake-v1.json.gz'
       - 'src/transport-bake.js'
       - 'src/road-lod.js'
+      - 'index.html'
       - 'data/osm/road-lod-authoritative-v1.json.gz'
       - 'tests/road-lod-authoritative.mjs'
       - 'tests/transport-cache-browser.mjs'
