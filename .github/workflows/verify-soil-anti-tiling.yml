@@ -1,0 +1,40 @@
+name: Soil anti-tiling and texture continuity
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/soil-anti-tiling.js'
+      - 'src/global-steppe-detail.js'
+      - 'src/terrain-game-detail.js'
+      - 'src/steppe-surface.js'
+      - 'index.html'
+      - 'tests/soil-anti-tiling.mjs'
+      - '.github/workflows/verify-soil-anti-tiling.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: soil-anti-tiling-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  soil:
+    name: Non-repeating soil contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript and shader-source syntax
+        run: |
+          node --check src/soil-anti-tiling.js
+          node --check src/global-steppe-detail.js
+          node --check src/terrain-game-detail.js
+          node --check src/steppe-surface.js
+          node --check tests/soil-anti-tiling.mjs
+      - name: Atlas mapping, continuous world coordinates and clone regression
+        run: node tests/soil-anti-tiling.mjs
