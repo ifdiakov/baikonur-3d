@@ -61,7 +61,7 @@ export async function addSprinterDetail(scene){
  for(const side of [-1,1])decal('RocketTrip · надпись на борту '+side,wordmark,(u,v)=>V(side*2,1.09+v*.25,-1.77-side*(u-.5)*1.75),V(-side,0,0),28,8);
  // Low-profile roof A/C and rails visible in the owner's photographs.
  const pieces=new Map(),white=new THREE.MeshStandardMaterial({color:'#e2e5e4',roughness:.36,metalness:.06,envMap:environment,envMapIntensity:.5}),rubber=new THREE.MeshStandardMaterial({color:'#202a30',roughness:.74}),metal=new THREE.MeshStandardMaterial({color:'#9ba9ad',metalness:.8,roughness:.28,envMap:environment});
- function add(geometry,mat,position,rotation=null){const m=new THREE.Matrix4().compose(V(...position),rotation||new THREE.Quaternion(),V(1,1,1));geometry.applyMatrix4(m);if(!pieces.has(mat))pieces.set(mat,[]);pieces.get(mat).push(geometry);}
+ function add(geometry,mat,position,rotation=null){if(geometry.index){const indexed=geometry;geometry=indexed.toNonIndexed();indexed.dispose();}const m=new THREE.Matrix4().compose(V(...position),rotation||new THREE.Quaternion(),V(1,1,1));geometry.applyMatrix4(m);if(!pieces.has(mat))pieces.set(mat,[]);pieces.get(mat).push(geometry);}
  add(new RoundedBoxGeometry(1.08,.18,1.22,3,.075),rubber,[0,2.535,-.5]);
  add(new RoundedBoxGeometry(1.06,.22,1.2,4,.095),white,[0,2.63,-.5]);
  for(let i=0;i<11;i++)add(new THREE.BoxGeometry(.62,.012,.018),rubber,[0,2.739,-.86+i*.068]);

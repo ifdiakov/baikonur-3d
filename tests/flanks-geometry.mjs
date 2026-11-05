@@ -53,7 +53,16 @@ for(const point of [[63.315601,45.650665],[63.286,45.591]])
  assert.equal(tint.userData.localTerrainTint,true);
  assert.equal(tint.material.polygonOffset,true);
  assert.equal(d.state().localHillTintCount,1);
- d.setOpacity(1);assert.equal(tint.visible,true);d.setOpacity(0);assert.equal(tint.visible,false);
+ assert.equal(hill.visible,true,'The 106/109 hill exists in the detailed 3D scene');
+ d.setOpacity(1);
+ assert.equal(tint.visible,true);
+ assert.equal(hill.visible,false,'The raised 106/109 soil must not stick through the flat flank plan');
+ assert.equal(d.state().localHillHiddenOnFlankMap,1);
+ d.setOpacity(0);
+ assert.equal(tint.visible,false);
+ assert.equal(hill.visible,true,'Returning to 3D restores the original 106/109 hill');
+ assert.equal(d.state().localHillHiddenOnFlankMap,0);
+ assert.deepEqual(Array.from(geo.attributes.position.array),Array.from(original),'The map toggle never flattens the source hill geometry');
 }
 // The city cover is attached to Krayniy's actual model coordinates, not a
 // flat polygon under the airport. Runway stripe heights remain above it.

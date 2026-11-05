@@ -1,0 +1,46 @@
+name: Bake detailed road geometry offline
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'src/transport-bake.js'
+      - 'scripts/build-transport-bake.mjs'
+      - '.github/workflows/bake-transport-meshes.yml'
+permissions:
+  contents: write
+concurrency:
+  group: baikonur-transport-baker
+  cancel-in-progress: true
+jobs:
+  bake:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 24
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Export full road mesh from production renderer
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+          node scripts/build-transport-bake.mjs
+      - name: Commit compressed precompiled road network
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/osm/transport-geometry-bake-v1.json.gz
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "build: bake exact road and rail geometry"
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git rebase origin/main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          exit 1
