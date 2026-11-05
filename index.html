@@ -535,7 +535,7 @@ import {fitOverviewCamera} from './src/overview-camera.js?v=20261102-museum10-v1
 import {buildExtendedTerrain, sampleSteppe, LARGE_TERRAIN_SEGMENTS} from './src/terrain-extent.js?v=20261102-progressive-v1';
 import {buildMuseumTerrainRelief} from './src/museum-terrain.js?v=20261102-progressive-v1';
 import {buildSharedSiloHill} from './src/shared-silo-hill.js?v=20261103-shared-silo-hill-v1';
-import {createSteppeSurface} from './src/steppe-surface.js?v=20261105-anti-tiling-v14';
+import {createSteppeSurface} from './src/steppe-surface.js?v=20261105-seamless-v15';
 import {loadSatelliteReference,SATELLITE_REFERENCE} from './src/satellite-reference.js?v=20261102-progressive-v1';
 import {getMriyaInstallation} from './src/mriya-exhibit.js?v=buran-paint-20261102-v1';
 import {buildHighwaySigns} from './src/road-signs.js?v=20261105-dirmentobe-east-sign-v2';
@@ -1747,7 +1747,7 @@ scene.userData.terrainStyle.surface=steppeSurface.stats();
 let gameTerrain=null,gameTerrainStatus='queued',gameTerrainError=null;
 const gameTerrainReady=startup.defer(async()=>{
  gameTerrainStatus='loading';
- const {createGameTerrainPilot}=await import('./src/terrain-game-detail.js?v=20261105-anti-tiling-v7');
+ const {createGameTerrainPilot}=await import('./src/terrain-game-detail.js?v=20261105-seamless-v8');
  gameTerrain=await createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,osmRails,transport,
   point,terrainRelief,steppeSurface,sceneScale:SCENE_SCALE});
  gameTerrainStatus='ready';
