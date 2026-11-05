@@ -1,0 +1,46 @@
+name: Site 95 housing district
+on:
+  pull_request:
+    branches: [main]
+    paths: ['src/site95*.js', 'src/archive-buildings.js', 'src/archive-models.js', 'src/archive-manifest.js', 'index.html', 'tests/site95-*.mjs', '.github/workflows/verify-site95.yml']
+  push:
+    branches: [main]
+    paths: ['src/site95*.js', 'src/archive-buildings.js', 'src/archive-models.js', 'src/archive-manifest.js', 'index.html', 'tests/site95-*.mjs', '.github/workflows/verify-site95.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: site95-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Validate source geometry and performance budget
+        run: node tests/site95-source.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Inspect town views in museum and on mobile
+        run: node tests/site95-browser.mjs
+      - name: Verify live deployment and repeat browser check
+        if: github.event_name != 'pull_request'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+        run: |
+          node scripts/verify-site95-published.mjs
+          node tests/site95-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site95-evidence
+          path: qa-site95/

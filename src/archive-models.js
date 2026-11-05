@@ -6,8 +6,8 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261105-site113-town-v1';
-import * as buildings from './archive-buildings.js?v=20261103-checkpoint7-flat-v2';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261106-site95-town-v1';
+import * as buildings from './archive-buildings.js?v=20261106-site95-town-v1';
 import * as launches from './archive-launches.js?v=20261102-site2-photo-v3';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
 import {buildSite31Exhibit,site31Controller,SITE31_VIEWS} from './site31-exhibit.js?v=20261103-soyuz-pits-v1';
@@ -68,6 +68,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   if(o.record.id==='pad-41')return inspectSite41('all',camera,controls);
   if(o.archive.kind==='silo'){siloController(o.g).inspect('all',camera,controls);return true;}
   if(o.record.id==='pad-250a')return inspectSite250a('all',camera,controls);
+  if(o.record.id==='pad-95')return inspectSite95('all',camera,controls);
   if(o.record.id==='pad-113')return inspectSite113('all',camera,controls);
   if(o.record.id==='pad-254')return inspectSite254('all',camera,controls);
   if(o.record.id==='pad-2')return inspectSite2('all',camera,controls);
@@ -124,6 +125,13 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   eye.sub(target).multiplyScalar(Math.max(1,.85/camera.aspect)).add(target);
   controls.target.copy(root.localToWorld(target));camera.position.copy(root.localToWorld(eye));controls.update();return true;
  }
+ function inspectSite95(view,camera,controls){
+  const root=objects.find(o=>o.record.id==='pad-95')?.g;if(!root?.userData.site95Model)return false;
+  const v=root.userData.site95Model.views[view]||root.userData.site95Model.views.all;
+  const target=new THREE.Vector3(...v.target),eye=new THREE.Vector3(...v.eye);
+  eye.sub(target).multiplyScalar(Math.max(1,.85/camera.aspect)).add(target);
+  root.updateWorldMatrix(true,false);controls.target.copy(root.localToWorld(target));camera.position.copy(root.localToWorld(eye));controls.update();return true;
+ }
  function inspectSite113(view,camera,controls){
   const root=objects.find(o=>o.record.id==='pad-113')?.g;if(!root?.userData.site113Model)return false;
   const v=root.userData.site113Model.views[view]||root.userData.site113Model.views.all;
@@ -157,5 +165,5 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   return true;
  }
  const site2=()=>objects.find(o=>o.record.id==='pad-2')?.g;
- return {inspectSite113,site113Stats:()=>objects.find(o=>o.record.id==='pad-113')?.g.userData.site113Model,inspectCheckpoint7,checkpoint7Stats:()=>objects.find(o=>o.record.id==='kpp-7')?.g.userData.checkpoint7Model,inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
+ return {inspectSite95,site95Stats:()=>objects.find(o=>o.record.id==='pad-95')?.g.userData.site95Model,inspectSite113,site113Stats:()=>objects.find(o=>o.record.id==='pad-113')?.g.userData.site113Model,inspectCheckpoint7,checkpoint7Stats:()=>objects.find(o=>o.record.id==='kpp-7')?.g.userData.checkpoint7Model,inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
 }
