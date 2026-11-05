@@ -2,7 +2,7 @@ import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling
 
 // GPU-only, georeferenced material blending shared by every soil mesh.
 // This module contains no external images; the atlas is built after first paint.
-export const GLOBAL_SOIL_DETAIL_VERSION='world-builder-five-material-global-v2-anti-tiling';
+export const GLOBAL_SOIL_DETAIL_VERSION='world-builder-five-material-global-v3-continuous-blend';
 const installed=new WeakSet();
 const COMMON=[
  SOIL_ANTI_TILING_GLSL,
@@ -10,26 +10,16 @@ const COMMON=[
  'uniform float globalSoilStrength;',
  'void globalSoilPair(vec3 w,out float a,out float b,out float fraction){',
  ' vec2 p=w.xz;',
- ' vec2 warp=vec2(soilDetailNoise(p/107.0+vec2(4.1,-2.2)),',
- '                soilDetailNoise(p/91.0+vec2(-9.7,7.4)))-.5;',
- ' vec2 uneven=p+warp*36.0;',
- ' float sand=soilDetailNoise(uneven/73.0+vec2(12.1,-2.3));',
- ' float gravel=soilDetailNoise(uneven/49.0+vec2(-7.2,8.3));',
- ' float salt=soilDetailNoise(uneven/109.0+vec2(3.8,19.7));',
- ' float scrub=soilDetailNoise(uneven/57.0+vec2(-13.4,4.1));',
+ ' vec2 broadWarp=vec2(soilDetailNoise(p/173.0+vec2(8.2,-1.7)),',
+ '                     soilDetailNoise(p/157.0+vec2(-4.6,7.1)))-.5;',
+ ' vec2 bent=p+broadWarp*58.0;',
+ ' float broad=soilDetailNoise(bent/211.0+vec2(2.3,9.1))-.5;',
+ ' float breakup=soilDetailNoise(bent/81.0+vec2(-9.6,3.4))-.5;',
+ ' float grit=soilDetailNoise(bent/27.0+vec2(5.8,-4.3))-.5;',
  ' float gradient=clamp(length(vec2(dFdx(w.y),dFdy(w.y)))/max(length(dFdx(w.xz))+length(dFdy(w.xz)),.0001)*2.3,0.0,1.0);',
- ' float weights[5];',
- ' weights[0]=.35+.17*(1.0-sand)+.06*(1.0-gradient);',
- ' weights[1]=.21+.40*sand-.13*gradient;',
- ' weights[2]=.10+.29*gravel+.30*gradient;',
- ' weights[3]=.10+.33*smoothstep(.48,.83,salt)*(1.0-.68*gradient);',
- ' weights[4]=.10+.27*scrub*(1.0-.5*gradient);',
- ' float best=-10.0,runner=-10.0;a=0.0;b=1.0;',
- ' for(int i=0;i<5;i++){',
- '  if(weights[i]>best){runner=best;b=a;best=weights[i];a=float(i);}',
- '  else if(weights[i]>runner){runner=weights[i];b=float(i);}',
- ' }',
- ' fraction=clamp(runner/max(best+runner,.0001),0.0,.5);',
+ ' float family=clamp(2.0+7.2*(broad*.53+breakup*.31+grit*.16),0.0,4.0);',
+ ' family=mix(family,2.0,gradient*.42);',
+ ' soilDetailNeighbours(family,a,b,fraction);',
  '}'
 ].join('\n');
 const SHADE_COLOR=[
@@ -43,7 +33,9 @@ const SHADE_COLOR=[
  ' vec3 familyB=mix(texture2D(globalSoilAlbedo,soilDetailAtlasUV(globalSoilB,globalCoordsA)).rgb,',
  '  texture2D(globalSoilAlbedo,soilDetailAtlasUV(globalSoilB,globalCoordsB)).rgb,globalDomainMix);',
  ' vec3 globalTone=mix(familyA,familyB,globalSoilMix);',
- ' diffuseColor.rgb=mix(diffuseColor.rgb,globalTone,globalSoilStrength*.35);',
+ ' vec3 globalVariation=soilDetailMacro(vSteppeWorld);',
+ ' diffuseColor.rgb*=mix(vec3(1.0),globalVariation,globalSoilStrength*.96);',
+ ' diffuseColor.rgb=mix(diffuseColor.rgb,globalTone,globalSoilStrength*.34);',
  '}'
 ].join('\n');
 const SHADE_NORMAL=[
