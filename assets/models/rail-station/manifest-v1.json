@@ -1,0 +1,58 @@
+{
+  "version": "rail-station-lite-v1",
+  "sourceDriveId": "1n3FXzb_cVsOT4NaceLr1ilxv89HnYd9T",
+  "sourceFile": "train-station-with-canopy.glb",
+  "sourceBytes": 21785724,
+  "sourceSha256": "44a50d50633d6c6abcec3ba2ca65b4467e9a4a81e28bb82c67b09a87bf67e94f",
+  "sourceTriangles": 20624,
+  "author": "Innerscene Corp",
+  "license": "CC0 1.0",
+  "copyright": "Authored by Innerscene Corp (innerscene.com). Public domain: dedicated under CC0 1.0 Universal, https://creativecommons.org/publicdomain/zero/1.0/. Free to use, modify and redistribute for any purpose, with no credit required.",
+  "removed": [
+    "Ballast",
+    "Benches",
+    "Canopy lights",
+    "Lighting",
+    "Platform railings",
+    "Stair railings",
+    "Station bands",
+    "Station building",
+    "Station canopy",
+    "Station doors",
+    "Station glass",
+    "Station roof",
+    "Station windows",
+    "Ticket hall frames",
+    "Ticket hall glass",
+    "Totems",
+    "Track rails",
+    "Track sleepers"
+  ],
+  "kept": [
+    "Canopy roofs",
+    "Canopy structure",
+    "Footbridge",
+    "Footbridge glass",
+    "Footbridge stairs",
+    "Platform edges",
+    "Platforms"
+  ],
+  "adaptation": {
+    "texturesRemoved": true,
+    "vertexColours": true,
+    "stationBuildingRemoved": true,
+    "sourceTracksRemoved": true,
+    "axis": "+X",
+    "unit": "metre",
+    "length": 110,
+    "sourceInnerPlatformEdge": 5,
+    "sourceOuterPlatformEdge": 9.95
+  },
+  "asset": {
+    "bytes": 13824,
+    "sha256": "249421dde476439662afcf19451828d35209eca7b97ac796939fb6a0ee1fb691",
+    "triangles": 1256,
+    "primitives": 1,
+    "textures": 0
+  }
+}
