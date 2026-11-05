@@ -29,5 +29,7 @@ jobs:
       - name: Test station scheme and complete rail geometry
         run: |
           node tests/rail-scheme.mjs
-          node tests/osm-transport-geometry.mjs
+          node tests/rail-surface.mjs
+          node tests/mik112-rail-layout.mjs
+          node tests/site110-rail-fan.mjs
           node tests/access-rail-continuity.mjs
