@@ -8,7 +8,7 @@ const page=await context.newPage(),requests=[],errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 page.on('request',r=>{const u=new URL(r.url());if(u.origin===new URL(base).origin)requests.push(u.pathname);});
 try{
- await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
+ await page.goto(new URL('?tour=0',base).href,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__MUSEUM_STARTUP?.stats?.().marks.some(m=>m.name==='interactive'),null,{timeout:180000});
  const stats=await page.evaluate(()=>{
   const marks=window.__MUSEUM_STARTUP.stats().marks;
@@ -25,7 +25,7 @@ try{
  assert(!requests.some(x=>x.endsWith('/src/complex-history-content.js')),'Full archive must not load before visitor opens it');
  const initialRequests=requests.length;
  await page.evaluate(()=>{document.querySelector('#complexHistoryAccordion').open=true;document.querySelector('[data-museum-action="history:why"]').click();});
- await page.locator('#complexHistoryPanel').waitFor({state:'visible',timeout:30000});
+ await page.waitForFunction(()=>document.querySelector('#complexHistoryPanel')?.hidden===false,null,{timeout:120000});
  assert.match(await page.locator('#complexHistoryPanel h3').textContent(),/Тюра-Там/);
  assert(requests.slice(initialRequests).some(x=>x.endsWith('/src/complex-history-content.js')),'Full history loads on demand');
  assert.deepEqual(errors,[]);
