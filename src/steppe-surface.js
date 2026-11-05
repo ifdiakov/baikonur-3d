@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import {installGlobalSoilDetail,GLOBAL_SOIL_DETAIL_VERSION} from './global-steppe-detail.js?v=20261105-v1';
+import {installGlobalSoilDetail,GLOBAL_SOIL_DETAIL_VERSION} from './global-steppe-detail.js?v=20261105-anti-tiling-v2';
 import {STEPPE_VERSION,sampleSteppeFields} from './steppe-field.js?v=20261101-steppe-v7';
 
 export const STEPPE_BIOME_EXTENT=18000;
 export const STEPPE_BIOME_RESOLUTION=1024;
 // The generated field and the material program have separate revisions: an
 // image treatment must not silently claim that the fallback soil field changed.
-export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v13-five-family-global';
+export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v14-anti-tiling';
 const installed=new WeakMap();
 
 function satelliteSurrounding(options){
@@ -484,13 +484,17 @@ export async function createSteppeSurface({renderer,satellite=null}={}){
   return primary&&satelliteExtension?{...primary,extension:satelliteExtension.sample(x,z,primary)}:primary;
  };
  return {apply(material,options){installSteppeSurface(material,textures,options);materials.add(material);
-   if(detailedAtlases)installGlobalSoilDetail(material,detailedAtlases,detailedStrength);
+   // The local terrain samples its own five-family PBR atlas. Avoid applying
+   // the global atlas a second time over the same surface.
+   if(detailedAtlases&&!material.userData.skipGlobalSoilDetail)
+    installGlobalSoilDetail(material,detailedAtlases,detailedStrength);
    return material;},
   enableDetailedMaterials(atlases){
    if(detailedAtlases)return false;
    if(!atlases?.albedo||!atlases?.normal||!atlases?.roughness)throw new Error('Detailed soil atlases not available');
    detailedAtlases=atlases;
-   for(const material of materials)installGlobalSoilDetail(material,atlases,detailedStrength);
+   for(const material of materials)if(!material.userData.skipGlobalSoilDetail)
+    installGlobalSoilDetail(material,atlases,detailedStrength);
    return true;
   },
   updateDetail(height){
