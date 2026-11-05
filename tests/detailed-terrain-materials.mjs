@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {SOIL_MATERIALS,periodicSoilNoise,SOIL_ATLAS_COLUMNS,SOIL_ATLAS_ROWS,createDetailedSoilAtlases} from '../src/terrain-material-atlas.js';
+import {SOIL_MATERIALS,periodicSoilNoise,SOIL_ATLAS_COLUMNS,SOIL_ATLAS_ROWS,SOIL_ATLAS_GUTTER_RATIO,createDetailedSoilAtlases} from '../src/terrain-material-atlas.js';
 import {GAME_TERRAIN_VERSION} from '../src/terrain-game-detail.js';
 const source=await readFile(new URL('../src/terrain-game-detail.js',import.meta.url),'utf8');
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
@@ -15,10 +15,25 @@ const atlas=await createDetailedSoilAtlases({tileSize:64});
 assert.equal(atlas.materialCount,5);
 assert.deepEqual([atlas.width,atlas.height],[256,128]);
 assert.equal(atlas.gpuBytes,256*128*4*3);
+assert.equal(SOIL_ATLAS_GUTTER_RATIO,1/16);
+assert.equal(atlas.gutterPixels,4);
+assert.equal(atlas.contentSize,56);
 for(const map of [atlas.albedo,atlas.normal,atlas.roughness]){
  assert.equal(map.image.width,256);assert.equal(map.image.height,128);
  assert.equal(map.image.data.length,256*128*4);
  assert(map.generateMipmaps);
+ // Check colour, normal and roughness at BOTH wrap edges of every family.
+ for(let family=0;family<SOIL_MATERIALS.length;family++){
+  const tile=atlas.tileSize,g=atlas.gutterPixels,ox=(family%SOIL_ATLAS_COLUMNS)*tile,
+   oy=Math.floor(family/SOIL_ATLAS_COLUMNS)*tile,data=map.image.data,width=atlas.width;
+  for(let offset=0;offset<tile;offset++)for(let channel=0;channel<4;channel++){
+   const index=(x,y)=>((oy+y)*width+ox+x)*4+channel;
+   assert.equal(data[index(g,offset)],data[index(tile-g,offset)],
+    'Atlas has a horizontal seam in '+map.name+' material '+family);
+   assert.equal(data[index(offset,g)],data[index(offset,tile-g)],
+    'Atlas has a vertical seam in '+map.name+' material '+family);
+  }
+ }
  map.dispose();
 }
 assert(GAME_TERRAIN_VERSION.includes('five-materials'));
