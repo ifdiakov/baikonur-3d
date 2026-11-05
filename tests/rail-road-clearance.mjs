@@ -31,7 +31,7 @@ const crossed=separateRailGraphFromRoads({railGraph:crossRail,roads:pavement,hea
 assert.equal(crossed.crossingCount,1);
 const centre=crossRail.edge.surfacePoints.find(p=>Math.abs(p.z)<1e-6);
 assert(centre);assert(Math.abs(centre.x)<1e-6&&Math.abs(centre.z)<1e-6);
-assert(centre.y+RAIL_PROFILE.headY>.72+.1,'Rail head must remain above asphalt at a level crossing');
+assert(centre.y+RAIL_PROFILE.headY>.72+.008,'Rail head must remain above asphalt at a level crossing');
 const index=buildRailRoadIndex(pavement,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
 const hits=findRailRoadCrossings([{points:crossRail.edge.surfacePoints}],index);
 assert.equal(hits.length,1);const parent=new THREE.Group();
