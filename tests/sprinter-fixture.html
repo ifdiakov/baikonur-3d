@@ -3,7 +3,7 @@
 <nav><button data-view="front">Спереди</button><button data-view="rear">Сзади</button><button data-view="hood">Капот</button><button data-view="side">Борт</button><button id="night">Ночь</button></nav><output id="result">Загрузка…</output>
 <script type="importmap">{"imports":{"three":"../src/vendor/three-r160/build/three.module.js","three/addons/":"../src/vendor/three-r160/examples/jsm/"}}</script>
 <script type="module">
-import * as T from 'three';import{createSprinterVehicle,loadSprinterSource}from'../src/sprinter-source.js?v=20261105-sprinter-detail-v2';
+import * as T from 'three';import{createSprinterVehicle,loadSprinterSource}from'../src/sprinter-source.js?v=20261105-sprinter-original-logo';
 const scene=new T.Scene();scene.background=new T.Color('#b7b2a8');const camera=new T.PerspectiveCamera(38,innerWidth/innerHeight,.1,100),renderer=new T.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=T.SRGBColorSpace;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1;document.body.append(renderer.domElement);
 const sky=new T.HemisphereLight('#d5e5f4','#8a7964',2.4),sun=new T.DirectionalLight('#fff0d4',2.4);sun.position.set(-5,8,7);scene.add(sky,sun);
 const plane=new T.Mesh(new T.PlaneGeometry(150,150),new T.MeshStandardMaterial({color:'#a5a39b',roughness:.95}));plane.rotation.x=-Math.PI/2;plane.position.y=-.012;scene.add(plane);

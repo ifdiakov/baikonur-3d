@@ -12,7 +12,7 @@ const {scene}=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsyn
 const bounds=new THREE.Box3().setFromObject(scene);assert.ok(Math.abs(bounds.min.y)<.001);assert.ok(Math.abs(bounds.getSize(new THREE.Vector3()).z-6.706)<.003);
 for(const w of manifest.wheels){const part=scene.getObjectByName(w.name);assert.ok(part);const box=new THREE.Box3().setFromObject(part);assert.ok(Math.abs(box.min.y)<.002,'Tyre rests on ground');assert.ok(Math.abs(box.max.y-.70078)<.003);}
 // Real body projection: labels follow bonnet/door surfaces rather than floating planes.
-const baked=JSON.parse(await readFile('assets/models/sprinter/decals-v2.json'));assert.equal(baked.sourceSha256,manifest.asset.sha256);assert.equal(baked.version,'sprinter-photo-detail-v2');
+const baked=JSON.parse(await readFile('assets/models/sprinter/decals-v3.json'));assert.equal(baked.sourceSha256,manifest.asset.sha256);assert.equal(baked.version,'sprinter-photo-detail-v3');
 const panels=[];scene.traverse(o=>{if(o.isMesh&&o.material.name==='carpaint')panels.push(o);});
 for(const spec of [
  {name:'hood',sample:(u,v)=>new THREE.Vector3((u-.5)*.66,4,3.12-v*.45),direction:new THREE.Vector3(0,-1,0)},

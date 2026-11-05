@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-export const SPRINTER_DETAIL_VERSION='sprinter-photo-detail-v2';
+export const SPRINTER_DETAIL_VERSION='sprinter-photo-detail-v3';
 const V=(...p)=>new THREE.Vector3(...p);
 let sharedTextures;
 function canvasTexture(w,h,draw){
@@ -10,13 +10,13 @@ function canvasTexture(w,h,draw){
 }
 async function textures(){
  if(!sharedTextures)sharedTextures=(async()=>{
-  const logo=await new THREE.TextureLoader().loadAsync(new URL('../assets/models/sprinter/hood-logo-v2.svg',import.meta.url).href);logo.colorSpace=THREE.SRGBColorSpace;logo.anisotropy=4;
+  const logo=await new THREE.TextureLoader().loadAsync(new URL('../assets/models/sprinter/hood-logo-original-v1.png',import.meta.url).href);logo.colorSpace=THREE.SRGBColorSpace;logo.anisotropy=4;
   const wordmark=canvasTexture(2048,320,(c,w,h)=>{c.fillStyle='#183b7a';c.font='italic 900 266px Arial, sans-serif';c.textAlign='center';c.textBaseline='middle';c.fillText('ROCKETTRIP',w/2,h*.52,w*.96);});
   const environment=canvasTexture(512,256,(c,w,h)=>{
    const g=c.createLinearGradient(0,0,0,h);for(const [p,col]of [[0,'#99b6cf'],[.36,'#cbdbe2'],[.49,'#f4f1e8'],[.53,'#aaa38f'],[1,'#555d65']])g.addColorStop(p,col);c.fillStyle=g;c.fillRect(0,0,w,h);
    const light=c.createLinearGradient(0,0,w,0);for(const [p,a]of [[0,0],[.15,0],[.24,.5],[.32,0],[.6,0],[.71,.35],[.79,0],[1,0]])light.addColorStop(p,`rgba(255,255,255,${a})`);c.fillStyle=light;c.fillRect(0,0,w,h);
   });environment.mapping=THREE.EquirectangularReflectionMapping;
-  const response=await fetch(new URL('../assets/models/sprinter/decals-v2.json',import.meta.url),{mode:'same-origin',credentials:'same-origin'});if(!response.ok)throw Error('Sprinter: отсутствует оформление кузова');
+  const response=await fetch(new URL('../assets/models/sprinter/decals-v3.json',import.meta.url),{mode:'same-origin',credentials:'same-origin'});if(!response.ok)throw Error('Sprinter: отсутствует оформление кузова');
   const baked=await response.json();if(baked.version!==SPRINTER_DETAIL_VERSION)throw Error('Sprinter: неверная версия оформления');
   return {logo,wordmark,environment,decals:baked.decals};
  })().catch(error=>{sharedTextures=null;throw error;});

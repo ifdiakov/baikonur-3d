@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
-import {addSprinterDetail,SPRINTER_DETAIL_VERSION} from './sprinter-detail.js?v=20261105-sprinter-detail-v2';
+import {addSprinterDetail,SPRINTER_DETAIL_VERSION} from './sprinter-detail.js?v=20261105-sprinter-original-logo';
 export const SPRINTER_VERSION='sprinter-drive-v1';
 export {SPRINTER_DETAIL_VERSION};
 let templatePromise=null;
