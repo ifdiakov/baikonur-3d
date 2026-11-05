@@ -73,6 +73,24 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
   .filter(e=>!e.abandoned&&!excludedEdges.has(e))
   .map(e=>({points:e.surfacePoints??[e.a.position,e.b.position]}));
  const crossings=findRailRoadCrossings(paths,index);
+ // Long OSM railway chords can cross a short road between their two endpoints.
+ // Insert knots ONLY in railway intervals near road corridors. The same knots
+ // feed rendering, the train route and the height/offset solver.
+ const movable=railGraph.edges.filter(e=>!e.abandoned&&!excludedEdges.has(e));
+ let addedSamples=0;
+ for(const edge of movable){
+  const source=edge.surfacePoints??[edge.a.position,edge.b.position],sampled=[source[0]];
+  for(let i=1;i<source.length;i++){
+   const a=source[i-1],b=source[i],length=near(a,b);
+   if(length>4&&index.querySegment(a,b).size){
+    const parts=Math.ceil(length/4);
+    for(let j=1;j<parts;j++)sampled.push(a.clone().lerp(b,j/parts));
+    addedSamples+=parts-1;
+   }
+   sampled.push(b);
+  }
+  edge.surfacePoints=sampled;
+ }
  const pinned=[...pinnedNodes];
  for(const edge of excludedEdges){pinned.push(edge.a.position,edge.b.position);}
  // Crossing neighbourhoods are indexed separately to avoid a global
@@ -119,7 +137,6 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
   cache.set(id,value);return value;
  };
  let displaced=0,maxShift=0,raised=0;
- const movable=railGraph.edges.filter(e=>!e.abandoned&&!excludedEdges.has(e));
  // Save all corrections before mutating shared nodes and display samples.
  const positions=new Set();
  for(const edge of movable){positions.add(edge.a.position);positions.add(edge.b.position);
@@ -137,7 +154,7 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
   edge.surfacePoints[0].copy(edge.a.position);edge.surfacePoints.at(-1).copy(edge.b.position);
  }
  return {version:RAIL_ROAD_CLEARANCE_VERSION,roadSegments:index.segments.length,crossingCount:crossings.length,
-  displacedPoints:displaced,raisedPoints:raised,maxLateralShift:maxShift,
+  displacedPoints:displaced,raisedPoints:raised,addedSamples,maxLateralShift:maxShift,
   requiredEdgeClearance:'road width',sourceWayIdsPreserved:true,crossings};
 }
 
@@ -166,7 +183,7 @@ export function buildRailCrossingSignals({crossings,parent}){
   for(let side of [-1,1]){
    const k=i*2+(side===1?1:0),along=Math.max(6,c.width*2.6),
     sideways=c.width/2+.95,x=c.x+c.tangentX*along*side+normalX*side*sideways,
-    z=c.z+c.tangentZ*along*side+normalZ*side*sideways,y=c.y+.15,yaw=Math.atan2(-c.tangentX*side,-c.tangentZ*side);
+    z=c.z+c.tangentZ*along*side+normalZ*side*sideways,y=c.y+.018,yaw=Math.atan2(-c.tangentX*side,-c.tangentZ*side);
    set(0,k,x,y+1.125,z,yaw);
    set(1,k,x,y+1.65,z,yaw);
    set(2,k,x,y+2.05,z,yaw,Math.PI/4);
