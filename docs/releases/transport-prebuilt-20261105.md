@@ -1,45 +1,34 @@
-# Cached transport load for the main museum entrance
+# Предварительная сборка дорожной сети — 5 ноября 2026
 
-## Architecture (November 5, 2026)
+## Продуктовый статус
 
-- OSM source data and all geometry-authoring algorithms remain untouched.
-- \`scripts/build-road-lod.mjs\` compiles the two deterministic overview
-  networks into \`data/osm/road-lod-prebuilt-v1.json\` (645,170 bytes).
-- \`scripts/build-transport-bake.mjs\` runs the *real* live renderer in Chromium
-  and extracts transportation routes, ground-protection corridors, object
-  metadata, station anchors and train/car paths. No 3D mesh arrays are carried
-  in the runtime metadata.
-- \`data/osm/transport-geometry-bake-v1.json.gz\` (463,071 bytes) replaces the
-  first version's oversized 61 MB 3D JSON. This lean cache is conditionally
-  restored by \`src/transport-bake.js\`.
-- The fast route-cache entrance runs in a tested **opt-in mode** (`?fastRoads=1`).
-  Normal visits still use full `buildOsmTransportNetwork` until the compiled
-  surface matches all exact owner road cutouts and material masks.
-- At close range, the exact source renderer can build the full geometric
-  roads, railheads, terminals and bridges. The cinematic introduction must not
-  be interrupted by this operation.
-- Normal visits and direct links retain the original full-detail startup.
-  The first auto-enabled version was reverted when the road-editor browser
-  test detected absent source asphalt and shoulder cutouts.
-- If the gzip asset is unavailable, outdated, cannot be decompressed, or its
-  metadata fails structural checks, startup automatically uses the original
-  full road renderer.
-- Emergency rollback for the experimental mode: \`?legacyRoads=1\`.
-- Debug fast path for direct inspection: \`?fastRoads=1\`.
+**По умолчанию включена быстрая загрузка.** До первого интерактивного кадра применяется компактный кеш реальных отображаемых маршрутов и заранее подготовленные far/medium LOD-слои автодорог и железнодорожных путей. Исходные OSM и исходный алгоритм точных дорог не удалены.
 
-## Verified baseline
+Данные на момент внедрения:
 
-CI cold-load measurements in Chromium, separate runs:
-- previous full transport startup ~48.8 s until first frame;
-- compact-cached route implementation measured ~27.3 s (earlier version)
-  and passed end-to-end browser verification after reducing cache size.
-This is not a controlled browser/network A/B test, so treat figures as
-preliminary until additional repeated CI measurements are available.
+- `data/osm/transport-geometry-bake-v1.json.gz` — около 463 КБ: маршруты движения, ЖД, станции, метаданные топологии, коридоры и сведения для сцен.
+- `data/osm/road-lod-authoritative-v1.json.gz` — около 93 КБ: far (253 дороги / 481 ЖД-путь) и medium (780 дорог / 481 ЖД-путь). Созданы из **конечного отображаемого набора после ручных исключений**, а не из сырых OSM-данных.
+- Используются `src/transport-bake.js`, `src/road-lod.js`, `src/road-editor.js` и `scripts/build-authoritative-road-lod.mjs`.
+- Исходный `data/osm/road-lod-prebuilt-v1.json` доступен исключительно для отладки `?previewRoadLOD=1`: он не отражает все авторские удаления.
+- Утверждённые 18 новых дорог и 286 удалённых участков обрабатываются `road-editor.js` также в быстром LOD; вырезы применяются физически к треугольникам.
+- При сближении с землёй создаётся **точная полная 3D-сеть по запросу**; новые исходные меши проходят ту же процедуру физических вырезов, что исключает возвращение удалённых участков.
+- Если gzip не доступен, браузер не поддерживает распаковку, неверен отпечаток исходных данных или контроль структуры, автоматически запускается прежний `buildOsmTransportNetwork`.
 
-## Source invalidation
+## Управление и архитектурные ограничения
 
-Rebuild the cached transportation metadata after edits to OSM files,
-authoritative owner road edits, display positions, site geometry placement
-or any source-road algorithm. Do not republish the generated cache under the
-old fingerprint if the source network has changed. The complete OSM GeoJSON
-remains the authoritative source for close detail.
+- Обычный вход на сайт — быстрый режим.
+- `?legacyRoads=1` или `?fastRoads=0` — прежний полный путь для сравнения и аварийного обхода.
+- `?bakeTransport=1` — служебный режим создания кеша в Chromium, не для посетителей.
+- Изменения OSM, 18 добавленных/286 удалённых дорог, расположения площадок требуют повторного bake и совпадающих `sourceFingerprint`.
+- `scripts/build-transport-bake.mjs` и `scripts/build-authoritative-road-lod.mjs` запускаются в `.github/workflows/bake-transport-meshes.yml`. Публикация двух gzip-файлов учитывает одновременные изменения GitHub, избегая binary rebase конфликтов.
+- Режим низкой высоты **пока требует вычислений в браузере и может на короткое время блокировать интерфейс**. Это открытый технический долг: компактные точные GPU-чанки ещё нужно подготовить отдельно.
+
+## Проверки скорости
+
+GitHub Actions, холодная загрузка Chromium в отдельных прогонах:
+- традиционная загрузка — около 49–59 с до первого кадра в предыдущих проверках;
+- восстановление быстрых маршрутов и LOD — около 24,8–25,3 с.
+
+Это не синхронное A/B на идентичной сети, поэтому приводится как диагностический ориентир, а не гарантированное ускорение на пользовательских устройствах. Код геометрии дорог и проверка авторских вырезов должны проходить browser QA при изменениях.
+
+Предыдущая попытка сериализовать всю готовую геометрию дала 51,5 МБ gzip (488 МБ текстовых буферов), что оказалось неприемлемо и было отклонено. **Полные меши не входят в быстрый кеш.**
