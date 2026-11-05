@@ -28,6 +28,7 @@ for(const r of bake.terrain.roads)for(let i=1;i<r.points.length;i++){
 }
 assert.deepEqual([...new Set(overlaps.map(JSON.stringify))],[],'All long road segments clear buildings and entrances');
 assert.equal(grade.heightAt(anchor.x,anchor.z,.72),-2.73);assert.equal(grade.heightAt(anchor.x+100,anchor.z,.72),.72);
+assert.equal(grade.heightAt(anchor.x+100,anchor.z,.91),.91,'No elevation changes outside this district');
 const samples=grade.conform([new THREE.Vector3(anchor.x-60,.72,anchor.z),new THREE.Vector3(anchor.x+60,.72,anchor.z)]);for(let i=1;i<samples.length;i++)assert(Math.abs(samples[i].y-samples[i-1].y)<.3);
 for(const p of samples)assert.equal(grade.heightAt(p.x,p.z,p.y),p.y,'Cached grade is idempotent');
 const checkpoint=createCheckpoint7RoadGrade({position:[-125,.72,913],roadAxis:[[-125,.72,1002],[-125,.72,824]],roadWidth:3.6,yaw:0,scale:.14});const prior=createSite113RoadGrade({x:0,z:0}).withCheckpoint(checkpoint),composed=grade.compose(prior);
