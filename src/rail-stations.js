@@ -105,7 +105,7 @@ export function stationGeometry(template,innerMetres){
  p.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
 }
 export function createRailStations({stations,paths,roads=[],parent,clickable,firstIndex,loadSource=loadRailStation}){
- const plans=planRailStations(stations,paths,roads),root=new THREE.Group();root.userData.excludeTransportBake=true;root.name='ЖД станции · перроны и навесы без зданий';parent.add(root);
+ let plans=planRailStations(stations,paths,roads),root=new THREE.Group();root.userData.excludeTransportBake=true;root.name='ЖД станции · перроны и навесы без зданий';parent.add(root);
  const fallbackGeometry=new THREE.BoxGeometry(110,1.38,4.95),fallbackMaterial=new THREE.MeshStandardMaterial({color:0xa9aa9c,roughness:1});
  const labels=stations.map((st,i)=>{
   const plan=plans[i],group=new THREE.Group(),anchor=new THREE.Object3D(),detail=new THREE.Group();group.name=st.name;group.position.fromArray(plan.position);group.rotation.y=plan.yaw||0;
@@ -113,15 +113,37 @@ export function createRailStations({stations,paths,roads=[],parent,clickable,fir
   if(!plan.skipped)for(const side of [-1,1]){const m=new THREE.Mesh(fallbackGeometry,fallbackMaterial);m.position.set(0,.69,side*(plan.innerMetres+2.475));m.userData.idx=firstIndex+i;detail.add(m);clickable.push(m);}
   return {...st,group,anchor,detail,plan};
  });
- const state={version:RAIL_STATION_VERSION,status:'idle',bytes:0,triangles:0,visible:0,error:null};let pending=null,lastCamera=null;
+ const state={version:RAIL_STATION_VERSION,status:'idle',bytes:0,triangles:0,visible:0,error:null};
+ let pending=null,lastCamera=null,loadedSource=null;
+ const geometryCache=new Map();
+ function fillStationDetail(s,i){
+  for(const mesh of s.detail.children){const index=clickable.indexOf(mesh);if(index>=0)clickable.splice(index,1);}
+  s.detail.clear();
+  if(s.plan.skipped)return;
+  if(loadedSource){
+   if(!geometryCache.has(s.plan.innerMetres))geometryCache.set(s.plan.innerMetres,stationGeometry(loadedSource.geometry,s.plan.innerMetres));
+   const mesh=new THREE.Mesh(geometryCache.get(s.plan.innerMetres),loadedSource.material);
+   mesh.name='Перроны · навесы · переход';mesh.userData.idx=firstIndex+i;mesh.userData.railStation=true;
+   s.detail.add(mesh);clickable.push(mesh);
+  }else for(const side of [-1,1]){
+   const mesh=new THREE.Mesh(fallbackGeometry,fallbackMaterial);
+   mesh.position.set(0,.69,side*(s.plan.innerMetres+2.475));mesh.userData.idx=firstIndex+i;
+   s.detail.add(mesh);clickable.push(mesh);
+  }
+ }
+
  const api={labels:()=>labels,plans:()=>plans,
+  replan(nextPaths,nextRoads=roads){
+   plans=planRailStations(stations,nextPaths,nextRoads);
+   labels.forEach((s,i)=>{s.plan=plans[i];s.group.position.fromArray(s.plan.position);s.group.rotation.y=s.plan.yaw||0;fillStationDetail(s,i);});
+   if(lastCamera)api.update(lastCamera);
+   return {count:labels.filter(s=>!s.plan.skipped).length,relocated:plans.filter(p=>p.shiftAlongRail).length,roadCollisionSkips:plans.filter(p=>p.skipped==='road-overlap').length};
+  },
   async load(){
    if(state.status==='ready')return true;if(pending)return pending;state.status='loading';state.error=null;
-   pending=(async()=>{try{const source=await loadSource(),cache=new Map();
-    labels.forEach((s,i)=>{if(s.plan.skipped)return;const obsolete=new Set(s.detail.children);for(let j=clickable.length-1;j>=0;j--)if(obsolete.has(clickable[j]))clickable.splice(j,1);s.detail.clear();
-     if(!cache.has(s.plan.innerMetres))cache.set(s.plan.innerMetres,stationGeometry(source.geometry,s.plan.innerMetres));
-     const m=new THREE.Mesh(cache.get(s.plan.innerMetres),source.material);m.name='Перроны · навесы · переход';m.userData.idx=firstIndex+i;m.userData.railStation=true;s.detail.add(m);clickable.push(m);
-    });state.status='ready';state.bytes=source.bytes;state.triangles=(source.geometry.index?.count||source.geometry.attributes.position.count)/3;if(lastCamera)api.update(lastCamera);return true;
+   pending=(async()=>{try{const source=await loadSource();loadedSource=source;
+    labels.forEach(fillStationDetail);
+    state.status='ready';state.bytes=source.bytes;state.triangles=(source.geometry.index?.count||source.geometry.attributes.position.count)/3;if(lastCamera)api.update(lastCamera);return true;
    }catch(error){state.status='error';state.error=String(error.message||error);return false;}finally{pending=null;}})();return pending;
   },
   update(camera){lastCamera=camera;state.visible=0;for(const s of labels){s.detail.visible=!s.plan.skipped&&camera.position.distanceToSquared(s.group.position)<240*240;if(s.detail.visible)state.visible++;}},
