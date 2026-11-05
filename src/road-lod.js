@@ -5,7 +5,7 @@ const phase='prebaked-overview';
 function stripGeometry(rows,geography,point,y){
  const xyz=[],indices=[];let skipped=0;
  for(const row of rows){
-  const path=row.points.map(ll=>{const xy=geography.project(...ll);return point(xy[0],xy[1],y);});
+  const path=row.points.map(ll=>{if(ll.length===3)return new THREE.Vector3(ll[0],ll[1]+.018,ll[2]);const xy=geography.project(...ll);return point(xy[0],xy[1],y);});
   if(path.length<2){skipped++;continue;}
   const base=xyz.length/3;
   for(let i=0;i<path.length;i++){

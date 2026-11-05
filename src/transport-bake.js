@@ -43,105 +43,12 @@ const packPath=(path,deviation=0)=>{
 };
 const packMany=(items,deviation=0)=>(items||[]).map(p=>packPath(p,deviation));
 
-
-// Store the exact final GPU buffers after intersection/clearance clipping. No
-// OSM triangulation or shoulder/marking intersections are repeated at boot.
-// Flatten to a single layer parent: matrixWorld retains every bridge/ramp and
-// rail placement, including instanced sleepers.
-function packMaterial(material){
- if(!material)return null;
- return {type:material.type,color:material.color?.getHex()??0xffffff,
-  emissive:material.emissive?.getHex()??0,roughness:material.roughness??1,
-  metalness:material.metalness??0,opacity:material.opacity??1,
-  transparent:material.transparent,side:material.side,depthWrite:material.depthWrite,
-  depthTest:material.depthTest,polygonOffset:material.polygonOffset,
-  polygonOffsetFactor:material.polygonOffsetFactor,polygonOffsetUnits:material.polygonOffsetUnits,
-  vertexColors:material.vertexColors,visible:material.visible,
-  name:material.name};
-}
-function packMesh(mesh){
- const geometry=mesh.geometry;
- if(!geometry?.attributes?.position)return null;
- const attributes={};
- for(const key of ['position','normal','uv','color','uv2']){
-  const attr=geometry.getAttribute(key);
-  if(attr)attributes[key]={itemSize:attr.itemSize,normalized:attr.normalized,values:Array.from(attr.array)};
- }
- return {name:mesh.name,kind:mesh.isInstancedMesh?'instanced':'mesh',count:mesh.isInstancedMesh?mesh.count:1,
-  matrix:mesh.matrixWorld.toArray(),renderOrder:mesh.renderOrder,visible:mesh.visible,
-  receiveShadow:mesh.receiveShadow,castShadow:mesh.castShadow,
-  userData:{groundSurface:mesh.userData.groundSurface===true,osmSource:mesh.userData.osmSource===true,
-   osmRailVolume:mesh.userData.osmRailVolume===true,pickable:false},
-  material:Array.isArray(mesh.material)?mesh.material.map(packMaterial):packMaterial(mesh.material),
-  geometry:{attributes,index:geometry.index?Array.from(geometry.index.array):null,
-   groups:geometry.groups.map(g=>({start:g.start,count:g.count,materialIndex:g.materialIndex})),
-   drawRange:{...geometry.drawRange}},
-  instanceMatrix:mesh.isInstancedMesh?Array.from(mesh.instanceMatrix.array):null,
-  instanceColor:mesh.isInstancedMesh&&mesh.instanceColor?Array.from(mesh.instanceColor.array):null};
-}
-function packMeshes(layer){
- layer.updateMatrixWorld(true);
- const meshes=[];
- layer.traverse(node=>{if(node.isMesh){const item=packMesh(node);if(item)meshes.push(item);}});
- return meshes;
-}
-function materialFromPack(record,name){
- if(!record)return new THREE.MeshStandardMaterial();
- const props={color:record.color,side:record.side,transparent:record.transparent,
-  opacity:record.opacity,depthWrite:record.depthWrite,depthTest:record.depthTest,
-  polygonOffset:record.polygonOffset,polygonOffsetFactor:record.polygonOffsetFactor,
-  polygonOffsetUnits:record.polygonOffsetUnits,vertexColors:record.vertexColors};
- let mat;
- if(record.type==='MeshBasicMaterial')mat=new THREE.MeshBasicMaterial(props);
- else if(record.type==='MeshLambertMaterial')mat=new THREE.MeshLambertMaterial({...props,emissive:record.emissive});
- else if(record.type==='MeshPhongMaterial')mat=new THREE.MeshPhongMaterial({...props,emissive:record.emissive});
- else mat=new THREE.MeshStandardMaterial({...props,emissive:record.emissive,
-  roughness:record.roughness,metalness:record.metalness});
- mat.name=record.name||name;mat.visible=record.visible!==false;
- return mat;
-}
-function unpackMesh(record){
- const g=new THREE.BufferGeometry();
- for(const [name,attr]of Object.entries(record.geometry.attributes)){
-  // Attribute values in the cache are the exact Float32 values captured by
-  // the renderer, rather than resampled points from the original GeoJSON.
-  const array=new Float32Array(attr.values);
-  g.setAttribute(name,new THREE.BufferAttribute(array,attr.itemSize,attr.normalized));
- }
- if(record.geometry.index)g.setIndex(record.geometry.index);
- for(const group of record.geometry.groups)g.addGroup(group.start,group.count,group.materialIndex);
- if(record.geometry.drawRange)g.setDrawRange(record.geometry.drawRange.start,record.geometry.drawRange.count);
- g.computeBoundingSphere();
- const materials=Array.isArray(record.material)?record.material.map(m=>materialFromPack(m,record.name)):materialFromPack(record.material,record.name);
- const m=record.kind==='instanced'?new THREE.InstancedMesh(g,materials,record.count):new THREE.Mesh(g,materials);
- if(record.kind==='instanced'){
-  m.instanceMatrix.array.set(record.instanceMatrix);m.instanceMatrix.needsUpdate=true;
-  if(record.instanceColor){m.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(record.instanceColor),3);}
-  m.computeBoundingSphere?.();
- }
- m.name=record.name;m.matrix.fromArray(record.matrix);m.matrixAutoUpdate=false;
- m.visible=record.visible!==false;m.renderOrder=record.renderOrder;
- m.castShadow=record.castShadow;m.receiveShadow=record.receiveShadow;
- m.userData={...record.userData,museumComponent:'prebaked-transport'};
- return m;
-}
-function restoreMeshes(rows,parent){
- let triangles=0;
- for(const row of rows){
-  const mesh=unpackMesh(row);parent.add(mesh);
-  const count=(mesh.geometry.index?.count||mesh.geometry.getAttribute('position').count)/3;
-  triangles+=count*(mesh.isInstancedMesh?mesh.count:1);
- }
- return {meshes:rows.length,triangles};
-}
-
 export function serializeTransport({transport,layers,mik112Rail,sourceFingerprint=null}){
  const paths=transport.roadPaths(),plan=paths.osmVehiclePlan,train=transport.trainPath();
  if(!plan?.routes?.length)throw Error('No transport graph to bake');
  const scene={
   version:TRANSPORT_BAKE_VERSION,fingerprint,sourceFingerprint,
-  cacheKind:'full-mesh-v1',
-  meshes:{roads:packMeshes(layers.roads),rails:packMeshes(layers.rails)},
+  cacheKind:'routes-only',
   roads:packMany(paths,.02),
   vehicles:{routes:packMany(plan.routes,.015),highway:plan.highway.id,source:plan.source,joins:plan.joins},
   extensions:packMany(paths.displayHighwayExtensions),
@@ -179,8 +86,7 @@ const unpack=rows=>rows.map(unpackPath);
 export function restoreBakedTransport({bake,layers,sourceFingerprint=null}){
  if(bake?.version!==TRANSPORT_BAKE_VERSION||bake?.fingerprint!==fingerprint)throw Error('Outdated transport bake');
  if(sourceFingerprint!==null&&bake.sourceFingerprint!==sourceFingerprint)throw Error('Source roads or display anchors changed since transport bake');
- if(bake.cacheKind!=='full-mesh-v1'||!bake.meshes?.roads?.length||!bake.meshes?.rails?.length)
-  throw Error('Incomplete compiled road or rail mesh: falling back to live renderer');
+ if(bake.cacheKind!=='routes-only')throw Error('Full mesh snapshots are disabled; require compact route metadata');
  const roadRoot=new THREE.Group(),railRoot=new THREE.Group();
  roadRoot.name='OpenStreetMap · автодороги';railRoot.name='OpenStreetMap · железнодорожные пути';
  const stations=bake.stations.map(s=>{
@@ -202,10 +108,7 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null}){
   mesh.name='Кэш · габариты виадука';mesh.position.copy(bbox.getCenter(new THREE.Vector3()));mesh.visible=false;
   roadRoot.add(mesh);return mesh;
  })():null;
- const meshStats={roads:restoreMeshes(bake.meshes.roads,roadRoot),rails:restoreMeshes(bake.meshes.rails,railRoot)};
- const stats={...bake.stats,baked:true,bakeVersion:TRANSPORT_BAKE_VERSION,
-  cacheKind:bake.cacheKind,meshStats,sourceBuildMilliseconds:bake.stats.buildMilliseconds,
-  buildMilliseconds:0};
+ const stats={...bake.stats,baked:true,bakeVersion:TRANSPORT_BAKE_VERSION,sourceBuildMilliseconds:bake.stats.buildMilliseconds,buildMilliseconds:0};
  // Attach only after every required structural object has been validated.
  layers.roads.add(roadRoot);layers.rails.add(railRoot);
  return {roadPaths:()=>paths,editableRoadPaths:()=>unpack(bake.editable),

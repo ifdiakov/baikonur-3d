@@ -962,17 +962,14 @@ if(new URLSearchParams(location.search).has('bakeTransport')){
 // authoritative for ground clearance, vehicles, site ports and the road editor.
 // Only its heavy display meshes are switched off while the overview LOD
 // occupies those exact world coordinates. Failure leaves full roads intact.
-let roadLOD=null,detailTransportReady=!transportFromBake||Boolean(transport.stats().meshStats?.roads?.meshes&&transport.stats().meshStats?.rails?.meshes),detailTransportLoading=false;
+let roadLOD=null,detailTransportReady=!transportFromBake,detailTransportLoading=false;
 let detailedTransportRoots=[
  layers.roads.getObjectByName('OpenStreetMap · автодороги'),
  layers.rails.getObjectByName('OpenStreetMap · железнодорожные пути')
 ];
 if(transportFromBake){
- // The compiled binary already contains the EXACT final road and railway
- // buffers, so don't substitute unchecked raw OSM over deleted owner roads.
- // Full detail is immediately ready at every altitude, without a delayed
- // 20-second blocking rebuild when the user zooms in.
- roadLOD={update:()=> 'prebaked-detailed',stats:()=>({mode:'prebaked-detailed',version:ROAD_LOD_VERSION,source:'exact-display-geometry'})};
+ roadLOD=createRoadLOD({data:preparedLOD,geography,point,scene});
+ roadLOD.update(Math.max(360,camera.position.y/SCENE_SCALE),detailedTransportRoots);
 }else if(transportQuery.get('previewRoadLOD')==='1'){
  // LOD source routes have not yet been intersected with all 286 owner
  // deletions. Keep public full-detail roads visible at every altitude until
