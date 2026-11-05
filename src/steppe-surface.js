@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {installGlobalSoilDetail,GLOBAL_SOIL_DETAIL_VERSION} from './global-steppe-detail.js?v=20261105-anti-tiling-v2';
+import {installGlobalSoilDetail,GLOBAL_SOIL_DETAIL_VERSION} from './global-steppe-detail.js?v=20261105-seamless-v3';
 import {STEPPE_VERSION,sampleSteppeFields} from './steppe-field.js?v=20261101-steppe-v7';
 
 export const STEPPE_BIOME_EXTENT=18000;
