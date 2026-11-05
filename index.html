@@ -932,6 +932,10 @@ startup.stage('Прокладываем дороги и железнодорож
 await startup.paint();
 const transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords,checkpoint7RoadGrade:checkpointRoadGrade});
 if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
+if(new URLSearchParams(location.search).has('bakeTransport')){
+ const {serializeTransport}=await import('./src/transport-bake.js?v=20261105-offline-v1');
+ window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail});
+}
 // Precompiled low/medium-distance OSM road geometry. The full network remains
 // authoritative for ground clearance, vehicles, site ports and the road editor.
 // Only its heavy display meshes are switched off while the overview LOD
