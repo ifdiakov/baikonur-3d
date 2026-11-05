@@ -28,4 +28,8 @@ assert(!html.includes('await Promise.all([\n loadUkssExhibit(ukssGroup)'));
 assert(html.includes('adaptTuaRails(mik112Exhibit);'));
 assert(ukss.includes("redirect:'error',cache:'default'"));
 assert(tua.includes("redirect:'error',cache:'default'"));
+assert(html.includes("createRoadLOD({data,geography,point,scene})"));
+assert(html.includes("roadLOD?.update(camera.position.y/SCENE_SCALE,detailedTransportRoots)"));
+assert(html.includes("key:'road-prebuilt-lod'"));
+assert(html.includes("roadLodDataReady=startup.fetchJSON("));
 console.log('MUSEUM_LOADING_OPTIMIZATION_PASS',JSON.stringify({galleryDeferred:gallery.length,historyInitiallyDeferred:true,soilInitiallyDeferred:true,versionedGlbCaching:true}));
