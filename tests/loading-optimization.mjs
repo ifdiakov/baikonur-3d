@@ -28,7 +28,7 @@ assert(!html.includes('await Promise.all([\n loadUkssExhibit(ukssGroup)'));
 assert(html.includes('adaptTuaRails(mik112Exhibit);'));
 assert(ukss.includes("redirect:'error',cache:'default'"));
 assert(tua.includes("redirect:'error',cache:'default'"));
-assert(html.includes("createRoadLOD({data,geography,point,scene})"));
+assert.match(html,/createRoadLOD\(\{data,geography,point,scene(?:,[^}]*)?\}\)/);
 assert(html.includes("roadLOD?.update("));
 assert(html.includes("key:'road-prebuilt-lod'"));
 assert(html.includes("roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'"));
