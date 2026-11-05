@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export const ROAD_SIGN_VERSION='two-readable-faces-four-aimed-floodlights-v1';
+export const ROAD_SIGN_VERSION='geographic-highway-snap-dirmentobe-v2';
 export const ROAD_SIGN_DIMENSIONS=Object.freeze({width:76,height:38,centerY:39,depth:1.1,faceZ:.64});
 
 // Each face has its own correctly oriented lettering. Reusing a double-sided
@@ -75,17 +75,29 @@ export function buildHighwaySigns({data,point,parent,roads=[],textureFactory=cre
  function createSign(spec){
   const group=new THREE.Group();group.name='Указатель '+spec.direction.toUpperCase();
   group.position.copy(point(spec.x,spec.y));
-  let nearest=Infinity,tangent=new THREE.Vector3(1,0,0);
+  const requested=group.position.clone();
+  let nearest=Infinity,closest=null,tangent=new THREE.Vector3(1,0,0);
   const routes=roads.filter(r=>r.id===(spec.direction==='west'?'r-south-west':'r-south-east'));
   for(const road of routes)for(let i=1;i<road.points.length;i++){
-   const a=road.points[i-1],b=road.points[i],line=new THREE.Line3(a,b),p=line.closestPointToPoint(group.position,true,new THREE.Vector3()),d=p.distanceToSquared(group.position);
-   if(d<nearest){nearest=d;tangent.copy(b).sub(a).setY(0).normalize();}
+   const a=road.points[i-1],b=road.points[i],dx=b.x-a.x,dz=b.z-a.z,len=dx*dx+dz*dz;
+   if(len<1e-10)continue;
+   // Choose by map X/Z rather than a fictitious 0-m altitude at the village.
+   const t=THREE.MathUtils.clamp(((requested.x-a.x)*dx+(requested.z-a.z)*dz)/len,0,1);
+   const p=a.clone().lerp(b,t),d=(p.x-requested.x)**2+(p.z-requested.z)**2;
+   if(d<nearest){nearest=d;closest=p;tangent.copy(b).sub(a).setY(0).normalize();}
   }
+  // The eastern panel is explicitly located by the settlement reference;
+  // anchor its supports to the *rendered* OSM road at the nearest cross-section.
+  // The western sign keeps its previously approved position unchanged.
+  if(spec.snapToHighway===true&&closest)group.position.copy(closest);
   // Both panels use an eastward local X axis, independent of source-way order.
   if(tangent.x<0)tangent.negate();
   group.rotation.y=-Math.atan2(tangent.z,tangent.x);
   group.userData={id:spec.id,direction:spec.direction,source:'data/road-signs.json',roadTangent:tangent.toArray(),
-   approximateFromCity:true,destinations:spec.destinations.map(d=>({name:d.city,km:d.distanceKm})),faces:[],floodlights:[]};
+   approximateFromCity:true,snappedToHighway:spec.snapToHighway===true&&Boolean(closest),
+   requestedPosition:requested.toArray(),roadCenterDistance:Number.isFinite(nearest)?Math.sqrt(nearest):null,
+   locationReference:spec.locationReference??null,
+   destinations:spec.destinations.map(d=>({name:d.city,km:d.distanceKm})),faces:[],floodlights:[]};
   const backplate=new THREE.Mesh(new THREE.BoxGeometry(width+1.8,height+1.2,depth),blue);
   backplate.name='Двусторонний корпус указателя';backplate.position.y=centerY;group.add(backplate);
   for(const side of [-1,1]){
@@ -131,6 +143,8 @@ export function buildHighwaySigns({data,point,parent,roads=[],textureFactory=cre
  return {signs,setEvening,stats:()=>({version:ROAD_SIGN_VERSION,signCount:signs.length,faceCount:signs.length*2,
   floodlightCount:lenses.length,floodlightsPerFace:2,evening:!!night.value,lighting:'two-directional-fixtures-per-readable-face',
   locations:signs.map(s=>({id:s.userData.id,direction:s.userData.direction,x:s.position.x,z:s.position.z,yaw:s.rotation.y,
-   roadTangent:s.userData.roadTangent,faces:s.userData.faces,floodlights:s.userData.floodlights})),
+   roadTangent:s.userData.roadTangent,faces:s.userData.faces,floodlights:s.userData.floodlights,
+   snappedToHighway:s.userData.snappedToHighway,roadCenterDistance:s.userData.roadCenterDistance,
+   locationReference:s.userData.locationReference})),
   cities:signs.flatMap(s=>s.userData.destinations),distancesFrom:'Baikonur city',approximate:true})};
 }

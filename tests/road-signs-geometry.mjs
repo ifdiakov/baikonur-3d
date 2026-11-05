@@ -8,7 +8,8 @@ const point=(x,z)=>new THREE.Vector3((x-650)*3.4,0,(z-522.5)*3.4);
 const parent=new THREE.Group(),textures=[];
 // Opposite source-way directions must not invert the geographical arrows.
 const roads=['west','east'].map(direction=>{
- const s=data[direction],points=[point(s.x-80,s.y-18),point(s.x,s.y),point(s.x+80,s.y+18)];
+ const s=data[direction],shift=direction==='east'?7:0;
+ const points=[point(s.x-80,s.y-18+shift),point(s.x,s.y+shift),point(s.x+80,s.y+18+shift)];
  return {id:'r-south-'+direction,points:direction==='west'?points.reverse():points};
 });
 const signs=buildHighwaySigns({data,point,parent,roads,textureFactory:(spec,arrowSign)=>{
@@ -17,6 +18,21 @@ const signs=buildHighwaySigns({data,point,parent,roads,textureFactory:(spec,arro
 parent.updateMatrixWorld(true);
 assert.equal(textures.length,4);assert.equal(new Set(textures).size,4,'Each face needs an independent readable texture');
 const report=signs.stats();assert.equal(report.version,ROAD_SIGN_VERSION);
+assert(Math.abs(data.east.x-989.0271)<1e-6&&Math.abs(data.east.y-710.8131)<1e-6,
+ 'Eastern sign is not anchored near the real Dirmentobe locality');
+const east=signs.signs.find(s=>s.userData.direction==='east');
+const west=signs.signs.find(s=>s.userData.direction==='west');
+assert.equal(east.userData.snappedToHighway,true,'The eastern sign must snap onto the road mesh');
+assert.equal(west.userData.snappedToHighway,false,'The western sign must stay where the owner placed it');
+assert(west.position.distanceTo(point(data.west.x,data.west.y))<1e-8);
+assert(east.position.distanceTo(point(data.east.x,data.east.y))>15,
+ 'The nearest road must replace the original locality point, not just orient the panel');
+const eastRoad=roads.find(r=>r.id==='r-south-east');
+const gap=Math.min(...eastRoad.points.slice(1).map((b,i)=>{
+ const a=eastRoad.points[i],d=b.clone().sub(a),t=THREE.MathUtils.clamp(east.position.clone().sub(a).dot(d)/(d.lengthSq()||1),0,1);
+ return east.position.distanceTo(a.clone().addScaledVector(d,t));
+}));
+assert(gap<.0001,'The right sign has not actually been placed on the road centreline');
 assert.equal(report.signCount,2);assert.equal(report.faceCount,4);assert.equal(report.floodlightCount,8);
 assert.equal(report.floodlightsPerFace,2);
 assert.deepEqual(report.cities.map(c=>c.name),['АКТОБЕ','САМАРА','КЫЗЫЛОРДА','АЛМАТЫ']);
