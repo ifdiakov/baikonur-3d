@@ -2,7 +2,7 @@
   "version": 2,
   "coordinateSystem": "1300×1045 source diagram coordinates",
   "signMeaning": "Rounded estimated car-route lengths from Baikonur city center to destination city centers; not exact distances from placed signposts.",
-  "placementStatus": "Roadside markers moved closer to central junction along the schematic southern highway; illustrative sites, not actual kilometer posts.",
+  "placementStatus": "Eastern sign is snapped to the rendered highway nearest Dirmentobe; western sign retains its original placement.",
   "west": {
     "id": "highway-west",
     "x": 180,
@@ -30,8 +30,8 @@
   },
   "east": {
     "id": "highway-east",
-    "x": 1105,
-    "y": 716,
+    "x": 989.0271,
+    "y": 710.8131,
     "direction": "east",
     "destinations": [
       {
@@ -50,6 +50,14 @@
           "https://www.avtodispetcher.ru/distance/?from=%D0%91%D0%B0%D0%B9%D0%BA%D0%BE%D0%BD%D1%83%D1%80&to=%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B"
         ]
       }
-    ]
+    ],
+    "snapToHighway": true,
+    "locationReference": {
+      "place": "Диірментөбе / Дирментобе",
+      "longitude": 63.63491,
+      "latitude": 45.73992,
+      "source": "https://www.openstreetmap.org/node/3778466164",
+      "kind": "settlement-near-highway"
+    }
   }
 }

@@ -16,7 +16,9 @@ async function textures(){
    const g=c.createLinearGradient(0,0,0,h);for(const [p,col]of [[0,'#99b6cf'],[.36,'#cbdbe2'],[.49,'#f4f1e8'],[.53,'#aaa38f'],[1,'#555d65']])g.addColorStop(p,col);c.fillStyle=g;c.fillRect(0,0,w,h);
    const light=c.createLinearGradient(0,0,w,0);for(const [p,a]of [[0,0],[.15,0],[.24,.5],[.32,0],[.6,0],[.71,.35],[.79,0],[1,0]])light.addColorStop(p,`rgba(255,255,255,${a})`);c.fillStyle=light;c.fillRect(0,0,w,h);
   });environment.mapping=THREE.EquirectangularReflectionMapping;
-  return {logo,wordmark,environment};
+  const response=await fetch(new URL('../assets/models/sprinter/decals-v2.json',import.meta.url),{mode:'same-origin',credentials:'same-origin'});if(!response.ok)throw Error('Sprinter: отсутствует оформление кузова');
+  const baked=await response.json();if(baked.version!==SPRINTER_DETAIL_VERSION)throw Error('Sprinter: неверная версия оформления');
+  return {logo,wordmark,environment,decals:baked.decals};
  })().catch(error=>{sharedTextures=null;throw error;});
  return sharedTextures;
 }
@@ -37,28 +39,29 @@ export function projectSprinterDecal(panels,{sample,direction,columns=24,rows=16
 }
 export async function addSprinterDetail(scene){
  if(typeof document==='undefined')return {version:SPRINTER_DETAIL_VERSION,decals:0};
- const {logo,wordmark,environment}=await textures();scene.updateMatrixWorld(true);
- const panels=[],lenses=[];
- scene.traverse(o=>{if(!o.isMesh)return;const m=o.material;if(m.name==='carpaint')panels.push(o);
+ const {logo,wordmark,environment,decals}=await textures();scene.updateMatrixWorld(true);
+ const lenses=[];
+ scene.traverse(o=>{if(!o.isMesh)return;const m=o.material;
   if(['carpaint','chrome','material','windowglass','mirror','clearglass','redglass','orangeglass'].includes(m.name)){m.envMap=environment;m.envMapIntensity=.65;}
   if(m.name==='carpaint'){m.color.set('#e4e7e6');m.roughness=.31;m.clearcoat=.65;m.clearcoatRoughness=.18;}
   if(m.name==='chrome'||m.name==='material'){m.metalness=.8;m.roughness=.23;}
   if(m.name==='mirror'){m.metalness=.9;m.roughness=.08;}
-  if(m.name==='windowglass'){m.color.set('#253c46');m.roughness=.16;m.metalness=.22;m.opacity=.96;m.depthWrite=true;m.envMapIntensity=.9;}
+  if(m.name==='windowglass'){m.color.set('#253c46');m.roughness=.27;m.metalness=.16;m.opacity=.96;m.depthWrite=true;m.envMapIntensity=.65;}
   if(m.name==='clearglass'){m.color.set('#c1d5de');m.opacity=.72;m.roughness=.17;m.depthWrite=true;}
   if(m.name==='redglass'||m.name==='orangeglass'){m.color.set(m.name==='redglass'?'#a71121':'#e88216');m.opacity=.95;m.roughness=.24;m.depthWrite=true;m.emissive.copy(m.color);m.emissiveIntensity=.04;m.userData.sprinterLens=true;lenses.push(m);}
  });
  const group=new THREE.Group();group.name='Sprinter · оформление по фотографиям RocketTrip';scene.add(group);
- function decal(name,map,sample,direction,columns,rows){
-  const geometry=projectSprinterDecal(panels,{sample,direction,columns,rows});
-  const material=new THREE.MeshStandardMaterial({map,transparent:true,alphaTest:.08,depthWrite:true,side:THREE.DoubleSide,roughness:.5,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+ function decal(name,map,key){
+  // Precomputed from this exact GLB: keep thousands of panel raycasts off the UI thread.
+  const data=decals[key],geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(data.position,3));geometry.setAttribute('uv',new THREE.Float32BufferAttribute(data.uv,2));geometry.setIndex(data.index);geometry.computeVertexNormals();
+  const material=new THREE.MeshStandardMaterial({map,transparent:true,alphaTest:.08,depthWrite:true,side:THREE.DoubleSide,roughness:.5,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1,forceSinglePass:true});
   const mesh=new THREE.Mesh(geometry,material);mesh.name=name;mesh.userData.sprinterDecal=true;group.add(mesh);return mesh;
  }
- // The mark faces an observer in front of the vehicle; its top points to the windscreen.
- decal('RocketTrip · логотип на капоте',logo,(u,v)=>V((u-.5)*.66,4,3.12-v*.45),V(0,-1,0),28,24);
- // Right-hand leaf as seen from behind; lettering stays clear of the latch and seam.
- decal('RocketTrip · надпись на задней двери',wordmark,(u,v)=>V(-.46-(u-.5)*.72,.99+v*.19,-5),V(0,0,1),24,8);
- for(const side of [-1,1])decal('RocketTrip · надпись на борту '+side,wordmark,(u,v)=>V(side*2,1.09+v*.25,-1.77-side*(u-.5)*1.75),V(-side,0,0),28,8);
+ // The mark faces an observer in front; its top points to the windscreen.
+ decal('RocketTrip · логотип на капоте',logo,'hood');
+ // Right-hand leaf as seen from behind, below the latch and clear of the seam.
+ decal('RocketTrip · надпись на задней двери',wordmark,'rear');
+ for(const side of [-1,1])decal('RocketTrip · надпись на борту '+side,wordmark,'side'+side);
  // Low-profile roof A/C and rails visible in the owner's photographs.
  const pieces=new Map(),white=new THREE.MeshStandardMaterial({color:'#e2e5e4',roughness:.36,metalness:.06,envMap:environment,envMapIntensity:.5}),rubber=new THREE.MeshStandardMaterial({color:'#202a30',roughness:.74}),metal=new THREE.MeshStandardMaterial({color:'#9ba9ad',metalness:.8,roughness:.28,envMap:environment});
  function add(geometry,mat,position,rotation=null){if(geometry.index){const indexed=geometry;geometry=indexed.toNonIndexed();indexed.dispose();}const m=new THREE.Matrix4().compose(V(...position),rotation||new THREE.Quaternion(),V(1,1,1));geometry.applyMatrix4(m);if(!pieces.has(mat))pieces.set(mat,[]);pieces.get(mat).push(geometry);}

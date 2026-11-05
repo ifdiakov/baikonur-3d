@@ -6,6 +6,8 @@ on:
       - 'src/museum-menu.js'
       - 'src/complex-history-menu.js'
       - 'src/osm-transport.js'
+      - 'src/transport-bake.js'
+      - 'tests/transport-bake.mjs'
       - 'src/road-surface.js'
       - 'index.html'
       - 'src/ukss-exhibit.js'
@@ -30,6 +32,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Verify optimized load path and history contracts
         run: |
+          node tests/transport-bake.mjs
+          node tests/road-prebuilt-lod.mjs
           node tests/loading-optimization.mjs
           node tests/complex-history.mjs
           node tests/menu-catalog-contract.mjs

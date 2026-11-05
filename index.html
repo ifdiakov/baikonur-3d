@@ -538,7 +538,7 @@ import {buildSharedSiloHill} from './src/shared-silo-hill.js?v=20261103-shared-s
 import {createSteppeSurface} from './src/steppe-surface.js?v=20261105-world-soil-v13';
 import {loadSatelliteReference,SATELLITE_REFERENCE} from './src/satellite-reference.js?v=20261102-progressive-v1';
 import {getMriyaInstallation} from './src/mriya-exhibit.js?v=buran-paint-20261102-v1';
-import {buildHighwaySigns} from './src/road-signs.js?v=20261030-river-roads-signs-v1';
+import {buildHighwaySigns} from './src/road-signs.js?v=20261105-dirmentobe-east-sign-v2';
 import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261101-saturn-terrain-v5';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainSample,saturnTerrainMeshHeight} from './src/saturn-access.js?v=20261101-saturn-terrain-v5';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
@@ -593,7 +593,7 @@ let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
 const nextLaunchDataReady=startup.defer(()=>startup.fetchJSON('./data/next-launch.json',{optional:true}),{key:'next-launch',priority:40});
-const roadSignDataReady=startup.fetchJSON('./data/road-signs.json');
+const roadSignDataReady=startup.fetchJSON('./data/road-signs.json?v=20261105-dirmentobe-east-v2');
 const roadLodDataReady=startup.fetchJSON('./data/osm/road-lod-prebuilt-v1.json',{optional:true,timeoutMs:7000});
 const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=roads-v4-18-286-site250a',{optional:true});
 startup.stage('Загружаем карту космодрома…',1);
