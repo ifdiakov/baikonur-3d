@@ -4,7 +4,7 @@ import {SOIL_ANTI_TILING_VERSION,SOIL_ANTI_TILING_GLSL,sampleSoilDetailDomains,s
 import {GLOBAL_SOIL_DETAIL_VERSION,installGlobalSoilDetail} from '../src/global-steppe-detail.js';
 
 assert.match(SOIL_ANTI_TILING_VERSION,/anti-tiling/);
-assert.match(GLOBAL_SOIL_DETAIL_VERSION,/anti-tiling/);
+assert.match(GLOBAL_SOIL_DETAIL_VERSION,/continuous-blend/);
 assert(SOIL_ANTI_TILING_GLSL.includes('soilDetailDomains'));
 assert(SOIL_ANTI_TILING_GLSL.includes('soilDetailAtlasUV'));
 assert(SOIL_ANTI_TILING_GLSL.includes('soilDetailNoise'));
