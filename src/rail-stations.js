@@ -1,17 +1,47 @@
 import * as THREE from 'three';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {RAIL_PROFILE} from './rail-profile.js';
-export const RAIL_STATION_VERSION='rail-station-lite-v1';
+export const RAIL_STATION_VERSION='rail-station-road-clearance-v2';
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),S=MUSEUM_METRE;
 const vector=p=>p.isVector3?p:V(...p);
 /** Align a platform pair to the existing railway corridor, without adding rails. */
-export function planRailStations(stations,paths){
+export function planRailStations(stations,paths,roads=[]){
  const segments=[];
  for(const path of paths){if(path.abandoned||Math.abs((path.width??RAIL_PROFILE.ballastWidth)-RAIL_PROFILE.ballastWidth)>.05)continue;
   for(let i=1;i<path.points.length;i++){
    const a=vector(path.points[i-1]),b=vector(path.points[i]),d=b.clone().sub(a),den=d.x*d.x+d.z*d.z;
    if(den>1e-8)segments.push({a,b,d,den});
   }
+ }
+ // Test the entire two-sided platform footprint, not just the label anchor.
+ // A road's full asphalt width (plus a small safety margin) is forbidden.
+ const roadSegments=[];
+ for(const road of roads)for(let i=1;i<(road.points?.length||0);i++){
+  const a=vector(road.points[i-1]),b=vector(road.points[i]),w=(Number(road.width)||2)/2+.25;
+  if(a.distanceToSquared(b)<1e-12)continue;
+  roadSegments.push({a,b,w,minX:Math.min(a.x,b.x)-w,maxX:Math.max(a.x,b.x)+w,
+   minZ:Math.min(a.z,b.z)-w,maxZ:Math.max(a.z,b.z)+w});
+ }
+ function overlapsRoads(position,axis,normal,innerMetres){
+  const halfLength=55*S+.25,near=(innerMetres+.15)*S,far=(innerMetres+5.1)*S;
+  const radius=halfLength+far+4;
+  function segmentBox(a,b,minX,maxX,minZ,maxZ){
+   let lo=0,hi=1;const dx=b[0]-a[0],dz=b[1]-a[1];
+   for(const [p,q] of [[-dx,a[0]-minX],[dx,maxX-a[0]],[-dz,a[1]-minZ],[dz,maxZ-a[1]]]){
+    if(Math.abs(p)<1e-12){if(q<0)return false;continue;}
+    const t=q/p;if(p<0)lo=Math.max(lo,t);else hi=Math.min(hi,t);if(lo>hi)return false;
+   }return true;
+  }
+  for(const road of roadSegments){
+   if(road.minX>position.x+radius||road.maxX<position.x-radius||road.minZ>position.z+radius||road.maxZ<position.z-radius)continue;
+   const local=p=>{const x=p.x-position.x,z=p.z-position.z;return [x*axis.x+z*axis.z,x*normal.x+z*normal.z];};
+   const a=local(road.a),b=local(road.b);
+   for(const side of [-1,1]){
+    const lo=side===1?near:-far,hi=side===1?far:-near;
+    if(segmentBox(a,b,-halfLength-road.w,halfLength+road.w,lo-road.w,hi+road.w))return true;
+   }
+  }
+  return false;
  }
  return stations.map(st=>{
   const anchor=st.group?.position||vector(st.position),nearest={distance:Infinity};
@@ -40,7 +70,15 @@ export function planRailStations(stations,paths){
   const mid=(left+right)/2,position=nearest.p.clone().addScaledVector(normal,mid);position.y+=.008;
   // Quantize upward so the closest rail retains >=1.25 m platform clearance.
   const innerMetres=Math.ceil(((right-left)/2/S+1.25+RAIL_PROFILE.gauge/(2*S))*4)/4;
-  return {id:st.id,name:st.name,position:position.toArray(),yaw:-Math.atan2(axis.z,axis.x),innerMetres,trackSpan:right-left,nearestRailDistance:nearest.distance,trackCount:hi-lo+1};
+  // Slide the station along the SAME railway corridor to the first asphalt-
+  // free location. Never place a slab over a road when no such span exists.
+  const shifts=[0,8,-8,16,-16,28,-28,45,-45,70,-70],chosen=shifts.find(shift=>
+   !overlapsRoads(position.clone().addScaledVector(axis,shift),axis,normal,innerMetres));
+  if(chosen==null)return {id:st.id,name:st.name,skipped:'road-overlap',position:position.toArray(),
+   yaw:-Math.atan2(axis.z,axis.x),innerMetres,trackSpan:right-left,nearestRailDistance:nearest.distance,trackCount:hi-lo+1};
+  position.addScaledVector(axis,chosen);
+  return {id:st.id,name:st.name,position:position.toArray(),yaw:-Math.atan2(axis.z,axis.x),innerMetres,
+   shiftAlongRail:chosen,trackSpan:right-left,nearestRailDistance:nearest.distance,trackCount:hi-lo+1};
  });
 }
 export function metricStationGeometry(mesh){
@@ -66,8 +104,8 @@ export function stationGeometry(template,innerMetres){
  for(let i=0;i<p.count;i++){const z=p.getZ(i),a=Math.abs(z);p.setZ(i,Math.sign(z)*(a<=5?a*innerMetres/5:innerMetres+a-5));}
  p.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
 }
-export function createRailStations({stations,paths,parent,clickable,firstIndex,loadSource=loadRailStation}){
- const plans=planRailStations(stations,paths),root=new THREE.Group();root.userData.excludeTransportBake=true;root.name='ЖД станции · перроны и навесы без зданий';parent.add(root);
+export function createRailStations({stations,paths,roads=[],parent,clickable,firstIndex,loadSource=loadRailStation}){
+ const plans=planRailStations(stations,paths,roads),root=new THREE.Group();root.userData.excludeTransportBake=true;root.name='ЖД станции · перроны и навесы без зданий';parent.add(root);
  const fallbackGeometry=new THREE.BoxGeometry(110,1.38,4.95),fallbackMaterial=new THREE.MeshStandardMaterial({color:0xa9aa9c,roughness:1});
  const labels=stations.map((st,i)=>{
   const plan=plans[i],group=new THREE.Group(),anchor=new THREE.Object3D(),detail=new THREE.Group();group.name=st.name;group.position.fromArray(plan.position);group.rotation.y=plan.yaw||0;
@@ -88,6 +126,6 @@ export function createRailStations({stations,paths,parent,clickable,firstIndex,l
   },
   update(camera){lastCamera=camera;state.visible=0;for(const s of labels){s.detail.visible=!s.plan.skipped&&camera.position.distanceToSquared(s.group.position)<240*240;if(s.detail.visible)state.visible++;}},
   inspect(id,camera,controls){const s=labels.find(s=>s.id===id);if(!s)return false;controls.target.copy(s.group.position).add(V(0,.7,0));const width=(s.plan.innerMetres||5)*S+5*S,range=Math.max(16,width*2);camera.position.copy(controls.target).add(V(range*.48,range*.75,range*.82).applyAxisAngle(V(0,1,0),s.plan.yaw||0));api.update(camera);return true;},
-  stats:()=>({...state,count:labels.filter(s=>!s.plan.skipped).length,skipped:plans.filter(p=>p.skipped),placements:plans})
+  stats:()=>({...state,count:labels.filter(s=>!s.plan.skipped).length,skipped:plans.filter(p=>p.skipped),relocated:plans.filter(p=>p.shiftAlongRail).length,roadCollisionSkips:plans.filter(p=>p.skipped==='road-overlap').length,placements:plans})
  };return api;
 }
