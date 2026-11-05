@@ -33,7 +33,7 @@ const view=(pixel,y,offset)=>{const [x,z]=site113Pixel(pixel);return {target:[x,
 export const SITE113_VIEWS={
  all:view([770,530],4,[185,210,240]),
  blocks:view([582,709],7,[-65,44,84]),
- stage:view([919,340],3,[32,23,42]),
+ stage:view([919,340],3,[-32,23,42]),
  utilities:view([647,632],4,[-38,23,49]),
  top:view([770,530],0,[0,350,.01])
 };

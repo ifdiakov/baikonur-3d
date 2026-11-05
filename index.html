@@ -970,7 +970,7 @@ if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
   const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261105-site113-grade-v1');
   const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
   if(preparedLOD.sourceFingerprint!==sourceFingerprint)throw Error('Compiled road LOD is stale after map edits');
-  transport=restoreBakedTransport({bake:preparedBake,layers,sourceFingerprint,roadGrade:site113RoadGrade});transportFromBake=true;
+  transport=restoreBakedTransport({bake:preparedBake,layers,sourceFingerprint,roadGrade:displayRoadGrade});transportFromBake=true;
   startup.mark('prebaked-transport-ready');
  }catch(error){console.warn('Cached transport rejected, rebuilding source geometry:',error);}
 }
@@ -991,7 +991,7 @@ let detailedTransportRoots=[
  layers.rails.getObjectByName('OpenStreetMap · железнодорожные пути')
 ];
 if(transportFromBake){
- roadLOD=createRoadLOD({data:preparedLOD,geography,point,scene,roadGrade:site113RoadGrade});
+ roadLOD=createRoadLOD({data:preparedLOD,geography,point,scene,roadGrade:displayRoadGrade});
  roadLOD.update(Math.max(360,camera.position.y/SCENE_SCALE),detailedTransportRoots);
 }else if(transportQuery.get('previewRoadLOD')==='1'){
  // LOD source routes have not yet been intersected with all 286 owner
@@ -1000,7 +1000,7 @@ if(transportFromBake){
  const roadLODReady=startup.defer(async()=>{
   const data=await roadLodDataReady;
   if(!data||data.version!==ROAD_LOD_VERSION)return null;
-  const view=createRoadLOD({data,geography,point,scene,roadGrade:site113RoadGrade});
+  const view=createRoadLOD({data,geography,point,scene,roadGrade:displayRoadGrade});
   roadLOD=view;
   view.update(camera.position.y/SCENE_SCALE,detailedTransportRoots);
   return view;

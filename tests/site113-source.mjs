@@ -51,3 +51,13 @@ const source={points:[[anchor.x-2,.72,anchor.z],[anchor.x+2,.72,anchor.z]],w:1.6
 const lod=createRoadLOD({data:{version:'road-lod-prebuilt-v1',levels:{far:{roads:[source],rails:[]},medium:{roads:[source],rails:[]}}},scene:new THREE.Scene(),roadGrade:grade});
 lod.root.traverse(mesh=>{if(mesh.userData.roadKind==='roads'){const p=mesh.geometry.attributes.position;for(let i=0;i<p.count;i++)assert(Math.abs(p.getY(i)+2.73)<1e-5);}});lod.destroy();
 console.log('SITE113_ROAD_GRADE_PASS');
+// The route-only cache may precede the checkpoint flattening. Applying the
+// composed display grade must preserve the already-approved ground-level КПП.
+const {restoreBakedTransport}=await import('../src/transport-bake.js');
+const {createCheckpoint7RoadGrade}=await import('../src/checkpoint7-road-grade.js');
+const checkpoint=createCheckpoint7RoadGrade({position:[-125,.72,913],roadAxis:[[-125,.72,1002],[-125,.72,824]],roadWidth:3.6,yaw:0,scale:.14});
+const composed=grade.withCheckpoint(checkpoint);
+const restored=restoreBakedTransport({bake,layers:{roads:new THREE.Group(),rails:new THREE.Group()},roadGrade:composed});
+const route=restored.roadPaths().find(r=>r.osmWayIds?.includes('173082916'));assert(route);
+const near=route.points.filter(p=>Math.abs(p.z-913)<2);assert(near.length);for(const p of near)assert(Math.abs(p.y+2.73)<.001,'Cached checkpoint road stays on the flat ground');
+console.log('SITE113_CHECKPOINT_CACHE_PASS');

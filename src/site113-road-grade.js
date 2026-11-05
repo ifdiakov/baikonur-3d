@@ -25,7 +25,7 @@ export function createSite113RoadGrade(anchor){
  }
  // Preserve the existing checkpoint's rail and road rules when the source
  // network is built. The cached routes and LOD use this local grade directly.
- function withCheckpoint(checkpoint){return {...checkpoint,adjustWidths,
+ function withCheckpoint(checkpoint){return {...checkpoint,adjustWidths,widthScale,
   weightAt:(x,z)=>Math.max(checkpoint.weightAt(x,z),weightAt(x,z)),
   roadAt:(x,z)=>weightAt(x,z)>0?heightAt(x,z,checkpoint.roadAt(x,z)??.72):checkpoint.roadAt(x,z),
   conform:points=>conform(checkpoint.conform(points))};}
