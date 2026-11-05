@@ -4,7 +4,7 @@ import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-v8-five-materials-seamless-blend';
+export const GAME_TERRAIN_VERSION = 'game-terrain-v9-five-materials-seamless-masks';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
