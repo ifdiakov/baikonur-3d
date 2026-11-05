@@ -21,7 +21,7 @@ function stripGeometry(rows,geography,point,y,roadGrade=null){
  geometry.computeBoundingSphere();return {geometry,skipped,triangles:indices.length/3};
 }
 export function createRoadLOD({data,geography,point,scene,roadGrade=null}){
- if(roadGrade?.isBaked?.(data))roadGrade=null;
+ if(roadGrade?.isBaked?.(data))roadGrade=roadGrade.cachedGrade??null;
  if(data?.version!==ROAD_LOD_VERSION||!data?.levels?.far||!data?.levels?.medium)throw Error('Unrecognized precompiled road LOD');
  const root=new THREE.Group();root.name='Готовая схема дорог · уровни детализации';scene.add(root);
  const levels={};

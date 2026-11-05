@@ -86,7 +86,7 @@ function unpackPath(row,roadGrade=null){
 }
 const unpack=(rows,grade=null)=>rows.map(row=>unpackPath(row,grade));
 export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGrade=null}){
- if(roadGrade?.isBaked?.(bake))roadGrade=null;
+ if(roadGrade?.isBaked?.(bake))roadGrade=roadGrade.cachedGrade??null;
  if(bake?.version!==TRANSPORT_BAKE_VERSION||bake?.fingerprint!==fingerprint)throw Error('Outdated transport bake');
  if(sourceFingerprint!==null&&bake.sourceFingerprint!==sourceFingerprint)throw Error('Source roads or display anchors changed since transport bake');
  if(bake.cacheKind!=='routes-only')throw Error('Full mesh snapshots are disabled; require compact route metadata');
