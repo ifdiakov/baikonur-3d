@@ -33,7 +33,7 @@ export function planSite250aThroughRoad({sourcePoints,siteCenter,siteYaw,cryoGat
   const a=spine[i-1],b=spine[i],n=Math.max(1,Math.ceil(horizontal(a,b)/1.1));
   for(let j=1;j<=n;j++)original.push(interpolate(a,b,j/n));
  }
- const main=original.map(p=>{
+ const shaped=original.map(p=>{
   const z=local(p)[1];
   const inBlend=smooth((42-z)/14),outBlend=smooth((z+55)/20);
   const detour=13.5*inBlend*outBlend;
@@ -44,6 +44,13 @@ export function planSite250aThroughRoad({sourcePoints,siteCenter,siteYaw,cryoGat
   const y=interpolate(p,[p[0],cryoGate[1]+(ukssGate[1]-cryoGate[1])*late,p[2]],grade)[1];
   return [p[0]+right[0]*detour,y,p[2]+right[2]*detour];
  });
+ // The lateral shift briefly increases local arc length. Re-sample after
+ // offsetting so the road's real geometric vertex spacing stays uniform.
+ const main=[shaped[0].slice()];
+ for(let i=1;i<shaped.length;i++){
+  const a=shaped[i-1],b=shaped[i],count=Math.max(1,Math.ceil(horizontal(a,b)/1.05));
+  for(let j=1;j<=count;j++)main.push(interpolate(a,b,j/count));
+ }
  // Stop along the existing source road near UKSS. Do not follow its last
  // unnecessary node and then reverse direction into the launch-site gate.
  const last=main.at(-1),span=horizontal(last,ukssGate);
