@@ -47,8 +47,9 @@ for(const [id,wayId]of [['airfield',37591623],['pad-251',24949215]]){
 const layers={roads:new THREE.Group(),rails:new THREE.Group()},transport=buildOsmTransportNetwork({data,legacyData:read('data/transport-network.json'),geography,point,layers,siteRecords});
 assert.equal(JSON.stringify(data),original,'Display joins preserve the archived source graph/data');
 const stats=transport.stats(),paths=transport.roadPaths();
-console.log('RAIL_PORT_DIAGNOSTIC',JSON.stringify({ports:stats.facilityRailPorts.map(p=>({id:p.id,portId:p.portId,sourceWayId:p.sourceWayId,sourceRouteId:p.sourceRouteId})),trimmed:stats.branchSimplification.rail.removedTerminalWayIds,pruned:stats.branchSimplification.rail.removedSegments}));
-assert(stats.facilityPorts.length>=46,'Site catalogue additions must retain all existing road gates');assert.equal(stats.facilityRailPorts.length,14);
+assert(stats.facilityPorts.length>=46,'Site catalogue additions must retain all existing road gates');
+assert.equal(stats.facilityRailPorts.length,15,'All 15 railway sockets, including new site 254 and two UKSS sockets, must render');
+assert.equal(stats.facilityRailPorts.filter(p=>p.id==='pad-250').length,2,'Both railway connections at UKSS must survive the road bypass');
 assert(stats.roadSurface.local.smoothedNodeIds.includes('439813528'),'The visibly broken ordinary-road corner receives the shared curve');
 const sourceGraph=buildOsmGraph(data.roads.features,{geography,point}),corner=sourceGraph.nodes.get('439813528');
 const cornerDirections=corner.edges.map(e=>e.surfaceTangents[e.a===corner?0:1]);near(Math.abs(cornerDirections[0].dot(cornerDirections[1])),1,1e-12,'Both real source ways share an exact curve frame');
