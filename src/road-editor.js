@@ -87,6 +87,18 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   physicalCutStats={version:ROAD_GEOMETRY_CUT_VERSION,meshes:sourceMeshes.length,clipped,removed,examined,triangles,
    clipPolygons:edits.clips,sourceCuts:edits.sourceCuts,replacementCuts:edits.replacementCuts,skippedOffRoad:edits.skippedOffRoad,restoredCrossings:edits.restoredCrossings,protectedClipParts:edits.protectedClipParts};
  }
+ function attachRoadMeshes(meshes){
+  let attached=0;
+  for(const mesh of meshes||[]){
+   if(!mesh?.isMesh||!targets.has(mesh.name)||originals.has(mesh))continue;
+   sourceMeshes.push(mesh);originals.set(mesh,mesh.geometry);
+   maskedMeshNames.push(mesh.name);attached++;
+  }
+  // Called when deferred full-detail road geometry is installed. The cuts
+  // remain physically absent from that geometry, not just alpha masked.
+  if(attached)replaceSourceGeometry();
+  return attached;
+ }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
  panel.setAttribute('aria-label','Редактор автомобильных дорог');
  panel.innerHTML='<div class="road-editor-heading"><b>АВТОДОРОГИ</b><button type="button" data-action="close" aria-label="Закрыть редактор">×</button></div>'
@@ -397,7 +409,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  }catch{status.textContent='Сохранённая схема повреждена. Импортируйте её из JSON или очистите правки.';}
  if(!readOnly)button?.addEventListener('click',()=>setActive(!active));
  setMode('draw');
- return {get active(){return active;},setActive,undo,redo,finish,
+ return {get active(){return active;},setActive,undo,redo,finish,attachRoadMeshes,
   snapshot:clone,maskAt,roadLightRemoved,path:id=>{const r=joinedPaths.find(r=>r.id===id);return r?{id:r.id,width:r.width,points:r.points.map(p=>[...p])}:null;},stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,readOnly,active,mode,
    added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,styleVersion:ROAD_EDIT_STYLE_VERSION,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,

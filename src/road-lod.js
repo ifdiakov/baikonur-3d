@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 export const ROAD_LOD_VERSION='road-lod-prebuilt-v1';
-const colors={road:0x777269,rail:0x8b8170};
+const colors={road:0xadb2b3,rail:0x8b8170};
 const phase='prebaked-overview';
 function stripGeometry(rows,geography,point,y){
  const xyz=[],indices=[];let skipped=0;
@@ -29,8 +29,13 @@ export function createRoadLOD({data,geography,point,scene}){
   for(const kind of ['roads','rails']){
    const actual=stripGeometry(data.levels[level][kind],geography,point,kind==='roads'?.84:.62);
    const mat=new THREE.MeshBasicMaterial({color:colors[kind==='roads'?'road':'rail'],side:THREE.DoubleSide,depthWrite:true});
-   const mesh=new THREE.Mesh(actual.geometry,mat);mesh.name='LOD · '+level+' · '+kind;mesh.receiveShadow=false;
-   mesh.userData={pickable:false,museumComponent:'prebuilt-road-lod'};
+   const mesh=new THREE.Mesh(actual.geometry,mat);
+   // The existing RocketTrip physical cutout tool selects exact names.
+   // Both far and medium road surfaces must be cut by the SAME approved
+   // 286 owner removals before the first public frame is displayed.
+   mesh.name=kind==='roads'?'OSM · единое дорожное полотно':'LOD · '+level+' · '+kind;
+   mesh.receiveShadow=false;
+   mesh.userData={pickable:false,museumComponent:'prebuilt-road-lod',roadKind:kind,osmSource:true};
    group.add(mesh);stats[kind]={features:data.levels[level][kind].length,triangles:actual.triangles};
   }
   group.visible=false;levels[level]={group,stats};

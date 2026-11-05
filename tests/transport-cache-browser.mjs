@@ -16,12 +16,17 @@ try{
  const report=await page.evaluate(()=>{
   const s=window.__BAIKONUR_QA.stats(),a=window.__MUSEUM_STARTUP.stats().marks;
   const beginning=a.find(x=>x.name==='startup')?.at,interactive=a.find(x=>x.name==='first-frame')?.at;
-  return {transport:s.transport,bake:s.transportBake,roadLOD:s.roadLOD,
+  return {transport:s.transport,bake:s.transportBake,roadLOD:s.roadLOD,roadEditor:s.roadEditor,
    sites:s.sites,firstFrameMs:Math.round(interactive-beginning),shadersValid:s.shadersValid,
    heading:document.getElementById('museumLoading')?.hidden};
  });
  assert.equal(report.transport.baked,true,'Cached topology and source-filtered preview must be used');
  assert.equal(report.bake.enabled,true);
+ assert.equal(report.roadEditor.added,18);
+ assert.equal(report.roadEditor.hidden,286);
+ assert(report.roadEditor.maskedMeshNames.includes('OSM · единое дорожное полотно'));
+ assert(report.roadEditor.physicalCuts.sourceCuts>=250,'Approved road removals must cut the fast LOD');
+ assert(report.roadEditor.physicalCuts.clipped>0,'Fast LOD must have physically removed road triangles');
  assert(['far','medium'].includes(report.roadLOD.mode),'Real far/medium LOD should be displayed');
  assert(report.transport.roadFeatureCount>3000);
  assert(report.sites>30);

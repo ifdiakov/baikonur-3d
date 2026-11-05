@@ -589,7 +589,7 @@ mapAttribution.append(attribution,terrainAttribution,modelCreditsLink);document.
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261105-prebuilt-roads-default-v1';
+const MUSEUM_REVISION='20261105-prebuilt-roads-correctly-cut-v2';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
@@ -1007,10 +1007,13 @@ function requestTransportDetail(){
     [...layers.roads.children].filter(o=>o.name==='OpenStreetMap · автодороги').at(-1),
     [...layers.rails.children].filter(o=>o.name==='OpenStreetMap · железнодорожные пути').at(-1)
    ];
+   const newlyBuilt=[];
    for(const root of detailedTransportRoots)root?.traverse(mesh=>{
     if(!mesh.isMesh)return;
+    newlyBuilt.push(mesh);
     for(const mat of (Array.isArray(mesh.material)?mesh.material:[mesh.material]))portalVoids.mask(mat);
    });
+   roadEditor?.attachRoadMeshes(newlyBuilt);
    detail.setBridgeEvening?.(eveningScene?.evening??true);
    detailTransportReady=true;
    roadLOD?.update(camera.position.y/SCENE_SCALE,detailedTransportRoots);
@@ -2286,6 +2289,9 @@ lightingEditor=createLightingEditor({scene,camera,canvas:renderer.domElement,
  onActiveChange(active){if(active){roadEditor?.setActive(false);document.getElementById('info').style.display='none';selectSiteCard(null);}}
 });
 const editorRoadMeshes=[];layers.roads.traverse(mesh=>{if(mesh.isMesh)editorRoadMeshes.push(mesh);});
+roadLOD?.root?.traverse(mesh=>{
+ if(mesh.isMesh&&mesh.userData.roadKind==='roads')editorRoadMeshes.push(mesh);
+});
 roadEditor=createRoadEditor({root:layers.roads,camera,canvas:renderer.domElement,groundMeshes:lightingGroundMeshes,
  roadMeshes:editorRoadMeshes,roads:transport.editableRoadPaths(),button:null,readOnly:true,
  terrainHeightAt:(x,z)=>museumTerrainHeightAt(x,z),defaultEdits:ownerRoadEdits,onChange(){eveningScene?.refreshRoadEditor(roadEditor);},
