@@ -1,0 +1,33 @@
+name: Railway terminus and site connections
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/rail-terminal-cleanup.js'
+      - 'src/osm-transport.js'
+      - 'src/rail-scheme.js'
+      - 'tests/rail-terminal-cleanup.mjs'
+      - 'data/osm/railways.geojson'
+      - 'data/osm/rail-points.geojson'
+      - '.github/workflows/verify-rail-termini.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install geometry dependencies
+        run: npm install --no-save three@0.160.1
+      - name: Test OSM rail ends against stations and pads
+        run: node tests/rail-terminal-cleanup.mjs
+      - name: Test station scheme and complete rail geometry
+        run: |
+          node tests/rail-scheme.mjs
+          node tests/osm-transport-geometry.mjs
+          node tests/access-rail-continuity.mjs
