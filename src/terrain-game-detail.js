@@ -4,7 +4,7 @@ import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling
 
 // Optional, local terrain detail for the first interactive game-quality pilot.
 // Source satellite/DEM and infrastructure geometry are never moved or replaced.
-export const GAME_TERRAIN_VERSION = 'game-terrain-v7-five-materials-anti-tiling';
+export const GAME_TERRAIN_VERSION = 'game-terrain-v8-five-materials-seamless-blend';
 const clamp=(n,a=0,b=1)=>Math.max(a,Math.min(b,n));
 const smooth=(a,b,x)=>{const t=clamp((x-a)/(b-a));return t*t*(3-2*t);};
 const worldMaskSize=620;
@@ -124,37 +124,15 @@ uniform sampler2D gameMaterialAlbedo,gameMaterialNormal,gameMaterialRoughness;
 uniform vec4 gameRect;
 
 void gameTopMaterials(vec4 field,out float bestId,out float nextId,out float blend){
- // ids: 0 clay, 1 sand, 2 gravel, 3 salt, 4 dry scrub
- float weights[5];
- weights[1]=field.r*.93;
- weights[2]=field.g*.92;
- weights[3]=field.b*.85;
- weights[4]=field.a*.52;
- weights[0]=max(.22,1.0-max(max(weights[1],weights[2]),max(weights[3],weights[4]))*.75);
- float best=-1.0,runner=-1.0;bestId=0.0;nextId=0.0;
- for(int i=0;i<5;i++){
-  if(weights[i]>best){runner=best;nextId=bestId;best=weights[i];bestId=float(i);}
-  else if(weights[i]>runner){runner=weights[i];nextId=float(i);}
- }
- blend=clamp(runner/max(best+runner,.0001),0.0,.5);
-}
-
-// Decorrelate every 11-unit patch. Smooth four-way crossfades avoid seams and
-// the repeating texture grid while the texture itself keeps its PBR mipmaps.
-vec2 gameHash2(vec2 cell){
- return fract(sin(vec2(dot(cell,vec2(127.1,311.7)),dot(cell,vec2(269.5,183.3))))*43758.5453);
-}
-vec3 gameStochasticGrain(vec2 p){
- vec2 tile=p/11.0,cell=floor(tile),fade=fract(tile);
- fade=fade*fade*(3.0-2.0*fade);
- vec2 uv=mat2(.866,-.5,.5,.866)*p/3.2;
- vec3 a=texture2D(gameGrains,uv+gameHash2(cell)*17.0).rgb;
- vec3 b=texture2D(gameGrains,uv+gameHash2(cell+vec2(1.0,0.0))*17.0).rgb;
- vec3 c=texture2D(gameGrains,uv+gameHash2(cell+vec2(0.0,1.0))*17.0).rgb;
- vec3 d=texture2D(gameGrains,uv+gameHash2(cell+vec2(1.0,1.0))*17.0).rgb;
- return mix(mix(a,b,fade.x),mix(c,d,fade.x),fade.y);
+ // One continuous material coordinate from ALL cover fields, rather than
+ // swapping a hard-ranked secondary family on every cover intersection.
+ float clay=.35+.16*(1.0-max(max(field.r,field.g),max(field.b,field.a)));
+ float total=clay+field.r+field.g+field.b+field.a;
+ float coordinate=clamp((field.r+2.0*field.g+3.0*field.b+4.0*field.a)/max(total,.001)*1.22,0.0,4.0);
+ soilDetailNeighbours(coordinate,bestId,nextId,blend);
 }
 `;
+
 const GAME_SOIL_SHADE=/* glsl */`
 // Unique patches follow DEM slope and the photo's existing light/dark cues.
 // All source landmarks stay in the satellite: color is only gently modulated.
@@ -171,7 +149,7 @@ gameWeather=mix(gameWeather,vec3(1.085,1.09,1.065),gameSoil.b*(.13+.18*gamePhoto
 gameWeather*=1.0+(gameSoil.a-.5)*.025;
 float gamePixelSize=max(length(dFdx(vSteppeWorld.xz)),length(dFdy(vSteppeWorld.xz)));
 float gamePatchFade=1.0-smoothstep(3.0,15.0,gamePixelSize);
-diffuseColor.rgb*=mix(vec3(1.0),gameWeather,gamePatchFade);
+diffuseColor.rgb*=mix(vec3(1.0),gameWeather*soilDetailMacro(vSteppeWorld),gamePatchFade);
 vec3 gameAlbedoA=mix(texture2D(gameMaterialAlbedo,soilDetailAtlasUV(gameMaterialA,gameCoordsA)).rgb,
  texture2D(gameMaterialAlbedo,soilDetailAtlasUV(gameMaterialA,gameCoordsB)).rgb,gameDomainMix);
 vec3 gameAlbedoB=mix(texture2D(gameMaterialAlbedo,soilDetailAtlasUV(gameMaterialB,gameCoordsA)).rgb,
@@ -181,7 +159,10 @@ vec3 gameRealSoil=mix(gameAlbedoA,gameAlbedoB,gameMaterialMix);
 // close-up. Soil atlas gives surface material identity, never new landmarks.
 diffuseColor.rgb=mix(diffuseColor.rgb,gameRealSoil,gamePatchFade*.35);
 float gameMicroFade=1.0-smoothstep(.22,1.65,gamePixelSize);
-vec3 gameMicro=gameStochasticGrain(vSteppeWorld.xz);
+// Match the exact same world-space domains used by the PBR atlas. The old
+// 11-unit bilinear random-cell stencil left a ghost square at close range.
+vec3 gameMicro=mix(texture2D(gameGrains,gameCoordsA).rgb,
+ texture2D(gameGrains,gameCoordsB).rgb,gameDomainMix);
 diffuseColor.rgb*=mix(vec3(1.0),
  clamp(vec3(1.0)+(gameMicro-vec3(.5))*.35,vec3(.83),vec3(1.17)),gameMicroFade);
 `;
@@ -204,8 +185,14 @@ function createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point
    p[1]>=bounds.minZ-40&&p[1]<=bounds.maxZ+40))return;
   ctx.beginPath();
   points.forEach(([x,z],i)=>{const [px,py]=toXY(x,z);i?ctx.lineTo(px,py):ctx.moveTo(px,py);});
-  ctx.strokeStyle='#8d8d8d';ctx.lineWidth=(width+17)*unit;ctx.stroke();
-  ctx.strokeStyle='#090909';ctx.lineWidth=(width+7)*unit;ctx.stroke();
+  // Several overlapping soft shoulder-width contours instead of the former
+  // two stark bands, which appeared as grey seams along the road corridor.
+  ctx.save();ctx.globalCompositeOperation='darken';
+  for(const [extra,shade] of [[21,237],[17,213],[13,173],[10,128],[7,69],[4,15],[2,0]]){
+   ctx.strokeStyle='rgb('+shade+','+shade+','+shade+')';
+   ctx.lineWidth=(width+extra)*unit;ctx.stroke();
+  }
+  ctx.restore();
  };
  for(const feature of osmRoads.features||[]){
   const geometry=feature.geometry,tags=feature.properties?.tags||{},kind=tags.highway;
@@ -433,7 +420,7 @@ export async function createGameTerrainPilot({scene,renderer,camera,siteRecords,
   height:altitude,blend:strength,stonesBlend:stonesStrength,
   stones:accepted,shrubs:shrubCount,triangles:terrain.geometry.index.count/3,
   geometry:'DEM-aligned mesh',material:'PBR MeshStandardMaterial',
-  textures:['stochastic-grain','non-repeating-landcover',
+  textures:['dual-domain-grain','non-repeating-landcover',
    'five-material-albedo','five-material-normal','five-material-roughness'],
   detailedMaterialVersion:DETAILED_SOIL_VERSION,materialFamilies:atlas.materials,
   atlasResolution:[atlas.width,atlas.height],atlasTile:atlas.tileSize,
