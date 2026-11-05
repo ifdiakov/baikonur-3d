@@ -20,8 +20,8 @@ try{
  });
  assert(stats.firstSceneReady&&stats.loaderHidden);
  const gallery=requests.filter(x=>x.includes('/assets/preloader/'));
- for(const file of ['soyuz-launch-20261103.webp','energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp'])
-  assert(gallery.some(x=>x.endsWith(file)),'All four gallery slides must load for the CSS carousel: '+file);
+ for(const file of ['soyuz-launch-20261103.webp','energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp','launch-complex-20261105.webp','buran-hangar-20261105.webp'])
+  assert(gallery.some(x=>x.endsWith(file)),'All six gallery slides must load for the CSS carousel: '+file);
  assert(!requests.some(x=>x.endsWith('/src/complex-history-content.js')),'Full archive must not load before visitor opens it');
  const initialRequests=requests.length;
  await page.evaluate(()=>{document.querySelector('#complexHistoryAccordion').open=true;document.querySelector('[data-museum-action="history:why"]').click();});

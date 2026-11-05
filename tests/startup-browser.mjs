@@ -366,7 +366,7 @@ async function exercisePreloader(page){
  assert.deepEqual(initial.features.map(feature=>feature.text),featurePhrases,'All eight visitor phrases preserve the requested order');
  assert.equal(initial.features.filter(feature=>feature.active).length,1,'The phrase carousel has one active slide');
  assert.ok(initial.features.every(feature=>feature.hidden===String(!feature.active)),'Only the current phrase is exposed to assistive technology');
- assert.equal(initial.images.length,4,'The scene uses the four thematic images');
+ assert.equal(initial.images.length,6,'The scene uses the six thematic images');
  assert.equal(initial.images[0].priority,'high','The first preloader visual is a critical startup resource');
  assert.ok(initial.images.slice(1).every(image=>image.priority==='low'),
   'Later gallery images remain low-priority while the museum loads');

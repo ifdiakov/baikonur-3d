@@ -5,7 +5,7 @@ const [html,menu,history,ukss,tua,startup]=await Promise.all([
  file('index.html'),file('src/museum-menu.js'),file('src/complex-history-content.js'),
  file('src/ukss-exhibit.js'),file('src/tua-exhibit.js'),file('src/museum-startup.js')
 ]);
-const gallery=['soyuz-launch-20261103.webp','energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp'];
+const gallery=['soyuz-launch-20261103.webp','energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp','launch-complex-20261105.webp','buran-hangar-20261105.webp'];
 for(const image of gallery){
  assert(html.includes(' src="./assets/preloader/'+image+'"'),'Each CSS carousel slide must have a loadable source: '+image);
  assert(!html.includes('data-src="./assets/preloader/'+image+'"'));
