@@ -17,7 +17,9 @@ await page.addInitScript(()=>{
 });
 const frame=()=>page.evaluate(()=>window.__ROAD_EDITOR_FRAME());
 try{
- await page.goto(base,{waitUntil:'domcontentloaded',timeout:120000});
+ // Full-precision pavement audit explicitly exercises the legacy detailed
+ // renderer; production overview now uses precompiled owner-filtered LOD.
+ await page.goto(new URL('?legacyRoads=1',base).href,{waitUntil:'domcontentloaded',timeout:120000});
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.roadEditor,null,{timeout:300000});
  const initial=await page.evaluate(()=>window.__BAIKONUR_QA.roadEditor.stats());
  assert(initial.sourceRoadPaths>100);
