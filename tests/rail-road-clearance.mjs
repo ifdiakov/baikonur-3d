@@ -24,11 +24,12 @@ assert.equal(parallel.edge.surfacePoints.at(-1).distanceTo(parallel.edge.b.posit
 
 // A real right-angle crossing retains its centre and puts the rail head above
 // the road surface. Two signs (one on either approach) are instanced.
-const crossRail=rail(V(0,GROUND,-100),V(0,GROUND,100),
- Array.from({length:99},(_,i)=>V(0,GROUND,-98+2*i)));
+// The source railway intentionally contains NO sample at the crossing.
+const crossRail=rail(V(0,GROUND,-100),V(0,GROUND,100));
 const crossed=separateRailGraphFromRoads({railGraph:crossRail,roads:pavement,headY:RAIL_PROFILE.headY,
  railHalfWidth:RAIL_PROFILE.ballastWidth/2});
 assert.equal(crossed.crossingCount,1);
+assert(crossed.addedSamples>0,'Sparse source rail must gain road-corridor knots');
 const centre=crossRail.edge.surfacePoints.find(p=>Math.abs(p.z)<1e-6);
 assert(centre);assert(Math.abs(centre.x)<1e-6&&Math.abs(centre.z)<1e-6);
 assert(centre.y+RAIL_PROFILE.headY>.72+.008,'Rail head must remain above asphalt at a level crossing');
