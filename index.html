@@ -1747,7 +1747,7 @@ scene.userData.terrainStyle.surface=steppeSurface.stats();
 let gameTerrain=null,gameTerrainStatus='queued',gameTerrainError=null;
 const gameTerrainReady=startup.defer(async()=>{
  gameTerrainStatus='loading';
- const {createGameTerrainPilot}=await import('./src/terrain-game-detail.js?v=20261105-seamless-v8');
+ const {createGameTerrainPilot}=await import('./src/terrain-game-detail.js?v=20261105-seamless-v9');
  gameTerrain=await createGameTerrainPilot({scene,renderer,camera,siteRecords,geography,osmRoads,osmRails,transport,
   point,terrainRelief,steppeSurface,sceneScale:SCENE_SCALE});
  gameTerrainStatus='ready';
