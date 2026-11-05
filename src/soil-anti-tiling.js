@@ -8,7 +8,9 @@ export const SOIL_ANTI_TILING_VERSION='soil-anti-tiling-warped-dual-domain-v1';
 // albedo, normal and roughness so the material stays physically coherent.
 export const SOIL_ANTI_TILING_GLSL=/* glsl */`
 float soilDetailHash(vec2 p){
- return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453123);
+ vec3 h=fract(vec3(p.x,p.y,p.x)*.1031);
+ h+=dot(h,h.yzx+33.33);
+ return fract((h.x+h.y)*h.z);
 }
 float soilDetailNoise(vec2 p){
  vec2 c=floor(p),f=fract(p);
@@ -31,7 +33,7 @@ void soilDetailDomains(vec2 world,out vec2 a,out vec2 b,out float factor){
  // Each sample has a different phase, rotation and irrational scale.
  // There is no hard cell selection, so adjacent fragments never snap.
  a=(world+slow*8.0+fine*1.65)/3.35;
- b=(mat2(.809017,-.587785,.587785,.809017)*world+
+ b=(mat2(.809017,.587785,-.587785,.809017)*world+
     slow.yx*5.7-fine.yx*2.15+vec2(31.17,-49.83))/4.43;
  factor=clamp(.43+.20*(soilDetailNoise(world/63.0+vec2(3.4,17.1))-.5),.32,.54);
 }
@@ -40,7 +42,9 @@ void soilDetailDomains(vec2 world,out vec2 a,out vec2 b,out float factor){
 // CPU reference of the warp. It tests deterministic, continuous coordinate
 // fields without requiring a browser/GPU just to validate anti-tiling changes.
 const fract=x=>x-Math.floor(x);
-const hash=(x,y)=>fract(Math.sin(x*127.1+y*311.7)*43758.5453123);
+const hash=(x,y)=>{const a=fract(x*.1031),b=fract(y*.1031),c=a;
+ const dot=a*(b+33.33)+b*(c+33.33)+c*(a+33.33);
+ return fract((a+dot+b+dot)*(c+dot));};
 export function sampleSoilDetailDomains(x,z){
  if(!Number.isFinite(x)||!Number.isFinite(z))throw new TypeError('World-space soil coordinates must be finite');
  const noise=(p,q)=>{
