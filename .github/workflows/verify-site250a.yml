@@ -8,6 +8,7 @@ on:
       - 'src/archive-manifest.js'
       - 'src/facility-ports.js'
       - 'tests/site250a*'
+      - 'scripts/verify-site250a-published.mjs'
       - '.github/workflows/verify-site250a.yml'
   push:
     branches: [main]
