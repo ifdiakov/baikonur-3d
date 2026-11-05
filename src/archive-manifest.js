@@ -1,3 +1,4 @@
+import {SITE95_VERSION,SITE95_REFERENCE} from './site95-layout.js?v=20261106-site95-town-v1';
 import {SITE113_VERSION,SITE113_REFERENCE} from './site113-layout.js?v=20261105-site113-town-v1';
 import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
 import {SITE250A_YAW,SITE250A_REFERENCE,SITE250A_VERSION} from './site250a-layout.js?v=20261103-site250a-photo-v1';
@@ -22,7 +23,7 @@ export const ARCHIVE_MAP=[
  {id:'pad-81',kind:'proton',title:'Два старта «Протона» · пл.81',scale:MUSEUM_METRE,yaw:0,satellite:'1vcxpuL94AAEsfmwW0hDPCc5vQH0qIcdZ',folder:'199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd',orientation:'image-traced',reviewImage:[1300,1000]},
  {id:'pad-200',kind:'proton',title:'Два старта «Протона» · пл.200',scale:MUSEUM_METRE,yaw:0,satellite:'1txB3LDU8wx-fP_hJngeWH3nIGvNlE0Zb',folder:'199muXRaZ0iCvWuHWVvLoEypkrDeJGfrd',orientation:'image-traced',reviewImage:[1300,1000]},
  {id:'pad-92',kind:'proton-halls',title:'МИК «Протон» · пл.92',scale:.14,yaw:0,satellite:'1eVJZ3hWXMuNqe-zMPDXJzRMUUfNS5KQs',orientation:'image-traced',reviewImage:[1300,1000]},
- {id:'pad-95',kind:'settlement',title:'Городок · пл.95',scale:.14,yaw:0,satellite:'1kYur_BaNa6xrjT-iuhdipTElHMJPsTNR',orientation:'image-traced',reviewImage:[1400,1000]},
+ {id:'pad-95',kind:'settlement',title:'Военный городок · пл.95',scale:MUSEUM_METRE,yaw:0,folder:SITE95_REFERENCE.folder,satellite:SITE95_REFERENCE.satellite,orientation:SITE95_REFERENCE.registration,modelVersion:SITE95_VERSION},
  {id:'pad-110',kind:'energia',title:'Два старта «Энергии» · пл.110',scale:MUSEUM_METRE,yaw:0,satellite:'1eYjF4gq89TBHBkKu_1r8VZt9xRU5EI8F',folder:'1G7BvhrGYZrnXHjuHsDiGsnVBxi7jrnn7',orientation:'image-traced',reviewImage:[1125,1000]},
  {id:'pad-251',kind:'yubileiny',title:'Аэродром Юбилейный',scale:.28,yaw:1.948,satellite:'19t1sFdi7uFk5tAe7gQ5AAYEUjvyTnHIE',folder:'15WuQR5kx9kWrsKp-DORaRxWapXQolNPl',orientation:'image-traced',axis:'WSW-ENE'},
  {id:'pad-2',kind:'buran',title:'Площадка №2 · музейный «Буран»',scale:MUSEUM_METRE,yaw:0,folder:'1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO',orientation:'owner-anchor-photo-plan-and-panorama',modelVersion:'20261102-site2-photo-v3'},

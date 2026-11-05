@@ -36,6 +36,7 @@ export function archiveKit(root){
  function quad(a,b,c,d,m='concrete',tag='face',parent=root){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([...a,...b,...c,...a,...c,...d],3));g.computeVertexNormals();return direct(g,m,tag,parent);}
  function path(points,width=5,y=.12,m='asphalt',tag='internal-road',parent=root){if(points.length<2)return;const pos=[],idx=[];points.forEach((p,i)=>{const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b[0]-a[0],dz=b[1]-a[1],len=Math.hypot(dx,dz)||1;for(const s of [-1,1])pos.push(p[0]-dz/len*s*width/2,y,p[1]+dx/len*s*width/2);if(i<points.length-1){const k=i*2;idx.push(k,k+1,k+2,k+1,k+3,k+2);}});const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));geo.setIndex(idx);geo.computeVertexNormals();return direct(geo,m,tag,parent);}
  function rail(points,{bed=true,y=.30,tag='rail',parent=root}={}){
+  if(parent===root)(root.userData.archiveRailPaths??=[]).push({points:points.map(p=>[...p]),y,tag});
   const worldScale=parent.getWorldScale(new THREE.Vector3()).x,scale=worldScale===1?MUSEUM_METRE:worldScale,p=railProfileAtScale(scale);
   const headTop=y+p.sleeperHeight/2+p.railHeight,headBottom=headTop-p.railHeight;
   const frame=new THREE.Matrix4();let cursor=parent;
