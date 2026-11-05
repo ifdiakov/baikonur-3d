@@ -82,7 +82,11 @@ function packMesh(mesh){
 function packMeshes(layer){
  layer.updateMatrixWorld(true);
  const meshes=[];
- layer.traverse(node=>{if(node.isMesh){const item=packMesh(node);if(item)meshes.push(item);}});
+ layer.traverse(node=>{if(node.isMesh){
+  // Asset instances are loaded and culled independently of road geometry.
+  for(let p=node;p;p=p.parent)if(p.userData.excludeTransportBake)return;
+  const item=packMesh(node);if(item)meshes.push(item);
+ }});
  return meshes;
 }
 function materialFromPack(record,name){
