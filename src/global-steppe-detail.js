@@ -3,6 +3,7 @@ import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling
 // GPU-only, georeferenced material blending shared by every soil mesh.
 // This module contains no external images; the atlas is built after first paint.
 export const GLOBAL_SOIL_DETAIL_VERSION='world-builder-five-material-global-v2-anti-tiling';
+const installed=new WeakSet();
 const COMMON=[
  SOIL_ANTI_TILING_GLSL,
  'uniform sampler2D globalSoilAlbedo,globalSoilNormal,globalSoilRoughness;',
@@ -68,7 +69,9 @@ const SHADE_ROUGHNESS=[
  '}'
 ].join('\n');
 export function installGlobalSoilDetail(material,atlases,strength){
- if(material.userData.globalSoilDetailInstalled)return false;
+ // Three.js copies userData to clones but not the onBeforeCompile hook.
+ // Track the actual material instance, not a copied flag.
+ if(installed.has(material))return false;
  if(!material.userData.steppeSurface)throw new Error('Only existing steppe soil may receive detailed materials');
  const old=material.onBeforeCompile,key=material.customProgramCacheKey.bind(material);
  material.onBeforeCompile=function(shader,renderer){
@@ -89,6 +92,7 @@ export function installGlobalSoilDetail(material,atlases,strength){
   }
  };
  material.customProgramCacheKey=()=>key()+'|'+GLOBAL_SOIL_DETAIL_VERSION+'|'+SOIL_ANTI_TILING_VERSION;
+ installed.add(material);
  material.userData.globalSoilDetailInstalled=true;
  material.needsUpdate=true;return true;
 }
