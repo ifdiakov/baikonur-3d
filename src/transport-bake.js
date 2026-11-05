@@ -22,7 +22,7 @@ export function serializeTransport({transport,layers,mik112Rail}){
  if(!plan?.routes?.length)throw Error('No transport graph to bake');
  const scene={
   version:TRANSPORT_BAKE_VERSION,fingerprint,
-  roadMeshes:layers.roads.toJSON(),railMeshes:layers.rails.toJSON(),
+  cacheKind:'routes-only',
   roads:packMany(paths),
   vehicles:{routes:packMany(plan.routes),highway:plan.highway.id,source:plan.source,joins:plan.joins},
   extensions:packMany(paths.displayHighwayExtensions),
@@ -30,11 +30,15 @@ export function serializeTransport({transport,layers,mik112Rail}){
   terrain:{roads:packMany(transport.terrainPaths().roads),rails:packMany(transport.terrainPaths().rails)},
   train:{...train,path:packPath(train.path)},
   stations:transport.stationLabels().map(s=>({id:s.id,name:s.name,osmUrl:s.osmUrl,record:s.record,
-   groupUUID:s.group.uuid,anchorUUID:s.anchor.uuid})),
+   position:s.group.position.toArray(),anchor:s.anchor.position.toArray()})),
   rail:transport.routes,
   marking:{count:transport.roadMarkingPlan.quads.length,stats:transport.roadMarkingPlan.stats},
   highwayDisplay:transport.highwayDisplay.stats(),
-  bridgeUUID:transport.bridgeObjects()[0]?.uuid||null,
+  bridgeBounds:(()=>{
+   const bridge=transport.bridgeObjects()[0];if(!bridge)return null;
+   const box=new THREE.Box3().setFromObject(bridge);
+   return box.isEmpty()?null:{min:box.min.toArray(),max:box.max.toArray()};
+  })(),
   mik112Rail:JSON.parse(JSON.stringify(mik112Rail||{connected:false})),
   stats:transport.stats()
  };
@@ -55,15 +59,14 @@ function unpackPath(row){
 const unpack=rows=>rows.map(unpackPath);
 export function restoreBakedTransport({bake,layers}){
  if(bake?.version!==TRANSPORT_BAKE_VERSION||bake?.fingerprint!==fingerprint)throw Error('Outdated transport bake');
- const loader=new THREE.ObjectLoader();
- const roads=loader.parse(bake.roadMeshes),rails=loader.parse(bake.railMeshes);
- const osmRoad=roads.getObjectByName('OpenStreetMap · автодороги');
- const osmRail=rails.getObjectByName('OpenStreetMap · железнодорожные пути');
- if(!osmRoad||!osmRail)throw Error('Cached road meshes incomplete');
- const stations=bake.stations.map(s=>({...s,
-  group:rails.getObjectByProperty('uuid',s.groupUUID),
-  anchor:rails.getObjectByProperty('uuid',s.anchorUUID)}));
- if(stations.some(s=>!s.group||!s.anchor))throw Error('Cached station anchors missing');
+ if(bake.cacheKind!=='routes-only')throw Error('Full mesh snapshots are disabled; require compact route metadata');
+ const roadRoot=new THREE.Group(),railRoot=new THREE.Group();
+ roadRoot.name='OpenStreetMap · автодороги';railRoot.name='OpenStreetMap · железнодорожные пути';
+ const stations=bake.stations.map(s=>{
+  const group=new THREE.Group();group.name=s.name;group.position.fromArray(s.position);
+  const anchor=new THREE.Object3D();anchor.position.fromArray(s.anchor);group.add(anchor);railRoot.add(group);
+  return {...s,group,anchor};
+ });
  const paths=unpack(bake.roads);
  paths.displayHighwayExtensions=unpack(bake.extensions);
  const routes=unpack(bake.vehicles.routes);
@@ -72,11 +75,15 @@ export function restoreBakedTransport({bake,layers}){
  paths.osmVehiclePlan={routes,highway,source:bake.vehicles.source,joins:bake.vehicles.joins,extensions:[]};
  const terrain={roads:unpack(bake.terrain.roads),rails:unpack(bake.terrain.rails)};
  const train={...bake.train,path:unpackPath(bake.train.path)};
- const bridge=bake.bridgeUUID?roads.getObjectByProperty('uuid',bake.bridgeUUID):null;
+ const bridge=bake.bridgeBounds?(function(){
+  const bbox=new THREE.Box3(new THREE.Vector3(...bake.bridgeBounds.min),new THREE.Vector3(...bake.bridgeBounds.max));
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(...bbox.getSize(new THREE.Vector3()).toArray()),new THREE.MeshBasicMaterial({visible:false}));
+  mesh.name='Кэш · габариты виадука';mesh.position.copy(bbox.getCenter(new THREE.Vector3()));mesh.visible=false;
+  roadRoot.add(mesh);return mesh;
+ })():null;
  const stats={...bake.stats,baked:true,bakeVersion:TRANSPORT_BAKE_VERSION,sourceBuildMilliseconds:bake.stats.buildMilliseconds,buildMilliseconds:0};
  // Attach only after every required structural object has been validated.
- for(const obj of [...roads.children])layers.roads.add(obj);
- for(const obj of [...rails.children])layers.rails.add(obj);
+ layers.roads.add(roadRoot);layers.rails.add(railRoot);
  return {roadPaths:()=>paths,editableRoadPaths:()=>unpack(bake.editable),
   terrainPaths:()=>terrain,trainPath:()=>train,stationLabels:()=>stations,
   connectMik112:()=>bake.mik112Rail,roadMarkingPlan:{quads:Array(bake.marking.count),stats:bake.marking.stats},
