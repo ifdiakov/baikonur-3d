@@ -3,7 +3,8 @@ import {createHash} from 'node:crypto';
 const base=process.env.BAIKONUR_URL||'https://ifdiakov.github.io/baikonur-3d/';
 const files=['src/site250a.js','src/site250a-layout.js'];
 const entrySource=await readFile('index.html','utf8');
-const expectedArchiveImport=entrySource.match(/import \\{installArchiveModels\\} from '([^']+)'/)?.[1];
+const expectedArchiveImport=entrySource.split(String.fromCharCode(10))
+ .find(line=>line.includes("import {installArchiveModels} from"))?.split("'")[1];
 if(!expectedArchiveImport)throw Error('Cannot verify the archive-models module import in index.html');
 const hash=b=>createHash('sha256').update(b).digest('hex'),expected=await Promise.all(files.map(f=>readFile(f).then(hash)));
 for(let attempt=0;attempt<36;attempt++){
