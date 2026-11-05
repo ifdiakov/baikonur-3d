@@ -7,6 +7,7 @@ on:
       - 'src/osm-transport.js'
       - 'src/rail-scheme.js'
       - 'tests/rail-terminal-cleanup.mjs'
+      - 'tests/rail-site-gates-integration.mjs'
       - 'tests/access-rail-continuity.mjs'
       - 'data/osm/railways.geojson'
       - 'data/osm/rail-points.geojson'
@@ -33,4 +34,4 @@ jobs:
           node tests/rail-surface.mjs
           node tests/mik112-rail-layout.mjs
           node tests/site110-rail-fan.mjs
-          node tests/access-rail-continuity.mjs
+          node tests/rail-site-gates-integration.mjs
