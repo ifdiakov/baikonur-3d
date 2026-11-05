@@ -15,6 +15,7 @@ on:
     paths:
       - 'src/site250a*'
       - 'tests/site250a*'
+      - 'scripts/verify-site250a-published.mjs'
       - '.github/workflows/verify-site250a.yml'
   workflow_dispatch:
 permissions:
