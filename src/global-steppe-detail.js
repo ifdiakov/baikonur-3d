@@ -1,23 +1,28 @@
+import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling.js?v=20261105-dual-domain-v1';
+
 // GPU-only, georeferenced material blending shared by every soil mesh.
 // This module contains no external images; the atlas is built after first paint.
-export const GLOBAL_SOIL_DETAIL_VERSION='world-builder-five-material-global-v1';
+export const GLOBAL_SOIL_DETAIL_VERSION='world-builder-five-material-global-v2-anti-tiling';
 const COMMON=[
+ SOIL_ANTI_TILING_GLSL,
  'uniform sampler2D globalSoilAlbedo,globalSoilNormal,globalSoilRoughness;',
  'uniform float globalSoilStrength;',
- 'vec2 globalSoilUV(float kind,vec2 world){',
- ' vec2 cell=vec2(mod(kind,4.0),floor(kind/4.0));',
- ' return (cell+mix(vec2(.0015),vec2(.9985),fract(world/3.2)))/vec2(4.0,2.0);',
- '}',
  'void globalSoilPair(vec3 w,out float a,out float b,out float fraction){',
- ' float n=sin(w.x*.011+sin(w.z*.017))*cos(w.z*.013-cos(w.x*.009));',
- ' float s=sin(w.x*.022+w.z*.014)*cos(w.z*.031-w.x*.005);',
+ ' vec2 p=w.xz;',
+ ' vec2 warp=vec2(soilDetailNoise(p/107.0+vec2(4.1,-2.2)),',
+ '                soilDetailNoise(p/91.0+vec2(-9.7,7.4)))-.5;',
+ ' vec2 uneven=p+warp*36.0;',
+ ' float sand=soilDetailNoise(uneven/73.0+vec2(12.1,-2.3));',
+ ' float gravel=soilDetailNoise(uneven/49.0+vec2(-7.2,8.3));',
+ ' float salt=soilDetailNoise(uneven/109.0+vec2(3.8,19.7));',
+ ' float scrub=soilDetailNoise(uneven/57.0+vec2(-13.4,4.1));',
  ' float gradient=clamp(length(vec2(dFdx(w.y),dFdy(w.y)))/max(length(dFdx(w.xz))+length(dFdy(w.xz)),.0001)*2.3,0.0,1.0);',
  ' float weights[5];',
- ' weights[0]=.46+.10*n;',
- ' weights[1]=.27+.20*n+.10*s-.10*gradient;',
- ' weights[2]=.13+.30*gradient+.13*s;',
- ' weights[3]=.08+.16*smoothstep(.1,.9,-n)*(.8-.35*gradient);',
- ' weights[4]=.15+.09*sin(w.z*.019-w.x*.024);',
+ ' weights[0]=.35+.17*(1.0-sand)+.06*(1.0-gradient);',
+ ' weights[1]=.21+.40*sand-.13*gradient;',
+ ' weights[2]=.10+.29*gravel+.30*gradient;',
+ ' weights[3]=.10+.33*smoothstep(.48,.83,salt)*(1.0-.68*gradient);',
+ ' weights[4]=.10+.27*scrub*(1.0-.5*gradient);',
  ' float best=-10.0,runner=-10.0;a=0.0;b=1.0;',
  ' for(int i=0;i<5;i++){',
  '  if(weights[i]>best){runner=best;b=a;best=weights[i];a=float(i);}',
@@ -28,17 +33,25 @@ const COMMON=[
 ].join('\n');
 const SHADE_COLOR=[
  'float globalSoilA=0.0,globalSoilB=1.0,globalSoilMix=0.0;',
+ 'vec2 globalCoordsA=vec2(0.0),globalCoordsB=vec2(0.0);float globalDomainMix=0.0;',
  'if(globalSoilStrength>.001){',
  ' globalSoilPair(vSteppeWorld,globalSoilA,globalSoilB,globalSoilMix);',
- ' vec3 globalTone=mix(texture2D(globalSoilAlbedo,globalSoilUV(globalSoilA,vSteppeWorld.xz)).rgb,',
- '  texture2D(globalSoilAlbedo,globalSoilUV(globalSoilB,vSteppeWorld.xz)).rgb,globalSoilMix);',
+ ' soilDetailDomains(vSteppeWorld.xz,globalCoordsA,globalCoordsB,globalDomainMix);',
+ ' vec3 familyA=mix(texture2D(globalSoilAlbedo,soilDetailAtlasUV(globalSoilA,globalCoordsA)).rgb,',
+ '  texture2D(globalSoilAlbedo,soilDetailAtlasUV(globalSoilA,globalCoordsB)).rgb,globalDomainMix);',
+ ' vec3 familyB=mix(texture2D(globalSoilAlbedo,soilDetailAtlasUV(globalSoilB,globalCoordsA)).rgb,',
+ '  texture2D(globalSoilAlbedo,soilDetailAtlasUV(globalSoilB,globalCoordsB)).rgb,globalDomainMix);',
+ ' vec3 globalTone=mix(familyA,familyB,globalSoilMix);',
  ' diffuseColor.rgb=mix(diffuseColor.rgb,globalTone,globalSoilStrength*.35);',
  '}'
 ].join('\n');
 const SHADE_NORMAL=[
  'if(globalSoilStrength>.001){',
- ' vec3 gn=mix(texture2D(globalSoilNormal,globalSoilUV(globalSoilA,vSteppeWorld.xz)).rgb,',
- '  texture2D(globalSoilNormal,globalSoilUV(globalSoilB,vSteppeWorld.xz)).rgb,globalSoilMix)*2.0-1.0;',
+ ' vec3 gnA=mix(texture2D(globalSoilNormal,soilDetailAtlasUV(globalSoilA,globalCoordsA)).rgb,',
+ '  texture2D(globalSoilNormal,soilDetailAtlasUV(globalSoilA,globalCoordsB)).rgb,globalDomainMix);',
+ ' vec3 gnB=mix(texture2D(globalSoilNormal,soilDetailAtlasUV(globalSoilB,globalCoordsA)).rgb,',
+ '  texture2D(globalSoilNormal,soilDetailAtlasUV(globalSoilB,globalCoordsB)).rgb,globalDomainMix);',
+ ' vec3 gn=mix(gnA,gnB,globalSoilMix)*2.0-1.0;',
  ' vec3 gx=normalize(vec3(1.00001,0.0,0.0)-normal*normal.x);',
  ' vec3 gz=normalize(cross(normal,gx));',
  ' normal=normalize(normal+(gx*gn.x+gz*gn.y)*globalSoilStrength*.20);',
@@ -46,8 +59,11 @@ const SHADE_NORMAL=[
 ].join('\n');
 const SHADE_ROUGHNESS=[
  'if(globalSoilStrength>.001){',
- ' float value=mix(texture2D(globalSoilRoughness,globalSoilUV(globalSoilA,vSteppeWorld.xz)).r,',
- ' texture2D(globalSoilRoughness,globalSoilUV(globalSoilB,vSteppeWorld.xz)).r,globalSoilMix);',
+ ' float roughA=mix(texture2D(globalSoilRoughness,soilDetailAtlasUV(globalSoilA,globalCoordsA)).r,',
+ '  texture2D(globalSoilRoughness,soilDetailAtlasUV(globalSoilA,globalCoordsB)).r,globalDomainMix);',
+ ' float roughB=mix(texture2D(globalSoilRoughness,soilDetailAtlasUV(globalSoilB,globalCoordsA)).r,',
+ '  texture2D(globalSoilRoughness,soilDetailAtlasUV(globalSoilB,globalCoordsB)).r,globalDomainMix);',
+ ' float value=mix(roughA,roughB,globalSoilMix);',
  ' roughnessFactor=mix(roughnessFactor,value,globalSoilStrength*.6);',
  '}'
 ].join('\n');
@@ -72,7 +88,7 @@ export function installGlobalSoilDetail(material,atlases,strength){
    shader.fragmentShader=shader.fragmentShader.replace('#include <roughnessmap_fragment>','#include <roughnessmap_fragment>\n'+SHADE_ROUGHNESS);
   }
  };
- material.customProgramCacheKey=()=>key()+'|'+GLOBAL_SOIL_DETAIL_VERSION;
+ material.customProgramCacheKey=()=>key()+'|'+GLOBAL_SOIL_DETAIL_VERSION+'|'+SOIL_ANTI_TILING_VERSION;
  material.userData.globalSoilDetailInstalled=true;
  material.needsUpdate=true;return true;
 }
