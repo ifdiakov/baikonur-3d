@@ -71,19 +71,21 @@ export function serializeTransport({transport,layers,mik112Rail,sourceFingerprin
  if(scene.stats.roadFeatureCount<2000)throw Error('Unexpected number of baked road features');
  return scene;
 }
-function unpackPath(row){
- const points=(row.points||[]).map(p=>new THREE.Vector3(...p));
+function unpackPath(row,roadGrade=null){
+ let points=(row.points||[]).map(p=>new THREE.Vector3(...p));
+ if(roadGrade)points=roadGrade.conform(points);
  const {widthSamples,...rest}=row;
+ const widthScale=roadGrade?.widthScale(row.id)??1;if(rest.width!=null)rest.width*=widthScale;
  if(points.length<2)return {...rest,points};
  const track=distancePath(points),path={...rest,...track};
  path.widthAt=widthSamples?.length?distance=>{
   const at=Math.min(widthSamples.length-1,Math.max(0,distance/(track.length||1)*(widthSamples.length-1)));
-  return THREE.MathUtils.lerp(widthSamples[Math.floor(at)],widthSamples[Math.min(widthSamples.length-1,Math.floor(at)+1)],at-Math.floor(at));
- }:()=>row.width||4;
+  return widthScale*THREE.MathUtils.lerp(widthSamples[Math.floor(at)],widthSamples[Math.min(widthSamples.length-1,Math.floor(at)+1)],at-Math.floor(at));
+ }:()=>rest.width||4;
  return path;
 }
-const unpack=rows=>rows.map(unpackPath);
-export function restoreBakedTransport({bake,layers,sourceFingerprint=null}){
+const unpack=(rows,grade=null)=>rows.map(row=>unpackPath(row,grade));
+export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGrade=null}){
  if(bake?.version!==TRANSPORT_BAKE_VERSION||bake?.fingerprint!==fingerprint)throw Error('Outdated transport bake');
  if(sourceFingerprint!==null&&bake.sourceFingerprint!==sourceFingerprint)throw Error('Source roads or display anchors changed since transport bake');
  if(bake.cacheKind!=='routes-only')throw Error('Full mesh snapshots are disabled; require compact route metadata');
@@ -94,13 +96,13 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null}){
   const anchor=new THREE.Object3D();anchor.position.fromArray(s.anchor);group.add(anchor);railRoot.add(group);
   return {...s,group,anchor};
  });
- const paths=unpack(bake.roads);
- paths.displayHighwayExtensions=unpack(bake.extensions);
- const routes=unpack(bake.vehicles.routes);
+ const paths=unpack(bake.roads,roadGrade);
+ paths.displayHighwayExtensions=unpack(bake.extensions,roadGrade);
+ const routes=unpack(bake.vehicles.routes,roadGrade);
  const highway=routes.find(r=>r.id===bake.vehicles.highway);
  if(!highway)throw Error('Cached highway missing');
  paths.osmVehiclePlan={routes,highway,source:bake.vehicles.source,joins:bake.vehicles.joins,extensions:[]};
- const terrain={roads:unpack(bake.terrain.roads),rails:unpack(bake.terrain.rails)};
+ const terrain={roads:unpack(bake.terrain.roads,roadGrade),rails:unpack(bake.terrain.rails)};
  const train={...bake.train,path:unpackPath(bake.train.path)};
  const bridge=bake.bridgeBounds?(function(){
   const bbox=new THREE.Box3(new THREE.Vector3(...bake.bridgeBounds.min),new THREE.Vector3(...bake.bridgeBounds.max));
@@ -111,7 +113,7 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null}){
  const stats={...bake.stats,baked:true,bakeVersion:TRANSPORT_BAKE_VERSION,sourceBuildMilliseconds:bake.stats.buildMilliseconds,buildMilliseconds:0};
  // Attach only after every required structural object has been validated.
  layers.roads.add(roadRoot);layers.rails.add(railRoot);
- return {roadPaths:()=>paths,editableRoadPaths:()=>unpack(bake.editable),
+ return {roadPaths:()=>paths,editableRoadPaths:()=>unpack(bake.editable,roadGrade),
   terrainPaths:()=>terrain,trainPath:()=>train,stationLabels:()=>stations,
   connectMik112:()=>bake.mik112Rail,roadMarkingPlan:{quads:Array(bake.marking.count),stats:bake.marking.stats},
   highwayDisplay:{stats:()=>bake.highwayDisplay,paths:paths.displayHighwayExtensions},

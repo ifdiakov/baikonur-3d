@@ -2,10 +2,10 @@ name: Site 113 housing district
 on:
   pull_request:
     branches: [main]
-    paths: ['src/site113*.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
+    paths: ['src/site113*.js', 'src/osm-transport.js', 'src/road-lod.js', 'src/transport-bake.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
   push:
     branches: [main]
-    paths: ['src/site113*.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
+    paths: ['src/site113*.js', 'src/osm-transport.js', 'src/road-lod.js', 'src/transport-bake.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
   workflow_dispatch:
 permissions:
   contents: read

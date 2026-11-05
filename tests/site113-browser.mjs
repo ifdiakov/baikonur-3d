@@ -12,6 +12,8 @@ try{
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.site113.stats());assert.equal(stats.version,'20261105-site113-town-v1');assert.equal(stats.buildings.length,24);
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.setLabelsVisible(false);});
  assert.equal(await page.locator('#site113Views button').count(),5);
+ await frame();await page.waitForFunction(()=>window.__BAIKONUR_QA.stats().transportBake.detailReady,null,{timeout:240000});
+ assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.site113.groundStats())).roadY,-2.73);
  for(const view of ['all','blocks','stage','utilities','top']){
   await page.locator(`[data-site113-view="${view}"]`).click();await frame();
   await page.screenshot({path:out+'/'+prefix+'-'+view+'.png'});

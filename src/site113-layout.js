@@ -9,6 +9,8 @@ export const SITE113_REFERENCE={folder:'1Jjp0M_CU7X0Vw-hb4PDERVwWsV9OXv7k',satel
 // a measured architectural survey. The common model scale remains 0.14.
 export const SITE113_PIXEL_ORIGIN=[1135,205],SITE113_PIXEL_SCALE=.319;
 export const site113Pixel=([u,v])=>[(u-SITE113_PIXEL_ORIGIN[0])*SITE113_PIXEL_SCALE,(v-SITE113_PIXEL_ORIGIN[1])*SITE113_PIXEL_SCALE];
+// Small display offsets keep balconies clear of the wider museum roads.
+const streetOffsets={"2":[8,-8],"3":[8,-8],"4":[8,-8],"5":[10,-6],"6":[0,-2],"10":[8,10],"12":[-10,-24],"13":[-2,0],"14":[-12,-24],"18":[0,2],"19":[-4,-12],"23":[30,32],"24":[8,8]};
 export const SITE113_BUILDINGS=[
  // Centre u/v, long facade pixels, depth pixels, floors, facade family.
  [489,606,110,28,5,'panel'],[494,692,132,28,5,'panel'],[537,736,132,28,5,'panel'],[580,780,132,28,5,'panel'],[622,825,132,28,5,'panel'],
@@ -17,7 +19,7 @@ export const SITE113_BUILDINGS=[
  [1000,143,94,30,5,'plain'],[1027,173,64,28,5,'plain'],[1119,270,90,28,5,'plain'],[1153,284,49,25,3,'plain'],
  [1056,427,91,29,5,'panel'],[996,408,70,26,3,'plain'],[1054,348,67,25,3,'plain'],[929,494,81,31,2,'civic'],
  [658,819,65,22,2,'civic'],[704,866,59,26,1,'civic']
-].map((b,i)=>({id:'site113-block-'+(i+1),pixel:b.slice(0,2),length:b[2]*SITE113_PIXEL_SCALE,depth:b[3]*SITE113_PIXEL_SCALE,floors:b[4],family:b[5],yaw:Math.PI/4,position:site113Pixel(b)}));
+].map((b,i)=>({id:'site113-block-'+(i+1),pixel:b.slice(0,2),length:b[2]*SITE113_PIXEL_SCALE*(i>=5&&i<=9?.62:1),depth:b[3]*SITE113_PIXEL_SCALE,floors:b[4],family:b[5],yaw:Math.PI/4,displayOffset:streetOffsets[i+1]||[0,0],position:site113Pixel(b.map((v,j)=>j<2?v+(streetOffsets[i+1]?.[j]||0):v))}));
 export const SITE113_PATHS=[
  // Footpaths and courts only. Existing OSM streets remain the road source.
  [[578,511],[658,585],[733,659],[809,735]],
