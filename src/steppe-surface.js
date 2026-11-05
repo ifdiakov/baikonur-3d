@@ -6,7 +6,7 @@ export const STEPPE_BIOME_EXTENT=18000;
 export const STEPPE_BIOME_RESOLUTION=1024;
 // The generated field and the material program have separate revisions: an
 // image treatment must not silently claim that the fallback soil field changed.
-export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v14-anti-tiling';
+export const STEPPE_SURFACE_VERSION='baikonur-steppe-surface-v15-soft-soil-joins';
 const installed=new WeakMap();
 
 function satelliteSurrounding(options){
@@ -137,6 +137,17 @@ export function createSteppeBiomeTexture(){
 export const STEPPE_FRAGMENT=/* glsl */`
  uniform sampler2D steppeBiomes,steppeMicro,steppeMeso;
  varying vec3 vSteppeWorld;
+ // The photograph and the fallback soils use the SAME world-space grain.
+ // Neither small sample repeats alone; broad, irregular warps and a rotated
+ // second phase keep the 2-unit source texture from reading as square tiles.
+ vec3 steppeUntiledMicro(vec2 p){
+  vec2 rotated=mat2(.819152,.573576,-.573576,.819152)*p;
+  vec2 broad=(texture2D(steppeMeso,p/173.0+vec2(.27,.61)).rg-.5)*8.5;
+  vec2 broken=(texture2D(steppeMeso,rotated/23.0+vec2(.71,.13)).gb-.5)*2.3;
+  vec2 a=(p+broad+broken)/2.37;
+  vec2 b=(rotated+vec2(17.31,-9.47)+broad.yx*.72-broken.yx)/3.11;
+  return mix(texture2D(steppeMicro,a).rgb,texture2D(steppeMicro,b).rgb,.51);
+ }
  vec3 steppeSurfaceTone(vec2 p){
   float pixelSize=max(length(dFdx(p)),length(dFdy(p)));
   // Mipmaps average subpixel grains; derivative fades remove their residual
@@ -170,7 +181,7 @@ export const STEPPE_FRAGMENT=/* glsl */`
   }
   float closeDetail=1.0-smoothstep(.045,.25,pixelSize);
   if(closeDetail>.001){
-   vec3 micro=texture2D(steppeMicro,p/2.0).rgb;
+   vec3 micro=steppeUntiledMicro(p);
    float soil=(micro.r-.5)*.48;
    float aeolian=(micro.g-.5)*.27;
    // Salt crust appears only in the salt-pan field, with narrow dark seams
@@ -205,7 +216,7 @@ export const STEPPE_SATELLITE_FRAGMENT=/* glsl */`
   float closeDetail=1.0-smoothstep(.045,.25,pixelSize);
   // The photograph supplies all broad soil structure. A restrained neutral
   // grain only appears at close range; no new salt fields or painted plants.
-  float grain=texture2D(steppeMicro,p/2.0).r-.5;
+  float grain=steppeUntiledMicro(p).r-.5;
   return vec3(1.0+grain*.12*closeDetail);
  }
 `;
