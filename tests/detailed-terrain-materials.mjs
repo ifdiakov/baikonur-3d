@@ -23,7 +23,9 @@ for(const map of [atlas.albedo,atlas.normal,atlas.roughness]){
 }
 assert(GAME_TERRAIN_VERSION.includes('five-materials'));
 assert(source.includes('gameMaterialAlbedo')&&source.includes('gameMaterialNormal')&&source.includes('gameMaterialRoughness'));
-assert(source.includes('gameTopMaterials')&&source.includes('gameAtlasUV'));
+assert(source.includes('gameTopMaterials')&&source.includes('soilDetailAtlasUV'));
+assert(source.includes('SOIL_ANTI_TILING_GLSL')&&!source.includes('vec2 gameAtlasUV('),
+ 'The original periodic local soil UVs must not return');
 assert(source.includes('const FIELD_RESOLUTION=512'));
 assert(html.includes('gameTerrain=await createGameTerrainPilot('));
 const globalSource=await readFile(new URL('../src/global-steppe-detail.js',import.meta.url),'utf8');
