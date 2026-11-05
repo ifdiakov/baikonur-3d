@@ -21,20 +21,26 @@ export function planRailStations(stations,paths){
    if(distance<nearest.distance)Object.assign(nearest,{distance,p,d:s.d});
   }
   if(!nearest.p)return {id:st.id,skipped:'no-displayed-rail',position:anchor.toArray()};
-  const axis=nearest.d.clone().setY(0).normalize();if(axis.x<0)axis.negate();const normal=V(-axis.z,0,axis.x),halfLength=55*S,offsets=[0];
+  const axis=nearest.d.clone().setY(0).normalize();if(axis.x<0)axis.negate();const normal=V(-axis.z,0,axis.x),halfLength=55*S,offsets=[0],corridors=[];
   for(const s of segments){
-   const dir=s.d.clone().setY(0).normalize();if(Math.abs(dir.dot(axis))<.94)continue;
+   const dir=s.d.clone().setY(0).normalize();
    const a=s.a.clone().sub(nearest.p),b=s.b.clone().sub(nearest.p),x0=a.dot(axis),x1=b.dot(axis);
    if(Math.min(x0,x1)>halfLength||Math.max(x0,x1)<-halfLength)continue;
    const t0=THREE.MathUtils.clamp((-halfLength-x0)/(x1-x0||1),0,1),t1=THREE.MathUtils.clamp((halfLength-x0)/(x1-x0||1),0,1);
-   for(const t of [t0,t1]){const z=a.clone().lerp(b,t).dot(normal);if(Math.abs(z)<12)offsets.push(z);}
+   const ends=[t0,t1].map(t=>a.clone().lerp(b,t).dot(normal)),low=Math.min(...ends),high=Math.max(...ends);
+   corridors.push([low,high]);
+   if(Math.abs(dir.dot(axis))>=.94)for(const z of ends)if(Math.abs(z)<12)offsets.push(z);
   }
-  const sorted=offsets.sort((a,b)=>a-b).filter((z,i,a)=>!i||z-a[i-1]>.08),zero=sorted.reduce((best,z,i)=>Math.abs(z)<Math.abs(sorted[best])?i:best,0);
+  const sorted=[];for(const z of offsets.sort((a,b)=>a-b))if(!sorted.length||z-sorted.at(-1)>.08)sorted.push(z);
+  const zero=sorted.reduce((best,z,i)=>Math.abs(z)<Math.abs(sorted[best])?i:best,0);
   let lo=zero,hi=zero;while(lo>0&&sorted[lo]-sorted[lo-1]<1.2)lo--;while(hi<sorted.length-1&&sorted[hi+1]-sorted[hi]<1.2)hi++;
-  const mid=(sorted[lo]+sorted[hi])/2,position=nearest.p.clone().addScaledVector(normal,mid);position.y+=.008;
+  let left=sorted[lo],right=sorted[hi];
+  // Include diverging turnout rails along the entire platform, not just its centre.
+  for(let pass=0;pass<corridors.length;pass++){let changed=false;for(const [a,b]of corridors)if(a<=right+1.1&&b>=left-1.1){if(a<left){left=a;changed=true;}if(b>right){right=b;changed=true;}}if(!changed)break;}
+  const mid=(left+right)/2,position=nearest.p.clone().addScaledVector(normal,mid);position.y+=.008;
   // Quantize upward so the closest rail retains >=1.25 m platform clearance.
-  const innerMetres=Math.ceil(((sorted[hi]-sorted[lo])/2/S+1.25+RAIL_PROFILE.gauge/(2*S))*4)/4;
-  return {id:st.id,name:st.name,position:position.toArray(),yaw:-Math.atan2(axis.z,axis.x),innerMetres,trackSpan:sorted[hi]-sorted[lo],nearestRailDistance:nearest.distance,trackCount:hi-lo+1};
+  const innerMetres=Math.ceil(((right-left)/2/S+1.25+RAIL_PROFILE.gauge/(2*S))*4)/4;
+  return {id:st.id,name:st.name,position:position.toArray(),yaw:-Math.atan2(axis.z,axis.x),innerMetres,trackSpan:right-left,nearestRailDistance:nearest.distance,trackCount:hi-lo+1};
  });
 }
 export function metricStationGeometry(mesh){
@@ -61,13 +67,6 @@ export function stationGeometry(template,innerMetres){
  p.needsUpdate=true;geometry.computeVertexNormals();geometry.computeBoundingSphere();return geometry;
 }
 export function createRailStations({stations,paths,parent,clickable,firstIndex,loadSource=loadRailStation}){
- // Older full-scene caches may still contain the former station boxes.
- const obsolete=[];parent.updateMatrixWorld(true);parent.traverse(m=>{
-  if(!m.isMesh||m.userData.museumComponent!=='prebaked-transport'||m.name||m.geometry.attributes.position.count!==24)return;
-  m.geometry.computeBoundingBox();const size=m.geometry.boundingBox.getSize(V()),p=m.getWorldPosition(V());
-  const body=Math.abs(size.x-5.4)<.01&&Math.abs(size.y-3.8)<.01&&Math.abs(size.z-9)<.01,roof=Math.abs(size.x-6)<.01&&Math.abs(size.y-.45)<.01&&Math.abs(size.z-9.6)<.01;
-  if((body||roof)&&stations.some(st=>{const a=st.group.position;return Math.abs(p.x-a.x-4)<.01&&Math.abs(p.z-a.z)<.01&&Math.abs(p.y-a.y-(body?1.9:3.9))<.01;}))obsolete.push(m);
- });obsolete.forEach(m=>{m.removeFromParent();m.geometry.dispose();});
  const plans=planRailStations(stations,paths),root=new THREE.Group();root.userData.excludeTransportBake=true;root.name='ЖД станции · перроны и навесы без зданий';parent.add(root);
  const fallbackGeometry=new THREE.BoxGeometry(110,1.38,4.95),fallbackMaterial=new THREE.MeshStandardMaterial({color:0xa9aa9c,roughness:1});
  const labels=stations.map((st,i)=>{

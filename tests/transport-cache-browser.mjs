@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {stat} from 'node:fs/promises';
 const cacheBytes=(await stat(new URL('../data/osm/transport-geometry-bake-v1.json.gz',import.meta.url))).size;
-assert(cacheBytes<12000000,'Precompiled transport cache should be under 12MB, actual: '+cacheBytes);
+const lodBytes=(await stat(new URL('../data/osm/road-lod-authoritative-v1.json.gz',import.meta.url))).size;
+assert(cacheBytes<1500000,'Precompiled transport cache must remain compact: '+cacheBytes);
+assert(lodBytes<2000000,'LOD needs to stay small: '+lodBytes);
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
 const errors=[],shaders=[];
@@ -18,12 +20,9 @@ try{
    sites:s.sites,firstFrameMs:Math.round(interactive-beginning),shadersValid:s.shadersValid,
    heading:document.getElementById('museumLoading')?.hidden};
  });
- assert.equal(report.transport.baked,true,'The real precalculated transport must be used');
- assert.equal(report.transport.cacheKind,'full-mesh-v1');
- assert(report.transport.meshStats?.roads?.meshes>1,'Real road meshes must be restored');
- assert(report.transport.meshStats?.rails?.meshes>1,'Real railway meshes must be restored');
+ assert.equal(report.transport.baked,true,'Cached topology and source-filtered preview must be used');
  assert.equal(report.bake.enabled,true);
- assert(report.roadLOD.mode==='far'||report.roadLOD.mode==='medium'||report.roadLOD.mode==='prebaked-detailed');
+ assert(['far','medium'].includes(report.roadLOD.mode),'Real far/medium LOD should be displayed');
  assert(report.transport.roadFeatureCount>3000);
  assert(report.sites>30);
  assert(report.heading);

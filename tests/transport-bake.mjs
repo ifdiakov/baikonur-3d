@@ -26,21 +26,10 @@ const fingerprint=transportSourceFingerprint({roads:{features:[{a:1}]},railways:
  ownerRoadEdits:{edits:[]},siteRecords:[{id:'pad-1',x:100,y:200}]});
 const payload=serializeTransport({transport:original,layers,mik112Rail:{connected:true,tracks:[]},sourceFingerprint:fingerprint});
 assert.equal(payload.version,TRANSPORT_BAKE_VERSION);
-assert.equal(payload.cacheKind,'full-mesh-v1');
-assert.equal(payload.meshes.roads.length,1);
-assert.equal(payload.meshes.rails.length,1);
-assert.deepEqual(payload.meshes.roads[0].geometry.attributes.position.values,
- Array.from(roadRoot.children[0].geometry.attributes.position.array));
 const target={roads:new THREE.Group(),rails:new THREE.Group()};
 assert.throws(()=>restoreBakedTransport({bake:payload,layers:target,sourceFingerprint:'wrong'}),/changed/);
 const baked=restoreBakedTransport({bake:JSON.parse(JSON.stringify(payload)),layers:target,sourceFingerprint:fingerprint});
 assert.equal(baked.stats().baked,true);
-assert.equal(baked.stats().meshStats.roads.meshes,1);
-assert.equal(baked.stats().meshStats.rails.meshes,1);
-const restoredRoad=target.roads.getObjectByName('OpenStreetMap · автодороги').children.find(x=>x.isMesh);
-assert(restoredRoad,'Pre-baked road geometry must actually exist in restored scene');
-assert.deepEqual(Array.from(restoredRoad.geometry.attributes.position.array),
- Array.from(roadRoot.children[0].geometry.attributes.position.array));
 assert.equal(baked.stats().sourceBuildMilliseconds,4000);
 assert.equal(baked.roadPaths().osmVehiclePlan.highway.sample(18).position.x,18);
 assert.equal(baked.roadPaths().osmVehiclePlan.highway.widthAt(0),6);
