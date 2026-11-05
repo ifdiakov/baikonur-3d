@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createRoadVehicles} from './road-vehicles.js?v=20261103-sprinter-v1';
+import {createRoadVehicles} from './road-vehicles.js?v=20261105-sprinter-detail-v2';
 import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH,TRAIN_METRIC_SCALE,TRAIN_VERSION} from './rail-vehicles.js?v=20261102-m62-headlamp-v2';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;

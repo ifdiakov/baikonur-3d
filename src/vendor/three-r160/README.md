@@ -10,7 +10,7 @@ does not depend on a third-party JavaScript CDN. The import map resolves `three`
 to `build/three.module.js` and `three/addons/` to `examples/jsm/` here.
 
 Included modules: the Three.js engine, OrbitControls, GLTFLoader, and its
-BufferGeometryUtils dependency. The model loaders already use the separate
+BufferGeometryUtils dependency, plus RoundedBoxGeometry for vehicle detail. The model loaders already use the separate
 local `../meshopt_decoder-v1.mjs` decoder. No upstream source is modified.
 
 ## Original file SHA-256 values
@@ -22,3 +22,4 @@ local `../meshopt_decoder-v1.mjs` decoder. No upstream source is modified.
 | `examples/jsm/loaders/GLTFLoader.js` | 108522 | `d073b438e6a07e1359741dd5d6c76c953420cc0d4fd84eb1bdde94315540e6a3` |
 | `examples/jsm/utils/BufferGeometryUtils.js` | 31906 | `9be041e96308775d00e2695cc607645b9a9b64fd7c0e759dd8f7c00a8d92becb` |
 | `LICENSE` | 1081 | `852e0e8699169bf9f6fdc6bda3e682d078dcbc738b5d33e74df594721bff271d` |
+| `examples/jsm/geometries/RoundedBoxGeometry.js` | 4625 | `d20aeaf7077c459a8d952d215738d7b44fba028440bb862d84b622a34f0c80bb` |
