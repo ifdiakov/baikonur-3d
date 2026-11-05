@@ -1020,6 +1020,8 @@ function requestTransportDetail(){
      facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,
      geography,point,layers,siteRecords,checkpoint7RoadGrade:displayRoadGrade});
    if(mik112Exhibit)detail.connectMik112?.(objects[mik112Index].g);
+   // After the fast cached boot, relocate platform models to the final rails.
+   railStations?.replan(detail.terrainPaths().rails,detail.terrainPaths().roads);
    detailedTransportRoots=[
     [...layers.roads.children].filter(o=>o.name==='OpenStreetMap · автодороги').at(-1),
     [...layers.rails.children].filter(o=>o.name==='OpenStreetMap · железнодорожные пути').at(-1)
