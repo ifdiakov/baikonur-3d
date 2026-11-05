@@ -970,7 +970,10 @@ let detailedTransportRoots=[
 if(transportFromBake){
  roadLOD=createRoadLOD({data:preparedLOD,geography,point,scene});
  roadLOD.update(Math.max(360,camera.position.y/SCENE_SCALE),detailedTransportRoots);
-}else{
+}else if(transportQuery.get('previewRoadLOD')==='1'){
+ // LOD source routes have not yet been intersected with all 286 owner
+ // deletions. Keep public full-detail roads visible at every altitude until
+ // the overview meshes preserve the same author-approved exclusions.
  const roadLODReady=startup.defer(async()=>{
   const data=await roadLodDataReady;
   if(!data||data.version!==ROAD_LOD_VERSION)return null;
