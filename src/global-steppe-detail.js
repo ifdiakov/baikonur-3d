@@ -1,4 +1,4 @@
-import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling.js?v=20261105-dual-domain-v1';
+import {SOIL_ANTI_TILING_GLSL,SOIL_ANTI_TILING_VERSION} from './soil-anti-tiling.js?v=20261105-seamless-v2';
 
 // GPU-only, georeferenced material blending shared by every soil mesh.
 // This module contains no external images; the atlas is built after first paint.
