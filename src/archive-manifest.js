@@ -1,3 +1,4 @@
+import {SITE113_VERSION,SITE113_REFERENCE} from './site113-layout.js?v=20261105-site113-town-v1';
 import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
 import {SITE250A_YAW,SITE250A_REFERENCE,SITE250A_VERSION} from './site250a-layout.js?v=20261103-site250a-photo-v1';
 import {SITE254_YAW,SITE254_REFERENCE,SITE254_VERSION} from './site254-layout.js?v=20261103-site254-e10s5';
@@ -11,6 +12,7 @@ import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-fa
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';
 export const ARCHIVE_MAP=[
+ {id:'pad-113',kind:'site113',title:'Городок · пл.113',scale:MUSEUM_METRE,yaw:0,folder:SITE113_REFERENCE.folder,satellite:SITE113_REFERENCE.satellite,orientation:SITE113_REFERENCE.registration,modelVersion:SITE113_VERSION},
  {id:'kpp-7',kind:'checkpoint',title:'КПП №7',scale:MUSEUM_METRE,yaw:0,folder:CHECKPOINT7_REFERENCE.folder,modelVersion:CHECKPOINT7_VERSION,orientation:'owner-directed-road-axis-between-bridge-and-saturn'},
  {id:'pad-250a',kind:'site250a',title:'Криогенный центр и командный пункт · пл.250А',scale:MUSEUM_METRE,yaw:SITE250A_YAW,folder:SITE250A_REFERENCE.folder,satellite:SITE250A_REFERENCE.satellite,orientation:SITE250A_REFERENCE.registration,modelVersion:SITE250A_VERSION},
  {id:'pad-254',kind:'site254',title:'МИК РКК «Энергия» · пл.254',scale:MUSEUM_METRE,yaw:SITE254_YAW,folder:SITE254_REFERENCE.folder,orientation:SITE254_REFERENCE.registration,modelVersion:SITE254_VERSION},

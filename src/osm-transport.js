@@ -262,6 +262,7 @@ function makeVehicleRoute(id,label,graphRoute,conform=points=>points){
 
 export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,checkpoint7RoadGrade=null}){
  const started=Date.now(),roadGraph=buildOsmGraph(data.roads.features,{geography,point}),railGraph=buildOsmGraph(data.railways.features,{geography,point,rail:true});
+ checkpoint7RoadGrade?.adjustWidths?.(roadGraph);
  const buildPhases=[],checkpoint=name=>{
   const elapsed=Date.now()-started;buildPhases.push({name,elapsedMs:elapsed});
   if(typeof performance!=='undefined'&&performance.mark)performance.mark('museum:transport-'+name);
