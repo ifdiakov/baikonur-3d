@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import * as THREE from 'three';
+import {buildSite113} from '../src/site113.js';
+import {SITE113_BUILDINGS,SITE113_VIEWS,site113Pixel} from '../src/site113-layout.js';
+import {ARCHIVE_MAP} from '../src/archive-manifest.js';
+const root=new THREE.Group(),built=buildSite113(root);let triangles=0,draws=0;
+root.traverse(o=>{if(!o.isMesh)return;draws++;const p=o.geometry.attributes.position;for(let i=0;i<p.array.length;i++)assert(Number.isFinite(p.array[i]));triangles+=(o.geometry.index?.count||p.count)/3*(o.isInstancedMesh?o.count:1);});
+assert.equal(SITE113_BUILDINGS.length,24);assert(built.features['site113-balcony-slab']>100);assert(built.features['site113-heating-pipe']>0);
+assert(triangles<90000);assert(draws<20);assert(built.boundsSize[1]<20);
+const ray=new THREE.Raycaster(new THREE.Vector3(...[...site113Pixel([919,340]).slice(0,1),20,site113Pixel([919,340])[1]]),new THREE.Vector3(0,-1,0));
+root.updateMatrixWorld(true);const hits=ray.intersectObject(root,true);assert(hits.some(h=>h.point.y>5&&h.point.y<7),'The shell is an actual curved roof above a low stage');
+assert.equal(ARCHIVE_MAP.filter(s=>s.id==='pad-113').length,1);assert.equal(ARCHIVE_MAP.find(s=>s.id==='pad-113').scale,.14);
+for(const v of Object.values(SITE113_VIEWS))assert(new THREE.Vector3(...v.eye).distanceTo(new THREE.Vector3(...v.target))>20);
+assert.equal(root.userData.site113Model.windowLights,false,'Abandoned blocks have no invented lit apartments');
+const index=await readFile(new URL('../index.html',import.meta.url),'utf8');assert(index.includes("get('view')==='site113'"));assert(index.includes('data-site113-view')||index.includes('dataset.site113View'));
+assert.doesNotThrow(()=>JSON.stringify(built));console.log('SITE113_SOURCE_PASS',JSON.stringify({draws,triangles,buildings:25,windows:built.features['site113-window-opening']}));

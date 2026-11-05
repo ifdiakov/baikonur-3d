@@ -519,7 +519,7 @@ import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-faci
 import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261103-soyuz-pits-v1';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261103-checkpoint7-flat-v2';
+import {installArchiveModels} from './src/archive-models.js?v=20261105-site113-town-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-photo-v3';
@@ -616,7 +616,7 @@ const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-202
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,ownerRoadEdits]=await Promise.all([
- './data/catalog.json','./data/osm/catalog-matches.json','./data/osm/roads.geojson?v=8681815663cf','./data/osm/railways.geojson?v=6652ccc2127c',
+ './data/catalog.json?v=20261105-site113-town-v1','./data/osm/catalog-matches.json','./data/osm/roads.geojson?v=8681815663cf','./data/osm/railways.geojson?v=6652ccc2127c',
  './data/osm/rail-points.geojson?v=b1676d9b3ec7','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson?v=65f8a2f3f082','./data/osm/places.geojson','./data/transport-network.json',ownerRoadEditsReady
 ].map(x=>typeof x==='string'?loadMuseumData(x):x));
 const museumKnowledge=createDeferredKnowledge({startup,onNavigate:action=>openMuseumAction(action)});
@@ -2043,6 +2043,11 @@ function focus(i){
  let site254Views=document.getElementById('site254Views');if(!site254Views){site254Views=document.createElement('div');site254Views.id='site254Views';site254Views.className='detail-views';document.getElementById('description').after(site254Views);}
  site254Views.replaceChildren();site254Views.hidden=r.id!=='pad-254';site254Views.style.display=site254Views.hidden?'none':'flex';
  if(r.id==='pad-254')for(const [label,view]of [['Весь МИК','all'],['Вход и площадь','entrance'],['Крыша','roof'],['Ж/д ворота','rail'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.onclick=()=>portalArchive.inspectSite254(view,camera,ctl);site254Views.append(b);}
+ let site113Views=document.getElementById('site113Views');
+ if(!site113Views){site113Views=document.createElement('div');site113Views.id='site113Views';site113Views.className='detail-views';document.getElementById('site254Views').after(site113Views);}
+ site113Views.replaceChildren();site113Views.hidden=r.id!=='pad-113';site113Views.style.cssText='display:'+(site113Views.hidden?'none':'flex')+';flex-wrap:wrap;gap:8px;margin:12px 0';
+ if(r.id==='pad-113')for(const [label,view]of [['Весь городок','all'],['Жилые корпуса','blocks'],['Эстрада','stage'],['Теплотрасса','utilities'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.dataset.site113View=view;b.textContent=label;b.onclick=()=>portalArchive.inspectSite113(view,camera,ctl);site113Views.append(b);}
+
  let site2Views=document.getElementById('site2Views');if(!site2Views){site2Views=document.createElement('div');site2Views.id='site2Views';document.getElementById('description').after(site2Views);}
  site2Views.replaceChildren();site2Views.hidden=r.id!=='pad-2';site2Views.style.display=site2Views.hidden?'none':'flex';
  if(r.id==='pad-2')for(const [label,view]of [['Вся площадка','all'],['Буран','buran'],['Правый трап','stairs'],['Музей','museum']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=()=>portalArchive.inspectSite2(view,camera,ctl);site2Views.append(b);}
@@ -2640,7 +2645,7 @@ function syncGagarinTableStatus(){
  const retry=document.createElement('button');retry.type='button';retry.textContent='Повторить';
  retry.onclick=()=>gagarinExhibit.table.load();el.append(retry);
 }
-window.__BAIKONUR_QA={checkpoint7:{stats:portalArchive.checkpoint7Stats,groundStats:checkpointRoadGrade.stats,inspect(view="all"){openMenuSite("kpp-7");portalArchive.inspectCheckpoint7(view,camera,ctl);}},gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
+window.__BAIKONUR_QA={site113:{inspect:view=>portalArchive.inspectSite113(view,camera,ctl),stats:portalArchive.site113Stats},checkpoint7:{stats:portalArchive.checkpoint7Stats,groundStats:checkpointRoadGrade.stats,inspect(view="all"){openMenuSite("kpp-7");portalArchive.inspectCheckpoint7(view,camera,ctl);}},gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
  const sources={main:ground,regional:outerTerrain.planes[0],intermediate:outerTerrain.planes[1],satellite:satelliteGround,relief:terrainRelief.mesh};
  if(visibility){
   for(const [id,value]of Object.entries(visibility))if(!Object.hasOwn(sources,id)||typeof value!=='boolean')throw new Error('Unknown terrain visibility entry');
@@ -2824,6 +2829,7 @@ if(new URLSearchParams(location.search).get('view')==='gagarin')window.__BAIKONU
 if(new URLSearchParams(location.search).get('view')==='site31'){openMenuSite('pad-31');portalArchive.inspectSite31(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='kpp7'){openMenuSite('kpp-7');portalArchive.inspectCheckpoint7(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site250a'){openMenuSite('pad-250a');portalArchive.inspectSite250a(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
+if(new URLSearchParams(location.search).get('view')==='site113'){openMenuSite('pad-113');portalArchive.inspectSite113(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site254'){openMenuSite('pad-254');portalArchive.inspectSite254(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site2'){openMenuSite('pad-2');portalArchive.inspectSite2(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='energia-launch'){openMenuSite('pad-250');requestEnergiaLaunch();}
