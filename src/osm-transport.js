@@ -921,12 +921,15 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  for(const [id,baseSpec] of Object.entries(FACILITY_PORTS)){
   if(id==='pad-2'&&gagarinApproach)continue; // Site 2 already has its only road connection.
-  if((id==='pad-250a'||id==='pad-250')&&cryoThrough)continue; // This one through road and 250A gate spur replace parallel approaches.
+  if(id==='pad-250a'&&cryoThrough)continue; // 250A itself has no rail sockets.
+  const bypassRoad=Boolean(cryoThrough&&id==='pad-250'); // Only the UKSS car driveway is superseded.
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;const spec={...baseSpec,yaw:site.runtimeYaw??baseSpec.yaw},gate=portWorld(spec,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw),target=id==='pad-2'&&site2PrimaryNearby?gate.clone():gate.clone().addScaledVector(out,30);
   const near=id==='pad-41'&&site41Replacement.attachmentEdge?{
    edge:site41Replacement.attachmentEdge,point:site41Replacement.attachmentEdge.b.position.clone(),distance:0,
    tangent:(site41Replacement.attachmentEdge.surfaceTangents?.[1]??site41Replacement.attachmentEdge.b.position.clone().sub(site41Replacement.attachmentEdge.a.position).normalize()).clone()
-  }:nearestSegment(roadGraph,target,e=>id==='pad-2'&&site2PrimaryNearby?e.wayId===SITE2_PRIMARY_WAY_ID:e.tags.highway!=='track'&&airportPortSourceAllowed(id,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));if(!near||near.distance>300**2)continue;
+  }:bypassRoad?null:nearestSegment(roadGraph,target,e=>id==='pad-2'&&site2PrimaryNearby?e.wayId===SITE2_PRIMARY_WAY_ID:e.tags.highway!=='track'&&airportPortSourceAllowed(id,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
+  if(!bypassRoad&&(!near||near.distance>300**2))continue;
+  if(!bypassRoad){
   const tangent=id==='pad-2'&&site2PrimaryNearby?gate.clone().sub(near.point).setY(0).normalize():near.tangent.clone();if(tangent.dot(gate.clone().sub(near.point))<0)tangent.negate();
   let anchors=(spec.roadApproach??[]).map(local=>portWorld(spec,local,site,point));
   if(id==='pad-251'&&airportClearance){
@@ -956,6 +959,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(id==='pad-251'&&airportClearanceReport)airportClearanceReport.gateAccess={sourceWayId:near.edge.wayId,sourcePoint:near.point.toArray(),gatePoint:gate.toArray(),
    profile:'landside-terminal-access',sampleCount:points.length,sourceGap:points[0].distanceTo(near.point),gateGap:points.at(-1).distanceTo(gate),
    airsideHits:points.filter(p=>{const [x,,z]=airportLocal(p);return x>-36&&x<36&&Math.abs(z)<1250;}).length};
+  }
+  // Model rail sockets are independent of the optional museum car driveway.
   const railPorts=spec.railConnections??(spec.rail||[]).map((position,i)=>({id:id+'-rail-'+i,position,outward:spec.railOutward??[0,0,1]}));
   for(const port of railPorts){
    const railOut=V(...(port.outward||spec.railOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),spec.yaw);
