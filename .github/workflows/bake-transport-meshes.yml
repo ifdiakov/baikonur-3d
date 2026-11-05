@@ -5,6 +5,14 @@ on:
     branches: [main]
     paths:
       - 'src/transport-bake.js'
+      - 'src/osm-transport.js'
+      - 'src/road-surface.js'
+      - 'data/osm/roads.geojson'
+      - 'data/osm/railways.geojson'
+      - 'data/osm/catalog-matches.json'
+      - 'data/road-edits-authoritative-20261103.json'
+      - 'data/catalog.json'
+      - 'index.html'
       - 'scripts/build-transport-bake.mjs'
       - '.github/workflows/bake-transport-meshes.yml'
 permissions:

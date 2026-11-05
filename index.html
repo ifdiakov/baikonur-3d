@@ -605,7 +605,7 @@ const transportDeepLink=['view','site','station','detail'].some(key=>transportQu
 // ?legacyRoads=1 is a safe, instant rollback for any map-level discrepancy.
 const useBakedTransport=!transportQuery.has('bakeTransport')&&!transportQuery.has('legacyRoads')&&
  (transportQuery.get('fastRoads')==='1'||[...transportQuery.keys()].every(key=>key==='tour'));
-const transportBakeReady=useBakedTransport?import('./src/transport-bake.js?v=20261105-compact-bake-v2')
+const transportBakeReady=useBakedTransport?import('./src/transport-bake.js?v=20261105-source-checked-v3')
  .then(module=>module.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz',{timeoutMs:7000}))
  .catch(error=>{console.warn('Optional transport cache not available:',error);return null;}):Promise.resolve(null);
 const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=roads-v4-18-286-site250a',{optional:true});
@@ -948,16 +948,18 @@ const preparedBake=await transportBakeReady;
 const preparedLOD=useBakedTransport?await roadLodDataReady:null;
 if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
  try{
-  const {restoreBakedTransport}=await import('./src/transport-bake.js?v=20261105-compact-bake-v2');
-  transport=restoreBakedTransport({bake:preparedBake,layers});transportFromBake=true;
+  const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261105-source-checked-v3');
+  const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
+  transport=restoreBakedTransport({bake:preparedBake,layers,sourceFingerprint});transportFromBake=true;
   startup.mark('prebaked-transport-ready');
  }catch(error){console.warn('Cached transport rejected, rebuilding source geometry:',error);}
 }
 if(!transport)transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords,checkpoint7RoadGrade:checkpointRoadGrade});
 if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
 if(new URLSearchParams(location.search).has('bakeTransport')){
- const {serializeTransport}=await import('./src/transport-bake.js?v=20261105-offline-v1');
- window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail});
+ const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261105-source-checked-v3');
+ const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
+ window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail,sourceFingerprint});
 }
 // Precompiled low/medium-distance OSM road geometry. The full network remains
 // authoritative for ground clearance, vehicles, site ports and the road editor.

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {distancePath} from '../src/traffic-paths.js';
-import {serializeTransport,restoreBakedTransport,TRANSPORT_BAKE_VERSION} from '../src/transport-bake.js';
+import {serializeTransport,restoreBakedTransport,TRANSPORT_BAKE_VERSION,transportSourceFingerprint} from '../src/transport-bake.js';
 const layers={roads:new THREE.Group(),rails:new THREE.Group()};
 const roadRoot=new THREE.Group();roadRoot.name='OpenStreetMap · автодороги';layers.roads.add(roadRoot);
 const railRoot=new THREE.Group();railRoot.name='OpenStreetMap · железнодорожные пути';layers.rails.add(railRoot);
@@ -22,10 +22,13 @@ const original={
  highwayDisplay:{stats:()=>({version:'test'})},
  bridgeObjects:()=>[],stats:()=>({roadFeatureCount:3185,renderedRoadWays:1,buildMilliseconds:4000})
 };
-const payload=serializeTransport({transport:original,layers,mik112Rail:{connected:true,tracks:[]}});
+const fingerprint=transportSourceFingerprint({roads:{features:[{a:1}]},railways:{features:[{b:2}]},
+ ownerRoadEdits:{edits:[]},siteRecords:[{id:'pad-1',x:100,y:200}]});
+const payload=serializeTransport({transport:original,layers,mik112Rail:{connected:true,tracks:[]},sourceFingerprint:fingerprint});
 assert.equal(payload.version,TRANSPORT_BAKE_VERSION);
 const target={roads:new THREE.Group(),rails:new THREE.Group()};
-const baked=restoreBakedTransport({bake:JSON.parse(JSON.stringify(payload)),layers:target});
+assert.throws(()=>restoreBakedTransport({bake:payload,layers:target,sourceFingerprint:'wrong'}),/changed/);
+const baked=restoreBakedTransport({bake:JSON.parse(JSON.stringify(payload)),layers:target,sourceFingerprint:fingerprint});
 assert.equal(baked.stats().baked,true);
 assert.equal(baked.stats().sourceBuildMilliseconds,4000);
 assert.equal(baked.roadPaths().osmVehiclePlan.highway.sample(18).position.x,18);

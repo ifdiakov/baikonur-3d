@@ -3,6 +3,15 @@ import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
 const fingerprint='road-lod-prebuilt-v1;geometry-v2;owner-road-edits-20261103';
+export function transportSourceFingerprint({roads,railways,ownerRoadEdits,siteRecords}){
+ // Fast deterministic FNV-1a of the EXACT topology and owner-specified
+ // display anchors, so changed roads cannot silently use an obsolete bake.
+ const content=JSON.stringify({roads:roads?.features,railways:railways?.features,ownerRoadEdits,
+  anchors:siteRecords.map(s=>[s.id,s.x,s.y,s.runtimeYaw??null])});
+ let value=2166136261;
+ for(let i=0;i<content.length;i++)value=Math.imul(value^content.charCodeAt(i),16777619)>>>0;
+ return value.toString(16).padStart(8,'0');
+}
 const quantize=value=>Math.round(value*1000)/1000;
 function simplifyPoints(points,deviation){
  if(!deviation||points.length<3)return points;
@@ -34,11 +43,11 @@ const packPath=(path,deviation=0)=>{
 };
 const packMany=(items,deviation=0)=>(items||[]).map(p=>packPath(p,deviation));
 
-export function serializeTransport({transport,layers,mik112Rail}){
+export function serializeTransport({transport,layers,mik112Rail,sourceFingerprint=null}){
  const paths=transport.roadPaths(),plan=paths.osmVehiclePlan,train=transport.trainPath();
  if(!plan?.routes?.length)throw Error('No transport graph to bake');
  const scene={
-  version:TRANSPORT_BAKE_VERSION,fingerprint,
+  version:TRANSPORT_BAKE_VERSION,fingerprint,sourceFingerprint,
   cacheKind:'routes-only',
   roads:packMany(paths,.02),
   vehicles:{routes:packMany(plan.routes,.015),highway:plan.highway.id,source:plan.source,joins:plan.joins},
@@ -74,8 +83,9 @@ function unpackPath(row){
  return path;
 }
 const unpack=rows=>rows.map(unpackPath);
-export function restoreBakedTransport({bake,layers}){
+export function restoreBakedTransport({bake,layers,sourceFingerprint=null}){
  if(bake?.version!==TRANSPORT_BAKE_VERSION||bake?.fingerprint!==fingerprint)throw Error('Outdated transport bake');
+ if(sourceFingerprint!==null&&bake.sourceFingerprint!==sourceFingerprint)throw Error('Source roads or display anchors changed since transport bake');
  if(bake.cacheKind!=='routes-only')throw Error('Full mesh snapshots are disabled; require compact route metadata');
  const roadRoot=new THREE.Group(),railRoot=new THREE.Group();
  roadRoot.name='OpenStreetMap · автодороги';railRoot.name='OpenStreetMap · железнодорожные пути';
