@@ -588,14 +588,17 @@ mapAttribution.append(attribution,terrainAttribution,modelCreditsLink);document.
 const mobileMenuToggle=document.createElement('button');mobileMenuToggle.id='mobileMenuToggle';mobileMenuToggle.type='button';mobileMenuToggle.className='mobile-menu-toggle';mobileMenuToggle.textContent='Меню';mobileMenuToggle.setAttribute('aria-expanded','false');mobileMenuToggle.setAttribute('aria-label','Открыть меню музея');document.getElementById('menuControls').append(mobileMenuToggle);
 function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',open);mobileMenuToggle.setAttribute('aria-expanded',String(open));mobileMenuToggle.textContent=open?'Закрыть':'Меню';mobileMenuToggle.setAttribute('aria-label',open?'Свернуть меню музея':'Открыть меню музея');}
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
-const MUSEUM_REVISION='20261105-owner-filtered-road-lod-v1';
+const MUSEUM_REVISION='20261105-prebuilt-roads-default-v1';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
 const nextLaunchDataReady=startup.defer(()=>startup.fetchJSON('./data/next-launch.json',{optional:true}),{key:'next-launch',priority:40});
 const roadSignDataReady=startup.fetchJSON('./data/road-signs.json?v=20261105-dirmentobe-east-v2');
 const transportQuery=new URLSearchParams(location.search);
-const useBakedTransport=transportQuery.get('fastRoads')==='1'&&!transportQuery.has('bakeTransport')&&!transportQuery.has('legacyRoads');
+// Production default: a 0.55MB source-checked cache and owner-filtered LOD
+// remove the original 20s OSM triangulation from first paint. Keep the exact
+// legacy builder as automatic fallback and as an explicit debug escape hatch.
+const useBakedTransport=transportQuery.get('fastRoads')!=='0'&&!transportQuery.has('bakeTransport')&&!transportQuery.has('legacyRoads');
 // Legacy raw OSM preview is available only for developer comparison. It can
 // include owner-deleted roads, so never display it in the public fast mode.
 const roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'
