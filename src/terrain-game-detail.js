@@ -229,6 +229,29 @@ function createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point
    2*(radius*unit+15),2*(radius*unit+15));ctx.restore();
  };
  exclude(pad,37);exclude(site2,31);
+ // Blend the grayscale clearance mask, not the photographed terrain.
+ // This removes the last contour steps along the road shoulders.
+ {
+  const size=MASK_RESOLUTION,kernel=[1,4,6,4,1],image=ctx.getImageData(0,0,size,size);
+  const pixels=image.data,horizontal=new Uint16Array(size*size);
+  let source=new Uint8Array(size*size);
+  for(let i=0;i<source.length;i++)source[i]=pixels[i*4];
+  const at=(x,z)=>Math.max(0,Math.min(size-1,z))*size+Math.max(0,Math.min(size-1,x));
+  for(let pass=0;pass<2;pass++){
+   for(let z=0;z<size;z++)for(let x=0;x<size;x++){
+    let total=0;for(let k=-2;k<=2;k++)total+=kernel[k+2]*source[at(x+k,z)];
+    horizontal[z*size+x]=total;
+   }
+   const next=new Uint8Array(size*size);
+   for(let z=0;z<size;z++)for(let x=0;x<size;x++){
+    let total=0;for(let k=-2;k<=2;k++)total+=kernel[k+2]*horizontal[at(x,z+k)];
+    next[z*size+x]=Math.round(total/256);
+   }
+   source=next;
+  }
+  for(let i=0;i<source.length;i++)pixels[i*4]=pixels[i*4+1]=pixels[i*4+2]=source[i];
+  ctx.putImageData(image,0,0);
+ }
  const data=ctx.getImageData(0,0,MASK_RESOLUTION,MASK_RESOLUTION).data;
  const pixelAt=(x,z)=>{
   const u=Math.floor((x-bounds.minX)*unit),v=Math.floor((z-bounds.minZ)*unit);
