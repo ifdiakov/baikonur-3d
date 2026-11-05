@@ -130,6 +130,11 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   const v=root.userData.site95Model.views[view]||root.userData.site95Model.views.all;
   const target=new THREE.Vector3(...v.target),eye=new THREE.Vector3(...v.eye);
   eye.sub(target).multiplyScalar(Math.max(1,.85/camera.aspect)).add(target);
+  if(camera.aspect<1){
+   const forward=target.clone().sub(eye).normalize(),right=new THREE.Vector3().crossVectors(forward,new THREE.Vector3(0,1,0)).normalize();
+   const up=new THREE.Vector3().crossVectors(right,forward).multiplyScalar(-eye.distanceTo(target)*.16);
+   target.add(up);eye.add(up);
+  }
   root.updateWorldMatrix(true,false);controls.target.copy(root.localToWorld(target));camera.position.copy(root.localToWorld(eye));controls.update();return true;
  }
  function inspectSite113(view,camera,controls){

@@ -21,6 +21,7 @@ try{
  }
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.site95.inspect('all');q.evening.setEvening(true);});await frame();await page.screenshot({path:out+'/'+prefix+'-night.png'});
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.site95.inspect('all');q.evening.setEvening(false);});await frame();await page.screenshot({path:out+'/'+prefix+'-mobile.png'});
+ const mobile=await page.evaluate(()=>{const q=window.__BAIKONUR_QA,c=q.stats().portalArchive.models.find(m=>m.id==='pad-95').centre;return {centre:q.projectWorld(...c),cardTop:document.getElementById('info').getBoundingClientRect().top};});assert(mobile.centre.y>110&&mobile.centre.y<mobile.cardTop-25,'Town centre stays above the mobile details card');
  assert.deepEqual(errors,[]);assert(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  await page.evaluate(()=>window.__BAIKONUR_QA.openObject('pad-254'));assert(await page.locator('#site95Views').isHidden(),'Site-specific views disappear on another object');
  await writeFile(out+'/'+prefix+'-result.json',JSON.stringify({passed:true,stats,errors},null,2));console.log('SITE95_BROWSER_PASS');
