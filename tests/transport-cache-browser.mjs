@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
+import {stat} from 'node:fs/promises';
+const cacheBytes=(await stat(new URL('../data/osm/transport-geometry-bake-v1.json.gz',import.meta.url))).size;
+assert(cacheBytes<1500000,'Precompiled transport cache must remain compact: '+cacheBytes);
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
 const errors=[],shaders=[];
@@ -25,6 +28,6 @@ try{
  assert.deepEqual(errors,[]);
  assert.deepEqual(shaders,[]);
  console.log('TRANSPORT_CACHE_BROWSER_PASS',JSON.stringify({firstFrameMs:report.firstFrameMs,
-   baked:report.transport.baked,sourceBuildMs:report.transport.sourceBuildMilliseconds,
+   cacheBytes,baked:report.transport.baked,sourceBuildMs:report.transport.sourceBuildMilliseconds,
    mode:report.roadLOD.mode,routeCount:report.transport.roadFeatureCount,siteCount:report.sites}));
 }finally{await browser.close();}
