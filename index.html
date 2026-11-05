@@ -540,7 +540,7 @@ import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-p
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261105-silo106109-flank-flat-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261105-site113-grade-v1';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261105-rail-road-clearance-v1';
 import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261105-site113-grade-v1';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261103-site254-w3';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
@@ -569,7 +569,7 @@ import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22
 import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261103-energia-keep-camera-steam-v12';
 import {createSoyuzDualLaunch} from './src/soyuz-dual-launch.js?v=20261103-dual-site-launch-v1';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261105-sprinter-original-logo';
-import {createRailStations} from './src/rail-stations.js?v=20261105-station-lite-v1';
+import {createRailStations} from './src/rail-stations.js?v=20261105-station-no-road-overlap-v2';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261102-site2-photo-v3';
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
@@ -1365,7 +1365,7 @@ async function loadServiceReference(){
 
 
 // Stations and sites share every card renderer, interaction and visibility rule.
-const railStations=createRailStations({stations:transport.stationLabels(),paths:transport.terrainPaths().rails,parent:layers.rails,clickable,firstIndex:objects.length});
+const railStations=createRailStations({stations:transport.stationLabels(),paths:transport.terrainPaths().rails,roads:transport.terrainPaths().roads,parent:layers.rails,clickable,firstIndex:objects.length});
 startup.defer(()=>railStations.load(),{key:'rail-stations-lite',priority:9});
 const stationObjects=railStations.labels().map((st,n)=>{
  const short=st.name.replace(/^ст\.\s*/u,'').replace('станционный район ','').replace(' (по схеме)','');
