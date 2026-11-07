@@ -445,6 +445,9 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  for(const [id,radius] of Object.entries({'pad-110':72,'pad-250':43,'pad-250a':22,'pad-31':60,'pad-45':35,'pad-42':22,'pad-112':35,'pad-112a':40,'pad-92':25,'pad-3':24,'pad-2':21.5,'pad-1':16})){
   const s=siteRecords.find(s=>s.id===id);if(s)masks.set(id,{center:point(s.x,s.y,0),radius});
  }
+ // Preserve the through AD between the twin 106/109 silos. Their small
+ // exhibition clearance envelopes must not interrupt a public road.
+ const TWIN_SILO_IDS=new Set(['pad-106','pad-109']);
  const site250a=siteRecords.find(s=>s.id==='pad-250a');if(site250a){const s=FACILITY_PORTS['pad-250a'];masks.set('pad-250a',{center:point(site250a.x,site250a.y,0),yaw:s.yaw,rectangle:{halfX:160*s.scale,minZ:-138*s.scale,maxZ:160*s.scale}});}
  const site254=siteRecords.find(s=>s.id==='pad-254');if(site254){const s=SITE254_ACCESS,m=SITE254_MASK;masks.set('pad-254',{center:portWorld(s,m.center,site254,point),yaw:s.yaw,rectangle:{halfX:m.halfX*s.scale,minZ:m.minZ*s.scale,maxZ:m.maxZ*s.scale}});}
  const hotelSite=siteRecords.find(s=>s.id==='pad-75');if(hotelSite)masks.set('pad-75',{center:portWorld(FACILITY_PORTS['pad-75'],FACILITY_PORTS['pad-75'].modelOffset,hotelSite,point),yaw:FACILITY_PORTS['pad-75'].yaw,rectangle:{halfX:10.8,minZ:-3.4,maxZ:12.4}});
@@ -456,7 +459,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // Reserve the same compact museum footprint as each detailed shaft model.
  for(const id of SILO_SITE_IDS){const site=siteRecords.find(s=>s.id===id);if(site)masks.set(id,{center:point(site.x,site.y,0),radius:10.5});}
  const railSiteClearance=createRailSiteClearancePlan({siteRecords,point}),railFootprintSites=new Set(railSiteClearance.siteIds);
- function masked(p,tags,margin=0,sourceWayId=null){for(const [id,m] of masks){if(id==='pad-2'&&sourceWayId===SITE2_PRIMARY_WAY_ID)continue;if(sourceWayId===INDUSTRIAL_THROUGH_ROAD&&INDUSTRIAL_THROUGH_SITES.has(id))continue;const dx=p.x-m.center.x,dz=p.z-m.center.z,c=Math.cos(m.yaw||0),s=Math.sin(m.yaw||0),x=dx*c-dz*s,z=dx*s+dz*c;if(m.rectangle){if(['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;const r=m.rectangle;if(Math.abs(x)<r.halfX+margin&&z>r.minZ-margin&&z<r.maxZ+margin)return true;}else if(x*x+z*z<(m.radius+margin)**2)return true;}return false;}
+ function masked(p,tags,margin=0,sourceWayId=null){for(const [id,m] of masks){if(id==='pad-2'&&sourceWayId===SITE2_PRIMARY_WAY_ID)continue;if(TWIN_SILO_IDS.has(id)&&['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;if(sourceWayId===INDUSTRIAL_THROUGH_ROAD&&INDUSTRIAL_THROUGH_SITES.has(id))continue;const dx=p.x-m.center.x,dz=p.z-m.center.z,c=Math.cos(m.yaw||0),s=Math.sin(m.yaw||0),x=dx*c-dz*s,z=dx*s+dz*c;if(m.rectangle){if(['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;const r=m.rectangle;if(Math.abs(x)<r.halfX+margin&&z>r.minZ-margin&&z<r.maxZ+margin)return true;}else if(x*x+z*z<(m.radius+margin)**2)return true;}return false;}
  function railMasked(p,margin=0){
   if(railSiteClearance.contains(p))return true;
   for(const [id,m]of masks){
@@ -534,6 +537,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // skirt the enlarged launch structures. They must not snap across a pad.
  for(const spec of Object.values(FACILITY_PORTS))for(const port of spec.railConnections??[])if(port.sourceWayId)for(const edge of railGraph.edges)if(edge.wayId===port.sourceWayId)railProtected.add(edge);
  for(const [id,spec] of Object.entries(FACILITY_PORTS)){
+  if(TWIN_SILO_IDS.has(id))continue; // One planned gate approach per site, not automatic loops.
   const site=siteRecords.find(s=>s.id===id);if(!site)continue;
   const effective={...spec,yaw:site.runtimeYaw??spec.yaw},gate=portWorld(effective,spec.road,site,point),out=V(...(spec.roadOutward||[0,0,1])).normalize().applyAxisAngle(V(0,1,0),effective.yaw);
   const near=nearestSegment(roadGraph,gate.clone().addScaledVector(out,30),e=>e.tags.highway!=='track'&&airportPortSourceAllowed(id,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
@@ -619,15 +623,36 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    bridgeRoadCleanupWays.push(way.osmId);
   }
  }
+ // Remove short dead-end service-road webbing around the 106/109 pair.
+ // A connected through road, arterial or destination-bearing access is never
+ // eligible. The original OSM graph remains intact for routing.
+ const twinSites=['pad-106','pad-109'].map(id=>siteRecords.find(s=>s.id===id)).filter(Boolean);
+ const twinCentres=twinSites.map(s=>point(s.x,s.y,0));
+ const twinRoadRemoved=new Set(),twinRoadRemovedWays=[];
+ for(const way of roadGraph.ways){
+  if(!['service','track','living_street'].includes(way.tags.highway)||
+     way.tags.name||way.tags.ref||way.tags.destination||way.tags.bridge||
+     protectedTrafficWays.has(way.osmId)||way.segments.some(e=>roadProtected.has(e)))continue;
+  const length=way.segments.reduce((sum,e)=>sum+e.length,0);
+  if(length>100||!way.segments.length)continue;
+  const ends=[way.segments[0].a,way.segments.at(-1).b];
+  if(!ends.some(n=>n.edges.length===1))continue;
+  if(!twinCentres.some(center=>way.segments.some(e=>[e.a,e.b].some(n=>
+    Math.hypot(n.position.x-center.x,n.position.z-center.z)<108))))continue;
+  for(const edge of way.segments)twinRoadRemoved.add(edge);
+  twinRoadRemovedWays.push(way.osmId);
+ }
  exhibitRoadFilter=buildExhibitRoadFilter(roadGraph,{protectedEdges:roadProtected,protectedTrafficWays,areas:exhibitAreas,
   available:e=>!roadPruning.removed.has(e)&&!leftWebEdges.has(e),excludedEdges:excludedAirportEdges,geography,point});
  // The enlarged runway can extend beyond the source airport cleanup box.
  for(const edge of excludedAirportEdges)exhibitRoadFilter.removed.add(edge);
  for(const edge of leftWebEdges)exhibitRoadFilter.removed.add(edge);
  for(const edge of bridgeRoadCleanupEdges)exhibitRoadFilter.removed.add(edge);
+ for(const edge of twinRoadRemoved)exhibitRoadFilter.removed.add(edge);
  for(const edge of site41Replacement.removed)exhibitRoadFilter.removed.add(edge);
  exhibitRoadFilter.stats.removedEdgeCount=exhibitRoadFilter.removed.size;
  exhibitRoadFilter.stats.bridgeCleanup={removedSegments:bridgeRoadCleanupEdges.size,removedWayIds:bridgeRoadCleanupWays};
+ exhibitRoadFilter.stats.twinSiloRoadCleanup={removedSegments:twinRoadRemoved.size,removedWayIds:twinRoadRemovedWays};
  // Junction surfaces follow only retained source roads. Paint is planned
  // after all paving is assembled, using the same retained road corridors.
  checkpoint('pruned');
@@ -960,6 +985,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   cryoThrough={cryoGate,ukssGate,cryoSpec,ukssSpec,sourceWay:site250aThroughWay,plan};
  }
  for(const [id,baseSpec] of Object.entries(FACILITY_PORTS)){
+  if(TWIN_SILO_IDS.has(id))continue;
   if(id==='pad-2'&&gagarinApproach)continue; // Site 2 already has its only road connection.
   if(id==='pad-250a'&&cryoThrough)continue; // 250A itself has no rail sockets.
   const bypassRoad=Boolean(cryoThrough&&id==='pad-250'); // Only the UKSS car driveway is superseded.
