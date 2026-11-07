@@ -22,6 +22,18 @@ for(const p of parallel.edge.surfacePoints)assert(Math.abs(p.z)>=4*1.5+RAIL_PROF
 assert.equal(parallel.edge.surfacePoints[0].distanceTo(parallel.edge.a.position),0);
 assert.equal(parallel.edge.surfacePoints.at(-1).distanceTo(parallel.edge.b.position),0);
 
+// Repeated clearance must not leave an angular sawtooth in a long
+// parallel railway near Site 5 / Seven Winds. Straight-through samples
+// are faired without letting the track touch the asphalt.
+const jagged=rail(V(-100,GROUND,2),V(100,GROUND,2),[
+ V(-60,GROUND,3.5),V(-20,GROUND,2),V(20,GROUND,3.5),V(60,GROUND,2)
+]);
+const clean=separateRailGraphFromRoads({railGraph:jagged,roads:pavement,
+ headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+assert(clean.polishedSamples>0,'The network-wide track fairing must run');
+for(const p of jagged.edge.surfacePoints)assert(Math.abs(p.z)>=6+RAIL_PROFILE.ballastWidth/2,
+ 'Straightened railway must remain separated from the full asphalt width');
+
 // A real right-angle crossing retains its centre and puts the rail head above
 // the road surface. Two signs (one on either approach) are instanced.
 // The source railway intentionally contains NO sample at the crossing.
