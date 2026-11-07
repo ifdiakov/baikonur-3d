@@ -854,7 +854,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  for(const way of railGraph.ways){
   const points=[];let run=0;
-  const render=()=>{if(points.length<2)return;for(const visible of drawRail(points,way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,railSurface.directionAt(way.osmId))){
+  const render=()=>{if(points.length<2)return;for(const visible of drawRail(points,way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
    renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...visible],width:RAIL_PROFILE.ballastWidth,source:'OpenStreetMap',osmWayIds:[way.osmId]});run++;
   }};
   for(const e of way.segments){
