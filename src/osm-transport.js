@@ -1036,8 +1036,44 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   drawRail(link.points,false,true,RAIL_PROFILE.gauge,link.wayId,frame,'end');renderedRailWays.add(link.wayId);
   railPaths.push({id:link.id,points:link.points,width:RAIL_PROFILE.ballastWidth,source:'museum-source-display-link',osmWayIds:[link.wayId]});
  }
- // The owner removed the reconstructed external Saturn approach. Its road,
- // embankment and lighting path are absent; the OSM roads and hill stay intact.
+ // The restored Saturn access is one smoothly graded driveway from the
+ // western main AD to the existing north-west gate. Do not add the former
+ // isolated straight ribbon or a second parallel spur.
+ let saturnAccessReport={status:'unavailable'};
+ if(saturnSite&&saturnCenter){
+  const s=SATURN_ACCESS,gate=saturnCenter.clone().add(V(s.gate.x*s.scale,s.gate.y*s.scale,s.gate.z*s.scale));
+  gate.y=s.elevation+s.gate.y*s.scale;
+  const outward=V(-1,0,-.26).normalize(),target=gate.clone().addScaledVector(outward,95);
+  const near=nearestSegment(roadGraph,target,e=>e.tags.highway!=='track'&&
+   !e.abandoned&&edgeKept(roadGraph,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
+  if(near&&near.distance<300**2){
+   const direction=gate.clone().sub(near.point).setY(0).normalize();
+   const tangent=near.tangent.clone().setY(0).normalize();
+   if(tangent.dot(direction)<0)tangent.negate();
+   const approach=gate.clone().addScaledVector(outward,43);
+   approach.y=terrainDatum(approach.clone(),3.4);
+   const softBend=near.point.clone().lerp(approach,.48);
+   softBend.addScaledVector(V(-direction.z,0,direction.x),Math.min(12,near.point.distanceTo(gate)*.06));
+   softBend.y=terrainDatum(softBend.clone(),3.4);
+   const width=3.4;
+   const transition=createAccessTransition({start:near.point,end:gate,
+    startTangent:tangent,endTangent:outward.clone().negate(),
+    anchors:[softBend,approach],startWidth:near.edge.width,endWidth:width,
+    sampleStep:1.1,startSlope:0});
+   const visibleRuns=[];
+   drawRoad(transition.points,width,{highway:'service',surface:'asphalt'},
+    false,true,null,visibleRuns,[{nodeId:'museum-port:pad-23',position:near.point.clone(),hostWayId:near.edge.wayId}],
+    {widthAt:transition.widthAt,directionAt:(_p,t)=>t});
+   roadPaths.push({id:s.routeId,label:'Естественный подъезд на Сатурн',
+    points:visibleRuns.flat(),width,source:'museum-model-port',osmWayIds:[near.edge.wayId],
+    tags:{highway:'service',surface:'asphalt'}});
+   saturnAccessReport={status:'connected',sourceWayId:near.edge.wayId,
+    length:transition.length,gate:gate.toArray(),roadGap:transition.points[0].distanceTo(near.point),
+    gateGap:transition.points.at(-1).distanceTo(gate),profile:'graded-curve-to-northwest-gate'};
+   connections++;
+  }
+ }
+
  // Lights are based on arterial paths and connectors; never place thousands
  // of lamps on every city alley or on abandoned service roads.
  roadPaths.osmVehiclePlan=roadPlan;
