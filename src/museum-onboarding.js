@@ -39,8 +39,11 @@
   function markSeen() {
     try { localStorage.setItem(STORAGE_KEY, 'yes'); } catch (_) {}
   }
+  // The owner wants the cinematic introduction when the map opens, not
+  // just on the first visit. Direct links, explicit ?tour=0, reduced-motion
+  // preferences and automated browser tests still retain their safeguards.
   const autoPlay = forced || (
-    !navigator.webdriver && !deepLink && !hasSeen() && params.get('tour') !== '0' && !reducedMotion
+    !navigator.webdriver && !deepLink && params.get('tour') !== '0' && !reducedMotion
   );
 
   function build() {
