@@ -38,7 +38,7 @@ const BBOX=[62.78,45.57,64.12,46.135];
 export const RAIL_NETWORK_GROUND_Y=-2.755;
 const MAIN=new Set(['motorway','trunk','primary','secondary','tertiary']);
 const CAR_WEIGHTS={motorway:.8,trunk:.8,primary:.85,secondary:.9,tertiary:1,unclassified:1.15,residential:1.5,service:2.1,living_street:2.5,track:5};
-const ROAD_STYLE=Object.freeze({asphaltColor:'#adb2b3',shoulderColor:'#c5c1b4',paintWidth:.10,shoulderExtra:.6,
+const ROAD_STYLE=Object.freeze({asphaltColor:'#555751',shoulderColor:'#c5c1b4',paintWidth:.10,shoulderExtra:.6,
  widths:Object.freeze({motorway:3.6,trunk:3.6,primary:3.6,secondary:3.1,tertiary:3.1,unclassified:2.4,residential:2,living_street:2,service:1.6,track:1.2})});
 // This existing through-road passes outside the actual 112/112A/110 buildings.
 // Their conservative circular model masks used to cut three gaps into it.
