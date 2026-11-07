@@ -1079,7 +1079,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const points=[a.p,a.p.clone().addScaledVector(a.direction,gap*.23),
    b.p.clone().addScaledVector(b.direction,gap*.23),b.p];
   const smooth=new THREE.CatmullRomCurve3(points,false,'centripetal',.3);
-  const samples=Array.from({length:Math.max(8,Math.ceil(gap))},(_,i,n)=>smooth.getPoint(i/(n.length-1)));
+  const sampleCount=Math.max(8,Math.ceil(gap));
+  const samples=Array.from({length:sampleCount},(_,i)=>smooth.getPoint(i/(sampleCount-1)));
   const width=Math.max(a.road.width,b.road.width),runs=[];
   drawRoad(samples,width,{highway:'unclassified',surface:'asphalt'},true,true,null,runs);
   roadPaths.push({id:'twin-silo-through-ad-repair',label:'Восстановленная основная АД 106/109',
