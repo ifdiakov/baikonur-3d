@@ -96,7 +96,8 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
   lastStatus=lastParts?(lastParts.expired?'Ожидаем подтверждения':launch.status==='confirmed'?'Подтверждено':'Предварительно')
    :precision==='date'||precision==='instant'?'Время старта уточняется':'Дата старта уточняется';
   for(const [key]of units){
-   const text=lastParts?String(lastParts[key]).padStart(key==='days'?3:2,'0'):'—';
+   // Days are a quantity, not a clock field: show 99, 9 and 1 rather than 099, 009 or 001.
+   const text=lastParts?(key==='days'?String(lastParts.days):String(lastParts[key]).padStart(2,'0')):'—';
    if(values[key].textContent!==text)values[key].textContent=text;
   }
   const spoken=lastParts?'До старта: '+units.map(([key])=>spokenUnit(lastParts[key],key)).join(', '):lastStatus;
