@@ -13,6 +13,9 @@ on:
       - 'src/ukss-exhibit.js'
       - 'src/tua-exhibit.js'
       - 'tests/loading-*'
+      - 'tests/menu-catalog-contract.mjs'
+      - 'tests/onboarding-flank-flyover.mjs'
+      - 'src/museum-onboarding.js'
       - '.github/workflows/verify-loading-optimization.yml'
   workflow_dispatch:
 permissions:
