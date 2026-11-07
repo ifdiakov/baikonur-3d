@@ -1,17 +1,26 @@
 {
-  "id": "progress-ms-37",
-  "name": "ПРОГРЕСС МС-37",
+  "id": "progress-ms-36",
+  "name": "ПРОГРЕСС МС-36",
   "siteId": "pad-31",
   "siteLabel": "ПЛ 31",
-  "launchAt": "2027-03-03T19:13:00+03:00",
-  "dateLabel": "03.03.2027 · 19:13 МСК",
+  "launchAt": "2026-11-24T13:13:00+03:00",
+  "dateLabel": "24.11.2026 · 13:13 МСК",
   "precision": "instant",
   "status": "planned",
-  "updatedAt": "2026-11-01",
-  "schedule": {"label": "Расписание запусков", "url": "https://rockettrip.space/raspisanie"},
+  "updatedAt": "2026-11-07",
+  "schedule": {
+    "label": "Расписание запусков",
+    "url": "https://rockettrip.space/raspisanie"
+  },
   "references": [
-    {"url": "https://rockettrip.space/raspisanie", "supports": "Planned mission date: 3 March 2027. No launch time is published here."},
-    {"url": "https://cosmotravel.co/ru/blog/raspisanie-puskov-baikonur", "supports": "Preliminary schedule: 3 March 2027, 19:13 Moscow, site 31. Published 10 August 2026; not official confirmation."}
+    {
+      "url": "https://rockettrip.space/raspisanie",
+      "supports": "Progress MS-36 and launch date 24 November 2026. The linked schedule does not specify a launch time."
+    },
+    {
+      "url": "https://nextspaceflight.com/launches/details/8233/",
+      "supports": "External tracker shows 05:03 UTC (08:03 Moscow) on 24 November 2026, conflicting with the owner's 13:13 Moscow time."
+    }
   ],
-  "selectionNote": "Mission explicitly selected by the museum owner. This is not an automatically ranked global launch calendar."
+  "selectionNote": "Launch selected and 13:13 Moscow time explicitly supplied by the museum owner on 2026-11-07. This planned time is not an official launch time confirmation; independent listings currently disagree."
 }
