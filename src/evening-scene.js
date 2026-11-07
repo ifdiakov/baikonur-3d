@@ -105,7 +105,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   scene.add(light);floods.push({light,owner:o.g});
  }
  function setEvening(value){evening=!!value;sky.visible=evening;
-  scene.background.set(evening?0x172844:0xb7b5a4);scene.fog.color.set(evening?0x202c46:0xb7b5a4);scene.fog.density=evening?.00007:.000085;
+  scene.background.set(evening?0x172844:0xb7b5a4);scene.fog.color.set(evening?0x202c46:0xb7b5a4);scene.fog.density=evening?.000115:.00013;
   hemisphere.color.set(evening?0x9ab5ee:0xbdd7f2);hemisphere.groundColor.set(evening?0x29344b:0x62533d);hemisphere.intensity=evening?.82:2;
   sun.color.set(evening?0xffb488:0xffdfb4);sun.intensity=evening?.5:2.2;sun.position.set(-700,evening?180:1200,500);
   for(const [m,c] of originals){m.color.copy(c);if(evening)m.color.multiply(new THREE.Color(0x53647f));}
