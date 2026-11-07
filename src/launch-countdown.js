@@ -52,7 +52,7 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
  section.setAttribute('aria-labelledby',headingId);
  const head=make('div','next-launch__head');
  const eyebrow=make('p','next-launch__eyebrow','СЛЕДУЮЩИЙ ЗАПУСК');
- const mission=make('h2','next-launch__name',launch.name||'ПРОГРЕСС МС-37');mission.id=headingId;
+ const mission=make('h2','next-launch__name',launch.name||'ПРОГРЕСС МС-36');mission.id=headingId;
  head.append(eyebrow,mission);
  const countdownClock=make('div','next-launch__clock');
  const countdownLabel=make('p','next-launch__countdown-label','ДО СТАРТА');
@@ -83,7 +83,7 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
  section.append(head,countdownClock,meta,footer);element.replaceChildren(section);
  let disposed=false,interval=null,lastParts=null,lastMode='unknown',lastStatus='';
  const stopTimer=()=>{if(interval!==null){clock.clearInterval(interval);interval=null;}};
- const stats=()=>({version:LAUNCH_COUNTDOWN_VERSION,id:launch.id||null,name:launch.name||'ПРОГРЕСС МС-37',
+ const stats=()=>({version:LAUNCH_COUNTDOWN_VERSION,id:launch.id||null,name:launch.name||'ПРОГРЕСС МС-36',
   siteId:launch.siteId||'pad-31',precision:launch.precision||'unknown',status:launch.status||'planned',
   launchAt:launch.launchAt||null,updatedAt:launch.updatedAt||null,scheduleUrl,mode:lastMode,
   countdown:lastParts?{...lastParts}:null,message:lastStatus,timerActive:interval!==null,disposed});
