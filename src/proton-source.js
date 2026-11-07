@@ -14,5 +14,6 @@ async function template(part){
 export async function loadProtonPart(part,{isolated=false}={}){
  const root=(await template(part)).clone(true);root.rotation.y=Math.PI;
  if(isolated){const geometries=new Map(),materials=new Map(),textures=new Map();root.traverse(o=>{if(!o.isMesh)return;if(!geometries.has(o.geometry))geometries.set(o.geometry,o.geometry.clone());o.geometry=geometries.get(o.geometry);const clone=m=>{if(!materials.has(m)){const next=m.clone();for(const [key,value]of Object.entries(next))if(value?.isTexture){if(!textures.has(value))textures.set(value,value.clone());next[key]=textures.get(value);}materials.set(m,next);}return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(clone):clone(o.material);});}
+ root.traverse(o=>{if(o.isMesh)o.receiveShadow=true;});
  root.userData.protonSource={version:PROTON_SOURCE_VERSION,part};return root;
 }
