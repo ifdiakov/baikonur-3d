@@ -28,7 +28,7 @@ import {smoothRailGraph,graphRailRoutePoints} from './rail-surface.js?v=20261102
 import {createRailSchemePlan,RAIL_SCHEME_REFERENCE} from './rail-scheme.js?v=20261102-rail-scheme-v1';
 import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261102-rail-scheme-v1';
 import {createRailCrossingProfile} from './rail-crossing-profile.js?v=20261102-rail-scheme-v1';
-import {separateRailGraphFromRoads,straightenPad5Rail,buildRailRoadIndex,findRailRoadCrossings,buildRailCrossingSignals} from './rail-road-clearance.js?v=20261105-rail-road-clearance-v1';
+import {separateRailGraphFromRoads,straightenPad5Rail,roundRailCorners,buildRailRoadIndex,findRailRoadCrossings,buildRailCrossingSignals} from './rail-road-clearance.js?v=20261105-rail-road-clearance-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -853,9 +853,11 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   pinnedNodes:[railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean)],
   headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const pad5RailStraightening=straightenPad5Rail({railGraph,roads:markingRoads,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+ const railCornerIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+ const railCornerProtected=[...railGraph.nodes.values()].filter(node=>node.edges.length!==2).map(node=>node.position).concat([railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean));
  for(const way of railGraph.ways){
   const points=[];let run=0;
-  const render=()=>{if(points.length<2)return;for(const visible of drawRail(points,way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
+  const render=()=>{if(points.length<2)return;for(const visible of drawRail(way.abandoned?points:roundRailCorners(points,{index:railCornerIndex,protectedPoints:railCornerProtected,railHalfWidth:RAIL_PROFILE.ballastWidth/2}),way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
    renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...visible],width:RAIL_PROFILE.ballastWidth,source:'OpenStreetMap',osmWayIds:[way.osmId]});run++;
   }};
   for(const e of way.segments){
