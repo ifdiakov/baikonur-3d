@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Энциклопедия Байконура — Гранд-макет</title>
+<style>
+:root{color-scheme:dark;font-family:Montserrat,Arial,sans-serif;background:#0c1420;color:#eaf1f9}*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 10% 0%,#193349 0%,#0c1420 48%) fixed}
+header{position:sticky;top:0;z-index:5;background:#101c2aee;backdrop-filter:blur(14px);border-bottom:1px solid #34495a;padding:16px max(20px,calc((100vw - 1400px)/2))}
+header a{color:#d9e7f5;text-decoration:none}header a:hover{color:white}
+nav{display:flex;align-items:center;justify-content:space-between;gap:20px}nav strong{font-size:15px;letter-spacing:.12em}
+main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px,5vw,64px);margin:5px 0 12px;font-weight:800;letter-spacing:-.045em}p{line-height:1.65}
+.lead{color:#a9bbc9;max-width:760px}#search{width:100%;padding:16px 18px;border:1px solid #40586b;background:#142337;color:white;border-radius:8px;font-size:16px;margin:25px 0 12px}
+.tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px}.tabs button{border:1px solid #40566b;background:#142436;color:#eaf1f9;padding:10px 14px;border-radius:6px;cursor:pointer}.tabs button.active{background:#c6aa6e;color:#10202b;border-color:#c6aa6e}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,460px);gap:20px;align-items:start}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{background:#142335;border:1px solid #2b4256;text-align:left;color:inherit;padding:18px;min-height:160px;border-radius:8px;cursor:pointer;transition:border .15s}.card:hover,.card.selected{border-color:#c6aa6e}
+.meta{display:block;color:#c7ab73;font-size:11px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase}.card b{display:block;font-size:19px;margin:9px 0}.small{color:#9fb3c4;font-size:13px;line-height:1.5}
+.detail{position:sticky;top:90px;background:#172a3e;border:1px solid #36516a;padding:26px;border-radius:9px;max-height:calc(100vh - 110px);overflow-y:auto}.detail h2{font-size:27px;margin:10px 0}.detail h3{color:#c6aa6e;font-size:13px;text-transform:uppercase;letter-spacing:.09em;margin-top:27px}.detail a{color:#c7ddf6;overflow-wrap:anywhere}.related{display:flex;flex-wrap:wrap;gap:7px}.related button{background:#243f56;color:#edf5fd;border:1px solid #52708b;padding:9px;border-radius:5px;cursor:pointer}.empty{color:#9fb3c4}.detail ul{padding-left:20px;line-height:1.8}footer{padding:30px 20px;border-top:1px solid #283c4c;color:#9fb3c4;font-size:13px;text-align:center}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.detail{position:static;max-height:none}main{padding-top:20px}nav strong{font-size:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}}
+</style></head>
+<body><header><nav><a href="./index.html">← ВЕРНУТЬСЯ В 3D-МАКЕТ</a><strong>ГРАНД-МАКЕТ · БАЙКОНУР</strong></nav></header>
+<main><span class="meta">Цифровой архив · открытая база знаний</span><h1>Энциклопедия Байконура</h1>
+<p class="lead">Ракеты, космические корабли, стартовые площадки, главные конструкторы и предприятия ракетно-космической отрасли. Откройте любой объект, чтобы исследовать связи между людьми, техникой и инфраструктурой.</p>
+<label for="search" class="small">Поиск по названиям, датам и описаниям</label><input id="search" type="search" placeholder="Например: Протон, Глушко, площадка 31, ЦЭНКИ">
+<div class="tabs" id="tabs" aria-label="Разделы"></div><div class="layout"><section class="cards" id="cards" aria-live="polite"></section><aside class="detail" id="detail" aria-live="polite"><h2>Выберите статью</h2><p class="small">Здесь появятся исторические сведения, источники и связанные материалы.</p></aside></div></main>
+<footer>Энциклопедия развивается. Годы, названия организаций и распределение инженерных ролей относятся к указанным историческим периодам; непроверенные связи не подменяют доказанные факты.</footer>
+<script>
+(async()=>{
+const $=s=>document.querySelector(s);const state={type:'all',q:'',id:null};let data;
+try{const response=await fetch('./data/encyclopedia.json');if(!response.ok)throw Error('HTTP '+response.status);data=await response.json();}
+catch(e){$('#cards').textContent='Не удалось загрузить энциклопедию: '+e.message;return}
+const map=new Map(data.items.map(x=>[x.id,x])); const types={all:'Все статьи',...data.types};
+function el(tag,cls,text){const a=document.createElement(tag);if(cls)a.className=cls;if(text!==undefined)a.textContent=text;return a}
+function open(id){const x=map.get(id);if(!x)return;state.id=id; history.replaceState(null,'','#'+encodeURIComponent(id));render();
+ if(window.innerWidth<851)$('#detail').scrollIntoView({behavior:'smooth',block:'start'});}
+function render(){
+ const tabs=$('#tabs');tabs.replaceChildren();Object.entries(types).forEach(([k,v])=>{const b=el('button',state.type===k?'active':'',v);b.type='button';b.onclick=()=>{state.type=k;render()};tabs.append(b)});
+ const matches=data.items.filter(x=>(state.type==='all'||x.type===state.type)&&[x.name,x.period,x.summary].join(' ').toLocaleLowerCase('ru').includes(state.q));
+ const cards=$('#cards');cards.replaceChildren();matches.forEach(x=>{const b=el('button','card'+(state.id===x.id?' selected':''));b.type='button';b.append(el('span','meta',data.types[x.type]),el('b','',x.name),el('span','small',x.period));b.onclick=()=>open(x.id);cards.append(b)});if(!matches.length)cards.append(el('p','empty','Ничего не найдено'));
+ const detail=$('#detail');detail.replaceChildren();const x=map.get(state.id);if(!x){detail.append(el('h2','','Выберите статью'),el('p','small','Все материалы связаны единой системой перекрёстных ссылок.'));return}
+ detail.append(el('span','meta',data.types[x.type]),el('h2','',x.name),el('p','small',x.period),el('p','',x.summary));
+ if(x.links?.length){detail.append(el('h3','','Связанные статьи'));const group=el('div','related');x.links.forEach(id=>{const related=map.get(id);if(!related)return;const b=el('button','',related.name);b.onclick=()=>open(id);group.append(b)});detail.append(group)}
+ if(x.sources?.length){detail.append(el('h3','','Источники для проверки и расширения'));const list=el('ul');x.sources.forEach(url=>{if(!/^https:\/\//.test(url))return;const li=el('li');const a=el('a','',new URL(url).hostname);a.href=url;a.rel='noopener noreferrer';a.target='_blank';li.append(a);list.append(li)});detail.append(list)}
+ const back=el('p','small','Содержимое первой редакции: краткая проверяемая справка. Детальные биографии, хронологии, заводские кооперации и документы будут добавляться в соответствующие статьи.');detail.append(back)
+}
+$('#search').addEventListener('input',e=>{state.q=e.target.value.trim().toLocaleLowerCase('ru');render()});
+window.addEventListener('hashchange',()=>{state.id=decodeURIComponent(location.hash.slice(1));render()});
+state.id=decodeURIComponent(location.hash.slice(1));render();
+})();
+</script></body></html>
