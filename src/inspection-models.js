@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261108-soyuz5-v1';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261108-proton-source-v1';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -18,7 +18,7 @@ async function gltf(path,signal,revision='20261101-source-exhibits-v2'){
 }
 export async function createInspectionModel(id,{signal}={}){
  id=resolveModelId(id);const spec=MODEL_CATALOG[id];if(!spec)throw new Error('Модель не найдена');let root,setExploded=null,setVehicleVisible=null,setGear=null,initialGear=1,update=null;const owned=[];
- if(spec.asset){root=await gltf(spec.asset,signal,spec.assetRevision);root.rotation.y=spec.yaw||0;if(id==='soyuz5'||id==='n1'||id==='mig25'||id==='tu204')root.userData.inspectionPrecise=true;}
+ if(spec.asset){root=await gltf(spec.asset,signal,spec.assetRevision);root.rotation.y=spec.yaw||0;if(id==='proton'||id==='soyuz5'||id==='n1'||id==='mig25'||id==='tu204')root.userData.inspectionPrecise=true;}
  else if(id.startsWith('zenit-')){const {createZenitRocket}=await import('./zenit-rocket.js?v=20261101-source-exhibits-v2');const model=createZenitRocket({variant:id==='zenit-land'?'land':'sea'});root=model.root;setExploded=model.setExploded;}
  else if(id==='aircraft'){
   const {buildAlrosaAircraft}=await import('./a320-aircraft.js?v=20261101-a320-tail-v2');root=new THREE.Group();const aircraft=buildAlrosaAircraft(root,{fallback:false});if(!await aircraft.ready)throw Error('Не удалось загрузить Airbus A320');aircraft.model.scale.setScalar(1);aircraft.setEvening(true);aircraft.setGear(1);setGear=aircraft.setGear;update=time=>aircraft.updateDetails(time/1000);
@@ -31,7 +31,7 @@ export async function createInspectionModel(id,{signal}={}){
  }else if(id==='silo'){
   const {buildSiloPad,siloController}=await import('./silo-pad.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildSiloPad(root);const controller=siloController(root);update=(time,camera,target)=>controller.update(time,camera,target);
  }else if(id==='proton-pad'){
-  const {buildProtonPosition,protonPositionController}=await import('./proton-launch.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildProtonPosition(root);setVehicleVisible=protonPositionController(root).setRocketVisible;
+  const {buildProtonPosition,protonPositionController}=await import('./proton-launch.js?v=20261108-proton-source-v1');root=new THREE.Group();buildProtonPosition(root);const controller=protonPositionController(root);if(!await controller.loadSource())throw Error(controller.source().error);setVehicleVisible=controller.setRocketVisible;
  }else if(id==='cyclone-pad'){
   const {buildCyclonePosition}=await import('./cyclone-launch.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildCyclonePosition(root);const rocket=await gltf('rockets/cyclone-2.glb',signal);rocket.position.y=1.38;root.add(rocket);setVehicleVisible=visible=>rocket.visible=!!visible;
  }else if(id==='pua-100'){
@@ -40,6 +40,7 @@ export async function createInspectionModel(id,{signal}={}){
   const {buildSite45}=await import('./site45.js?v=20261102-site2-photo-v3');root=new THREE.Group();buildSite45(root);
  }
  if(!root)throw new Error('Не удалось собрать модель');
+ if(id==='proton'){const stages=[];root.traverse(o=>{if(Number.isInteger(o.userData.inspectionStage))stages.push({o,stage:o.userData.inspectionStage,base:o.position.clone()});});setExploded=active=>{for(const {o,stage,base}of stages)o.position.copy(base).add(new THREE.Vector3(0,active?stage*6:0,0));root.updateMatrixWorld(true);};}
  if(id.startsWith('cyclone-')&&id!=='cyclone-pad'){const parts=[];root.traverse(o=>{if(Number.isFinite(o.userData.inspectionStage))parts.push({o,base:o.position.clone(),stage:o.userData.inspectionStage});});setExploded=enabled=>{for(const {o,base,stage}of parts){o.position.copy(base);if(enabled){if(stage===4){o.position.x+=8;o.position.y+=8;}else o.position.y+=stage*3;}}root.updateMatrixWorld(true);};root.userData.inspectionPrecise=true;}
  root.updateMatrixWorld(true);
  const bounds=inspectionBounds(root),size=bounds.getSize(new THREE.Vector3());if(bounds.isEmpty()||![...size.toArray()].every(Number.isFinite)){disposeInspectionModel(root);throw new Error('В модели нет геометрии');}

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {buildProtonPosition} from './proton-launch.js?v=20261102-site2-photo-v3';
+import {buildProtonPosition} from './proton-launch.js?v=20261108-proton-source-v1';
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {flamePetal} from './flame-petals.js';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
@@ -63,4 +63,4 @@ export function soyuz31(root){
 export {buildSite45 as zenit45} from './site45.js?v=20261102-site2-photo-v3';
 
 // Export the same module instance used by protonComplex for geometry checks.
-export {buildProtonPosition,protonPositionController} from './proton-launch.js?v=20261102-site2-photo-v3';
+export {buildProtonPosition,protonPositionController} from './proton-launch.js?v=20261108-proton-source-v1';

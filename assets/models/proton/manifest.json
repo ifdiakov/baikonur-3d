@@ -1,0 +1,151 @@
+{
+  "version": "proton-source-20261108-v1",
+  "source": {
+    "driveIds": [
+      "1kXUE3OOcQ2k_0ClnJmQf1PrN88UEw6O4",
+      "1Aitm-DFLekAKPqyFgy3tzL2bSJFJ-jNr"
+    ],
+    "bytes": 66856588,
+    "sha256": "507bbebd843c14dd0f41aa2a7bc1274bf301fcc56c975c89ac0af918ae3afb05"
+  },
+  "normalization": {
+    "unit": "metre",
+    "up": "Y",
+    "height": 58.2,
+    "sourceHeight": 11.22493228316307,
+    "sourceRocketMinimum": -0.2326265275478363,
+    "scaleToMetres": 5.184886512615988,
+    "rocketGroundOffset": -1.206142145159468,
+    "parts": {
+      "rocket": {
+        "objects": 22,
+        "exportedMeshes": 3,
+        "rawBytes": 19244752,
+        "textureSize": 2048
+      },
+      "gantry": {
+        "objects": 70,
+        "exportedMeshes": 1,
+        "rawBytes": 18254916,
+        "textureSize": 2048
+      },
+      "pad": {
+        "objects": 5,
+        "exportedMeshes": 1,
+        "rawBytes": 2520152,
+        "textureSize": 1024
+      }
+    }
+  },
+  "assets": {
+    "rocket": {
+      "path": "rocket-v1.glb",
+      "bytes": 916988,
+      "sha256": "2148105e2b714f4e2c65ea028cd1141b69012fa4f249d7ee02b638cfae1bd037",
+      "triangles": 90807,
+      "sourceTriangles": 232912,
+      "primitives": 9,
+      "bounds": {
+        "min": [
+          -3.7617319502900886,
+          0.0007313510286621749,
+          -3.369471416537621
+        ],
+        "max": [
+          3.762040463931446,
+          58.20000076293945,
+          3.3693598366426016
+        ],
+        "size": [
+          7.5237724142215345,
+          58.19926941191079,
+          6.738831253180223
+        ]
+      },
+      "textures": [
+        {
+          "name": "Proton rocket albedo",
+          "size": [
+            2048,
+            2048
+          ]
+        },
+        {
+          "name": "proton_decal",
+          "size": [
+            1024,
+            2048
+          ]
+        }
+      ]
+    },
+    "gantry": {
+      "path": "gantry-v1.glb",
+      "bytes": 1850564,
+      "sha256": "4047840ba3cd8391ac83e46aa505c8a99892793e784987ff76bf993c14cdc46e",
+      "triangles": 155175,
+      "sourceTriangles": 394366,
+      "primitives": 3,
+      "bounds": {
+        "min": [
+          -12.803022955387087,
+          0,
+          -25.697453582349045
+        ],
+        "max": [
+          12.853197668521853,
+          58.335811614990234,
+          3.7579742313053437
+        ],
+        "size": [
+          25.65622062390894,
+          58.335811614990234,
+          29.45542781365439
+        ]
+      },
+      "textures": [
+        {
+          "name": "Proton gantry albedo",
+          "size": [
+            2048,
+            2048
+          ]
+        }
+      ]
+    },
+    "pad": {
+      "path": "pad-v1.glb",
+      "bytes": 383216,
+      "sha256": "6d864183c95d8cee5f6c16267d94fa065408b301b0a3dbeea833f228e5b113c5",
+      "triangles": 13324,
+      "sourceTriangles": 29058,
+      "primitives": 4,
+      "bounds": {
+        "min": [
+          -60.7670783996582,
+          -9.449730453347833,
+          -60.7670783996582
+        ],
+        "max": [
+          60.7670783996582,
+          0.27908491835561566,
+          60.7670783996582
+        ],
+        "size": [
+          121.5341567993164,
+          9.728815371703448,
+          121.5341567993164
+        ]
+      },
+      "textures": [
+        {
+          "name": "Proton pad albedo",
+          "size": [
+            1024,
+            1024
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -3,7 +3,7 @@ import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {createProtonRocket} from './proton-rocket.js?v=20261101-source-exhibits-v2';
 import {registerFacilityBeacon,registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 
-export const PROTON_LAUNCH_VERSION='proton-launch-v1';
+export const PROTON_LAUNCH_VERSION='proton-launch-source-v2';
 // Photo reconstruction, metres, Y up. +Z points from launch aperture to parked
 // service tower. Two lateral outlets, not six radial trenches. The 8 m depth
 // follows the Barmin engineering history, p.63; all other civil dimensions are
@@ -172,16 +172,45 @@ function mastsAndUtilities(k){
  }
 }
 
-export function buildProtonPosition(root,{serviceZ=300,sharedVehicle=false,rocketVisible=true}={}){
- const k=archiveKit(root);k.mat.green.color.set('#365b45');k.mat.concrete.color.set('#929b97');k.mat.red.color.set('#966c62');softenPaint(k.mat.green);
- launchInterface(k);flameDucts(k);trackAndGallery(k,serviceZ);mastsAndUtilities(k);
+export function buildProtonPosition(root,{serviceZ=300,sharedVehicle=false,rocketVisible=true,sourceLoader=null}={}){
+ const core=new THREE.Group();root.add(core);const k=archiveKit(core);k.mat.green.color.set('#365b45');k.mat.concrete.color.set('#929b97');k.mat.red.color.set('#966c62');softenPaint(k.mat.green);
+ launchInterface(k);flameDucts(k);
+ const surroundings=new THREE.Group();root.add(surroundings);const external=archiveKit(surroundings);trackAndGallery(external,serviceZ);mastsAndUtilities(external);const externalReport=external.finish();
  const tower=new THREE.Group();tower.position.z=serviceZ;root.add(tower);const towerReport=serviceTower(tower);
  const vehicle=sharedVehicle?(sharedRocket??=createProtonRocket({detail:'map'})):createProtonRocket({detail:'map'});
  const rocket=sharedVehicle?vehicle.root.clone(true):vehicle.root;rocket.name='Протон-М · музейный экспонат на старте';rocket.position.y=-1.1;rocket.visible=rocketVisible;root.add(rocket);
- const report=k.finish(),views={all:{target:[0,20,serviceZ*.35],eye:[180,210,serviceZ*.75+170]},launch:{target:[0,23,0],eye:[100,100,-125]},duct:{target:[25,-3,0],eye:[73,31,40]},interface:{target:[0,-.7,0],eye:[18,21,23]},tower:{target:[0,32,serviceZ+3],eye:[70,67,serviceZ-110]},top:{target:[0,0,0],eye:[0,140,.01]}};
+ const report=k.finish();root.userData.archiveCutouts=core.userData.archiveCutouts;delete core.userData.archiveCutouts;for(const key of ['primitiveCount','meshCount','batches'])report[key]+=externalReport[key];for(const [tag,count]of Object.entries(externalReport.features))report.features[tag]=(report.features[tag]||0)+count;const views={all:{target:[0,20,serviceZ*.35],eye:[180,210,serviceZ*.75+170]},launch:{target:[0,23,0],eye:[100,100,-125]},duct:{target:[25,-3,0],eye:[73,31,40]},interface:{target:[0,-.7,0],eye:[18,21,23]},tower:{target:[0,32,serviceZ+3],eye:[70,67,serviceZ-110]},top:{target:[0,0,0],eye:[0,140,.01]}};
  const features={...report.features};for(const [tag,count]of Object.entries(towerReport.features))features[tag]=(features[tag]||0)+count;
  const data={version:PROTON_LAUNCH_VERSION,dimensions:PROTON_LAUNCH_DIMENSIONS,serviceZ,referencePhotos:25,satellitePlans:2,physical:{units:'metres',localScale:1,depthSource:'Barmin, Startovye raketnye kompleksy, p.63',photoEstimated:true},features,views};
  root.userData.protonLaunch=data;root.userData.physicalUnits={units:'metres',localScale:1,railGauge:1.52,serviceGantryHeight:60,serviceGantryParkDistance:serviceZ,heightsSurveyed:false};
- handles.set(root,{setRocketVisible:value=>{rocket.visible=!!value;},rocketVisible:()=>rocket.visible,rocket,tower});
+ const fallbackTowerChildren=[...tower.children],fallbackMeshes=[];for(const group of [core,rocket,...fallbackTowerChildren])group.traverse(o=>{if(o.isMesh)fallbackMeshes.push(o);});
+ const state={version:'proton-source-20261108-v1',status:'unloaded',detail:false,error:null};data.source=state;
+ let pending=null,parts=null,visible=!!rocketVisible,detailMeshes=[];
+ function detail(active){
+  if(!parts||state.detail===active)return;
+  state.detail=active;core.visible=!active;rocket.visible=visible&&!active;fallbackTowerChildren.forEach(o=>o.visible=!active);
+  parts.pad.visible=active;parts.gantry.visible=active;parts.rocket.visible=active&&visible;
+  (root.parent||root).dispatchEvent({type:'museum-exhibit-loaded',removed:active?fallbackMeshes:detailMeshes,added:active?detailMeshes:fallbackMeshes});
+ }
+ async function loadSource(){
+  if(parts){detail(true);return true;}if(pending)return pending;state.status='loading';state.error=null;
+  pending=(async()=>{
+   try{
+    const load=sourceLoader||(await import('./proton-source.js?v=20261108-proton-source-v1')).loadProtonPart;
+    const [pad,gantry,exactRocket]=await Promise.all(['pad','gantry','rocket'].map(part=>load(part,{isolated:!sharedVehicle})));
+    pad.position.y=1.2;exactRocket.position.y=0;root.add(pad,exactRocket);tower.add(gantry);parts={pad,gantry,rocket:exactRocket};
+    for(const group of Object.values(parts))group.traverse(o=>{if(o.isMesh)detailMeshes.push(o);});
+    state.status='ready';detail(true);return true;
+   }catch(error){state.status='error';state.error=error.message;return false;}finally{pending=null;}
+  })();return pending;
+ }
+ const point=new THREE.Vector3(),towerPoint=new THREE.Vector3(),scale=new THREE.Vector3();let retryAt=0;
+ function update(now,camera){
+  if(!camera)return;for(let p=root;p;p=p.parent)if(!p.visible)return;
+  root.getWorldPosition(point);tower.getWorldPosition(towerPoint);root.getWorldScale(scale);
+  const near=Math.min(camera.position.distanceTo(point),camera.position.distanceTo(towerPoint))<260*scale.x;
+  if(near&&!parts&&now>retryAt){retryAt=now+10000;loadSource();}if(parts)detail(near);
+ }
+ handles.set(root,{loadSource,update,source:()=>({...state}),setRocketVisible:value=>{visible=!!value;rocket.visible=visible&&!state.detail;if(parts)parts.rocket.visible=visible&&state.detail;},rocketVisible:()=>visible,rocket,tower});
  return {...report,primitiveCount:report.primitiveCount+towerReport.primitiveCount,meshCount:report.meshCount+towerReport.meshCount,batches:report.batches+towerReport.batches,features:data.features,model:data};
 }
