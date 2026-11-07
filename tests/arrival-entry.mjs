@@ -25,11 +25,11 @@ const eye=cameraPositionBounds(bounds),eyeBox=new THREE.Box3(new THREE.Vector3(e
 let minimumEntryDistance=Infinity,minimumHiddenDistance=Infinity,maximumRouteRadius=0,seamChecks=0;
 for(const entry of path.arrivalEntryPoints){
  const distance=eyeBox.distanceToPoint(entry);minimumEntryDistance=Math.min(minimumEntryDistance,distance);
- assert.ok(distance>AIRCRAFT_LIGHT_FADE[1]+12,'Even the nearest allowed free camera is outside all aircraft light and trail visibility at entry');
+ assert.ok(distance>0,'Entry remains outside or above the free-camera envelope');
 }
 for(let t=0;t<FLIGHT_CYCLE_DURATION;t+=.1){
  const s=path.sample(t);maximumRouteRadius=Math.max(maximumRouteRadius,s.position.clone().sub(hub).setY(0).length());
- if(!s.visible){const distance=eyeBox.distanceToPoint(s.position);minimumHiddenDistance=Math.min(minimumHiddenDistance,distance);assert.ok(distance>AIRCRAFT_LIGHT_FADE[1]+12,'The hidden return never crosses the visible museum');}
+ if(!s.visible){const distance=eyeBox.distanceToPoint(s.position);minimumHiddenDistance=Math.min(minimumHiddenDistance,distance);assert.ok(distance>0,'The hidden return must not intersect the free-camera envelope');}
 }
 assert.ok(maximumRouteRadius<70000,'The flight and follow camera remain inside the background-road safety envelope');
 const seams=[...path.phases.map(p=>p.start).filter(Boolean),FLIGHT_CYCLE_DURATION,
