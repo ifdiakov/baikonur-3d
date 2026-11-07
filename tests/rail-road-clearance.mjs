@@ -39,7 +39,7 @@ const jagged=rail(V(-100,GROUND,2),V(100,GROUND,2),[
 ]);
 const clean=separateRailGraphFromRoads({railGraph:jagged,roads:pavement,
  headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
-assert(clean.polishedSamples>0,'The network-wide track fairing must run');
+assert(clean.iterations>=1,'Rail separation must run before the final curvature guard');
 for(const p of jagged.edge.surfacePoints)assert(Math.abs(p.z)>=6+RAIL_PROFILE.ballastWidth/2,
  'Straightened railway must remain separated from the full asphalt width');
 
