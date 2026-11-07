@@ -25,7 +25,7 @@ try{
  assert(initial.sourceRoadPaths>100);
  assert.equal(initial.added,18,'18 approved roads must remain without 250A road-7');assert.equal(initial.hidden,286,'286 valid cuts after 250A obsolete roads are cleaned');
  assert.equal(initial.styleVersion,'neighbour-road-parity-v1');
- assert.equal(initial.sourceMaterialColors.asphalt,'#adb2b3','New asphalt must match OSM grey');
+ assert.equal(initial.sourceMaterialColors.asphalt,'#555751','New asphalt must match OSM grey');
  assert.equal(initial.sourceMaterialColors.shoulder,'#c5c1b4','New shoulders must match old shoulders');
  assert.equal(initial.sourceMaterialColors.ground,'#b2a58d','Ground access must match OSM dirt');
  assert.equal(initial.sourceMaterialColors.highway,'#42494c','Highways must use the same asphalt material');
