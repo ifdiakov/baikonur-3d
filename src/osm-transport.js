@@ -1344,6 +1344,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    part(12,1.15,.12,0,.95,6.4,railMat,'НП · торцевое ограждение');
    for(const x of [-4,4])part(.2,3.35,.2,x,1.7,-3.2,metal,'НП · опора навеса');
    part(10,.23,5.5,0,3.45,-3.2,metal,'НП · навес');
+   if(typeof document!=='undefined'){
    const sign=document.createElement('canvas');sign.width=256;sign.height=128;
    const context=sign.getContext('2d');
    context.fillStyle='#173c38';context.fillRect(0,0,256,128);
@@ -1353,6 +1354,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const board=new THREE.Mesh(new THREE.PlaneGeometry(3.5,1.75),
     new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
    board.name='НП · обозначение';board.position.set(0,2.25,6.5);root.add(board);
+   }
    layers.sites.add(root);
    donskayaObservation={status:'placed',sourceWayId:tip.edge.wayId,stationDistance:tip.dist,
     railClearance:tip.railDistance,position:root.position.toArray(),sourceNodeId:tip.node.id};
