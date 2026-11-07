@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildRailRoadIndex,findRailRoadCrossings,separateRailGraphFromRoads,straightenPad5Rail,buildRailCrossingSignals} from '../src/rail-road-clearance.js';
+import {buildRailRoadIndex,findRailRoadCrossings,separateRailGraphFromRoads,straightenPad5Rail,roundRailCorners,buildRailCrossingSignals} from '../src/rail-road-clearance.js';
 import {planRailStations,createRailStations} from '../src/rail-stations.js';
 import {RAIL_PROFILE} from '../src/rail-profile.js';
 
@@ -11,6 +11,15 @@ function rail(a,b,intermediate=[]){
  edge.surfacePoints=[a,...intermediate,b];
  return {nodes:new Map([['a',x],['b',y]]),edges:[edge],edge};
 }
+// Ordinary railway corner becomes a tangent continuous circular-style arc,
+// while switch/crossing anchors remain exactly at their source locations.
+const squareRail=[V(-30,GROUND,0),V(0,GROUND,0),V(0,GROUND,30)];
+const bend=roundRailCorners(squareRail,{roads:[],radius:8});
+assert(bend.length>squareRail.length,'Rail bend must be sampled as a smooth arc');
+assert(bend.some(p=>p.x<0&&p.z>0),'Arc replaces the sharp 90 degree corner');
+assert.equal(bend[0],squareRail[0]);assert.equal(bend.at(-1),squareRail.at(-1));
+const pinnedBend=roundRailCorners(squareRail,{roads:[],protectedPoints:[squareRail[1]],radius:8});
+assert.equal(pinnedBend.length,3,'A source switch stays fixed');
 // Parallel rail must end at least a complete road width past the road edge.
 const parallel=rail(V(-100,GROUND,1),V(100,GROUND,1),[V(0,GROUND,1)]);
 const pavement=[{id:'road-1',width:4,points:[V(-200,.72,0),V(200,.72,0)]}];
