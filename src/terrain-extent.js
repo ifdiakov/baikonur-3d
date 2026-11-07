@@ -27,7 +27,7 @@ const smooth=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3
  */
 export function buildExtendedTerrain({scene,registerGroundSurface,renderer,satelliteOwnsGroundColor=false}) {
   const config=[
-    {id:'regional',extent:52000,resolution:512,height:-4.95,fade:.22,detail:0,order:0,segments:LARGE_TERRAIN_SEGMENTS},
+    {id:'regional',extent:52000,resolution:512,height:-4.95,fade:.31,detail:0,order:0,segments:LARGE_TERRAIN_SEGMENTS},
     {id:'intermediate',extent:18000,resolution:768,height:-3.75,fade:.24,detail:1,order:1}
   ];
   const planes=[],textures=[],regionInfo=[],satelliteBase=[161,136,109];
