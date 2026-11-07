@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Display corrections only. OSM node/way identities and source GeoJSON are immutable.
-export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v2-tight-crossing-envelopes';
+export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v3-edge-local-iterative';
 const CELL=24,EPS=1e-8,clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
 const key=(x,z)=>Math.floor(x/CELL)+':'+Math.floor(z/CELL);
@@ -93,68 +93,77 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
  }
  const pinned=[...pinnedNodes];
  for(const edge of excludedEdges){pinned.push(edge.a.position,edge.b.position);}
- // Crossing neighbourhoods are indexed separately to avoid a global
- // rail-sample x crossing-count scan on the full Baikonur network.
- const crossingCells=new Map(),crossCellSize=96;
- for(const crossing of crossings){
-  const radius=crossing.radius+12;
-  for(let x=Math.floor((crossing.x-radius)/crossCellSize);x<=Math.floor((crossing.x+radius)/crossCellSize);x++)
-   for(let z=Math.floor((crossing.z-radius)/crossCellSize);z<=Math.floor((crossing.z+radius)/crossCellSize);z++){
-    const k=x+':'+z;if(!crossingCells.has(k))crossingCells.set(k,[]);crossingCells.get(k).push(crossing);
+ // A level crossing relaxes separation on its own railway edge only.
+ // The old global crossing neighbourhood also pulled unrelated nearby rails
+ // onto the asphalt.
+ const crossingByPoint=new Map(),positions=new Set();
+ for(const edge of movable){
+  const own=findRailRoadCrossings([{points:edge.surfacePoints}],index);
+  for(const p of [edge.a.position,edge.b.position,...edge.surfacePoints]){
+   positions.add(p);
+   for(const hit of own){
+    if(near(p,hit)>hit.radius+7)continue;
+    const list=crossingByPoint.get(p)||[];list.push(hit);crossingByPoint.set(p,list);
    }
+  }
  }
- const around=p=>crossingCells.get(Math.floor(p.x/crossCellSize)+':'+Math.floor(p.z/crossCellSize))||[];
- const cache=new Map(),shiftAt=p=>{
-  const id=p.x.toFixed(6)+':'+p.z.toFixed(6)+':'+p.y.toFixed(6);
-  if(cache.has(id))return cache.get(id);
+ const shiftAt=p=>{
   let best=null;
   for(const road of index.queryPoint(p)){
    const t=clamp(((p.x-road.a.x)*road.dx+(p.z-road.a.z)*road.dz)/road.len2);
-   const x=road.a.x+t*road.dx,z=road.a.z+t*road.dz,d=Math.hypot(p.x-x,p.z-z),
-    target=road.width*1.5+railHalfWidth+.12,intrusion=target-d;
-   if(intrusion<=0||best&&intrusion<=best.intrusion)continue;
-   let sign=Math.sign(road.dx*(p.z-z)-road.dz*(p.x-x));
-   if(!sign)sign=1;
+   const x=road.a.x+t*road.dx,z=road.a.z+t*road.dz;
+   const distance=Math.hypot(p.x-x,p.z-z),target=road.width*1.5+railHalfWidth+.12;
+   const intrusion=target-distance;
+   if(intrusion<=1e-6||best&&intrusion<=best.intrusion)continue;
+   const sign=Math.sign(road.dx*(p.z-z)-road.dz*(p.x-x))||1;
    best={intrusion,dx:-road.dz/road.len*sign,dz:road.dx/road.len*sign};
   }
-  let weight=1;
-  for(const c of around(p)){
-   const d=Math.hypot(p.x-c.x,p.z-c.z);
-   weight=Math.min(weight,smooth((d-c.radius)/7));
+  let weight=1,y=p.y;
+  for(const hit of crossingByPoint.get(p)||[]){
+   const d=near(p,hit);
+   weight=Math.min(weight,smooth((d-hit.radius)/7));
+   const top=hit.y+.014-headY;
+   if(top>p.y){
+    const span=Math.max(90,1.875*(top-p.y)/.08);
+    y=Math.max(y,p.y+(top-p.y)*(1-smooth((d-hit.radius)/span)));
+   }
   }
   for(const node of pinned){
-   const d=near(p,node);if(d<28)weight=Math.min(weight,smooth((d-6)/22));
+   const d=near(p,node);
+   if(d<28)weight=Math.min(weight,smooth((d-6)/22));
   }
-  let targetY=p.y;
-  for(const c of around(p)){
-   const d=Math.hypot(p.x-c.x,p.z-c.z),top=c.y+.014-headY;
-   if(top<=p.y)continue;
-   const span=Math.max(90,1.875*(top-p.y)/.08),alpha=1-smooth((d-c.radius)/span);
-   if(alpha>0)targetY=Math.max(targetY,p.y+(top-p.y)*alpha);
-  }
-  const value={dx:(best?.dx||0)*(best?.intrusion||0)*weight,
-   dz:(best?.dz||0)*(best?.intrusion||0)*weight,y:targetY};
-  cache.set(id,value);return value;
+  return {dx:(best?.dx||0)*(best?.intrusion||0)*weight,
+   dz:(best?.dz||0)*(best?.intrusion||0)*weight,y};
  };
- let displaced=0,maxShift=0,raised=0;
- // Save all corrections before mutating shared nodes and display samples.
- const positions=new Set();
- for(const edge of movable){positions.add(edge.a.position);positions.add(edge.b.position);
-  for(const p of edge.surfacePoints||[])positions.add(p);
+ let displaced=0,maxShift=0,raised=0,iterations=0;
+ const displacement=new Map(),samples=[...positions];
+ // Iterative projection resolves roads on either side of a rail, which a
+ // single pass cannot do. All positions move synchronously within each pass.
+ for(let pass=0;pass<6;pass++){
+  const shifts=samples.map(p=>({p,shift:shiftAt(p)}));let changed=false;
+  for(const {p,shift}of shifts){
+   const dist=Math.hypot(shift.dx,shift.dz);
+   if(dist>1e-6){
+    p.x+=shift.dx;p.z+=shift.dz;changed=true;
+    if(!displacement.has(p))displaced++;
+    displacement.set(p,(displacement.get(p)||0)+dist);
+    maxShift=Math.max(maxShift,displacement.get(p));
+   }
+   if(shift.y>p.y+1e-6){p.y=shift.y;raised++;changed=true;}
+  }
+  iterations++;
+  if(!changed)break;
  }
- const shifts=[...positions].map(p=>({p,shift:shiftAt(p)}));
- for(const {p,shift}of shifts){
-  const length=Math.hypot(shift.dx,shift.dz);
-  if(length>1e-6){p.x+=shift.dx;p.z+=shift.dz;displaced++;maxShift=Math.max(maxShift,length);}
-  if(shift.y>p.y+1e-6){p.y=shift.y;raised++;}
- }
+ const residualIntrusions=samples.filter(p=>{
+  const shift=shiftAt(p);return Math.hypot(shift.dx,shift.dz)>.03;
+ }).length;
  // Keep exact source-node seams, including a way boundary that owns its
  // first/last surface point as a separate cloned Vector3.
  for(const edge of movable)if(edge.surfacePoints?.length){
   edge.surfacePoints[0].copy(edge.a.position);edge.surfacePoints.at(-1).copy(edge.b.position);
  }
  return {version:RAIL_ROAD_CLEARANCE_VERSION,roadSegments:index.segments.length,crossingCount:crossings.length,
-  displacedPoints:displaced,raisedPoints:raised,addedSamples,maxLateralShift:maxShift,
+  displacedPoints:displaced,raisedPoints:raised,addedSamples,maxLateralShift:maxShift,iterations,residualIntrusions,
   requiredEdgeClearance:'road width',sourceWayIdsPreserved:true,crossings};
 }
 
