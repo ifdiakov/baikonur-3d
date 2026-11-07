@@ -461,7 +461,7 @@ export function buildRoadSurfaces({roads,parent,junctions:supplied=[]}){
  }
  const fillets=junctions.flatMap(junctionFillets);pavements.push(...fillets);
  const pavement=unionRecords(pavements),shoulder=unionRecords(shoulders,pavements);
- const asphaltMat=new THREE.MeshStandardMaterial({color:0x555550,roughness:.98}),shoulderMat=new THREE.MeshStandardMaterial({color:0xa69b84,roughness:1});
+ const asphaltMat=new THREE.MeshStandardMaterial({color:0x555751,roughness:.98}),shoulderMat=new THREE.MeshStandardMaterial({color:0xa69b84,roughness:1});
  for(const [name,result,material]of [['road-pavement-union',pavement,asphaltMat],['road-shoulder-union',shoulder,shoulderMat]]){const mesh=new THREE.Mesh(triangulate(result.polygons),material);mesh.name=name;mesh.receiveShadow=true;mesh.userData.groundSurface=true;mesh.userData.roadSurfaceVersion=ROAD_SURFACE_VERSION;parent.add(mesh);}
  const dashes=[],edgeLines=[];
  const inJunction=p=>junctions.some(j=>Math.abs(p.y-j.y)<.3&&Math.hypot(p.x-j.x,p.z-j.z)<j.radius);
