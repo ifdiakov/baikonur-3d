@@ -1324,9 +1324,11 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const tip=candidates[0];
   if(tip){
    const root=new THREE.Group();root.name='НП · станция Донская';
-   const pad=tip.node.position.clone().addScaledVector(tip.heading,7);
+   // Approximately 35 × 50 m in the museum's 3.4/65 world scale.
+   const pad=tip.node.position.clone().addScaledVector(tip.heading,1.4);
    root.position.set(pad.x,tip.node.position.y+.05,pad.z);
    root.rotation.y=Math.atan2(tip.heading.x,tip.heading.z);
+   root.scale.set(.16,.2,.2);
    root.userData.museumComponent='observation-platform';
    root.userData.source='owner-placement-donskaya-dead-end';
    const deckMaterial=new THREE.MeshStandardMaterial({color:0x555751,roughness:.93});
