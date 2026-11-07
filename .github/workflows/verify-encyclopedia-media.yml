@@ -1,0 +1,54 @@
+name: Encyclopedia media and 3D cards
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'encyclopedia.html'
+      - 'index.html'
+      - 'data/encyclopedia.json'
+      - 'src/encyclopedia-3d.js'
+      - 'tests/encyclopedia-media-*.mjs'
+      - '.github/workflows/verify-encyclopedia-media.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'encyclopedia.html'
+      - 'index.html'
+      - 'data/encyclopedia.json'
+      - 'src/encyclopedia-3d.js'
+      - 'tests/encyclopedia-media-*.mjs'
+      - '.github/workflows/verify-encyclopedia-media.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: encyclopedia-media-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Static media contracts and source mappings
+        run: |
+          node --check src/encyclopedia-3d.js
+          node tests/encyclopedia-media-data.mjs
+      - name: Install browser tests
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Serve the museum
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+      - name: Verify the encyclopedia card imagery and 3D
+        run: node tests/encyclopedia-media-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: encyclopedia-media-visuals
+          path: qa-encyclopedia-media/
