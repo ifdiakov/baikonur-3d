@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildRailRoadIndex,findRailRoadCrossings,separateRailGraphFromRoads,buildRailCrossingSignals} from '../src/rail-road-clearance.js';
+import {buildRailRoadIndex,findRailRoadCrossings,separateRailGraphFromRoads,straightenPad5Rail,buildRailCrossingSignals} from '../src/rail-road-clearance.js';
 import {planRailStations,createRailStations} from '../src/rail-stations.js';
 import {RAIL_PROFILE} from '../src/rail-profile.js';
 
@@ -55,6 +55,20 @@ for(const p of besideJoin.edge.surfacePoints){
   return Math.hypot(p.x-road.a.x-t*road.dx,p.z-road.a.z-t*road.dz)-1.5*road.width-RAIL_PROFILE.ballastWidth/2;
  });
  assert(Math.min(...distances)>=-.15,'Rail joins must stay away from both asphalt pieces');
+}
+
+// Opposite Site 5: the southbound mainline must become a straight chord
+// rather than following small zigzags inherited from road-joint clearance.
+const map=(x,y)=>V((x-650)*3.4,GROUND,(y-522.5)*3.4);
+const line5=rail(map(621,547),map(620,560),[map(622.5,551),map(619,555)]);
+line5.edge.wayId='37543646';
+const offsetRoad=[{id:'pad5-road',width:3.6,points:[map(635,545),map(635,565)]}];
+const pad5Plan=straightenPad5Rail({railGraph:line5,roads:offsetRoad,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+assert.equal(pad5Plan.straightened,1,'Site 5 line must be straightened');
+const chordA=line5.edge.a.position,chordB=line5.edge.b.position;
+for(const p of line5.edge.surfacePoints.slice(1,-1)){
+ const dx=chordB.x-chordA.x,dz=chordB.z-chordA.z;
+ assert(Math.abs(dx*(p.z-chordA.z)-dz*(p.x-chordA.x))<1e-6,'Straight track points must lie on one chord');
 }
 
 // A real right-angle crossing retains its centre and puts the rail head above
