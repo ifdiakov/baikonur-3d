@@ -854,7 +854,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const pad5RailStraightening=straightenPad5Rail({railGraph,roads:markingRoads,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const railCornerIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
- const railCornerProtected=[...railGraph.nodes.values()].filter(node=>node.edges.length!==2).map(node=>node.position).concat([railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean));
+ const railCornerProtected=[...railGraph.nodes.values()].filter(node=>node.edges.length!==2).map(node=>node.position).concat([railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean),railRoadClearance.crossings.map(hit=>V(hit.x,hit.y,hit.z)));
  for(const way of railGraph.ways){
   const points=[];let run=0;
   const render=()=>{if(points.length<2)return;for(const visible of drawRail(way.abandoned?points:roundRailCorners(points,{index:railCornerIndex,protectedPoints:railCornerProtected,railHalfWidth:RAIL_PROFILE.ballastWidth/2}),way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
