@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Display corrections only. OSM node/way identities and source GeoJSON are immutable.
-export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v3-edge-local-iterative';
+export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v4-faired-lines';
 const CELL=24,EPS=1e-8,clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
 const key=(x,z)=>Math.floor(x/CELL)+':'+Math.floor(z/CELL);
@@ -157,13 +157,51 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
  const residualIntrusions=samples.filter(p=>{
   const shift=shiftAt(p);return Math.hypot(shift.dx,shift.dz)>.03;
  }).length;
+ // Finish each generated rail line with a conservative geometric fairing.
+ // The road-clearance projector can leave sawtooth offsets even when every
+ // point clears the asphalt. Smooth only ordinary straight-through samples:
+ // never touch a switch, crossing, station/model port, or source endpoint.
+ const nodePositions=new Set([...railGraph.nodes.values()].map(node=>node.position));
+ const crossingNear=p=>(crossingByPoint.get(p)||[]).some(hit=>near(p,hit)<hit.radius+9);
+ const clearanceAt=p=>{
+  let margin=Infinity;
+  for(const road of index.queryPoint(p)){
+   const t=clamp(((p.x-road.a.x)*road.dx+(p.z-road.a.z)*road.dz)/road.len2);
+   const d=Math.hypot(p.x-(road.a.x+t*road.dx),p.z-(road.a.z+t*road.dz));
+   margin=Math.min(margin,d-(road.width*1.5+railHalfWidth+.12));
+  }
+  return margin;
+ };
+ let polishedSamples=0;
+ for(let pass=0;pass<4;pass++){
+  const proposed=new Map();
+  for(const edge of movable){
+   const points=edge.surfacePoints||[];
+   for(let i=1;i<points.length-1;i++){
+    const p=points[i],before=points[i-1],after=points[i+1];
+    if(nodePositions.has(p)||crossingNear(p)||pinned.some(node=>near(p,node)<28))continue;
+    const l=near(before,p),r=near(after,p);
+    if(l<.04||r<.04)continue;
+    // Arc-length weighted interpolant has no tendency to pull long-short
+    // pairs into an artificial bend.
+    const t=l/(l+r),tx=before.x+(after.x-before.x)*t,tz=before.z+(after.z-before.z)*t;
+    const dx=(tx-p.x)*.45,dz=(tz-p.z)*.45,length=Math.hypot(dx,dz);
+    if(length<.015)continue;
+    const scale=Math.min(1,1.5/length),q={x:p.x+dx*scale,y:p.y,z:p.z+dz*scale};
+    if(clearanceAt(q)<-.025||clearanceAt({x:(p.x+q.x)/2,z:(p.z+q.z)/2})<-.025)continue;
+    proposed.set(p,q);
+   }
+  }
+  if(!proposed.size)break;
+  for(const [p,q] of proposed){p.x=q.x;p.z=q.z;polishedSamples++;}
+ }
  // Keep exact source-node seams, including a way boundary that owns its
  // first/last surface point as a separate cloned Vector3.
  for(const edge of movable)if(edge.surfacePoints?.length){
   edge.surfacePoints[0].copy(edge.a.position);edge.surfacePoints.at(-1).copy(edge.b.position);
  }
  return {version:RAIL_ROAD_CLEARANCE_VERSION,roadSegments:index.segments.length,crossingCount:crossings.length,
-  displacedPoints:displaced,raisedPoints:raised,addedSamples,maxLateralShift:maxShift,iterations,residualIntrusions,
+  displacedPoints:displaced,raisedPoints:raised,addedSamples,maxLateralShift:maxShift,iterations,residualIntrusions,polishedSamples,
   requiredEdgeClearance:'road width',sourceWayIdsPreserved:true,crossings};
 }
 
