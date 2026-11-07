@@ -5,7 +5,7 @@ import {RAIL_PROFILE} from './rail-profile.js?v=20261031-facilities-rails-lighti
 
 import {RAIL_VEHICLE_PROFILES} from './rail-vehicle-profiles.js?v=20261102-m62-v1';
 export {RAIL_VEHICLE_PROFILES};
-export const TRAIN_VERSION='m62-kosmotrans-v2-headlight-beam';
+export const TRAIN_VERSION='m62-kosmotrans-v3-extended-light-pool';
 export const COACH_COUNT=4;
 export const TRAIN_METRIC_SCALE=RAIL_PROFILE.gauge/1.52;
 const loco=RAIL_VEHICLE_PROFILES.m62,coach=RAIL_VEHICLE_PROFILES.coach;
@@ -90,7 +90,7 @@ export function buildRailVehicle(parent,{wagon=false,gauge=RAIL_PROFILE.gauge,in
  const headY=4.0274,bufferY=1.5084,windowY=wagon?2.63:3.18,markers=wagon?(last?[-1,1].map(s=>({x:s*1.15,y:3.35,z:-9.68,height:0,color:0xff4537,size:3})):[]):[{x:0,y:headY,z:7.97,height:0,color:0xffe9ba,size:6,brightness:2},...[-1,1].map(s=>({x:s*1.1,y:bufferY,z:8.065,height:0,color:0xffedc9,size:3.6}))];
  const lights=createLightField(root,markers,{name:wagon?'Хвостовые огни':'М62 · прожектор и буферные огни',minPixels:wagon?3.2:4.8});
  const windows=createLightField(root,(wagon?[-5,0,5]:[-7.3,7.3]).flatMap(z=>[-1,1].map(s=>({x:s*(wagon?1.6:1.44),y:windowY,z,height:0,color:0xffd896,size:.65}))),{name:'Тёплый свет окон',minPixels:2});
- let spill=null;if(!wagon){const mat=new THREE.MeshBasicMaterial({map:beamTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false});spill=new THREE.Mesh(new THREE.PlaneGeometry(6,27),mat);spill.rotation.x=-Math.PI/2;spill.position.set(0,.025,21.5);spill.renderOrder=5;spill.name='М62 · свет на пути';root.add(spill);}
+ let spill=null;if(!wagon){const mat=new THREE.MeshBasicMaterial({map:beamTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false});spill=new THREE.Mesh(new THREE.PlaneGeometry(48,108),mat);spill.rotation.x=-Math.PI/2;spill.position.set(0,.025,62);spill.renderOrder=5;spill.name='М62 · свет на пути';root.add(spill);}
  const detailCounts={'source-body':1,'cab-window':wagon?0:8,'lit-window':wagon?20:0,'kosmotrans-lettering':wagon?0:2,'tail-lamp':last?2:0};
  const state={version:TRAIN_VERSION,status:'fallback',error:null,id:profile.id};let night=true,pending=null,detailMaterials=[];
  root.scale.setScalar(metricScale);for(const part of [...axles,...bogies])part.root.scale.setScalar(metricScale);
