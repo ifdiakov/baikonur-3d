@@ -879,7 +879,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const pad5RailStraightening=straightenPad5Rail({railGraph,roads:markingRoads,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const railCornerIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const railCornerProtected=[...railGraph.nodes.values()].filter(node=>node.edges.length!==2).map(node=>node.position).concat([railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean),railRoadClearance.crossings.map(hit=>V(hit.x,hit.y,hit.z))]);
- const site5HiddenRailWays=new Set(['172458462']);
+ const site5HiddenRailWays=new Set(['172458462','172458465']);
  for(const way of railGraph.ways){
   if(site5HiddenRailWays.has(String(way.osmId)))continue;
   const points=[];let run=0;
