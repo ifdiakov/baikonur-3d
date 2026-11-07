@@ -3,7 +3,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
-import {ROAD_LIGHT_STYLES,ROAD_LIGHT_LENS_EMISSION,createRoadFixtureGeometry,createRoadFixtureMaterials,roadFixtureHead} from './road-lighting.js?v=20261102-site2-photo-v3';
+import {ROAD_LIGHT_STYLES,ROAD_LIGHT_LENS_EMISSION,ROAD_LIGHT_FADE,createRoadFixtureGeometry,createRoadFixtureMaterials,roadFixtureHead} from './road-lighting.js?v=20261102-site2-photo-v3';
 import {createBridgeApproachPlan,createBridgeEmbankmentGeometry} from './bridge-embankments.js?v=20261031-road-markings-v1';
 
 export const INTERCHANGE_BRIDGE_VERSION='reference-viaduct-v1';
@@ -225,7 +225,7 @@ export function buildInterchangeBridge({parent,plan}){
     if(key==='earth')mesh.userData.bridgeApproachTerrain=true;
     root.add(mesh);triangles+=geometry.attributes.position.count/3;meshCount++;
   }
-  const lights=createLightField(root,lamps,{name:'Виадук · фонари',minPixels:2.1});
+  const lights=createLightField(root,lamps,{name:'Виадук · фонари',minPixels:2.1,fog:true,distanceFade:[ROAD_LIGHT_FADE.start,ROAD_LIGHT_FADE.end],distanceFadeExponent:ROAD_LIGHT_FADE.exponent,distanceFadeMetric:ROAD_LIGHT_FADE.metric});
   // A single additive sheet follows the exact deck vertices. Unlike flat disc
   // pools it cannot float over the sloping approaches or spill beyond the road.
   const spillGeometry=root.getObjectByName('Виадук · asphalt').geometry.clone();
