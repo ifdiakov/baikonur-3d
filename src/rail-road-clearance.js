@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Display corrections only. OSM node/way identities and source GeoJSON are immutable.
-export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v1';
+export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v2-tight-crossing-envelopes';
 const CELL=24,EPS=1e-8,clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
 const key=(x,z)=>Math.floor(x/CELL)+':'+Math.floor(z/CELL);
@@ -97,7 +97,7 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
  // rail-sample x crossing-count scan on the full Baikonur network.
  const crossingCells=new Map(),crossCellSize=96;
  for(const crossing of crossings){
-  const radius=Math.max(95,(crossing.radius+90));
+  const radius=crossing.radius+12;
   for(let x=Math.floor((crossing.x-radius)/crossCellSize);x<=Math.floor((crossing.x+radius)/crossCellSize);x++)
    for(let z=Math.floor((crossing.z-radius)/crossCellSize);z<=Math.floor((crossing.z+radius)/crossCellSize);z++){
     const k=x+':'+z;if(!crossingCells.has(k))crossingCells.set(k,[]);crossingCells.get(k).push(crossing);
@@ -120,7 +120,7 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
   let weight=1;
   for(const c of around(p)){
    const d=Math.hypot(p.x-c.x,p.z-c.z);
-   weight=Math.min(weight,smooth((d-c.radius)/22));
+   weight=Math.min(weight,smooth((d-c.radius)/7));
   }
   for(const node of pinned){
    const d=near(p,node);if(d<28)weight=Math.min(weight,smooth((d-6)/22));
