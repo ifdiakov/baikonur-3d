@@ -53,6 +53,19 @@ for(const hiddenId of ['172458462','172458465'])
   'Redundant railway branch opposite Site 5 is still visible: '+hiddenId);
 assert(transport.routes.rail.some(r=>r.osmWayIds?.includes('37543646')),
  'The main Site 5 railway must remain visible');
+// 07 Nov corrections: one intentional AD to each twin silo and a viewing
+// platform anchored at a retained dead-end road by Donskaya station.
+for(const id of ['pad-106','pad-109']){
+ const entry=stats.twinSiloConnections?.find(x=>x.id===id);
+ assert.equal(entry?.status,'connected',id+': dedicated AD driveway not connected');
+ assert(entry.sourceGap<1e-6&&entry.gateGap<1e-6,id+': AD has a seam gap');
+ assert(transport.roadPaths().some(r=>r.id==='silo-single-driveway-'+id),
+  id+': dedicated AD is not rendered');
+}
+assert.equal(stats.donskayaObservation?.status,'placed','Donskaya NP must sit at a retained AD dead end');
+assert(stats.donskayaObservation.stationDistance<470,'Donskaya NP is not near the station');
+assert(['not-needed','connected'].includes(stats.twinThroughRepair.status),
+ 'Through AD 106/109 repair has an invalid state');
 const train=transport.trainPath();
 assert(train.path.points.length>10&&train.osmWayIds.length>0,'The train route is no longer connected');
 console.log('RAIL_SITE_GATES_INTEGRATION_PASS',JSON.stringify({
