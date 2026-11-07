@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Display corrections only. OSM node/way identities and source GeoJSON are immutable.
-export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v4-faired-lines';
+export const RAIL_ROAD_CLEARANCE_VERSION='rail-road-clearance-v5-road-junction-caps';
 const CELL=24,EPS=1e-8,clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
 const smooth=t=>{t=clamp(t);return t*t*(3-2*t);};
 const key=(x,z)=>Math.floor(x/CELL)+':'+Math.floor(z/CELL);
@@ -113,15 +113,28 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
    const t=clamp(((p.x-road.a.x)*road.dx+(p.z-road.a.z)*road.dz)/road.len2);
    const x=road.a.x+t*road.dx,z=road.a.z+t*road.dz;
    const distance=Math.hypot(p.x-x,p.z-z),target=road.width*1.5+railHalfWidth+.12;
-   const intrusion=target-distance;
+   // Crossing exemptions are specific to the intersected road. A crossing
+   // of one road at a junction does not waive clearance from the others.
+   const exempt=(crossingByPoint.get(p)||[]).some(hit=>
+    hit.roadId===road.roadId&&near(p,hit)<hit.radius+7);
+   const intrusion=exempt?0:target-distance;
    if(intrusion<=1e-6||best&&intrusion<=best.intrusion)continue;
-   const sign=Math.sign(road.dx*(p.z-z)-road.dz*(p.x-x))||1;
-   best={intrusion,dx:-road.dz/road.len*sign,dz:road.dx/road.len*sign};
+   // At a road-way seam the nearest point is often the segment endpoint.
+   // A fixed segment normal then kicks the rail sideways towards the NEXT
+   // segment, producing the sawtooth and asphalt overlaps seen on the map.
+   // Use a radial escape at endpoint caps, a normal only on the interior.
+   const vx=p.x-x,vz=p.z-z;
+   const sign=Math.sign(road.dx*vz-road.dz*vx)||1;
+   const radial=Math.hypot(vx,vz),cap=t<.001||t>.999;
+   const nx=cap&&radial>1e-6?vx/radial:-road.dz/road.len*sign;
+   const nz=cap&&radial>1e-6?vz/radial:road.dx/road.len*sign;
+   best={intrusion,dx:nx,dz:nz,roadId:road.roadId};
   }
   let weight=1,y=p.y;
   for(const hit of crossingByPoint.get(p)||[]){
    const d=near(p,hit);
-   weight=Math.min(weight,smooth((d-hit.radius)/7));
+   // Do not suppress the correction for other roads at this intersection.
+   // That separate road-specific exemption is handled above.
    const top=hit.y+.014-headY;
    if(top>p.y){
     const span=Math.max(90,1.875*(top-p.y)/.08);
