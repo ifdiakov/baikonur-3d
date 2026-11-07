@@ -1,0 +1,32 @@
+name: Verify launch countdown
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/launch-countdown.js'
+      - 'index.html'
+      - 'tests/launch-countdown-format.mjs'
+      - '.github/workflows/verify-launch-countdown.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/launch-countdown.js'
+      - 'index.html'
+      - 'tests/launch-countdown-format.mjs'
+      - '.github/workflows/verify-launch-countdown.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check countdown formatting at days 100 and 10
+        run: |
+          node --check src/launch-countdown.js
+          node tests/launch-countdown-format.mjs
