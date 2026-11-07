@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "updated": "2026-11-07",
   "types": {
     "rocket": "Ракеты и корабли",
@@ -24,7 +24,12 @@
       "sources": [
         "https://samspace.ru/about/history/",
         "https://fr.samspace.ru/news/press_relizy/19456/"
-      ]
+      ],
+      "media": {
+        "kind": "model3d",
+        "previewId": "r7",
+        "note": "Схематическая 3D-реконструкция исходной Р-7; не подменена поздней ракетой «Союз»."
+      }
     },
     {
       "id": "soyuz",
@@ -42,7 +47,13 @@
       ],
       "sources": [
         "https://samspace.ru/about/history/"
-      ]
+      ],
+      "media": {
+        "kind": "model3d",
+        "previewId": "soyuz",
+        "viewerId": "soyuz",
+        "note": "При открытии статьи лёгкий макет заменяется моделью ракеты «Союз» из 3D-коллекции музея."
+      }
     },
     {
       "id": "soyuzcraft",
@@ -57,7 +68,12 @@
       ],
       "sources": [
         "https://www.energia.ru/"
-      ]
+      ],
+      "media": {
+        "kind": "model3d",
+        "previewId": "soyuzcraft",
+        "note": "Схематическая 3D-модель корабля «Союз», отличная от ракеты-носителя. Геометрия для обзорного изучения."
+      }
     },
     {
       "id": "proton",
@@ -73,7 +89,13 @@
       ],
       "sources": [
         "https://dfnc.ru/arhiv-kataloga-predpriyatij/predpriyatiya/gknpc-hrunichev/"
-      ]
+      ],
+      "media": {
+        "kind": "model3d",
+        "previewId": "proton",
+        "viewerId": "proton",
+        "note": "Обзорный 3D-макет и подробная процедурная модель ракеты «Протон-М»."
+      }
     },
     {
       "id": "energia",
@@ -89,7 +111,13 @@
       ],
       "sources": [
         "https://buran.ru/htm/konstru2.htm"
-      ]
+      ],
+      "media": {
+        "kind": "model3d",
+        "previewId": "energia",
+        "viewerId": "energia",
+        "note": "Обзорный макет с заменой на модель «Энергии» из музейной коллекции при открытии карточки."
+      }
     },
     {
       "id": "buran",
@@ -106,7 +134,13 @@
       ],
       "sources": [
         "https://buran.ru/htm/konstru2.htm"
-      ]
+      ],
+      "media": {
+        "kind": "model3d",
+        "previewId": "buran",
+        "viewerId": "buran",
+        "note": "Обзорный макет орбитального корабля; точная модель из музейного экспоната подгружается по открытию."
+      }
     },
     {
       "id": "site1",
@@ -241,7 +275,13 @@
       ],
       "sources": [
         "https://buran.ru/htm/konstru2.htm"
-      ]
+      ],
+      "media": {
+        "kind": "wordmark",
+        "text": "ОКБ-1",
+        "credit": "Типографическое обозначение исторического КБ, не официальный логотип",
+        "source": "https://www.energia.ru/"
+      }
     },
     {
       "id": "energiaorg",
@@ -261,7 +301,13 @@
       ],
       "sources": [
         "https://buran.ru/htm/konstru2.htm"
-      ]
+      ],
+      "media": {
+        "kind": "logo",
+        "src": "./assets/org-logos/energia.png",
+        "credit": "Фирменный знак РКК «Энергия» (современного правопреемника); не исторический знак ОКБ-1",
+        "source": "https://www.energia.ru/"
+      }
     },
     {
       "id": "progress",
@@ -277,7 +323,13 @@
       ],
       "sources": [
         "https://samspace.ru/about/history/"
-      ]
+      ],
+      "media": {
+        "kind": "logo",
+        "src": "./assets/org-logos/progress.png",
+        "credit": "Логотип РКЦ «Прогресс», музейная адаптация",
+        "source": "https://samspace.ru/"
+      }
     },
     {
       "id": "khrunichev",
@@ -292,7 +344,13 @@
       ],
       "sources": [
         "https://dfnc.ru/arhiv-kataloga-predpriyatij/predpriyatiya/gknpc-hrunichev/"
-      ]
+      ],
+      "media": {
+        "kind": "logo",
+        "src": "./assets/org-logos/khrunichev.png",
+        "credit": "Логотип Центра Хруничева, музейная адаптация",
+        "source": "https://www.khrunichev.ru/"
+      }
     },
     {
       "id": "tsenki",
@@ -308,7 +366,13 @@
       ],
       "sources": [
         "https://www.russian.space/o-predpriyatii/istoriya-predpriyatiya/"
-      ]
+      ],
+      "media": {
+        "kind": "logo",
+        "src": "./assets/org-logos/tsenki.png",
+        "credit": "Логотип ЦЭНКИ, музейная адаптация",
+        "source": "https://www.russian.space/"
+      }
     },
     {
       "id": "molniya",
@@ -322,7 +386,13 @@
       ],
       "sources": [
         "https://buran.ru/"
-      ]
+      ],
+      "media": {
+        "kind": "logo",
+        "src": "https://npomolniya.ru/assets/templates/site/images/logo.jpg",
+        "credit": "Логотип АО «НПО «Молния» с официального сайта предприятия",
+        "source": "https://www.npomolniya.ru/"
+      }
     },
     {
       "id": "energomash",
@@ -335,7 +405,13 @@
       ],
       "sources": [
         "https://www.npoenergomash.ru/"
-      ]
+      ],
+      "media": {
+        "kind": "logo",
+        "src": "./assets/org-logos/energomash.png",
+        "credit": "Логотип НПО Энергомаш, музейная адаптация",
+        "source": "https://www.npoenergomash.ru/"
+      }
     },
     {
       "id": "lavochkin",
@@ -346,7 +422,13 @@
       "links": [],
       "sources": [
         "https://www.laspace.ru/"
-      ]
+      ],
+      "media": {
+        "kind": "logo",
+        "src": "./assets/org-logos/lavochkin.png",
+        "credit": "Логотип НПО имени С. А. Лавочкина, музейная адаптация",
+        "source": "https://www.laspace.ru/"
+      }
     },
     {
       "id": "barmin",
@@ -360,7 +442,14 @@
       ],
       "sources": [
         "https://ru.wikipedia.org/wiki/Бармин,_Владимир_Павлович"
-      ]
+      ],
+      "media": {
+        "kind": "portrait",
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/Vladimir_Barmin_(mos.ru)_02.jpg?width=520",
+        "credit": "Главархив Москвы / Mos.ru; Wikimedia Commons",
+        "source": "https://commons.wikimedia.org/wiki/Category:Vladimir_Pavlovitch_Barmin",
+        "license": "Сведения об авторстве и условиях на странице источника"
+      }
     },
     {
       "id": "korolev",
@@ -377,7 +466,14 @@
       ],
       "sources": [
         "https://samspace.ru/about/history/"
-      ]
+      ],
+      "media": {
+        "kind": "portrait",
+        "src": "./assets/flank-portraits/korolev.webp",
+        "credit": "Портрет из архива команды RocketTrip",
+        "source": "./assets/flank-portraits/sources.json",
+        "license": "Происхождение и атрибуция указаны в реестре изображений"
+      }
     },
     {
       "id": "kozlov",
@@ -392,7 +488,14 @@
       ],
       "sources": [
         "https://samspace.ru/about/history/"
-      ]
+      ],
+      "media": {
+        "kind": "portrait",
+        "src": "https://warheroes.ru/content/images/photodocs/10441/original/8beee5943fd17cdbedf2cca6b194db7a.jpg",
+        "credit": "Проект «Герои страны» — фотодокумент",
+        "source": "https://warheroes.ru/hero/hero.asp?photo_id=16929",
+        "license": "Атрибуция источнику; права автора фотографии не установлены"
+      }
     },
     {
       "id": "glushko",
@@ -407,7 +510,14 @@
       ],
       "sources": [
         "https://buran.ru/htm/konstru2.htm"
-      ]
+      ],
+      "media": {
+        "kind": "portrait",
+        "src": "https://bessmertnybarak.ru/filesSt/2615_Glushko_Valentin_Petrovich/foto_1445576195.jpg",
+        "credit": "Архивный портрет — «Бессмертный барак»",
+        "source": "https://bessmertnybarak.ru/Glushko_Valentin_Petrovich/",
+        "license": "Атрибуция источнику; права автора фотографии не установлены"
+      }
     },
     {
       "id": "chelomey",
@@ -420,7 +530,14 @@
       ],
       "sources": [
         "https://ru.wikipedia.org/wiki/Челомей,_Владимир_Николаевич"
-      ]
+      ],
+      "media": {
+        "kind": "portrait",
+        "src": "./assets/flank-portraits/chelomey.webp",
+        "credit": "Портрет из архива команды RocketTrip",
+        "source": "./assets/flank-portraits/sources.json",
+        "license": "Происхождение и атрибуция указаны в реестре изображений"
+      }
     },
     {
       "id": "lozino",
@@ -434,7 +551,14 @@
       ],
       "sources": [
         "https://buran.ru/"
-      ]
+      ],
+      "media": {
+        "kind": "portrait",
+        "src": "https://commons.wikimedia.org/wiki/Special:FilePath/Lozino-Lozinsky.jpg?width=520",
+        "credit": "Лев Медведев / Leo Medvedev; Wikimedia Commons",
+        "source": "https://commons.wikimedia.org/wiki/File:Lozino-Lozinsky.jpg",
+        "license": "CC BY-SA 4.0"
+      }
     }
   ]
 }
