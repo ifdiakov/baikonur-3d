@@ -104,5 +104,32 @@ tour.update(31000);tour.update(31900);const interrupted=camera.position.clone();
 tour.skip();assert.equal(tour.stats().active,false);
 assert.equal(camera.position.distanceTo(interrupted),0,'Skip must never snap back to overview');
 assert.equal(controls.enabled,true);
+
+// Previously the tour only auto-played once. It must now run on EVERY
+// ordinary map opening, while deep links and explicit tour=0 retain control.
+const sourceHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+assert.match(sourceHtml,/<button id="museumTourStart" class="sites-accordion museum-tour-menu-entry"/);
+assert.match(sourceHtml,/body\.mobile-menu-open #ui>#museumTourStart\{display:flex\}/);
+assert.match(sourceHtml,/document\.getElementById\('museumTourStart'\)\?\.addEventListener\('click'/);
+assert.match(sourceHtml,/window\.__MUSEUM_ONBOARDING\?\.replay\(\)/);
+function autoForReturningVisitor(search,webdriver=false){
+ const win={
+  matchMedia:()=>({matches:false}),requestAnimationFrame:fn=>1,
+  localStorage:{getItem:()=> 'yes',setItem(){}}
+ };
+ vm.runInNewContext(source,{
+  window:win,document,location:{search},navigator:{webdriver},
+  localStorage:win.localStorage,URLSearchParams,console,Math,requestAnimationFrame:win.requestAnimationFrame
+ },{filename:'returning-visitor-onboarding.js'});
+ const tour=win.__MUSEUM_ONBOARDING;
+ tour.attach({camera,controls,focusGagarin(){},flankTourPose(){return {eye:initialEye.clone(),target:initialTarget.clone()};},isObjectFocused:()=>false});
+ tour.ready();
+ return tour.stats().pendingStart;
+}
+assert.equal(autoForReturningVisitor(''),true,'Previously seen visitors should receive the opening tour');
+assert.equal(autoForReturningVisitor('?tour=0'),false,'Explicit opt-out must suppress autoplay');
+assert.equal(autoForReturningVisitor('?view=site31'),false,'Deep-linked site inspection must not be interrupted');
+assert.equal(autoForReturningVisitor('',true),false,'Automated browser runs suppress unsolicited autoplay');
+
 console.log('ONBOARDING_FLANK_FLYOVER_PASS',JSON.stringify({introMs:3000,totalMs:29000,steps:6,
  zoomDelta:Math.round(initialEye.y-zoomEye.y),flyTarget:[flyTarget.x,flyTarget.z]}));
