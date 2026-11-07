@@ -40,6 +40,19 @@ const signs=buildRailCrossingSignals({crossings:hits,parent});
 assert.equal(signs.count,2);assert.equal(signs.root.children.length,7);
 for(const mesh of signs.root.children)assert.equal(mesh.count,2);
 
+// A crossing of one track must not exempt a neighbouring parallel track from
+// the required full road-width clearance (regression near the 7 Winds area).
+const through=rail(V(0,GROUND,-30),V(0,GROUND,30));
+const adjacent=rail(V(-100,GROUND,1),V(100,GROUND,1),[V(0,GROUND,1)]);
+const sharedGraph={nodes:new Map([...through.nodes,...adjacent.nodes].map(([id,n],i)=>[id+'-'+i,n])),edges:[through.edge,adjacent.edge]};
+const independent=separateRailGraphFromRoads({railGraph:sharedGraph,roads:pavement,
+ headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+assert.equal(independent.crossingCount,1);
+assert(independent.iterations>=1);
+for(const p of adjacent.edge.surfacePoints)assert(Math.abs(p.z)>=4*1.5+RAIL_PROFILE.ballastWidth/2,
+ 'An unrelated crossing must not pull a parallel rail into the road: '+p.z);
+assert.equal(independent.residualIntrusions,0,'Iterative clearance must converge on unobstructed rails');
+
 // Fixed railway model-port seams must not drift horizontally.
 const fixed=rail(V(-30,GROUND,1),V(30,GROUND,1),[V(0,GROUND,1)]);
 separateRailGraphFromRoads({railGraph:fixed,roads:pavement,pinnedNodes:[fixed.edge.a.position],
