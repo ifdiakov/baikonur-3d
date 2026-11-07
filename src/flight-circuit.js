@@ -10,11 +10,11 @@ export const TOUCHDOWN_TIME=120;
 export const FLIGHT_TIMINGS=Object.freeze({approach:120,rollout:28,hold:20,turn:12,taxi:50,takeoff:24,departure:80,away:60});
 export const FLIGHT_LEG_DURATION=Object.values(FLIGHT_TIMINGS).reduce((a,b)=>a+b,0)+FLIGHT_TIMINGS.turn;
 export const FLIGHT_CYCLE_DURATION=FLIGHT_LEG_DURATION*2;
-export const FLIGHT_CIRCUIT_VERSION='krayniy-osm-circuit-v8-closer-entry';
+export const FLIGHT_CIRCUIT_VERSION='krayniy-osm-circuit-v9-20k-entry';
 // The initial frame and the hidden return stay beyond the museum's navigation
 // envelope. The aircraft reaches the existing overflight nodes only after
 // travelling through the distant atmosphere, rather than spawning over the map.
-export const FLIGHT_ENTRY_DISTANCE=43000;
+export const FLIGHT_ENTRY_DISTANCE=20000;
 export const FLIGHT_RETURN_HIDE_TIME=20;
 
 function hermite(nodes,t){
@@ -67,12 +67,12 @@ export function createFlightCircuit(airfield,{aircraftScale=.28,firstAirfield=ai
  }
  const approachNodes=[
   [{t:0,p:atHub(-FLIGHT_ENTRY_DISTANCE,1200,-2100),v:V(1200,-4,0)},
-   {t:4,p:atHub(-13000,960,-2100),v:V(2400,-35,0)},
+   {t:4,p:atHub(-9000,960,-2100),v:V(2400,-35,0)},
    {t:10,p:atHub(-6000,740,-2100),v:V(600,-25,10)},
    {t:18,p:atHub(-2900,560,-1900),v:V(200,-12,40)},
    {t:42,p:atHub(-600,400,-300),v:V(44,-4,28)}],
   [{t:0,p:atHub(-FLIGHT_ENTRY_DISTANCE,1200,-450),v:V(1200,-4,0)},
-   {t:4,p:atHub(-13000,960,-450),v:V(2400,-35,0)},
+   {t:4,p:atHub(-9000,960,-450),v:V(2400,-35,0)},
    {t:10,p:atHub(-6000,740,-450),v:V(600,-25,0)},
    {t:18,p:atHub(-2600,560,-420),v:V(200,-12,8)},
    {t:38,p:atHub(0,400,0),v:V(48,-3,14)}]
