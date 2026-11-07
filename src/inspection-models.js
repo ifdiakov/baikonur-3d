@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261102-site2-photo-v3';
+import {MODEL_CATALOG,resolveModelId} from './model-catalog.js?v=20261108-soyuz5-v1';
 // Ignore hidden light pools and proxy geometry when framing a real exhibit.
 export function inspectionBounds(root){
  root.updateWorldMatrix(true,true);const bounds=new THREE.Box3(),part=new THREE.Box3(),point=new THREE.Vector3();
@@ -18,7 +18,7 @@ async function gltf(path,signal,revision='20261101-source-exhibits-v2'){
 }
 export async function createInspectionModel(id,{signal}={}){
  id=resolveModelId(id);const spec=MODEL_CATALOG[id];if(!spec)throw new Error('Модель не найдена');let root,setExploded=null,setVehicleVisible=null,setGear=null,initialGear=1,update=null;const owned=[];
- if(spec.asset){root=await gltf(spec.asset,signal,spec.assetRevision);root.rotation.y=spec.yaw||0;if(id==='n1'||id==='mig25'||id==='tu204')root.userData.inspectionPrecise=true;}
+ if(spec.asset){root=await gltf(spec.asset,signal,spec.assetRevision);root.rotation.y=spec.yaw||0;if(id==='soyuz5'||id==='n1'||id==='mig25'||id==='tu204')root.userData.inspectionPrecise=true;}
  else if(id.startsWith('zenit-')){const {createZenitRocket}=await import('./zenit-rocket.js?v=20261101-source-exhibits-v2');const model=createZenitRocket({variant:id==='zenit-land'?'land':'sea'});root=model.root;setExploded=model.setExploded;}
  else if(id==='aircraft'){
   const {buildAlrosaAircraft}=await import('./a320-aircraft.js?v=20261101-a320-tail-v2');root=new THREE.Group();const aircraft=buildAlrosaAircraft(root,{fallback:false});if(!await aircraft.ready)throw Error('Не удалось загрузить Airbus A320');aircraft.model.scale.setScalar(1);aircraft.setEvening(true);aircraft.setGear(1);setGear=aircraft.setGear;update=time=>aircraft.updateDetails(time/1000);

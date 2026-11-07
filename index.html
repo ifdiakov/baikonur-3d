@@ -597,9 +597,9 @@ import {adaptTuaRails} from './src/tua-rails.js?v=20261031-facilities-rails-ligh
 import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-exhibits-v1';
 import {installLabelMapGestures} from './src/label-map-gestures.js?v=20261103-label-gesture-bridge-v1';
 import {createMapCameraSmoothing,smoothingAlpha,MUSEUM_DAMPING_AT_60FPS} from './src/map-camera-smoothing.js?v=20261103-smooth-map-camera-v1';
-import {installModelInspector} from './src/model-inspector.js?v=20261102-site2-photo-v3';
-import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261102-site2-photo-v3';
-import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261103-lean-startup-v1';
+import {installModelInspector} from './src/model-inspector.js?v=20261108-soyuz5-v1';
+import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261108-soyuz5-v1';
+import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261108-soyuz5-v1';
 import {MUSEUM_METRE,MUSEUM_MAP_SCALE} from './src/museum-scale.js?v=20261102-silo-height-v1';
 import {CYCLONE_MOUNTS} from './src/cyclone-launch.js?v=20261102-site2-photo-v3';
 import {SITE41_R16_MOUNT} from './src/site41-profile.js?v=20261101-r16-exhibit-v1';
@@ -2570,7 +2570,7 @@ function openMuseumAction(action){
   case 'energia-buran':showRocketKnowledge('energia-buran','pad-110');portalArchive.inspectSite110('left',camera,ctl);break;
   case 'energia':case 'energia-m':showRocketKnowledge(action,'pad-112');focusMik112('tua');tuaRocketControls.choose(action);break;
   case 'tua':openMenuSite('pad-112');focusMik112('tua');showRocketKnowledge('tua','pad-112',false);break;
-  case 'proton':case 'n1':modelInspector.open([action]);break;
+  case 'proton':case 'n1':case 'soyuz5':modelInspector.open([action]);break;
   case 'cyclone-2':openMenuSite('pad-90');modelInspector.open(['cyclone-2','cyclone-3','cyclone-pad']);break;
   case 'r16':openMenuSite('pad-41');portalArchive.inspectSite41('rocket',camera,ctl);modelInspector.open(['r16']);break;
   case 'mig25ru':case 'mig25':modelInspector.open(['mig25']);break;
@@ -2886,6 +2886,7 @@ if(new URLSearchParams(location.search).get('view')==='site31'){openMenuSite('pa
 if(new URLSearchParams(location.search).get('view')==='kpp7'){openMenuSite('kpp-7');portalArchive.inspectCheckpoint7(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site250a'){openMenuSite('pad-250a');portalArchive.inspectSite250a(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site113'){openMenuSite('pad-113');portalArchive.inspectSite113(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
+if(new URLSearchParams(location.search).get('view')==='soyuz5')openMuseumAction('soyuz5');
 if(new URLSearchParams(location.search).get('view')==='site95'){openMenuSite('pad-95');portalArchive.inspectSite95(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site254'){openMenuSite('pad-254');portalArchive.inspectSite254(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site2'){openMenuSite('pad-2');portalArchive.inspectSite2(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}

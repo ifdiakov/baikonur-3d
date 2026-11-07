@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261102-site2-photo-v3';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261102-site2-photo-v3';
-import {renderModelFacts} from './model-facts-view.js?v=20261102-site2-photo-v3';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261108-soyuz5-v1';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261108-soyuz5-v1';
+import {renderModelFacts} from './model-facts-view.js?v=20261108-soyuz5-v1';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);
@@ -22,7 +22,7 @@ try{
   const bounds=box(),center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
   const dir=new THREE.Vector3(...direction).normalize(),right=new THREE.Vector3(0,1,0).cross(dir).normalize(),up=dir.clone().cross(right),tan=Math.tan(THREE.MathUtils.degToRad(camera.fov*.5));let distance=0;
   for(const x of [-.5,.5])for(const y of [-.5,.5])for(const z of [-.5,.5]){const v=new THREE.Vector3(size.x*x,size.y*y,size.z*z);distance=Math.max(distance,v.dot(dir)+Math.abs(v.dot(up))/tan,v.dot(dir)+Math.abs(v.dot(right))/(tan*camera.aspect));}
-  if(['mig25','n1','proton','tu204'].includes(current)){
+  if(['mig25','n1','proton','tu204','soyuz5'].includes(current)){
    distance=0;const point=new THREE.Vector3();model.root.traverseVisible(o=>{if(!o.isMesh)return;const p=o.geometry.attributes.position;for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld).sub(center);distance=Math.max(distance,point.dot(dir)+Math.abs(point.dot(up))/tan,point.dot(dir)+Math.abs(point.dot(right))/(tan*camera.aspect));}});
   }distance*=1.17;
   controls.target.copy(center);camera.position.copy(center).add(new THREE.Vector3(...direction).normalize().multiplyScalar(distance));controls.minDistance=Math.max(.2,size.length()*.015);controls.maxDistance=Math.max(300,size.length()*8);camera.near=Math.max(.02,size.length()/300);camera.far=Math.max(300,distance*8);camera.updateProjectionMatrix();

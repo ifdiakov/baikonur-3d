@@ -1,0 +1,40 @@
+name: Soyuz-5 source model
+on:
+  pull_request:
+    branches: [main]
+    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml']
+  push:
+    branches: [main]
+    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: soyuz5-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 @gltf-transform/core@4.2.1 @gltf-transform/extensions@4.2.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Validate model, textures and menu contracts
+        run: |
+          node tests/soyuz5-source.mjs
+          node tests/menu-catalog-contract.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Inspect source model and museum integration
+        run: node tests/soyuz5-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soyuz5-evidence
+          path: qa-soyuz5/

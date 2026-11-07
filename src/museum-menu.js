@@ -1,7 +1,7 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {COMPLEX_HISTORY_MENU} from './complex-history-menu.js?v=20261103-lean-startup-v1';
 
-export const MUSEUM_MENU_VERSION='museum-seven-sections-v10';
+export const MUSEUM_MENU_VERSION='museum-seven-sections-v11-soyuz5';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -39,6 +39,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
  {id:'equipmentAccordion',title:'РАКЕТЫ И ТЕХНИКА',items:[
   {action:'zenit-3sl',title:'«Зенит»',description:'Площадка №45 · просмотр ракеты в 3D'},
   {action:'r7',title:'«Союз»',description:'Гагаринский старт и площадка №31'},
+  {action:'soyuz5',title:'«Союз-5»',description:'Байтерек · ступени и двигатели в 3D'},
   {action:'energia-polyus',title:'«Энергия — Полюс»',description:'Ракета-экспонат на УКСС'},
   {action:'energia-buran',title:'«Энергия — Буран»',description:'Площадка №110, МИК и транспортёры'},
   {action:'energia',title:'«Энергия»',description:'Четырёхблочная ракета-носитель'},
