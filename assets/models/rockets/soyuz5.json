@@ -1,0 +1,80 @@
+{
+  "version": "rocket-exhibits-v1",
+  "id": "soyuz5",
+  "assetRevision": "soyuz5-20261108-v1",
+  "source": {
+    "name": "Soyuz 5.blend",
+    "driveFileId": "1J9pJXNADD8BL-z5Lz7CBoLoEoS5AIVtj",
+    "url": "https://drive.google.com/file/d/1J9pJXNADD8BL-z5Lz7CBoLoEoS5AIVtj/view",
+    "bytes": 17962592,
+    "sha256": "06d2da1d44f4faed53fd095c5e491b36141834940d001061a0feabda96f7c285"
+  },
+  "asset": {
+    "path": "soyuz5.glb",
+    "bytes": 811684,
+    "sha256": "ccdbcbe0f232b414bdc340992ae09d3ba9b7f8562ef6fa476780f8f528901e53"
+  },
+  "normalization": {
+    "unit": "metre",
+    "up": "Y",
+    "scale": 1,
+    "origin": "Centreline at lowest nozzle point; source proportions preserved"
+  },
+  "bounds": {
+    "min": [
+      -2.274836049014555,
+      0,
+      -2.274836049014555
+    ],
+    "max": [
+      2.274836049014555,
+      60.92603015899658,
+      2.274836049014555
+    ],
+    "size": [
+      4.54967209802911,
+      60.92603015899658,
+      4.54967209802911
+    ]
+  },
+  "statistics": {
+    "triangles": 62034,
+    "sourceTriangles": 62034,
+    "vertices": 42187,
+    "primitives": 15,
+    "meshes": 4,
+    "materials": 10,
+    "textures": [
+      {
+        "name": "energia logo baked",
+        "mimeType": "image/png",
+        "size": [
+          512,
+          2048
+        ],
+        "bytes": 411139
+      },
+      {
+        "name": "soyuz-5 logo baked",
+        "mimeType": "image/png",
+        "size": [
+          512,
+          2048
+        ],
+        "bytes": 113375
+      }
+    ]
+  },
+  "optimization": {
+    "geometryDecimated": false,
+    "positionBits": 16,
+    "normalBits": 12,
+    "uvBits": 14,
+    "removed": "Cameras, lights, empty helper and packed environment maps",
+    "logos": "Original shader colours baked at 512 × 2048; original rocket UVs preserved"
+  },
+  "notes": [
+    "Concept-era source geometry is preserved; it is not identified as the as-flown April 2026 configuration.",
+    "Source mesh bounding height is not a specification for every Soyuz-5 configuration."
+  ]
+}

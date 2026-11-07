@@ -56,7 +56,7 @@ for(const station of stations)assert.equal(museumCatalogueSection({id:'osm-stati
 assert.equal(field.objects.length,7);assert.equal(new Set(field.objects.map(record=>record.id)).size,7);
 assert.match(aside,/<details id="graveyardAccordion"[\s\S]*id="graveyardList"/);
 const equipment=MUSEUM_SECTIONS.find(section=>section.id==='equipmentAccordion'),actions=equipment.items.map(item=>item.action);
-assert.deepEqual([...actions].sort(),['cyclone-2','proton','n1','r16','mig25','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','sprinter','silo'].sort(),'Physical exhibits remain in the equipment section while animations move to reconstructions');
+assert.deepEqual([...actions].sort(),['soyuz5','cyclone-2','proton','n1','r16','mig25','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','sprinter','silo'].sort(),'Physical exhibits remain in the equipment section while animations move to reconstructions');
 const reconstructions=MUSEUM_SECTIONS.find(section=>section.id==='reconstructionsAccordion');
 const reconstructionActions=reconstructions.items.map(item=>item.action);
 assert.deepEqual([...reconstructionActions].sort(),['soyuz-launch-1','soyuz-launch-31','energia-reconstruction','buran-landing-reconstruction','buran-loading-reconstruction','flight-cycle','train-cycle','silo-cycle','aircraft','train'].sort(),

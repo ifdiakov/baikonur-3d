@@ -1,7 +1,8 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261102-site2-photo-v3';
+import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261108-soyuz5-v1';
 export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION;
 const definitions={
+ soyuz5:{title:'Союз-5',subtitle:'Байтерек · площадка №45',kind:'rocket',asset:'rockets/soyuz5.glb',yaw:Math.PI,assetRevision:'soyuz5-20261108-v1',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/soyuz5-source-model.md',sourceLabel:'Источники модели ↗',viewLabels:{front:'Двигатели',side:'Стык ступеней',top:'Обтекатель'},views:{front:{target:[0,2,0],offset:[6,-5,-9]},side:{target:[0,38.5,0],offset:[8,1.8,-12]},top:{target:[0,55,0],offset:[12,3,-18]}}},
  'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
  'cyclone-2':{title:'Циклон-2',subtitle:'Площадка №90 · Байконур',kind:'rocket',asset:'rockets/cyclone-2.glb'},
  'cyclone-3':{title:'Циклон-3',subtitle:'Коллекция моделей · Плесецк',kind:'rocket',asset:'rockets/cyclone-3.glb'},
@@ -32,8 +33,8 @@ export const MODEL_CATALOG=Object.freeze(Object.fromEntries(Object.entries(defin
 const siteModels={
  'pad-2':['buran'],
  'pad-90':['cyclone-2','cyclone-pad','cyclone-3'],
- 'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','site45','zenit-sea'],
- 'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land'],'pad-250':['energia-polyus','energia-buran','energia'],
+ 'pad-1':['soyuz','train','coach'],'pad-31':['soyuz'],'pad-41':['r16'],'pad-45':['zenit-land','soyuz5','site45','zenit-sea'],
+ 'pad-81':['proton-pad','proton'],'pad-200':['proton-pad','proton'],'pad-92':['proton'],'pad-42':['zenit-land','soyuz5'],'pad-250':['energia-polyus','energia-buran','energia'],
  'pad-110':['energia-buran','energia','n1'],'pad-112':['tua','energia-buran','energia-polyus','energia','energia-m','n1'],
  'pad-112a':['energia-m','buran','energia-buran'],'pad-251':['pua-100','mriya','buran','mig25'],'airfield':['tu204','aircraft'],'city':['train','coach'],
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,['silo']]))

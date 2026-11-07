@@ -1,7 +1,10 @@
 // Historical reference records, separate from the geometry and its visual adaptation.
 // Counts always name their variant / period; unknown is never represented as zero.
-export const MODEL_FACTS_VERSION='model-facts-20261102-m62-v1';
+export const MODEL_FACTS_VERSION='model-facts-20261108-soyuz5-v1';
 export const FACT_SOURCES=Object.freeze({
+ soyuz5First:['РКЦ «Прогресс» · первый пуск «Союза-5», 1 мая 2026','https://zakupki.samspace.ru/news/press_relizy/20638/'],
+ soyuz5Baiterek:['Правительство Казахстана · «Байтерек» и «Союз-5», 5 мая 2026','https://www.gov.kz/org/mfa-unesco/press/news/details/1214360?lang=en'],
+ soyuz5Flight:['ЦЭНКИ · первый испытательный пуск, 1 мая 2026','https://www.russian.space/press-tsentr/novosti/pervyy-ispytatelnyy-pusk-rakety-nositelya-novogo-pokoleniya-soyuz-5.html'],
  cpkAircraft:['ЦПК · приёмка двух самолётов в 2019 году','https://www.gctc.ru/main.php?id=4832'],
  cpkGagarin:['ЦПК · передача «Юрия Гагарина», фотографии','https://www.gctc.ru/main.php?id=4611'],
  cpkTransport:['ЦПК · возможности Ту-204-300','https://www.gctc.ru/main.php?id=7331'],
@@ -49,6 +52,11 @@ export const FACT_SOURCES=Object.freeze({
 });
 const record=(summary,specs,developer,service,activity,facts,sources,note='')=>({summary,specs,developer,service,activity,facts,sources,note});
 export const MODEL_FACTS=Object.freeze({
+ soyuz5:record('Двухступенчатая ракета-носитель среднего класса для комплекса «Байтерек» на Байконуре.',
+  [['Ступени','2 · последовательное расположение'],['Полезная нагрузка на НОО','до 17 т'],['Первая ступень','РД-171МВ'],['Вторая ступень','РД-0124МС'],['Топливо','Керосин и жидкий кислород'],['Стартовый комплекс','«Байтерек» · площадка №45']],
+  'АО «РКЦ «Прогресс» в кооперации предприятий ракетно-космической отрасли.',
+  'Лётно-конструкторские испытания начаты в 2026 году.', ['Первый испытательный пуск','30 апреля 2026 · 21:00 мск'],
+  ['Первый пуск состоялся с площадки №45: обе ступени отработали штатно, а макет полезной нагрузки вышел на расчётную суборбитальную траекторию.','Комплекс «Байтерек» создан в рамках совместного проекта Казахстана и России с модернизацией наземной инфраструктуры.','В казахстанских материалах ракета также называется «Сункар».'],['soyuz5First','soyuz5Baiterek','soyuz5Flight']),
  tu204:record('Специальный пассажирский самолёт для доставки экипажей космических кораблей, врачей и сопровождающих на космодром и обратно.',
   [['Модификация','Ту-204-300'],['Борт','RA-64044 «Юрий Гагарин»'],['Двигатели','2 × ПС-90А'],['Вместимость ЦПК','До 53 пассажиров'],['Продолжительность полёта','До 10 часов'],['Дальность в данных ЦПК','До 7 200 км']],
   'ОКБ А. Н. Туполева; изготовитель — «Авиастар», Ульяновск', 'В эксплуатации ЦПК с 2019 года; сведения о перевозках — на 1 ноября 2026 года', ['Самолётов в специальной паре ЦПК','2 Ту-204-300; число выполненных рейсов не опубликовано'],

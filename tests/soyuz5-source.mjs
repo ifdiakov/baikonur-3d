@@ -1,0 +1,21 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {NodeIO} from '@gltf-transform/core';
+import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
+import {MeshoptDecoder} from 'meshoptimizer';
+import {MODEL_CATALOG,modelsForObject} from '../src/model-catalog.js';
+import {FACT_SOURCES} from '../src/model-facts.js';
+const bytes=await readFile('assets/models/rockets/soyuz5.glb'),manifest=JSON.parse(await readFile('assets/models/rockets/soyuz5.json'));
+assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.asset.sha256);assert(bytes.length<1000000);
+assert.equal(bytes.readUInt32LE(0),0x46546c67);const json=JSON.parse(bytes.subarray(20,20+bytes.readUInt32LE(12)).toString());
+assert(json.buffers.every(b=>!b.uri));assert(json.images.every(i=>!i.uri));assert(json.samplers.every(s=>s.wrapS===33071&&s.wrapT===33071),'Logos clamp to their source UV domain instead of repeating down the body');assert(!json.cameras?.length);assert(!json.animations?.length);
+await MeshoptDecoder.ready;const doc=await new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.decoder':MeshoptDecoder}).readBinary(bytes);
+const r=doc.getRoot(),names=r.listNodes().map(n=>n.getName());for(const name of ['Soyuz-5 S1','Soyuz-5 S2','Soyuz-5 interstage','Soyuz ST fairing'])assert(names.includes(name));
+let triangles=0;for(const m of r.listMeshes())for(const p of m.listPrimitives())triangles+=p.getIndices().getCount()/3;
+assert.equal(triangles,62034);assert.equal(triangles,manifest.statistics.sourceTriangles);assert.equal(r.listTextures().length,2);
+for(const t of r.listTextures()){assert.deepEqual(t.getSize(),[512,2048]);assert(t.getImage().length>10000);}
+assert(manifest.bounds.size[1]>60&&manifest.bounds.size[1]<62);assert(Math.abs(manifest.bounds.min[1])<.001);
+const spec=MODEL_CATALOG.soyuz5;assert.equal(spec.assetRevision,manifest.assetRevision);assert(spec.facts.sources.every(k=>FACT_SOURCES[k]));
+for(const id of ['pad-42','pad-45'])assert(modelsForObject({id}).includes('soyuz5'));assert.equal(modelsForObject({id:'pad-45'})[0],'zenit-land');
+console.log('SOYUZ5_SOURCE_OK',JSON.stringify({bytes:bytes.length,triangles,textures:2,completeAssemblies:true}));
