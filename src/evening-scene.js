@@ -41,6 +41,30 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   baseHeightAt:(road,p)=>road.id===SATURN_ACCESS.routeId&&saturn?saturnGround(p.x,p.z)+.035:p.y-.055,
   terrainAt:road=>road.id===SATURN_ACCESS.routeId&&saturn?'saturn':'road'
  }),{isLightAllowed,isPoleAllowed,isLightPowered});
+ // Owner correction: remove the road fixture closest to Site 102.
+ // Remove the entire station (both poles if a highway pair), so no orphan
+ // luminous pool or detached lamp remains. Other site and road lights stay.
+ const site102=objects.find(o=>o.record.id==='pad-102');
+ let site102RemovedRoadLamps=0;
+ if(site102&&roadLayout.records.length){
+  const at=site102.g.getWorldPosition(new THREE.Vector3());
+  const groups=new Map();
+  for(const lamp of roadLayout.records){
+   const id=lamp.stationId||lamp;
+   if(!groups.has(id))groups.set(id,[]);
+   groups.get(id).push(lamp);
+  }
+  let chosen=null,best=Infinity;
+  for(const [id,lamps] of groups){
+   const distance=Math.min(...lamps.map(l=>Math.hypot(l.x-at.x,l.z-at.z)));
+   if(distance<best){best=distance;chosen=id;}
+  }
+  if(chosen!=null&&best<=85){
+   for(let i=roadLayout.records.length-1;i>=0;i--)if(roadLayout.records[i].stationId===chosen){
+    roadLayout.records.splice(i,1);site102RemovedRoadLamps++;
+   }
+  }
+ }
  const roadLights=roadLayout.records;
  excludedByBank.road=roadLayout.excludedByBank;excludedByClearance.road=roadLayout.excludedByClearance;
  const roadField=createRoadLightField(layers.roads,roadLights,{name:'Дороги · современные и винтажные фонари',minPixels:2.8});fields.push(roadField);
@@ -122,7 +146,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   get evening(){return evening;},update(now){sky.position.copy(camera.position);facilityLighting.update(now);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
   roadLightRecords:()=>roadLights.map(r=>({style:r.style,roadId:r.roadId,stationId:r.stationId,side:r.side,position:[r.x,r.y,r.z],center:r.center,color:r.color,height:r.height,powered:r.powered,brightness:r.brightness,poolRadiusX:r.poolRadiusX,poolRadiusY:r.poolRadiusY})),
   facilityLightRecords:()=>facilityLighting.records(),
-  stats:()=>({version:'evening-road-lighting-v4',evening,roadLights:roadLights.length,excludedByRoadEditor,roadLighting:roadLightLayoutStats(roadLights.filter(l=>l.visible!==false)),roadFixtures:roadField.stats(),facilityLighting:facilityLighting.stats(),siteLights:siteLights.length,runwayLights:runway.length,
+  stats:()=>({version:'evening-road-lighting-v4',evening,roadLights:roadLights.length,site102RemovedRoadLamps,excludedByRoadEditor,roadLighting:roadLightLayoutStats(roadLights.filter(l=>l.visible!==false)),roadFixtures:roadField.stats(),facilityLighting:facilityLighting.stats(),siteLights:siteLights.length,runwayLights:runway.length,
    courtyardLights:courtyardLights.map(l=>({siteId:objects.find(o=>o.g===l.owner)?.record.id,position:[l.lightX,l.lightY,l.lightZ],base:[l.x,l.y,l.z],height:l.height})),
    powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered!==false).length,litSiteIds:[...new Set([...siteLights,...courtyardLights].filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
    airportLighting:{version:AIRPORT_LIGHT_LAYOUT_VERSION,airports:objects.filter(o=>o.g.userData.airport).map(o=>({key:o.g.userData.airport.key,length:o.g.userData.airport.length,approachLength:o.g.userData.airport.approachLength??480,
