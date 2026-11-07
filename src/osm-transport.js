@@ -28,7 +28,7 @@ import {smoothRailGraph,graphRailRoutePoints} from './rail-surface.js?v=20261102
 import {createRailSchemePlan,RAIL_SCHEME_REFERENCE} from './rail-scheme.js?v=20261102-rail-scheme-v1';
 import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261102-rail-scheme-v1';
 import {createRailCrossingProfile} from './rail-crossing-profile.js?v=20261102-rail-scheme-v1';
-import {separateRailGraphFromRoads,buildRailRoadIndex,findRailRoadCrossings,buildRailCrossingSignals} from './rail-road-clearance.js?v=20261105-rail-road-clearance-v1';
+import {separateRailGraphFromRoads,straightenPad5Rail,buildRailRoadIndex,findRailRoadCrossings,buildRailCrossingSignals} from './rail-road-clearance.js?v=20261105-rail-road-clearance-v1';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -852,6 +852,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const railRoadClearance=separateRailGraphFromRoads({railGraph,roads:markingRoads,excludedEdges:replacedRailEdges,
   pinnedNodes:[railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean)],
   headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+ const pad5RailStraightening=straightenPad5Rail({railGraph,roads:markingRoads,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  for(const way of railGraph.ways){
   const points=[];let run=0;
   const render=()=>{if(points.length<2)return;for(const visible of drawRail(points,way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
@@ -1136,7 +1137,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     continuousThroughRoads:[{sourceWayId:INDUSTRIAL_THROUGH_ROAD,siteIds:[...INDUSTRIAL_THROUGH_SITES],renderedRuns:roadPaths.filter(r=>r.source==='OpenStreetMap'&&r.osmWayIds?.includes(INDUSTRIAL_THROUGH_ROAD)).length}]},junctionCount,markingSegments,railTies,railGauge:RAIL_PROFILE.gauge,
    railProfile:RAIL_PROFILE,branchSimplification:{version:'terminal-branches-v2',road:roadPruning.stats,rail:railPruning.stats},renderedRailWays:renderedRailWays.size,
    railSurface:{...railSurface.stats,groundDatum:RAIL_NETWORK_GROUND_Y,bridgeRise:5.8,trainUsesSharedSurface:true},
-   railCrossings:railCrossings.stats,railRoadClearance:{...railRoadClearance,crossings:railRoadClearance.crossings.length},
+   railCrossings:railCrossings.stats,railRoadClearance:{...railRoadClearance,crossings:railRoadClearance.crossings.length,pad5Straightening:pad5RailStraightening},
     railCrossingSignals:{count:crossingSigns.count,crossings:crossingSigns.crossings},
    railBuildingClearance:railSiteClearance.stats(),
    railScheme:{...railScheme.stats,protectedRemovedEdges:[...railScheme.protectedEdges].filter(edge=>railPruning.removed.has(edge)).length,
