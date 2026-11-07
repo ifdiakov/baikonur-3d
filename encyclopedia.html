@@ -16,7 +16,48 @@ main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px
 .meta{display:block;color:#c7ab73;font-size:11px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase}.card b{display:block;font-size:19px;margin:9px 0}.small{color:#9fb3c4;font-size:13px;line-height:1.5}
 .detail{position:sticky;top:90px;background:#172a3e;border:1px solid #36516a;padding:26px;border-radius:9px;max-height:calc(100vh - 110px);overflow-y:auto}.detail h2{font-size:27px;margin:10px 0}.detail h3{color:#c6aa6e;font-size:13px;text-transform:uppercase;letter-spacing:.09em;margin-top:27px}.detail a{color:#c7ddf6;overflow-wrap:anywhere}.related{display:flex;flex-wrap:wrap;gap:7px}.related button{background:#243f56;color:#edf5fd;border:1px solid #52708b;padding:9px;border-radius:5px;cursor:pointer}.empty{color:#9fb3c4}.detail ul{padding-left:20px;line-height:1.8}footer{padding:30px 20px;border-top:1px solid #283c4c;color:#9fb3c4;font-size:13px;text-align:center}
 @media(max-width:850px){.layout{grid-template-columns:1fr}.detail{position:static;max-height:none}main{padding-top:20px}nav strong{font-size:12px}.cards{grid-template-columns:repeat(auto-fill,minmax(165px,1fr))}}
-</style></head>
+
+/* Every encyclopaedia record has the right visual evidence: a real portrait,
+   an attributed company emblem, or a Three.js-generated model study. */
+.card{display:flex;flex-direction:column;align-items:stretch;min-height:288px;padding:0;overflow:hidden}
+.card>.meta{padding:13px 15px 0}
+.card>b{padding:0 15px;margin:7px 0 7px;font-size:17px;line-height:1.3}
+.card>.small{display:block;padding:0 15px 16px;margin-top:auto}
+.card-media{height:156px;flex:0 0 156px;position:relative;margin:0;background:radial-gradient(circle at 50% 45%,#304356 0%,#142336 74%);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.card-media img{width:100%;height:100%;display:block;object-fit:contain}
+.card-media[data-kind="portrait"] img{object-fit:cover;object-position:center 23%;filter:grayscale(.45)}
+.card-media[data-kind="logo"]{background:#e4e9eb}
+.card-media[data-kind="logo"] img{padding:16px;object-fit:contain}
+.card-media[data-kind="wordmark"]{background:#e2e6e8}
+.card-media[data-kind="wordmark"] .wordmark{font:800 48px/1 Bounded,Montserrat,Arial,sans-serif;color:#213e54;letter-spacing:-.04em}
+.card-media[data-kind="model3d"]{background:radial-gradient(ellipse at 50% 60%,#29465d 0%,#102032 75%)}
+.card-media .model-thumbnail{object-fit:contain}
+.card-media .model-3d-label{position:absolute;right:9px;bottom:8px;background:#0c1929db;color:#f4d3a0;border:1px solid #d3b1768a;border-radius:5px;font:750 9px/1.4 Montserrat,Arial,sans-serif;letter-spacing:.1em;padding:4px 7px}
+.card-media .fallback-mark{display:flex;align-items:center;justify-content:center;position:absolute;inset:0;color:#d7e3ec;font:800 33px/1.1 Montserrat,Arial,sans-serif;letter-spacing:.045em}
+.card-media[data-kind="logo"] .fallback-mark{color:#2c4d65}
+.card-media img:not([hidden])~.fallback-mark{display:none}
+.card-media .model-placeholder{color:#8da6bd;font:600 10px Montserrat,Arial,sans-serif;letter-spacing:.08em}
+.card-media .model-thumbnail:not([src]){display:none}
+.card:focus-visible{outline:2px solid #c6aa6e;outline-offset:2px}
+.detail-media{border-radius:9px;overflow:hidden;min-height:212px;max-height:360px;margin:0 0 20px;background:radial-gradient(ellipse at 50% 50%,#304458,#101f30)}
+.detail-media[data-kind="portrait"]{height:300px;max-width:330px}
+.detail-media[data-kind="portrait"] img{width:100%;height:100%;display:block;object-fit:cover;object-position:center 22%;filter:grayscale(.3)}
+.detail-media[data-kind="logo"],.detail-media[data-kind="wordmark"]{height:230px;display:flex;align-items:center;justify-content:center;background:#e4e9eb}
+.detail-media[data-kind="logo"] img{display:block;width:min(84%,470px);max-height:190px;object-fit:contain}
+.detail-media[data-kind="wordmark"] .wordmark{font:850 clamp(55px,7vw,90px)/1 Bounded,Montserrat,Arial,sans-serif;color:#203e56}
+.detail-media .fallback-mark{display:flex;align-items:center;justify-content:center;height:100%;font-size:44px;color:#d5e1ea}
+.detail-model-stage{height:300px;min-height:240px;background:#112234}
+.detail-model-stage>canvas{width:100%;height:100%;display:block;touch-action:pan-y}
+.media-caption{font-size:11px;line-height:1.5;color:#9eb4c4;margin:8px 0 18px}
+.detail .media-credit{margin:8px 0 18px;font-size:11px;color:#96acbd;line-height:1.6}
+.detail .media-credit a{color:#c8d9e9}
+.detail .model-tip{color:#c7ad77;font-size:11px;margin:8px 0 18px}
+@media(max-width:850px){
+ .card{min-height:258px}.card-media{height:130px;flex-basis:130px}
+ .card>b{font-size:15px}.card>.small{font-size:11px}
+ .detail-model-stage{height:300px}
+}
+</style><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script></head>
 <body><header><nav><a href="./index.html">← ВЕРНУТЬСЯ В 3D-МАКЕТ</a><strong>ГРАНД-МАКЕТ · БАЙКОНУР</strong></nav></header>
 <main><span class="meta">Цифровой архив · открытая база знаний</span><h1>Энциклопедия Байконура</h1>
 <p class="lead">Ракеты, космические корабли, стартовые площадки, главные конструкторы и предприятия ракетно-космической отрасли. Откройте любой объект, чтобы исследовать связи между людьми, техникой и инфраструктурой.</p>
@@ -25,25 +66,175 @@ main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px
 <footer>Энциклопедия развивается. Годы, названия организаций и распределение инженерных ролей относятся к указанным историческим периодам; непроверенные связи не подменяют доказанные факты.</footer>
 <script>
 (async()=>{
-const $=s=>document.querySelector(s);const state={type:'all',q:'',id:null};let data;
-try{const response=await fetch('./data/encyclopedia.json');if(!response.ok)throw Error('HTTP '+response.status);data=await response.json();}
-catch(e){$('#cards').textContent='Не удалось загрузить энциклопедию: '+e.message;return}
-const map=new Map(data.items.map(x=>[x.id,x])); const types={all:'Все статьи',...data.types};
-function el(tag,cls,text){const a=document.createElement(tag);if(cls)a.className=cls;if(text!==undefined)a.textContent=text;return a}
-function open(id){const x=map.get(id);if(!x)return;state.id=id; history.replaceState(null,'','#'+encodeURIComponent(id));render();
- if(window.innerWidth<851)$('#detail').scrollIntoView({behavior:'smooth',block:'start'});}
+const $=s=>document.querySelector(s);
+const state={type:'all',q:'',id:null};let data,displayedDetailId=null;
+const thumbs=new Map(),map=new Map(),safeUrl=value=>{
+ try{const url=new URL(value,location.href);return ['https:','http:'].includes(url.protocol)||url.origin===location.origin?url.href:null}catch{return null}
+};
+let modelController=null,modelPromise=null,previewStarted=false;
+try{
+ const response=await fetch('./data/encyclopedia.json?v=encyclopedia-media-v2');
+ if(!response.ok)throw Error('HTTP '+response.status);
+ data=await response.json();
+}catch(e){$('#cards').textContent='Не удалось загрузить энциклопедию: '+e.message;return}
+for(const item of data.items)map.set(item.id,item);
+const types={all:'Все статьи',...data.types};
+function el(tag,cls,text){
+ const a=document.createElement(tag);if(cls)a.className=cls;if(text!==undefined)a.textContent=text;return a;
+}
+function initials(x){
+ const words=x.name.replace(/[«»()]/g,'').split(/[\s—]+/).filter(Boolean);
+ return words.length>=2?(words[0][0]+words[1][0]).toUpperCase():words[0]?.slice(0,3).toUpperCase()||'—';
+}
+function createMedia(x,detail=false){
+ const cfg=x.media;
+ if(!cfg)return null;
+ if(cfg.kind==='model3d'){
+  const box=el('div',detail?'detail-media detail-model-frame':'card-media');
+  box.dataset.kind='model3d';
+  if(detail){
+   const stage=el('div','detail-model-stage');
+   stage.dataset.modelId=cfg.previewId;
+   box.append(stage);
+  }else{
+   const thumb=el('img','model-thumbnail');
+   thumb.alt='Трёхмерный макет: '+x.name;
+   thumb.loading='lazy';thumb.decoding='async';thumb.dataset.previewId=cfg.previewId;
+   if(thumbs.has(cfg.previewId))thumb.src=thumbs.get(cfg.previewId);
+   else box.append(el('span','model-placeholder','3D-МАКЕТ ПОДГОТАВЛИВАЕТСЯ'));
+   box.append(thumb,el('span','model-3d-label','3D'));
+  }
+  return box;
+ }
+ const box=el('div',detail?'detail-media':'card-media');
+ box.dataset.kind=cfg.kind;
+ if(cfg.kind==='wordmark'){
+  box.append(el('strong','wordmark',cfg.text||'—'));return box;
+ }
+ const mark=el('span','fallback-mark',initials(x));
+ box.append(mark);
+ if(cfg.src&&safeUrl(cfg.src)){
+  const img=el('img','');
+  img.alt=(cfg.kind==='portrait'?'Портрет ':'Логотип ')+x.name;
+  img.loading=detail?'eager':'lazy';img.decoding='async';
+  img.addEventListener('load',()=>{mark.hidden=true;});
+  img.addEventListener('error',()=>{img.hidden=true;mark.hidden=false;box.dataset.imageError='true'});
+  img.src=cfg.src;box.prepend(img);
+ }else box.dataset.imageError='true';
+ return box;
+}
+function appendMediaCredit(detail,x){
+ const m=x.media;if(!m)return;
+ if(m.kind==='model3d'){
+  detail.append(el('p','model-tip','Вращайте 3D-макет мышью или пальцем. Детальная модель загружается только при открытии этой статьи.'));
+  detail.append(el('p','media-credit',m.note||'Обзорный геометрический 3D-макет.'));
+  return;
+ }
+ const credit=el('p','media-credit');
+ credit.append(document.createTextNode((m.credit||'Иллюстрация')+(m.license?' · '+m.license:'')));
+ const url=safeUrl(m.source);
+ if(url){const a=el('a','','Источник ↗');a.href=url;a.rel='noopener noreferrer';a.target='_blank';credit.append(' · ',a);}
+ detail.append(credit);
+}
+function warm3D(){
+ if(modelPromise)return modelPromise;
+ modelPromise=import('./src/encyclopedia-3d.js?v=20261107-media-v1')
+ .then(m=>{
+  modelController=m.createEncyclopedia3D();
+  if(!previewStarted){
+   previewStarted=true;
+   const ids=[...new Set(data.items.filter(x=>x.media?.kind==='model3d').map(x=>x.media.previewId))];
+   modelController.renderThumbnails(ids,(id,src)=>{
+    thumbs.set(id,src);
+    document.querySelectorAll('#cards img[data-preview-id]').forEach(img=>{
+     if(img.dataset.previewId===id&&img.isConnected){img.src=src;img.previousElementSibling?.classList.contains('model-placeholder')&&img.previousElementSibling.remove();}
+    });
+   });
+  }
+  return modelController;
+ }).catch(error=>{console.warn('Энциклопедия · 3D:',error);return null});
+ return modelPromise;
+}
+function presentModel(x,stage){
+ const currentId=x.id,media=x.media;
+ warm3D().then(api=>{
+  if(!api||state.id!==currentId||!stage.isConnected)return;
+  api.mount(stage,media.previewId,media.viewerId||null);
+ });
+}
+function open(id){
+ if(!map.has(id))return;
+ state.id=id;
+ history.replaceState(null,'','#'+encodeURIComponent(id));
+ render();
+ if(window.innerWidth<851)$('#detail').scrollIntoView({behavior:'smooth',block:'start'});
+}
 function render(){
- const tabs=$('#tabs');tabs.replaceChildren();Object.entries(types).forEach(([k,v])=>{const b=el('button',state.type===k?'active':'',v);b.type='button';b.onclick=()=>{state.type=k;render()};tabs.append(b)});
- const matches=data.items.filter(x=>(state.type==='all'||x.type===state.type)&&[x.name,x.period,x.summary].join(' ').toLocaleLowerCase('ru').includes(state.q));
- const cards=$('#cards');cards.replaceChildren();matches.forEach(x=>{const b=el('button','card'+(state.id===x.id?' selected':''));b.type='button';b.append(el('span','meta',data.types[x.type]),el('b','',x.name),el('span','small',x.period));b.onclick=()=>open(x.id);cards.append(b)});if(!matches.length)cards.append(el('p','empty','Ничего не найдено'));
- const detail=$('#detail');detail.replaceChildren();const x=map.get(state.id);if(!x){detail.append(el('h2','','Выберите статью'),el('p','small','Все материалы связаны единой системой перекрёстных ссылок.'));return}
+ const tabs=$('#tabs');tabs.replaceChildren();
+ Object.entries(types).forEach(([k,v])=>{
+  const b=el('button',state.type===k?'active':'',v);b.type='button';
+  b.onclick=()=>{state.type=k;render()};tabs.append(b);
+ });
+ const matches=data.items.filter(x=>(state.type==='all'||x.type===state.type)
+  &&[x.name,x.period,x.summary].join(' ').toLocaleLowerCase('ru').includes(state.q));
+ const cards=$('#cards');cards.replaceChildren();
+ matches.forEach(x=>{
+  const b=el('button','card'+(state.id===x.id?' selected':''));
+  b.type='button';b.dataset.articleId=x.id;
+  const media=createMedia(x,false);if(media)b.append(media);
+  b.append(el('span','meta',data.types[x.type]),el('b','',x.name),el('span','small',x.period));
+  b.onclick=()=>open(x.id);cards.append(b);
+ });
+ if(!matches.length)cards.append(el('p','empty','Ничего не найдено'));
+ // Filtering the list must not repeatedly destroy the same WebGL model.
+ if(displayedDetailId===state.id)return;
+ displayedDetailId=state.id;
+ modelController?.destroy();
+ const detail=$('#detail');detail.replaceChildren();
+ const x=map.get(state.id);
+ if(!x){
+  detail.append(el('h2','','Выберите статью'),el('p','small','Все материалы связаны единой системой перекрёстных ссылок.'));
+  return;
+ }
+ const media=createMedia(x,true);
+ if(media)detail.append(media);
  detail.append(el('span','meta',data.types[x.type]),el('h2','',x.name),el('p','small',x.period),el('p','',x.summary));
- if(x.links?.length){detail.append(el('h3','','Связанные статьи'));const group=el('div','related');x.links.forEach(id=>{const related=map.get(id);if(!related)return;const b=el('button','',related.name);b.onclick=()=>open(id);group.append(b)});detail.append(group)}
- if(x.sources?.length){detail.append(el('h3','','Источники для проверки и расширения'));const list=el('ul');x.sources.forEach(url=>{if(!/^https:\/\//.test(url))return;const li=el('li');const a=el('a','',new URL(url).hostname);a.href=url;a.rel='noopener noreferrer';a.target='_blank';li.append(a);list.append(li)});detail.append(list)}
- const back=el('p','small','Содержимое первой редакции: краткая проверяемая справка. Детальные биографии, хронологии, заводские кооперации и документы будут добавляться в соответствующие статьи.');detail.append(back)
+ appendMediaCredit(detail,x);
+ if(x.links?.length){
+  detail.append(el('h3','','Связанные статьи'));
+  const group=el('div','related');
+  x.links.forEach(id=>{
+   const related=map.get(id);if(!related)return;
+   const b=el('button','',related.name);b.onclick=()=>open(id);group.append(b);
+  });detail.append(group);
+ }
+ if(x.sources?.length){
+  detail.append(el('h3','','Источники для проверки и расширения'));
+  const list=el('ul');x.sources.forEach(url=>{
+   const href=safeUrl(url);if(!href)return;
+   const li=el('li'),a=el('a','',new URL(href).hostname);
+   a.href=href;a.rel='noopener noreferrer';a.target='_blank';li.append(a);list.append(li);
+  });detail.append(list);
+ }
+ detail.append(el('p','small','Содержимое первой редакции: краткая проверяемая справка. Детальные биографии, хронологии и заводские кооперации будут добавляться в соответствующие статьи.'));
+ if(x.media?.kind==='model3d')presentModel(x,media.querySelector('.detail-model-stage'));
 }
 $('#search').addEventListener('input',e=>{state.q=e.target.value.trim().toLocaleLowerCase('ru');render()});
 window.addEventListener('hashchange',()=>{state.id=decodeURIComponent(location.hash.slice(1));render()});
+window.addEventListener('pagehide',()=>modelController?.dispose(),{once:true});
 state.id=decodeURIComponent(location.hash.slice(1));render();
+// The encyclopedia text and portraits are usable before the engine is fetched.
+// One temporary shared WebGL context renders six model thumbnails in idle turns.
+requestAnimationFrame(()=>{
+ const schedule=()=>warm3D();
+ if('requestIdleCallback' in window)window.requestIdleCallback(schedule,{timeout:900});
+ else setTimeout(schedule,200);
+});
+window.__ENCYCLOPEDIA_QA={
+ open,filter:type=>{state.type=type;render();},
+ stats:()=>({items:data.items.length,types:data.types,selectedId:state.id,mediaKinds:
+  data.items.reduce((out,x)=>(out[x.media?.kind||'none']=(out[x.media?.kind||'none']||0)+1,out),{}),
+  previewCount:thumbs.size,model:modelController?.stats()||null})
+};
 })();
 </script></body></html>
