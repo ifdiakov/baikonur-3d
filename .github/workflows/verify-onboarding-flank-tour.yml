@@ -1,0 +1,30 @@
+name: Verify opening flank flyover
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/museum-onboarding.js'
+      - 'tests/onboarding-flank-flyover.mjs'
+      - '.github/workflows/verify-onboarding-flank-tour.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/museum-onboarding.js'
+      - 'tests/onboarding-flank-flyover.mjs'
+      - '.github/workflows/verify-onboarding-flank-tour.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify three-second flank introduction, skip and original-camera return
+        run: node tests/onboarding-flank-flyover.mjs
