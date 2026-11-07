@@ -1040,6 +1040,41 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     ...(fanTrack?{displaySourceNodeId:fanTrack.displaySourceNodeId,displayLayout:site110Fan.version,sourceDestination:fanTrack.originalDestination,metrics:fanTrack.metrics}:{} )});
   }
  }
+ // Two independent, direct gate spurs from the surviving through AD.
+ // The old automatic silo access wrapped around the models and duplicated
+ // short source branches. Use only the nearest retained major road here.
+ const twinSiloConnections=[];
+ for(const id of ['pad-106','pad-109']){
+  const site=siteRecords.find(s=>s.id===id),spec=FACILITY_PORTS[id];
+  if(!site||!spec)continue;
+  const gate=portWorld(spec,spec.road,site,point);
+  const near=nearestSegment(roadGraph,gate,e=>edgeKept(roadGraph,e)&&
+   ['primary','secondary','tertiary','unclassified'].includes(e.tags.highway)&&
+   !e.tags.bridge&&!e.tags.tunnel);
+  if(!near||near.distance>180**2){
+   twinSiloConnections.push({id,status:'no-retained-through-road'});continue;
+  }
+  const direction=gate.clone().sub(near.point).setY(0).normalize();
+  const tangent=near.tangent.clone().setY(0).normalize();
+  if(tangent.dot(direction)<0)tangent.negate();
+  const entry=gate.clone().lerp(near.point,.28);
+  entry.y=THREE.MathUtils.lerp(gate.y,near.point.y,.28);
+  const transition=createAccessTransition({start:near.point,end:gate,
+   startTangent:tangent,endTangent:direction,
+   anchors:[entry],startWidth:near.edge.width,endWidth:2.7,sampleStep:.7});
+  const visibleRuns=[];
+  drawRoad(transition.points,2.7,{highway:'service',surface:'asphalt'},false,true,null,visibleRuns,
+   [{nodeId:'museum-port:'+id,position:near.point.clone(),hostWayId:near.edge.wayId}],
+   {widthAt:transition.widthAt,directionAt:(_p,t)=>t});
+  roadPaths.push({id:'silo-single-driveway-'+id,label:'АД к площадке '+id.slice(4),
+   width:2.7,points:visibleRuns.flat(),source:'museum-model-port',osmWayIds:[near.edge.wayId],
+   tags:{highway:'service',surface:'asphalt'}});
+  const report={id,status:'connected',sourceWayId:near.edge.wayId,
+   sourceGap:transition.points[0].distanceTo(near.point),
+   gateGap:transition.points.at(-1).distanceTo(gate),samples:transition.points.length};
+  twinSiloConnections.push(report);accessReports.push({...report,sourcePoint:near.point.toArray(),gate:gate.toArray()});
+  connections++;
+ }
  // One deliberate continuous service road: road to Yubileiny -> 250A
  // cryogenic centre -> UKSS. It is display geometry only; OSM topology is
  // not rewritten and all three endpoints retain their own source metadata.
@@ -1256,5 +1291,6 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    siteAccess:accessReports.map(r=>r.id.replace('pad-','')),gatePorts:accessReports.map(r=>r.id),
    vehicleRoutes:roadPlan.routes.map(r=>({id:r.id,source:r.source,length:r.length,osmWayCount:r.osmWayIds.length,nodeCount:r.nodeIds.length,vehicleScale:r.vehicleScale})),trainSource:train.source,trainWayCount:train.osmWayIds.length,
    saturnAccess:saturnAccessReport,
+   twinSiloConnections,
    interchange:{version:'osm-reference-viaduct-v1',bridges:bridges.map(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY?{...b,...interchangeBridge?.stats()}:b),ramps:0,source:'OpenStreetMap bridge/layer topology; Bridge Design by 3DtechVN, CC BY 4.0'},gagarinRail:{version:'osm-pad1-port-v1',joinGap:gagarinJoinGap,entryWorld:gate.toArray(),gauge:RAIL_PROFILE.gauge,straightLength:18}})};
 }
