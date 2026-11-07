@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 export const HIGHWAY_SURFACE_VERSION='continuous-highway-v1';
-export const HIGHWAY_ASPHALT_COLOR=0x42494c;
+export const HIGHWAY_ASPHALT_COLOR=0x555751;
 export const HIGHWAY_ASPHALT_LIFT=.006;
 export const HIGHWAY_SAMPLE_STEP=.65;
 export const HIGHWAY_MARKINGS=Object.freeze({version:'bridge-continuous-markings-v1',yellowColor:0xe2b746,whiteColor:0xf0eee3,
