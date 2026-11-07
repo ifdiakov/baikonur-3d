@@ -17,15 +17,15 @@ roads.osmVehiclePlan={highway};
 const paths=roadLightingPaths(roads);
 assert.deepEqual(paths.map(p=>p.id),['highway','cosmodrome-road','osm-access-pad-1']);
 const records=buildRoadLightRecords(roads),layout=roadLightLayoutStats(records);
-assert.equal(layout.highway.lamps,10);assert.equal(layout.highway.stations,5);
-assert.equal(layout.cosmodrome.lamps,7);assert.equal(layout.cosmodrome.stations,7);
-assert.equal(layout.highway.spacing,58/1.5);assert.equal(layout.cosmodrome.spacing,43.5);
-for(const [id,factor,density]of [['highway',1.5,1.5],['cosmodrome',2,2/1.5]]){
+assert.equal(layout.highway.lamps,8);assert.equal(layout.highway.stations,4);
+assert.equal(layout.cosmodrome.lamps,5);assert.equal(layout.cosmodrome.stations,5);
+assert.equal(layout.highway.spacing,58);assert.equal(layout.cosmodrome.spacing,65);
+for(const [id,factor,density]of [['highway',1.5,1],['cosmodrome',2,1]]){
  assert.equal(layout[id].brightness,factor);assert.equal(layout[id].density,density);assert.equal(layout[id].poolScale,factor);
 }
 assert.equal(ROAD_LIGHT_STYLES.highway.color,0xd8e8ff);assert.equal(ROAD_LIGHT_STYLES.cosmodrome.color,0xffbf7b);
 const singles=records.filter(r=>r.roadId==='cosmodrome-road');
-for(let i=1;i<singles.length;i++)assert.ok(Math.abs(singles[i].center[0]-singles[i-1].center[0]-43.5)<1e-9,'Single vintage lamps are 1.5 times farther apart than the preceding 29-unit layout');
+for(let i=1;i<singles.length;i++)assert.ok(Math.abs(singles[i].center[0]-singles[i-1].center[0]-65)<1e-9,'Single vintage lamps use the reduced 65-unit spacing');
 assert.deepEqual(layout.highway.incompletePairs,[]);assert.deepEqual(layout.cosmodrome.extraLamps,[]);
 const groups=new Map();for(const r of records){const g=groups.get(r.stationId)||[];g.push(r);groups.set(r.stationId,g);}
 for(const group of groups.values()){
