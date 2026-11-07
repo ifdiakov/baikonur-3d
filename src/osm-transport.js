@@ -597,13 +597,37 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const left=way.segments.every(e=>(e.a.position.x+e.b.position.x)/2<-380);
   if(left&&length<260)for(const edge of way.segments)leftWebEdges.add(edge);
  }
+ // At the bridge, remove only short terminal service-road leftovers.
+ // A separate OSM way can otherwise leave a tiny detached asphalt strip
+ // after adjacent branches have been hidden. Keep the full carriageway,
+ // the bridge itself, all traffic routes, and every facility driveway.
+ const bridgeRoadCleanupEdges=new Set(),bridgeRoadCleanupWays=[];
+ if(interchangeBridgePlan){
+  const bridgeCenter=interchangeBridgePlan.origin;
+  for(const way of roadGraph.ways){
+   if(!['service','track','residential','living_street'].includes(way.tags.highway)||
+     way.tags.name||way.tags.ref||way.tags.destination||
+     way.tags.bridge||way.tags.tunnel||
+     protectedTrafficWays.has(way.osmId)||way.segments.some(e=>roadProtected.has(e)))continue;
+   const length=way.segments.reduce((sum,e)=>sum+e.length,0);
+   if(length>65||!way.segments.length)continue;
+   const first=way.segments[0].a,last=way.segments.at(-1).b;
+   if(first.edges.length!==1&&last.edges.length!==1)continue;
+   if(!way.segments.some(e=>[e.a,e.b].some(node=>
+     Math.hypot(node.position.x-bridgeCenter.x,node.position.z-bridgeCenter.z)<160)))continue;
+   for(const edge of way.segments)bridgeRoadCleanupEdges.add(edge);
+   bridgeRoadCleanupWays.push(way.osmId);
+  }
+ }
  exhibitRoadFilter=buildExhibitRoadFilter(roadGraph,{protectedEdges:roadProtected,protectedTrafficWays,areas:exhibitAreas,
   available:e=>!roadPruning.removed.has(e)&&!leftWebEdges.has(e),excludedEdges:excludedAirportEdges,geography,point});
  // The enlarged runway can extend beyond the source airport cleanup box.
  for(const edge of excludedAirportEdges)exhibitRoadFilter.removed.add(edge);
  for(const edge of leftWebEdges)exhibitRoadFilter.removed.add(edge);
+ for(const edge of bridgeRoadCleanupEdges)exhibitRoadFilter.removed.add(edge);
  for(const edge of site41Replacement.removed)exhibitRoadFilter.removed.add(edge);
  exhibitRoadFilter.stats.removedEdgeCount=exhibitRoadFilter.removed.size;
+ exhibitRoadFilter.stats.bridgeCleanup={removedSegments:bridgeRoadCleanupEdges.size,removedWayIds:bridgeRoadCleanupWays};
  // Junction surfaces follow only retained source roads. Paint is planned
  // after all paving is assembled, using the same retained road corridors.
  checkpoint('pruned');
