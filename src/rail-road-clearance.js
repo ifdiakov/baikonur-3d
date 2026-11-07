@@ -259,6 +259,50 @@ export function straightenPad5Rail({railGraph,roads,railHalfWidth=.224}={}){
  return {version:'pad5-direct-rail-v1',straightened,blocked,sourceWays:[...wayIds]};
 }
 
+/**
+ * Render-only circular corner fillets for continuous rails.
+ * The original topology, switches, model ports and true crossings are fixed.
+ * A fillet is rejected whenever its new swept chord violates asphalt clearance.
+ */
+export function roundRailCorners(points,{roads=[],index=null,protectedPoints=[],radius=2.8,railHalfWidth=.224}={}){
+ if(!Array.isArray(points)||points.length<3)return points;
+ const roadIndex=index||buildRailRoadIndex(roads,{railHalfWidth});
+ const fixed=p=>protectedPoints.some(q=>near(p,q)<.035);
+ const clear=p=>{
+  for(const road of roadIndex.queryPoint(p)){
+   const t=clamp(((p.x-road.a.x)*road.dx+(p.z-road.a.z)*road.dz)/road.len2);
+   if(Math.hypot(p.x-road.a.x-t*road.dx,p.z-road.a.z-t*road.dz)<road.width*1.5+railHalfWidth+.12-.025)return false;
+  }
+  return true;
+ };
+ const rounded=[points[0]];
+ for(let i=1;i<points.length-1;i++){
+  const a=points[i-1],p=points[i],b=points[i+1],l=near(a,p),r=near(p,b);
+  if(l<.3||r<.3||fixed(p)){rounded.push(p);continue;}
+  const ax=(p.x-a.x)/l,az=(p.z-a.z)/l,bx=(b.x-p.x)/r,bz=(b.z-p.z)/r;
+  const dot=clamp(ax*bx+az*bz,-1,1),turn=Math.acos(dot);
+  if(turn<.065||turn>1.6){rounded.push(p);continue;}
+  // Tangent length for a circular turn: R * tan(turn/2). Limit it to
+  // adjoining segments, so every fillet is monotone and cannot loop.
+  const tangent=Math.min(radius*Math.tan(turn/2),l*.32,r*.32);
+  if(tangent<.09){rounded.push(p);continue;}
+  const entry=new THREE.Vector3(p.x-ax*tangent,p.y-(p.y-a.y)*tangent/l,p.z-az*tangent);
+  const exit=new THREE.Vector3(p.x+bx*tangent,p.y+(b.y-p.y)*tangent/r,p.z+bz*tangent);
+  const curve=new THREE.QuadraticBezierCurve3(entry,p,exit);
+  const count=Math.max(4,Math.ceil(turn/.065));
+  const samples=Array.from({length:count+1},(_,j)=>curve.getPoint(j/count));
+  // Include all intervals, not merely sample points: the rail has a width.
+  let safe=true;
+  for(let j=0;j<samples.length;j++){
+   if(!clear(samples[j])||(j&& !clear(samples[j-1].clone().lerp(samples[j],.5)))){safe=false;break;}
+  }
+  if(!safe){rounded.push(p);continue;}
+  rounded.push(...samples);
+ }
+ rounded.push(points.at(-1));
+ return rounded;
+}
+
 // One set of instanced meshes for the whole museum, rather than hundreds of
 // independent sign meshes. Signs stand on the road approaches, not on tracks.
 export function buildRailCrossingSignals({crossings,parent}){
