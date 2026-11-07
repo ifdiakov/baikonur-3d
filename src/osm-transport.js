@@ -1296,6 +1296,68 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    destinationRoutes:mikRailSourcePlan.destinationRoutes.map(({edges,points,...route})=>route),replacedSourceEdges:mikRailSourcePlan.replacedEdges.size,displayReplacements:mikRailSourcePlan.displayReplacements,
    railGauge:RAIL_PROFILE.gauge,railProfile:RAIL_PROFILE};
  }
+ // A small observation platform at the END of the displayed dead-end AD
+ // closest to Donskaya station. Use the actual retained road terminal rather
+ // than placing a marker on the station's railway tracks.
+ const donskayaFeature=(data.railPoints?.features||[]).find(f=>f.properties?.name==='Донская');
+ let donskayaObservation={status:'station-not-found'};
+ if(donskayaFeature){
+  const station=point(...geography.project(...donskayaFeature.geometry.coordinates),0);
+  const candidates=[];
+  for(const node of roadGraph.nodes.values()){
+   const active=node.edges.filter(edge=>edgeKept(roadGraph,edge));
+   if(active.length!==1)continue;
+   const edge=active[0],kind=edge.tags.highway;
+   if(!['service','track','unclassified','residential','tertiary'].includes(kind)||edge.tags.bridge||edge.tags.tunnel)continue;
+   const dist=Math.hypot(node.position.x-station.x,node.position.z-station.z);
+   if(dist>470)continue;
+   const other=edge.a===node?edge.b:edge.a;
+   const heading=node.position.clone().sub(other.position).setY(0).normalize();
+   if(heading.lengthSq()<.1)continue;
+   const railDistance=Math.min(500,...[...railGraph.nodes.values()].filter(n=>
+    Math.abs(n.position.x-node.position.x)<65&&Math.abs(n.position.z-node.position.z)<65)
+    .map(n=>Math.hypot(n.position.x-node.position.x,n.position.z-node.position.z)));
+   const score=dist+(railDistance<10?120:0)+(kind==='track'?18:0);
+   candidates.push({node,edge,heading,dist,railDistance,score});
+  }
+  candidates.sort((a,b)=>a.score-b.score);
+  const tip=candidates[0];
+  if(tip){
+   const root=new THREE.Group();root.name='НП · станция Донская';
+   const pad=tip.node.position.clone().addScaledVector(tip.heading,7);
+   root.position.set(pad.x,tip.node.position.y+.05,pad.z);
+   root.rotation.y=Math.atan2(tip.heading.x,tip.heading.z);
+   root.userData.museumComponent='observation-platform';
+   root.userData.source='owner-placement-donskaya-dead-end';
+   const deckMaterial=new THREE.MeshStandardMaterial({color:0x555751,roughness:.93});
+   const metal=new THREE.MeshStandardMaterial({color:0x3b5654,metalness:.35,roughness:.7});
+   const railMat=new THREE.MeshStandardMaterial({color:0xd3c6ad,roughness:.75});
+   function part(w,h,d,x,y,z,mat,name){
+    const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+    mesh.position.set(x,y,z);mesh.name=name;mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);
+   }
+   part(12,.35,13,0,.18,0,deckMaterial,'НП · площадка');
+   for(const side of [-1,1]){
+    part(.14,1.3,13,side*5.87,1.01,0,railMat,'НП · боковое ограждение');
+    for(const z of [-5.9,0,5.9])part(.23,1.7,.23,side*5.85,.96,z,metal,'НП · стойка');
+   }
+   part(12,1.15,.12,0,.95,6.4,railMat,'НП · торцевое ограждение');
+   for(const x of [-4,4])part(.2,3.35,.2,x,1.7,-3.2,metal,'НП · опора навеса');
+   part(10,.23,5.5,0,3.45,-3.2,metal,'НП · навес');
+   const sign=document.createElement('canvas');sign.width=256;sign.height=128;
+   const context=sign.getContext('2d');
+   context.fillStyle='#173c38';context.fillRect(0,0,256,128);
+   context.fillStyle='#fff3d4';context.font='bold 86px Arial';context.textAlign='center';
+   context.textBaseline='middle';context.fillText('НП',128,68);
+   const texture=new THREE.CanvasTexture(sign);texture.colorSpace=THREE.SRGBColorSpace;
+   const board=new THREE.Mesh(new THREE.PlaneGeometry(3.5,1.75),
+    new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
+   board.name='НП · обозначение';board.position.set(0,2.25,6.5);root.add(board);
+   layers.sites.add(root);
+   donskayaObservation={status:'placed',sourceWayId:tip.edge.wayId,stationDistance:tip.dist,
+    railClearance:tip.railDistance,position:root.position.toArray(),sourceNodeId:tip.node.id};
+  }else donskayaObservation={status:'no-nearby-road-dead-end'};
+ }
  // Roadside crossing signals also cover museum-only late driveways.
  const crossingIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const crossingSigns=buildRailCrossingSignals({crossings:findRailRoadCrossings(railPaths,crossingIndex),parent:roadRoot});
@@ -1340,5 +1402,6 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    saturnAccess:saturnAccessReport,
    twinSiloConnections,
    twinThroughRepair,
+   donskayaObservation,
    interchange:{version:'osm-reference-viaduct-v1',bridges:bridges.map(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY?{...b,...interchangeBridge?.stats()}:b),ramps:0,source:'OpenStreetMap bridge/layer topology; Bridge Design by 3DtechVN, CC BY 4.0'},gagarinRail:{version:'osm-pad1-port-v1',joinGap:gagarinJoinGap,entryWorld:gate.toArray(),gauge:RAIL_PROFILE.gauge,straightLength:18}})};
 }
