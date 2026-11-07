@@ -331,7 +331,7 @@ async function assertPreloaderFits(page,viewport,{error=false}={}){
   'Loading feedback can wrap when the available font and width require it');
  // A short viewport may scroll vertically. The status and recovery action
  // must still be reachable, rather than clipped below a fixed-height card.
- const controls=error?['#museumLoadingMessage','#museumRetry']:['#museumLaunchStatus','#museumMotionToggle'];
+ const controls=error?['#museumLoadingMessage','#museumRetry']:['#museumLaunchStatus'];
  for(const selector of controls){
   const control=page.locator(selector);await control.scrollIntoViewIfNeeded({timeout:2000});
   const box=await control.boundingBox();
@@ -350,13 +350,11 @@ async function assertReducedMotion(page){
   return {reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,
    running:loader.getAnimations({subtree:true}).filter(animation=>animation.playState==='running').length,
    launchStep:Number(loader.dataset.launchStep),paused:loader.classList.contains('is-paused'),motion:loader.dataset.motion,
-   toggleDisabled:document.getElementById('museumMotionToggle').disabled,
-   togglePressed:document.getElementById('museumMotionToggle').getAttribute('aria-pressed')};
+   toggleCount:document.querySelectorAll('#museumMotionToggle').length};
  });
  assert.equal(motion.reduced,true);assert.equal(motion.running,0,'Reduced motion removes decorative preloader animation');
  assert.equal(motion.paused,true);assert.equal(motion.motion,'paused');
- assert.equal(motion.toggleDisabled,true,'The control cannot override the reduced-motion preference');
- assert.equal(motion.togglePressed,'true');
+ assert.equal(motion.toggleCount,0,'The preloader has no pause/play control');
  return motion;
 }
 
@@ -383,41 +381,23 @@ async function exercisePreloader(page){
  assert.equal(initial.live,'polite');assert.equal(initial.messageRole,'status');
  assert.notEqual(initial.outerLive,'polite','Changing a launch phrase must not announce the entire loading screen');
  assert.notEqual(initial.outerRole,'status');
- assert.equal(initial.toggle.tag,'BUTTON');assert.equal(initial.toggle.label,'Пауза анимации');
- assert.equal(initial.toggle.pressed,'false');assert.equal(initial.toggle.disabled,false);
+ assert.equal(await page.locator('#museumMotionToggle').count(),0);
  assert.equal(await page.locator('[data-preloader-story],#museumStoryPrev,#museumStoryNext,#museumMapGagarin,#museumMapBuran').count(),0);
  assert.equal(initial.launch[0]?.step,0);assert.equal(initial.launch[0]?.text,firstLaunchStatus);
  assert.equal(initial.launch[0]?.counter,'01 / '+launchStatusCount);
  assert.equal(initial.launchStep,0,'No future launch phrase is shown while the required catalog is held');
  assert.deepEqual(initial.launch.map(item=>item.step),[0]);
- const toggle=page.getByRole('button',{name:'Пауза анимации',exact:true});
- await toggle.focus();await page.keyboard.press('Enter');
- const paused=await preloaderState(page);
- assert.equal(paused.paused,true);assert.equal(paused.motion,'paused');assert.equal(paused.toggle.pressed,'true');
  const layouts=[];
  for(const viewport of [{width:1280,height:800},{width:390,height:720}])
   layouts.push(await assertPreloaderFits(page,viewport));
- assert.deepEqual((await preloaderState(page)).features,paused.features,
-  'Manual pause freezes the promotional phrase carousel during viewport changes');
  await page.emulateMedia({reducedMotion:'reduce'});
- await page.waitForFunction(()=>document.getElementById('museumMotionToggle').disabled);
+ await page.waitForFunction(()=>document.getElementById('museumLoading').classList.contains('is-reduced'));
  const motion=await assertReducedMotion(page);
  await page.emulateMedia({reducedMotion:'no-preference'});
- await page.waitForFunction(()=>!document.getElementById('museumMotionToggle').disabled);
- const restored=await preloaderState(page);
- assert.equal(restored.paused,true,'Removing the OS preference preserves a visitor-selected pause');
- assert.equal(restored.toggle.pressed,'true');
- const stillPaused=await preloaderState(page);
- assert.equal(stillPaused.launchStep,0,'Presentation controls cannot advance held scene progress');
- assert.equal(stillPaused.status,paused.status);assert.equal(stillPaused.stage,initial.stage);
- assertVisualProgress(stillPaused);
- assert.ok(stillPaused.fillScale>=initial.fillScale,'Pausing decoration and changing the motion preference cannot rewind progress');
- assert.equal(stillPaused.running,0,'Pausing stops decorative motion');
- assert.deepEqual(stillPaused.features,restored.features,'Removing reduced motion preserves the manual pause');
+ await page.waitForFunction(()=>!document.getElementById('museumLoading').classList.contains('is-reduced'));
  await page.setViewportSize({width:1280,height:800});
- await page.locator('#museumMotionToggle').focus();await page.keyboard.press('Space');
  const resumed=await preloaderState(page);
- assert.equal(resumed.paused,false);assert.equal(resumed.motion,'running');assert.equal(resumed.toggle.pressed,'false');
+ assert.equal(resumed.paused,false);assert.equal(resumed.motion,'running');
  // Outlast the requested 4-second phrase interval. Status text and ARIA
  // still describe real work while the bounded visual bar keeps moving.
  const progressSamples=await sampleVisualProgress(page,4300);
@@ -431,7 +411,7 @@ async function exercisePreloader(page){
   resumed.features.map(feature=>Math.round(feature.opacity*100)/100),
   'Compositor-driven visitor phrases keep advancing without JS class changes');
  // The actual load below runs with normal motion and records every phase.
- return {initial,paused,stillPaused,resumed,held,layouts,motion,progressSamples};
+ return {initial,resumed,held,layouts,motion,progressSamples};
 }
 
 function assertLaunchSequence(sequence,{visible=true}={}){
@@ -600,13 +580,13 @@ async function exerciseProgressFixtures(){
    assert.equal(state.chromeReady,false);assert.ok(state.inert.every(item=>item.inert===true));
    assert.deepEqual(state.test.ready,[]);assert.equal(intro.launchStep,failedAt);
    assert.equal(intro.stage,8);assert.equal(intro.decorationRunning,0);
-   assert.equal(intro.toggle.disabled,true);
+   assert.equal(await run.page.locator('#museumMotionToggle').count(),0);
    assert.deepEqual(state.test.launch.map(item=>item.step),[0],
     'Visibility changes cannot flush queued statuses after startup has failed');
    run.record.error=state;assertNoRuntimeErrors(run.record);await run.close();continue;
   }
   if(mode==='paused'){
-   await run.page.getByRole('button',{name:'Пауза анимации',exact:true}).click();
+   await run.page.emulateMedia({reducedMotion:'reduce'});
    const targets=[0,2,4,6,9,11,13,15,18];run.record.phases=[];
    for(let index=1;index<=9;index++){
     await run.page.evaluate(index=>window.__MUSEUM_STARTUP.stage('Этап '+index,index),index);
@@ -620,8 +600,8 @@ async function exerciseProgressFixtures(){
     assert.equal(phase.stage,index-1);assertVisualProgress(phase);
     if(run.record.phases.length)assert.ok(phase.fillScale>=run.record.phases.at(-1).fillScale,
      'Real phase updates never rewind the bar while decoration is paused');
-    assert.equal(phase.paused,true);assert.equal(phase.toggle.pressed,'true');
-    assert.equal(phase.decorationRunning,0,'Manual pause freezes decoration while real-stage text advances');
+    assert.equal(phase.paused,true);
+    assert.equal(phase.decorationRunning,0,'Reduced motion freezes decoration while real-stage text advances');
     assert.equal(phase.status,launchStatuses[targets[index-1]]);
     run.record.phases.push({index,launchStep:phase.launchStep,stage:phase.stage,fillScale:phase.fillScale,decorationRunning:phase.decorationRunning});
    }
