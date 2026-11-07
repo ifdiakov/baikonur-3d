@@ -71,4 +71,6 @@ assert(train.path.points.length>10&&train.osmWayIds.length>0,'The train route is
 console.log('RAIL_SITE_GATES_INTEGRATION_PASS',JSON.stringify({
  railPortCount:ports.length,bySite:expected,prunedTips:stats.branchSimplification.rail.removedTerminalEnds,
  removedSegments:stats.branchSimplification.rail.removedSegments,
- retainedStationLinks:stats.railScheme.connectionCount,trainWayIds:train.osmWayIds}));
+ retainedStationLinks:stats.railScheme.connectionCount,trainWayIds:train.osmWayIds,
+ twinThroughRepair:stats.twinThroughRepair,twinSiloConnections:stats.twinSiloConnections,
+ donskayaObservation:stats.donskayaObservation}));
