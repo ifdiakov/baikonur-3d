@@ -134,6 +134,6 @@ export function addSaturnNorthwestGate(root) {
   ]);
   const sections=sectionsFor(path,40);
   strip(root,sections,()=>9,()=>gate.y-.12,pavementMaterial(0x9b917e),'northwest-gate-shoulder',4);
-  strip(root,sections,()=>7,()=>gate.y,pavementMaterial(0x555550),'northwest-gate-pavement',5);
+  strip(root,sections,()=>7,()=>gate.y,pavementMaterial(0x555751),'northwest-gate-pavement',5);
   return {entryCorner:'north-west',gateLocal:{...gate},internalJoinLocal:{...internalJoin},revision:SATURN_ACCESS.revision};
 }
