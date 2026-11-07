@@ -6,8 +6,8 @@ const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out='qa-highway-lighting';
 const revision='20261102-energia-polyus-v2';
 const requested={
- highway:{brightness:1.5,density:1.5,poolScale:1.5,spacing:58/1.5},
- cosmodrome:{brightness:2,density:4/3,poolScale:2,spacing:43.5}
+ highway:{brightness:1.5,density:1,poolScale:1.5,spacing:58},
+ cosmodrome:{brightness:2,density:1,poolScale:2,spacing:65}
 };
 const evidence={base,prefix,revision,errors:[],shaderErrors:[],failedResources:[],views:[]};
 await mkdir(out,{recursive:true});
@@ -104,7 +104,7 @@ function checkAllStations(records,stats){
  }
  assert(highwayStations>1&&cosmodromeStations>1,'Both complete road families are exercised');
  const layout=stats.roadLighting;
- assert.equal(layout.version,'road-lighting-modern-vintage-v3');
+ assert.equal(layout.version,'road-lighting-modern-vintage-v4-near-fade');
  assert.equal(layout.highway.fixture,'modern-led');assert.equal(layout.cosmodrome.fixture,'vintage-industrial');
  assert.equal(layout.highway.colorTemperature,4800);assert.equal(layout.cosmodrome.colorTemperature,2700);
  for(const [style,expected] of Object.entries(requested)){
@@ -133,14 +133,14 @@ try{
  const layout=checkAllStations(records,initial.evening);evidence.layout=layout;
  await writeFile(`${out}/${prefix}-stations.json`,JSON.stringify(records,null,2));
  assert.equal(initial.highway.version,'continuous-highway-v1');
- assert.equal(initial.highway.asphaltColor,'#42494c');assert.equal(initial.highway.sharedWithBridge,true);
+ assert.equal(initial.highway.asphaltColor,'#555751');assert.equal(initial.highway.sharedWithBridge,true);
  assert.equal(initial.highway.sourceTopologyPreserved,true);
  assert(initial.highway.edgeCount>0&&initial.highway.sampleCount>initial.highway.edgeCount);
  assert.equal(initial.bridge.asphaltColor,initial.highway.asphaltColor,'The highway and bridge use the same asphalt');
  assert.equal(initial.bridge.lighting.style,'modern-led');assert.equal(initial.bridge.lighting.color,'#d8e8ff');
  assert.equal(initial.bridge.lighting.colorTemperature,4800);
  assert.equal(initial.bridge.lighting.pairs*2,initial.bridge.lamps,'Bridge lights continue the opposite-pair layout');
- assert.equal(initial.bridge.lamps,24,'The bridge retains opposite pairs at 1.5 times the previous lamp density');
+ assert.equal(initial.bridge.lamps,16,'The bridge retains paired lamps with reduced density');
  assert.equal(initial.bridge.lighting.sharedFixtureGeometry,true,'The bridge uses the same modern fixture geometry as the highway');
  assert.equal(initial.bridge.lighting.sharedFixtureMaterials,true,'The bridge uses the same fixture finish as the highway');
  assert(Math.abs(initial.bridge.lighting.lensEmission-1.65*requested.highway.brightness)<1e-9,'Bridge and highway lenses have equal brightness');
