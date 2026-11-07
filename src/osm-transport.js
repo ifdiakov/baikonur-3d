@@ -1040,6 +1040,52 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     ...(fanTrack?{displaySourceNodeId:fanTrack.displaySourceNodeId,displayLayout:site110Fan.version,sourceDestination:fanTrack.originalDestination,metrics:fanTrack.metrics}:{} )});
   }
  }
+ // A broken carriageway near the twin silos is joined only when two
+ // exposed main-road ends face one another, with no existing asphalt between
+ // them. This does not touch source OSM geometry or unrelated intersections.
+ const twinThroughRepair={status:'not-needed',gap:0,roadIds:[]};
+ const loose=[];
+ for(const road of roadPaths){
+  const kind=road.tags?.highway?.replace('_link','');
+  if(!['primary','secondary','tertiary','unclassified'].includes(kind)||road.points?.length<2)continue;
+  for(const end of [0,road.points.length-1]){
+   const p=road.points[end],q=road.points[end?end-1:1];
+   if(!twinCentres.some(center=>Math.hypot(p.x-center.x,p.z-center.z)<145))continue;
+   const direction=p.clone().sub(q).setY(0).normalize();
+   loose.push({road,p,direction,end});
+  }
+ }
+ let repair=null;
+ for(let i=0;i<loose.length;i++)for(let j=i+1;j<loose.length;j++){
+  const a=loose[i],b=loose[j];if(a.road===b.road)continue;
+  const dx=b.p.x-a.p.x,dz=b.p.z-a.p.z,gap=Math.hypot(dx,dz);
+  if(gap<3||gap>62)continue;
+  const axis=V(dx/gap,0,dz/gap);
+  if(a.direction.dot(axis)<.82||b.direction.dot(axis)>-.82)continue;
+  // Do not lay a second carriageway across an already connected intersection.
+  const mid=a.p.clone().lerp(b.p,.5);
+  const covered=roadPaths.some(road=>{
+   if(road===a.road||road===b.road||road.points?.length<2)return false;
+   for(let k=1;k<road.points.length;k++){
+    const q=new THREE.Line3(road.points[k-1],road.points[k]).closestPointToPoint(mid,true,V());
+    if(Math.hypot(q.x-mid.x,q.z-mid.z)<Math.max(2,road.width/2))return true;
+   }return false;
+  });
+  if(covered)continue;
+  if(!repair||gap<repair.gap)repair={a,b,gap};
+ }
+ if(repair){
+  const {a,b,gap}=repair;
+  const points=[a.p,a.p.clone().addScaledVector(a.direction,gap*.23),
+   b.p.clone().addScaledVector(b.direction,gap*.23),b.p];
+  const smooth=new THREE.CatmullRomCurve3(points,false,'centripetal',.3);
+  const samples=Array.from({length:Math.max(8,Math.ceil(gap))},(_,i,n)=>smooth.getPoint(i/(n.length-1)));
+  const width=Math.max(a.road.width,b.road.width),runs=[];
+  drawRoad(samples,width,{highway:'unclassified',surface:'asphalt'},true,true,null,runs);
+  roadPaths.push({id:'twin-silo-through-ad-repair',label:'Восстановленная основная АД 106/109',
+   width,points:runs.flat(),source:'museum-continuity-repair',tags:{highway:'unclassified',surface:'asphalt'}});
+  Object.assign(twinThroughRepair,{status:'connected',gap,roadIds:[a.road.id,b.road.id]});
+ }
  // Two independent, direct gate spurs from the surviving through AD.
  // The old automatic silo access wrapped around the models and duplicated
  // short source branches. Use only the nearest retained major road here.
@@ -1292,5 +1338,6 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    vehicleRoutes:roadPlan.routes.map(r=>({id:r.id,source:r.source,length:r.length,osmWayCount:r.osmWayIds.length,nodeCount:r.nodeIds.length,vehicleScale:r.vehicleScale})),trainSource:train.source,trainWayCount:train.osmWayIds.length,
    saturnAccess:saturnAccessReport,
    twinSiloConnections,
+   twinThroughRepair,
    interchange:{version:'osm-reference-viaduct-v1',bridges:bridges.map(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY?{...b,...interchangeBridge?.stats()}:b),ramps:0,source:'OpenStreetMap bridge/layer topology; Bridge Design by 3DtechVN, CC BY 4.0'},gagarinRail:{version:'osm-pad1-port-v1',joinGap:gagarinJoinGap,entryWorld:gate.toArray(),gauge:RAIL_PROFILE.gauge,straightLength:18}})};
 }
