@@ -218,6 +218,47 @@ export function separateRailGraphFromRoads({railGraph,roads,excludedEdges=new Se
   requiredEdgeClearance:'road width',sourceWayIdsPreserved:true,crossings};
 }
 
+/**
+ * Straighten the uninterrupted southbound main line opposite pad 5.
+ * A point-wise road avoidance pass can make the sampled rail zigzag at road
+ * joints. Replace ONLY the display samples within this OSM edge by a chord
+ * when the complete replacement clears every asphalt corridor. Switches and
+ * source-node endpoints remain anchored.
+ */
+export function straightenPad5Rail({railGraph,roads,railHalfWidth=.224}={}){
+ const index=buildRailRoadIndex(roads,{railHalfWidth}),wayIds=new Set(['37543646']);
+ const candidates=railGraph.edges.filter(e=>wayIds.has(String(e.wayId))&&!e.abandoned);
+ let straightened=0,blocked=0;
+ function clearance(p){
+  for(const road of index.queryPoint(p)){
+   const t=clamp(((p.x-road.a.x)*road.dx+(p.z-road.a.z)*road.dz)/road.len2);
+   if(Math.hypot(p.x-road.a.x-t*road.dx,p.z-road.a.z-t*road.dz)<road.width*1.5+railHalfWidth+.12)return false;
+  }
+  return true;
+ }
+ for(const edge of candidates){
+  const a=edge.a.position,b=edge.b.position;
+  // At museum scale, this is the straight southbound track beside the main
+  // road (site 5 sits at map x=704, y=550; the track is near map x=621).
+  const mapY=p=>p.z/3.4+522.5,mapX=p=>p.x/3.4+650;
+  if([a,b].some(p=>mapX(p)<610||mapX(p)>630)||Math.min(mapY(a),mapY(b))<545||Math.max(mapY(a),mapY(b))>605)continue;
+  const points=edge.surfacePoints||[];
+  if(points.length<3)continue;
+  const line=points.map((p,i)=>{if(!i||i===points.length-1)return p;
+   const dx=b.x-a.x,dz=b.z-a.z,len=dx*dx+dz*dz;
+   const t=clamp(((p.x-a.x)*dx+(p.z-a.z)*dz)/(len||1));
+   return new THREE.Vector3(a.x+dx*t,p.y,a.z+dz*t);
+  });
+  // Check the entire new chord at closely spaced points, not only vertices.
+  let valid=true;
+  const count=Math.max(2,Math.ceil(near(a,b)/.75));
+  for(let i=0;i<=count;i++)if(!clearance(a.clone().lerp(b,i/count))){valid=false;break;}
+  if(!valid){blocked++;continue;}
+  edge.surfacePoints=line;straightened++;
+ }
+ return {version:'pad5-direct-rail-v1',straightened,blocked,sourceWays:[...wayIds]};
+}
+
 // One set of instanced meshes for the whole museum, rather than hundreds of
 // independent sign meshes. Signs stand on the road approaches, not on tracks.
 export function buildRailCrossingSignals({crossings,parent}){
