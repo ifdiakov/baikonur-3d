@@ -615,7 +615,7 @@ const MUSEUM_REVISION='20261105-prebuilt-roads-correctly-cut-v2';
 let labelsVisible=true,fly=false,angle=0;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
-const nextLaunchDataReady=startup.defer(()=>startup.fetchJSON('./data/next-launch.json',{optional:true}),{key:'next-launch',priority:40});
+const nextLaunchDataReady=startup.defer(()=>startup.fetchJSON('./data/next-launch.json?v=20261107-progress-ms36',{optional:true}),{key:'next-launch',priority:40});
 const roadSignDataReady=startup.fetchJSON('./data/road-signs.json?v=20261105-dirmentobe-east-v2');
 const transportQuery=new URLSearchParams(location.search);
 // Production default: a 0.55MB source-checked cache and owner-filtered LOD
@@ -644,7 +644,7 @@ const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirport
 const museumKnowledge=createDeferredKnowledge({startup,onNavigate:action=>openMuseumAction(action)});
 const nextLaunchHost=document.getElementById('nextLaunchPanel');
 let nextLaunchController=createLaunchCountdown({element:nextLaunchHost,
- launch:{id:'progress-ms-37',name:'ПРОГРЕСС МС-37',siteId:'pad-31',siteLabel:'ПЛ 31',precision:'unknown',status:'planned'},
+ launch:{id:'progress-ms-36',name:'ПРОГРЕСС МС-36',siteId:'pad-31',siteLabel:'ПЛ 31',launchAt:'2026-11-24T13:13:00+03:00',dateLabel:'24.11.2026 · 13:13 МСК',precision:'instant',status:'planned'},
  onOpenSite:id=>openMenuSite(id)});
 const nextLaunch={stats:()=>nextLaunchController.stats(),refresh:()=>nextLaunchController.refresh(),dispose:()=>nextLaunchController.dispose()};
 nextLaunchDataReady.then(launch=>{if(launch)nextLaunchController=createLaunchCountdown({element:nextLaunchHost,launch,onOpenSite:id=>openMenuSite(id)});});
