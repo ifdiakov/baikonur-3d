@@ -42,6 +42,17 @@ assert.equal(stats.railScheme.protectedRemovedEdges,0,'A protected station line 
 assert.equal(stats.railScheme.connectionCount,20,'The 20 station relationships must remain');
 assert.equal(stats.branchSimplification.rail.matchingVersion,'site-matched-rail-ends-v1');
 assert(stats.branchSimplification.rail.removedTerminalEnds>0,'Unassigned rail dead ends were not cut');
+// Owner's 07.11.2026 corrections: a smoothly connected Saturn driveway
+// and a single unbroken visible main railway opposite Site 5.
+assert.equal(stats.saturnAccess?.status,'connected','Saturn must have a real AD driveway to its northwest gate');
+const saturnDrive=transport.roadPaths().find(r=>r.id==='r-site23-saturn-access');
+assert(saturnDrive?.points.length>5,'Saturn access must be a sampled, continuous curved surface');
+assert(stats.saturnAccess.roadGap<.001&&stats.saturnAccess.gateGap<.001,'Saturn access has a disconnected endpoint');
+for(const hiddenId of ['172458462','172458465'])
+ assert(!transport.routes.rail.some(r=>r.osmWayIds?.includes(hiddenId)),
+  'Redundant railway branch opposite Site 5 is still visible: '+hiddenId);
+assert(transport.routes.rail.some(r=>r.osmWayIds?.includes('37543646')),
+ 'The main Site 5 railway must remain visible');
 const train=transport.trainPath();
 assert(train.path.points.length>10&&train.osmWayIds.length>0,'The train route is no longer connected');
 console.log('RAIL_SITE_GATES_INTEGRATION_PASS',JSON.stringify({
