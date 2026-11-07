@@ -1355,7 +1355,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide}));
    board.name='НП · обозначение';board.position.set(0,2.25,6.5);root.add(board);
    }
-   layers.sites.add(root);
+   if(layers.sites)layers.sites.add(root);
    donskayaObservation={status:'placed',sourceWayId:tip.edge.wayId,stationDistance:tip.dist,
     railClearance:tip.railDistance,position:root.position.toArray(),sourceNodeId:tip.node.id};
   }else donskayaObservation={status:'no-nearby-road-dead-end'};
