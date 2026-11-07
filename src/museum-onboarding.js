@@ -3,29 +3,32 @@
 
   // A lightweight, camera-led tour. It starts only AFTER the museum preloader
   // has disappeared and never delays access to the actual interactive map.
-  const TOTAL_MS = 26000;
-  const STORAGE_KEY = 'baikonur-museum-onboarding-v1';
+  const FLANK_FLYOVER_MS = 3000;
+  const TOTAL_MS = 29000;
+  const STORAGE_KEY = 'baikonur-museum-onboarding-v2';
   const params = new URLSearchParams(location.search);
   const forced = params.get('tour') === '1';
   const deepLink = ['view', 'site', 'station', 'detail'].some(key => params.has(key));
   const reducedMotion = Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
   const mobile = Boolean(window.matchMedia?.('(pointer: coarse)').matches);
   const stages = [
-    { end: 5000, title: 'ПЕРЕМЕЩЕНИЕ ПО КАРТЕ',
+    { end: 3000, title: 'ФЛАНГИ КОСМОДРОМА',
+      hint: 'Приближаемся к космодрому и пролетаем над его тремя флангами.' },
+    { end: 8000, title: 'ПЕРЕМЕЩЕНИЕ ПО КАРТЕ',
       hint: mobile ? 'Проведите одним пальцем, чтобы перемещаться.' : 'Удерживайте левую кнопку мыши и двигайте карту.' },
-    { end: 11000, title: 'МАСШТАБ И РАКУРС',
+    { end: 14000, title: 'МАСШТАБ И РАКУРС',
       hint: mobile ? 'Два пальца — масштаб и вращение.' : 'Колёсико — масштаб. Правая кнопка — поворот.' },
-    { end: 17000, title: 'СТАРТОВЫЕ ПЛОЩАДКИ',
+    { end: 20000, title: 'СТАРТОВЫЕ ПЛОЩАДКИ',
       hint: 'Выберите объект на карте, чтобы открыть его историю и 3D-модель.' },
-    { end: 22000, title: 'ИССЛЕДУЙТЕ ОБЪЕКТЫ',
+    { end: 25000, title: 'ИССЛЕДУЙТЕ ОБЪЕКТЫ',
       hint: 'Камеру можно вращать вокруг выбранного сооружения.' },
-    { end: 26000, title: 'ЦИФРОВЫЕ РЕКОНСТРУКЦИИ',
+    { end: 29000, title: 'ЦИФРОВЫЕ РЕКОНСТРУКЦИИ',
       hint: 'В меню доступны старты ракет, посадка «Бурана» и другие события.' }
   ];
   let root, title, hint, counter, skip, progress;
   let api = null, ready = false, active = false, pendingStart = false;
   let elapsed = 0, lastNow = 0, currentStage = -1;
-  let move = null, orbit = null, initiallyFocused = false, originalControls = null;
+  let move = null, orbit = null, flyover = null, initiallyFocused = false, originalControls = null;
   let selectedDuringDemo = false, spotlight = null, openedMenu = null;
   let startingPose = null; // Exact original eye + look-at, including height and heading.
 
@@ -52,10 +55,10 @@
       '<span class="museum-tour__text"></span>',
       '</div>',
       '<div class="museum-tour__actions">',
-      '<span class="museum-tour__step" aria-hidden="true">01 / 05</span>',
+      '<span class="museum-tour__step" aria-hidden="true">01 / 06</span>',
       '<button class="museum-tour__skip" type="button">Пропустить <span aria-hidden="true">×</span></button>',
       '</div>',
-      '<div class="museum-tour__track" role="progressbar" aria-label="Прогресс обучения" aria-valuemin="0" aria-valuemax="26" aria-valuenow="0">',
+      '<div class="museum-tour__track" role="progressbar" aria-label="Прогресс обучения" aria-valuemin="0" aria-valuemax="29" aria-valuenow="0">',
       '<span class="museum-tour__fill"></span></div>'
     ].join('');
     document.body.appendChild(root);
@@ -122,6 +125,42 @@
     p.eye.y = p.target.y + (p.eye.y - p.target.y) * scale;
     return p;
   }
+  // The opening panorama starts at the visitor's ORIGINAL overview pose.
+  // Zoom first to the exact flank-plan framing used elsewhere in the museum;
+  // then glide a short distance over the terrain. No camera teleport.
+  function startFlankFlyover() {
+    const from = pose();
+    const destination = api?.flankTourPose?.();
+    if (!from || !destination?.eye?.clone || !destination?.target?.clone) {
+      tweenTo(zoomDestination(), FLANK_FLYOVER_MS);
+      return;
+    }
+    const flank = { eye: destination.eye.clone(), target: destination.target.clone() };
+    const advance = flank.target.clone().sub(flank.eye).setY(0);
+    if (advance.lengthSq() < 1e-10) advance.set(0, 0, -1);
+    advance.normalize().multiplyScalar(mobile ? 90 : 150);
+    // A slight eastward drift reveals successive pads instead of mimicking
+    // a mechanical vertical zoom. Endpoints and tangents are eased to rest.
+    const lateral = advance.clone().set(-advance.z, 0, advance.x).normalize().multiplyScalar(mobile ? 30 : 48);
+    const glide = advance.add(lateral);
+    flyover = { from, flank, glide, at: elapsed, duration: FLANK_FLYOVER_MS };
+    move = null;
+    orbit = null;
+  }
+
+  function runFlankFlyover(complete = false) {
+    if (!flyover) return;
+    const t = complete ? 1 : Math.max(0, Math.min(1, (elapsed - flyover.at) / flyover.duration));
+    const zoom = ease(t / .43);               // approach the flank plan in ~1.3 s
+    const traverse = ease((t - .30) / .70);   // gentle flight during the remainder
+    const { from, flank, glide } = flyover;
+    api.camera.position.copy(from.eye).lerp(flank.eye, zoom).addScaledVector(glide, traverse);
+    api.controls.target.copy(from.target).lerp(flank.target, zoom).addScaledVector(glide, traverse);
+    api.camera.lookAt(api.controls.target);
+    api.camera.updateMatrixWorld(true);
+    if (t >= 1) flyover = null;
+  }
+
   function startOrbit(startAt = elapsed, focused = false) {
     if (reducedMotion) return;
     const p = pose();
@@ -166,19 +205,25 @@
     if (spotlight?.getClientRects().length) spotlight.classList.add('museum-tour-spotlight');
   }
   function enterStage(i) {
+    // Finish the last flank-flight sample exactly, even after a dropped frame.
+    if (currentStage === 0 && i !== 0 && flyover) runFlankFlyover(true);
     currentStage = i;
     const s = stages[i];
     title.textContent = s.title;
     hint.textContent = s.hint;
-    counter.textContent = String(i + 1).padStart(2, '0') + ' / 05';
+    counter.textContent = String(i + 1).padStart(2, '0') + ' / 06';
     highlight(null);
 
     if (i === 0) {
+      // A deep-linked/focused object must never be moved away unexpectedly.
       if (initiallyFocused) startOrbit(0, true);
+      else startFlankFlyover();
+    } else if (i === 1) {
+      if (initiallyFocused) startOrbit(elapsed, true);
       else tweenTo(panDestination(), 5000);
-    } else if (i === 1 && !initiallyFocused) {
+    } else if (i === 2 && !initiallyFocused) {
       tweenTo(zoomDestination(), 6000);
-    } else if (i === 2) {
+    } else if (i === 3) {
       if (!initiallyFocused && typeof api?.focusGagarin === 'function') {
         // Focus updates the real site card. Capture its destination pose,
         // then instantly restore the current camera BEFORE the next render.
@@ -196,10 +241,10 @@
         }
       }
       highlight(document.getElementById('info'));
-    } else if (i === 3) {
+    } else if (i === 4) {
       if (!initiallyFocused) startOrbit(elapsed, false);
       highlight(mobile ? document.getElementById('mobileMenuToggle') : document.getElementById('sitesAccordion'));
-    } else if (i === 4) {
+    } else if (i === 5) {
       // Finish the fly-around with a gentle 3.9 s return to the exact view
       // shown before the tour: original position, height, target and heading.
       if (startingPose) {
@@ -223,7 +268,7 @@
     if (lastNow > 0) elapsed += Math.max(0, now - lastNow);
     lastNow = now;
     if (elapsed >= TOTAL_MS) {
-      // The final rendered frame may land beyond 26 s. Complete the move
+      // The final rendered frame may land beyond 29 s. Complete the move
       // before stopping; do not leave a near-but-not-exact camera pose.
       stop(true);
       return;
@@ -231,7 +276,8 @@
     const i = stages.findIndex(s => elapsed < s.end);
     if (i !== currentStage) enterStage(i);
     if (!reducedMotion) {
-      if (move) runMove();
+      if (flyover) runFlankFlyover();
+      else if (move) runMove();
       else if (orbit) runOrbit();
     }
     progress.style.width = (elapsed / TOTAL_MS * 100).toFixed(2) + '%';
@@ -250,6 +296,7 @@
     openedMenu = null;
     move = null;
     orbit = null;
+    flyover = null;
     initiallyFocused = Boolean(api.isObjectFocused?.());
     originalControls = { enabled: api.controls.enabled, damping: api.controls.enableDamping };
     // Suppress scripted-tour vs. wheel/damping competition. The first real
@@ -270,6 +317,7 @@
     pendingStart = false;
     move = null;
     orbit = null;
+    flyover = null;
     // Natural completion returns to the starting altitude/view. A visitor
     // pressing Skip or using the map stays at the camera's current pose.
     if (completed && startingPose) setPose(startingPose);
@@ -317,7 +365,7 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'museum-tour-replay';
-    button.textContent = '↻  ПОВТОРИТЬ ЭКСКУРСИЮ · 26 СЕК';
+    button.textContent = '↻  ПОВТОРИТЬ ЭКСКУРСИЮ · 29 СЕК';
     button.addEventListener('click', () => start());
     host.appendChild(button);
   }
@@ -333,8 +381,9 @@
     attach, ready: readyAfterPreloader, update, fail, replay: start, skip: stop,
     stats: () => ({
       active, ready, pendingStart, elapsedMs: Math.round(elapsed), step: currentStage,
-      durationMs: TOTAL_MS, focused: initiallyFocused, moving: Boolean(move), orbiting: Boolean(orbit),
-      returning: active && currentStage === 4 && Boolean(move)
+      durationMs: TOTAL_MS, flankFlyoverMs: FLANK_FLYOVER_MS, focused: initiallyFocused,
+      moving: Boolean(move), orbiting: Boolean(orbit), flyingFlanks: Boolean(flyover),
+      returning: active && currentStage === 5 && Boolean(move)
     })
   });
 })();
