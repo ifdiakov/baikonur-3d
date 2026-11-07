@@ -713,7 +713,7 @@
     {
       "id": "sector-south-junction",
       "name": "Южная транспортная группа",
-      "x": 675,
+      "x": 665,
       "y": 518,
       "model": "tech",
       "firstYear": null,
