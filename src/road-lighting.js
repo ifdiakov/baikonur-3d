@@ -3,15 +3,15 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js?v=20261101-highway-fog-v1';
 import {HIGHWAY_DISPLAY,applyHighwayDisplayFade} from './highway-display.js?v=20261102-site2-photo-v3';
 
-export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v3';
+export const ROAD_LIGHTING_VERSION='road-lighting-modern-vintage-v4-near-fade';
 export const ROAD_LIGHT_LENS_EMISSION=1.65;
 // Light must disappear before the road itself: screen-sized halos otherwise
 // accumulate into a bright line. Ground distance keeps the high map view lit.
-export const ROAD_LIGHT_FADE=Object.freeze({start:8000,end:24000,exponent:2,metric:'ground'});
+export const ROAD_LIGHT_FADE=Object.freeze({start:1800,end:5500,exponent:2,metric:'ground'});
 export const ROAD_LIGHT_STYLES=Object.freeze({
- highway:Object.freeze({id:'highway',fixture:'modern-led',height:3.2,spacing:58/1.5,brightness:1.5,density:1.5,poolScale:1.5,color:0xd8e8ff,colorTemperature:4800,
+ highway:Object.freeze({id:'highway',fixture:'modern-led',height:3.2,spacing:58,brightness:1.5,density:1,poolScale:1.5,color:0xd8e8ff,colorTemperature:4800,
   poleColor:0x344552,armReach:.72,headLength:.62,headWidth:.22,headThickness:.075}),
- cosmodrome:Object.freeze({id:'cosmodrome',fixture:'vintage-industrial',height:2.8,spacing:43.5,brightness:2,density:2/1.5,poolScale:2,color:0xffbf7b,colorTemperature:2700,
+ cosmodrome:Object.freeze({id:'cosmodrome',fixture:'vintage-industrial',height:2.8,spacing:65,brightness:2,density:1,poolScale:2,color:0xffbf7b,colorTemperature:2700,
   poleColor:0x8c887b,armReach:.61,headLength:.45,headWidth:.28,headThickness:.18})
 });
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
