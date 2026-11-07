@@ -879,9 +879,22 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const pad5RailStraightening=straightenPad5Rail({railGraph,roads:markingRoads,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const railCornerIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const railCornerProtected=[...railGraph.nodes.values()].filter(node=>node.edges.length!==2).map(node=>node.position).concat([railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean),railRoadClearance.crossings.map(hit=>V(hit.x,hit.y,hit.z))]);
+ const site5HiddenRailWays=new Set(['172458462']);
  for(const way of railGraph.ways){
+  if(site5HiddenRailWays.has(String(way.osmId)))continue;
   const points=[];let run=0;
-  const render=()=>{if(points.length<2)return;for(const visible of drawRail(way.abandoned?points:roundRailCorners(points,{index:railCornerIndex,protectedPoints:railCornerProtected,railHalfWidth:RAIL_PROFILE.ballastWidth/2}),way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
+  const render=()=>{if(points.length<2)return;
+   let display=points;
+   if(['37543646','37547653'].includes(String(way.osmId))){
+    const x0=(620.85-650)*3.4,lo=525,hi=565;
+    display=points.map(p=>{
+     const my=p.z/3.4+522.5;
+     if(my<lo||my>hi)return p;
+     const weight=THREE.MathUtils.smoothstep(my,lo,lo+7)*(1-THREE.MathUtils.smoothstep(my,hi-7,hi));
+     const q=p.clone();q.x=THREE.MathUtils.lerp(p.x,x0,weight);return q;
+    });
+   }
+   for(const visible of drawRail(way.abandoned?display:roundRailCorners(display,{index:railCornerIndex,protectedPoints:railCornerProtected,railHalfWidth:RAIL_PROFILE.ballastWidth/2}),way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
    renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...visible],width:RAIL_PROFILE.ballastWidth,source:'OpenStreetMap',osmWayIds:[way.osmId]});run++;
   }};
   for(const e of way.segments){
@@ -1197,7 +1210,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
      markings:{...HIGHWAY_MARKINGS,sourceWayIds:[...highwayMarkedWays],mainRuns:highwayMarkingRuns,rampRuns:rampMarkingRuns,projectionMisses:roadMarkingPlan.stats.projectionMisses,
       yellowTriangles:highwayYellow.triangles,whiteTriangles:highwayWhite.triangles,bridgeBoundary:'exact-profile-seams',lanePolicy:'source-lanes-and-direction',junctionPolicy:roadMarkingPlan.stats.version}},
     continuousThroughRoads:[{sourceWayId:INDUSTRIAL_THROUGH_ROAD,siteIds:[...INDUSTRIAL_THROUGH_SITES],renderedRuns:roadPaths.filter(r=>r.source==='OpenStreetMap'&&r.osmWayIds?.includes(INDUSTRIAL_THROUGH_ROAD)).length}]},junctionCount,markingSegments,railTies,railGauge:RAIL_PROFILE.gauge,
-   railProfile:RAIL_PROFILE,branchSimplification:{version:'terminal-branches-v2',road:roadPruning.stats,rail:railPruning.stats},renderedRailWays:renderedRailWays.size,
+   railProfile:RAIL_PROFILE,branchSimplification:{version:'terminal-branches-v2',road:roadPruning.stats,rail:railPruning.stats},renderedRailWays:renderedRailWays.size,site5HiddenRailWays:[...site5HiddenRailWays],
    railSurface:{...railSurface.stats,groundDatum:RAIL_NETWORK_GROUND_Y,bridgeRise:5.8,trainUsesSharedSurface:true},
    railCrossings:railCrossings.stats,railRoadClearance:{...railRoadClearance,crossings:railRoadClearance.crossings.length,pad5Straightening:pad5RailStraightening},
     railCrossingSignals:{count:crossingSigns.count,crossings:crossingSigns.crossings},
@@ -1216,6 +1229,6 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    gagarinSite2Road:gagarinRoadReport,
    siteAccess:accessReports.map(r=>r.id.replace('pad-','')),gatePorts:accessReports.map(r=>r.id),
    vehicleRoutes:roadPlan.routes.map(r=>({id:r.id,source:r.source,length:r.length,osmWayCount:r.osmWayIds.length,nodeCount:r.nodeIds.length,vehicleScale:r.vehicleScale})),trainSource:train.source,trainWayCount:train.osmWayIds.length,
-   saturnAccess:null,
+   saturnAccess:saturnAccessReport,
    interchange:{version:'osm-reference-viaduct-v1',bridges:bridges.map(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY?{...b,...interchangeBridge?.stats()}:b),ramps:0,source:'OpenStreetMap bridge/layer topology; Bridge Design by 3DtechVN, CC BY 4.0'},gagarinRail:{version:'osm-pad1-port-v1',joinGap:gagarinJoinGap,entryWorld:gate.toArray(),gauge:RAIL_PROFILE.gauge,straightLength:18}})};
 }
