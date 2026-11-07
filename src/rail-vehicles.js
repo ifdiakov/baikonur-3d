@@ -5,7 +5,7 @@ import {RAIL_PROFILE} from './rail-profile.js?v=20261031-facilities-rails-lighti
 
 import {RAIL_VEHICLE_PROFILES} from './rail-vehicle-profiles.js?v=20261102-m62-v1';
 export {RAIL_VEHICLE_PROFILES};
-export const TRAIN_VERSION='m62-kosmotrans-v1';
+export const TRAIN_VERSION='m62-kosmotrans-v2-headlight-beam';
 export const COACH_COUNT=4;
 export const TRAIN_METRIC_SCALE=RAIL_PROFILE.gauge/1.52;
 const loco=RAIL_VEHICLE_PROFILES.m62,coach=RAIL_VEHICLE_PROFILES.coach;
@@ -63,7 +63,7 @@ function beamTexture(){
  const width=32,height=96,data=new Uint8Array(width*height*4);
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
   const u=(x/(width-1)-.5)*2,v=1-y/(height-1),spread=.12+.88*v;
-  const alpha=Math.exp(-Math.pow(u/spread,2)*4)*Math.pow(1-v,1.6)*Math.min(1,v*15)*.29;
+  const alpha=Math.exp(-Math.pow(u/spread,2)*4)*Math.pow(1-v,1.6)*Math.min(1,v*15)*.52;
   const at=(y*width+x)*4;data.set([255,220,157,Math.round(alpha*255)],at);
  }
  const texture=new THREE.DataTexture(data,width,height);texture.needsUpdate=true;return texture;
@@ -87,7 +87,7 @@ export function buildRailVehicle(parent,{wagon=false,gauge=RAIL_PROFILE.gauge,in
  b.finish();
  const axles=profile.axles.map((offset,i)=>{const axle=new THREE.Group();axle.name='Колёсная пара '+(i+1);parent.add(axle);const wheels=[-1,1].map(side=>wheel(axle,side*.76,profile.wheelRadius,{steel,dark,hub},side));return {root:axle,offset:offset*metricScale,wheels};});
  const bogies=profile.bogies.map(offset=>{const bg=new THREE.Group();bg.name=wagon?'Двухосная тележка':'Трёхосная тележка';parent.add(bg);const bb=batches(bg);for(const side of [-1,1])bb.box(.25,.35,wagon?3.2:5.6,side*1.03,.7,0,dark,'bogie-frame');bb.finish();return {root:bg,offset:offset*metricScale};});
- const headY=4.0274,bufferY=1.5084,windowY=wagon?2.63:3.18,markers=wagon?(last?[-1,1].map(s=>({x:s*1.15,y:3.35,z:-9.68,height:0,color:0xff4537,size:3})):[]):[{x:0,y:headY,z:7.97,height:0,color:0xffe9ba,size:6,brightness:4},...[-1,1].map(s=>({x:s*1.1,y:bufferY,z:8.065,height:0,color:0xffedc9,size:3.6}))];
+ const headY=4.0274,bufferY=1.5084,windowY=wagon?2.63:3.18,markers=wagon?(last?[-1,1].map(s=>({x:s*1.15,y:3.35,z:-9.68,height:0,color:0xff4537,size:3})):[]):[{x:0,y:headY,z:7.97,height:0,color:0xffe9ba,size:6,brightness:2},...[-1,1].map(s=>({x:s*1.1,y:bufferY,z:8.065,height:0,color:0xffedc9,size:3.6}))];
  const lights=createLightField(root,markers,{name:wagon?'Хвостовые огни':'М62 · прожектор и буферные огни',minPixels:wagon?3.2:4.8});
  const windows=createLightField(root,(wagon?[-5,0,5]:[-7.3,7.3]).flatMap(z=>[-1,1].map(s=>({x:s*(wagon?1.6:1.44),y:windowY,z,height:0,color:0xffd896,size:.65}))),{name:'Тёплый свет окон',minPixels:2});
  let spill=null;if(!wagon){const mat=new THREE.MeshBasicMaterial({map:beamTexture(),transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide,toneMapped:false});spill=new THREE.Mesh(new THREE.PlaneGeometry(6,27),mat);spill.rotation.x=-Math.PI/2;spill.position.set(0,.025,21.5);spill.renderOrder=5;spill.name='М62 · свет на пути';root.add(spill);}
