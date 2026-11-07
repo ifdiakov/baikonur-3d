@@ -34,6 +34,29 @@ assert(clean.polishedSamples>0,'The network-wide track fairing must run');
 for(const p of jagged.edge.surfacePoints)assert(Math.abs(p.z)>=6+RAIL_PROFILE.ballastWidth/2,
  'Straightened railway must remain separated from the full asphalt width');
 
+// Two asphalt pieces meeting at a join are ONE continuous carriageway.
+// A railway running along the join must not be pushed into either segment,
+// nor acquire the sharp alternating bends seen near Seven Winds.
+const roadJoin=[
+ {id:'road-west',width:4,points:[V(-120,.72,0),V(0,.72,0)]},
+ {id:'road-east',width:4,points:[V(0,.72,0),V(120,.72,12)]}
+];
+const besideJoin=rail(V(-105,GROUND,1.5),V(105,GROUND,11.5),[
+ V(-50,GROUND,1.5),V(-8,GROUND,1.5),V(0,GROUND,1.5),
+ V(8,GROUND,2.0),V(50,GROUND,6.2)
+]);
+const joined=separateRailGraphFromRoads({railGraph:besideJoin,roads:roadJoin,
+ headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+assert.equal(joined.crossingCount,0,'Ordinary asphalt joints are not railway crossings');
+const joinedIndex=buildRailRoadIndex(roadJoin,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+for(const p of besideJoin.edge.surfacePoints){
+ const distances=joinedIndex.queryPoint(p).map(road=>{
+  const t=Math.max(0,Math.min(1,((p.x-road.a.x)*road.dx+(p.z-road.a.z)*road.dz)/road.len2));
+  return Math.hypot(p.x-road.a.x-t*road.dx,p.z-road.a.z-t*road.dz)-1.5*road.width-RAIL_PROFILE.ballastWidth/2;
+ });
+ assert(Math.min(...distances)>=-.15,'Rail joins must stay away from both asphalt pieces');
+}
+
 // A real right-angle crossing retains its centre and puts the rail head above
 // the road surface. Two signs (one on either approach) are instanced.
 // The source railway intentionally contains NO sample at the crossing.
