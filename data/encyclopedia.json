@@ -1,0 +1,440 @@
+{
+  "version": 1,
+  "updated": "2026-11-07",
+  "types": {
+    "rocket": "Ракеты и корабли",
+    "site": "Площадки и комплексы",
+    "organization": "Предприятия",
+    "person": "Конструкторы"
+  },
+  "items": [
+    {
+      "id": "r7",
+      "type": "rocket",
+      "name": "Р-7",
+      "period": "1954–1957 (разработка и первые испытания)",
+      "summary": "Двухступенчатая ракета, основа семейства советских космических носителей.",
+      "links": [
+        "korolev",
+        "glushko",
+        "okb1",
+        "progress",
+        "site1"
+      ],
+      "sources": [
+        "https://samspace.ru/about/history/",
+        "https://fr.samspace.ru/news/press_relizy/19456/"
+      ]
+    },
+    {
+      "id": "soyuz",
+      "type": "rocket",
+      "name": "Семейство «Союз»",
+      "period": "С 1960-х; отдельные модификации имеют собственную историю",
+      "summary": "Семейство ракет-носителей на базе архитектуры Р-7. Не путать с одноимённым пилотируемым кораблём.",
+      "links": [
+        "korolev",
+        "kozlov",
+        "progress",
+        "energia",
+        "site1",
+        "site31"
+      ],
+      "sources": [
+        "https://samspace.ru/about/history/"
+      ]
+    },
+    {
+      "id": "soyuzcraft",
+      "type": "rocket",
+      "name": "Космический корабль «Союз»",
+      "period": "Разработка с 1960-х",
+      "summary": "Семейство пилотируемых космических кораблей; самостоятельная программа, отличная от ракеты-носителя «Союз».",
+      "links": [
+        "korolev",
+        "energia",
+        "site254"
+      ],
+      "sources": [
+        "https://www.energia.ru/"
+      ]
+    },
+    {
+      "id": "proton",
+      "type": "rocket",
+      "name": "«Протон» / «Протон-М»",
+      "period": "1960-е — исходное семейство; 1990-е — модернизация «Протон-М»",
+      "summary": "Тяжёлые ракеты-носители, разработанные в кооперации ОКБ-52/КБ «Салют» и производителя имени Хруничева. Атрибуция версий различается.",
+      "links": [
+        "chelomey",
+        "khrunichev",
+        "site81",
+        "site200"
+      ],
+      "sources": [
+        "https://dfnc.ru/arhiv-kataloga-predpriyatij/predpriyatiya/gknpc-hrunichev/"
+      ]
+    },
+    {
+      "id": "energia",
+      "type": "rocket",
+      "name": "«Энергия»",
+      "period": "1976–1988 (программа и лётные испытания)",
+      "summary": "Сверхтяжёлая ракета-носитель системы «Энергия—Буран», генеральный конструктор программы В. П. Глушко.",
+      "links": [
+        "glushko",
+        "energiaorg",
+        "site110",
+        "site112"
+      ],
+      "sources": [
+        "https://buran.ru/htm/konstru2.htm"
+      ]
+    },
+    {
+      "id": "buran",
+      "type": "rocket",
+      "name": "Орбитальный корабль «Буран»",
+      "period": "1976–1988 (разработка и первый полёт)",
+      "summary": "Многоразовый орбитальный корабль; головная организация по орбитальному кораблю — НПО «Молния», головная по системе — НПО «Энергия».",
+      "links": [
+        "lozino",
+        "molniya",
+        "energiaorg",
+        "site112",
+        "yubileiny"
+      ],
+      "sources": [
+        "https://buran.ru/htm/konstru2.htm"
+      ]
+    },
+    {
+      "id": "site1",
+      "type": "site",
+      "name": "Площадка №1 — Гагаринский старт",
+      "period": "1950-е — сооружение; исторический старт",
+      "summary": "Стартовый комплекс семейства Р-7, с которого 12 апреля 1961 года стартовал Юрий Гагарин.",
+      "links": [
+        "r7",
+        "soyuz",
+        "barmin",
+        "korolev",
+        "tsenki"
+      ],
+      "sources": [
+        "https://www.russian.space/o-predpriyatii/istoriya-predpriyatiya/"
+      ]
+    },
+    {
+      "id": "site31",
+      "type": "site",
+      "name": "Площадка №31",
+      "period": "С 1960-х",
+      "summary": "Стартовый комплекс носителей семейства Р-7/«Союз»; инженерные и операторские роли различаются по периодам.",
+      "links": [
+        "soyuz",
+        "progress",
+        "tsenki"
+      ],
+      "sources": [
+        "https://t.me/s/roscosmos_gk/17527"
+      ]
+    },
+    {
+      "id": "site81",
+      "type": "site",
+      "name": "Площадка №81",
+      "period": "С 1960-х",
+      "summary": "Один из стартовых комплексов ракет «Протон».",
+      "links": [
+        "proton",
+        "khrunichev",
+        "tsenki"
+      ],
+      "sources": [
+        "https://t.me/s/roscosmos_gk/17527"
+      ]
+    },
+    {
+      "id": "site200",
+      "type": "site",
+      "name": "Площадка №200",
+      "period": "С 1970-х",
+      "summary": "Пусковой комплекс ракет «Протон».",
+      "links": [
+        "proton",
+        "khrunichev",
+        "tsenki"
+      ],
+      "sources": [
+        "https://t.me/s/roscosmos_gk/17527"
+      ]
+    },
+    {
+      "id": "site110",
+      "type": "site",
+      "name": "Площадка №110",
+      "period": "Исторические программы Н-1 и «Энергия—Буран»",
+      "summary": "Стартовая инфраструктура тяжёлых и сверхтяжёлых ракет; необходимо отдельно документировать реконструкции и изменения комплекса.",
+      "links": [
+        "energia",
+        "energiaorg",
+        "glushko"
+      ],
+      "sources": [
+        "https://buran.ru/htm/konstru2.htm"
+      ]
+    },
+    {
+      "id": "site112",
+      "type": "site",
+      "name": "Площадка №112 — МИК",
+      "period": "Советский период; модернизации",
+      "summary": "Монтажно-испытательная инфраструктура, связанная с программой «Энергия—Буран».",
+      "links": [
+        "energia",
+        "buran",
+        "energiaorg"
+      ],
+      "sources": [
+        "https://buran.ru/htm/konstru2.htm"
+      ]
+    },
+    {
+      "id": "site254",
+      "type": "site",
+      "name": "Площадка №254",
+      "period": "Современная подготовка кораблей",
+      "summary": "Технический комплекс подготовки пилотируемых кораблей; конкретные операторы и исторические этапы подлежат уточнению.",
+      "links": [
+        "soyuzcraft",
+        "energiaorg"
+      ],
+      "sources": [
+        "https://www.energia.ru/"
+      ]
+    },
+    {
+      "id": "yubileiny",
+      "type": "site",
+      "name": "Аэродром «Юбилейный»",
+      "period": "Программа «Энергия—Буран»",
+      "summary": "Аэродром, принимавший орбитальный корабль «Буран» 15 ноября 1988 года.",
+      "links": [
+        "buran",
+        "molniya"
+      ],
+      "sources": [
+        "https://buran.ru/"
+      ]
+    },
+    {
+      "id": "okb1",
+      "type": "organization",
+      "name": "ОКБ-1 (историческое)",
+      "period": "1946 — начало истории предприятия",
+      "summary": "Головное конструкторское бюро С. П. Королёва; исторический предшественник РКК «Энергия».",
+      "links": [
+        "korolev",
+        "energiaorg",
+        "r7"
+      ],
+      "sources": [
+        "https://buran.ru/htm/konstru2.htm"
+      ]
+    },
+    {
+      "id": "energiaorg",
+      "type": "organization",
+      "name": "РКК «Энергия» / НПО «Энергия»",
+      "period": "Историческая преемственность ОКБ-1 → ЦКБЭМ → НПО «Энергия»",
+      "summary": "Разработка пилотируемых кораблей и орбитальных систем; головная организация программы «Энергия—Буран».",
+      "links": [
+        "okb1",
+        "korolev",
+        "glushko",
+        "soyuzcraft",
+        "energia",
+        "buran",
+        "site110",
+        "site254"
+      ],
+      "sources": [
+        "https://buran.ru/htm/konstru2.htm"
+      ]
+    },
+    {
+      "id": "progress",
+      "type": "organization",
+      "name": "РКЦ «Прогресс» (Самара)",
+      "period": "Серийное производство Р-7 с 1958 года",
+      "summary": "Производство ракет семейства Р-7 и «Союз», разработка и модернизации носителей. Исторический завод №1.",
+      "links": [
+        "kozlov",
+        "r7",
+        "soyuz",
+        "site31"
+      ],
+      "sources": [
+        "https://samspace.ru/about/history/"
+      ]
+    },
+    {
+      "id": "khrunichev",
+      "type": "organization",
+      "name": "ГКНПЦ имени М. В. Хруничева",
+      "period": "В нынешней форме с 1993 года",
+      "summary": "Разработка и производство носителей «Протон-М», «Ангара», ракетных блоков; исторические предшественники — завод имени Хруничева и КБ «Салют».",
+      "links": [
+        "proton",
+        "site81",
+        "site200"
+      ],
+      "sources": [
+        "https://dfnc.ru/arhiv-kataloga-predpriyatij/predpriyatiya/gknpc-hrunichev/"
+      ]
+    },
+    {
+      "id": "tsenki",
+      "type": "organization",
+      "name": "ЦЭНКИ",
+      "period": "Создан в 1994 году",
+      "summary": "Эксплуатация объектов наземной космической инфраструктуры, включая Байконур; не считать автоматически разработчиком самих ракет.",
+      "links": [
+        "site1",
+        "site31",
+        "site81",
+        "site200"
+      ],
+      "sources": [
+        "https://www.russian.space/o-predpriyatii/istoriya-predpriyatiya/"
+      ]
+    },
+    {
+      "id": "molniya",
+      "type": "organization",
+      "name": "НПО «Молния»",
+      "period": "Программа «Буран» (с 1970-х)",
+      "summary": "Головной разработчик орбитального корабля «Буран» в составе межотраслевой кооперации.",
+      "links": [
+        "buran",
+        "lozino"
+      ],
+      "sources": [
+        "https://buran.ru/"
+      ]
+    },
+    {
+      "id": "energomash",
+      "type": "organization",
+      "name": "НПО Энергомаш",
+      "period": "Историческая школа ЖРД",
+      "summary": "Разработчик жидкостных ракетных двигателей для различных носителей; карточки конкретных двигателей и кооперации предстоит связать отдельно.",
+      "links": [
+        "glushko"
+      ],
+      "sources": [
+        "https://www.npoenergomash.ru/"
+      ]
+    },
+    {
+      "id": "lavochkin",
+      "type": "organization",
+      "name": "НПО имени С. А. Лавочкина",
+      "period": "Советская и российская космонавтика",
+      "summary": "Автоматические межпланетные станции, космические аппараты и исторически разгонные блоки; участие различается по миссиям.",
+      "links": [],
+      "sources": [
+        "https://www.laspace.ru/"
+      ]
+    },
+    {
+      "id": "barmin",
+      "type": "person",
+      "name": "Владимир Павлович Бармин",
+      "period": "1909–1993",
+      "summary": "Главный конструктор стартовых комплексов ракетно-космической техники.",
+      "links": [
+        "site1",
+        "r7"
+      ],
+      "sources": [
+        "https://ru.wikipedia.org/wiki/Бармин,_Владимир_Павлович"
+      ]
+    },
+    {
+      "id": "korolev",
+      "type": "person",
+      "name": "Сергей Павлович Королёв",
+      "period": "1907–1966",
+      "summary": "Главный конструктор ОКБ-1, ключевая фигура разработки Р-7 и первых космических программ.",
+      "links": [
+        "okb1",
+        "r7",
+        "soyuz",
+        "soyuzcraft",
+        "site1"
+      ],
+      "sources": [
+        "https://samspace.ru/about/history/"
+      ]
+    },
+    {
+      "id": "kozlov",
+      "type": "person",
+      "name": "Дмитрий Ильич Козлов",
+      "period": "1919–2009",
+      "summary": "Руководитель куйбышевского филиала ОКБ-1, один из организаторов серийного производства Р-7.",
+      "links": [
+        "progress",
+        "r7",
+        "soyuz"
+      ],
+      "sources": [
+        "https://samspace.ru/about/history/"
+      ]
+    },
+    {
+      "id": "glushko",
+      "type": "person",
+      "name": "Валентин Петрович Глушко",
+      "period": "1908–1989",
+      "summary": "Генеральный конструктор НПО «Энергия», руководитель разработки системы «Энергия—Буран».",
+      "links": [
+        "energiaorg",
+        "energia",
+        "energomash"
+      ],
+      "sources": [
+        "https://buran.ru/htm/konstru2.htm"
+      ]
+    },
+    {
+      "id": "chelomey",
+      "type": "person",
+      "name": "Владимир Николаевич Челомей",
+      "period": "1914–1984",
+      "summary": "Руководитель ОКБ-52, создатель семейства УР, включая исходную программу УР-500 («Протон»).",
+      "links": [
+        "proton"
+      ],
+      "sources": [
+        "https://ru.wikipedia.org/wiki/Челомей,_Владимир_Николаевич"
+      ]
+    },
+    {
+      "id": "lozino",
+      "type": "person",
+      "name": "Глеб Евгеньевич Лозино-Лозинский",
+      "period": "1909–2001",
+      "summary": "Генеральный конструктор НПО «Молния», руководитель разработки корабля «Буран».",
+      "links": [
+        "molniya",
+        "buran"
+      ],
+      "sources": [
+        "https://buran.ru/"
+      ]
+    }
+  ]
+}
