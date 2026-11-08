@@ -12,7 +12,20 @@ page.on('pageerror',e=>errors.push(e.message));
 page.on('console',message=>{if(message.type()==='error'&&/shader error|VALIDATE_STATUS|GL_INVALID_OPERATION/i.test(message.text()))shaders.push(message.text());});
 try{
  await page.goto('http://127.0.0.1:8765/?tour=0&fastRoads=1',{waitUntil:'domcontentloaded',timeout:90000});
- await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.stats?.(),null,{timeout:180000});
+ try{
+  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.stats?.(),null,{timeout:30000});
+ }catch(error){
+  const diagnostic=await page.evaluate(()=>({
+   error:document.getElementById('error')?.textContent,
+   loading:document.getElementById('museumLoadingMessage')?.textContent,
+   bodyReady:document.body.classList.contains('museum-ready'),
+   startup:window.__MUSEUM_STARTUP?.stats?.(),
+   scriptReady:Boolean(window.__BAIKONUR_QA),
+   url:location.href
+  })).catch(e=>({evaluateError:e.message}));
+  console.error('BAIKONUR_BOOT_DIAGNOSTIC',JSON.stringify({diagnostic,pageErrors:errors,shaders}));
+  throw error;
+ }
  const report=await page.evaluate(()=>{
   const s=window.__BAIKONUR_QA.stats(),a=window.__MUSEUM_STARTUP.stats().marks;
   const beginning=a.find(x=>x.name==='startup')?.at,interactive=a.find(x=>x.name==='first-frame')?.at;
