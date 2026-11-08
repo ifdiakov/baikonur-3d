@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {clipSingleRailAccess} from './site-single-rail-access.js?v=20261108-single-access-v1';
+import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
@@ -109,8 +110,9 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
  const highway=routes.find(r=>r.id===bake.vehicles.highway);
  if(!highway)throw Error('Cached highway missing');
  paths.osmVehiclePlan={routes,highway,source:bake.vehicles.source,joins:bake.vehicles.joins,extensions:[]};
- const terrain={roads:unpack(bake.terrain.roads,roadGrade).map(trimPhantomSpur).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(path.points,path).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
- const train={...bake.train,path:unpackPath(bake.train.path)};
+ const terrain={roads:unpack(bake.terrain.roads,roadGrade).map(trimPhantomSpur).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(path.points,path).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points:roundRailCorners(points,{radius:15})})))};
+ const bakedTrainPath=unpackPath(bake.train.path);
+ const train={...bake.train,path:distancePath(roundRailCorners(bakedTrainPath.points,{radius:15}))};
  const bridge=bake.bridgeBounds?(function(){
   const bbox=new THREE.Box3(new THREE.Vector3(...bake.bridgeBounds.min),new THREE.Vector3(...bake.bridgeBounds.max));
   const mesh=new THREE.Mesh(new THREE.BoxGeometry(...bbox.getSize(new THREE.Vector3()).toArray()),new THREE.MeshBasicMaterial({visible:false}));
