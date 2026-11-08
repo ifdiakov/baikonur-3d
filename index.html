@@ -998,8 +998,14 @@ if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
  try{
   const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261108-global-curves-v6');
   const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
-  if(preparedLOD.sourceFingerprint!==sourceFingerprint)throw Error('Compiled road LOD is stale after map edits');
-  transport=restoreBakedTransport({bake:preparedBake,layers,sourceFingerprint,roadGrade:displayRoadGrade});transportFromBake=true;
+  // Load the light cached scene first even when owner-authored road edits
+  // have advanced since the last full transport bake. Precise roads are
+  // regenerated on demand, and known deleted paths are filtered by the
+  // transport/LOD modules. Reject only an internally inconsistent bake.
+  if(preparedLOD.sourceFingerprint!==preparedBake.sourceFingerprint)
+   throw Error('Transport bake and overview LOD were built from different sources');
+  transport=restoreBakedTransport({bake:preparedBake,layers,sourceFingerprint:preparedBake.sourceFingerprint,roadGrade:displayRoadGrade});transportFromBake=true;
+  if(sourceFingerprint!==preparedBake.sourceFingerprint)console.info('Using fast cached first frame; latest author road edits are applied on detailed load');
   startup.mark('prebaked-transport-ready');
  }catch(error){console.warn('Cached transport rejected, rebuilding source geometry:',error);}
 }
