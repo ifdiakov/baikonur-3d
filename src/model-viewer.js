@@ -16,11 +16,11 @@ try{
  const darkBackground=getComputedStyle(document.documentElement).backgroundColor;
  const scene=new THREE.Scene();scene.background=new THREE.Color(darkBackground);const camera=new THREE.PerspectiveCamera(35,1,.01,5000),controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.10;controls.autoRotateSpeed=0;
  const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)'),rotateButton=document.getElementById('rotate');
- let lastFrame=null,rotationSpeed=0;
+ let lastFrame=null,rotationSpeed=0,lastMotionPreference=reducedMotion.matches;
  function setAutoRotation(enabled){controls.autoRotate=!!enabled;rotationSpeed=0;controls.autoRotateSpeed=0;lastFrame=null;rotateButton.setAttribute('aria-pressed',String(controls.autoRotate));}
  const stopAutoRotation=()=>setAutoRotation(false);
  controls.addEventListener('start',stopAutoRotation);
- const motionPreferenceChanged=()=>{if(reducedMotion.matches)stopAutoRotation();};
+ const motionPreferenceChanged=()=>{lastMotionPreference=reducedMotion.matches;if(lastMotionPreference)stopAutoRotation();};
  reducedMotion.addEventListener('change',motionPreferenceChanged);
  const resetFrameClock=()=>{lastFrame=null;};document.addEventListener('visibilitychange',resetFrameClock);
  scene.add(new THREE.HemisphereLight('#e9f4ff','#6c7782',2.1));for(const [color,power,position]of [['#fff7eb',3.2,[30,60,65]],['#b9daff',2.3,[-40,20,-45]],['#fff',.8,[0,-20,20]]]){const light=new THREE.DirectionalLight(color,power);light.position.set(...position);scene.add(light);}
@@ -48,6 +48,7 @@ try{
  }
  function updateFrame(time=performance.now()){
   if(disposed)return false;
+  if(reducedMotion.matches!==lastMotionPreference)motionPreferenceChanged();
   const dt=lastFrame===null?0:Math.max(0,Math.min((time-lastFrame)/1000,.05));lastFrame=time;
   if(document.hidden)return false;
   rotationSpeed=THREE.MathUtils.damp(rotationSpeed,controls.autoRotate ? .65 : 0,3,dt);

@@ -53,13 +53,13 @@ try{
  await page.screenshot({path:out+'/mobile.png',fullPage:true});
  // Exercise the normal requestAnimationFrame loop too, without synthetic stepping.
  const live=await browser.newPage({viewport:{width:900,height:700}});
- await live.goto(new URL('workshop/model.html?model=silo',base).href);
+ await live.goto(new URL('workshop/model.html?model=silo',base).href);await live.bringToFront();
  await live.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);
  const liveBefore=await live.evaluate(()=>__MODEL_VIEWER_QA.stats().camera);
  await live.waitForTimeout(700);
  const liveAfter=await live.evaluate(()=>__MODEL_VIEWER_QA.stats());
  assert(liveAfter.autoRotate);assert.notDeepEqual(liveAfter.camera,liveBefore);
- await live.emulateMedia({reducedMotion:'reduce'});await live.waitForFunction(()=>__MODEL_VIEWER_QA.stats().reducedMotion&&!__MODEL_VIEWER_QA.stats().autoRotate);
+ await live.emulateMedia({reducedMotion:'reduce'});try{await live.waitForFunction(()=>__MODEL_VIEWER_QA.stats().reducedMotion&&!__MODEL_VIEWER_QA.stats().autoRotate);}catch(e){report.motionPreferenceFailure=await live.evaluate(()=>({stats:__MODEL_VIEWER_QA.stats(),hidden:document.hidden,freshQuery:matchMedia('(prefers-reduced-motion: reduce)').matches}));throw e;}
  await live.close();report.liveAnimation=true;
  assert.deepEqual(errors,[]);report.passed=true;report.errors=errors;console.log('SILO_PREVIEW_AND_AUTOROTATE_OK',JSON.stringify(report));
 }finally{await writeFile(out+'/report.json',JSON.stringify({...report,errors},null,2)+'\n');await browser.close();}
