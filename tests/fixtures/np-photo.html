@@ -1,0 +1,19 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><title>НП RocketTrip · проверка модели</title>
+<style>body{margin:0;background:#d9d7cc;font:14px Arial;color:#303b39}canvas{display:block}header{position:absolute;left:32px;top:28px;pointer-events:none}h1{margin:0 0 6px;font-size:24px}p{margin:0;color:#666c65}</style>
+<header><h1>НП RocketTrip</h1><p>50 × 35 м · два арочных шатра 10 × 10 м</p></header>
+<script type="importmap">{"imports":{"three":"../../src/vendor/three-r160/build/three.module.js","three/addons/":"../../src/vendor/three-r160/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {buildSite31Observation} from '../../src/site31-observation-platform.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color('#d9d7cc');
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.append(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(37,innerWidth/innerHeight,.01,100);
+const root=buildSite31Observation({plan:{position:new THREE.Vector3(),rotationY:0,source:'photo-fixture'}});scene.add(root);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc6beaa,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.04;ground.receiveShadow=true;scene.add(ground);
+const hemi=new THREE.HemisphereLight(0xddeeff,0xa39373,2);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff0d6,2.5);sun.position.set(-4,8,-6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:.1,far:30});sun.shadow.bias=-.0002;scene.add(sun);
+window.npRender=(view='front')=>{
+ hemi.intensity=view==='night'?.55:2;sun.intensity=view==='night'?.45:2.5;scene.background.set(view==='night'?0x172844:0xd9d7cc);
+ camera.position.set(...(view==='top'?[0,12,.01]:view==='detail'?[-.5,1.4,-3.8]:[8,7,-10]));camera.lookAt(0,.1,0);camera.updateMatrixWorld();renderer.render(scene,camera);return root.userData.observationPlatform;
+};window.npRender();window.npReady=true;
+</script></html>

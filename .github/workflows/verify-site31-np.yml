@@ -1,10 +1,12 @@
-name: Observation platform 31–1
+name: RocketTrip observation platform
 on:
   push:
-    branches: [main]
+    branches: [main, codex/np-redraw]
     paths:
       - 'index.html'
       - 'src/site31-observation-platform.js'
+      - 'src/osm-transport.js'
+      - 'tests/fixtures/np-photo.html'
       - 'src/evening-scene.js'
       - 'tests/site31-observation*.mjs'
       - '.github/workflows/verify-site31-np.yml'
@@ -13,6 +15,8 @@ on:
     paths:
       - 'index.html'
       - 'src/site31-observation-platform.js'
+      - 'src/osm-transport.js'
+      - 'tests/fixtures/np-photo.html'
       - 'src/evening-scene.js'
       - 'tests/site31-observation*.mjs'
       - '.github/workflows/verify-site31-np.yml'
