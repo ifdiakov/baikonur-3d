@@ -564,7 +564,11 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const infrastructure=e=>e.tags.name||e.tags.ref||e.tags.destination||e.tags.bridge&&e.tags.bridge!=='no'||e.tags.tunnel&&e.tags.tunnel!=='no';
  roadPruning=pruneTerminalBranches(roadGraph,{maxLength:160,protectedEdges:roadProtected,protectedNode:n=>protectedNode(n)||EXHIBIT_ACCESS_NODE_IDS.includes(n.id)||krayniyClearance&&n.id===krayniyLayout.access.sourceNodeId,
   eligible:e=>inCosmodrome(e)&&!infrastructure(e)&&!MAIN.has(e.tags.highway?.replace('_link',''))&&!['driveway','parking_aisle'].includes(e.tags.service)});
- railPruning=pruneUnassignedRailTermini({graph:railGraph,maxLength:85,protectedEdges:railProtected,
+ // Owner policy: remove unassigned terminal rail trees across the
+ // cosmodrome, not merely tiny single-segment stubs. Protected OSM train
+ // routes, model ports, station yards and destination tracks take precedence
+ // over pruning; only non-destination dead ends are removed.
+ railPruning=pruneUnassignedRailTermini({graph:railGraph,maxLength:165,protectedEdges:railProtected,
   siteRecords,railPoints:data.railPoints?.features??[],schemeStations:railScheme.stations,
   geography,point,eligible:e=>inCosmodrome(e)&&!infrastructure(e)});
  // Simplify the displayed road webs only. Source-node graphs continue to
