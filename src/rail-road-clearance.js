@@ -264,7 +264,7 @@ export function straightenPad5Rail({railGraph,roads,railHalfWidth=.224}={}){
  * The original topology, switches, model ports and true crossings are fixed.
  * A fillet is rejected whenever its new swept chord violates asphalt clearance.
  */
-export function roundRailCorners(points,{roads=[],index=null,protectedPoints=[],radius=2.8,railHalfWidth=.224}={}){
+export function roundRailCorners(points,{roads=[],index=null,protectedPoints=[],radius=2.8,radiusAt=null,railHalfWidth=.224}={}){
  if(!Array.isArray(points)||points.length<3)return points;
  const roadIndex=index||buildRailRoadIndex(roads,{railHalfWidth});
  const fixed=p=>protectedPoints.some(q=>near(p,q)<.035);
@@ -284,13 +284,23 @@ export function roundRailCorners(points,{roads=[],index=null,protectedPoints=[],
   if(turn<.065||turn>1.6){rounded.push(p);continue;}
   // Tangent length for a circular turn: R * tan(turn/2). Limit it to
   // adjoining segments, so every fillet is monotone and cannot loop.
-  const tangent=Math.min(radius*Math.tan(turn/2),l*.32,r*.32);
+  const localRadius=radiusAt?Math.max(.2,radiusAt(p)):radius;
+  const tangent=Math.min(localRadius*Math.tan(turn/2),l*.42,r*.42);
   if(tangent<.09){rounded.push(p);continue;}
   const entry=new THREE.Vector3(p.x-ax*tangent,p.y-(p.y-a.y)*tangent/l,p.z-az*tangent);
   const exit=new THREE.Vector3(p.x+bx*tangent,p.y+(b.y-p.y)*tangent/r,p.z+bz*tangent);
-  const curve=new THREE.QuadraticBezierCurve3(entry,p,exit);
-  const count=Math.max(4,Math.ceil(turn/.065));
-  const samples=Array.from({length:count+1},(_,j)=>curve.getPoint(j/count));
+  // Exact circular fillet, tangent to both straight segments. A quadratic
+  // Bezier through the vertex was not circular and retained a visible kink.
+  const side=Math.sign(ax*bz-az*bx)||1,actualRadius=tangent/Math.tan(turn/2);
+  const cx=entry.x-az*side*actualRadius,cz=entry.z+ax*side*actualRadius;
+  const start=Math.atan2(entry.z-cz,entry.x-cx);
+  const count=Math.max(6,Math.ceil(turn/.045));
+  const samples=Array.from({length:count+1},(_,j)=>{
+   const t=j/count,angle=start+side*turn*t;
+   return new THREE.Vector3(cx+Math.cos(angle)*actualRadius,
+    THREE.MathUtils.lerp(entry.y,exit.y,t),
+    cz+Math.sin(angle)*actualRadius);
+  });
   // Include all intervals, not merely sample points: the rail has a width.
   let safe=true;
   for(let j=0;j<samples.length;j++){
