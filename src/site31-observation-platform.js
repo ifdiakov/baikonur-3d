@@ -43,7 +43,7 @@ export function planSite31Observation({launch,reference,roads=[],distanceMetres=
      (road.highway&&road.width>6?25:0);
     if(!best||score<best.score)
      best={score,p,roadId:road.id??'',roadWidth:road.width||3,
-      tangent:v.normalize(),distanceFromLaunch:radial,heading,roadY:Number.isFinite(pts[i-1]?.y)?pts[i-1].y:
+      tangent:v.clone().normalize(),distanceFromLaunch:radial,heading,roadY:Number.isFinite(pts[i-1]?.y)?pts[i-1].y:
        Array.isArray(pts[i-1])?pts[i-1][1]:0};
    }
   }
