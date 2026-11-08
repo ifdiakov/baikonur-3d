@@ -1,0 +1,20 @@
+<!doctype html><html lang="ru"><meta charset="utf-8"><title>Союз · проверка поверхности</title>
+<style>body{margin:0;background:#b8bec5}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"../../src/vendor/three-r160/build/three.module.js","three/addons/":"../../src/vendor/three-r160/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {loadRocketSource} from '../../src/rocket-exhibits.js';
+const {scene:rocket,manifest}=await loadRocketSource('soyuz');
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xb8bec5);scene.add(rocket);
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);document.body.append(renderer.domElement);
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+scene.add(new THREE.HemisphereLight(0xe5efff,0x76705f,2));
+for(const [position,power] of [[[-20,50,30],3],[[20,30,-30],1.5]]){const light=new THREE.DirectionalLight(0xffffff,power);light.position.set(...position);scene.add(light);}
+const camera=new THREE.OrthographicCamera();
+window.fixtureRender=(view='whole',angle=0)=>{
+ const [y,height]=({whole:[25,56],fairing:[38.7,14],body:[27,17],boosters:[9,18],engines:[1,12]})[view];
+ const aspect=innerWidth/innerHeight;camera.left=-height*aspect/2;camera.right=height*aspect/2;camera.top=height/2;camera.bottom=-height/2;camera.near=.01;camera.far=200;
+ camera.position.set(32*Math.sin(angle),y+(view==='engines'?-24:3),32*Math.cos(angle));camera.lookAt(0,y,0);camera.updateProjectionMatrix();camera.updateMatrixWorld();renderer.render(scene,camera);
+ return {revision:manifest.modelRevision,asset:manifest.assetStats,triangles:renderer.info.render.triangles,drawCalls:renderer.info.render.calls,view,angle};
+};window.fixtureState=window.fixtureRender();window.fixtureReady=true;
+</script></html>

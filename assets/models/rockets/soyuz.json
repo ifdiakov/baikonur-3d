@@ -46,12 +46,12 @@
     "materials": 23,
     "textures": 6
   },
-  "assetSha256": "7e4b39506c027bf8156edd1ef3524e9e93d6e46c5e15774b5ad2da5e50c3ef66",
+  "assetSha256": "fcf1ab117d262a8a9bfa9ecb96677932d643045147a5b9e64334a49f563d7eca",
   "recoverySha256": "748eea3237a2d12f157623c9de30b02f0182edbe3ba170f4c8200d2f070df6d4",
   "assetStats": {
-    "bytes": 1557312,
-    "triangles": 253329,
-    "vertices": 218914,
+    "bytes": 2617860,
+    "triangles": 513858,
+    "vertices": 435046,
     "primitives": 7,
     "materials": 7,
     "textures": 7
@@ -63,11 +63,15 @@
     "normalCreaseAngleDegrees": null,
     "removedTinyComponents": 372,
     "removedTinyTriangles": 533769,
-    "simplifiedPrimitives": 1352,
-    "trianglesRemovedBySimplification": 2593881
+    "simplifiedPrimitives": 1160,
+    "trianglesRemovedBySimplification": 2333352,
+    "preservePanelBorders": true,
+    "preserveSurfaceMinDimensionMetres": 2,
+    "preservedSurfacePrimitives": 237,
+    "preservedSurfaceTriangles": 264950
   },
   "layerStats": {
-    "default": 253329
+    "default": 513858
   },
   "bounds": {
     "min": [
@@ -98,13 +102,14 @@
     ]
   },
   "attribution": {
-    "archive": "http://www.buran.ru/htm/3d-model.htm",
-    "providedBy": "Project owner / Google Drive",
     "authors": [
       "Владимир Некрасов"
     ],
     "sourceUrl": "http://buran.ru/htm/3d-model.htm",
+    "archive": "http://www.buran.ru/htm/3d-model.htm",
     "driveUrl": "https://drive.google.com/file/d/187i3huuRDscAv_EV_qPPju1lCV76IPsB/view",
+    "providedBy": "Project owner / Google Drive",
     "licenseNote": "Авторская модель из архива buran.ru; файл предоставлен владельцем проекта. Открытая лицензия не заявляется."
-  }
+  },
+  "modelRevision": "soyuz-surface-20261108-v1"
 }

@@ -1,4 +1,4 @@
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261108-rd180-v1';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261108-soyuz-surface-v1';
 export function installModelInspector({onOpen=()=>{},onClose=()=>{}}={}){
  const dialog=document.createElement('dialog');dialog.id='modelInspector';dialog.className='model-inspector';dialog.setAttribute('aria-label','Просмотр техники в 3D');
  const close=document.createElement('button');close.type='button';close.className='model-inspector-close';close.setAttribute('aria-label','Закрыть просмотр и вернуться к объекту');close.textContent='×';
@@ -21,7 +21,7 @@ export function installModelInspector({onOpen=()=>{},onClose=()=>{}}={}){
   selected=resolveModelId(selected);if(!allowed.includes(selected))selected=allowed[0];
   if(!dialog.open){opener=document.activeElement;closed=false;onOpen();dialog.showModal();}
   frame?.remove();frame=document.createElement('iframe');frame.title='3D-модель · '+MODEL_CATALOG[selected].title;frame.setAttribute('allow','fullscreen');frame.className='model-inspector-frame';
-  const url=new URL('./workshop/model.html?v=20261108-rd180-v1',location.href);url.searchParams.set('v',MODEL_VIEWER_VERSION+'-autorotate-v2');url.searchParams.set('embed','1');url.searchParams.set('model',selected);url.searchParams.set('models',allowed.join(','));
+  const url=new URL('./workshop/model.html?v=20261108-rd180-v1',location.href);url.searchParams.set('v',MODEL_VIEWER_VERSION+'-soyuz-surface-v1');url.searchParams.set('embed','1');url.searchParams.set('model',selected);url.searchParams.set('models',allowed.join(','));
   frame.src=url.href;content.replaceChildren(frame);active=selected;ready=false;close.focus();return true;
  }
  return {open,close:hide,isOpen:()=>dialog.open,stats:()=>({open:dialog.open,modelId:active,ready,frames:content.querySelectorAll('iframe').length})};

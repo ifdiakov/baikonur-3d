@@ -21,9 +21,14 @@ const input=await readFile(args.source),source=JSON.parse(await readFile(args.so
 const doc=await io.readBinary(input);doc.setLogger(new Logger(Logger.Verbosity.ERROR));
 const root=doc.getRoot();
 const policy={maximumSurfaceErrorMetres:Number(args.error||.02),tinyComponentMaximumDimensionMetres:.08,targetRatio:.08};
+// Soyuz has adjoining panels and an inner shell just 10 mm behind the painted
+// fairing. Independent 20 mm decimation makes those layers cross. Retain the
+// original triangles of extended surfaces and lock borders of smaller parts.
+const preservePanelBorders=args.id==='soyuz';
 const count=p=>(p.getIndices()?.getCount()||p.getAttribute('POSITION').getCount())/3;
 const rebuildNormals=args.id!=='soyuz';
 const optimization={...policy,normalCreaseAngleDegrees:rebuildNormals?45:null,removedTinyComponents:0,removedTinyTriangles:0,simplifiedPrimitives:0,trianglesRemovedBySimplification:0};
+if(preservePanelBorders)Object.assign(optimization,{preservePanelBorders:true,preserveSurfaceMinDimensionMetres:2,preservedSurfacePrimitives:0,preservedSurfaceTriangles:0});
 // The legacy STL-derived Energia objects mark every small triangle as a hard
 // face. These artificial seams prevent decimation. Rebuild physical creases
 // after geometric simplification; keep all texture seams throughout.
@@ -36,8 +41,11 @@ for(const node of root.listNodes()){
   if(range<policy.tinyComponentMaximumDimensionMetres){
    optimization.removedTinyComponents++;optimization.removedTinyTriangles+=before;mesh.removePrimitive(primitive);continue;
   }
+  if(preservePanelBorders&&range>=optimization.preserveSurfaceMinDimensionMetres){
+   optimization.preservedSurfacePrimitives++;optimization.preservedSurfaceTriangles+=before;continue;
+  }
   if(before<32)continue;
-  simplifyPrimitive(primitive,{simplifier:MeshoptSimplifier,ratio:policy.targetRatio,error:policy.maximumSurfaceErrorMetres/range,lockBorder:false});
+  simplifyPrimitive(primitive,{simplifier:MeshoptSimplifier,ratio:policy.targetRatio,error:policy.maximumSurfaceErrorMetres/range,lockBorder:preservePanelBorders});
   const after=count(primitive);assert.ok(after>0,'A visible assembly cannot disappear');
   if(after<before){optimization.simplifiedPrimitives++;optimization.trianglesRemovedBySimplification+=before-after;}
  }
@@ -98,6 +106,7 @@ const manifest={version:'rocket-exhibits-v1',id:args.id,source,assetSha256:sha(b
  attribution:{authors:credits.authors,sourceUrl:'http://buran.ru/htm/3d-model.htm',archive:'http://www.buran.ru/htm/3d-model.htm',
   driveUrl:'https://drive.google.com/file/d/'+credits.driveId+'/view',providedBy:'Project owner / Google Drive',
   licenseNote:'Авторская модель из архива buran.ru; файл предоставлен владельцем проекта. Открытая лицензия не заявляется.'}};
+if(args.id==='soyuz')manifest.modelRevision='soyuz-surface-20261108-v1';
 await mkdir(args.output,{recursive:true});
 await writeFile(resolve(args.output,args.id+'.glb'),bytes);
 await writeFile(resolve(args.output,args.id+'.json'),JSON.stringify(manifest,null,2)+'\n');

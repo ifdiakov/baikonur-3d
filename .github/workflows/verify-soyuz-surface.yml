@@ -1,0 +1,47 @@
+name: Verify Soyuz surface repair
+on:
+  push:
+    branches: [main, codex/soyuz-surface-repair]
+    paths:
+      - 'assets/models/rockets/soyuz.*'
+      - 'scripts/prepare-rocket-assets.mjs'
+      - 'tests/soyuz-surface*.mjs'
+      - 'tests/fixtures/soyuz-surface.html'
+      - '.github/workflows/verify-soyuz-surface.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: soyuz-surface-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install geometry and browser tools
+        run: |
+          npm install --no-save three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Check skin continuity, asset budget, scale and launch geometry
+        run: |
+          node tests/soyuz-surface.mjs
+          node tests/rocket-assets.mjs
+          node tests/soyuz-launch-scale.mjs
+          node tests/soyuz-dual-launch-unit.mjs
+      - name: Serve the museum
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/soyuz-surface-http.log 2>&1 &
+          curl --retry 7 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
+      - name: Inspect the repaired source and both launch sites
+        run: node tests/soyuz-surface-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: soyuz-surface-visuals
+          path: qa-soyuz-surface/
+          retention-days: 14

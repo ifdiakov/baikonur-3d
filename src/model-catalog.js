@@ -8,7 +8,7 @@ const definitions={
  'cyclone-2':{title:'Циклон-2',subtitle:'Площадка №90 · Байконур',kind:'rocket',asset:'rockets/cyclone-2.glb'},
  'cyclone-3':{title:'Циклон-3',subtitle:'Коллекция моделей · Плесецк',kind:'rocket',asset:'rockets/cyclone-3.glb'},
  'cyclone-pad':{title:'Старт Циклона',subtitle:'Площадка №90 · историческая реконструкция',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/cyclone-reference.md',sourceLabel:'Источники реконструкции ↗',viewLabels:{front:'Стартовый стол',side:'Установщик',top:'Сверху'},views:{front:{target:[0,1.5,0],offset:[-11,7,-13]},side:{target:[0,18,4],offset:[26,12,-35]}}},
- soyuz:{title:'Союз',subtitle:'Ракета-экспонат',kind:'rocket',asset:'rockets/soyuz.glb'},
+ soyuz:{title:'Союз',subtitle:'Ракета-экспонат',kind:'rocket',asset:'rockets/soyuz.glb',assetRevision:'soyuz-surface-20261108-v1'},
  'energia-polyus':{title:'Энергия — Полюс',subtitle:'Ракета и полезная нагрузка',kind:'rocket',asset:'rockets/energia-polyus.glb'},
  'energia-buran':{title:'Энергия — Буран',subtitle:'Ракетно-космический комплекс',kind:'rocket',asset:'rockets/energia-buran.glb',assetRevision:'buran-paint-20261102-v1'},
  energia:{title:'Энергия',subtitle:'Ракета-носитель',kind:'rocket',asset:'rockets/energia.glb'},
