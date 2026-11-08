@@ -29,7 +29,7 @@ import {smoothRailGraph,graphRailRoutePoints} from './rail-surface.js?v=20261102
 import {createRailSchemePlan,RAIL_SCHEME_REFERENCE} from './rail-scheme.js?v=20261102-rail-scheme-v1';
 import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261102-rail-scheme-v1';
 import {createRailCrossingProfile} from './rail-crossing-profile.js?v=20261102-rail-scheme-v1';
-import {separateRailGraphFromRoads,straightenPad5Rail,roundRailCorners,buildRailRoadIndex,findRailRoadCrossings,buildRailCrossingSignals} from './rail-road-clearance.js?v=20261105-rail-road-clearance-v1';
+import {separateRailGraphFromRoads,straightenPad5Rail,roundRailCorners,buildRailRoadIndex,findRailRoadCrossings,buildRailCrossingSignals} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const clamp=THREE.MathUtils.clamp;
@@ -884,7 +884,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null,sleeperAnchor=null){
   if(points.length<2)return [];
-  const selectedRuns=clipSingleRailAccess(points,wayId),airportRuns=selectedRuns.flatMap(run=>clipAirportRails(run,wayId,RAIL_PROFILE.gauge)),displayed=force?airportRuns:airportRuns.flatMap(run=>railSiteClearance.clipPath(run,{sourceWayId:wayId}).runs),renderedRuns=[];
+  const selectedRuns=clipSingleRailAccess(points,wayId),
+   // Apply the same round-curve rule to source ways, yard lines and museum
+   // connections, before generating sleepers, ballast and both rail heads.
+   curvedRuns=isAbandoned?selectedRuns:selectedRuns.map(run=>roundRailCorners(run,{radius:15})),
+   airportRuns=curvedRuns.flatMap(run=>clipAirportRails(run,wayId,RAIL_PROFILE.gauge)),
+   displayed=force?airportRuns:airportRuns.flatMap(run=>railSiteClearance.clipPath(run,{sourceWayId:wayId}).runs),renderedRuns=[];
   for(const visible of displayed){
    const samples=conformRailPath(visible,RAIL_PROFILE.ballastWidth),path=distancePath(samples);if(path.length<.01)continue;
    const runs=[];let run=[];
@@ -940,7 +945,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
      const q=p.clone();q.x=THREE.MathUtils.lerp(p.x,x0,weight);return q;
     });
    }
-   for(const visible of drawRail(way.abandoned?display:roundRailCorners(display,{index:railCornerIndex,protectedPoints:railCornerProtected,radiusAt:railForkRadiusAt,railHalfWidth:RAIL_PROFILE.ballastWidth/2}),way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
+   for(const visible of drawRail(display,way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
    renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...visible],width:RAIL_PROFILE.ballastWidth,source:'OpenStreetMap',osmWayIds:[way.osmId]});run++;
   }};
   for(const e of way.segments){
@@ -1229,7 +1234,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const connectionRuns=drawRail(connectionPoints,false,true,RAIL_PROFILE.gauge,null,connectionFrame,'start');connections++;
  for(const [i,points]of connectionRuns.entries())railPaths.push({id:'gagarin-source-connection-'+i,points,width:RAIL_PROFILE.ballastWidth,source:'museum-model-port',osmWayIds:[]});
  const gagarinJoinGap=connectionPoints.at(-1).distanceTo(graphTrain.nodes[0].position);
- const trainPoints=conformRailPath([...connectionPoints,...graphRailRoutePoints(graphTrain).slice(1)],RAIL_PROFILE.ballastWidth).map(p=>p.clone().add(V(0,RAIL_PROFILE.headY,0))),train={path:distancePath(trainPoints),gauge:RAIL_PROFILE.gauge,source:'OpenStreetMap',surfaceVersion:railSurface.stats.version,from:'Пл. №1 · Гагаринский старт',to:'Тюратам · город',joins:[{from:'museum-pad1-port',to:'osm-rail-network',gap:gagarinJoinGap,tangentDot:connection.getTangent(1).dot(railTangent)}],sections:[{id:'osm-pad1-to-tyuratam'}],osmWayIds:[...new Set(graphTrain.edges.map(e=>e.wayId))]};
+ const trainPoints=conformRailPath(roundRailCorners([...connectionPoints,...graphRailRoutePoints(graphTrain).slice(1)],{radius:15}),RAIL_PROFILE.ballastWidth).map(p=>p.clone().add(V(0,RAIL_PROFILE.headY,0))),train={path:distancePath(trainPoints),gauge:RAIL_PROFILE.gauge,source:'OpenStreetMap',surfaceVersion:railSurface.stats.version,from:'Пл. №1 · Гагаринский старт',to:'Тюратам · город',joins:[{from:'museum-pad1-port',to:'osm-rail-network',gap:gagarinJoinGap,tangentDot:connection.getTangent(1).dot(railTangent)}],sections:[{id:'osm-pad1-to-tyuratam'}],osmWayIds:[...new Set(graphTrain.edges.map(e=>e.wayId))]};
  for(const f of data.railPoints?.features||[]){const tags=tagsFor(f);if(!['station','halt'].includes(tags.railway)||f.geometry.type!=='Point')continue;const [lon,lat]=f.geometry.coordinates;if(lon<BBOX[0]||lon>BBOX[2]||lat<BBOX[1]||lat>BBOX[3])continue;
   const p=geography.project(lon,lat),at=point(...p,RAIL_NETWORK_GROUND_Y),group=new THREE.Group(),anchor=new THREE.Object3D();group.name=f.properties.name;group.position.copy(at);anchor.position.y=3;group.add(anchor);railRoot.add(group);
   // Station platforms are supplied by the shared lightweight model layer.
