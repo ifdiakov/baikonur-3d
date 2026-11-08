@@ -12,6 +12,7 @@ const choices=(params.get('models')||Object.keys(MODEL_CATALOG).join(',')).split
 if(!choices.length)choices.push('soyuz');for(const id of choices){const option=document.createElement('option');option.value=id;option.textContent=MODEL_CATALOG[id].title;select.append(option);}
 let current=choices.includes(resolveModelId(params.get('model')))?resolveModelId(params.get('model')):choices[0],model=null,renderer=null,observer=null,request=null,generation=0,raf=0,disposed=false;
 function renderIntro(id){
+ select.value=id;
  const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;renderModelFacts(spec,document.getElementById('modelFacts'),document.getElementById('modelFactSources'));document.querySelector('.intro').scrollTop=0;document.getElementById('modelSources').open=false;
  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.credit?'3D-модель: '+spec.credit+' ↗':(spec.sourceLabel||'Материалы модели ↗');
 }

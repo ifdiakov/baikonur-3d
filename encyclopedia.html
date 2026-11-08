@@ -52,6 +52,7 @@ main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px
 .detail .media-credit{margin:8px 0 18px;font-size:11px;color:#96acbd;line-height:1.6}
 .detail .media-credit a{color:#c8d9e9}
 .detail .model-tip{color:#c7ad77;font-size:11px;margin:8px 0 18px}
+.article-model-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 22px}.article-model-choices a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:12px 8px;border:1px solid #e88679;border-radius:6px;background:#423541;color:#fff;text-decoration:none;text-align:center;font-weight:700;font-size:13px}.article-model-choices a:hover{background:#60434c}.article-model-choices a:focus-visible{outline:2px solid #f4c989;outline-offset:2px}
 @media(max-width:850px){
  .card{min-height:258px}.card-media{height:130px;flex-basis:130px}
  .card>b{font-size:15px}.card>.small{font-size:11px}
@@ -73,7 +74,7 @@ const thumbs=new Map(),map=new Map(),safeUrl=value=>{
 };
 let modelController=null,modelPromise=null,previewStarted=false;
 try{
- const response=await fetch('./data/encyclopedia.json?v=20261108-rd180-v1');
+ const response=await fetch('./data/encyclopedia.json?v=20261108-site45-choice-v1');
  if(!response.ok)throw Error('HTTP '+response.status);
  data=await response.json();
 }catch(e){$('#cards').textContent='Не удалось загрузить энциклопедию: '+e.message;return}
@@ -200,6 +201,11 @@ function render(){
  if(media)detail.append(media);
  detail.append(el('span','meta',data.types[x.type]),el('h2','',x.name),el('p','small',x.period),el('p','',x.summary));
  appendMediaCredit(detail,x);
+ if(x.modelChoices?.length){
+  detail.append(el('h3','','Выбрать ракету · 3D'));const choices=el('div','article-model-choices');choices.setAttribute('role','group');choices.setAttribute('aria-label','Выбор ракеты площадки');
+  const ids=x.modelChoices.map(choice=>choice.id).join(',');
+  for(const choice of x.modelChoices){const link=el('a','',choice.label);link.dataset.modelChoice=choice.id;link.href='./workshop/model.html?'+new URLSearchParams({model:choice.id,models:ids});choices.append(link);}detail.append(choices);
+ }
  if(x.specs?.length){
   detail.append(el('h3','','Характеристики'));const list=el('dl','article-specs');
   for(const [label,value]of x.specs){list.append(el('dt','small',label),el('dd','',value));}detail.append(list);

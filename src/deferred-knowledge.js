@@ -1,4 +1,4 @@
-import {MUSEUM_KNOWLEDGE_INDEX as index} from './museum-knowledge-index.js?v=20261102-progressive-v1';
+import {MUSEUM_KNOWLEDGE_INDEX as index} from './museum-knowledge-index.js?v=20261108-site45-choice-v1';
 
 const TASK_KEY='museum-knowledge';
 const METHODS={site:'renderSite',rocket:'renderRocket',story:'renderStory'};
