@@ -1,0 +1,52 @@
+name: Observation platform 31–1
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/site31-observation-platform.js'
+      - 'src/evening-scene.js'
+      - 'tests/site31-observation*.mjs'
+      - '.github/workflows/verify-site31-np.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/site31-observation-platform.js'
+      - 'src/evening-scene.js'
+      - 'tests/site31-observation*.mjs'
+      - '.github/workflows/verify-site31-np.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: site31-np-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install geometry and browser tooling
+        run: |
+          npm install --no-save three@0.160.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Check the NP layout and road-adjacent placement
+        run: |
+          node --check src/site31-observation-platform.js
+          node tests/site31-observation.mjs
+      - name: Serve the museum
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+      - name: Check NP in the 3D museum
+        run: node tests/site31-observation-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site31-observation-visuals
+          path: qa-site31-np/
