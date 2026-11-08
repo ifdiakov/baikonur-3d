@@ -555,16 +555,16 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261105-site113-town-v1';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261108-site31-tower-lamps-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261108-site113-streets-v2';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-photo-v3';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261105-silo106109-flank-flat-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261108-pad5-spur-removed-v11';
-import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261108-pad5-spur-removed-v8';
-import {createMuseumGeography} from './src/osm-geography.js?v=20261103-site254-w3';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261108-owner19-transport-v12';
+import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261108-owner19-lod-v9';
+import {createMuseumGeography} from './src/osm-geography.js?v=20261108-pad202-204-shifts-v4';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
 import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261102-progressive-v1';
 import {fitOverviewCamera} from './src/overview-camera.js?v=20261102-museum10-v1';
@@ -646,7 +646,7 @@ const roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'
  :Promise.resolve(null);
 // The fast path uses two precompiled assets: stable authored route topology
 // and far/medium meshes created ONLY from the filtered final road display.
-const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261108-pad5-spur-removed-v8'):Promise.resolve(null);
+const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261108-owner19-bake-v9'):Promise.resolve(null);
 const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Optional transport cache not available:',error);return null;});
 const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz',{timeoutMs:10000}):null)
@@ -996,7 +996,7 @@ const preparedBake=await transportBakeReady;
 const preparedLOD=useBakedTransport?await authoritativeLodReady:null;
 if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
  try{
-  const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261108-pad5-spur-removed-v8');
+  const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261108-owner19-bake-v9');
   const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
   // Load the light cached scene first even when owner-authored road edits
   // have advanced since the last full transport bake. Precise roads are
@@ -1012,7 +1012,7 @@ if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
 if(!transport)transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords,checkpoint7RoadGrade:displayRoadGrade});
 if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
 if(new URLSearchParams(location.search).has('bakeTransport')){
- const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261108-pad5-spur-removed-v8');
+ const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261108-owner19-bake-v9');
  const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
  window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail,sourceFingerprint,displayGradeVersion:displayRoadGrade.version});
 }
@@ -2974,6 +2974,25 @@ if(new URLSearchParams(location.search).get('view')==='terrain')window.__BAIKONU
 window.__MUSEUM_ONBOARDING?.attach({camera,controls:ctl,
   flankTourPose:()=>{const target=point(...flankViewCenter);return {target,eye:target.clone().add(new THREE.Vector3(0,760*SCENE_SCALE,760*SCENE_SCALE))};},
   focusGagarin:()=>focus(0),isObjectFocused:()=>Number.isInteger(currentObject)&&currentObject>=0&&document.getElementById('info').style.display==='block'});
+// Targeted correction: an illustrative building overlaps the marked AD at
+// map X=589, Y=342.7. Hide only tall 3D building fragments whose actual
+// footprint intersects the road point; never touch road or railway geometry.
+startup.defer(()=>{
+ const p=point(589,342.7),tol=3.3,removed=[];
+ for(const parent of [layers.sites,layers.city]){
+  parent.updateWorldMatrix(true,true);
+  parent.traverse(mesh=>{
+   if(!mesh.isMesh||!mesh.visible||mesh.userData.groundSurface)return;
+   const bounds=new THREE.Box3().setFromObject(mesh);
+   if(bounds.max.y<2.1||bounds.min.y>120||bounds.max.x<p.x-tol||bounds.min.x>p.x+tol||
+    bounds.max.z<p.z-tol||bounds.min.z>p.z+tol)return;
+   if(bounds.max.y-bounds.min.y<1.2)return;
+   mesh.visible=false;removed.push(mesh.name||'building-mesh');
+  });
+ }
+ window.__MUSEUM_OWNER_BUILDING_CLEARANCE={target:[589,342.7],removed};
+ return removed.length;
+},{key:'owner-building-clearance-589-343',priority:42});
 animate();startup.ready();
 if(new URLSearchParams(location.search).get('view')==='pua'){openMenuSite('pad-251');let puaAttempts=0;const startPua=()=>{if(puaLoading.start())return;const state=puaLoading.stats();if(!state.ready&&puaAttempts++<180)setTimeout(startPua,500);};startPua();}
 }catch(err){window.__MUSEUM_STARTUP?.fail(err);document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}
