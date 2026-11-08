@@ -1,0 +1,49 @@
+name: Road acceptance inspection
+on:
+  push:
+    branches: [fix/road-acceptance-20261109]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: road-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+      - name: Package reproducible inspection sources
+        run: |
+          mkdir -p /tmp/road-inspection
+          git ls-files -z | tar --exclude='*.glb' --exclude='*.gltf' --exclude='*.bin' --exclude='*.blend' --exclude='*.fbx' --null -T - -czf /tmp/road-inspection/source.tar.gz
+          tar -czf /tmp/road-inspection/dependencies.tar.gz node_modules/three node_modules/meshoptimizer node_modules/playwright node_modules/playwright-core
+      - uses: actions/upload-artifact@v4
+        with:
+          name: road-inspection-source
+          path: /tmp/road-inspection/
+          retention-days: 3
+      - run: npx playwright install --with-deps chromium
+      - name: Source geometry
+        run: node tests/site113-source.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Render current town
+        run: node tests/site113-browser.mjs
+      - name: Road acceptance checks
+        if: always()
+        run: |
+          if [ -f tests/owner-road-acceptance.mjs ]; then node tests/owner-road-acceptance.mjs; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: road-acceptance-evidence
+          path: |
+            qa-site113/
+            qa-owner-roads/
