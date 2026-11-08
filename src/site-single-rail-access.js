@@ -12,13 +12,23 @@ export function railSourceId(pathOrId){
  const path=pathOrId||{};
  return String(path.sourceWayId??path.osmWayIds?.[0]??path.id??'').replace(/^osm-rail-/,'').replace(/-\d+$/,'');
 }
-export function isPreservedAccess(pathOrId){return preserved.has(railSourceId(pathOrId));}
+export function isPreservedAccess(pathOrId,points=null){
+ if(preserved.has(railSourceId(pathOrId)))return true;
+ // Older baked archives did not serialize sourceWayId. Recover only the
+ // approved approach by both end anchors; nearby parallel spurs differ.
+ if(!points||points.length<2)return false;
+ const map=p=>({x:p.x/3.4+650,y:p.z/3.4+522.5});
+ const ends=[map(points[0]),map(points.at(-1))];
+ const near=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<1.2;
+ return (near(ends[0],{x:573.1,y:751.3})&&near(ends[1],{x:565.7,y:738.8}))||
+  (near(ends[1],{x:573.1,y:751.3})&&near(ends[0],{x:565.7,y:738.8}));
+}
 export function inRailClearance(x,y){
  const b=SINGLE_RAIL_ACCESS_BOUNDS;
  return x>b.minX&&x<b.maxX&&y>b.minY&&y<b.maxY;
 }
 export function clipSingleRailAccess(points,pathOrId,{world=true}={}){
- if(isPreservedAccess(pathOrId)||points.length<2)return [points];
+ if(isPreservedAccess(pathOrId,points)||points.length<2)return [points];
  const b=SINGLE_RAIL_ACCESS_BOUNDS;
  // Parameterize in museum coordinates; retain shared endpoint and height.
  const mp=p=>world?{x:p.x/3.4+650,y:p.z/3.4+522.5}:{x:p.x,y:p.z};
