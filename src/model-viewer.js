@@ -51,7 +51,9 @@ try{
   const dt=lastFrame===null?0:Math.max(0,Math.min((time-lastFrame)/1000,.05));lastFrame=time;
   if(document.hidden)return;
   rotationSpeed=THREE.MathUtils.damp(rotationSpeed,controls.autoRotate ? .65 : 0,3,dt);
-  controls.autoRotateSpeed=rotationSpeed;controls.update(dt);
+  controls.autoRotateSpeed=rotationSpeed;
+  if(dt>0)controls.dampingFactor=1-Math.pow(.9,dt*60);
+  controls.update(dt);
   model?.update?.(time,camera,controls.target);renderer.render(scene,camera);
  }
  async function load(id){
