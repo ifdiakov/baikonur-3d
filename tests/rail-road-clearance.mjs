@@ -26,8 +26,8 @@ assert(curved.length>=6,'Circular fillet must be densely sampled');
 for(const p of curved)assert(Math.abs(Math.hypot(p.x-radiusCentre.x,p.z-radiusCentre.z)-8)<1e-5,
  'Every point of the bend must lie on the same circle');
 const wideBend=roundRailCorners(squareRail,{radiusAt:()=>15,roads:[]});
-assert(wideBend.some(p=>Math.abs(p.x+15)<1e-5&&Math.abs(p.z)<1e-5),
- 'Gagarin/254/2 fork must use a wider entry tangent');
+assert(wideBend.some(p=>Math.abs(p.x+12.6)<1e-5&&Math.abs(p.z)<1e-5),
+ 'Gagarin/254/2 fork must widen its arc as far as the adjoining segment permits');
 const pinnedBend=roundRailCorners(squareRail,{roads:[],protectedPoints:[squareRail[1]],radius:8});
 assert.equal(pinnedBend.length,3,'A source switch stays fixed');
 // Parallel rail must end at least a complete road width past the road edge.
