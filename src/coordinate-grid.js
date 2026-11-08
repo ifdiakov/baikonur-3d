@@ -52,6 +52,7 @@ export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045
  const toggle=document.getElementById('coordinateGridToggle');
  function setEnabled(value){
   enabled=Boolean(value);group.visible=enabled;hud.style.display=enabled?'block':'none';
+  document.dispatchEvent(new CustomEvent('coordinate-grid-change',{detail:{enabled}}));
   if(toggle){toggle.setAttribute('aria-pressed',String(enabled));toggle.textContent=enabled?'▦ КООРДИНАТНАЯ СЕТКА · ВЫКЛ':'▦ КООРДИНАТНАЯ СЕТКА · ВКЛ';}
   if(!enabled){last=null;hidePointerBadge();}
  }
