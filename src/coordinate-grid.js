@@ -86,10 +86,10 @@ export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045
   setEnabled(!enabled);
  });
  toggle?.addEventListener('click',()=>setEnabled(!enabled));
- // Editing coordinates are part of the museum's normal authoring view.
- // Keep them active across ordinary navigation and URL refreshes; use G or
- // ?grid=0 to temporarily hide the overlay.
- setEnabled(new URLSearchParams(location.search).get('grid')!=='0');
- window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v4-default-visible'};
+ // Owner request 2026-11-09: every visit starts with a clean museum view.
+ // Legacy ?grid=1 links must not restore debugging overlays. G and the
+ // existing button remain available for deliberate editing sessions.
+ setEnabled(false);
+ window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v5-default-hidden'};
  return {setEnabled,isEnabled:()=>enabled,group};
 }

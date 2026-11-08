@@ -14,9 +14,11 @@ function rulerStep(height){
  return [1,2,5,10].find(n=>n*magnitude>=h/4)*magnitude;
 }
 
-export function createCameraAltitude(){
+export function createCameraAltitude({enabled=false}={}){
  const root=document.createElement('aside');
  root.id='cameraAltitude';root.className='camera-altitude';
+ // Owner request 2026-11-09: keep technical telemetry, not a visible HUD.
+ root.hidden=true;root.style.display='none';root.setAttribute('aria-hidden','true');
  root.setAttribute('aria-label','Техническая шкала высоты камеры');
  root.setAttribute('aria-describedby','cameraAltitudeUnits');
  root.setAttribute('aria-live','off');
@@ -37,7 +39,12 @@ export function createCameraAltitude(){
  });
  document.body.append(root);
  let last='';
- return {update(height,y,level){
+ function setEnabled(value){
+  enabled=Boolean(value);root.hidden=!enabled;root.style.display=enabled?'':'none';
+  root.setAttribute('aria-hidden',String(!enabled));last='';
+ }
+ setEnabled(enabled);
+ return {setEnabled,isEnabled:()=>enabled,update(height,y,level){
   if(!Number.isFinite(height)||!Number.isFinite(y))return;
   const key=`${height.toFixed(1)}|${y.toFixed(1)}|${level}`;
   if(key===last)return;last=key;

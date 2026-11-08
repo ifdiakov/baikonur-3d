@@ -51,7 +51,7 @@ export function createTransportLabels({camera,renderer,roads=[],rails=[],grid=nu
    rows.push({kind,label,key,position,description:describe(path,kind)});
   }
  }
- let enabled=Boolean(grid?.isEnabled?.()),lastDraw=0,layoutWidth=0,layoutHeight=0;
+ let enabled=false,lastDraw=0,layoutWidth=0,layoutHeight=0;
  const button=document.getElementById('transportLabelsToggle');
  const legend=document.createElement('div');
  legend.id='transportReferenceLegend';
@@ -108,6 +108,6 @@ export function createTransportLabels({camera,renderer,roads=[],rails=[],grid=nu
  document.addEventListener('coordinate-grid-change',e=>setEnabled(Boolean(e.detail?.enabled)));
  setEnabled(enabled);
  window.__MUSEUM_TRANSPORT_LABELS={setEnabled,isEnabled:()=>enabled,count:()=>rows.length,
-  lookup:label=>rows.find(r=>r.label===label)?.description??null,version:'transport-labels-v1'};
+  lookup:label=>rows.find(r=>r.label===label)?.description??null,version:'transport-labels-v2-default-hidden'};
  return {setEnabled,isEnabled:()=>enabled,draw,count:()=>rows.length};
 }
