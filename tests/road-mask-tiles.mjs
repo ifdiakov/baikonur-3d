@@ -6,7 +6,8 @@ import {
 } from '../src/road-mask-tiles.js';
 
 const owner=JSON.parse(readFileSync(new URL('../data/road-edits-authoritative-20261103.json',import.meta.url),'utf8'));
-assert.equal(owner.added.length,18);
+assert.equal(owner.added.length,19);
+assert.equal(owner.added.filter(r=>r.id==='road-105-repaired').length,1,'Site 105 keeps one repaired AD approach');
 assert.equal(owner.hidden.length,286);
 assert(roadMaskCoverageWidth(1.6,'hidden')>=2.37,
  'Deleted road mask must erase both 30 cm shoulders, not leave two pale contours');
