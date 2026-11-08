@@ -1324,11 +1324,31 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const railDistance=Math.min(500,...[...railGraph.nodes.values()].filter(n=>
     Math.abs(n.position.x-node.position.x)<65&&Math.abs(n.position.z-node.position.z)<65)
     .map(n=>Math.hypot(n.position.x-node.position.x,n.position.z-node.position.z)));
-   const score=dist+(railDistance<10?120:0)+(kind==='track'?18:0);
-   candidates.push({node,edge,heading,dist,railDistance,score});
+   // Identify a genuine AD turn-off: follow this branch to its first
+   // road junction, rather than equating the nearest dead end with the exit.
+   let cursor=other,previous=edge,junction=null,walked=0;
+   const visited=new Set([edge]);
+   for(let hop=0;hop<24;hop++){
+    const links=cursor.edges.filter(e=>edgeKept(roadGraph,e));
+    if(links.length>=3){junction=cursor;break;}
+    const next=links.find(e=>e!==previous&&!visited.has(e));
+    if(!next)break;
+    const target=next.a===cursor?next.b:next.a;
+    walked+=Math.hypot(target.position.x-cursor.position.x,target.position.z-cursor.position.z);
+    if(walked>240)break;
+    visited.add(next);previous=next;cursor=target;
+   }
+   const junctionDistance=junction?Math.hypot(junction.position.x-station.x,junction.position.z-station.z):Infinity;
+   const score=(junction?junctionDistance*.85+dist*.18+walked*.12:dist+190)+
+    (railDistance<10?120:0)+(kind==='track'?18:0);
+   candidates.push({node,edge,heading,dist,railDistance,junctionDistance,score});
   }
+  // The previous implementation chose the nearest dead end regardless of
+  // whether its road was the station turn-off. Prefer the OTHER AD connected
+  // to a real junction by Donskaya when one exists.
   candidates.sort((a,b)=>a.score-b.score);
-  const tip=candidates[0];
+  const junctionCandidates=candidates.filter(c=>Number.isFinite(c.junctionDistance));
+  const tip=junctionCandidates[0]??candidates[0];
   if(tip){
    const root=new THREE.Group();root.name='НП · станция Донская';
    // Approximately 35 × 50 m in the museum's 3.4/65 world scale.
@@ -1366,7 +1386,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    }
    if(layers.sites)layers.sites.add(root);
    donskayaObservation={status:'placed',sourceWayId:tip.edge.wayId,stationDistance:tip.dist,
-    railClearance:tip.railDistance,position:root.position.toArray(),sourceNodeId:tip.node.id};
+    railClearance:tip.railDistance,position:root.position.toArray(),sourceNodeId:tip.node.id,junctionDistance:tip.junctionDistance};
   }else donskayaObservation={status:'no-nearby-road-dead-end'};
  }
  // Roadside crossing signals also cover museum-only late driveways.
