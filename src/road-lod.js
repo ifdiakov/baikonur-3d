@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261108-owner19-v1';
+import {shapeOwnerRail} from './owner-rail-curves.js?v=20261108-owner19-v1';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 export const ROAD_LOD_VERSION='road-lod-prebuilt-v1';
@@ -14,10 +16,14 @@ function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads'){
    const cut=path.findIndex((p,i)=>i>0&&p.x/3.4+650>752.45&&p.z/3.4+522.5>458.75);
    if(cut>=2)path=path.slice(0,cut);
   }
+  if(kind==='roads'){
+   path=polishCachedOwnerAd(path,row.id);
+   if(path.length<2){skipped++;continue;}
+  }else path=shapeOwnerRail(path,row.id);
   if(roadGrade)path=roadGrade.conform(path);
   const runs=kind==='rails'?clipSingleRailAccess(path,row.id).flatMap(run=>clipPad5DuplicateRail(run,row.id)):[path];
   if(!runs.length){skipped++;continue;}
-  const width=row.w*(roadGrade?.widthScale(row.id)??1);
+  const width=(kind==='roads'&&['museum-yubileiny-250a-ukss','museum-pad-250a-gate-spur'].includes(String(row.id))?2.5:row.w)*(roadGrade?.widthScale(row.id)??1);
   for(const path of runs){if(path.length<2)continue;
   const base=xyz.length/3;
   for(let i=0;i<path.length;i++){
