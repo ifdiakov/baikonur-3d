@@ -27,7 +27,7 @@ function finalLighting(root){
  const front=new THREE.Vector3(0,0,1),up=new THREE.Vector3(0,1,0);
  const palette=new THREE.MeshStandardMaterial({color:0xdce2dd,roughness:.64,metalness:.12,side:THREE.DoubleSide});
  const supports=new THREE.MeshStandardMaterial({color:0x74868b,roughness:.85,metalness:.27});
- const geometry=new THREE.PlaneGeometry(1,1);
+ const geometry=new THREE.PlaneGeometry(1,1),panelInstances=[];
  function panelBoard(id,x,y,z,{columns=4,rows=2,stepX=1.18,stepY=.78,sizeX=1.0,sizeY=.65,target}={}){
   const normal=new THREE.Vector3(-x,0,-z).normalize();
   if(normal.lengthSq()<.1)normal.set(0,0,1);
@@ -37,13 +37,7 @@ function finalLighting(root){
   for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
    const p=center.clone().addScaledVector(right,(col-(columns-1)/2)*stepX);
    p.y+=(row-(rows-1)/2)*stepY;
-   const panel=new THREE.Mesh(geometry,palette);
-   panel.position.copy(p);
-   panel.quaternion.copy(quat);
-   panel.scale.set(sizeX,sizeY,1);
-   panel.name='Пл.31 · плафон '+id+' '+(row*columns+col+1);
-   panel.userData.site31LampPanel=id;
-   heads.add(panel);
+   panelInstances.push({position:p,quaternion:quat.clone(),sizeX,sizeY});
    lamps.push({position:p.toArray(),normal:normal.toArray(),size:[sizeX,sizeY]});
   }
   const frame=new THREE.Mesh(new THREE.BoxGeometry((columns-1)*stepX+sizeX+.24,.12,.18),supports);
@@ -70,6 +64,19 @@ function finalLighting(root){
   panelBoard(id,x,y-2.2,z,{columns:2,rows:2,stepX:.78,stepY:.66,
    sizeX:.66,sizeY:.5,target:[Math.sign(x)*27,0,29]});
  }
+ // Batched geometry: thirty-two physical lamp faces cost one draw call
+ // rather than thirty-two extra objects on the museum's first render.
+ const panels=new THREE.InstancedMesh(geometry,palette,panelInstances.length);
+ const instance=new THREE.Object3D();
+ panelInstances.forEach((spec,i)=>{
+  instance.position.copy(spec.position);instance.quaternion.copy(spec.quaternion);
+  instance.scale.set(spec.sizeX,spec.sizeY,1);instance.updateMatrix();
+  panels.setMatrixAt(i,instance.matrix);
+ });
+ panels.instanceMatrix.needsUpdate=true;
+ panels.name='Пл.31 · плафоны мачт (32 инстанса)';
+ panels.userData.site31LampPanelCount=panelInstances.length;
+ heads.add(panels);
  root.add(heads);
  root.userData.site31AdditionalLighting={version:'site31-mast-light-heads-v1',
   sourceFloodTowers:3,serviceMasts:2,panels:32,boards:5,
