@@ -18,6 +18,16 @@ const bend=roundRailCorners(squareRail,{roads:[],radius:8});
 assert(bend.length>squareRail.length,'Rail bend must be sampled as a smooth arc');
 assert(bend.some(p=>p.x<0&&p.z>0),'Arc replaces the sharp 90 degree corner');
 assert.equal(bend[0],squareRail[0]);assert.equal(bend.at(-1),squareRail.at(-1));
+// The turn is a true constant-radius circular arc, not a quadratic Bezier
+// through the sharp vertex. The 254/2 fork gets a larger radius than yards.
+const radiusCentre=V(-8,GROUND,8);
+const curved=bend.slice(1,-1);
+assert(curved.length>=6,'Circular fillet must be densely sampled');
+for(const p of curved)assert(Math.abs(Math.hypot(p.x-radiusCentre.x,p.z-radiusCentre.z)-8)<1e-5,
+ 'Every point of the bend must lie on the same circle');
+const wideBend=roundRailCorners(squareRail,{radiusAt:()=>15,roads:[]});
+assert(wideBend.some(p=>Math.abs(p.x+15)<1e-5&&Math.abs(p.z)<1e-5),
+ 'Gagarin/254/2 fork must use a wider entry tangent');
 const pinnedBend=roundRailCorners(squareRail,{roads:[],protectedPoints:[squareRail[1]],radius:8});
 assert.equal(pinnedBend.length,3,'A source switch stays fixed');
 // Parallel rail must end at least a complete road width past the road edge.
