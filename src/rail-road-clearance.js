@@ -264,53 +264,42 @@ export function straightenPad5Rail({railGraph,roads,railHalfWidth=.224}={}){
  * The original topology, switches, model ports and true crossings are fixed.
  * A fillet is rejected whenever its new swept chord violates asphalt clearance.
  */
-export function roundRailCorners(points,{roads=[],index=null,protectedPoints=[],radius=2.8,radiusAt=null,railHalfWidth=.224}={}){
+// Owner's highest-priority railway geometry policy: no angular turns.
+// Smooth every genuine change of heading, even near a road, switch or source
+// boundary. Only endpoints are fixed so neighbouring authored joins survive.
+// This is display geometry, and does not modify the original OSM network.
+export const ALL_RAIL_TURNS_SMOOTH_VERSION='all-rail-turns-circular-v2';
+export function roundRailCorners(points,{radius=12,radiusAt=null,minTurn=.025,railHalfWidth=.224}={}){
  if(!Array.isArray(points)||points.length<3)return points;
- const roadIndex=index||buildRailRoadIndex(roads,{railHalfWidth});
- const fixed=p=>protectedPoints.some(q=>near(p,q)<.035);
- const clear=p=>{
-  for(const road of roadIndex.queryPoint(p)){
-   const t=clamp(((p.x-road.a.x)*road.dx+(p.z-road.a.z)*road.dz)/road.len2);
-   if(Math.hypot(p.x-road.a.x-t*road.dx,p.z-road.a.z-t*road.dz)<road.width*1.5+railHalfWidth+.12-.025)return false;
-  }
-  return true;
- };
- const rounded=[points[0]];
+ const result=[points[0]];
+ const planar=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
  for(let i=1;i<points.length-1;i++){
-  const a=points[i-1],p=points[i],b=points[i+1],l=near(a,p),r=near(p,b);
-  if(l<.3||r<.3||fixed(p)){rounded.push(p);continue;}
+  const a=points[i-1],p=points[i],b=points[i+1],l=planar(a,p),r=planar(p,b);
+  if(l<.025||r<.025){if(planar(result.at(-1),p)>.001)result.push(p);continue;}
   const ax=(p.x-a.x)/l,az=(p.z-a.z)/l,bx=(b.x-p.x)/r,bz=(b.z-p.z)/r;
   const dot=clamp(ax*bx+az*bz,-1,1),turn=Math.acos(dot);
-  if(turn<.065||turn>1.6){rounded.push(p);continue;}
-  // Tangent length for a circular turn: R * tan(turn/2). Limit it to
-  // adjoining segments, so every fillet is monotone and cannot loop.
-  const localRadius=radiusAt?Math.max(.2,radiusAt(p)):radius;
-  const tangent=Math.min(localRadius*Math.tan(turn/2),l*.42,r*.42);
-  if(tangent<.09){rounded.push(p);continue;}
+  if(turn<minTurn||turn>Math.PI-.035){result.push(p);continue;}
+  // A circular fillet joins both original chords tangentially. Shrink it
+  // before neighbouring corners rather than leaving their sharp vertex.
+  const targetRadius=radiusAt?Math.max(.2,radiusAt(p)):radius;
+  const tangent=Math.min(targetRadius*Math.tan(turn/2),l*.46,r*.46);
+  if(tangent<.012){result.push(p);continue;}
   const entry=new THREE.Vector3(p.x-ax*tangent,p.y-(p.y-a.y)*tangent/l,p.z-az*tangent);
   const exit=new THREE.Vector3(p.x+bx*tangent,p.y+(b.y-p.y)*tangent/r,p.z+bz*tangent);
-  // Exact circular fillet, tangent to both straight segments. A quadratic
-  // Bezier through the vertex was not circular and retained a visible kink.
-  const side=Math.sign(ax*bz-az*bx)||1,actualRadius=tangent/Math.tan(turn/2);
-  const cx=entry.x-az*side*actualRadius,cz=entry.z+ax*side*actualRadius;
-  const start=Math.atan2(entry.z-cz,entry.x-cx);
-  const count=Math.max(6,Math.ceil(turn/.045));
-  const samples=Array.from({length:count+1},(_,j)=>{
-   const t=j/count,angle=start+side*turn*t;
-   return new THREE.Vector3(cx+Math.cos(angle)*actualRadius,
-    THREE.MathUtils.lerp(entry.y,exit.y,t),
-    cz+Math.sin(angle)*actualRadius);
-  });
-  // Include all intervals, not merely sample points: the rail has a width.
-  let safe=true;
-  for(let j=0;j<samples.length;j++){
-   if(!clear(samples[j])||(j&& !clear(samples[j-1].clone().lerp(samples[j],.5)))){safe=false;break;}
+  const side=Math.sign(ax*bz-az*bx)||1,arcRadius=tangent/Math.tan(turn/2);
+  const cx=entry.x-az*side*arcRadius,cz=entry.z+ax*side*arcRadius;
+  const start=Math.atan2(entry.z-cz,entry.x-cx),steps=Math.min(32,Math.max(5,Math.ceil(turn/.075)));
+  // Explicit first/last points stop tiny GPU gaps between rails and curves.
+  if(planar(result.at(-1),entry)>.001)result.push(entry);
+  for(let step=1;step<steps;step++){
+   const t=step/steps,angle=start+side*turn*t;
+   result.push(new THREE.Vector3(cx+Math.cos(angle)*arcRadius,
+    THREE.MathUtils.lerp(entry.y,exit.y,t),cz+Math.sin(angle)*arcRadius));
   }
-  if(!safe){rounded.push(p);continue;}
-  rounded.push(...samples);
+  result.push(exit);
  }
- rounded.push(points.at(-1));
- return rounded;
+ if(planar(result.at(-1),points.at(-1))>.001)result.push(points.at(-1));
+ return result;
 }
 
 // One set of instanced meshes for the whole museum, rather than hundreds of
