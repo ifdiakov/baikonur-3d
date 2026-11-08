@@ -1,0 +1,26 @@
+name: Two editions source preparation
+on:
+  push:
+    branches: [feature/workshop-public-20261109]
+    paths: ['.github/workflows/two-editions-source.yml']
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0 esbuild@0.25.0
+          mkdir -p /tmp/two-editions-source
+          git ls-files -z | tar --null -T - -czf /tmp/two-editions-source/source.tar.gz
+          tar -czf /tmp/two-editions-source/dependencies.tar.gz node_modules/three node_modules/meshoptimizer node_modules/playwright node_modules/playwright-core node_modules/esbuild node_modules/@esbuild
+      - uses: actions/upload-artifact@v4
+        with:
+          name: two-editions-source
+          path: /tmp/two-editions-source/
+          retention-days: 2
