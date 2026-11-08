@@ -15,22 +15,27 @@ const ready=()=>page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready
 const stats=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.stats());
 const advance=(frames,hz=60)=>page.evaluate(({frames,hz})=>{const q=window.__MODEL_VIEWER_QA;window.__motionTime??=performance.now();for(let i=0;i<frames;i++)q.frame(window.__motionTime+=1000/hz);return q.stats();},{frames,hz});
 const resetClock=()=>page.evaluate(()=>window.__motionTime=performance.now());
+const capture=async name=>{
+ await page.evaluate(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
+ const clip=await page.locator('#modelView').boundingBox();
+ await page.screenshot({path:out+'/'+name+'.png',clip});
+};
 try{
  await page.goto(url);await ready();await resetClock();
  assert.equal((await stats()).autoRotate,true);
  assert.equal(await page.locator('#rotate').getAttribute('aria-pressed'),'true');
- await page.locator('#modelView').screenshot({path:out+'/closed.png'});
+ await capture('closed');
  report.initial=await stats();
  const first=(await stats()).camera;await advance(30);const early=await stats();assert.notDeepEqual(early.camera,first);assert(early.rotationSpeed>0&&early.rotationSpeed<.65);
  await advance(210);report.open=await stats();assert.equal(report.open.modelState.state,'open');assert(report.open.modelState.steamVisible);
  await page.locator('#rotate').click();assert.equal((await stats()).autoRotate,false);await advance(120);
- await page.locator('#modelView').screenshot({path:out+'/open.png'});
+ await capture('open');
  const still=(await stats()).camera;await advance(60);assert(Math.hypot(...(await stats()).camera.map((v,i)=>v-still[i]))<1e-6);
  await page.locator('#rotate').click();await advance(60);assert((await stats()).autoRotate);
  const bounds=await page.locator('#modelView canvas').boundingBox();await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);await page.mouse.down();await page.mouse.move(bounds.x+bounds.width*.58,bounds.y+bounds.height*.52,{steps:5});await page.mouse.up();assert.equal((await stats()).autoRotate,false);assert.equal(await page.locator('#rotate').getAttribute('aria-pressed'),'false');
  await page.locator('#rotate').click();await page.mouse.wheel(0,80);assert.equal((await stats()).autoRotate,false);
  await page.locator('#rotate').click();await page.locator('[data-view="side"]').click();assert.equal((await stats()).autoRotate,false);
- await advance(60);await page.locator('#modelView').screenshot({path:out+'/side.png'});
+ await advance(60);await capture('side');
  // Switching models and reopening the viewer both start a fresh smooth orbit.
  await page.evaluate(()=>__MODEL_VIEWER_QA.load('zenit-land'));await ready();assert.equal((await stats()).autoRotate,true);await resetClock();await advance(120);report.rocket=await stats();assert(report.rocket.rotationSpeed>.6);
  await page.reload();await ready();assert((await stats()).autoRotate);await resetClock();

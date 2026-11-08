@@ -26,6 +26,11 @@ function clippedShape(w,d,c){const s=new THREE.Shape(),pts=[[-w/2+c,-d/2],[w/2-c
 function slab(kit,shape,depth,y,material,name){const g=new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:64});g.rotateX(-Math.PI/2);g.translate(0,y,0);return kit.direct(g,material,name);}
 function collar(kit,r,y,material='steel',tube=.08,name='shaft-ring'){const m=kit.direct(new THREE.TorusGeometry(r,tube,8,96),material,name);m.rotation.x=Math.PI/2;m.position.y=y;return m;}
 
+function softenSiloPaint(material){
+ const compile=material.onBeforeCompile;
+ material.onBeforeCompile=(shader,renderer)=>{compile(shader,renderer);shader.uniforms.museumWear.value=.18;shader.uniforms.museumPeriod.value=4.2;};
+ material.customProgramCacheKey=()=> 'museum-silo-paint-v3';
+}
 function createVapour(root){
  const count=36,positions=new Float32Array(count*3),sizes=new Float32Array(count),opacities=new Float32Array(count);
  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(positions,3).setUsage(THREE.DynamicDrawUsage));g.setAttribute('particleSize',new THREE.BufferAttribute(sizes,1).setUsage(THREE.DynamicDrawUsage));g.setAttribute('particleOpacity',new THREE.BufferAttribute(opacities,1).setUsage(THREE.DynamicDrawUsage));
@@ -71,7 +76,7 @@ function createVapour(root){
 
 export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пусковая установка · пл.'+siteId.slice(4),activation='distance'}={}){
  const k=archiveKit(root);root.name=title;
- k.mat.green.color.setHex(0x50664a);k.mat.concrete.color.setHex(0xaaa89a);k.mat.dark.color.setHex(0x242b28);
+ k.mat.green.color.setHex(0x59634c);softenSiloPaint(k.mat.green);k.mat.ballast.color.setHex(0x565b55);k.mat.concrete.color.setHex(0xaaa89a);k.mat.dark.color.setHex(0x242b28);
  // Concrete apron has a real central opening; the map terrain uses the same void.
  const apron=clippedShape(24,25,2);const hole=new THREE.Path();hole.absarc(0,0,3.2,0,Math.PI*2,true);apron.holes.push(hole);
  slab(k,apron,.28,0,'concrete','perforated-apron');
@@ -103,7 +108,7 @@ export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пус
   k.rod([4.8*c-.5*z,.99,4.8*z+.5*c],[4.8*c+.5*z,.99,4.8*z-.5*c],.09,'green','rim-lock-link');
  }
  // Low perimeter domes seen around the reference's upper assembly.
- for(const a of [.20,2.35,4.3])k.sphere(.65,6.45*Math.cos(a),.32,6.45*Math.sin(a),'dark','perimeter-dome',[1,.68,1]);
+ for(const a of [.20,2.35,4.3])k.sphere(.65,6.45*Math.cos(a),.32,6.45*Math.sin(a),'ballast','perimeter-dome',[1,.68,1]);
  // Visible nose only, held below the rim; opening the lid does not raise the missile.
  const rocket=new THREE.Group();rocket.name='ШПУ · видимая носовая часть ракеты';root.add(rocket);
  const olive=new THREE.MeshStandardMaterial({color:0x475b3a,roughness:.52,metalness:.24}),silver=new THREE.MeshStandardMaterial({color:0xadae9e,roughness:.43,metalness:.52});
@@ -114,7 +119,7 @@ export function buildSiloPad(root,{siteId='pad-109',title='Шахтная пус
  // A shallow circular cover with a narrow rectangular hinge extension.
  // This is an exterior visualization, not a dimensional mechanism model.
  const hinge=new THREE.Group();hinge.position.set(0,1.44,-5.45);hinge.name='ШПУ · шарнир крышки';root.add(hinge);
- const lid=new THREE.Group();lid.position.z=5.45;hinge.add(lid);const lk=archiveKit(lid);lk.mat.green.color.setHex(0x61684b);lk.mat.steel.color.setHex(0x8b9389);
+ const lid=new THREE.Group();lid.position.z=5.45;hinge.add(lid);const lk=archiveKit(lid);lk.mat.green.color.setHex(0x61684b);softenSiloPaint(lk.mat.green);lk.mat.steel.color.setHex(0x8b9389);
  const lidProfile=[[0,.64],[4.95,.64],[5.35,.52],[5.60,.38],[5.60,.12],[5.42,.04],[0,.04]].map(p=>new THREE.Vector2(...p));
  lk.direct(new THREE.LatheGeometry(lidProfile,80),'green','round-armoured-lid');
  for(const [r,y,t,m]of [[5.57,.13,.045,'steel'],[5.56,.37,.035,'green'],[5.15,-.08,.055,'dark'],[4.75,-.17,.045,'steel']])collar(lk,r,y,m,t,'layered-lid-ring');
