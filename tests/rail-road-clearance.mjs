@@ -11,8 +11,8 @@ function rail(a,b,intermediate=[]){
  edge.surfacePoints=[a,...intermediate,b];
  return {nodes:new Map([['a',x],['b',y]]),edges:[edge],edge};
 }
-// Ordinary railway corner becomes a tangent continuous circular-style arc,
-// while switch/crossing anchors remain exactly at their source locations.
+// Every railway turn, including previously protected switch bends, must be
+// a tangent-continuous circular-style arc. Endpoints remain exact.
 const squareRail=[V(-30,GROUND,0),V(0,GROUND,0),V(0,GROUND,30)];
 const bend=roundRailCorners(squareRail,{roads:[],radius:8});
 assert(bend.length>squareRail.length,'Rail bend must be sampled as a smooth arc');
@@ -26,10 +26,18 @@ assert(curved.length>=6,'Circular fillet must be densely sampled');
 for(const p of curved)assert(Math.abs(Math.hypot(p.x-radiusCentre.x,p.z-radiusCentre.z)-8)<1e-5,
  'Every point of the bend must lie on the same circle');
 const wideBend=roundRailCorners(squareRail,{radiusAt:()=>15,roads:[]});
-assert(wideBend.some(p=>Math.abs(p.x+12.6)<1e-5&&Math.abs(p.z)<1e-5),
+assert(wideBend.some(p=>Math.abs(p.x+13.8)<1e-5&&Math.abs(p.z)<1e-5),
  'Gagarin/254/2 fork must widen its arc as far as the adjoining segment permits');
 const pinnedBend=roundRailCorners(squareRail,{roads:[],protectedPoints:[squareRail[1]],radius:8});
-assert.equal(pinnedBend.length,3,'A source switch stays fixed');
+assert(pinnedBend.length>3,'No sharp exception for a switch or source junction');
+assert.equal(pinnedBend[0],squareRail[0]);
+assert.equal(pinnedBend.at(-1),squareRail.at(-1));
+const roadNearCorner=[{id:'road-beside-bend',width:8,points:[V(-10,.72,-2),V(10,.72,-2)]}];
+const unavoidable=roundRailCorners(squareRail,{roads:roadNearCorner,protectedPoints:[squareRail[1]],radius:8});
+assert(unavoidable.length>3,'Pavement proximity cannot switch railway smoothing off');
+const crooked=[V(-40,GROUND,-12),V(-12,GROUND,-12),V(-5,GROUND,0),V(20,GROUND,7)];
+const corrected=roundRailCorners(crooked,{radius:12});
+assert(corrected.length>crooked.length,'A zigzag railway receives sampled curve segments');
 // Parallel rail must end at least a complete road width past the road edge.
 const parallel=rail(V(-100,GROUND,1),V(100,GROUND,1),[V(0,GROUND,1)]);
 const pavement=[{id:'road-1',width:4,points:[V(-200,.72,0),V(200,.72,0)]}];
