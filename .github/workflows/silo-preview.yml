@@ -1,0 +1,52 @@
+name: Silo preview and model rotation
+on:
+  push:
+    branches: [codex/silo-preview-autorotate]
+    paths: ['src/**', 'workshop/model.html', 'tests/model-viewer-motion.mjs', '.github/workflows/silo-preview.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: silo-preview-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  preview:
+    if: github.ref == 'refs/heads/codex/silo-preview-autorotate'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/silo-preview-autorotate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Syntax check
+        run: |
+          node --check src/model-viewer.js
+          node --check src/inspection-models.js
+          node --check src/silo-pad.js
+          node --check tests/model-viewer-motion.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Check rotation and render actual silo geometry
+        run: node tests/model-viewer-motion.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: silo-preview
+          path: previews/silo-v3/
+      - name: Save review images on this draft branch only
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add previews/silo-v3
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: save silo preview and rotation checks [skip ci]"
+            git push origin HEAD:codex/silo-preview-autorotate
+          fi
