@@ -315,7 +315,7 @@ export function roundRailCorners(points,{roads=[],index=null,protectedPoints=[],
 
 // One set of instanced meshes for the whole museum, rather than hundreds of
 // independent sign meshes. Signs stand on the road approaches, not on tracks.
-export function buildRailCrossingSignals({crossings,parent}){
+export function buildRailCrossingSignals({crossings,parent,roadIndex=null}){
  const count=crossings.length*2,root=new THREE.Group();root.name='ЖД переезды · светофоры и знаки';root.userData.excludeTransportBake=true;
  if(!count){parent.add(root);return {root,count:0};}
  const components=[
@@ -339,14 +339,40 @@ export function buildRailCrossingSignals({crossings,parent}){
    const k=i*2+(side===1?1:0),along=Math.max(6,c.width*2.6),
     sideways=c.width/2+.95,x=c.x+c.tangentX*along*side+normalX*side*sideways,
     z=c.z+c.tangentZ*along*side+normalZ*side*sideways,y=c.y+.018,yaw=Math.atan2(-c.tangentX*side,-c.tangentZ*side);
-   set(0,k,x,y+1.125,z,yaw);
-   set(1,k,x,y+1.65,z,yaw);
-   set(2,k,x,y+2.05,z,yaw,Math.PI/4);
-   set(3,k,x,y+2.05,z,yaw,-Math.PI/4);
-   for(const [component,offset]of [[4,-.18],[5,.18]]){
-    set(component,k,x+Math.cos(yaw)*offset+Math.sin(yaw)*.13,y+1.65,z-Math.sin(yaw)*offset+Math.cos(yaw)*.13,yaw);
+   // Keep each crossing pole OFF all neighbouring AD surfaces, including
+   // secondary roads at complex intersections. A rail crossing does not
+   // authorize placing its signal in another roadway's driving lane.
+   const clearOfRoad=(px,pz)=>{
+    if(!roadIndex)return true;
+    for(const road of roadIndex.queryPoint({x:px,z:pz})){
+     const t=clamp(((px-road.a.x)*road.dx+(pz-road.a.z)*road.dz)/road.len2);
+     const dx=px-road.a.x-t*road.dx,dz=pz-road.a.z-t*road.dz;
+     if(Math.hypot(dx,dz)<road.width/2+.75)return false;
+    }
+    return true;
+   };
+   let px=x,pz=z;
+   if(!clearOfRoad(px,pz)){
+    let found=false;
+    for(let step=1;step<=16;step++)for(const direction of [1,-1]){
+     const shift=step*.9*direction;
+     const tx=x+normalX*shift,tz=z+normalZ*shift;
+     if(clearOfRoad(tx,tz)){px=tx;pz=tz;found=true;break;}
+    }
+    // No safe shoulder: suppress this sign rather than leaving a road hazard.
+    if(!found){for(let part=0;part<meshes.length;part++){
+     dummy.position.set(0,-100000,0);dummy.scale.set(0,0,0);
+     dummy.updateMatrix();meshes[part].setMatrixAt(k,dummy.matrix);
+    }continue;}
    }
-   set(6,k,x,y+2.65,z,yaw);
+   set(0,k,px,y+1.125,pz,yaw);
+   set(1,k,px,y+1.65,pz,yaw);
+   set(2,k,px,y+2.05,pz,yaw,Math.PI/4);
+   set(3,k,px,y+2.05,pz,yaw,-Math.PI/4);
+   for(const [component,offset]of [[4,-.18],[5,.18]]){
+    set(component,k,px+Math.cos(yaw)*offset+Math.sin(yaw)*.13,y+1.65,pz-Math.sin(yaw)*offset+Math.cos(yaw)*.13,yaw);
+   }
+   set(6,k,px,y+2.65,pz,yaw);
   }
  }
  for(const mesh of meshes)mesh.instanceMatrix.needsUpdate=true;
