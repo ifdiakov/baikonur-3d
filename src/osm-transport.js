@@ -903,6 +903,13 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   headY:RAIL_PROFILE.headY,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const pad5RailStraightening=straightenPad5Rail({railGraph,roads:markingRoads,railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const railCornerIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
+ // Wide-radius railway curves on the route from Gagarin via sites 2/254,
+ // especially at the fork around map coordinates 610–640 E, 400–420 N.
+ // Other yard throat geometry keeps its original compact radius.
+ const railForkRadiusAt=p=>{
+  const mapX=p.x/3.4+650,mapY=p.z/3.4+522.5;
+  return mapX>=590&&mapX<=655&&mapY>=379&&mapY<=433?15:2.8;
+ };
  const railCornerProtected=[...railGraph.nodes.values()].filter(node=>node.edges.length!==2).map(node=>node.position).concat([railStart.position,railEnd.position,...[...railSeams.keys()].map(id=>railGraph.nodes.get(String(id))?.position).filter(Boolean),railRoadClearance.crossings.map(hit=>V(hit.x,hit.y,hit.z))]);
  const site5HiddenRailWays=new Set(['172458462','172458465']);
  for(const way of railGraph.ways){
@@ -919,7 +926,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
      const q=p.clone();q.x=THREE.MathUtils.lerp(p.x,x0,weight);return q;
     });
    }
-   for(const visible of drawRail(way.abandoned?display:roundRailCorners(display,{index:railCornerIndex,protectedPoints:railCornerProtected,railHalfWidth:RAIL_PROFILE.ballastWidth/2}),way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
+   for(const visible of drawRail(way.abandoned?display:roundRailCorners(display,{index:railCornerIndex,protectedPoints:railCornerProtected,radiusAt:railForkRadiusAt,railHalfWidth:RAIL_PROFILE.ballastWidth/2}),way.abandoned,false,RAIL_PROFILE.gauge,way.osmId,null)){
    renderedRailWays.add(way.osmId);railPaths.push({id:'osm-rail-'+way.osmId+(run?'-'+run:''),points:[...visible],width:RAIL_PROFILE.ballastWidth,source:'OpenStreetMap',osmWayIds:[way.osmId]});run++;
   }};
   for(const e of way.segments){
