@@ -16,12 +16,12 @@ page.setDefaultTimeout(90000);
 const stat=()=>page.evaluate(()=>window.__ENCYCLOPEDIA_QA?.stats());
 try{
  await page.goto(new URL('encyclopedia.html',base).href,{waitUntil:'domcontentloaded',timeout:120000});
- await page.waitForFunction(()=>window.__ENCYCLOPEDIA_QA?.stats().items===28,null,{timeout:90000});
+ await page.waitForFunction(()=>window.__ENCYCLOPEDIA_QA?.stats().items===36,null,{timeout:90000});
  let x=await stat();
- assert.deepEqual(JSON.parse(JSON.stringify(x.mediaKinds)),{model3d:6,none:8,logo:7,wordmark:1,portrait:6});
- assert.equal(await page.locator('#cards .card').count(),28);
+ assert.deepEqual(JSON.parse(JSON.stringify(x.mediaKinds)),{model3d:7,none:15,logo:7,wordmark:1,portrait:6});
+ assert.equal(await page.locator('#cards .card').count(),36);
  // All six technology cards must show independently generated model thumbnails.
- await page.waitForFunction(()=>window.__ENCYCLOPEDIA_QA?.stats().previewCount===6,null,{timeout:90000});
+ await page.waitForFunction(()=>window.__ENCYCLOPEDIA_QA?.stats().previewCount===7,null,{timeout:90000});
  const rocketIds=['r7','soyuz','soyuzcraft','proton','energia','buran'];
  for(const id of rocketIds){
   const image=page.locator('#cards [data-article-id="'+id+'"] img.model-thumbnail');
@@ -43,7 +43,7 @@ try{
  await page.screenshot({path:out+'/soyuz-spacecraft.png'});
 
  await page.locator('#tabs button').filter({hasText:'Конструкторы'}).click();
- assert.equal(await page.locator('#cards .card').count(),6);
+ assert.equal(await page.locator('#cards .card').count(),7);
  assert.equal(await page.locator('#cards .card-media[data-kind="portrait"] img').count(),6);
  await page.locator('#cards [data-article-id="korolev"]').click();
  assert.equal(await page.locator('#detail .detail-media[data-kind="portrait"] img').count(),1);
@@ -65,7 +65,7 @@ try{
  assert.deepEqual(logs,[],'No WebGL or JavaScript errors in encyclopaedia');
  x=await stat();
  await writeFile(out+'/result.json',JSON.stringify({pass:true,stats:x,errors,logs},null,2));
- console.log('ENCYCLOPEDIA_MEDIA_BROWSER_PASS',JSON.stringify({previewCount:6,people:6,companies:8,interactive:true}));
+ console.log('ENCYCLOPEDIA_MEDIA_BROWSER_PASS',JSON.stringify({previewCount:7,people:7,companies:8,interactive:true}));
 }catch(error){
  await writeFile(out+'/failure.json',JSON.stringify({message:error.message,errors,logs,stats:await stat()},null,2));
  await page.screenshot({path:out+'/failure.png'}).catch(()=>{});

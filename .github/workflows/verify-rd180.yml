@@ -1,0 +1,37 @@
+name: RD-180 model and linked cards
+on:
+  push:
+    branches: [main, codex/rd180]
+    paths: ['assets/models/rd180/**', 'src/rd180-facts.js', 'src/model-*.js', 'src/model-viewer.css', 'src/inspection-models.js', 'src/museum-menu.js', 'src/encyclopedia-3d.js', 'index.html', 'encyclopedia.html', 'data/encyclopedia.json', 'tests/rd180-*.mjs', '.github/workflows/verify-rd180.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install test dependencies
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Verify source and catalogues
+        run: |
+          node tests/rd180-source.mjs
+          node tests/menu-catalog-contract.mjs
+          node tests/encyclopedia-media-data.mjs
+          node tests/soyuz5-source.mjs
+          node tests/proton-source.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Verify WebGL, views, mobile and related navigation
+        run: node tests/rd180-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rd180-evidence
+          path: qa-rd180/

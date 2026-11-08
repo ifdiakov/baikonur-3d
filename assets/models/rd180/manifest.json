@@ -1,0 +1,27 @@
+{
+  "assetRevision": "rd180-20261108-v1",
+  "source": {
+    "driveId": "1OmRVGpSsFwNekwvrXWLBy9JOQdFUhM4A",
+    "name": "-180.glb",
+    "bytes": 3212772,
+    "sha256": "64c5acd8b49652c3969830f2c93b36e5c614c57396b5b021f03244f8e64246c8",
+    "author": "viktor_durov",
+    "license": "CC-BY-4.0",
+    "url": "https://sketchfab.com/3d-models/180-acf0e1b46a2e48158e64015335f9fb5e"
+  },
+  "asset": {
+    "bytes": 1401176,
+    "sha256": "ccbdb37d649ddc4331267d2915a2a3287b9fa59919a0644c5a85395938b4fbb7",
+    "triangles": 26398,
+    "materials": 5,
+    "heightMetres": 3.556
+  },
+  "palette": [
+    "Satin aluminium and stainless pipes",
+    "Light nozzle shells and red source markings",
+    "Olive painted actuator",
+    "Warm steel feed lines",
+    "Dark steel fittings"
+  ],
+  "note": "Interpretive museum finish from photographs; original geometry and baked markings retained. Uniform height normalization, no engineering dimensions inferred."
+}

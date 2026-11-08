@@ -1,7 +1,9 @@
 // Historical reference records, separate from the geometry and its visual adaptation.
 // Counts always name their variant / period; unknown is never represented as zero.
-export const MODEL_FACTS_VERSION='model-facts-20261108-proton-source-v1';
+import {RD180_FACTS,RD180_SOURCES} from './rd180-facts.js?v=20261108-rd180-v1';
+export const MODEL_FACTS_VERSION='model-facts-20261108-rd180-v1';
 export const FACT_SOURCES=Object.freeze({
+ ...RD180_SOURCES,
  soyuz5First:['РКЦ «Прогресс» · первый пуск «Союза-5», 1 мая 2026','https://zakupki.samspace.ru/news/press_relizy/20638/'],
  soyuz5Baiterek:['Правительство Казахстана · «Байтерек» и «Союз-5», 5 мая 2026','https://www.gov.kz/org/mfa-unesco/press/news/details/1214360?lang=en'],
  soyuz5Flight:['ЦЭНКИ · первый испытательный пуск, 1 мая 2026','https://www.russian.space/press-tsentr/novosti/pervyy-ispytatelnyy-pusk-rakety-nositelya-novogo-pokoleniya-soyuz-5.html'],
@@ -52,6 +54,7 @@ export const FACT_SOURCES=Object.freeze({
 });
 const record=(summary,specs,developer,service,activity,facts,sources,note='')=>({summary,specs,developer,service,activity,facts,sources,note});
 export const MODEL_FACTS=Object.freeze({
+ rd180:RD180_FACTS,
  soyuz5:record('Двухступенчатая ракета-носитель среднего класса для комплекса «Байтерек» на Байконуре.',
   [['Ступени','2 · последовательное расположение'],['Полезная нагрузка на НОО','до 17 т'],['Первая ступень','РД-171МВ'],['Вторая ступень','РД-0124МС'],['Топливо','Керосин и жидкий кислород'],['Стартовый комплекс','«Байтерек» · площадка №45']],
   'АО «РКЦ «Прогресс» в кооперации предприятий ракетно-космической отрасли.',

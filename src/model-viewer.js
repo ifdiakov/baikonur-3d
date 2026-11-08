@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261108-proton-source-v1';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261108-proton-source-v1';
-import {renderModelFacts} from './model-facts-view.js?v=20261108-proton-source-v1';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261108-rd180-v1';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261108-rd180-v1';
+import {renderModelFacts} from './model-facts-view.js?v=20261108-rd180-v1';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);
@@ -11,6 +11,12 @@ const container=document.getElementById('modelView'),status=document.getElementB
 const choices=(params.get('models')||Object.keys(MODEL_CATALOG).join(',')).split(',').map(resolveModelId).filter((x,i,a)=>MODEL_CATALOG[x]&&a.indexOf(x)===i);
 if(!choices.length)choices.push('soyuz');for(const id of choices){const option=document.createElement('option');option.value=id;option.textContent=MODEL_CATALOG[id].title;select.append(option);}
 let current=choices.includes(resolveModelId(params.get('model')))?resolveModelId(params.get('model')):choices[0],model=null,renderer=null,observer=null,request=null,generation=0,raf=0,disposed=false;
+function renderIntro(id){
+ const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;renderModelFacts(spec,document.getElementById('modelFacts'),document.getElementById('modelFactSources'));document.querySelector('.intro').scrollTop=0;document.getElementById('modelSources').open=false;
+ const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.credit?'3D-модель: '+spec.credit+' ↗':(spec.sourceLabel||'Материалы модели ↗');
+}
+// The museum record remains usable even on devices without WebGL.
+renderIntro(current);
 try{
  renderer=new THREE.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;container.append(renderer.domElement);renderer.domElement.tabIndex=0;renderer.domElement.setAttribute('aria-label','Вращайте модель мышью или касанием');
  const darkBackground=getComputedStyle(document.documentElement).backgroundColor;
@@ -62,10 +68,9 @@ try{
   id=resolveModelId(id);if(!MODEL_CATALOG[id])return;
   const token=++generation;request?.abort();request=new AbortController();const controller=request,timer=setTimeout(()=>controller.abort(),45000);
   setAutoRotation(false);current=id;select.value=id;status.hidden=false;statusText.textContent='Загружаем модель…';document.getElementById('retry').hidden=true;model?.root.removeFromParent();model?.dispose();model=null;
-  const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;renderModelFacts(spec,document.getElementById('modelFacts'),document.getElementById('modelFactSources'));document.querySelector('.intro').scrollTop=0;document.getElementById('modelSources').open=false;
+  const spec=MODEL_CATALOG[id];renderIntro(id);
   document.getElementById('siteRocket').hidden=true;document.getElementById('siteRocket').setAttribute('aria-pressed','true');document.getElementById('siteRocket').textContent='Убрать ракету';vehicleVisible=true;
   document.getElementById('gear').hidden=true;document.getElementById('gear').setAttribute('aria-pressed','true');document.getElementById('gear').textContent='Убрать шасси';gear=true;
-  const source=document.getElementById('modelSource');source.hidden=!spec.source;if(spec.source)source.href=spec.source;source.textContent=spec.credit?'3D-модель: '+spec.credit+' ↗':(spec.sourceLabel||'Материалы модели ↗');
   document.getElementById('explode').hidden=true;document.getElementById('explode').setAttribute('aria-pressed','false');document.getElementById('explode').textContent='Разнести ступени';exploded=false;
   try{
    const result=await createInspectionModel(id,{signal:request.signal});if(token!==generation||disposed){result.dispose();return;}
@@ -87,4 +92,4 @@ try{
  window.__MODEL_VIEWER_QA={version:MODEL_VIEWER_VERSION,load,inspect,frame:renderFrame,step:updateFrame,stats:()=>({modelId:current,ready:!!model,choices,view,dark,exploded,gear,vehicleVisible,autoRotate:controls.autoRotate,rotationSpeed,reducedMotion:reducedMotion.matches,camera:camera.position.toArray(),target:controls.target.toArray(),size:model?box().getSize(new THREE.Vector3()).toArray():null,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,viewport:[container.clientWidth,container.clientHeight]})};
  function animateModel(time){raf=requestAnimationFrame(animateModel);renderFrame(time);}raf=requestAnimationFrame(animateModel);load(current);
  window.addEventListener('pagehide',()=>{disposed=true;generation++;request?.abort();cancelAnimationFrame(raf);observer.disconnect();reducedMotion.removeEventListener('change',motionPreferenceChanged);document.removeEventListener('visibilitychange',resetFrameClock);controls.dispose();model?.dispose();renderer.dispose();renderer.forceContextLoss();},{once:true});
-}catch(error){status.hidden=false;statusText.textContent='Для просмотра модели нужен WebGL. Обновите страницу или включите аппаратное ускорение.';console.error(error);}
+}catch(error){select.addEventListener('change',()=>renderIntro(select.value));status.hidden=false;statusText.textContent='Для просмотра модели нужен WebGL. Обновите страницу или включите аппаратное ускорение.';console.error(error);}

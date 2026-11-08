@@ -5,7 +5,8 @@
     "rocket": "Ракеты и корабли",
     "site": "Площадки и комплексы",
     "organization": "Предприятия",
-    "person": "Конструкторы"
+    "person": "Конструкторы",
+    "engine": "Ракетные двигатели"
   },
   "items": [
     {
@@ -107,7 +108,8 @@
         "glushko",
         "energiaorg",
         "site110",
-        "site112"
+        "site112",
+        "rd170-family"
       ],
       "sources": [
         "https://buran.ru/htm/konstru2.htm"
@@ -213,7 +215,8 @@
       "links": [
         "energia",
         "energiaorg",
-        "glushko"
+        "glushko",
+        "rd170-family"
       ],
       "sources": [
         "https://buran.ru/htm/konstru2.htm"
@@ -399,12 +402,16 @@
       "type": "organization",
       "name": "НПО Энергомаш",
       "period": "Историческая школа ЖРД",
-      "summary": "Разработчик жидкостных ракетных двигателей для различных носителей; карточки конкретных двигателей и кооперации предстоит связать отдельно.",
+      "summary": "НПО «Энергомаш» имени академика В. П. Глушко, Химки — разработчик и изготовитель жидкостных ракетных двигателей, в том числе РД-180 для Atlas III и Atlas V. Разработка РД-180 велась под руководством Бориса Каторгина.",
       "links": [
-        "glushko"
+        "glushko",
+        "rd180",
+        "rd170-family",
+        "katorgin"
       ],
       "sources": [
-        "https://www.npoenergomash.ru/"
+        "https://www.ulalaunch.com/rockets/atlas-v",
+        "https://history.mai.ru/personalities/item.php?id=120324"
       ],
       "media": {
         "kind": "logo",
@@ -502,14 +509,17 @@
       "type": "person",
       "name": "Валентин Петрович Глушко",
       "period": "1908–1989",
-      "summary": "Генеральный конструктор НПО «Энергия», руководитель разработки системы «Энергия—Буран».",
+      "summary": "Генеральный конструктор НПО «Энергия», руководитель разработки системы «Энергия—Буран». Основатель конструкторской школы НПО «Энергомаш». Связан с РД-180 через предшествующее семейство двигателей; разработка самого РД-180 относится к 1990-м годам и велась после его смерти.",
       "links": [
         "energiaorg",
         "energia",
-        "energomash"
+        "energomash",
+        "rd170-family"
       ],
       "sources": [
-        "https://buran.ru/htm/konstru2.htm"
+        "https://buran.ru/htm/konstru2.htm",
+        "https://history.mai.ru/personalities/item.php?id=120324",
+        "https://www.ulalaunch.com/docs/default-source/rockets/atlasvusersguide2010a.pdf?sfvrsn=f84bb59e_2"
       ],
       "media": {
         "kind": "portrait",
@@ -559,6 +569,263 @@
         "source": "https://commons.wikimedia.org/wiki/File:Lozino-Lozinsky.jpg",
         "license": "CC BY-SA 4.0"
       }
+    },
+    {
+      "id": "rd180",
+      "type": "engine",
+      "name": "РД-180",
+      "period": "Первое применение — 2000",
+      "summary": "Двухкамерный кислородно-керосиновый двигатель первой ступени Atlas III и Atlas V. Разработан НПО «Энергомаш» на основе семейства РД-170/171. Разработкой руководил Борис Иванович Каторгин. Две камеры питаются от общего турбонасосного агрегата; направление тяги меняется качанием камер. На Байконуре РД-180 не применялся. Связь с макетом — через семейство РД-170/171, работавшее на «Энергии» и «Зените». Номинальные тяга, импульс и диапазон дросселирования — по руководству Atlas V (2010). Масса указана так, как её публикует ULA, без переименования в «сухую». Окраска — музейная интерпретация фотографий; геометрия исходной модели сохранена.",
+      "links": [],
+      "sources": [
+        "https://www.ulalaunch.com/rockets/atlas-v",
+        "https://www.ulalaunch.com/docs/default-source/rockets/atlasvusersguide2010a.pdf?sfvrsn=f84bb59e_2",
+        "https://history.mai.ru/personalities/item.php?id=120324",
+        "https://mai.ru/press/news/detail.php?ID=51883",
+        "https://commons.wikimedia.org/wiki/File:RD-180.jpg",
+        "https://creativecommons.org/licenses/by/4.0/"
+      ],
+      "specs": [
+        [
+          "Тип",
+          "Жидкостный, замкнутая схема"
+        ],
+        [
+          "Компоненты топлива",
+          "Жидкий кислород + керосин RP-1"
+        ],
+        [
+          "Камеры сгорания",
+          "2, общий турбонасосный агрегат"
+        ],
+        [
+          "Тяга у земли / в вакууме",
+          "3 827 / 4 152 кН"
+        ],
+        [
+          "Удельный импульс у земли / в вакууме",
+          "311,3 / 337,8 с"
+        ],
+        [
+          "Дросселирование",
+          "47–100% номинальной тяги"
+        ],
+        [
+          "Длина",
+          "3,56 м (140 дюймов)"
+        ],
+        [
+          "Масса по данным ULA",
+          "≈5 480 кг (12 081 фунт)"
+        ]
+      ],
+      "relationGroups": [
+        {
+          "title": "Связанные изделия",
+          "items": [
+            [
+              "atlas3",
+              "Atlas III",
+              "Первая ступень"
+            ],
+            [
+              "atlas5",
+              "Atlas V",
+              "Первая ступень"
+            ],
+            [
+              "rd170-family",
+              "РД-170 / РД-171",
+              "Исходное семейство"
+            ],
+            [
+              "energia",
+              "«Энергия»",
+              "Родство через РД-170"
+            ]
+          ]
+        },
+        {
+          "title": "Конструкторы",
+          "items": [
+            [
+              "katorgin",
+              "Борис Каторгин",
+              "Руководитель разработки РД-180"
+            ],
+            [
+              "glushko",
+              "Валентин Глушко",
+              "Основатель конструкторской школы"
+            ]
+          ]
+        },
+        {
+          "title": "Предприятие",
+          "items": [
+            [
+              "energomash",
+              "НПО «Энергомаш»",
+              "Разработка и производство"
+            ]
+          ]
+        },
+        {
+          "title": "Стартовые площадки Atlas V",
+          "items": [
+            [
+              "slc41",
+              "SLC-41 · Канаверал",
+              "Применение РД-180"
+            ],
+            [
+              "slc3e",
+              "SLC-3E · Ванденберг",
+              "Исторические пуски Atlas V"
+            ]
+          ]
+        },
+        {
+          "title": "Байконур · связь через семейство",
+          "items": [
+            [
+              "site110",
+              "Площадка №110",
+              "«Энергия» · РД-170"
+            ],
+            [
+              "site45",
+              "Площадка №45",
+              "«Зенит» · РД-171"
+            ]
+          ]
+        }
+      ],
+      "viewerId": "rd180",
+      "media": {
+        "kind": "model3d",
+        "previewId": "rd180",
+        "viewerId": "rd180",
+        "note": "Исходная 3D-модель: viktor_durov, CC BY 4.0. Окраска и адаптация RocketTrip. Источник и лицензия — в подробном 3D-просмотре."
+      }
+    },
+    {
+      "id": "atlas3",
+      "type": "rocket",
+      "name": "Atlas III",
+      "period": "Первый пуск — 24 мая 2000",
+      "summary": "Американская ракета-носитель, на которой РД-180 впервые применили в полёте. Двигатель устанавливался на первой ступени; верхняя ступень — Centaur.",
+      "links": [
+        "rd180",
+        "atlas5",
+        "energomash"
+      ],
+      "sources": [
+        "https://mai.ru/press/news/detail.php?ID=51883",
+        "https://www.ulalaunch.com/docs/default-source/rockets/atlasvusersguide2010a.pdf?sfvrsn=f84bb59e_2"
+      ]
+    },
+    {
+      "id": "atlas5",
+      "type": "rocket",
+      "name": "Atlas V",
+      "period": "Первый пуск — 21 августа 2002",
+      "summary": "Ракета-носитель с первой ступенью Common Core Booster и одним двухкамерным РД-180. Топливо первой ступени — кислород и керосин; верхняя ступень Centaur использует кислород и водород. Площадки применения: SLC-41 на мысе Канаверал и SLC-3E на базе Ванденберг.",
+      "links": [
+        "rd180",
+        "atlas3",
+        "slc41",
+        "slc3e",
+        "energomash"
+      ],
+      "sources": [
+        "https://www.ulalaunch.com/rockets/atlas-v",
+        "https://www.ulalaunch.com/docs/default-source/rockets/atlasvusersguide2010a.pdf?sfvrsn=f84bb59e_2",
+        "https://mai.ru/press/news/detail.php?ID=51883"
+      ]
+    },
+    {
+      "id": "rd170-family",
+      "type": "engine",
+      "name": "Семейство РД-170 / РД-171",
+      "period": "«Энергия» и «Зенит»",
+      "summary": "Четырёхкамерные двигатели НПО «Энергомаш»: РД-170 применялся на боковых блоках «Энергии», РД-171 — на первой ступени «Зенита». Их узлы и решения стали основой двухкамерного РД-180. Это родство двигателей, а не установка РД-180 на советские носители.",
+      "links": [
+        "rd180",
+        "energia",
+        "site110",
+        "site45",
+        "glushko",
+        "katorgin",
+        "energomash"
+      ],
+      "sources": [
+        "https://www.ulalaunch.com/docs/default-source/rockets/atlasvusersguide2010a.pdf?sfvrsn=f84bb59e_2",
+        "https://www.buran.ru/htm/bigbook.htm",
+        "https://yuzhmash.com/en/products/launch-vehicles/zenit-3slb/"
+      ]
+    },
+    {
+      "id": "katorgin",
+      "type": "person",
+      "name": "Борис Иванович Каторгин",
+      "period": "Руководитель разработки РД-180",
+      "summary": "Учёный и конструктор ракетных двигателей. Генеральный конструктор НПО «Энергомаш» в 1991–2010 годах; под его руководством создан РД-180 для ракет Atlas. Участвовал также в развитии семейства РД-170/171.",
+      "links": [
+        "rd180",
+        "energomash",
+        "rd170-family"
+      ],
+      "sources": [
+        "https://history.mai.ru/personalities/item.php?id=120324",
+        "https://mai.ru/press/news/detail.php?ID=51883"
+      ]
+    },
+    {
+      "id": "slc41",
+      "type": "site",
+      "name": "SLC-41 · мыс Канаверал",
+      "period": "Флорида, США · старт Atlas V",
+      "summary": "Стартовый комплекс Atlas V на мысе Канаверал. Связь с РД-180 прямая: двигатель работает на первой ступени ракеты. Площадка находится в США и не входит в территорию Байконура.",
+      "links": [
+        "atlas5",
+        "rd180"
+      ],
+      "sources": [
+        "https://www.ulalaunch.com/rockets/atlas-v",
+        "https://www.ulalaunch.com/docs/default-source/rockets/atlasvusersguide2010a.pdf?sfvrsn=f84bb59e_2",
+        "https://www.nasa.gov/commercial-crew-program-press-kit/"
+      ]
+    },
+    {
+      "id": "slc3e",
+      "type": "site",
+      "name": "SLC-3E · Ванденберг",
+      "period": "Калифорния, США · исторический старт Atlas V",
+      "summary": "Стартовый комплекс, с которого запускали Atlas V с двигателем РД-180 на первой ступени. Западное побережье использовалось для соответствующих орбитальных направлений. Карточка описывает историческое применение Atlas V, а не нынешнее оснащение площадки.",
+      "links": [
+        "atlas5",
+        "rd180"
+      ],
+      "sources": [
+        "https://www.ulalaunch.com/docs/default-source/rockets/atlasvusersguide2010a.pdf?sfvrsn=f84bb59e_2"
+      ]
+    },
+    {
+      "id": "site45",
+      "type": "site",
+      "name": "Площадка №45 · Байконур",
+      "period": "Исторический комплекс «Зенит»",
+      "summary": "Наземный старт ракет семейства «Зенит». На первой ступени применялось семейство РД-171, родственное РД-180. Сам РД-180 здесь не эксплуатировался.",
+      "links": [
+        "rd170-family",
+        "rd180",
+        "energomash"
+      ],
+      "sources": [
+        "https://yuzhmash.com/en/products/launch-vehicles/zenit-3slb/",
+        "https://www.russian.space/o-predpriyatii/filialy/nii-sk.html"
+      ]
     }
   ]
 }

@@ -104,6 +104,7 @@ function modelFor(id){
  else if(id==='proton')makeProton(root);
  else if(id==='energia')makeEnergia(root);
  else if(id==='buran')makeBuran(root);
+ else if(id==='rd180')return root; // Empty loading stage; never substitute another engine.
  else return null;
  return root;
 }
@@ -116,6 +117,7 @@ function fit(camera,controls,root,margin=1.4){
  root.updateMatrixWorld(true,true);
  const bounds=new THREE.Box3().setFromObject(root);
  const center=bounds.getCenter(new THREE.Vector3()),size=bounds.getSize(new THREE.Vector3());
+ if(bounds.isEmpty()){center.set(0,1.8,0);size.set(3.2,3.56,1.8);}
  const radius=Math.max(3,size.length()*.52);
  const distance=radius/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))*margin;
  camera.position.copy(center).add(new THREE.Vector3(distance*.64,distance*.26,distance*.77));
@@ -142,12 +144,14 @@ export function createEncyclopedia3D(){
    for(const id of ids){
     if(disposed)return;
     if(!previewCache.has(id)){
-     const root=modelFor(id);
+     const exact=id==='rd180'?await (await import('./inspection-models.js?v=20261108-rd180-v1')).createInspectionModel(id):null;
+     const root=exact?.root||modelFor(id);
      if(!root)continue;
      scene.add(root);fit(camera,controls,root,1.22);
      renderer.render(scene,camera);
      previewCache.set(id,renderer.domElement.toDataURL('image/webp',.84));
      scene.remove(root);
+     exact?.dispose();
     }
     ready(id,previewCache.get(id));
     await nextTurn();
@@ -211,7 +215,7 @@ export function createEncyclopedia3D(){
     // rather than silently showing a different historical vehicle.
     (async()=>{
       try{
-       const {createInspectionModel}=await import('./inspection-models.js?v=20261108-proton-source-v1');
+       const {createInspectionModel}=await import('./inspection-models.js?v=20261108-rd180-v1');
        const exact=await createInspectionModel(exactId,{signal:abort.signal});
        if(active!==state||abort.signal.aborted){exact.dispose();return;}
        scene.remove(root);state.root=exact.root;scene.add(exact.root);state.exact=exact;

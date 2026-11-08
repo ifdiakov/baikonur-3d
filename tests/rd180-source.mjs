@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {NodeIO} from '@gltf-transform/core';
+import {ALL_EXTENSIONS} from '@gltf-transform/extensions';
+import {MeshoptDecoder} from 'meshoptimizer';
+import {MODEL_CATALOG,modelsForKnowledge,modelsForObject} from '../src/model-catalog.js';
+import {FACT_SOURCES} from '../src/model-facts.js';
+const bytes=await readFile('assets/models/rd180/model-v1.glb'),manifest=JSON.parse(await readFile('assets/models/rd180/manifest.json'));
+assert.equal(createHash('sha256').update(bytes).digest('hex'),manifest.asset.sha256);assert(bytes.length<1500000);
+await MeshoptDecoder.ready;const doc=await new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.decoder':MeshoptDecoder}).readBinary(bytes),r=doc.getRoot();
+assert.match(r.getAsset().copyright,/viktor_durov.*CC BY 4.0/);assert.equal(r.listMaterials().length,5);assert.equal(r.listTextures().length,2);
+let triangles=0;const lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity],v=[];
+for(const n of r.listNodes())for(const p of n.getMesh()?.listPrimitives()||[]){triangles+=p.getIndices().getCount()/3;const a=p.getAttribute('POSITION'),m=n.getWorldMatrix();for(let i=0;i<a.getCount();i++){a.getElement(i,v);for(let j=0;j<3;j++){const x=m[j]*v[0]+m[j+4]*v[1]+m[j+8]*v[2]+m[j+12];lo[j]=Math.min(lo[j],x);hi[j]=Math.max(hi[j],x);}}}
+assert.equal(triangles,26398);assert(Math.abs(hi[1]-lo[1]-3.556)<.002);assert(Math.abs(lo[1])<.001);
+assert(r.listMaterials().every(m=>m.getEmissiveFactor().every(x=>x===0)));assert(r.listMaterials().some(m=>m.getBaseColorFactor()[1]>m.getBaseColorFactor()[0]*1.4));
+const spec=MODEL_CATALOG.rd180;assert.equal(spec.kind,'engine');assert.equal(spec.assetRevision,manifest.assetRevision);assert(spec.facts.sources.every(id=>FACT_SOURCES[id]));assert.deepEqual(modelsForKnowledge('rd180'),['rd180']);assert(!modelsForObject({id:'pad-45'}).includes('rd180'));
+const enc=JSON.parse(await readFile('data/encyclopedia.json')),map=new Map(enc.items.map(x=>[x.id,x]));assert.equal(map.size,enc.items.length);
+for(const item of enc.items)for(const id of item.links||[])assert(map.has(id),`${item.id} -> ${id}`);
+for(const group of spec.facts.related)for(const[id]of group.items)assert(map.has(id),id);
+assert.deepEqual(map.get('rd180').specs,spec.facts.specs);assert.deepEqual(map.get('rd180').relationGroups,spec.facts.related);
+assert.equal(map.get('katorgin').type,'person');assert.equal(map.get('energomash').type,'organization');assert.equal(map.get('slc41').type,'site');
+console.log('RD180_SOURCE_OK',JSON.stringify({bytes:bytes.length,triangles,materials:5,height:hi[1]-lo[1],related:spec.facts.related.flatMap(x=>x.items).length}));

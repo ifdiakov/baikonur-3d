@@ -1,7 +1,8 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
-import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261108-proton-source-v1';
+import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261108-rd180-v1';
 export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION;
 const definitions={
+ rd180:{title:'РД-180',subtitle:'НПО «Энергомаш» · двигатель Atlas',kind:'engine',asset:'rd180/model-v1.glb',assetRevision:'rd180-20261108-v1',source:'https://sketchfab.com/3d-models/180-acf0e1b46a2e48158e64015335f9fb5e',credit:'viktor_durov · CC BY 4.0 · материалы и адаптация RocketTrip',viewLabels:{front:'Сопла',side:'Трубопроводы',top:'Агрегаты'},views:{front:{target:[0,.65,0],offset:[1,-1.2,3.7]},side:{target:[0,2.25,0],offset:[3.7,1,3.6]},top:{target:[0,2.7,0],offset:[2.3,2.8,2.8]}}},
  soyuz5:{title:'Союз-5',subtitle:'Байтерек · площадка №45',kind:'rocket',asset:'rockets/soyuz5.glb',yaw:Math.PI,assetRevision:'soyuz5-20261108-v1',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/soyuz5-source-model.md',sourceLabel:'Источники модели ↗',viewLabels:{front:'Двигатели',side:'Стык ступеней',top:'Обтекатель'},views:{front:{target:[0,2,0],offset:[6,-5,-9]},side:{target:[0,38.5,0],offset:[8,1.8,-12]},top:{target:[0,55,0],offset:[12,3,-18]}}},
  'pua-100':{title:'ПУА-100',subtitle:'Юбилейный · погрузочный агрегат',kind:'site',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/pua-100-reference.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,25,20],offset:[68,15,75]},side:{target:[0,26,9],offset:[60,8,-8]}}},
  'cyclone-2':{title:'Циклон-2',subtitle:'Площадка №90 · Байконур',kind:'rocket',asset:'rockets/cyclone-2.glb'},

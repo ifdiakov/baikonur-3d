@@ -73,7 +73,7 @@ const thumbs=new Map(),map=new Map(),safeUrl=value=>{
 };
 let modelController=null,modelPromise=null,previewStarted=false;
 try{
- const response=await fetch('./data/encyclopedia.json?v=20261108-proton-source-v1');
+ const response=await fetch('./data/encyclopedia.json?v=20261108-rd180-v1');
  if(!response.ok)throw Error('HTTP '+response.status);
  data=await response.json();
 }catch(e){$('#cards').textContent='Не удалось загрузить энциклопедию: '+e.message;return}
@@ -138,7 +138,7 @@ function appendMediaCredit(detail,x){
 }
 function warm3D(){
  if(modelPromise)return modelPromise;
- modelPromise=import('./src/encyclopedia-3d.js?v=20261108-proton-source-v1')
+ modelPromise=import('./src/encyclopedia-3d.js?v=20261108-rd180-v1')
  .then(m=>{
   modelController=m.createEncyclopedia3D();
   if(!previewStarted){
@@ -200,6 +200,16 @@ function render(){
  if(media)detail.append(media);
  detail.append(el('span','meta',data.types[x.type]),el('h2','',x.name),el('p','small',x.period),el('p','',x.summary));
  appendMediaCredit(detail,x);
+ if(x.specs?.length){
+  detail.append(el('h3','','Характеристики'));const list=el('dl','article-specs');
+  for(const [label,value]of x.specs){list.append(el('dt','small',label),el('dd','',value));}detail.append(list);
+ }
+ if(x.viewerId){const link=el('a','article-viewer-link','Открыть подробную 3D-модель →');link.href='./workshop/model.html?model='+encodeURIComponent(x.viewerId);detail.append(link);}
+ if(x.relationGroups?.length){
+  for(const group of x.relationGroups){detail.append(el('h3','',group.title));const links=el('div','related');
+   for(const [id,label,relation]of group.items){if(!map.has(id))continue;const b=el('button','',label+' · '+relation);b.type='button';b.dataset.relatedId=id;b.onclick=()=>open(id);links.append(b);}detail.append(links);
+  }
+ }
  if(x.links?.length){
   detail.append(el('h3','','Связанные статьи'));
   const group=el('div','related');
