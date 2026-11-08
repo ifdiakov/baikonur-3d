@@ -5,12 +5,12 @@ import * as THREE from 'three';
 export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045,scale=3.4}){
  const group=new THREE.Group();group.name='Координатная сетка · музей';group.visible=false;
  group.renderOrder=30;scene.add(group);
- const minor=[],major=[],axisY=2.4;
+ const fine=[],minor=[],major=[],axisY=2.4;
  const line=(arr,x1,z1,x2,z2)=>arr.push(x1,axisY,z1,x2,axisY,z2);
  const toX=x=>(x-width/2)*scale,toZ=y=>(y-height/2)*scale;
- for(let x=0;x<=width;x+=25)line(x%100===0?major:minor,toX(x),toZ(0),toX(x),toZ(height));
- for(let y=0;y<=height;y+=25)line(y%100===0?major:minor,toX(0),toZ(y),toX(width),toZ(y));
- for(const [segments,color,opacity] of [[minor,0x86c9d6,.26],[major,0xffdc86,.68]]){
+ for(let x=0;x<=width;x+=5)line(x%100===0?major:x%25===0?minor:fine,toX(x),toZ(0),toX(x),toZ(height));
+ for(let y=0;y<=height;y+=5)line(y%100===0?major:y%25===0?minor:fine,toX(0),toZ(y),toX(width),toZ(y));
+ for(const [segments,color,opacity] of [[fine,0x91c6d0,.13],[minor,0x86c9d6,.38],[major,0xffdc86,.78]]){
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(segments,3));
   const mesh=new THREE.LineSegments(geometry,new THREE.LineBasicMaterial({color,transparent:true,opacity,depthWrite:false}));
   mesh.frustumCulled=false;group.add(mesh);
@@ -69,6 +69,6 @@ export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045
  });
  toggle?.addEventListener('click',()=>setEnabled(!enabled));
  if(new URLSearchParams(location.search).get('grid')==='1')setEnabled(true);
- window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v1'};
+ window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v2-fine5'};
  return {setEnabled,isEnabled:()=>enabled,group};
 }
