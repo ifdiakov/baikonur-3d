@@ -39,8 +39,6 @@
  display:block;width:0;height:100%;background:#ebae7c;border-radius:3px
 }
 .museum-tour-spotlight{outline:2px solid rgba(241,181,119,.85)!important;outline-offset:3px;box-shadow:0 0 0 5px rgba(240,183,126,.1)!important}
-.museum-tour-replay{display:block;width:100%;padding:9px 11px;margin-top:9px;border:1px solid rgba(191,211,220,.25);background:rgba(68,95,109,.2);color:inherit;text-align:left;border-radius:7px;font:700 11px/1.45 Montserrat,Arial,sans-serif;cursor:pointer}
-.museum-tour-replay:hover,.museum-tour-replay:focus-visible{border-color:#efb880;outline-color:#efb880}
 @media(max-width:850px){
  #museumOnboarding .museum-tour__hint{top:auto;bottom:clamp(115px,15vh,155px);width:calc(100vw - 30px);gap:5px}
  #museumOnboarding .museum-tour__title{font-size:13px}
