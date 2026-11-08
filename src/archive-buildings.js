@@ -5,6 +5,7 @@ import {registerFacilityFloodlights} from './facility-light-anchors.js?v=2026103
 import {buildMzkSdi} from './mzk-sdi.js?v=20261102-site2-photo-v3';
 import {buildAirport} from './airport-models.js?v=20261102-site2-photo-v3';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
+import {buildSite31Observation,SITE31_NP_VERSION} from './site31-observation-platform.js?v=20261109-royaltent-rt100-v1';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
 export function protonHalls(root){
  const k=archiveKit(root),P=imageFrame([680,450],.60);const hall=(p,w,d,h,opts={})=>{const[x,z]=P(p);return k.hall({x,z,w:w*.6,d:d*.6,h,yaw:imageAxisYaw([0,0],[260,198]),...opts});};
@@ -26,8 +27,19 @@ export function yubileiny(root){return buildAirport(root,'yubileiny');}
 export {buildCheckpoint7 as checkpoint7} from './checkpoint7.js?v=20261103-checkpoint7-flat-v2';
 
 export function observationPoint(root){
- const k=archiveKit(root);function tent(cx,cz,w,d){const r=w/2,y=2.6,segments=24;for(let i=0;i<segments;i++){const a=i/segments*Math.PI,b=(i+1)/segments*Math.PI;k.quad([cx+r*Math.cos(a),y+r*.47*Math.sin(a),cz-d/2],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),cz-d/2],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),cz+d/2],[cx+r*Math.cos(a),y+r*.47*Math.sin(a),cz+d/2],'white','shelter-fabric');}for(let z=cz-d/2;z<=cz+d/2+.1;z+=d/6){for(let i=0;i<12;i++){const a=i/12*Math.PI,b=(i+1)/12*Math.PI;k.rod([cx+r*Math.cos(a),y+r*.47*Math.sin(a),z],[cx+r*Math.cos(b),y+r*.47*Math.sin(b),z],.07,'steel','arched-frame');}for(const s of[-1,1])k.rod([cx+s*r,0,z],[cx+s*r,y,z],.08,'steel','shelter-post');}for(const s of[-1,1])k.box(.05,2.4,d,cx+s*r,1.2,cz,'light','shelter-side-screen');}
- tent(-15,0,15,20);tent(13,0,20,25);for(const x of[-18,-12,8,15])for(const z of[-5,3]){k.box(3,.18,1,x,1.2,z,'light','buffet-table');for(const dx of[-1,1])k.rod([x+dx,0,z],[x+dx,1.2,z],.055,'steel','table-leg');}for(const x of[-34,34]){k.cyl(.1,8,x,4,-15,'steel','flagpole');k.box(3,1.8,.04,x+1.5,6.8,-15,'blue','flag');}return k.finish();
+ // The archive and the live map share one model. The archive is framed in
+ // physical metres, so remove only the map's uniform display scale.
+ const model=buildSite31Observation({plan:{position:new THREE.Vector3(),rotationY:0,source:'owner-layout-in-archive-local-frame'}});
+ model.scale.setScalar(1);root.add(model);
+ const platform=model.userData.observationPlatform,counts={};
+ for(const feature of platform.features)counts[feature]=(counts[feature]||0)+1;
+ let meshes=0;model.traverse(o=>{if(o.isMesh)meshes++;});
+ root.userData.observationPlatform=platform;
+ root.userData.archiveCutouts=[];
+ root.updateWorldMatrix(true,true);
+ return {features:counts,primitiveCount:platform.features.length,meshCount:meshes,batches:meshes,
+  cutouts:[],boundsSize:new THREE.Box3().setFromObject(model).getSize(new THREE.Vector3()).toArray(),
+  observationPlatform:{version:SITE31_NP_VERSION,widthMetres:platform.widthMetres,lengthMetres:platform.lengthMetres,shelters:platform.shelters}};
 }
 export function nedelinRuins(root){
  const k=archiveKit(root);k.box(66,.35,36,0,-.1,0,'concrete','ruin-floor');for(const x of[-32,32])k.box(1,5,35,x,2.5,0,'light','ruin-sidewall');for(const x of[-27,-12,3,18,31])k.box(2.8,5,1.1,x,2.5,18,'light','ruin-front-jamb');k.box(66,1.1,1.1,0,5.1,18,'light','ruin-front-lintel');k.box(65,5,1,0,2.5,-18,'concrete','ruin-backwall');for(const[x,z,w,d]of[[-24,-9,16,17],[21,-7,22,20]])k.box(w,.5,d,x,5.4,z,'concrete','broken-roof-slab');for(let i=0;i<48;i++)k.box(1+i%4,.3+i%3*.2,1+i%5,-35+i*23%73,.2,-24+i*41%49,'concrete','rubble');for(let i=0;i<14;i++)k.rod([-30+i*4,4.8,18],[-29+i*4,6.5,17],.08,'rust','exposed-rebar');const physical={units:'metres',localScale:1,modelFloorMetres:[66,36],wallHeightMetres:5,dimensionsSurveyed:false,interpretation:'Photo-guided ruin exhibit, not the complete Site 41 launch complex or a measured R-16 launcher.'};root.userData.physicalUnits=physical;return {...k.finish(),physical};

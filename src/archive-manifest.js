@@ -35,7 +35,7 @@ export const ARCHIVE_MAP=[
  {id:'city',kind:'city',title:'Город Байконур · спутниковый план',scale:.20,yaw:0,satellite:'1URocxjo-ZAYAWIIrBhBGMfwx1BKhKkGT',orientation:'image-traced',completeness:'first-pass'}
 ];
 export const ARCHIVE_GALLERY=[
- {id:'np-rockettrip',kind:'observation',title:'НП RocketTrip',folder:'1WO0cKko5TsAK26X1xpR9-sOo5auDDtGR',photo:'1X6ZPCmt5y2xr0dQnyc2rFHyljd8r9eF_',note:'Модель двух укрытий. Точная точка и азимут на карте не подтверждены.'},
+ {id:'np-rockettrip',kind:'observation',title:'НП RocketTrip',folder:'1WO0cKko5TsAK26X1xpR9-sOo5auDDtGR',photo:'1X6ZPCmt5y2xr0dQnyc2rFHyljd8r9eF_',note:'Наблюдательная площадка RocketTrip у станции Донская: территория 50 × 35 м, два арочных шатра ARCH DUNE RT100/10, парковка, флагштоки и санитарный блок.'},
  {id:'kpp-7',kind:'checkpoint',title:'КПП №7',folder:'1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl',photo:'1WS2Ofp7NbMl4CV65HqNEWpfST-bfzivk',note:'Фасад и проезды по пяти фотографиям. На карте — дорога от города между мостом и поворотом на «Сатурн».'},
  {id:'pad-41-study',kind:'nedelin',title:'Площадка №41 · мемориал и руины',folder:SITE41_REFERENCE.folder,photo:'17h2xzjy84ZlM5vUu2FIYGV-iuH2UyhNI',note:'План комплекса по спутниковому снимку и семи наземным фотографиям: мемориал, командный пост, стартовые площадки и сохранившиеся сооружения.'},
  {id:'pad-2-study',kind:'buran',title:'Площадка №2 · музейный «Буран»',folder:'1sxMZCp2P-IHgOY9tg2XggRX15m_HF3sO',photo:'1Qtezy9yYrK5Fvv4ZBtlRCB8FvomKeYlO',note:'Отдельный экспонат. Не смешивается с обозначениями площадок 2А и 2Б.'},

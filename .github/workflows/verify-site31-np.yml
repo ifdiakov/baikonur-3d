@@ -1,10 +1,15 @@
 name: RocketTrip observation platform
 on:
   push:
-    branches: [main, codex/np-redraw]
+    branches: [main, codex/np-redraw, codex/np-royaltent-detail]
     paths:
       - 'index.html'
       - 'src/site31-observation-platform.js'
+      - 'src/royaltent-rt100.js'
+      - 'src/archive-buildings.js'
+      - 'src/archive-models.js'
+      - 'src/archive-manifest.js'
+      - 'archive.html'
       - 'src/osm-transport.js'
       - 'tests/fixtures/np-photo.html'
       - 'src/evening-scene.js'
@@ -15,6 +20,11 @@ on:
     paths:
       - 'index.html'
       - 'src/site31-observation-platform.js'
+      - 'src/royaltent-rt100.js'
+      - 'src/archive-buildings.js'
+      - 'src/archive-models.js'
+      - 'src/archive-manifest.js'
+      - 'archive.html'
       - 'src/osm-transport.js'
       - 'tests/fixtures/np-photo.html'
       - 'src/evening-scene.js'
@@ -42,6 +52,7 @@ jobs:
       - name: Check the NP layout and road-adjacent placement
         run: |
           node --check src/site31-observation-platform.js
+          node --check src/royaltent-rt100.js
           node tests/site31-observation.mjs
       - name: Serve the museum
         run: |

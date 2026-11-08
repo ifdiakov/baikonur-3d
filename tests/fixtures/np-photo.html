@@ -1,19 +1,90 @@
-<!doctype html><html lang="ru"><meta charset="utf-8"><title>НП RocketTrip · проверка модели</title>
-<style>body{margin:0;background:#d9d7cc;font:14px Arial;color:#303b39}canvas{display:block}header{position:absolute;left:32px;top:28px;pointer-events:none}h1{margin:0 0 6px;font-size:24px}p{margin:0;color:#666c65}</style>
-<header><h1>НП RocketTrip</h1><p>50 × 35 м · два арочных шатра 10 × 10 м</p></header>
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<title>НП RocketTrip · проверка модели</title>
+<style>
+body{margin:0;background:#d9d7cc;font:14px Arial;color:#303b39}canvas{display:block}
+header{position:absolute;left:28px;top:24px;pointer-events:none;max-width:calc(100vw - 56px)}
+h1{margin:0 0 6px;font-size:23px;font-weight:600}p{margin:0;color:#666c65;font-size:13px}
+body.night header{color:#f3eee2}body.night p{color:#c2cbd5}
+</style>
+<header><h1>НП RocketTrip</h1><p id="caption">50 × 35 м · два шатра ARCH DUNE RT100/10</p></header>
 <script type="importmap">{"imports":{"three":"../../src/vendor/three-r160/build/three.module.js","three/addons/":"../../src/vendor/three-r160/examples/jsm/"}}</script>
 <script type="module">
 import * as THREE from 'three';
 import {buildSite31Observation} from '../../src/site31-observation-platform.js';
-const scene=new THREE.Scene();scene.background=new THREE.Color('#d9d7cc');
-const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.body.append(renderer.domElement);
-const camera=new THREE.PerspectiveCamera(37,innerWidth/innerHeight,.01,100);
-const root=buildSite31Observation({plan:{position:new THREE.Vector3(),rotationY:0,source:'photo-fixture'}});scene.add(root);
-const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc6beaa,roughness:1}));ground.rotation.x=-Math.PI/2;ground.position.y=-.04;ground.receiveShadow=true;scene.add(ground);
+import {createRoyalTentRT100Geometry} from '../../src/royaltent-rt100.js';
+import {MUSEUM_METRE} from '../../src/museum-scale.js';
+
+const scene=new THREE.Scene();
+const renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(1);
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+document.body.append(renderer.domElement);
+const camera=new THREE.PerspectiveCamera(37,innerWidth/innerHeight,.005,100);
+const root=buildSite31Observation({plan:{position:new THREE.Vector3(),rotationY:0,source:'photo-fixture'}});
+scene.add(root);
+
+// Use the production geometry factory and the production materials for the
+// frame-only views. Hiding the fabric here must not replace the real trusses.
+const frame=new THREE.Group();
+frame.scale.setScalar(MUSEUM_METRE);frame.position.set(-11.65*MUSEUM_METRE,.16*MUSEUM_METRE,-5.5*MUSEUM_METRE);
+const frameData=createRoyalTentRT100Geometry({walls:false,membrane:false});
+for(const [key,geometry] of Object.entries(frameData.parts)){
+ const source=root.children.find(o=>o.isMesh&&o.name==='НП · '+key);
+ if(!source)throw new Error('Missing production material for tent part: '+key);
+ const mesh=new THREE.Mesh(geometry,source.material);mesh.castShadow=true;mesh.receiveShadow=true;frame.add(mesh);
+}
+scene.add(frame);
+
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(200,200),new THREE.MeshStandardMaterial({color:0xc6beaa,roughness:1}));
+ground.rotation.x=-Math.PI/2;ground.position.y=-.04;ground.receiveShadow=true;scene.add(ground);
 const hemi=new THREE.HemisphereLight(0xddeeff,0xa39373,2);scene.add(hemi);
-const sun=new THREE.DirectionalLight(0xfff0d6,2.5);sun.position.set(-4,8,-6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:.1,far:30});sun.shadow.bias=-.0002;scene.add(sun);
+const sun=new THREE.DirectionalLight(0xfff0d6,2.5);sun.position.set(-4,8,-6);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);Object.assign(sun.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:.1,far:30});
+sun.shadow.bias=-.0002;scene.add(sun);
+
+// Camera positions and targets are expressed in real metres, then receive the
+// same uniform museum scale as the model. Close views include the interior,
+// anchor foot, central connector and the closed pavilion's entry doors.
+const views={
+ front:{eye:[58,40,-72],target:[0,.8,-1],caption:'50 × 35 м · два шатра ARCH DUNE RT100/10'},
+ top:{eye:[0,86,.1],target:[0,0,0],caption:'План НП · шатры 10 × 10 м'},
+ detail:{eye:[-24,8,-22],target:[-11.65,2.2,-5.5],caption:'Шатёр 10 × 10 м · арки и натяжная мембрана'},
+ 'tent-front':{eye:[-11.65,3.0,-25],target:[-11.65,2.5,-5.5],caption:'Открытый вход · трёхпоясная арочная ферма'},
+ interior:{eye:[-11.65,1.65,-9.2],target:[-11.65,4.5,-3.5],fov:64,caption:'Внутри шатра · рёбра кровли и узлы каркаса'},
+ joint:{eye:[-18.8,1.6,-13.1],target:[-16.65,.95,-10.5],fov:44,caption:'Угловой узел · две арки на общей опорной лапе'},
+ crown:{eye:[-11.65,2.25,-7.2],target:[-11.65,5.0,-5.5],fov:46,caption:'Центральное соединение · четыре ребра кровли'},
+ doors:{eye:[23,7.3,-23],target:[11.65,2.2,-5.5],caption:'Закрытый шатёр · стенки и двустворчатые двери'},
+ frame:{eye:[-24,8,-22],target:[-11.65,2.2,-5.5],frame:true,caption:'Каркас ARCH DUNE RT100/10 · мембрана скрыта для проверки'},
+ 'frame-crown':{eye:[-11.65,2.25,-7.2],target:[-11.65,5.0,-5.5],fov:52,frame:true,caption:'Центральный узел каркаса · мембрана скрыта для проверки'},
+ night:{eye:[58,40,-72],target:[0,.8,-1],night:true,caption:'НП RocketTrip · вечернее освещение'},
+ 'tent-night':{eye:[-24,8,-22],target:[-11.65,2.2,-5.5],night:true,caption:'Арочный шатёр · вечернее освещение'},
+};
+let activeView='front';
 window.npRender=(view='front')=>{
- hemi.intensity=view==='night'?.55:2;sun.intensity=view==='night'?.45:2.5;scene.background.set(view==='night'?0x172844:0xd9d7cc);
- camera.position.set(...(view==='top'?[0,12,.01]:view==='detail'?[-.5,1.4,-3.8]:[8,7,-10]));camera.lookAt(0,.1,0);camera.updateMatrixWorld();renderer.render(scene,camera);return root.userData.observationPlatform;
-};window.npRender();window.npReady=true;
-</script></html>
+ const config=views[view];if(!config)throw new Error('Unknown NP camera view: '+view);activeView=view;
+ root.visible=!config.frame;frame.visible=!!config.frame;
+ hemi.intensity=config.night?.55:2;sun.intensity=config.night?.45:2.5;
+ scene.background=new THREE.Color(config.night?0x172844:0xd9d7cc);
+ document.body.classList.toggle('night',!!config.night);document.querySelector('#caption').textContent=config.caption;
+ camera.fov=config.fov??37;camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+ camera.position.fromArray(config.eye).multiplyScalar(MUSEUM_METRE);
+ camera.lookAt(new THREE.Vector3().fromArray(config.target).multiplyScalar(MUSEUM_METRE));
+ camera.updateMatrixWorld();renderer.render(scene,camera);return root.userData.observationPlatform;
+};
+window.npInspect=()=>{
+ const gl=renderer.getContext(),pixels=new Uint8Array(4*renderer.domElement.width*renderer.domElement.height);
+ gl.readPixels(0,0,renderer.domElement.width,renderer.domElement.height,gl.RGBA,gl.UNSIGNED_BYTE,pixels);
+ const colours=new Set();let low=255,high=0;
+ for(let i=0;i<pixels.length;i+=128){
+  const r=pixels[i],g=pixels[i+1],b=pixels[i+2];
+  colours.add((r>>4)*256+(g>>4)*16+(b>>4));low=Math.min(low,r,g,b);high=Math.max(high,r,g,b);
+ }
+ return {view:activeView,calls:renderer.info.render.calls,triangles:renderer.info.render.triangles,
+  distinctColours:colours.size,channelRange:high-low,contextLost:gl.isContextLost(),model:root.userData.observationPlatform};
+};
+addEventListener('resize',()=>{renderer.setSize(innerWidth,innerHeight);window.npRender(activeView)});
+window.npRender();window.npReady=true;
+</script>
+</html>
