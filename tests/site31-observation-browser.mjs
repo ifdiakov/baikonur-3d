@@ -1,45 +1,43 @@
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
-const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
-const out='qa-site31-np';await mkdir(out,{recursive:true});
-const errors=[],browser=await chromium.launch({headless:true,args:[
- '--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl',
- '--enable-unsafe-swiftshader','--disable-gpu-sandbox'
-]});
+const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-site31-np';await mkdir(out,{recursive:true});
+const errors=[],browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 try{
- const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
- page.on('pageerror',error=>errors.push(error.message));
- await page.goto(new URL('?view=np31-1&tour=0',base).href,{waitUntil:'domcontentloaded',timeout:120000});
- await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA?.np31?.().present)&&document.body.classList.contains('museum-ready'),null,{timeout:240000});
- const state=await page.evaluate(()=>{
-  const qa=window.__BAIKONUR_QA;
-  return {observation:qa.np31(),site:qa.siteState('np-31-1'),camera:qa.cameraState()};
+ const page=await browser.newPage({viewport:{width:1440,height:960},deviceScaleFactor:1});page.on('pageerror',e=>errors.push(e.message));
+ // Test-only frame gate lets SwiftShader finish screenshots of the heavy map.
+ // The production render loop and animation code remain unchanged.
+ await page.addInitScript(()=>{
+  const raf=requestAnimationFrame.bind(window);let paused=false,pending=[];
+  window.requestAnimationFrame=fn=>raf(t=>{if(paused)pending.push(fn);else fn(t)});
+  window.__qaPauseFrames=()=>{paused=true};
+  window.__qaResumeFrames=()=>{paused=false;const jobs=pending;pending=[];for(const fn of jobs)window.requestAnimationFrame(fn)};
  });
- const np=state.observation;
- assert(np.present&&np.visible,'NP must not be hidden on the published 3D map');
- assert.equal(np.id,'np-31-1');
- assert(np.roadConnected,'NP needs an actual nearby Site 31–1 access road');
- assert(np.roadId,'NP source-road metadata must identify its real placement');
- assert(np.actualDistanceMetres>1450&&np.actualDistanceMetres<3350,'NP placement should be around 2.4 km from Site 31');
- assert(np.clearanceFromRoad>=5.9,'NP platform must not lie on the carriageway');
- assert.equal(np.model.shelters,2);assert.equal(np.model.widthMetres,35);assert.equal(np.model.lengthMetres,50);
- assert(np.bounds.every(Number.isFinite)&&np.bounds[0]>3&&np.bounds[2]>3);
- assert(state.site,'NP must have a selectable museum card');
- assert(Math.hypot(state.camera.target[0]-np.position[0],state.camera.target[2]-np.position[2])<2,
- 'Direct ?view=np31-1 must focus on the new stand');
- // SwiftShader's continuous WebGL animation can starve full-page captures.
- // A screenshot is supplementary; scene presence, road distance, direct focus
- // and WebGL-free JS exceptions are asserted above, independently.
- let screenshotCaptured=false;
- try{
-  await page.screenshot({path:out+'/site31-np-night.png',fullPage:false,
-   animations:'disabled',timeout:12000});
-  screenshotCaptured=true;
- }catch(error){console.warn('NP_OPTIONAL_SCREENSHOT_SKIPPED',error.message);}
- assert.deepEqual(errors,[],'NP must not break main museum startup');
- await writeFile(out+'/result.json',JSON.stringify({pass:true,np,camera:state.camera,errors,screenshotCaptured},null,2));
- console.log('SITE31_NP_BROWSER_PASS',JSON.stringify({roadId:np.roadId,
- actualDistanceMetres:Math.round(np.actualDistanceMetres),bounds:np.bounds,screenshotCaptured}));
-}catch(error){await writeFile(out+'/failure.json',JSON.stringify({message:error.message,errors},null,2));throw error}
-finally{await browser.close()}
+ await page.goto(new URL('tests/fixtures/np-photo.html',base).href);await page.waitForFunction(()=>window.npReady);
+ for(const view of ['front','top','detail','night']){
+  await page.evaluate(v=>window.npRender(v),view);await page.screenshot({path:out+'/np-'+view+'.png',timeout:20000});
+ }
+ await page.goto(new URL('?view=np&tour=0',base).href,{waitUntil:'domcontentloaded',timeout:120000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.np31?.().present&&document.body.classList.contains('museum-ready'),null,{timeout:240000});
+ const state=await page.evaluate(()=>({np:__BAIKONUR_QA.np31(),site:__BAIKONUR_QA.siteState('np-31-1'),camera:__BAIKONUR_QA.cameraState(),transport:__BAIKONUR_QA.stats().transportBake}));
+ assert(state.np.visible);assert.equal(state.np.instanceCount,1);assert.deepEqual(state.site.map,[912.9,304.9]);
+ assert.equal(state.np.model.version,'rockettrip-np-photo-20261108-v2');assert.equal(state.np.model.shelters,2);
+ assert(Math.hypot(state.camera.target[0]-state.np.position[0],state.camera.target[2]-state.np.position[2])<2);
+ // Let the deferred detailed transport finish and ensure it never adds the old canopy.
+ await page.waitForFunction(()=>!__BAIKONUR_QA.stats().transportBake.detailLoading,null,{timeout:180000});
+ assert.equal(await page.evaluate(()=>__BAIKONUR_QA.np31().instanceCount),1);
+ await page.evaluate(()=>__BAIKONUR_QA.evening.setEvening(false));
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
+ await page.screenshot({path:out+'/np-map-desktop.png',timeout:30000});
+ await page.evaluate(()=>window.__qaResumeFrames());
+ await page.setViewportSize({width:390,height:844});await page.evaluate(()=>__BAIKONUR_QA.focusSite('np-31-1'));
+ const mobile=await page.evaluate(()=>({camera:__BAIKONUR_QA.cameraState(),np:__BAIKONUR_QA.np31(),overflow:document.documentElement.scrollWidth>innerWidth}));
+ assert(!mobile.overflow);assert(mobile.np.visible);assert.equal(mobile.np.instanceCount,1);
+ assert(mobile.np.screenBounds.minX>=12&&mobile.np.screenBounds.maxX<=378,'The whole NP must fit the mobile screen');
+ assert(mobile.np.screenBounds.minY>=90&&mobile.np.screenBounds.maxY<=590,'Keep the NP above the mobile card');
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
+ await page.screenshot({path:out+'/np-map-mobile.png',timeout:30000});
+ const mapScreenshot=true;
+ assert.deepEqual(errors,[]);
+ await writeFile(out+'/result.json',JSON.stringify({pass:true,state,mobile,mapScreenshot,errors},null,2));console.log('NP_PHOTO_BROWSER_PASS');
+}catch(e){await writeFile(out+'/failure.json',JSON.stringify({message:e.message,errors},null,2));throw e}finally{await browser.close()}

@@ -562,7 +562,7 @@ import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-p
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261105-silo106109-flank-flat-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261108-clear-crossing-poles-v4';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261108-np-and-crossing-clearance-v5';
 import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261105-site113-grade-v1';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261103-site254-w3';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
@@ -594,7 +594,7 @@ import {createGroundTraffic} from './src/ground-traffic.js?v=20261105-sprinter-o
 import {createCoordinateGrid} from './src/coordinate-grid.js?v=20261108-transport-sync-v4';
 import {createTransportLabels} from './src/transport-reference-labels.js?v=20261108-labels-v1';
 import {createRailStations} from './src/rail-stations.js?v=20261105-station-no-road-overlap-v2';
-import {planSite31Observation,buildSite31Observation,SITE31_NP_VERSION} from './src/site31-observation-platform.js?v=20261108-np-31-1-v1';
+import {planSite31Observation,buildSite31Observation,SITE31_NP_VERSION} from './src/site31-observation-platform.js?v=20261108-np-photo-v2';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261102-site2-photo-v3';
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
@@ -1393,9 +1393,7 @@ async function loadServiceReference(){
 // Loaded together with the optional reference plan, on demand.
 
 
-// NP near the road from Pad 31 toward Pad 1. It is a small physical
-// 35 × 50 m viewing facility, not another unverified launch site.
-// Keep catalogue geometry and road-transport fingerprints untouched.
+// One NP RocketTrip at the owner's pin, shared by cached and detailed startup.
 const launch31=objects.find(o=>o.record.id==='pad-31'),launch1=objects.find(o=>o.record.id==='pad-1');
 let site31Observation=null;
 if(launch31&&launch1){
@@ -1408,14 +1406,14 @@ if(launch31&&launch1){
  g.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=index;clickable.push(mesh);}});
  const x=g.position.x/S+W/2,y=g.position.z/S+H/2;
  const record={
-  id:'np-31-1',name:'НП · направление 31–1',number:null,kind:'observation',
-  titleShort:'НП у 31–1',titleFull:'Наблюдательная площадка · направление 31–1',
+  id:'np-31-1',name:'НП RocketTrip',number:null,kind:'observation',
+  titleShort:'НП RocketTrip',titleFull:'Наблюдательная площадка RocketTrip',
   purposeShort:'Наблюдение за стартами с площадки №31',
-  purposeLong:'Наблюдательная площадка RocketTrip: открытая зона 35 × 50 м, два укрытия по 100 м². На макете она показана возле дорожного направления между площадками №31 и №1.',
-  note:'Положение НП является музейной привязкой по направлению к площадке №1 и существующему дорожному полотну, а не геодезически подтверждёнными координатами.',
-  status:'label-read',positionVerified:false,positionConfidence:'owner-directed-museum-placement',
-  positionBasis:'Музейная привязка вдоль направления 31–1, без изменения исходных дорог',
-  geoSource:{kind:'owner-directed-display',status:'illustrative',modelAnchor:'illustrative',refs:[],reason:'НП у 31–1 · запрос владельца'},
+  purposeLong:'Наблюдательная площадка RocketTrip: территория 50 × 35 м, два белых арочных шатра по 100 м², зона наблюдения, флагштоки, парковка и санитарный блок.',
+  note:'Планировка и облик восстановлены по схеме и фотографиям RocketTrip.',
+  status:'label-read',positionVerified:false,positionConfidence:'owner-confirmed-map-pin',
+  positionBasis:'Координаты владельца X=912.9, Y=304.9',
+  geoSource:{kind:'owner-directed-display',status:'illustrative',modelAnchor:'illustrative',refs:['https://drive.google.com/drive/folders/1WO0cKko5TsAK26X1xpR9-sOo5auDDtGR'],reason:'Положение на макете указано владельцем, размеры взяты со схемы'},
   x,y,model:'observation',firstYear:2026,render:true
  };
  site31Observation={g,record,placement};
@@ -2081,8 +2079,9 @@ function focus(i){
   camera.position.copy(ctl.target).add(new THREE.Vector3(160,165,195).multiplyScalar(SATURN_SCALE));
  }else if(o.isStation){railStations.inspect(r.id,camera,ctl);
  }else if(r.id==='np-31-1'){
-  ctl.target.y+=.9;
-  camera.position.copy(ctl.target).add(new THREE.Vector3(13,12,17));
+  const mobile=matchMedia('(max-width:850px)').matches;
+  ctl.target.copy(o.g.localToWorld(new THREE.Vector3(0,mobile?-22:1,0)));
+  camera.position.copy(o.g.localToWorld(new THREE.Vector3(...(mobile?[88,120,-130]:[37,44,-53]))));
  }else if(o.archive){portalArchive.focus(i,camera,ctl);}else camera.position.copy(ctl.target).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  let airportViews=document.getElementById('airportViews');if(!airportViews){airportViews=document.createElement('div');airportViews.id='airportViews';document.getElementById('description').after(airportViews);}
  airportViews.replaceChildren();airportViews.hidden=!o.g.userData.airport;
@@ -2374,6 +2373,14 @@ function museumTerrainHeightAt(x,z){
  return Math.max(height,saturnGroup.localToWorld(saturnCameraSample).y);
 }
 
+// Keep the NP feet on the rendered terrain, with a thin compacted-earth pad.
+if(site31Observation){
+ const g=site31Observation.g,heights=[];
+ for(const x of [-25,0,25])for(const z of [-17.5,0,17.5]){
+  const p=g.localToWorld(new THREE.Vector3(x,0,z));heights.push(museumTerrainHeightAt(p.x,p.z));
+ }
+ g.position.y=Math.max(...heights)+.24*MUSEUM_METRE+.018;
+}
 const lightingGroundMeshes=[ground,satelliteGround,...outerTerrain.planes,terrainRelief.mesh,sharedSiloHill.mesh];
 layers.roads.traverse(mesh=>{if(mesh.isMesh&&mesh.userData.groundSurface!==false&&!mesh.name.startsWith('road-center-dash'))lightingGroundMeshes.push(mesh)});
 saturnGroup.traverse(mesh=>{if(mesh.userData.museumComponent==='murguduk-hill')lightingGroundMeshes.push(mesh)});
@@ -2746,13 +2753,19 @@ function syncGagarinTableStatus(){
 window.__BAIKONUR_QA={np31:()=>{
  const p=site31Observation; if(!p)return {present:false};
  const model=p.g.userData.observationPlatform;
- return {present:true,id:'np-31-1',visible:p.g.visible&&p.g.parent?.visible!==false,
+ const box=new THREE.Box3().setFromObject(p.g),projected=[];
+ for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){
+  const v=new THREE.Vector3(x,y,z).project(camera);projected.push([(v.x+1)*innerWidth/2,(1-v.y)*innerHeight/2]);
+ }
+ const screenBounds={minX:Math.min(...projected.map(p=>p[0])),maxX:Math.max(...projected.map(p=>p[0])),minY:Math.min(...projected.map(p=>p[1])),maxY:Math.max(...projected.map(p=>p[1]))};
+ return {present:true,screenBounds,id:'np-31-1',visible:p.g.visible&&p.g.parent?.visible!==false,
   position:p.g.getWorldPosition(new THREE.Vector3()).toArray(),
   roadConnected:p.placement.connectedToRoad,roadId:p.placement.roadId,
   actualDistanceMetres:p.placement.actualDistanceMetres,
   nominalDistanceMetres:p.placement.nominalDistanceMetres,
   clearanceFromRoad:p.placement.clearanceFromRoad,
-  model:{...model},bounds:new THREE.Box3().setFromObject(p.g).getSize(new THREE.Vector3()).toArray()};
+  instanceCount:siteRoot.children.filter(o=>o.userData.museumComponent==='observation-platform').length,
+  model:{...model,features:undefined},bounds:new THREE.Box3().setFromObject(p.g).getSize(new THREE.Vector3()).toArray()};
 },site95:{groundStats:site95RoadGrade.stats,inspect:view=>portalArchive.inspectSite95(view,camera,ctl),stats:portalArchive.site95Stats},site113:{groundStats:site113RoadGrade.stats,inspect:view=>portalArchive.inspectSite113(view,camera,ctl),stats:portalArchive.site113Stats},checkpoint7:{stats:portalArchive.checkpoint7Stats,groundStats:checkpointRoadGrade.stats,inspect(view="all"){openMenuSite("kpp-7");portalArchive.inspectCheckpoint7(view,camera,ctl);}},gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
  const sources={main:ground,regional:outerTerrain.planes[0],intermediate:outerTerrain.planes[1],satellite:satelliteGround,relief:terrainRelief.mesh};
  if(visibility){
@@ -2935,7 +2948,7 @@ window.__BAIKONUR_QA={np31:()=>{
  steppeSurface.updateDetail(camera.position.y/SCENE_SCALE);if(camera.position.y<250&&!terrainDetailRequested){terrainDetailRequested=true;startup.promote('game-terrain-pilot',100);steppeSurface.requestDetail();}updateLabels();portalVoids.update();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;buranLanding.syncOverlay();transportLabels.draw(now);renderer.render(scene,camera)}if(new URLSearchParams(location.search).get('view')==='motovoz')groundTraffic.setFollowing(true);if(new URLSearchParams(location.search).get('view')==='cars')groundTraffic.focusCars();if(new URLSearchParams(location.search).get('view')==='sprinter')groundTraffic.focusSprinter();if(new URLSearchParams(location.search).get('view')==='flanks')showFlanks();if(new URLSearchParams(location.search).get('view')==='silo'){const requested=new URLSearchParams(location.search).get('site')||'pad-109';const id=objects.some(o=>o.record.id===requested&&o.archive?.kind==='silo')?requested:'pad-109';focus(objects.findIndex(o=>o.record.id===id));if(new URLSearchParams(location.search).get('detail')==='1')portalArchive.inspectSilo('close',camera,ctl,id);}if(new URLSearchParams(location.search).get('view')==='ukss'){focus(ukssIndex);inspectUkss(new URLSearchParams(location.search).get('detail')||'overview');}if(new URLSearchParams(location.search).get('view')==='krayniy')inspectKrayniyTerminal(new URLSearchParams(location.search).get('detail')||'airside');if(new URLSearchParams(location.search).get('view')==='mzk'){focus(objects.findIndex(o=>o.record.id==='pad-112a'));const detail=new URLSearchParams(location.search).get('detail');if(['mzk','sdi'].includes(detail))portalArchive.inspectMzkSdi(detail,camera,ctl);if(new URLSearchParams(location.search).get('doors')==='open')portalArchive.setSdiGateOpen(true);}if(new URLSearchParams(location.search).get('view')==='hotel')focus(objects.findIndex(o=>o.record.id==='pad-75'));if(new URLSearchParams(location.search).get('view')==='site41'){focus(objects.findIndex(o=>o.record.id==='pad-41'));portalArchive.inspectSite41(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='mriya'){const i=objects.findIndex(o=>o.record.id==='pad-251');if(i>=0){focus(i);document.querySelector('#airportViews button:last-child')?.click();document.getElementById('info').style.display='none';}}if(new URLSearchParams(location.search).get('view')==='site110'){openMenuSite('pad-110');portalArchive.inspectSite110(new URLSearchParams(location.search).get('detail')||'left',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='buran-landing'){openMenuSite('pad-251');requestBuranLanding();}
 if(new URLSearchParams(location.search).get('view')==='gagarin')window.__BAIKONUR_QA.gagarinTable.inspect(new URLSearchParams(location.search).get('detail')||'structure');
 if(new URLSearchParams(location.search).get('view')==='site31'){openMenuSite('pad-31');portalArchive.inspectSite31(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
-if(new URLSearchParams(location.search).get('view')==='np31-1')window.__BAIKONUR_QA.focusSite('np-31-1');
+if(['np','np31-1'].includes(new URLSearchParams(location.search).get('view')))window.__BAIKONUR_QA.focusSite('np-31-1');
 if(new URLSearchParams(location.search).get('view')==='kpp7'){openMenuSite('kpp-7');portalArchive.inspectCheckpoint7(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site250a'){openMenuSite('pad-250a');portalArchive.inspectSite250a(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site113'){openMenuSite('pad-113');portalArchive.inspectSite113(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
