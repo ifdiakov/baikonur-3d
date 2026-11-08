@@ -94,7 +94,10 @@ tour.update(29100);assert.equal(tour.stats().active,false);
 assert.equal(camera.position.distanceTo(initialEye),0,'Natural completion must restore the original camera eye');
 assert.equal(controls.target.distanceTo(initialTarget),0,'Natural completion must restore the original look-at');
 assert.equal(controls.enabled,true);
-assert.match(replayHost.lastChild?.textContent||'',/29 СЕК/);
+assert.equal(replayHost.lastChild,undefined,
+ 'Camera controls must no longer show a duplicate training button');
+assert.equal(source.includes('museum-tour-replay'),false,
+ 'The obsolete camera-control replay UI is removed from the tour script');
 assert.equal(storage.get('baikonur-museum-onboarding-v2'),'yes');
 
 // A visitor who interrupts the intro stays at the observed camera pose.
