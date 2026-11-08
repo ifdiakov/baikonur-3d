@@ -5,6 +5,14 @@ const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-site31-np'
 const errors=[],browser=await chromium.launch({headless:true,args:['--no-sandbox','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 try{
  const page=await browser.newPage({viewport:{width:1440,height:960},deviceScaleFactor:1});page.on('pageerror',e=>errors.push(e.message));
+ // Test-only frame gate lets SwiftShader finish screenshots of the heavy map.
+ // The production render loop and animation code remain unchanged.
+ await page.addInitScript(()=>{
+  const raf=requestAnimationFrame.bind(window);let paused=false,pending=[];
+  window.requestAnimationFrame=fn=>raf(t=>{if(paused)pending.push(fn);else fn(t)});
+  window.__qaPauseFrames=()=>{paused=true};
+  window.__qaResumeFrames=()=>{paused=false;const jobs=pending;pending=[];for(const fn of jobs)window.requestAnimationFrame(fn)};
+ });
  await page.goto(new URL('tests/fixtures/np-photo.html',base).href);await page.waitForFunction(()=>window.npReady);
  for(const view of ['front','top','detail','night']){
   await page.evaluate(v=>window.npRender(v),view);await page.screenshot({path:out+'/np-'+view+'.png',timeout:20000});
@@ -19,12 +27,17 @@ try{
  await page.waitForFunction(()=>!__BAIKONUR_QA.stats().transportBake.detailLoading,null,{timeout:180000});
  assert.equal(await page.evaluate(()=>__BAIKONUR_QA.np31().instanceCount),1);
  await page.evaluate(()=>__BAIKONUR_QA.evening.setEvening(false));
- let mapScreenshot=false;
- try{await page.screenshot({path:out+'/np-map-desktop.png',timeout:20000});mapScreenshot=true}catch(e){console.warn('MAP_SCREENSHOT_UNAVAILABLE',e.message)}
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
+ await page.screenshot({path:out+'/np-map-desktop.png',timeout:30000});
+ await page.evaluate(()=>window.__qaResumeFrames());
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>__BAIKONUR_QA.focusSite('np-31-1'));
  const mobile=await page.evaluate(()=>({camera:__BAIKONUR_QA.cameraState(),np:__BAIKONUR_QA.np31(),overflow:document.documentElement.scrollWidth>innerWidth}));
  assert(!mobile.overflow);assert(mobile.np.visible);assert.equal(mobile.np.instanceCount,1);
- try{await page.screenshot({path:out+'/np-map-mobile.png',timeout:20000})}catch(e){console.warn('MOBILE_SCREENSHOT_UNAVAILABLE',e.message)}
+ assert(mobile.np.screenBounds.minX>=12&&mobile.np.screenBounds.maxX<=378,'The whole NP must fit the mobile screen');
+ assert(mobile.np.screenBounds.minY>=90&&mobile.np.screenBounds.maxY<=590,'Keep the NP above the mobile card');
+ await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
+ await page.screenshot({path:out+'/np-map-mobile.png',timeout:30000});
+ const mapScreenshot=true;
  assert.deepEqual(errors,[]);
  await writeFile(out+'/result.json',JSON.stringify({pass:true,state,mobile,mapScreenshot,errors},null,2));console.log('NP_PHOTO_BROWSER_PASS');
 }catch(e){await writeFile(out+'/failure.json',JSON.stringify({message:e.message,errors},null,2));throw e}finally{await browser.close()}

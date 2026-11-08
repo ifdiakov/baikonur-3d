@@ -2080,8 +2080,8 @@ function focus(i){
  }else if(o.isStation){railStations.inspect(r.id,camera,ctl);
  }else if(r.id==='np-31-1'){
   const mobile=matchMedia('(max-width:850px)').matches;
-  ctl.target.copy(o.g.localToWorld(new THREE.Vector3(0,mobile?-7:1,0)));
-  camera.position.copy(o.g.localToWorld(new THREE.Vector3(37,mobile?52:44,-53)));
+  ctl.target.copy(o.g.localToWorld(new THREE.Vector3(0,mobile?-16:1,0)));
+  camera.position.copy(o.g.localToWorld(new THREE.Vector3(...(mobile?[68,88,-100]:[37,44,-53]))));
  }else if(o.archive){portalArchive.focus(i,camera,ctl);}else camera.position.copy(ctl.target).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  let airportViews=document.getElementById('airportViews');if(!airportViews){airportViews=document.createElement('div');airportViews.id='airportViews';document.getElementById('description').after(airportViews);}
  airportViews.replaceChildren();airportViews.hidden=!o.g.userData.airport;
@@ -2753,7 +2753,12 @@ function syncGagarinTableStatus(){
 window.__BAIKONUR_QA={np31:()=>{
  const p=site31Observation; if(!p)return {present:false};
  const model=p.g.userData.observationPlatform;
- return {present:true,id:'np-31-1',visible:p.g.visible&&p.g.parent?.visible!==false,
+ const box=new THREE.Box3().setFromObject(p.g),projected=[];
+ for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){
+  const v=new THREE.Vector3(x,y,z).project(camera);projected.push([(v.x+1)*innerWidth/2,(1-v.y)*innerHeight/2]);
+ }
+ const screenBounds={minX:Math.min(...projected.map(p=>p[0])),maxX:Math.max(...projected.map(p=>p[0])),minY:Math.min(...projected.map(p=>p[1])),maxY:Math.max(...projected.map(p=>p[1]))};
+ return {present:true,screenBounds,id:'np-31-1',visible:p.g.visible&&p.g.parent?.visible!==false,
   position:p.g.getWorldPosition(new THREE.Vector3()).toArray(),
   roadConnected:p.placement.connectedToRoad,roadId:p.placement.roadId,
   actualDistanceMetres:p.placement.actualDistanceMetres,
