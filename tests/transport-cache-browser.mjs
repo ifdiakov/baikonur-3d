@@ -22,7 +22,7 @@ try{
  });
  assert.equal(report.transport.baked,true,'Cached topology and source-filtered preview must be used');
  assert.equal(report.bake.enabled,true);
- assert.equal(report.roadEditor.added,18);
+ assert.equal(report.roadEditor.added,19,'Fast overview must preserve the newly repaired Site 105 road');
  assert.equal(report.roadEditor.hidden,286);
  assert(report.roadEditor.maskedMeshNames.includes('OSM · единое дорожное полотно'));
  assert(report.roadEditor.physicalCuts.sourceCuts>=250,'Approved road removals must cut the fast LOD');
