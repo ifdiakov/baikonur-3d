@@ -35,7 +35,7 @@ const owner=JSON.parse(readFileSync(new URL('../data/road-edits-authoritative-20
 assert.equal(owner.added.length,19);
 assert(owner.added.some(r=>r.id==='road-105-repaired'),'The repaired Site 105 road enters the mesh builder');
 assert.equal(owner.hidden.length,286);
-assert.equal(owner.revision,'rockettrip-roads-v4-20261105-site250a-asphalt-cleanup');
+assert.equal(owner.revision,'rockettrip-roads-v5-20261108-site105-continuous-driveway');
 assert(!owner.added.some(r=>r.id==='road-7'),'Duplicate asphalt strip near 250A is still in the baseline');
 assert(!owner.hidden.some(h=>['museum-yubileiny-250a-ukss','osm-access-pad-250a','osm-road-54568055','osm-road-54568055-1'].includes(h.sourceId)),
  'Stale cuts should not fragment the reconstructed 250A access road');
