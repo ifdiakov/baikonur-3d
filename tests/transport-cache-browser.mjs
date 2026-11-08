@@ -47,6 +47,12 @@ try{
  assert(report.shadersValid);
  assert.deepEqual(errors,[]);
  assert.deepEqual(shaders,[]);
+ // The author-selected overlap at map 589/342.7 is checked after the
+ // first frame so geometry QA never delays initial readiness.
+ await page.waitForFunction(()=>Boolean(window.__MUSEUM_OWNER_BUILDING_CLEARANCE),null,{timeout:15000}).catch(()=>null);
+ const clearance=await page.evaluate(()=>window.__MUSEUM_OWNER_BUILDING_CLEARANCE??null);
+ console.log('OWNER_BUILDING_CLEARANCE',JSON.stringify(clearance));
+
  console.log('TRANSPORT_CACHE_BROWSER_PASS',JSON.stringify({firstFrameMs:report.firstFrameMs,
    cacheBytes,baked:report.transport.baked,sourceBuildMs:report.transport.sourceBuildMilliseconds,
    mode:report.roadLOD.mode,routeCount:report.transport.roadFeatureCount,siteCount:report.sites}));
