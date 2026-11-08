@@ -354,10 +354,10 @@ export function buildRailCrossingSignals({crossings,parent,roadIndex=null}){
    let px=x,pz=z;
    if(!clearOfRoad(px,pz)){
     let found=false;
-    for(let step=1;step<=16;step++)for(const direction of [1,-1]){
+    searchShoulder:for(let step=1;step<=16;step++)for(const direction of [1,-1]){
      const shift=step*.9*direction;
      const tx=x+normalX*shift,tz=z+normalZ*shift;
-     if(clearOfRoad(tx,tz)){px=tx;pz=tz;found=true;break;}
+     if(clearOfRoad(tx,tz)){px=tx;pz=tz;found=true;break searchShoulder;}
     }
     // No safe shoulder: suppress this sign rather than leaving a road hazard.
     if(!found){for(let part=0;part<meshes.length;part++){
