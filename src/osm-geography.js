@@ -15,6 +15,8 @@ export const WORLD_UNITS_PER_MAP_UNIT = 3.4;
 // Keep the OSM source point and the registration of every other site intact.
 export const MUSEUM_DISPLAY_OFFSETS = Object.freeze({
   'pad-23': Object.freeze([20,0]),
+  'pad-202': Object.freeze([0,-5]),
+  'pad-204': Object.freeze([-10,0]),
   'pad-3': Object.freeze([0,10]),
   'pad-42': Object.freeze([0,10]),
   'pad-254': Object.freeze([7+3/Math.SQRT2,5+3/Math.SQRT2]),
