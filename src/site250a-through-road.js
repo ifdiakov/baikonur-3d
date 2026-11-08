@@ -3,7 +3,7 @@
 export const SITE250A_THROUGH_WAY_ID='54568055';
 export const SITE250A_THROUGH_VERSION='osm-54568055-smooth-ukss-road-v2';
 export const SITE250A_THROUGH_PROFILE=Object.freeze({
- width:6.5,spurWidth:4.8,offset:13.5,
+ width:2.5,spurWidth:2.5,offset:13.5,
  halfX:160*.14,minZ:-138*.14,maxZ:160*.14
 });
 const clamp=(v,a=0,b=1)=>Math.max(a,Math.min(b,v));
