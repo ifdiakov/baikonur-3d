@@ -18,8 +18,12 @@ const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html
 assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the six remaining menu sections in order');
 assert.deepEqual([...aside.matchAll(/<details id="[^"]+" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">([^<]+)<\/span>/g)].map(match=>match[1]),titles,
  'Only the seven accordion sections count as catalogue headings; encyclopedia and camera-control training are separate');
-assert.match(aside,/<details id="navigationGuide"[\s\S]*?<div class="navigation-guide-content">[\s\S]*?<button id="museumTourStart"[^>]*type="button"/,
- 'Training must sit inside the camera-control panel, not in the root menu');
+const guideStart=html.indexOf('<details id="navigationGuide"'),guide=html.slice(guideStart,html.indexOf('</details>',guideStart));
+assert(guideStart>0&&guide.includes('class="navigation-guide-content"'));
+assert.match(guide,/<button id="museumTourStart"[^>]*type="button"/,
+ 'Training must sit inside the camera-control panel');
+assert.doesNotMatch(aside,/id="museumTourStart"/,
+ 'Training must not appear as a separate top-level menu entry');
 assert.match(aside,/<a id="encyclopediaNavLink"[^>]+href="\.\/encyclopedia\.html"/,'The Encyclopedia link remains available');
 assert.match(aside,/<div class="museum-name">БАЙКОНУР<\/div>/);
 assert.match(aside,/<span class="museum-subtitle-label">ИНТЕРАКТИВНЫЙ МУЗЕЙ<\/span><span class="museum-dimension">3D<\/span>/);
