@@ -108,7 +108,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
  const down=new THREE.Raycaster(new THREE.Vector3(),new THREE.Vector3(0,-1,0));
  function baseAt(x,z,meshes,ceiling){down.ray.origin.set(x,1000,z);return groundQuery.intersections(down,meshes).find(h=>h.point.y<=ceiling)?.point.y??-2.755;}
  for(const o of objects){
-  if(o.type==='air'||o.g.userData.site2Model)continue; // Site 2 uses its ten photo-built lamp fixtures below.
+  if(o.type==='air'||o.g.userData.site2Model||o.g.userData.skipGenericSiteLights)continue; // Site 2 uses its ten photo-built lamp fixtures below.
   // Photo-built courtyards provide existing lamp heads. A generic ring of
   // additional poles can otherwise land on the building after a site turn.
   if(o.g.userData.courtyardLightRecords){courtyardLights.push(...o.g.userData.courtyardLightRecords());continue;}
