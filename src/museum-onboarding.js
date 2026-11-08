@@ -362,20 +362,8 @@
     pendingStart = false;
     if (active) stop();
   }
-  function installReplay() {
-    const host = document.querySelector('#navigationGuide .navigation-guide-content');
-    if (!host || host.querySelector('.museum-tour-replay')) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'museum-tour-replay';
-    button.textContent = '↻  ПОВТОРИТЬ ЭКСКУРСИЮ · 29 СЕК';
-    button.addEventListener('click', () => start());
-    host.appendChild(button);
-  }
 
   build();
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installReplay, { once: true });
-  else installReplay();
   document.addEventListener('visibilitychange', () => {
     lastNow = 0;
     if (!document.hidden && pendingStart) requestAnimationFrame(() => start());
