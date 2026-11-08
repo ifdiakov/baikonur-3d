@@ -1,6 +1,7 @@
 import {SITE254_ACCESS,SITE254_MASK} from './site254-layout.js?v=20261103-site254-e10s5';
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
+import {clipSingleRailAccess} from './site-single-rail-access.js?v=20261108-single-access-v1';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
 import {pruneUnassignedRailTermini} from './rail-terminal-cleanup.js?v=20261106-site-matched-rail-ends-v1';
 import {buildExhibitRoadFilter,EXHIBIT_ACCESS_NODE_IDS,EXHIBIT_ROAD_AREAS,rectangleSegmentInterval,clipRoadOutsideRectangle,airportPerimeterBypass} from './exhibit-road-filter.js?v=20261030-river-roads-signs-v1';
@@ -870,7 +871,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null,sleeperAnchor=null){
   if(points.length<2)return [];
-  const airportRuns=clipAirportRails(points,wayId,RAIL_PROFILE.gauge),displayed=force?airportRuns:airportRuns.flatMap(run=>railSiteClearance.clipPath(run,{sourceWayId:wayId}).runs),renderedRuns=[];
+  const selectedRuns=clipSingleRailAccess(points,wayId),airportRuns=selectedRuns.flatMap(run=>clipAirportRails(run,wayId,RAIL_PROFILE.gauge)),displayed=force?airportRuns:airportRuns.flatMap(run=>railSiteClearance.clipPath(run,{sourceWayId:wayId}).runs),renderedRuns=[];
   for(const visible of displayed){
    const samples=conformRailPath(visible,RAIL_PROFILE.ballastWidth),path=distancePath(samples);if(path.length<.01)continue;
    const runs=[];let run=[];
