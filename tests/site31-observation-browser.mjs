@@ -10,7 +10,7 @@ const errors=[],browser=await chromium.launch({headless:true,args:[
 try{
  const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFactor:1});
  page.on('pageerror',error=>errors.push(error.message));
- await page.goto(new URL('?view=np31-1&tour=0',base),{waitUntil:'domcontentloaded',timeout:120000});
+ await page.goto(new URL('?view=np31-1&tour=0',base).href,{waitUntil:'domcontentloaded',timeout:120000});
  await page.waitForFunction(()=>Boolean(window.__BAIKONUR_QA?.np31?.().present)&&document.body.classList.contains('museum-ready'),null,{timeout:240000});
  const state=await page.evaluate(()=>{
   const qa=window.__BAIKONUR_QA;
