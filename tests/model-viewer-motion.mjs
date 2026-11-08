@@ -45,10 +45,10 @@ try{
   const az=s=>Math.atan2(s.camera[0]-s.target[0],s.camera[2]-s.target[2]);angles.push(Math.abs(az(after)-az(before)));
  }
  assert(Math.abs(angles[0]-angles[1])<.01,'Orbit speed must not depend on refresh rate');report.angles=angles;
- await page.emulateMedia({reducedMotion:'reduce'});await page.waitForFunction(()=>__MODEL_VIEWER_QA.stats().reducedMotion&&!__MODEL_VIEWER_QA.stats().autoRotate);
+ await page.emulateMedia({reducedMotion:'reduce'});await page.reload();await ready();assert.equal((await stats()).autoRotate,false);
  await page.evaluate(()=>__MODEL_VIEWER_QA.load('silo'));await ready();assert.equal((await stats()).autoRotate,false);
  await page.locator('#rotate').click();assert.equal((await stats()).autoRotate,true);await page.locator('#rotate').click();
- await page.emulateMedia({reducedMotion:'no-preference'});await page.waitForFunction(()=>!__MODEL_VIEWER_QA.stats().reducedMotion);
+ await page.emulateMedia({reducedMotion:'no-preference'});await page.reload();await ready();assert.equal((await stats()).reducedMotion,false);
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>__MODEL_VIEWER_QA.load('silo'));await ready();await resetClock();await advance(240);assert((await stats()).autoRotate);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.screenshot({path:out+'/mobile.png',fullPage:true});
  // Exercise the normal requestAnimationFrame loop too, without synthetic stepping.
@@ -58,6 +58,8 @@ try{
  const liveBefore=await live.evaluate(()=>__MODEL_VIEWER_QA.stats().camera);
  await live.waitForTimeout(700);
  const liveAfter=await live.evaluate(()=>__MODEL_VIEWER_QA.stats());
- assert(liveAfter.autoRotate);assert.notDeepEqual(liveAfter.camera,liveBefore);await live.close();report.liveAnimation=true;
+ assert(liveAfter.autoRotate);assert.notDeepEqual(liveAfter.camera,liveBefore);
+ await live.emulateMedia({reducedMotion:'reduce'});await live.waitForFunction(()=>__MODEL_VIEWER_QA.stats().reducedMotion&&!__MODEL_VIEWER_QA.stats().autoRotate);
+ await live.close();report.liveAnimation=true;
  assert.deepEqual(errors,[]);report.passed=true;report.errors=errors;console.log('SILO_PREVIEW_AND_AUTOROTATE_OK',JSON.stringify(report));
 }finally{await writeFile(out+'/report.json',JSON.stringify({...report,errors},null,2)+'\n');await browser.close();}
