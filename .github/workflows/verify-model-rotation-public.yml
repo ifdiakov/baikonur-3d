@@ -1,0 +1,46 @@
+name: Verify published model rotation
+on:
+  push:
+    branches: [main]
+    paths: ['src/model-viewer.js', 'src/model-inspector.js', 'workshop/model.html', '.github/workflows/verify-model-rotation-public.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check modules
+        run: |
+          node --check src/model-viewer.js
+          node --check src/model-inspector.js
+      - name: Verify the published viewer and preserve the pending silo preview
+        run: |
+          node --input-type=module <<'NODE'
+          import {readFile} from 'node:fs/promises';
+          import {createHash} from 'node:crypto';
+          const paths=['src/model-viewer.js','src/model-inspector.js','workshop/model.html'];
+          const expected=await Promise.all(paths.map(async path=>[path,createHash('sha256').update(await readFile(path)).digest('hex')]));
+          for(let attempt=0;attempt<40;attempt++){
+            const matched=await Promise.all(expected.map(async([path,hash])=>{
+              try{const response=await fetch('https://ifdiakov.github.io/baikonur-3d/'+path+'?rotation-proof='+Date.now(),{signal:AbortSignal.timeout(15000)});
+                return response.ok&&createHash('sha256').update(Buffer.from(await response.arrayBuffer())).digest('hex')===hash;
+              }catch{return false;}
+            }));
+            if(matched.every(Boolean)){
+              const response=await fetch('https://ifdiakov.github.io/baikonur-3d/src/silo-pad.js?rotation-proof='+Date.now());
+              const silo=await response.text();
+              if(!response.ok||silo.includes('museum-silos-v3-round-preview'))throw Error('Silo preview must not be published with this viewer-only release');
+              console.log('MODEL_ROTATION_PUBLIC_OK',JSON.stringify(expected));
+              process.exit(0);
+            }
+            console.log('Waiting for Pages',attempt+1,matched);
+            await new Promise(resolve=>setTimeout(resolve,15000));
+          }
+          throw Error('Published viewer did not match the release');
+          NODE
