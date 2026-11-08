@@ -33,8 +33,13 @@ const rocket=new THREE.Group();rocket.name='existing-source-rocket';root.add(roc
 let swaps=0,change=null;root.addEventListener('museum-exhibit-loaded',e=>{swaps++;change=e;});
 assert.equal(await control.load(),false);assert.equal(control.stats().asset.status,'error');assert(root.children.includes(initial));assert.equal(swaps,0);
 fail=false;assert.deepEqual(await Promise.all([control.load(),control.load()]),[true,true]);assert.equal(calls,2);assert.equal(swaps,1);
-assert.equal(control.stats().version,SITE31_ASSET_VERSION);assert.equal(control.stats().asset.status,'ready');assert.equal(root.children.length,2);assert(root.children.includes(rocket));assert(!root.children.includes(initial));
+assert.equal(control.stats().version,SITE31_ASSET_VERSION);assert.equal(control.stats().asset.status,'ready');assert.equal(root.children.length,3,'The preserved light-screen group remains attached when the source model swaps');assert(root.children.includes(rocket));assert(!root.children.includes(initial));
 assert.equal(root.userData.archiveCutouts,cutouts);assert.deepEqual(cutouts,[SITE31_PIT]);assert.equal(root.userData.facilityLighting,lighting);
+assert.equal(root.userData.site31AdditionalLighting.panels,32);
+assert.equal(root.userData.site31AdditionalLighting.boards,5);
+const screen=root.children.find(x=>x.userData.site31FloodlightHeads);
+assert(screen&&screen.children.some(x=>x.isInstancedMesh&&x.count===32),
+ 'New mast lens geometry stays anchored and batched across the GLB swap');
 assert.equal(control.stats().rocketMount.position[1],0);assert.deepEqual(control.stats().roadPort,SITE31_PORTS.road);assert.deepEqual(control.stats().railPort,SITE31_PORTS.rail);
 assert(!change.added.some(o=>change.removed.includes(o)));assert.equal(change.added.filter(o=>o.userData.museumComponent==='site31-source-structure').length,2);
 assert.equal(await control.load(),true);assert.equal(swaps,1);assert.equal(calls,2);
