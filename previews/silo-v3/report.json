@@ -47,8 +47,8 @@
       "open": true,
       "state": "closed",
       "lidAngleDeg": 0,
-      "cameraDistance": 29.63511430718633,
-      "cameraHeight": 7.505882352941177,
+      "cameraDistance": 30.15443582625946,
+      "cameraHeight": 7.889705882352944,
       "planDistance": 10.41147390753757,
       "aimDistance": 0,
       "steamVisible": false,
@@ -123,12 +123,12 @@
     },
     "camera": [
       13.999999999999998,
-      17.6,
+      18.500000000000004,
       20
     ],
     "target": [
       0,
-      4.6,
+      5.5,
       0
     ],
     "size": [
@@ -136,8 +136,8 @@
       11.034999821335077,
       47.20499999821186
     ],
-    "drawCalls": 34,
-    "triangles": 55314,
+    "drawCalls": 33,
+    "triangles": 55302,
     "viewport": [
       967,
       778
@@ -191,9 +191,9 @@
       "open": true,
       "state": "open",
       "lidAngleDeg": 108,
-      "cameraDistance": 29.63511430718633,
-      "cameraHeight": 7.505882352941177,
-      "planDistance": 10.411473907537571,
+      "cameraDistance": 30.154435826259473,
+      "cameraHeight": 7.889705882352945,
+      "planDistance": 10.411473907537577,
       "aimDistance": 0,
       "steamVisible": true,
       "steamParticles": 36,
@@ -266,13 +266,13 @@
       }
     },
     "camera": [
-      8.848747069480298,
-      17.6,
-      22.75301464202851
+      8.848747069480318,
+      18.500000000000007,
+      22.753014642028514
     ],
     "target": [
       0,
-      4.6,
+      5.5,
       0
     ],
     "size": [
@@ -280,8 +280,8 @@
       19.29378436072698,
       47.20499999821186
     ],
-    "drawCalls": 35,
-    "triangles": 55314,
+    "drawCalls": 34,
+    "triangles": 55312,
     "viewport": [
       967,
       778
@@ -324,13 +324,13 @@
     "gear": true,
     "vehicleVisible": true,
     "autoRotate": true,
-    "rotationSpeed": 0.6483062036630335,
+    "rotationSpeed": 0.6483062036630346,
     "reducedMotion": false,
     "modelState": null,
     "camera": [
-      58.17281604767214,
-      24.2158883980425,
-      80.12866183844066
+      58.172816047671546,
+      24.21588839804251,
+      80.12866183844095
     ],
     "target": [
       25.420678949066428,
@@ -350,10 +350,8 @@
     ]
   },
   "angles": [
-    0.2428628955548931,
-    0.2399165700419525
+    0.2428628955548941,
+    0.23991657004194578
   ],
-  "liveAnimation": true,
-  "passed": true,
   "errors": []
 }
