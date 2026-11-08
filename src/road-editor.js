@@ -30,7 +30,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  const surfaceMaterials={
   asphalt:originalMaterial('OSM · единое дорожное полотно',0xadb2b3),
   ground:originalMaterial('OSM · грунтовые проезды',0xb2a58d),
-  highway:originalMaterial('OSM · асфальт трассы',0x42494c),
+  highway:originalMaterial('OSM · асфальт трассы',0x555751),
   shoulder:originalMaterial('OSM · единые обочины',0xc5c1b4),
   paintWhite:originalMaterial('OSM · разметка',0xf2f0e4),
   paintYellow:originalMaterial('Трасса · двойная жёлтая',0xe2b746)
