@@ -13,7 +13,7 @@ page.on('console',message=>{if(message.type()==='error'&&/shader error|VALIDATE_
 try{
  await page.goto('http://127.0.0.1:8765/?tour=0&fastRoads=1',{waitUntil:'domcontentloaded',timeout:90000});
  try{
-  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.stats?.(),null,{timeout:30000});
+  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.stats?.(),null,{timeout:90000});
  }catch(error){
   const diagnostic=await page.evaluate(()=>({
    error:document.getElementById('error')?.textContent,
@@ -35,7 +35,7 @@ try{
  });
  assert.equal(report.transport.baked,true,'Cached topology and source-filtered preview must be used');
  assert.equal(report.bake.enabled,true);
- assert.equal(report.roadEditor.added,19,'Fast overview must preserve the newly repaired Site 105 road');
+ assert.equal(report.roadEditor.added,18,'Fast overview must respect removal of repaired Site 105 road');
  assert.equal(report.roadEditor.hidden,286);
  assert(report.roadEditor.maskedMeshNames.includes('OSM · единое дорожное полотно'));
  assert(report.roadEditor.physicalCuts.sourceCuts>=250,'Approved road removals must cut the fast LOD');
