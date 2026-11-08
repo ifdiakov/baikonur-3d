@@ -31,6 +31,15 @@ try{
  assert.equal(initial.sourceMaterialColors.highway,'#555751','Highways must match the OSM source asphalt palette (including fallback)');
  assert.equal(initial.roadStyles.length,19);
  assert.equal(initial.baselineRevision,'rockettrip-roads-v5-20261108-site105-continuous-driveway');
+ const near105=await page.evaluate(()=>{
+  const qa=window.__BAIKONUR_QA,light=qa.stats().evening;
+  const road=qa.roadEditor.path('road-105-repaired');
+  return {lampRemoved:light.site105RemovedRoadLamps,stationId:light.site105RemovedStationId,
+   roadExists:Boolean(road),roadLength:road?.points?.length};
+ });
+ assert(near105.roadExists&&near105.roadLength>40,
+  'Site 105 repaired road must be drawn with a smoothly sampled real 3D alignment');
+ assert(near105.lampRemoved>=1,'Remove the street-lamp station nearest Site 105, including glow and pole');
  assert(!initial.roadStyles.some(r=>r.id==='road-7'),'Duplicate 250A asphalt is rendered');
  assert(initial.mesh.markedRoads>=1,'New marked access roads have no white/yellow lines');
  const northern=initial.roadStyles.find(r=>r.id==='road-31');
@@ -99,7 +108,8 @@ try{
  for(const [id,range,label] of [
   ['road-3',75,'gagarin-junction'],
   ['road-26',75,'ground-hairpin'],
-  ['road-31',155,'northern-elevated-road']
+  ['road-31',155,'northern-elevated-road'],
+  ['road-105-repaired',95,'site105-repaired-road']
  ]){
   const view=await page.evaluate(({id,range})=>{
    const qa=window.__BAIKONUR_QA,road=qa.inspectEditedRoad(id,{range});
