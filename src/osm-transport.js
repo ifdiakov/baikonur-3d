@@ -1,6 +1,7 @@
 import {SITE254_ACCESS,SITE254_MASK} from './site254-layout.js?v=20261103-site254-e10s5';
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
+import {shapeOwnerRail,missingOwnerRailSeam,makeOwnerRailSeam} from './owner-rail-curves.js?v=20261108-owner19-v1';
 import {omitOwnerRoadEdge,polishOwnerRoadSamples} from './owner-ad-refinements.js?v=20261108-owner19-v1';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
@@ -898,7 +899,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null,sleeperAnchor=null){
   if(points.length<2)return [];
-  const selectedRuns=clipSingleRailAccess(points,wayId).flatMap(run=>clipPad5DuplicateRail(run,wayId)),
+  const selectedRuns=clipSingleRailAccess(shapeOwnerRail(points,wayId),wayId).flatMap(run=>clipPad5DuplicateRail(run,wayId)),
    // Apply the same round-curve rule to source ways, yard lines and museum
    // connections, before generating sleepers, ballast and both rail heads.
    curvedRuns=isAbandoned?selectedRuns:selectedRuns.map(run=>roundRailCorners(run,{radius:15})),
@@ -960,6 +961,13 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    if(points.length&&points.at(-1).distanceTo(e.a.position)>1e-5){render();points.length=0;}
    const surface=e.surfacePoints??[e.a.position,e.b.position];if(!points.length)points.push(surface[0]);points.push(...surface.slice(1));
   }render();
+ }
+ // Preserve a single contiguous real railway between the two user-approved
+ // endpoints; generate a small bridge only when the visible source leaves a gap.
+ if(missingOwnerRailSeam(railPaths)){
+  const continuity=makeOwnerRailSeam(),joined=drawRail(continuity,false,true,RAIL_PROFILE.gauge,'owner-rail-continuity-579-587');
+  joined.forEach((run,i)=>railPaths.push({id:'owner-rail-continuity-579-587-'+i,
+   points:run,width:RAIL_PROFILE.ballastWidth,source:'owner-connection',osmWayIds:[]}));
  }
  // Nearest physical segment, used only for the short museum-scale apron
  // transition. Every long-distance route remains a path of shared OSM nodes.
