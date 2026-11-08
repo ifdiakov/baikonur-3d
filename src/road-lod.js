@@ -15,7 +15,7 @@ function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads'){
    if(cut>=2)path=path.slice(0,cut);
   }
   if(roadGrade)path=roadGrade.conform(path);
-  const runs=kind==='rails'?clipSingleRailAccess(path,row.id).map(run=>roundRailCorners(run,{radius:15})):[path];
+  const runs=kind==='rails'?clipSingleRailAccess(path,row.id):[path];
   if(!runs.length){skipped++;continue;}
   const width=row.w*(roadGrade?.widthScale(row.id)??1);
   for(const path of runs){if(path.length<2)continue;
