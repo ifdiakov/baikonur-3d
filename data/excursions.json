@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "updated": "2026-11-09",
+  "excursions": [
+    {
+      "id": "space-history-five-stories",
+      "title": "История освоения космоса: пять сюжетов",
+      "durationMinutes": 25,
+      "category": "Историческая тематическая экскурсия",
+      "description": "От Р-7 и первого спутника до сверхтяжёлой «Энергии», «Бурана» и наследия Байконура.",
+      "stops": [
+        {
+          "encyclopediaId": "site1",
+          "topic": "Р-7, спутник и Гагарин"
+        },
+        {
+          "encyclopediaId": "site31",
+          "topic": "Пилотируемые полёты и корабли «Союз»"
+        },
+        {
+          "encyclopediaId": "site110",
+          "topic": "Космическая гонка и сверхтяжёлые носители"
+        },
+        {
+          "encyclopediaId": "site112",
+          "topic": "Инфраструктура «Энергии—Бурана»"
+        },
+        {
+          "encyclopediaId": "yubileiny",
+          "topic": "Посадка «Бурана» и историческое наследие"
+        }
+      ],
+      "reference": {
+        "title": "Краткая история освоения космоса",
+        "author": "Сергей Каленник",
+        "published": "2013-07-15",
+        "url": "https://habr.com/ru/companies/balrobotov/articles/186610/",
+        "type": "opinion",
+        "factCheckRequired": true
+      },
+      "guidePath": "docs/excursions/history-of-space-habr-186610.md"
+    }
+  ]
+}
