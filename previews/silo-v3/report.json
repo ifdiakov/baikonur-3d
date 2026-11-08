@@ -47,8 +47,8 @@
       "open": true,
       "state": "closed",
       "lidAngleDeg": 0,
-      "cameraDistance": 28.758303148829903,
-      "cameraHeight": 6.823529411764708,
+      "cameraDistance": 29.63511430718633,
+      "cameraHeight": 7.505882352941177,
       "planDistance": 10.41147390753757,
       "aimDistance": 0,
       "steamVisible": false,
@@ -123,12 +123,12 @@
     },
     "camera": [
       13.999999999999998,
-      16.000000000000004,
+      17.6,
       20
     ],
     "target": [
       0,
-      3,
+      4.6,
       0
     ],
     "size": [
@@ -191,9 +191,9 @@
       "open": true,
       "state": "open",
       "lidAngleDeg": 108,
-      "cameraDistance": 28.758303148829917,
-      "cameraHeight": 6.823529411764709,
-      "planDistance": 10.411473907537573,
+      "cameraDistance": 29.63511430718633,
+      "cameraHeight": 7.505882352941177,
+      "planDistance": 10.411473907537571,
       "aimDistance": 0,
       "steamVisible": true,
       "steamParticles": 36,
@@ -266,13 +266,13 @@
       }
     },
     "camera": [
-      8.848747069480325,
-      16.000000000000007,
+      8.848747069480298,
+      17.6,
       22.75301464202851
     ],
     "target": [
       0,
-      3,
+      4.6,
       0
     ],
     "size": [
@@ -280,8 +280,8 @@
       19.29378436072698,
       47.20499999821186
     ],
-    "drawCalls": 36,
-    "triangles": 55326,
+    "drawCalls": 35,
+    "triangles": 55314,
     "viewport": [
       967,
       778
@@ -350,8 +350,10 @@
     ]
   },
   "angles": [
-    0.2428628955548935,
-    0.23991657004194977
+    0.2428628955548931,
+    0.2399165700419525
   ],
+  "liveAnimation": true,
+  "passed": true,
   "errors": []
 }
