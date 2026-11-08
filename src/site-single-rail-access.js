@@ -60,3 +60,36 @@ export function clipSingleRailAccess(points,pathOrId,{world=true}={}){
  }
  flush();return result;
 }
+
+/**
+ * Owner deletion near Site 5: remove the redundant parallel line of
+ * OSM way 172458467 between map Y=512.9 and 521.2. The through mainline
+ * OSM way 37547653 must remain intact for the locomotive.
+ *
+ * Uses precise boundary clipping, preserving all unaffected segments.
+ */
+export const PAD5_REDUNDANT_RAIL_WAY='172458467';
+export function clipPad5DuplicateRail(points,pathOrId){
+ if(String(railSourceId(pathOrId))!==PAD5_REDUNDANT_RAIL_WAY||points.length<2)return [points];
+ const lo=512.7,hi=521.4;
+ const mapY=p=>p.z/3.4+522.5;
+ const output=[];let run=[];
+ const flush=()=>{if(run.length>1)output.push(run);run=[];};
+ for(let i=1;i<points.length;i++){
+  const a=points[i-1],b=points[i],ay=mapY(a),by=mapY(b);
+  const cuts=[0,1];
+  if(Math.abs(by-ay)>1e-9)for(const bound of [lo,hi]){
+   const t=(bound-ay)/(by-ay);if(t>1e-9&&t<1-1e-9)cuts.push(t);
+  }
+  cuts.sort((x,y)=>x-y);
+  for(let j=1;j<cuts.length;j++){
+   const ta=cuts[j-1],tb=cuts[j],y=ay+(by-ay)*(ta+tb)/2;
+   if(y>=lo&&y<=hi){flush();continue;}
+   const start=a.clone().lerp(b,ta),end=a.clone().lerp(b,tb);
+   if(!run.length)run.push(start);
+   else if(run.at(-1).distanceToSquared(start)>1e-10){flush();run.push(start);}
+   run.push(end);
+  }
+ }
+ flush();return output;
+}
