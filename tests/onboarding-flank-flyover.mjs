@@ -111,8 +111,9 @@ assert.equal(controls.enabled,true);
 // Previously the tour only auto-played once. It must now run on EVERY
 // ordinary map opening, while deep links and explicit tour=0 retain control.
 const sourceHtml=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-assert.match(sourceHtml,/<button id="museumTourStart" class="sites-accordion museum-tour-menu-entry"/);
-assert.match(sourceHtml,/body\.mobile-menu-open #ui>#museumTourStart\{display:flex\}/);
+assert.match(sourceHtml,/<button id="museumTourStart" class="museum-tour-replay"[^>]*>↻ ОБУЧЕНИЕ · 29 СЕК<\/button>/);
+assert.match(sourceHtml,/<div class="navigation-guide-content">[\s\S]*?<button id="museumTourStart" class="museum-tour-replay"/);
+assert.doesNotMatch(sourceHtml,/#ui>#museumTourStart/,'Tour button must not be a top-level sidebar entry');
 assert.match(sourceHtml,/document\.getElementById\('museumTourStart'\)\?\.addEventListener\('click'/);
 assert.match(sourceHtml,/window\.__MUSEUM_ONBOARDING\?\.replay\(\)/);
 function autoForReturningVisitor(search,webdriver=false){
