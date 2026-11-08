@@ -32,7 +32,8 @@ for(const [kind,g] of Object.entries(geometries)){
 
 // Exercise the actual uploaded owner scheme, not only a synthetic junction.
 const owner=JSON.parse(readFileSync(new URL('../data/road-edits-authoritative-20261103.json',import.meta.url),'utf8'));
-assert.equal(owner.added.length,18);
+assert.equal(owner.added.length,19);
+assert(owner.added.some(r=>r.id==='road-105-repaired'),'The repaired Site 105 road enters the mesh builder');
 assert.equal(owner.hidden.length,286);
 assert.equal(owner.revision,'rockettrip-roads-v4-20261105-site250a-asphalt-cleanup');
 assert(!owner.added.some(r=>r.id==='road-7'),'Duplicate asphalt strip near 250A is still in the baseline');
