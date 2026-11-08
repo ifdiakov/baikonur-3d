@@ -116,18 +116,18 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   const radius=id==='pad-1'?19:id==='pad-250'?36:id==='pad-112'?25:id==='pad-23'?53:id==='pad-3'?18:o.type==='city'?23:10;
   const height=id==='pad-1'?2:1.2;
   const surfaces=[];o.g.traverse(m=>{if(m.isMesh)surfaces.push(m);});
-  const count=o.type==='city'?12:id==='pad-3'?8:4;
+  const count=o.type==='city'?12:id==='pad-31'?10:id==='pad-3'?8:4;
   for(let j=0;j<count;j++){const angle=(j+.5)*Math.PI*2/count;
    // Site 31's traced bowl is wider than the former generic light circle.
    // Keep its poles and pools on the solid service yards, not above the void.
-   const site31Local=[[-86,.10,-40],[80,.10,-40],[-83,.10,118],[94,.10,117]];
+   const site31Local=[[-86,.10,-40],[80,.10,-40],[-83,.10,118],[94,.10,117],[-99,.10,-9],[99,.10,-9],[-97,.10,40],[98,.10,40],[-98,.10,82],[98,.10,83]];
    const site31Base=id==='pad-31'?o.g.localToWorld(new THREE.Vector3(...site31Local[j])):null;
    const x=site31Base?.x??center.x+Math.cos(angle)*radius,z=site31Base?.z??center.z+Math.sin(angle)*radius;
    // Saturn's summit is above the former raycast ceiling. Sample its actual
    // height field, so bases and light pools cannot drop to the flat map below.
    const y=(site31Base?site31Base.y:id==='pad-23'?saturnGround(x,z):baseAt(x,z,surfaces,height))+.02;
    (o.type==='city'?cityLights:siteLights).push({x,y,z,
-    height:id==='pad-1'?1.8:id==='pad-250'?3.6:id==='pad-3'?3.2:2.6,radius:site31Base?4:10,owner:o.g,color:j%3?0xffcf94:0xd6e8ff});
+    height:id==='pad-1'?1.8:id==='pad-250'?3.6:id==='pad-3'?3.2:2.6,radius:site31Base?4:10,owner:o.g,color:site31Base?0xffcf94:j%3?0xffcf94:0xd6e8ff});
   }
  }
  filterBank(siteLights,'site');filterBank(cityLights,'city');
