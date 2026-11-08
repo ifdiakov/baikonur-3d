@@ -17,8 +17,9 @@ assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.title),titles);
 const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html.indexOf('</aside>',asideStart));
 assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the six remaining menu sections in order');
 assert.deepEqual([...aside.matchAll(/<details id="[^"]+" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">([^<]+)<\/span>/g)].map(match=>match[1]),titles,
- 'Only the seven accordion sections count as catalogue headings; stand-alone tour and encyclopedia entries are separate links');
-assert.match(aside,/<button id="museumTourStart"[^>]*type="button"/,'Training is visible as a distinct menu action');
+ 'Only the seven accordion sections count as catalogue headings; encyclopedia and camera-control training are separate');
+assert.match(aside,/<details id="navigationGuide"[\s\S]*?<div class="navigation-guide-content">[\s\S]*?<button id="museumTourStart"[^>]*type="button"/,
+ 'Training must sit inside the camera-control panel, not in the root menu');
 assert.match(aside,/<a id="encyclopediaNavLink"[^>]+href="\.\/encyclopedia\.html"/,'The Encyclopedia link remains available');
 assert.match(aside,/<div class="museum-name">БАЙКОНУР<\/div>/);
 assert.match(aside,/<span class="museum-subtitle-label">ИНТЕРАКТИВНЫЙ МУЗЕЙ<\/span><span class="museum-dimension">3D<\/span>/);
