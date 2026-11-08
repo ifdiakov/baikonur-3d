@@ -384,7 +384,18 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const markingRoads=[],highwayMarkedWays=new Set();let highwayMarkingRuns=0,rampMarkingRuns=0;
  let markingSegments=0,railTies=0,connections=0;const accessReports=[],railPortReports=[],renderedRoadWays=new Set(),renderedRailWays=new Set(),hiddenCityWays=new Set();
  let roadPruning=null,railPruning=null,exhibitRoadFilter=null;
- const edgeKept=(graph,e)=>!(graph===roadGraph?roadPruning:railPruning)?.removed.has(e)&&!(graph===roadGraph&&exhibitRoadFilter?.removed.has(e));
+ // Owner correction near X752.4/Y458.7: old OSM side branch 37550553
+ // doubles back across the approved driveway. Keep only its short connection
+ // from the main AD to 37550561; the eastward spur is not displayed.
+ const junctionSpurRemoved=new Set();
+ for(const way of roadGraph.ways)if(String(way.osmId)==='37550553')
+  for(const edge of way.segments){
+   const a=edge.a.position,b=edge.b.position;
+   const midX=(a.x+b.x)/6.8+650,midY=(a.z+b.z)/6.8+522.5;
+   if(midX>753&&midY>458)junctionSpurRemoved.add(edge);
+  }
+
+ const edgeKept=(graph,e)=>!(graph===roadGraph?roadPruning:railPruning)?.removed.has(e)&&!(graph===roadGraph&&(exhibitRoadFilter?.removed.has(e)||junctionSpurRemoved.has(e)));
  // The enlarged Yubileiny exhibit occupies more land than the source runway.
  // Clear its displayed runway, taxiway, apron and terminal. A single
  // synthetic perimeter route reconnects through roads; intersecting railway
