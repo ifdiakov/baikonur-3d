@@ -70,7 +70,23 @@ export function clipSingleRailAccess(points,pathOrId,{world=true}={}){
  */
 export const PAD5_REDUNDANT_RAIL_WAY='172458467';
 export function clipPad5DuplicateRail(points,pathOrId){
- if(String(railSourceId(pathOrId))!==PAD5_REDUNDANT_RAIL_WAY||points.length<2)return [points];
+ const id=railSourceId(pathOrId);
+ if(points.length<2)return [points];
+ if(String(id)!==PAD5_REDUNDANT_RAIL_WAY){
+  // Legacy terrain bake omits sourceWayId. Recover this precise branch
+  // only when its points include BOTH unique anchors (not the adjacent
+  // through line 37547653). Never infer from a single nearby point.
+  if(id&&id!=='unknown'&&!String(id).startsWith('rail-'))return [points];
+  const distanceTo=(x,y)=>{
+   let best=Infinity;
+   for(const p of points){
+    const mx=p.x/3.4+650,my=p.z/3.4+522.5;
+    best=Math.min(best,Math.hypot(mx-x,my-y));
+   }
+   return best;
+  };
+  if(distanceTo(621.77,521.08)>1.5||distanceTo(616.85,491.97)>2.2)return [points];
+ }
  const lo=512.7,hi=521.4;
  const mapY=p=>p.z/3.4+522.5;
  const output=[];let run=[];
