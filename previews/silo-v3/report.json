@@ -193,7 +193,7 @@
       "lidAngleDeg": 108,
       "cameraDistance": 28.758303148829917,
       "cameraHeight": 6.823529411764709,
-      "planDistance": 10.411473907537575,
+      "planDistance": 10.411473907537573,
       "aimDistance": 0,
       "steamVisible": true,
       "steamParticles": 36,
@@ -266,9 +266,9 @@
       }
     },
     "camera": [
-      8.871973403311848,
+      8.848747069480325,
       16.000000000000007,
-      22.74396816588802
+      22.75301464202851
     ],
     "target": [
       0,
@@ -287,5 +287,71 @@
       778
     ]
   },
+  "rocket": {
+    "modelId": "zenit-land",
+    "ready": true,
+    "choices": [
+      "soyuz5",
+      "pua-100",
+      "cyclone-2",
+      "cyclone-3",
+      "cyclone-pad",
+      "soyuz",
+      "energia-polyus",
+      "energia-buran",
+      "energia",
+      "energia-m",
+      "zenit-land",
+      "zenit-sea",
+      "tua",
+      "buran",
+      "mig25",
+      "n1",
+      "r16",
+      "proton",
+      "mriya",
+      "aircraft",
+      "tu204",
+      "train",
+      "coach",
+      "silo",
+      "proton-pad",
+      "site45"
+    ],
+    "view": "full",
+    "dark": true,
+    "exploded": false,
+    "gear": true,
+    "vehicleVisible": true,
+    "autoRotate": true,
+    "rotationSpeed": 0.6483062036630335,
+    "reducedMotion": false,
+    "modelState": null,
+    "camera": [
+      58.17281604767214,
+      24.2158883980425,
+      80.12866183844066
+    ],
+    "target": [
+      25.420678949066428,
+      14.677847851552965,
+      0
+    ],
+    "size": [
+      52.91748566569572,
+      32.95474171684869,
+      4.239999771118164
+    ],
+    "drawCalls": 19,
+    "triangles": 100160,
+    "viewport": [
+      967,
+      778
+    ]
+  },
+  "angles": [
+    0.2428628955548935,
+    0.23991657004194977
+  ],
   "errors": []
 }
