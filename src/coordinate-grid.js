@@ -86,7 +86,10 @@ export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045
   setEnabled(!enabled);
  });
  toggle?.addEventListener('click',()=>setEnabled(!enabled));
- if(new URLSearchParams(location.search).get('grid')==='1')setEnabled(true);
- window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v3-cursor-badge'};
+ // Editing coordinates are part of the museum's normal authoring view.
+ // Keep them active across ordinary navigation and URL refreshes; use G or
+ // ?grid=0 to temporarily hide the overlay.
+ setEnabled(new URLSearchParams(location.search).get('grid')!=='0');
+ window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v4-default-visible'};
  return {setEnabled,isEnabled:()=>enabled,group};
 }
