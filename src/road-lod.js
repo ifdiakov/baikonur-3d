@@ -8,6 +8,11 @@ function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads'){
  for(const row of rows){
   if(kind==='roads'&&String(row.id)==='37549252'){skipped++;continue;}
   let path=row.points.map(ll=>{if(ll.length===3)return new THREE.Vector3(ll[0],ll[1]+.018,ll[2]);const xy=geography.project(...ll);return point(xy[0],xy[1],y);});
+  if(kind==='roads'&&String(row.id)==='37550553'){
+   // Keep the connection to X752.4/Y458.7; remove its stray eastbound tail.
+   const cut=path.findIndex((p,i)=>i>0&&p.x/3.4+650>752.45&&p.z/3.4+522.5>458.75);
+   if(cut>=2)path=path.slice(0,cut);
+  }
   if(roadGrade)path=roadGrade.conform(path);
   const runs=kind==='rails'?clipSingleRailAccess(path,row.id):[path];
   if(!runs.length){skipped++;continue;}
