@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {validateWorkshopState,mapToWorld,worldToMap} from '../src/workshop-state.js';
+const base={version:1,objects:{'pad-113':{position:[1,2,3],yaw:.5,scale:.14}},roads:null};
+assert.deepEqual(validateWorkshopState(base,new Set(['pad-113'])).objects['pad-113'].position,[1,2,3]);
+assert.throws(()=>validateWorkshopState(base,new Set(['pad-1'])));
+assert.throws(()=>validateWorkshopState({...base,objects:{x:{position:[NaN,1,1],yaw:0,scale:1}}}));
+assert.throws(()=>validateWorkshopState({...base,objects:{x:{position:[1,2,3],yaw:0,scale:-1}}}));
+assert.throws(()=>validateWorkshopState(JSON.parse('{"version":1,"objects":{"__proto__":{"position":[1,2,3],"yaw":0,"scale":1}}}')));
+for(const p of [[650,522.5,0],[605.7,424.2,-2.73],[0,0,1]])worldToMap(mapToWorld(...p)).forEach((n,i)=>assert(Math.abs(n-p[i])<1e-8));
+console.log('WORKSHOP_STATE_PASS');

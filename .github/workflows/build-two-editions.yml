@@ -1,0 +1,70 @@
+name: Build and verify two museum editions
+on:
+  push:
+    branches: [feature/workshop-public-20261109, main]
+    paths: ['data/workshop-state.json', '.github/workflows/build-two-editions.yml', 'scripts/editions-retry.txt']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+concurrency:
+  group: two-editions-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deterministic build tools
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0 esbuild@0.25.0
+          npx playwright install --with-deps chromium
+      - name: Prepare workshop and bundled public runtime
+        run: |
+          python3 scripts/apply-editions-context.py
+          python3 scripts/prepare-two-editions.py
+          node tests/workshop-state.mjs
+          node scripts/build-public-app.mjs
+          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/two-editions-server.log 2>&1 &
+      - name: Compile approved scene into terrain images and site assets
+        run: node scripts/build-public-data.mjs
+      - name: Browser acceptance and cold load timings
+        env:
+          QA_RUNS: '3'
+        run: node tests/two-editions-browser.mjs
+      - name: Write plain-language role report
+        run: node scripts/write-edition-report.mjs
+      - name: Save verified build without overwriting concurrent edits
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add AGENTS.md PROJECT_CONTEXT.md src/road-editor.js workshop.html museum.html public-app public-data docs/releases/two-editions-20261109.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Publish verified workshop and terrain-texture visitor build'
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+      - name: Request Pages rebuild for authored main update
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api --method POST repos/${{ github.repository }}/pages/builds
+      - name: Preserve scene compiler output and evidence
+        if: always()
+        run: |
+          mkdir -p qa-two-editions
+          cp /tmp/two-editions-server.log qa-two-editions/server.log || true
+          tar -czf /tmp/two-editions-built.tar.gz --exclude=node_modules public-data public-app museum.html workshop.html src/workshop-tools.js src/public-museum.js src/public-build-export.js 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: two-editions-evidence
+          path: |
+            qa-two-editions/
+            /tmp/two-editions-built.tar.gz
+          retention-days: 7
