@@ -13,7 +13,7 @@ await page.addInitScript(()=>{const raf=requestAnimationFrame;window.requestAnim
 const url=new URL('workshop/model.html?model=silo',base).href;
 const ready=()=>page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);
 const stats=()=>page.evaluate(()=>window.__MODEL_VIEWER_QA.stats());
-const advance=(frames,hz=60)=>page.evaluate(({frames,hz})=>{const q=window.__MODEL_VIEWER_QA;window.__motionTime??=performance.now();for(let i=0;i<frames;i++)q.frame(window.__motionTime+=1000/hz);return q.stats();},{frames,hz});
+const advance=(frames,hz=60)=>page.evaluate(({frames,hz})=>{const q=window.__MODEL_VIEWER_QA;window.__motionTime??=performance.now();for(let i=0;i<frames;i++)q.step(window.__motionTime+=1000/hz);q.frame(window.__motionTime);return q.stats();},{frames,hz});
 const resetClock=()=>page.evaluate(()=>window.__motionTime=performance.now());
 const capture=async name=>{
  await page.evaluate(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
@@ -51,5 +51,13 @@ try{
  await page.emulateMedia({reducedMotion:'no-preference'});
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>__MODEL_VIEWER_QA.load('silo'));await ready();await resetClock();await advance(240);assert((await stats()).autoRotate);assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
  await page.screenshot({path:out+'/mobile.png',fullPage:true});
+ // Exercise the normal requestAnimationFrame loop too, without synthetic stepping.
+ const live=await browser.newPage({viewport:{width:900,height:700}});
+ await live.goto(new URL('workshop/model.html?model=silo',base).href);
+ await live.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);
+ const liveBefore=await live.evaluate(()=>__MODEL_VIEWER_QA.stats().camera);
+ await live.waitForTimeout(700);
+ const liveAfter=await live.evaluate(()=>__MODEL_VIEWER_QA.stats());
+ assert(liveAfter.autoRotate);assert.notDeepEqual(liveAfter.camera,liveBefore);await live.close();report.liveAnimation=true;
  assert.deepEqual(errors,[]);report.passed=true;report.errors=errors;console.log('SILO_PREVIEW_AND_AUTOROTATE_OK',JSON.stringify(report));
 }finally{await writeFile(out+'/report.json',JSON.stringify({...report,errors},null,2)+'\n');await browser.close();}

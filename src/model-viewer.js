@@ -46,16 +46,17 @@ try{
   }else fit(({full:rocket?[1.5,.35,2.8]:[1.1,.70,1.4],front:[0,.06,1],side:[1,.09,0],top:[0,1,.001],bottom:[0,-1,.001]})[id]||[1,1,1]);
   controls.update(0);controls.enableDamping=true;controls.autoRotate=wasRotating;lastFrame=null;camera.updateMatrixWorld(true);for(const b of document.querySelectorAll('[data-view]')){b.classList.toggle('active',b.dataset.view===id);b.setAttribute('aria-pressed',String(b.dataset.view===id));}return true;
  }
- function renderFrame(time=performance.now()){
-  if(disposed)return;
+ function updateFrame(time=performance.now()){
+  if(disposed)return false;
   const dt=lastFrame===null?0:Math.max(0,Math.min((time-lastFrame)/1000,.05));lastFrame=time;
-  if(document.hidden)return;
+  if(document.hidden)return false;
   rotationSpeed=THREE.MathUtils.damp(rotationSpeed,controls.autoRotate ? .65 : 0,3,dt);
   controls.autoRotateSpeed=rotationSpeed;
   if(dt>0)controls.dampingFactor=1-Math.pow(.9,dt*60);
   controls.update(dt);
-  model?.update?.(time,camera,controls.target);renderer.render(scene,camera);
+  model?.update?.(time,camera,controls.target);return true;
  }
+ function renderFrame(time=performance.now()){if(updateFrame(time))renderer.render(scene,camera);}
  async function load(id){
   id=resolveModelId(id);if(!MODEL_CATALOG[id])return;
   const token=++generation;request?.abort();request=new AbortController();const controller=request,timer=setTimeout(()=>controller.abort(),45000);
@@ -82,7 +83,7 @@ try{
  document.getElementById('gear').onclick=e=>{if(!model?.setGear)return;gear=!gear;model.setGear(gear?1:0);e.currentTarget.setAttribute('aria-pressed',String(gear));e.currentTarget.textContent=gear?'Убрать шасси':'Выпустить шасси';inspect(view);renderFrame();};
  document.getElementById('explode').onclick=e=>{if(!model?.setExploded)return;exploded=!exploded;model.setExploded(exploded?1:0);e.currentTarget.setAttribute('aria-pressed',String(exploded));e.currentTarget.textContent=exploded?'Собрать ракету':'Разнести ступени';inspect('full');};
  renderer.domElement.addEventListener('keydown',e=>{if(e.key==='Home'){e.preventDefault();stopAutoRotation();inspect('full');}});
- window.__MODEL_VIEWER_QA={version:MODEL_VIEWER_VERSION,load,inspect,frame:renderFrame,stats:()=>({modelId:current,ready:!!model,choices,view,dark,exploded,gear,vehicleVisible,autoRotate:controls.autoRotate,rotationSpeed,reducedMotion:reducedMotion.matches,modelState:model?.stats?.()??null,camera:camera.position.toArray(),target:controls.target.toArray(),size:model?box().getSize(new THREE.Vector3()).toArray():null,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,viewport:[container.clientWidth,container.clientHeight]})};
+ window.__MODEL_VIEWER_QA={version:MODEL_VIEWER_VERSION,load,inspect,frame:renderFrame,step:updateFrame,stats:()=>({modelId:current,ready:!!model,choices,view,dark,exploded,gear,vehicleVisible,autoRotate:controls.autoRotate,rotationSpeed,reducedMotion:reducedMotion.matches,modelState:model?.stats?.()??null,camera:camera.position.toArray(),target:controls.target.toArray(),size:model?box().getSize(new THREE.Vector3()).toArray():null,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,viewport:[container.clientWidth,container.clientHeight]})};
  function animateModel(time){raf=requestAnimationFrame(animateModel);renderFrame(time);}raf=requestAnimationFrame(animateModel);load(current);
  window.addEventListener('pagehide',()=>{disposed=true;generation++;request?.abort();cancelAnimationFrame(raf);observer.disconnect();reducedMotion.removeEventListener('change',motionPreferenceChanged);document.removeEventListener('visibilitychange',resetFrameClock);controls.dispose();model?.dispose();renderer.dispose();renderer.forceContextLoss();},{once:true});
 }catch(error){status.hidden=false;statusText.textContent='Для просмотра модели нужен WebGL. Обновите страницу или включите аппаратное ускорение.';console.error(error);}
