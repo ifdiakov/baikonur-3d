@@ -41,6 +41,7 @@ jobs:
           node tests/road-editor-startup.mjs
           node tests/site31-source-model.mjs
           node tests/site31-geometry.mjs
+          node tests/site31-added-lighting.mjs
           node tests/gagarin-source-table.mjs
           node tests/soyuz-launch-scale.mjs
           node tests/soyuz-excavation-rim.mjs
