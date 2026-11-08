@@ -1,7 +1,7 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {COMPLEX_HISTORY_MENU} from './complex-history-menu.js?v=20261103-lean-startup-v1';
 
-export const MUSEUM_MENU_VERSION='museum-seven-sections-v11-soyuz5';
+export const MUSEUM_MENU_VERSION='museum-seven-sections-v12-proton';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -46,7 +46,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'energia-m',title:'«Энергия-М»',description:'Двухблочная компоновка проекта'},
   {action:'tua',title:'«Кузнечики»',description:'Транспортно-установочные агрегаты'},
   {action:'cyclone-2',title:'«Циклон»',description:'Площадка №90 · Циклон-2 и Циклон-3 в 3D'},
-  {action:'proton',title:'«Протон-М»',description:'Площадки №81 и №200 · просмотр в 3D'},
+  {action:'proton',title:'«Протон»',description:'Площадки №81 и №200 · просмотр в 3D'},
   {action:'n1',title:'«Н-1»',description:'Лунная ракета · просмотр в 3D'},
   {action:'r16',title:'Р-16',description:'Музейный экспонат на площадке №41 · просмотр в 3D'},
   {action:'mig25',title:'МиГ-25',description:'Рассмотреть самолёт в 3D'},

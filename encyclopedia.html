@@ -73,7 +73,7 @@ const thumbs=new Map(),map=new Map(),safeUrl=value=>{
 };
 let modelController=null,modelPromise=null,previewStarted=false;
 try{
- const response=await fetch('./data/encyclopedia.json?v=encyclopedia-media-v2');
+ const response=await fetch('./data/encyclopedia.json?v=20261108-proton-source-v1');
  if(!response.ok)throw Error('HTTP '+response.status);
  data=await response.json();
 }catch(e){$('#cards').textContent='Не удалось загрузить энциклопедию: '+e.message;return}
@@ -138,7 +138,7 @@ function appendMediaCredit(detail,x){
 }
 function warm3D(){
  if(modelPromise)return modelPromise;
- modelPromise=import('./src/encyclopedia-3d.js?v=20261107-media-v1')
+ modelPromise=import('./src/encyclopedia-3d.js?v=20261108-proton-source-v1')
  .then(m=>{
   modelController=m.createEncyclopedia3D();
   if(!previewStarted){

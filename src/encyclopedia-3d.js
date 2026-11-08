@@ -211,7 +211,7 @@ export function createEncyclopedia3D(){
     // rather than silently showing a different historical vehicle.
     (async()=>{
       try{
-       const {createInspectionModel}=await import('./inspection-models.js?v=20261107-encyclopedia-card-3d-v1');
+       const {createInspectionModel}=await import('./inspection-models.js?v=20261108-proton-source-v1');
        const exact=await createInspectionModel(exactId,{signal:abort.signal});
        if(active!==state||abort.signal.aborted){exact.dispose();return;}
        scene.remove(root);state.root=exact.root;scene.add(exact.root);state.exact=exact;

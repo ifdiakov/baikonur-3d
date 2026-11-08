@@ -1,0 +1,42 @@
+name: Proton source models
+on:
+  pull_request:
+    branches: [main]
+    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
+  push:
+    branches: [main]
+    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: proton-source-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install verification dependencies
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 @gltf-transform/core@4.2.1 @gltf-transform/extensions@4.2.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Validate source models, LOD and placement
+        run: |
+          node tests/proton-source.mjs
+          node tests/proton-launch-geometry.mjs
+          node tests/soyuz5-source.mjs
+          node tests/menu-catalog-contract.mjs
+      - name: Serve checkout
+        run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Inspect models and both launch sites
+        run: node tests/proton-launch-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proton-source-evidence
+          path: qa-inspector/
