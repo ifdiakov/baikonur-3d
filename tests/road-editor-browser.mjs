@@ -28,7 +28,7 @@ try{
  assert.equal(initial.sourceMaterialColors.asphalt,'#555751','New asphalt must match OSM grey');
  assert.equal(initial.sourceMaterialColors.shoulder,'#c5c1b4','New shoulders must match old shoulders');
  assert.equal(initial.sourceMaterialColors.ground,'#b2a58d','Ground access must match OSM dirt');
- assert.equal(initial.sourceMaterialColors.highway,'#42494c','Highways must use the same asphalt material');
+ assert.equal(initial.sourceMaterialColors.highway,'#555751','Highways must match the OSM source asphalt palette (including fallback)');
  assert.equal(initial.roadStyles.length,19);
  assert.equal(initial.baselineRevision,'rockettrip-roads-v5-20261108-site105-continuous-driveway');
  assert(!initial.roadStyles.some(r=>r.id==='road-7'),'Duplicate 250A asphalt is rendered');
