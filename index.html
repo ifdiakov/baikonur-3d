@@ -2080,8 +2080,8 @@ function focus(i){
  }else if(o.isStation){railStations.inspect(r.id,camera,ctl);
  }else if(r.id==='np-31-1'){
   const mobile=matchMedia('(max-width:850px)').matches;
-  ctl.target.copy(o.g.localToWorld(new THREE.Vector3(0,mobile?-16:1,0)));
-  camera.position.copy(o.g.localToWorld(new THREE.Vector3(...(mobile?[68,88,-100]:[37,44,-53]))));
+  ctl.target.copy(o.g.localToWorld(new THREE.Vector3(0,mobile?-22:1,0)));
+  camera.position.copy(o.g.localToWorld(new THREE.Vector3(...(mobile?[88,120,-130]:[37,44,-53]))));
  }else if(o.archive){portalArchive.focus(i,camera,ctl);}else camera.position.copy(ctl.target).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  let airportViews=document.getElementById('airportViews');if(!airportViews){airportViews=document.createElement('div');airportViews.id='airportViews';document.getElementById('description').after(airportViews);}
  airportViews.replaceChildren();airportViews.hidden=!o.g.userData.airport;
