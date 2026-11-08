@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {clipSingleRailAccess} from './site-single-rail-access.js?v=20261108-single-access-v1';
+import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 export const ROAD_LOD_VERSION='road-lod-prebuilt-v1';
 const colors={road:0xadb2b3,rail:0x8b8170};
 const phase='prebaked-overview';
@@ -14,7 +15,7 @@ function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads'){
    if(cut>=2)path=path.slice(0,cut);
   }
   if(roadGrade)path=roadGrade.conform(path);
-  const runs=kind==='rails'?clipSingleRailAccess(path,row.id):[path];
+  const runs=kind==='rails'?clipSingleRailAccess(path,row.id).map(run=>roundRailCorners(run,{radius:15})):[path];
   if(!runs.length){skipped++;continue;}
   const width=row.w*(roadGrade?.widthScale(row.id)??1);
   for(const path of runs){if(path.length<2)continue;
