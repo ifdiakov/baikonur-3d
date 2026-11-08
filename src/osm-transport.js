@@ -1397,7 +1397,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  // Roadside crossing signals also cover museum-only late driveways.
  const crossingIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
- const crossingSigns=buildRailCrossingSignals({crossings:findRailRoadCrossings(railPaths,crossingIndex),parent:roadRoot});
+ const crossingSigns=buildRailCrossingSignals({crossings:findRailRoadCrossings(railPaths,crossingIndex),parent:roadRoot,roadIndex:crossingIndex});
  checkpoint('complete');
  const buildMilliseconds=Date.now()-started;
  return {roadPaths:()=>roadPaths,
