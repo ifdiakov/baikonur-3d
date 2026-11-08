@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {clipSingleRailAccess} from './site-single-rail-access.js?v=20261108-single-access-v1';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
@@ -103,7 +104,7 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
  const highway=routes.find(r=>r.id===bake.vehicles.highway);
  if(!highway)throw Error('Cached highway missing');
  paths.osmVehiclePlan={routes,highway,source:bake.vehicles.source,joins:bake.vehicles.joins,extensions:[]};
- const terrain={roads:unpack(bake.terrain.roads,roadGrade).filter(path=>path.id!=='r-site23-saturn-access'),rails:unpack(bake.terrain.rails)};
+ const terrain={roads:unpack(bake.terrain.roads,roadGrade).filter(path=>path.id!=='r-site23-saturn-access'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(path.points,path).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
  const train={...bake.train,path:unpackPath(bake.train.path)};
  const bridge=bake.bridgeBounds?(function(){
   const bbox=new THREE.Box3(new THREE.Vector3(...bake.bridgeBounds.min),new THREE.Vector3(...bake.bridgeBounds.max));
