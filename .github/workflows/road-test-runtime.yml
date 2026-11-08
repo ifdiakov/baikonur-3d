@@ -1,0 +1,25 @@
+name: Road test runtime
+on:
+  push:
+    branches: [fix/road-acceptance-20261109]
+    paths: ['.github/workflows/road-test-runtime.yml']
+permissions:
+  contents: read
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install chromium-headless-shell
+          root=$(find "$HOME/.cache/ms-playwright" -maxdepth 1 -type d -name 'chromium_headless_shell-*' | head -1)
+          tar -C "$root" -czf /tmp/road-browser-runtime.tar.gz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: road-browser-runtime
+          path: /tmp/road-browser-runtime.tar.gz
+          retention-days: 1
