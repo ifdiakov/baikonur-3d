@@ -11,14 +11,71 @@ function release(root){
  const geometry=new Set(),materials=new Set(),textures=new Set();root.traverse(o=>{if(!o.isMesh)return;geometry.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material]){materials.add(m);for(const t of Object.values(m))if(t?.isTexture)textures.add(t);}});
  geometry.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());textures.forEach(t=>t.dispose());
 }
+// The imported 31/6 source provides tall trusses but only a few useful
+// illuminated lens surfaces. Mount compact physical lamp panels on those
+// actual mast locations, then feed their exact faces to the shared instanced
+// floodlight system; do not spawn individual PointLights or SpotLights.
 function finalLighting(root){
- // Source towers are grounded separately, without scaling their lattice.
- for(const [id,position]of [['east',[60.97,97.41,13.22]],['west',[-73.63,103.23,-14.55]],['service-right',[3.99,39.41,1.02]],['service-left',[-3.33,37,0]]])registerFacilityBeacon(root,{id:'site31-source-'+id,position,kind:'source-tower'});
- for(const [id,x,y,z]of [['a',84.6,67.24,-21.6],['b',-112.6,68.3,-84.9],['c',-97.7,68.37,84.2]]){
-  const normal=new THREE.Vector3(-x,0,-z).normalize().toArray();
-  registerFacilityFloodlights(root,{id:'site31-source-flood-'+id,target:[0,0,0],beacon:[x,y,z],source:'Drive model light tower',lamps:[{position:[x,y-1,z],normal,size:[.6,.6]}]});
+ const sourceMasts=[
+  ['east',[60.97,97.41,13.22]],['west',[-73.63,103.23,-14.55]],
+  ['service-right',[3.99,39.41,1.02]],['service-left',[-3.33,37,0]]
+ ];
+ for(const [id,position]of sourceMasts)registerFacilityBeacon(root,{id:'site31-source-'+id,position,kind:'source-tower'});
+ const heads=new THREE.Group();
+ heads.name='Пл.31 · реальные плафоны осветительных мачт';
+ heads.userData.site31FloodlightHeads=true;
+ const front=new THREE.Vector3(0,0,1),up=new THREE.Vector3(0,1,0);
+ const palette=new THREE.MeshStandardMaterial({color:0xdce2dd,roughness:.64,metalness:.12,side:THREE.DoubleSide});
+ const supports=new THREE.MeshStandardMaterial({color:0x74868b,roughness:.85,metalness:.27});
+ const geometry=new THREE.PlaneGeometry(1,1);
+ function panelBoard(id,x,y,z,{columns=4,rows=2,stepX=1.18,stepY=.78,sizeX=1.0,sizeY=.65,target}={}){
+  const normal=new THREE.Vector3(-x,0,-z).normalize();
+  if(normal.lengthSq()<.1)normal.set(0,0,1);
+  const right=new THREE.Vector3().crossVectors(up,normal).normalize();
+  const lamps=[],quat=new THREE.Quaternion().setFromUnitVectors(front,normal);
+  const center=new THREE.Vector3(x,y,z);
+  for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
+   const p=center.clone().addScaledVector(right,(col-(columns-1)/2)*stepX);
+   p.y+=(row-(rows-1)/2)*stepY;
+   const panel=new THREE.Mesh(geometry,palette);
+   panel.position.copy(p);
+   panel.quaternion.copy(quat);
+   panel.scale.set(sizeX,sizeY,1);
+   panel.name='Пл.31 · плафон '+id+' '+(row*columns+col+1);
+   panel.userData.site31LampPanel=id;
+   heads.add(panel);
+   lamps.push({position:p.toArray(),normal:normal.toArray(),size:[sizeX,sizeY]});
+  }
+  const frame=new THREE.Mesh(new THREE.BoxGeometry((columns-1)*stepX+sizeX+.24,.12,.18),supports);
+  frame.position.copy(center).addScaledVector(normal,-.14);
+  frame.quaternion.copy(quat);
+  frame.name='Пл.31 · траверса '+id;
+  heads.add(frame);
+  registerFacilityFloodlights(root,{
+   id:'site31-source-flood-'+id,target,beacon:[x,y+1,z],
+   source:'Site 31 source mast with added physical illuminated panel faces',
+   lamps
+  });
  }
+ // Three existing source floodlight towers: eight small heads per screen.
+ for(const [id,x,y,z]of [
+  ['a',84.6,67.24,-21.6],['b',-112.6,68.3,-84.9],['c',-97.7,68.37,84.2]
+ ]){
+  panelBoard(id,x,y-1,z,{target:[x*.55,0,z*.25+55]});
+ }
+ // Two mechanical service masts receive smaller work lights below the crown.
+ for(const [id,x,y,z]of [
+  ['service-right',3.99,39.41,1.02],['service-left',-3.33,37,0]
+ ]){
+  panelBoard(id,x,y-2.2,z,{columns:2,rows:2,stepX:.78,stepY:.66,
+   sizeX:.66,sizeY:.5,target:[Math.sign(x)*27,0,29]});
+ }
+ root.add(heads);
+ root.userData.site31AdditionalLighting={version:'site31-mast-light-heads-v1',
+  sourceFloodTowers:3,serviceMasts:2,panels:32,boards:5,
+  weatherproofFaces:true,geometryOwner:heads.name};
 }
+
 export function buildSite31Exhibit(root,{autoLoad=typeof window!=='undefined',loadSource=null}={}){
  const fallback=new THREE.Group();fallback.name='Пл.31 · резервная модель';root.add(fallback);
  const result=buildSite31Pad(fallback),state={version:SITE31_ASSET_VERSION,status:'pending',error:null,bytes:0,triangles:0,drawCalls:0};
