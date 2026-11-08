@@ -711,6 +711,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  for(const way of roadGraph.ways){
   // The source 54568055 road passes through the enlarged 250A footprint.
   // Its entire rendered ribbon is replaced by one offset, connected ribbon.
+  // Owner-directed deletion at map X874 Y275: source OSM way overlaps road-105-repaired.
+  if(String(way.osmId)==='37549252')continue;
   if(use250aBypass&&way===site250aThroughWay)continue;
   if((gagarinApproach&&way.osmId===GAGARIN_APPROACH_WAY_ID)||isRedundantGagarinWay(way))continue;
   const major=MAIN.has(way.tags.highway?.replace('_link',''))||way.tags.highway==='unclassified',points=[];
