@@ -1348,16 +1348,22 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   // to a real junction by Donskaya when one exists.
   candidates.sort((a,b)=>a.score-b.score);
   const junctionCandidates=candidates.filter(c=>Number.isFinite(c.junctionDistance));
-  const tip=junctionCandidates[0]??candidates[0];
+  // Exact owner-selected location from the museum's coordinate overlay.
+  // Do not auto-relocate the NP when OSM road topology changes.
+  const ownerPosition=point(912.9,304.9,0);
+  const tip=junctionCandidates[0]??candidates[0]??{
+   node:{id:'owner-np-donskaya',position:ownerPosition},edge:{wayId:null},
+   heading:new THREE.Vector3(0,0,1),dist:null,railDistance:null,junctionDistance:null
+  };
   if(tip){
    const root=new THREE.Group();root.name='НП · станция Донская';
    // Approximately 35 × 50 m in the museum's 3.4/65 world scale.
    const pad=tip.node.position.clone().addScaledVector(tip.heading,1.4);
-   root.position.set(pad.x,tip.node.position.y+.05,pad.z);
+   root.position.set(ownerPosition.x,0.05,ownerPosition.z);
    root.rotation.y=Math.atan2(tip.heading.x,tip.heading.z);
    root.scale.set(.16,.2,.2);
    root.userData.museumComponent='observation-platform';
-   root.userData.source='owner-placement-donskaya-dead-end';
+   root.userData.source='owner-confirmed-map-coordinates-x912.9-y304.9';
    const deckMaterial=new THREE.MeshStandardMaterial({color:0x555751,roughness:.93});
    const metal=new THREE.MeshStandardMaterial({color:0x3b5654,metalness:.35,roughness:.7});
    const railMat=new THREE.MeshStandardMaterial({color:0xd3c6ad,roughness:.75});
@@ -1386,7 +1392,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    }
    if(layers.sites)layers.sites.add(root);
    donskayaObservation={status:'placed',sourceWayId:tip.edge.wayId,stationDistance:tip.dist,
-    railClearance:tip.railDistance,position:root.position.toArray(),sourceNodeId:tip.node.id,junctionDistance:tip.junctionDistance};
+    railClearance:tip.railDistance,position:root.position.toArray(),mapCoordinates:{x:912.9,y:304.9},sourceNodeId:tip.node.id,junctionDistance:tip.junctionDistance};
   }else donskayaObservation={status:'no-nearby-road-dead-end'};
  }
  // Roadside crossing signals also cover museum-only late driveways.
