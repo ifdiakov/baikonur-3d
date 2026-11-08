@@ -98,13 +98,18 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
   const anchor=new THREE.Object3D();anchor.position.fromArray(s.anchor);group.add(anchor);railRoot.add(group);
   return {...s,group,anchor};
  });
- const paths=unpack(bake.roads,roadGrade).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired');
+ const trimPhantomSpur=path=>{
+  if(!/^osm-road-37550553(?:-|$)/.test(String(path.id)))return path;
+  const cut=path.points.findIndex((p,i)=>i>0&&p.x/3.4+650>752.45&&p.z/3.4+522.5>458.75);
+  return cut>=2?{...path,points:path.points.slice(0,cut)}:path;
+ };
+ const paths=unpack(bake.roads,roadGrade).map(trimPhantomSpur).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired');
  paths.displayHighwayExtensions=unpack(bake.extensions,roadGrade);
  const routes=unpack(bake.vehicles.routes,roadGrade).filter(path=>path.id!=='r-site23-saturn-access');
  const highway=routes.find(r=>r.id===bake.vehicles.highway);
  if(!highway)throw Error('Cached highway missing');
  paths.osmVehiclePlan={routes,highway,source:bake.vehicles.source,joins:bake.vehicles.joins,extensions:[]};
- const terrain={roads:unpack(bake.terrain.roads,roadGrade).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(path.points,path).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
+ const terrain={roads:unpack(bake.terrain.roads,roadGrade).map(trimPhantomSpur).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(path.points,path).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
  const train={...bake.train,path:unpackPath(bake.train.path)};
  const bridge=bake.bridgeBounds?(function(){
   const bbox=new THREE.Box3(new THREE.Vector3(...bake.bridgeBounds.min),new THREE.Vector3(...bake.bridgeBounds.max));
