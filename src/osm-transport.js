@@ -1,6 +1,7 @@
 import {SITE254_ACCESS,SITE254_MASK} from './site254-layout.js?v=20261103-site254-e10s5';
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
+import {omitOwnerRoadEdge,polishOwnerRoadSamples} from './owner-ad-refinements.js?v=20261108-owner19-v1';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
 import {pruneUnassignedRailTermini} from './rail-terminal-cleanup.js?v=20261106-site-matched-rail-ends-v1';
@@ -395,7 +396,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    if(midX>753&&midY>458)junctionSpurRemoved.add(edge);
   }
 
- const edgeKept=(graph,e)=>!(graph===roadGraph?roadPruning:railPruning)?.removed.has(e)&&!(graph===roadGraph&&(exhibitRoadFilter?.removed.has(e)||junctionSpurRemoved.has(e)));
+ const edgeKept=(graph,e)=>!(graph===roadGraph?roadPruning:railPruning)?.removed.has(e)&&!(graph===roadGraph&&(exhibitRoadFilter?.removed.has(e)||junctionSpurRemoved.has(e)||omitOwnerRoadEdge(e)));
  // The enlarged Yubileiny exhibit occupies more land than the source runway.
  // Clear its displayed runway, taxiway, apron and terminal. A single
  // synthetic perimeter route reconnects through roads; intersecting railway
@@ -483,7 +484,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return false;
  }
  function drawRoad(points,width,tags={},marked=false,force=false,wayId=null,renderedRuns=null,connections=[],surface={}){
-  if(points.length<2)return false;const samples=conformRoadPath(points,width),path=distancePath(samples);if(path.length<.001)return false;
+  if(points.length<2)return false;const samples=polishOwnerRoadSamples(conformRoadPath(points,width),wayId),path=distancePath(samples);if(path.length<.001)return false;
   const dirt=tags.highway==='track'||['unpaved','ground','dirt','sand'].includes(tags.surface),pavement=dirt?unpaved:isHighwayRoad(tags)?highwayAsphalt:asphalt;
   let run=[],rendered=false;
   const flush=()=>{if(run.length>1){
@@ -774,6 +775,14 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   // A horizontal junction disc would protrude through their graded approaches.
   if(!n.edges.some(e=>isHighwayRoad(e.tags))){shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);}
   junctionCount++;
+ }
+ // Tight, owner-verified AD junctions: weld the ordinary paved arms at
+ // their shared heights to avoid triangular holes and missing shoulders.
+ for(const [x,y,radius] of [[612.5,414.1,2.5],[589.8,377.1,2.65],[585.0,402.6,1.5],[580.2,404.0,1.5]]){
+  const centre=point(x,y,0),grade=terrainDatum(centre,4);
+  centre.y=grade;
+  shoulder.disc(centre,radius+.42,-.055);
+  asphalt.disc(centre,radius);
  }
  // Exactly one Gagarin road and one branch to Site 2; these share
  // precise endpoints rather than overlapping guessed centre lines.
