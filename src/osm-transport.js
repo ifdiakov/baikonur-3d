@@ -809,6 +809,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    [{nodeId:'museum-port:pad-2',position:junction.clone(),hostWayId:sourceId}],{widthAt:transition.widthAt});
   shoulder.disc(junction,2.2,-.055);asphalt.disc(junction,1.88);
   roadPaths.push({id:'gagarin-site2-turnoff',label:'Съезд на площадку № 2',
+   tags:{highway:'service',surface:'asphalt'},surface:'asphalt',
    points:spurRuns.flat(),width:3.2,widthAt:transition.widthAt,
    source:'museum-port-to-OSM-main',osmWayIds:[sourceId]});
   accessReports.push({id:'pad-2',sourceWayId:sourceId,roadGap:transition.points.at(-1).distanceTo(gate),
