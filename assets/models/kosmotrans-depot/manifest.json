@@ -1,0 +1,62 @@
+{
+  "version": "kosmotrans-depot-20261108-v1",
+  "sourceDriveId": "1RskdMA0OTrYb4-bAqjwLQ3TD0FnK0Pn9",
+  "sourceFile": "railway_maintenance_depot_and_diesel_locomotive.glb",
+  "sourceBytes": 37964636,
+  "sourceSha256": "029c712e2eecca6b4f66fd2c9a97c31ecb2c8b45b20039b3808c031dc2352c31",
+  "sourceTriangles": 951239,
+  "author": "Metazeon",
+  "license": "CC-BY-4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "sourceUrl": "https://sketchfab.com/3d-models/railway-maintenance-depot-and-diesel-locomotive-0eaba418418447169f4d6a2f4926d4e9",
+  "adaptation": {
+    "unit": "metre",
+    "up": "+Y",
+    "illustrative": true,
+    "cropSourceXY": [
+      [
+        -92,
+        65
+      ],
+      [
+        -10,
+        283
+      ]
+    ],
+    "removed": "Outer main line, northern approaches and ragged scan perimeter",
+    "ground": "Flattened scanned apron; no terrain mound",
+    "texture": [
+      1024,
+      1024
+    ],
+    "placementMap": [
+      566.5,
+      550
+    ],
+    "placementBasis": "Owner: west/left of main AD, at Kosmotrans latitude; not an OSM surveyed depot footprint"
+  },
+  "bounds": {
+    "min": [
+      -78.50114444410535,
+      -0.001798737622827673,
+      -146.5
+    ],
+    "max": [
+      78.50114444410535,
+      34.630270112134546,
+      146.5
+    ],
+    "size": [
+      157.0022888882107,
+      34.632068849757374,
+      293
+    ]
+  },
+  "asset": {
+    "bytes": 647224,
+    "sha256": "b3561f06c74f7321fb1637008758e7e4af9ca49cfe4efe2ec876e21155aeeae1",
+    "triangles": 45347,
+    "primitives": 1,
+    "textures": 1
+  }
+}

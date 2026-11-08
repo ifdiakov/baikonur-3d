@@ -1,0 +1,126 @@
+{
+  "version": "road-fleet-20261108-v1",
+  "id": "land-cruiser",
+  "label": "Toyota Land Cruiser LC300",
+  "unit": "metre",
+  "forward": "+Z",
+  "paint": "black",
+  "halfWidth": 1.1044653506646729,
+  "bounds": {
+    "min": [
+      -1.1044653506646729,
+      0,
+      -2.5305933952331543
+    ],
+    "max": [
+      1.1044653506646729,
+      1.9227675964644435,
+      2.5305933952331543
+    ],
+    "size": [
+      2.2089307013293458,
+      1.9227675964644435,
+      5.061186790466309
+    ]
+  },
+  "asset": {
+    "file": "model.glb",
+    "bytes": 424456,
+    "triangles": 18903,
+    "primitives": 26,
+    "textures": 6,
+    "sha256": "0170231185e2eadf968696d4c6d1266642a2f27a95f61b2288ee8a0ebe9dc812"
+  },
+  "wheels": [
+    {
+      "name": "wheelFrontLeft",
+      "center": [
+        -0.820159,
+        0.417126,
+        1.554658
+      ],
+      "radius": 0.417
+    },
+    {
+      "name": "wheelFrontRight",
+      "center": [
+        0.819841,
+        0.417126,
+        1.554658
+      ],
+      "radius": 0.417
+    },
+    {
+      "name": "wheelRearLeft",
+      "center": [
+        -0.820159,
+        0.417126,
+        -1.312242
+      ],
+      "radius": 0.417
+    },
+    {
+      "name": "wheelRearRight",
+      "center": [
+        0.819841,
+        0.417126,
+        -1.312242
+      ],
+      "radius": 0.417
+    }
+  ],
+  "lights": [
+    {
+      "kind": "head",
+      "position": [
+        -0.69,
+        0.95,
+        2.4
+      ]
+    },
+    {
+      "kind": "head",
+      "position": [
+        0.69,
+        0.95,
+        2.4
+      ]
+    },
+    {
+      "kind": "tail",
+      "position": [
+        -0.78,
+        1.13,
+        -2.37
+      ]
+    },
+    {
+      "kind": "tail",
+      "position": [
+        0.78,
+        1.13,
+        -2.37
+      ]
+    }
+  ],
+  "source": {
+    "file": "land-cruiser.glb",
+    "originalFilename": "2024_toyota_land_cruiser_lc300_vxr_409_tt.glb",
+    "driveId": "1EuCQNJy_yFCbHGYr2oWcst_PHeFtxic3",
+    "label": "Toyota Land Cruiser LC300",
+    "author": "Ddiaz Design (https://sketchfab.com/ddiaz-design)",
+    "license": "CC-BY-NC-SA-4.0 (http://creativecommons.org/licenses/by-nc-sa/4.0/)",
+    "source": "https://sketchfab.com/3d-models/2024-toyota-land-cruiser-lc300-vxr-409-tt-0937e2b405964856a1aac96f54861274",
+    "title": "2024 Toyota Land Cruiser LC300 VXR 409 TT",
+    "bytes": 46559156,
+    "sha256": "a2f37ae317dffb2551da0d2c61118f0567dd4f5594b782b66a9871b89c199c43",
+    "driveUrl": "https://drive.google.com/file/d/1EuCQNJy_yFCbHGYr2oWcst_PHeFtxic3/view"
+  },
+  "modifications": [
+    "Removed high-poly hidden interior where applicable; exterior identity preserved.",
+    "Original tyre/rim geometry separated into four rotating assemblies.",
+    "Simplified topology, embedded textures resized to <=512 px and encoded as WebP.",
+    "Metric normalization, +Y up, +Z forward, wheel contact at y=0.",
+    "Body paint changed to black; original NC-SA licence retained."
+  ]
+}

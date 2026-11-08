@@ -1,0 +1,126 @@
+{
+  "version": "road-fleet-20261108-v1",
+  "id": "uaz-patriot",
+  "label": "УАЗ Патриот",
+  "unit": "metre",
+  "forward": "+Z",
+  "paint": "original",
+  "halfWidth": 1.1038305052994744,
+  "bounds": {
+    "min": [
+      -1.103815653833678,
+      0,
+      -2.4666709899902344
+    ],
+    "max": [
+      1.1038305052994744,
+      2.1404360808100353,
+      2.4666709899902344
+    ],
+    "size": [
+      2.2076461591331524,
+      2.1404360808100353,
+      4.933341979980469
+    ]
+  },
+  "asset": {
+    "file": "model.glb",
+    "bytes": 187384,
+    "triangles": 14358,
+    "primitives": 17,
+    "textures": 2,
+    "sha256": "da050d4331a9a2a50a7cf3b5f0717f82b7ea788d09762f4c2251fcc75daf80e1"
+  },
+  "wheels": [
+    {
+      "name": "wheelFrontLeft",
+      "center": [
+        -0.938654,
+        0.428888,
+        1.584999
+      ],
+      "radius": 0.431
+    },
+    {
+      "name": "wheelFrontRight",
+      "center": [
+        0.935346,
+        0.428888,
+        1.584999
+      ],
+      "radius": 0.431
+    },
+    {
+      "name": "wheelRearLeft",
+      "center": [
+        -0.938654,
+        0.428888,
+        -1.269701
+      ],
+      "radius": 0.431
+    },
+    {
+      "name": "wheelRearRight",
+      "center": [
+        0.935346,
+        0.428888,
+        -1.269701
+      ],
+      "radius": 0.431
+    }
+  ],
+  "lights": [
+    {
+      "kind": "head",
+      "position": [
+        -0.66,
+        1.09,
+        2.18
+      ]
+    },
+    {
+      "kind": "head",
+      "position": [
+        0.66,
+        1.09,
+        2.18
+      ]
+    },
+    {
+      "kind": "tail",
+      "position": [
+        -0.88,
+        1.28,
+        -2.12
+      ]
+    },
+    {
+      "kind": "tail",
+      "position": [
+        0.88,
+        1.28,
+        -2.12
+      ]
+    }
+  ],
+  "source": {
+    "file": "vehicle-extra.glb",
+    "originalFilename": "baa2ffb6f97348ce9712a4edd4e41093.glb",
+    "driveId": "11dFkeOzSII6GM29STYQ4Q8IHkhrbnZlD",
+    "label": "УАЗ Патриот",
+    "author": "Mikhail Hamanovich (https://sketchfab.com/mihailhamanovich)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/uaz-patriot-baa2ffb6f97348ce9712a4edd4e41093",
+    "title": "UAZ Patriot (УАЗ Патриот)",
+    "bytes": 111735008,
+    "sha256": "e8565f3b836bf5ea3ab96a89add743bdae55ea6df575e26bbb0f6ba5e1da7719",
+    "driveUrl": "https://drive.google.com/file/d/11dFkeOzSII6GM29STYQ4Q8IHkhrbnZlD/view"
+  },
+  "modifications": [
+    "Removed high-poly hidden interior where applicable; exterior identity preserved.",
+    "Original tyre/rim geometry separated into four rotating assemblies.",
+    "Simplified topology, embedded textures resized to <=512 px and encoded as WebP.",
+    "Metric normalization, +Y up, +Z forward, wheel contact at y=0.",
+    "Original body paint retained."
+  ]
+}

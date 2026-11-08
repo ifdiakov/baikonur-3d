@@ -1,0 +1,126 @@
+{
+  "version": "road-fleet-20261108-v1",
+  "id": "uaz-bukhanka",
+  "label": "УАЗ-452 «Буханка»",
+  "unit": "metre",
+  "forward": "+Z",
+  "paint": "grey",
+  "halfWidth": 1.1139470080407892,
+  "bounds": {
+    "min": [
+      -1.1139470080407892,
+      -2.9802322387695312e-8,
+      -2.2124319076538086
+    ],
+    "max": [
+      1.1139470080407892,
+      2.21890630265502,
+      2.2124319076538086
+    ],
+    "size": [
+      2.2278940160815783,
+      2.2189063324573426,
+      4.424863815307617
+    ]
+  },
+  "asset": {
+    "file": "model.glb",
+    "bytes": 390760,
+    "triangles": 11630,
+    "primitives": 9,
+    "textures": 8,
+    "sha256": "dc74f88703f597d39329401e5a5a7355b0f1a613e49555de31067155fdef1cbb"
+  },
+  "wheels": [
+    {
+      "name": "wheelFrontLeft",
+      "center": [
+        -0.76215,
+        0.399631,
+        1.175431
+      ],
+      "radius": 0.399632
+    },
+    {
+      "name": "wheelFrontRight",
+      "center": [
+        0.76215,
+        0.399631,
+        1.175431
+      ],
+      "radius": 0.399632
+    },
+    {
+      "name": "wheelRearLeft",
+      "center": [
+        -0.76215,
+        0.399631,
+        -1.206499
+      ],
+      "radius": 0.399632
+    },
+    {
+      "name": "wheelRearRight",
+      "center": [
+        0.76215,
+        0.399631,
+        -1.206499
+      ],
+      "radius": 0.399632
+    }
+  ],
+  "lights": [
+    {
+      "kind": "head",
+      "position": [
+        -0.65,
+        0.97,
+        2.15
+      ]
+    },
+    {
+      "kind": "head",
+      "position": [
+        0.65,
+        0.97,
+        2.15
+      ]
+    },
+    {
+      "kind": "tail",
+      "position": [
+        -0.85,
+        0.94,
+        -2.13
+      ]
+    },
+    {
+      "kind": "tail",
+      "position": [
+        0.85,
+        0.94,
+        -2.13
+      ]
+    }
+  ],
+  "source": {
+    "file": "bukhanka.glb",
+    "originalFilename": "452_not_ready.glb",
+    "driveId": "1ov8vdZAgSO_H7LNZoJ4_TjizI5hI67wc",
+    "label": "УАЗ-452 «Буханка»",
+    "author": "Mayess (https://sketchfab.com/Mayess)",
+    "license": "CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)",
+    "source": "https://sketchfab.com/3d-models/452-not-ready-9d3c5286e20d4e81857d53336801989c",
+    "title": "УАЗ 452 Not ready",
+    "bytes": 9555936,
+    "sha256": "55f25be4ce4e0358d145f147c44cf6bb4cb98e6d17590ae59f9e2cabceb7c230",
+    "driveUrl": "https://drive.google.com/file/d/1ov8vdZAgSO_H7LNZoJ4_TjizI5hI67wc/view"
+  },
+  "modifications": [
+    "Removed high-poly hidden interior where applicable; exterior identity preserved.",
+    "Original tyre/rim geometry separated into four rotating assemblies.",
+    "Simplified topology, embedded textures resized to <=512 px and encoded as WebP.",
+    "Metric normalization, +Y up, +Z forward, wheel contact at y=0.",
+    "Olive paint polygons assigned grey PBR materials; glass, lamps and rubber retain their atlases."
+  ]
+}

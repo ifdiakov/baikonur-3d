@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {createRoadVehicles} from './road-vehicles.js?v=20261105-sprinter-original-logo';
+import {createRoadVehicles} from './road-vehicles.js?v=20261108-road-fleet-v1';
 import {buildRailVehicle,COACH_COUNT,COACH_OFFSETS,TRAIN_START_DISTANCE,TRAIN_CONSIST_LENGTH,TRAIN_METRIC_SCALE,TRAIN_VERSION} from './rail-vehicles.js?v=20261102-m62-headlamp-v2';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z),clamp=THREE.MathUtils.clamp;
@@ -64,7 +64,7 @@ export function createGroundTraffic({layers,transport,camera,controls,canvas,but
  }
  function setEvening(value){night=!!value;roadVehicles.setEvening(night);for(const v of vehicles)v.setEvening(night);render(elapsed);}
  setEvening(true);
- return {whenReady:requestModels,loadModels,loadSprinters:roadVehicles.loadSprinters,setEvening,stopFollowing,setFollowing,focusTrain(distanceScale=1){if(typeof window!=='undefined')requestModels();stopFollowing();onFollow?.();frameTrain(distanceScale);},seek(t){elapsed=Math.max(0,t);forced=elapsed;render(elapsed);},resume(){forced=null;lastNow=null;},
+ return {whenReady:requestModels,loadModels,loadSprinters:roadVehicles.loadSprinters,loadRoadFleet:roadVehicles.loadRoadFleet,setEvening,stopFollowing,setFollowing,focusTrain(distanceScale=1){if(typeof window!=='undefined')requestModels();stopFollowing();onFollow?.();frameTrain(distanceScale);},seek(t){elapsed=Math.max(0,t);forced=elapsed;render(elapsed);},resume(){forced=null;lastNow=null;},
   focusSprinter(){stopFollowing();onFollow?.();layers.roads.visible=true;const toggle=document.querySelector('[data-layer="roads"]');if(toggle)toggle.checked=true;followingSprinter=roadVehicles.focusSprinter();if(followingSprinter!==null)sprinterPosition.copy(cars[followingSprinter].root.position);showSprinterCredit(roadVehicles.loadSprinters);},
   focusCars(index=null){stopFollowing();onFollow?.();layers.roads.visible=true;const toggle=document.querySelector('[data-layer="roads"]');if(toggle)toggle.checked=true;roadVehicles.focus(index);},
   focusHighway(){stopFollowing();onFollow?.();const at=highway.sample(highway.bridgeDistance);controls.target.copy(at.position);camera.position.copy(at.position).add(V(65,70,90));controls.update();},

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {createLightField} from './light-field.js?v=20261031-road-markings-v1';
 import {buildHighwayPath, distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
+import {createRoadFleetVehicle,roadFleetKind} from './road-fleet.js?v=20261108-road-fleet-v1';
 import {createSprinterVehicle} from './sprinter-source.js?v=20261105-sprinter-original-logo';
 
 const V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
@@ -89,52 +90,10 @@ function batch(group){
   if(!sets.has(child.material))sets.set(child.material,[]);sets.get(child.material).push(geometry);group.remove(child);child.geometry.dispose();}
  for(const [mat,geometries]of sets){const mesh=new THREE.Mesh(mergeGeometries(geometries,false),mat);mesh.name='Автомобиль · детали кузова';group.add(mesh);geometries.forEach(g=>g.dispose());}
 }
-function createCar(parent,index){
- const root=new THREE.Group();root.name='Автомобиль '+(index+1);root.userData.pickable=false;root.userData.museumComponent='moving-road-vehicle';parent.add(root);
- const type=index%6===2?'van':index%4===1?'suv':'sedan',van=type==='van',suv=type==='suv';
- const colors=[0xd8d7cf,0x568893,0xddd0a9,0xb45f45,0x8c95a2,0x4b7560,0xbd9f76,0x7186a0];
- const paint=material(colors[index%colors.length]),rubber=material(0x1c232b),chrome=material(0xa7b1b2,{metalness:.72}),trim=material(0x33404a);
- const glass=material(0x436079,{metalness:.44,roughness:.21,emissive:0x587183,emissiveIntensity:.24});
- const warm=new THREE.MeshBasicMaterial({color:0xffecc5,toneMapped:false}),red=new THREE.MeshBasicMaterial({color:0xff4034,toneMapped:false}),amber=new THREE.MeshBasicMaterial({color:0xffbd58,toneMapped:false});
- const solids=new THREE.Group();root.add(solids);const rear=van?-2.03:-1.84,front=van?2.03:1.84;
- piece(solids,1.49,.46,front-rear,0,.66,0,paint,'body');piece(solids,1.40,.15,front-rear-.1,0,.32,0,trim,'underbody');
- piece(solids,1.31,van?1.15:suv?.74:.58,van?2.9:2.06,0,van?1.44:suv?1.24:1.13,van?-.44:-.19,paint,'cabin');
- piece(solids,1.36,.10,van?2.93:2.17,0,van?2.055:suv?1.65:1.47,van?-.44:-.2,paint,'roof');
- const glassY=van?1.63:suv?1.37:1.22,glassHeight=van?.49:suv?.44:.35,windZ=van?1.03:.85;
- piece(solids,1.20,glassHeight,.034,0,glassY,windZ,glass,'windshield');piece(solids,1.20,glassHeight,.034,0,glassY,van?-1.905:-1.23,glass,'rear-window');
- for(const side of [-1,1]){
-  if(van){piece(solids,.034,.48,.75,side*.675,glassY,.58,glass,'cab-window');piece(solids,.034,.58,1.24,side*.675,glassY,-1.02,glass,'van-side-window');}
-  else for(const [z,length]of [[.34,.80],[-.66,.72]])piece(solids,.034,glassHeight,length,side*.674,glassY,z,glass,'side-window');
-  piece(solids,.14,.20,.28,side*.82,glassY-.17,.67,paint,'wing-mirror');
-  for(const z of [-.68,.43])piece(solids,.042,.044,.20,side*.765,.91,z,chrome,'door-handle');
-  piece(solids,.055,.065,3.2,side*.755,.51,0,chrome,'side-sill');
-  if(suv)piece(solids,.07,.10,1.67,side*.54,1.74,-.2,trim,'roof-rail');
- }
- for(const z of [rear,front]){piece(solids,1.46,.18,.15,0,.47,z,trim,'bumper');piece(solids,.45,.14,.022,0,.59,z+Math.sign(z)*.09,chrome,'plate');}
- piece(solids,.58,.23,.033,0,.76,front+.07,trim,'grille');for(const x of [-.20,0,.20])piece(solids,.025,.20,.03,x,.76,front+.09,chrome,'grille-bar');
- for(const side of [-1,1]){piece(solids,.31,.18,.05,side*.50,.79,front+.05,warm,'headlight-lens');piece(solids,.27,.23,.05,side*.53,.78,rear-.05,red,'tail-lamp');piece(solids,.08,.16,.052,side*.69,.79,front+.05,amber,'indicator');}
- batch(solids);
- const wheelGeometry=new THREE.CylinderGeometry(.265,.265,.16,16),rimGeometry=new THREE.CylinderGeometry(.152,.152,.168,12),wheels=[];
- for(const z of [van?-1.36:-1.17,van?1.36:1.17])for(const side of [-1,1]){
-  const spin=new THREE.Group();spin.position.set(side*.735,.265,z);root.add(spin);wheels.push(spin);
-  const tyre=new THREE.Mesh(wheelGeometry,rubber);tyre.rotation.z=Math.PI/2;spin.add(tyre);
-  const rim=new THREE.Mesh(rimGeometry,chrome);rim.rotation.z=Math.PI/2;spin.add(rim);
-  for(let n=0;n<3;n++){const spoke=piece(spin,.172,.025,.28,0,0,0,trim,'wheel-spoke');spoke.rotation.x=n*Math.PI/3;}batch(spin);
- }
- const lamps=createLightField(root,[-1,1].flatMap(side=>[
-  {x:side*.50,y:.79,z:front+.09,height:0,color:0xffedc7,size:5.7},
-  {x:side*.53,y:.78,z:rear-.09,height:0,color:0xff382a,size:3.6}
- ]),{name:'Автомобиль · фары и габариты',minPixels:4.3});
- const beamMaterial=new THREE.ShaderMaterial({transparent:true,depthWrite:false,side:THREE.DoubleSide,blending:THREE.AdditiveBlending,uniforms:{power:{value:1}},
-  vertexShader:`varying vec2 vUv;#include <common>\n#include <logdepthbuf_pars_vertex>\nvoid main(){vUv=uv;vec4 mvPosition=modelViewMatrix*vec4(position,1.);gl_Position=projectionMatrix*mvPosition;#include <logdepthbuf_vertex>\n}`.replaceAll(';#include',';\n#include'),
-  fragmentShader:`varying vec2 vUv;uniform float power;#include <common>\n#include <logdepthbuf_pars_fragment>\nvoid main(){#include <logdepthbuf_fragment>\nfloat distance=1.-vUv.y;float width=.10+distance*.37;float edge=1.-smoothstep(width*.45,width,abs(vUv.x-.5));float a=edge*pow(1.-distance,1.7)*.21*power;gl_FragColor=vec4(1.,.79,.44,a);}`.replaceAll(';#include',';\n#include').replaceAll('{#include','{\n#include')});
- const beam=new THREE.Mesh(new THREE.PlaneGeometry(6.4,11),beamMaterial);beam.rotation.x=-Math.PI/2;beam.position.set(0,.033,front+5.5);beam.renderOrder=5;root.add(beam);
- const fading=[paint,rubber,chrome,trim,glass,warm,red,amber];fading.forEach(m=>{m.transparent=true;});
- return {root,type,wheels,glass,lamps,update(state,night){
-  root.position.copy(state.position);root.rotation.set(-Math.asin(clamp(state.tangent.y,-1,1)),Math.atan2(state.tangent.x,state.tangent.z),0,'YXZ');root.visible=state.opacity>.003;
-  for(const mat of fading)mat.opacity=state.opacity;glass.emissiveIntensity=night?.24:.035;
-  wheels.forEach(w=>w.rotation.x=state.distance*state.direction/.265);lamps.setStrength(state.opacity*(night?1.6:.19));beam.visible=night;beamMaterial.uniforms.power.value=state.opacity;
- }};
+// No generic vehicle geometry, including while source models are loading.
+function createSprinterAnchor(parent){
+ const root=new THREE.Group();root.visible=false;root.userData.pickable=false;root.userData.museumComponent='moving-road-vehicle';parent.add(root);
+ return {root,wheels:[],update(pose){root.position.copy(pose.position);root.visible=false;}};
 }
 
 function extendRoad(parent,extensions){
@@ -163,18 +122,22 @@ export function createRoadVehicles({parent,roads,camera,controls}){
    configs.push({route,phase,direction,speed:routeIndex===0?16:routeIndex===1?13:10});
   }
  });
- const cars=configs.map((_,i)=>{const car=createCar(parent,i);return car.type==='van'?createSprinterVehicle(car):car;}),states=[];let night=true;
+ let fleetIndex=0;
+ const cars=configs.map((_,i)=>i%6===2?createSprinterVehicle(createSprinterAnchor(parent)):createRoadFleetVehicle(parent,roadFleetKind(fleetIndex++))),states=[];let night=true;
  cars.forEach((car,i)=>{configs[i].halfWidth=car.halfWidth||.9;});
  cars.forEach((car,i)=>car.root.scale.setScalar(configs[i].route.vehicleScale||1));
  const museumBounds=new THREE.Box3().setFromPoints(roads.flatMap(r=>r.points)).expandByScalar(15),junction=plan.highway.position(plan.highway.bridgeDistance);
- function update(elapsed){configs.forEach((config,i)=>{const state=roadVehiclePose(config.route,elapsed,config);states[i]=state;cars[i].update(state,night);});}
+ function update(elapsed){configs.forEach((config,i)=>{config.halfWidth=cars[i].halfWidth||.9;const state=roadVehiclePose(config.route,elapsed,config);states[i]=state;cars[i].update(state,night);});}
  let pending=null;const loadSprinters=()=>pending||(pending=Promise.all(cars.filter(c=>c.type==='sprinter').map(c=>c.loadDetail())).then(results=>results.every(Boolean)).finally(()=>{pending=null;}));
+ let fleetPending=null;const loadRoadFleet=()=>fleetPending||(fleetPending=Promise.all(cars.filter(c=>c.type!=='sprinter').map(c=>c.loadDetail())).then(results=>results.every(Boolean)).finally(()=>{fleetPending=null;}));
  if(typeof window!=='undefined'){
   const startup=globalThis.__MUSEUM_STARTUP;
-  if(startup?.defer)startup.defer(loadSprinters,{key:'sprinter',priority:3});else Promise.resolve().then(loadSprinters);
+  if(startup?.defer){startup.defer(loadSprinters,{key:'sprinter',priority:3});startup.defer(loadRoadFleet,{key:'road-fleet',priority:3});}
+  else{Promise.resolve().then(loadSprinters);Promise.resolve().then(loadRoadFleet);}
  }
  function focus(index=null){
   if(index===null){let nearest=Infinity;index=0;cars.forEach((car,i)=>{if(!museumBounds.containsPoint(car.root.position)||states[i]?.opacity<.95)return;const distance=car.root.position.distanceToSquared(junction);if(distance<nearest){nearest=distance;index=i;}});}
+  globalThis.__MUSEUM_STARTUP?.promote?.('road-fleet',100);if(typeof window!=='undefined')loadRoadFleet();
   const car=cars[clamp(index,0,cars.length-1)],target=car.root.position.clone().add(V(0,.65,0));controls.target.copy(target);camera.position.copy(target).add(V(16,14,21));controls.update();
   // The existing mobile sidebar occupies the left half of the canvas. Keep
   // the selected car in the free area, without changing global camera bounds.
@@ -187,9 +150,10 @@ export function createRoadVehicles({parent,roads,camera,controls}){
   if(globalThis.innerWidth<700){camera.updateMatrixWorld();const right=new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld,0),halfWidth=camera.position.distanceTo(target)*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))*camera.aspect;camera.position.addScaledVector(right,-halfWidth*.35);controls.target.addScaledVector(right,-halfWidth*.35);controls.update();}
   globalThis.__MUSEUM_STARTUP?.promote?.('sprinter',100);return i;
  }
- return {update,focus,focusSprinter,loadSprinters,setEvening(value){night=!!value;extension.setEvening(night);},cars,highway:plan.highway,
-  stats:()=>({version:'road-vehicles-v2',cars:cars.length,routeCount:plan.routes.length,extensionLength:extension.length,extensionLamps:extension.poles,joins:plan.joins,
+ return {update,focus,focusSprinter,loadSprinters,loadRoadFleet,setEvening(value){night=!!value;extension.setEvening(night);},cars,highway:plan.highway,
+  stats:()=>({version:'road-vehicles-v3',cars:cars.length,routeCount:plan.routes.length,extensionLength:extension.length,extensionLamps:extension.poles,joins:plan.joins,
    routes:plan.routes.map(r=>({id:r.id,label:r.label,length:r.length,rampStart:r.rampStart,rampEnd:r.rampEnd})),
+   fleet:cars.flatMap((car,index)=>car.type!=='sprinter'?[{index,...car.sourceState}]:[]),
    sprinters:cars.flatMap((car,index)=>car.type==='sprinter'?[{index,...car.sourceState}]:[]),
-   carStates:states.map((s,i)=>({...s,position:s.position.toArray(),tangent:s.tangent.toArray(),index:i,type:cars[i].type,lightCount:4,wheelRotation:cars[i].wheels[0].rotation.x,scale:cars[i].root.scale.x}))})};
+   carStates:states.map((s,i)=>({...s,position:s.position.toArray(),tangent:s.tangent.toArray(),index:i,type:cars[i].type,lightCount:4,wheelRotation:cars[i].wheels[0]?.rotation.x??0,scale:cars[i].root.scale.x}))})};
 }

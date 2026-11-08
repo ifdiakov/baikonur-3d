@@ -1,0 +1,51 @@
+name: Kosmotrans depot and road fleet
+on:
+  push:
+    branches: [main, codex/kosmotrans-depot-fleet]
+    paths:
+      - 'index.html'
+      - 'src/kosmotrans-depot.js'
+      - 'src/road-fleet.js'
+      - 'src/road-vehicles.js'
+      - 'src/ground-traffic.js'
+      - 'assets/models/kosmotrans-depot/**'
+      - 'assets/models/road-fleet/**'
+      - 'tests/depot-fleet*.mjs'
+      - 'tests/road-fleet.mjs'
+      - 'tests/fixtures/depot-fleet.html'
+      - '.github/workflows/verify-depot-fleet.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: depot-fleet-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install geometry and browser tooling
+        run: |
+          npm install --no-save three@0.160.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Check asset budgets and routing
+        run: |
+          node tests/depot-fleet-assets.mjs
+          node tests/road-fleet.mjs
+          node tests/road-vehicles-geometry.mjs
+      - name: Serve the museum
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+          sleep 2
+      - name: Check source models and the running map
+        run: node tests/depot-fleet-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: depot-fleet-visuals
+          path: qa-depot-fleet/
