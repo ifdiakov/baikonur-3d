@@ -589,6 +589,7 @@ import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=202611
 import {createSoyuzDualLaunch} from './src/soyuz-dual-launch.js?v=20261103-dual-site-launch-v1';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261105-sprinter-original-logo';
 import {createRailStations} from './src/rail-stations.js?v=20261105-station-no-road-overlap-v2';
+import {planSite31Observation,buildSite31Observation,SITE31_NP_VERSION} from './src/site31-observation-platform.js?v=20261108-np-31-1-v1';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
 import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261102-site2-photo-v3';
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
@@ -1387,6 +1388,34 @@ async function loadServiceReference(){
 // Loaded together with the optional reference plan, on demand.
 
 
+// NP near the road from Pad 31 toward Pad 1. It is a small physical
+// 35 × 50 m viewing facility, not another unverified launch site.
+// Keep catalogue geometry and road-transport fingerprints untouched.
+const launch31=objects.find(o=>o.record.id==='pad-31'),launch1=objects.find(o=>o.record.id==='pad-1');
+let site31Observation=null;
+if(launch31&&launch1){
+ const placement=planSite31Observation({
+  launch:launch31.g.position,reference:launch1.g.position,roads:transport.roadPaths()
+ });
+ const g=buildSite31Observation({plan:placement});
+ siteRoot.add(g);
+ const index=objects.length;
+ g.traverse(mesh=>{if(mesh.isMesh){mesh.userData.idx=index;clickable.push(mesh);}});
+ const x=g.position.x/S+W/2,y=g.position.z/S+H/2;
+ const record={
+  id:'np-31-1',name:'НП · направление 31–1',number:null,kind:'observation',
+  titleShort:'НП у 31–1',titleFull:'Наблюдательная площадка · направление 31–1',
+  purposeShort:'Наблюдение за стартами с площадки №31',
+  purposeLong:'Наблюдательная площадка RocketTrip: открытая зона 35 × 50 м, два укрытия по 100 м². На макете она показана возле дорожного направления между площадками №31 и №1.',
+  note:'Положение НП является музейной привязкой по направлению к площадке №1 и существующему дорожному полотну, а не геодезически подтверждёнными координатами.',
+  status:'label-read',positionVerified:false,positionConfidence:'owner-directed-museum-placement',
+  positionBasis:'Музейная привязка вдоль направления 31–1, без изменения исходных дорог',
+  geoSource:{kind:'owner-directed-display',status:'illustrative',modelAnchor:'illustrative',refs:[],reason:'НП у 31–1 · запрос владельца'},
+  x,y,model:'observation',firstYear:2026,render:true
+ };
+ site31Observation={g,record,placement};
+ objects.push({g,name:record.name,from:2026,type:'observation',x,y,record});
+}
 // Stations and sites share every card renderer, interaction and visibility rule.
 const railStations=createRailStations({stations:transport.stationLabels(),paths:transport.terrainPaths().rails,roads:transport.terrainPaths().roads,parent:layers.rails,clickable,firstIndex:objects.length});
 startup.defer(()=>railStations.load(),{key:'rail-stations-lite',priority:9});
@@ -1472,7 +1501,7 @@ function makeSiteEye(i){
 function makeSiteMini(i,className){
  const mini=document.createElement("button");mini.type="button";mini.className=className;
  const o=cardObjects[i],number=o.record.number||o.name.match(/№\s*([\dА-ЯA-Z]+)/u)?.[1];
- mini.textContent=o.isStation?"Ж/Д · "+o.record.titleShort:number?"Пл. №"+number:"◇";
+ mini.textContent=o.isStation?"Ж/Д · "+o.record.titleShort:o.record.kind==='observation'?'НП':number?"Пл. №"+number:"◇";
  mini.setAttribute("aria-label","Развернуть "+displaySiteName(o));
  mini.title="Развернуть карточку";
  mini.addEventListener("click",e=>{
@@ -1489,7 +1518,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape")selectSiteCard(null)
 for(let i=0;i<cardObjects.length;i++){
  const o=cardObjects[i],item=o.record,identified=o.isStation||item.status==="label-read"||item.status==="externally-attributed";
  const match=o.name.match(/№\s*([\dА-ЯA-Z]+)/u);
- const badgeText=o.isStation?"Ж/Д · "+item.titleShort:identified&&match?"пл. №"+match[1]:"◇";
+ const badgeText=o.isStation?"Ж/Д · "+item.titleShort:item.kind==='observation'?'НП':identified&&match?"пл. №"+match[1]:"◇";
  const fullText=o.isStation?"":identified?(item.titleShort||o.name.replace(/^Площадка\s*№\s*[\dА-ЯA-Z]+\s*[—-]?\s*/u,"").trim()):o.name;
  const el=document.createElement("div");el.className="site-label"+(identified?"":" is-provisional")+(o.isStation?" station-card":"");
  if(o.isStation)el.dataset.stationId=item.id;
@@ -2044,6 +2073,9 @@ function focus(i){
   ctl.target.add(new THREE.Vector3(0,32,5).multiplyScalar(SATURN_SCALE));
   camera.position.copy(ctl.target).add(new THREE.Vector3(160,165,195).multiplyScalar(SATURN_SCALE));
  }else if(o.isStation){railStations.inspect(r.id,camera,ctl);
+ }else if(r.id==='np-31-1'){
+  ctl.target.y+=.9;
+  camera.position.copy(ctl.target).add(new THREE.Vector3(13,12,17));
  }else if(o.archive){portalArchive.focus(i,camera,ctl);}else camera.position.copy(ctl.target).add(new THREE.Vector3(90,115,135).multiplyScalar(MODEL_SCALE));
  let airportViews=document.getElementById('airportViews');if(!airportViews){airportViews=document.createElement('div');airportViews.id='airportViews';document.getElementById('description').after(airportViews);}
  airportViews.replaceChildren();airportViews.hidden=!o.g.userData.airport;
@@ -2886,6 +2918,7 @@ window.__BAIKONUR_QA={site95:{groundStats:site95RoadGrade.stats,inspect:view=>po
  steppeSurface.updateDetail(camera.position.y/SCENE_SCALE);if(camera.position.y<250&&!terrainDetailRequested){terrainDetailRequested=true;startup.promote('game-terrain-pilot',100);steppeSurface.requestDetail();}updateLabels();portalVoids.update();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;buranLanding.syncOverlay();renderer.render(scene,camera)}if(new URLSearchParams(location.search).get('view')==='motovoz')groundTraffic.setFollowing(true);if(new URLSearchParams(location.search).get('view')==='cars')groundTraffic.focusCars();if(new URLSearchParams(location.search).get('view')==='sprinter')groundTraffic.focusSprinter();if(new URLSearchParams(location.search).get('view')==='flanks')showFlanks();if(new URLSearchParams(location.search).get('view')==='silo'){const requested=new URLSearchParams(location.search).get('site')||'pad-109';const id=objects.some(o=>o.record.id===requested&&o.archive?.kind==='silo')?requested:'pad-109';focus(objects.findIndex(o=>o.record.id===id));if(new URLSearchParams(location.search).get('detail')==='1')portalArchive.inspectSilo('close',camera,ctl,id);}if(new URLSearchParams(location.search).get('view')==='ukss'){focus(ukssIndex);inspectUkss(new URLSearchParams(location.search).get('detail')||'overview');}if(new URLSearchParams(location.search).get('view')==='krayniy')inspectKrayniyTerminal(new URLSearchParams(location.search).get('detail')||'airside');if(new URLSearchParams(location.search).get('view')==='mzk'){focus(objects.findIndex(o=>o.record.id==='pad-112a'));const detail=new URLSearchParams(location.search).get('detail');if(['mzk','sdi'].includes(detail))portalArchive.inspectMzkSdi(detail,camera,ctl);if(new URLSearchParams(location.search).get('doors')==='open')portalArchive.setSdiGateOpen(true);}if(new URLSearchParams(location.search).get('view')==='hotel')focus(objects.findIndex(o=>o.record.id==='pad-75'));if(new URLSearchParams(location.search).get('view')==='site41'){focus(objects.findIndex(o=>o.record.id==='pad-41'));portalArchive.inspectSite41(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='mriya'){const i=objects.findIndex(o=>o.record.id==='pad-251');if(i>=0){focus(i);document.querySelector('#airportViews button:last-child')?.click();document.getElementById('info').style.display='none';}}if(new URLSearchParams(location.search).get('view')==='site110'){openMenuSite('pad-110');portalArchive.inspectSite110(new URLSearchParams(location.search).get('detail')||'left',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='buran-landing'){openMenuSite('pad-251');requestBuranLanding();}
 if(new URLSearchParams(location.search).get('view')==='gagarin')window.__BAIKONUR_QA.gagarinTable.inspect(new URLSearchParams(location.search).get('detail')||'structure');
 if(new URLSearchParams(location.search).get('view')==='site31'){openMenuSite('pad-31');portalArchive.inspectSite31(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
+if(new URLSearchParams(location.search).get('view')==='np31-1')window.__BAIKONUR_QA.focusSite('np-31-1');
 if(new URLSearchParams(location.search).get('view')==='kpp7'){openMenuSite('kpp-7');portalArchive.inspectCheckpoint7(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site250a'){openMenuSite('pad-250a');portalArchive.inspectSite250a(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='site113'){openMenuSite('pad-113');portalArchive.inspectSite113(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
