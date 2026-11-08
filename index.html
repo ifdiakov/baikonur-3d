@@ -593,7 +593,6 @@ import {createSoyuzDualLaunch} from './src/soyuz-dual-launch.js?v=20261103-dual-
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261108-road-fleet-v1';
 import {createCoordinateGrid} from './src/coordinate-grid.js?v=20261108-transport-sync-v4';
 import {createTransportLabels} from './src/transport-reference-labels.js?v=20261108-labels-v1';
-import {createKosmotransDepot,DEPOT_PLACEMENT} from './src/kosmotrans-depot.js?v=20261108-depot-v1';
 import {createRailStations} from './src/rail-stations.js?v=20261105-station-no-road-overlap-v2';
 import {planSite31Observation,buildSite31Observation,SITE31_NP_VERSION} from './src/site31-observation-platform.js?v=20261108-np-photo-v2';
 import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js?v=portal-partners-v1';
@@ -1420,18 +1419,6 @@ if(launch31&&launch1){
  site31Observation={g,record,placement};
  objects.push({g,name:record.name,from:2026,type:'observation',x,y,record});
 }
-// Owner placement: left/west of the main AD, at the Kosmotrans district.
-const kosmotransDepot=createKosmotransDepot({parent:siteRoot,clickable,index:objects.length});
-const depotRecord={id:'kosmotrans-depot',name:'ЖД депо «Космотранс»',number:null,kind:'rail-depot',model:'rail-depot',
- titleShort:'ЖД депо',titleFull:'Железнодорожное депо «Космотранс»',purposeShort:'Ремонтные корпуса и железнодорожный двор',
- purposeLong:'Ремонтные корпуса, служебное здание, пути и техника железнодорожного двора. Депо расположено слева от главной автодороги, в районе «Космотранса».',
- note:'Адаптированная модель из коллекции владельца. Облик и положение на макете иллюстративные.',
- status:'owner-model',positionVerified:false,positionConfidence:'owner-directed-display',positionBasis:'По указанию владельца: западная сторона главной АД, район Космотранса',
- geoSource:{kind:'owner-directed-display',status:'illustrative',modelAnchor:'illustrative',refs:[{url:'https://drive.google.com/file/d/1RskdMA0OTrYb4-bAqjwLQ3TD0FnK0Pn9/view'}]},
- publicReferences:['https://sketchfab.com/3d-models/railway-maintenance-depot-and-diesel-locomotive-0eaba418418447169f4d6a2f4926d4e9'],
- x:DEPOT_PLACEMENT.map[0],y:DEPOT_PLACEMENT.map[1],firstYear:2026,render:true};
-objects.push({g:kosmotransDepot.root,name:depotRecord.name,from:2026,type:'rail-depot',x:depotRecord.x,y:depotRecord.y,record:depotRecord});
-startup.defer(()=>kosmotransDepot.load(),{key:'kosmotrans-depot',priority:10});
 // Debug transport labels are reference-only overlays; they never modify AD/rail topology.
 const transportLabels=createTransportLabels({camera,renderer,roads:transport.roadPaths(),rails:transport.terrainPaths().rails,grid:coordinateGrid});
 // Stations and sites share every card renderer, interaction and visibility rule.
