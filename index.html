@@ -579,7 +579,7 @@ import {createRoadEditor} from './src/road-editor.js?v=20261108-highway-palette-
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261102-site2-photo-v3';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261101-tu204-cpk-v1';
-import {buildEveningScene} from './src/evening-scene.js?v=20261108-site105-lamp-site31-perimeter-v1';
+import {buildEveningScene} from './src/evening-scene.js?v=20261108-np31-lamp-clearance-v1';
 import {createArrivalFlight} from './src/arrival-flight.js?v=20261101-a320-tail-v2';
 import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPositionBounds,MUSEUM_CAMERA_MAX_HEIGHT,MUSEUM_CAMERA_MIN_Y} from './src/camera-navigation.js?v=20261103-camera-min-h1-v1';
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261101-altitude-v1';
@@ -2736,7 +2736,17 @@ function syncGagarinTableStatus(){
  const retry=document.createElement('button');retry.type='button';retry.textContent='Повторить';
  retry.onclick=()=>gagarinExhibit.table.load();el.append(retry);
 }
-window.__BAIKONUR_QA={site95:{groundStats:site95RoadGrade.stats,inspect:view=>portalArchive.inspectSite95(view,camera,ctl),stats:portalArchive.site95Stats},site113:{groundStats:site113RoadGrade.stats,inspect:view=>portalArchive.inspectSite113(view,camera,ctl),stats:portalArchive.site113Stats},checkpoint7:{stats:portalArchive.checkpoint7Stats,groundStats:checkpointRoadGrade.stats,inspect(view="all"){openMenuSite("kpp-7");portalArchive.inspectCheckpoint7(view,camera,ctl);}},gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
+window.__BAIKONUR_QA={np31:()=>{
+ const p=site31Observation; if(!p)return {present:false};
+ const model=p.g.userData.observationPlatform;
+ return {present:true,id:'np-31-1',visible:p.g.visible&&p.g.parent?.visible!==false,
+  position:p.g.getWorldPosition(new THREE.Vector3()).toArray(),
+  roadConnected:p.placement.connectedToRoad,roadId:p.placement.roadId,
+  actualDistanceMetres:p.placement.actualDistanceMetres,
+  nominalDistanceMetres:p.placement.nominalDistanceMetres,
+  clearanceFromRoad:p.placement.clearanceFromRoad,
+  model:{...model},bounds:new THREE.Box3().setFromObject(p.g).getSize(new THREE.Vector3()).toArray()};
+},site95:{groundStats:site95RoadGrade.stats,inspect:view=>portalArchive.inspectSite95(view,camera,ctl),stats:portalArchive.site95Stats},site113:{groundStats:site113RoadGrade.stats,inspect:view=>portalArchive.inspectSite113(view,camera,ctl),stats:portalArchive.site113Stats},checkpoint7:{stats:portalArchive.checkpoint7Stats,groundStats:checkpointRoadGrade.stats,inspect(view="all"){openMenuSite("kpp-7");portalArchive.inspectCheckpoint7(view,camera,ctl);}},gagarinTable:{stats:gagarinExhibit.table.stats,load:gagarinExhibit.table.load,inspect(view="structure"){openMenuSite("pad-1");if(view==="structure"){ctl.target.copy(padGroup.localToWorld(new THREE.Vector3(0,18,0)));camera.position.copy(padGroup.localToWorld(new THREE.Vector3(-60,50,80)));ctl.update();camera.updateMatrixWorld(true);}}},terrainVisibility(visibility=null){
  const sources={main:ground,regional:outerTerrain.planes[0],intermediate:outerTerrain.planes[1],satellite:satelliteGround,relief:terrainRelief.mesh};
  if(visibility){
   for(const [id,value]of Object.entries(visibility))if(!Object.hasOwn(sources,id)||typeof value!=='boolean')throw new Error('Unknown terrain visibility entry');
