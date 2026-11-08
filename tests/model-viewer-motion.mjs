@@ -33,7 +33,7 @@ try{
  const still=(await stats()).camera;await advance(60);assert(Math.hypot(...(await stats()).camera.map((v,i)=>v-still[i]))<1e-6);
  await page.locator('#rotate').click();await advance(60);assert((await stats()).autoRotate);
  const bounds=await page.locator('#modelView canvas').boundingBox();await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2);await page.mouse.down();await page.mouse.move(bounds.x+bounds.width*.58,bounds.y+bounds.height*.52,{steps:5});await page.mouse.up();assert.equal((await stats()).autoRotate,false);assert.equal(await page.locator('#rotate').getAttribute('aria-pressed'),'false');
- await page.locator('#rotate').click();await page.mouse.wheel(0,80);assert.equal((await stats()).autoRotate,false);
+ await page.locator('#rotate').click();const wheelBounds=await page.locator('#modelView canvas').boundingBox();await page.mouse.move(wheelBounds.x+wheelBounds.width/2,wheelBounds.y+wheelBounds.height/2);await page.mouse.wheel(0,80);await page.waitForFunction(()=>!__MODEL_VIEWER_QA.stats().autoRotate);
  await page.locator('#rotate').click();await page.locator('[data-view="side"]').click();assert.equal((await stats()).autoRotate,false);
  await advance(60);await capture('side');
  // Switching models and reopening the viewer both start a fresh smooth orbit.
