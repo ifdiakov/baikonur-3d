@@ -1,19 +1,24 @@
 import * as THREE from 'three';
+import {clipSingleRailAccess} from './site-single-rail-access.js?v=20261108-single-access-v1';
 export const ROAD_LOD_VERSION='road-lod-prebuilt-v1';
 const colors={road:0xadb2b3,rail:0x8b8170};
 const phase='prebaked-overview';
-function stripGeometry(rows,geography,point,y,roadGrade=null){
+function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads'){
  const xyz=[],indices=[];let skipped=0;
  for(const row of rows){
   let path=row.points.map(ll=>{if(ll.length===3)return new THREE.Vector3(ll[0],ll[1]+.018,ll[2]);const xy=geography.project(...ll);return point(xy[0],xy[1],y);});
   if(roadGrade)path=roadGrade.conform(path);
-  if(path.length<2){skipped++;continue;}
-  const base=xyz.length/3,width=row.w*(roadGrade?.widthScale(row.id)??1);
+  const runs=kind==='rails'?clipSingleRailAccess(path,row.id):[path];
+  if(!runs.length){skipped++;continue;}
+  const width=row.w*(roadGrade?.widthScale(row.id)??1);
+  for(const path of runs){if(path.length<2)continue;
+  const base=xyz.length/3;
   for(let i=0;i<path.length;i++){
    const prev=path[Math.max(0,i-1)],next=path[Math.min(path.length-1,i+1)];
    const dx=next.x-prev.x,dz=next.z-prev.z,len=Math.hypot(dx,dz)||1,sideX=-dz/len*width*.5,sideZ=dx/len*width*.5;
    const p=path[i];xyz.push(p.x-sideX,p.y,p.z-sideZ,p.x+sideX,p.y,p.z+sideZ);
    if(i+1<path.length){const q=base+i*2;indices.push(q,q+2,q+1,q+1,q+2,q+3);}
+  }
   }
  }
  const geometry=new THREE.BufferGeometry();
@@ -29,7 +34,7 @@ export function createRoadLOD({data,geography,point,scene,roadGrade=null}){
   const group=new THREE.Group();group.name='Дороги · '+level;root.add(group);
   const stats={};
   for(const kind of ['roads','rails']){
-   const actual=stripGeometry(data.levels[level][kind],geography,point,kind==='roads'?.84:.62,kind==='roads'?roadGrade:null);
+   const actual=stripGeometry(data.levels[level][kind],geography,point,kind==='roads'?.84:.62,kind==='roads'?roadGrade:null,kind);
    const mat=new THREE.MeshBasicMaterial({color:colors[kind==='roads'?'road':'rail'],side:THREE.DoubleSide,depthWrite:true});
    const mesh=new THREE.Mesh(actual.geometry,mat);
    // The existing RocketTrip physical cutout tool selects exact names.
