@@ -33,13 +33,27 @@ export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045
  const hud=document.createElement('div');hud.id='coordinateGridHud';
  hud.style.cssText='position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:120;display:none;pointer-events:none;background:#10262ce8;color:#fff4d5;border:1px solid #c9a760;border-radius:8px;padding:9px 14px;font:600 12px/1.5 Arial,sans-serif;box-shadow:0 4px 20px #0007;text-align:center';
  hud.textContent='СЕТКА · наведите курсор на карту · Shift + клик — копировать координаты';document.body.appendChild(hud);
+ const pointerBadge=document.createElement('div');pointerBadge.id='coordinateGridPointerBadge';
+ pointerBadge.style.cssText='position:fixed;top:0;left:0;z-index:121;display:none;pointer-events:none;white-space:nowrap;background:rgba(12,30,37,.93);color:#fff4d5;border:1px solid #d8b973;border-radius:6px;padding:5px 8px;font:700 12px/1.35 Arial,sans-serif;box-shadow:0 3px 12px #0008;transform:translate3d(0,0,0)';
+ pointerBadge.setAttribute('aria-hidden','true');document.body.appendChild(pointerBadge);
+ function hidePointerBadge(){pointerBadge.style.display='none';}
+ function showPointerBadge(e,p){
+  if(!p){hidePointerBadge();return;}
+  pointerBadge.textContent='X: '+p.x.toFixed(1)+'  ·  Y: '+p.y.toFixed(1);
+  pointerBadge.style.display='block';
+  const rect=pointerBadge.getBoundingClientRect();
+  const left=e.clientX+18+rect.width>innerWidth-8?e.clientX-rect.width-14:e.clientX+18;
+  const top=e.clientY+18+rect.height>innerHeight-8?e.clientY-rect.height-14:e.clientY+18;
+  pointerBadge.style.left=Math.max(6,left)+'px';
+  pointerBadge.style.top=Math.max(6,top)+'px';
+ }
  const raycaster=new THREE.Raycaster(),cursor=new THREE.Vector2(),surface=new THREE.Plane(new THREE.Vector3(0,1,0),0),world=new THREE.Vector3();
  let enabled=false,last=null;
  const toggle=document.getElementById('coordinateGridToggle');
  function setEnabled(value){
   enabled=Boolean(value);group.visible=enabled;hud.style.display=enabled?'block':'none';
   if(toggle){toggle.setAttribute('aria-pressed',String(enabled));toggle.textContent=enabled?'▦ КООРДИНАТНАЯ СЕТКА · ВЫКЛ':'▦ КООРДИНАТНАЯ СЕТКА · ВКЛ';}
-  if(!enabled)last=null;
+  if(!enabled){last=null;hidePointerBadge();}
  }
  function readPointer(e){
   const bounds=canvas.getBoundingClientRect();
@@ -54,8 +68,11 @@ export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045
  canvas.addEventListener('pointermove',e=>{
   if(!enabled)return;
   last=readPointer(e);
+  showPointerBadge(e,last);
   hud.textContent=last?'X: '+last.x.toFixed(1)+' · Y: '+last.y.toFixed(1)+' | Shift + клик — копировать координаты':'Координатная сетка · наведите на территорию';
  });
+ canvas.addEventListener('pointerleave',hidePointerBadge);
+ canvas.addEventListener('pointercancel',hidePointerBadge);
  canvas.addEventListener('click',e=>{
   if(!enabled||!e.shiftKey)return;
   const p=readPointer(e);if(!p)return;
@@ -69,6 +86,6 @@ export function createCoordinateGrid({scene,camera,canvas,width=1300,height=1045
  });
  toggle?.addEventListener('click',()=>setEnabled(!enabled));
  if(new URLSearchParams(location.search).get('grid')==='1')setEnabled(true);
- window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v2-fine5'};
+ window.__MUSEUM_COORD_GRID={setEnabled,isEnabled:()=>enabled,last:()=>last,version:'coordinate-grid-v3-cursor-badge'};
  return {setEnabled,isEnabled:()=>enabled,group};
 }
