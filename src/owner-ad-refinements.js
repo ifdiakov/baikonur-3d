@@ -58,3 +58,18 @@ export function polishOwnerRoadSamples(points,wayId){
  }
  return result;
 }
+
+/** Apply identical owner edits in cached route and overview LOD geometry.
+ * Return zero or one retained polyline; deleted fragments cannot reappear
+ * when camera crosses a level-of-detail threshold. */
+export function polishCachedOwnerAd(points,rawId){
+ const text=String(rawId??''),id=(text.match(/(?:osm-road-|marking-road-)?(\d{7,})(?:-|$)/)||[])[1]||text;
+ const removed=['172571864','172441889','443174416','172704752'];
+ if(removed.includes(id))return [];
+ let line=points;
+ if(id==='172704810'){
+  const terminal=points.findIndex(p=>{const q=map(p);return q.x>556&&q.y>402;});
+  if(terminal>1)line=points.slice(0,terminal);
+ }
+ return line.length>1?polishOwnerRoadSamples(line,id):[];
+}
