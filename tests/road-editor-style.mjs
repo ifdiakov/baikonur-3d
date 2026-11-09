@@ -41,14 +41,10 @@ assert.equal(cut.classId,'asphalt');assert.equal(cut.marking,null);assert.equal(
 assert(nearestSourceRoad([15,2.8,0],source,{maxDistance:4})===null,'High overpass must not use ground-road style/height');
 assert.equal(ROAD_EDIT_WHITE_EDGE_INSET,.22);
 const owner=JSON.parse(readFileSync(new URL('../data/road-edits-authoritative-20261103.json',import.meta.url),'utf8'));
-assert.equal(owner.added.length,19);assert.equal(owner.hidden.length,286);
-const site105Road=owner.added.find(r=>r.id==='road-105-repaired');
-assert(site105Road,'Site 105 must have a single new continuous access');
-assert.equal(site105Road.surface,'asphalt');
-assert.equal(site105Road.width,1.8);
-assert.deepEqual(site105Road.points[0],[806.138,.72,-834.495]);
-assert.deepEqual(site105Road.points.at(-1),[705.203,-1.986,-874.387]);
-assert.equal(owner.added.filter(r=>r.id.startsWith('road-105-')).length,1);
+// Owner revision v6 removed Site 105. Never resurrect it for an old fixture.
+assert.equal(owner.added.length,18);assert.equal(owner.hidden.length,286);
+assert.match(owner.revision,/remove-osm37549252-and-site105/);
+assert(!owner.added.some(r=>r.id.startsWith('road-105-')),'Deleted Site 105 access stays deleted');
 assert(!owner.added.some(r=>r.id==='road-7'),'250A duplicate road must stay removed');
 assert(owner.added.some(r=>r.id==='road-31'&&r.points.at(-1)[1]>20));
 console.log('ROAD_EDITOR_STYLE_PASS',JSON.stringify({version:ROAD_EDIT_STYLE_VERSION,source:p.sourceId,

@@ -16,6 +16,7 @@ window.__WORKSHOP_READY=import('./src/workshop-tools.js?v=20261109-editions-v1')
 assert 'window.__BAIKONUR_QA={' in s
 s=s.replace('window.__BAIKONUR_QA={',api+'window.__BAIKONUR_QA={',1)
 s=s.replace('<body>','<body>\n<script>if(!new URLSearchParams(location.search).has("viewer")){const u=new URL(location.href);u.searchParams.set("tour","0");history.replaceState(null,"",u);}</script>',1)
+s=s.replace('currentObject=i;selectSiteCard(i);', "currentObject=i;if(WORKSHOP_MODE)window.dispatchEvent(new CustomEvent('workshop-selection',{detail:r.id}));selectSiteCard(i);",1)
 (root/'workshop.html').write_text(s)
 p=root/'src/road-editor.js';s=p.read_text()
 if 'replaceState(data)' not in s:

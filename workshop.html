@@ -2064,7 +2064,7 @@ function focus(i){
  groundTraffic?.stopFollowing();
  currentResearch=null;activeKnowledge=null;
  setGagarinDetailView(i===0);
- const o=cardObjects[i],r=o.record;currentObject=i;selectSiteCard(i);syncModelCard(o.isStation?['train','coach']:modelsForObject(r));o.g.getWorldPosition(ctl.target);
+ const o=cardObjects[i],r=o.record;currentObject=i;if(WORKSHOP_MODE)window.dispatchEvent(new CustomEvent('workshop-selection',{detail:r.id}));selectSiteCard(i);syncModelCard(o.isStation?['train','coach']:modelsForObject(r));o.g.getWorldPosition(ctl.target);
  rocketExhibits.prioritizeSite(r.id);steppeSurface.requestDetail();
   if(r.id==='pad-1'||r.id==='pad-2')startup.promote?.('game-terrain-pilot',90);
  if(o.isStation){startup.promote('rail-stations-lite',95);if(railStations.stats().status==='error')railStations.load();}

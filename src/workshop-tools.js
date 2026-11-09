@@ -7,7 +7,7 @@ export async function installWorkshopTools(d,{enabled=false}={}){
  let state={version:1,objects:{},roads:null},history=[],future=[];
  function applyObject(id,p){const o=known.get(id);o.g.position.fromArray(p.position);o.g.rotation.y=p.yaw;o.g.scale.setScalar(p.scale);o.g.updateMatrixWorld(true);const [x,y]=worldToMap(p.position);o.x=x;o.y=y;o.record.x=x;o.record.y=y;}
  function validate(s){const next=validateWorkshopState(s,new Set(known.keys()));if(next.roads)next.roads=validateRoadEdits(next.roads);return next;}
- function apply(s,{roads=true}={}){const next=validate(s);for(const [id,p]of baselines)applyObject(id,p);for(const [id,p]of Object.entries(next.objects))applyObject(id,p);if(roads&&next.roads&&enabled)d.roadEditor.replaceState(next.roads);state=next;}
+ function apply(s,{roads=true}={}){const next=validate(s);const affected=new Set([...Object.keys(state.objects),...Object.keys(next.objects)]);for(const id of affected)applyObject(id,next.objects[id]||baselines.get(id));if(roads&&next.roads&&enabled&&JSON.stringify(next.roads)!==JSON.stringify(d.roadEditor.snapshot()))d.roadEditor.replaceState(next.roads);state=next;}
  let loadError='';
  try{const r=await fetch('./data/workshop-state.json',{cache:'no-cache'});if(r.ok)apply(await r.json(),{roads:enabled});}catch(e){loadError='Опубликованные правки не загружены: '+e.message;}
  if(enabled){try{const saved=localStorage.getItem(WORKSHOP_STORAGE);if(saved)apply(JSON.parse(saved));}catch(e){loadError='Черновик не применён: '+e.message;}}
@@ -31,7 +31,7 @@ export async function installWorkshopTools(d,{enabled=false}={}){
  function persist(){try{localStorage.setItem(WORKSHOP_STORAGE,JSON.stringify(snapshot()));status('Черновик сохранён в этом браузере. Публичный музей не изменён.');}catch{status('Не хватило места для сохранения. Скачайте проект.');}}
  function checkpoint(){history.push(snapshot());if(history.length>40)history.shift();future=[];}
  function commit(fn){try{checkpoint();fn();persist();sync();}catch(e){if(history.length){apply(history.pop());}status(e.message);}}
- select.onchange=sync;sync();
+ select.onchange=sync;sync();window.addEventListener('workshop-selection',({detail:id})=>{if(known.has(id)){select.value=id;sync();}});
  $('wsFocus').onclick=()=>window.__BAIKONUR_QA.openObject(select.value);
  $('wsApply').onclick=()=>commit(()=>{const id=select.value,p={position:mapToWorld(read('wsX'),read('wsY'),read('wsH')),yaw:read('wsYaw')*Math.PI/180,scale:read('wsScale')};validateWorkshopState({version:1,objects:{[id]:p}},new Set(known.keys()));state.objects[id]=p;applyObject(id,p);});
  $('wsGround').onclick=()=>{const x=(read('wsX')-650)*3.4,z=(read('wsY')-522.5)*3.4;$('wsH').value=d.museumTerrainHeightAt(x,z).toFixed(3);$('wsApply').click();};
