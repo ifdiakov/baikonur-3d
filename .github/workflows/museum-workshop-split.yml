@@ -2,7 +2,7 @@ name: Build and verify museum and workshop
 on:
   push:
     branches: [main, feat/museum-workshop-split-20261109]
-    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/bake-site-road-ink.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', 'tests/public-terrain-patch.mjs', '.github/workflows/museum-workshop-split.yml']
+    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/public-build-cache.mjs', 'scripts/bake-site-road-ink.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', 'tests/public-terrain-patch.mjs', 'tests/public-build-cache.mjs', '.github/workflows/museum-workshop-split.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -30,12 +30,25 @@ jobs:
         run: |
           node tests/workshop-state.mjs
           node tests/public-terrain-patch.mjs
+          node tests/public-build-cache.mjs
           node scripts/prepare-workshop.mjs
           node --check src/public-museum.js
           node --check src/workshop-panel.js
+          node --input-type=module <<'JS'
+          import {readFile,writeFile} from 'node:fs/promises';
+          let text=await readFile('PROJECT_CONTEXT.md','utf8');
+          if(!text.includes('### Повторное использование проверенной сборки')){
+            text+='\n\n### Повторное использование проверенной сборки\n09.11.2026: data/public-build-cache.json фиксирует точную проверенную ревизию исходной сцены и SHA-256 манифеста. scripts/public-build-cache.mjs сравнивает исходники, опубликованные правки, исходные и готовые ресурсы с этой ревизией. Только при полном совпадении пропускается повторное запекание; функциональные тесты и проверка опубликованного сайта НЕ пропускаются. Изменение высот, дорог, моделей, исходников или подготовленных ресурсов требует новой сборки. Сертификат обновляется только после успешных тестов.\n';
+            await writeFile('PROJECT_CONTEXT.md',text);
+          }
+          JS
+      - name: Check exact tested build inputs and asset certificate
+        id: prepared
+        run: node scripts/public-build-cache.mjs check
       - name: Serve source
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/museum-http.log 2>&1 &
       - name: Prepare immutable visitor terrain and models
+        if: steps.prepared.outputs.rebuild == 'true'
         run: |
           set -o pipefail
           node scripts/build-public-scene.mjs 2>&1 | tee /tmp/public-build.log
@@ -44,15 +57,16 @@ jobs:
           QA_RUNS: '2'
           QA_OUT: qa-museum-split/local
         run: node tests/museum-split-browser.mjs
-      - name: Commit verified generated assets to the current branch
+      - name: Commit verified generated assets and certificate
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add index.html museum.html workshop.html src scripts tests assets/public-v1 data/public-scene.json PROJECT_CONTEXT.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Build verified visitor scene and workshop entrypoint'
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          if ! git diff --cached --quiet; then git commit -m 'Build verified visitor scene and workshop entrypoint'; fi
+          node scripts/public-build-cache.mjs record
+          git add data/public-build-cache.json
+          if ! git diff --cached --quiet; then git commit -m 'Certify unchanged tested public scene inputs and generated assets'; fi
+          git push origin HEAD:${{ github.ref_name }}
           git rev-parse HEAD > qa-museum-split/source-commit.txt
       - name: Assemble verified Pages payload
         if: github.ref == 'refs/heads/main'
@@ -84,6 +98,14 @@ jobs:
           console.log('PUBLIC_HASH_PARITY_PASS');
           JS
           node tests/museum-split-browser.mjs
+          node --input-type=module <<'JS'
+          import {readFile} from 'node:fs/promises';
+          import assert from 'node:assert/strict';
+          const manifest=JSON.parse(await readFile('data/public-scene.json','utf8'));
+          const report=JSON.parse(await readFile(process.env.QA_OUT+'/report.json','utf8'));
+          for(const row of report.measurements)if(row.sourceFingerprint)assert.equal(row.sourceFingerprint,manifest.fingerprint,'Browser actually used the published tested scene');
+          console.log('PUBLIC_BROWSER_REVISION_PARITY_PASS');
+          JS
       - name: Preserve build and browser evidence
         if: always()
         run: |
@@ -91,6 +113,8 @@ jobs:
           cp /tmp/public-build.log qa-museum-split/ 2>/dev/null || true
           cp /tmp/museum-http.log qa-museum-split/ 2>/dev/null || true
           cp data/public-scene.json qa-museum-split/ 2>/dev/null || true
+          cp data/public-build-cache.json qa-museum-split/ 2>/dev/null || true
+          printf '%s\n' 'Chromium/Linux/SwiftShader: software WebGL, not a real phone. Cold isolated browser contexts; unthrottled network. Workshop continuous animation is paused after the first frame for inspection. Opening times are not FPS measurements.' > qa-museum-split/measurement-conditions.txt
           tar -czf /tmp/split-result-source.tar.gz src/workshop* src/public-* src/terrain-voids.js scripts/prepare-workshop.mjs scripts/build-public-scene.mjs scripts/bake-site-road-ink.mjs tests/museum-split-browser.mjs museum.html workshop.html data/public-scene.json assets/public-v1 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
