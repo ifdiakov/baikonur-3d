@@ -9,7 +9,7 @@ try{git(['cat-file','-e',baseline+'^{commit}']);}catch{git(['fetch','--no-tags',
 for(const path of targets)assert.equal(await readFile(path,'utf8'),transform(path,git(['show',baseline+':'+path]).toString()),'Unapproved changes in '+path);
 const hash=b=>createHash('sha1').update(Buffer.from('blob '+b.length+'\0')).update(b).digest('hex');
 let preserved=0;
-for(const row of git(['ls-tree','-r',baseline,'--','src','data','assets']).toString().trim().split('\n')){
+for(const row of git(['ls-tree','-rz',baseline,'--','src','data','assets']).toString().split('\0').filter(Boolean)){
  const [meta,path]=row.split('\t');if(targets.includes(path))continue;assert.equal(hash(await readFile(path)),meta.split(' ')[2],'Unrelated model, surface, road, texture or module changed: '+path);preserved++;
 }
 assert((await readFile('index.html')).equals(await readFile('museum.html')));
