@@ -10,8 +10,8 @@ const ref='c3f6a737dc5f9c78332c7db3806251b104bc6456',git=args=>execFileSync('git
 try{git(['cat-file','-e',ref+'^{commit}']);}catch{git(['fetch','--no-tags','--depth=1','origin',ref]);}
 const allowed=new Set(['src/transport-bake.js','src/site110.js','src/road-editor-mesh.js','src/owner-rail-curves.js','src/road-lod.js','src/owner-ad-refinements.js','src/road-editor.js','src/workshop-road-editor.js','src/site113-road-grade.js','src/road-editor-style.js','src/site113.js','src/osm-transport.js','data/road-edits-authoritative-20261103.json','data/osm/transport-geometry-bake-v1.json.gz','data/osm/road-lod-authoritative-v1.json.gz']);
 const norm=s=>s.replace(/\?v=[^'"\s]+/g,'');let unchanged=0,cacheKeysOnly=0;
-for(const row of git(['ls-tree','-r',ref,'--','src','data','assets']).toString().trim().split('\n')){
- const [meta,path]=row.split('\t');if(allowed.has(path))continue;const bytes=await readFile(path),expected=meta.split(' ')[2],actual=createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex');
+for(const row of git(['ls-tree','-r','-z',ref,'--','src','data','assets']).toString().split('\0').filter(Boolean)){
+ const split=row.indexOf('\t'),meta=row.slice(0,split),path=row.slice(split+1);if(allowed.has(path))continue;const bytes=await readFile(path),expected=meta.split(' ')[2],actual=createHash('sha1').update(Buffer.from('blob '+bytes.length+'\0')).update(bytes).digest('hex');
  if(actual===expected){unchanged++;continue;}
  assert(path.endsWith('.js')&&norm(bytes.toString())===norm(git(['show',ref+':'+path]).toString()),'Unrelated original museum resource changed: '+path);cacheKeysOnly++;
 }
