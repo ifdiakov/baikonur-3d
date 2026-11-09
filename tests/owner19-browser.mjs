@@ -28,9 +28,11 @@ try{
    for(const [x,z]of [[538.7,440.9],[543.4,446.2]])for(let i=-3;i<=3;i++)for(let j=-3;j<=3;j++){
     ray.set(v(x+i*.12+.003,z+j*.12+.007),down);const hits=ray.intersectObjects(surfaces,false);for(let k=1;k<hits.length;k++)if(Math.abs(hits[k].point.y-hits[k-1].point.y)<.002)collisions.push([x+i*.12,z+j*.12,hits[k].object.name]);
    }
+   const lodPalettes=[];d.roadLOD.root.traverse(o=>{if(o.isMesh&&o.userData.roadKind==='roads')lodPalettes.push({type:o.material.type,color:o.material.color.getHexString()});});
    const removed=d.objects.find(o=>o.record.id==='pad-110').g.userData.owner19BuildingClearance,roadIds=d.transport.editableRoadPaths().map(r=>r.id),stats=q.stats();
-   return {revision:stats.roadEditor.baselineRevision,colors:stats.roadEditor.sourceMaterialColors,collisions,removed,roadIds,railRoutes:d.transport.routes.rail.map(r=>r.id),site113:q.site113.stats(),offsets:d.siteRecords.filter(r=>['pad-202','pad-204'].includes(r.id)),job:stats.transportBake,shaders:stats.shadersValid};
+   return {lodPalettes,revision:stats.roadEditor.baselineRevision,colors:stats.roadEditor.sourceMaterialColors,collisions,removed,roadIds,railRoutes:d.transport.routes.rail.map(r=>r.id),site113:q.site113.stats(),offsets:d.siteRecords.filter(r=>['pad-202','pad-204'].includes(r.id)),job:stats.transportBake,shaders:stats.shadersValid};
   });
+  assert.equal(checks.lodPalettes.length,2);assert(checks.lodPalettes.every(m=>m.type==='MeshStandardMaterial'&&m.color==='555751'));
   assert.equal(checks.colors.asphalt,'#555751');assert(checks.shaders);assert.deepEqual(checks.removed.removedLocal,[-260,350]);assert.equal(checks.removed.retainedTechnicalBuildings,7);assert.equal(checks.collisions.length,0,'Ramp overlap: '+JSON.stringify(checks.collisions.slice(0,10)));
   for(const id of ['172571693','172571703','172571718','172571743','172571754','172571790','172571792','172571808','172571823','172571852','172571888'])assert(checks.roadIds.some(r=>r==='osm-road-'+id||r.startsWith('osm-road-'+id+'-')),'Missing 113 street '+id);
   assert(!checks.roadIds.some(id=>/^osm-road-(443174416|172704752|172704782)(?:-|$)/.test(id)));assert(!checks.railRoutes.some(id=>id.startsWith('owner-rail-continuity')));assert.equal(checks.job.attempts,1);
@@ -40,6 +42,10 @@ try{
    for(const [name,x,y,h]of areas){
     await page.evaluate(({x,y,h})=>{const d=__OWNER19,wx=(x-650)*3.4,wz=(y-522.5)*3.4;d.ctl.enableDamping=false;d.ctl.maxPolarAngle=Math.PI/2;d.ctl.target.set(wx,0,wz);d.camera.position.set(wx,h,wz+.01);d.ctl.update();d.camera.updateMatrixWorld(true);d.roadLOD.update(100,d.layers.roads.children.filter(c=>c.name.startsWith('OpenStreetMap ·')).concat(d.layers.rails.children.filter(c=>c.name.startsWith('OpenStreetMap ·'))));d.renderer.render(d.scene,d.camera);},{x,y,h});
     await page.screenshot({path:out+'/'+name+'.png',timeout:120000});
+    if(name==='t605')for(const height of [500,1000]){
+     await page.evaluate(height=>{const d=__OWNER19;d.roadLOD.update(height,d.layers.roads.children.filter(c=>c.name.startsWith('OpenStreetMap ·')).concat(d.layers.rails.children.filter(c=>c.name.startsWith('OpenStreetMap ·'))));d.renderer.render(d.scene,d.camera);},height);
+     await page.screenshot({path:out+'/'+name+'-lod-'+height+'.png',timeout:120000});
+    }
     if(name.startsWith('ramp')){await page.evaluate(()=>{const d=__OWNER19;d.camera.position.z+=14;d.camera.lookAt(d.ctl.target);d.camera.updateMatrixWorld(true);d.renderer.render(d.scene,d.camera)});await page.screenshot({path:out+'/'+name+'-oblique.png',timeout:120000});}
    }
    await style.evaluate(e=>e.remove());
