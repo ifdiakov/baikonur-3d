@@ -2,8 +2,8 @@
 name: Verify nonblocking full-detail museum
 on:
   push:
-    branches: [main, fix/nonblocking-detail-20261109]
-    paths: ['index.html','museum.html','workshop.html','src/**','scripts/*detail*.mjs','tests/transport-transition-browser.mjs','.github/workflows/nonblocking-detail.yml']
+    branches: [main, fix/nonblocking-detail-20261109, fix/owner19-network-20261109]
+    paths: ['index.html','museum.html','workshop.html','src/**','data/road-edits-authoritative-20261103.json','scripts/*detail*.mjs','scripts/*owner19*.mjs','tests/owner19-*.mjs','tests/transport-transition-browser.mjs','.github/workflows/nonblocking-detail.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -20,83 +20,88 @@ jobs:
       name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'museum-candidate' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Select full or targeted acceptance
+      - name: Select relevant acceptance
         id: impact
-        run: node scripts/ci/impact.mjs release
-      - name: Validate CI selection and failure guards
+        run: |
+          node scripts/ci/impact.mjs release
+          node scripts/owner19-scope.mjs
+      - name: Validate delivery guards
         run: node tests/ci-reliability.mjs
       - uses: actions/setup-node@v4
-        if: steps.impact.outputs.runtime == 'true'
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         with:
           node-version: '22'
-      - name: Reuse downloaded verification dependencies
-        if: steps.impact.outputs.runtime == 'true'
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         with:
           path: ~/.npm
           key: museum-npm-${{ runner.os }}-v1
-      - name: Reuse matching browser binaries
-        if: steps.impact.outputs.runtime == 'true'
-        uses: actions/cache@v4
+      - uses: actions/cache@v4
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         with:
           path: ~/.cache/ms-playwright
           key: museum-playwright-${{ runner.os }}-1.57.0
-      - name: Preserve the full museum and prepare final independent placards
-        if: steps.impact.outputs.runtime == 'true'
+      - name: Apply only the owner-approved network corrections
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         run: |
-          git fetch --no-tags --depth=1 origin 7fa943f25435a49328d21b58e1e103031f0a7fab
-          git show 7fa943f25435a49328d21b58e1e103031f0a7fab:index.html > qa-reference.html
-          if ! grep -q DETAIL_FIDELITY_V2 index.html; then node scripts/apply-nonblocking-detail.mjs; fi
-          node scripts/refine-detail-fidelity.mjs
-          node scripts/finish-detail-release.mjs
-          git diff --exit-code 7fa943f25435a49328d21b58e1e103031f0a7fab -- assets data src/osm-transport.js src/evening-scene.js src/arrival-flight.js src/museum-menu.js src/steppe-surface.js src/mzk-sdi.js src/mzk-hall.js src/mzk-sdi-stand.js
+          if [ '${{ steps.impact.outputs.owner19 }}' = true ]; then node scripts/apply-owner19.mjs; fi
+          git fetch --no-tags --depth=1 origin 77da663d9f3f2f78bc92d75cf1b415c854b0c300
+          git show 77da663d9f3f2f78bc92d75cf1b415c854b0c300:index.html > qa-reference.html
+          git diff --exit-code 77da663d9f3f2f78bc92d75cf1b415c854b0c300 -- assets data ':!data/road-edits-authoritative-20261103.json' ':!data/osm/transport-geometry-bake-v1.json.gz' ':!data/osm/road-lod-authoritative-v1.json.gz' src/evening-scene.js src/arrival-flight.js src/museum-menu.js src/steppe-surface.js src/mzk-sdi.js src/mzk-hall.js src/mzk-sdi-stand.js src/np-royaltent.js src/site31-observation-platform.js
           cmp index.html museum.html
-      - name: Build isolated worker and browser tools
-        if: steps.impact.outputs.runtime == 'true'
+      - name: Build matching worker and verification tools
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         run: |
           npm install --no-save three@0.160.1 playwright@1.57.0 esbuild@0.25.12
           npx esbuild src/transport-detail-worker-entry.js --bundle --platform=browser --format=esm --minify --outfile=src/transport-detail-worker.bundle.js
           npx playwright install --with-deps chromium
           node tests/site31-observation.mjs
-      - name: Serve exact original and repaired scene
-        if: steps.impact.outputs.runtime == 'true'
+      - name: Serve candidate
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/transition-http.log 2>&1 &
-      - name: Compare exact geometry and verify responsiveness, full card text and unobstructed controls
-        if: steps.impact.outputs.runtime == 'true'
+      - name: Regenerate matching route caches and verify all 19 requirements
+        if: steps.impact.outputs.owner19 == 'true'
+        run: |
+          node scripts/ci/run-bounded.mjs 300 owner19-cache node scripts/build-owner19-caches.mjs
+          node tests/owner19-source.mjs
+      - name: Candidate browser acceptance
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         env:
           QA_OUT: qa-freeze/local
         run: |
-          if [ "${{ steps.impact.outputs.profile }}" = "np" ]; then
+          if [ '${{ steps.impact.outputs.owner19 }}' = true ]; then
+            node scripts/ci/run-bounded.mjs 900 candidate-owner19 node tests/owner19-browser.mjs
+          elif [ '${{ steps.impact.outputs.profile }}' = np ]; then
             FIXTURE=0 node scripts/ci/run-bounded.mjs 600 candidate-np node tests/np-royaltent-browser.mjs
           else
             node scripts/ci/run-bounded.mjs 900 candidate-full node tests/transport-transition-browser.mjs
           fi
-      - name: Record verified source and requirements
-        if: steps.impact.outputs.runtime == 'true'
+      - name: Record the verified source and generated caches
+        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src tests/transport-transition-browser.mjs PROJECT_CONTEXT.md
-          if ! git diff --cached --quiet; then git commit -m 'Verify responsive full scene and readable independent MZK SDI cards'; git push origin HEAD:${{ github.ref_name }}; fi
+          git add index.html museum.html workshop.html src data/road-edits-authoritative-20261103.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz scripts/build-authoritative-road-lod.mjs PROJECT_CONTEXT.md
+          if ! git diff --cached --quiet; then git commit -m 'Owner19: verified connected roads, rail curves, town streets and matching caches'; git push origin HEAD:${{ github.ref_name }}; fi
           git rev-parse HEAD > qa-freeze/source-commit.txt
       - name: Assemble verified Pages release
-        if: (github.ref == 'refs/heads/main') && (steps.impact.outputs.runtime == 'true')
+        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true')
         run: |
           mkdir -p /tmp/museum-pages
           git archive HEAD | tar -xf - -C /tmp/museum-pages
           rm -rf /tmp/museum-pages/.github /tmp/museum-pages/scripts /tmp/museum-pages/tests
           node scripts/ci/release-proof.mjs manifest /tmp/museum-pages
       - uses: actions/upload-pages-artifact@v3
-        if: (github.ref == 'refs/heads/main') && (steps.impact.outputs.runtime == 'true')
+        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true')
         with:
           path: /tmp/museum-pages
       - name: Refuse stale publication
-        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true')
+        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true')
         run: node scripts/ci/release-proof.mjs guard
       - uses: actions/deploy-pages@v4
-        if: (github.ref == 'refs/heads/main') && (steps.impact.outputs.runtime == 'true')
-      - name: Repeat on the actual published site
-        if: (github.ref == 'refs/heads/main') && (steps.impact.outputs.runtime == 'true')
+        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true')
+      - name: Verify the actual published files and browser rendering
+        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true')
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_OUT: qa-freeze/public
@@ -105,13 +110,15 @@ jobs:
           VERIFY_PUBLIC: '1'
         run: |
           node scripts/ci/release-proof.mjs confirm
-          if [ "${{ steps.impact.outputs.profile }}" = "np" ]; then
+          if [ '${{ steps.impact.outputs.owner19 }}' = true ]; then
+            node scripts/ci/run-bounded.mjs 900 public-owner19 node tests/owner19-browser.mjs
+          elif [ '${{ steps.impact.outputs.profile }}' = np ]; then
             FIXTURE=0 node scripts/ci/run-bounded.mjs 600 public-np node tests/np-royaltent-browser.mjs
           else
             node scripts/ci/run-bounded.mjs 900 public-full node tests/transport-transition-browser.mjs
           fi
-      - name: Verify published tent revision and actual evening close-ups
-        if: ((github.ref == 'refs/heads/main') && (steps.impact.outputs.runtime == 'true')) && (steps.impact.outputs.profile != 'np')
+      - name: Verify published tents when not already covered by the target suite
+        if: github.ref == 'refs/heads/main' && steps.impact.outputs.runtime == 'true' && steps.impact.outputs.owner19 != 'true' && steps.impact.outputs.profile != 'np'
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_OUT: qa-freeze/np-public
@@ -119,8 +126,8 @@ jobs:
           FIXTURE: '0'
           VERIFY_PUBLIC: '1'
         run: node scripts/ci/run-bounded.mjs 360 public-np-closeup node tests/np-royaltent-browser.mjs
-      - name: Mark complete only after all published checks pass
-        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true')
+      - name: Complete only after public acceptance
+        if: github.ref == 'refs/heads/main' && (steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true')
         run: node scripts/ci/release-proof.mjs complete qa-freeze
       - uses: actions/upload-artifact@v4
         if: always()
@@ -129,4 +136,5 @@ jobs:
           path: |
             qa-freeze/
             qa-ci/
+            qa-owner19/
           retention-days: 7
