@@ -1,0 +1,59 @@
+name: Verify NP RoyalTent detail candidate
+on:
+  push:
+    branches: [fix/np-royaltent-detail-20261109]
+    paths: ['src/np-royaltent.js','src/site31-observation-platform.js','scripts/apply-np-royaltent.mjs','tests/np-royaltent-*.mjs','.github/workflows/np-royaltent-candidate.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: np-royaltent-candidate
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Integrate only detailed NP tents
+        run: |
+          node scripts/apply-np-royaltent.mjs
+          node --check src/np-royaltent.js
+          node --check src/site31-observation-platform.js
+          node tests/np-royaltent-preservation.mjs
+      - name: Install deterministic rendering tests
+        run: |
+          npm install --no-save three@0.160.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Verify geometry and construction dimensions
+        run: node tests/site31-observation.mjs
+      - name: Serve candidate
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/np-royaltent-http.log 2>&1 &
+      - name: Inspect construction and actual evening museum on desktop, mobile and workshop
+        env:
+          QA_OUT: qa-np-royaltent/local
+        run: node tests/np-royaltent-browser.mjs
+      - name: Commit only verified integration and requirements
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/site31-observation-platform.js index.html museum.html workshop.html tests/site31-observation.mjs tests/site31-observation-browser.mjs tests/fixtures/np-photo.html tests/transport-transition-browser.mjs PROJECT_CONTEXT.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Integrate verified RoyalTent NP detail without changing original museum appearance'
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+          git rev-parse HEAD > qa-np-royaltent/source-commit.txt
+      - name: Preserve evidence
+        if: always()
+        run: |
+          mkdir -p qa-np-royaltent
+          cp /tmp/np-royaltent-http.log qa-np-royaltent/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: np-royaltent-candidate-evidence
+          path: qa-np-royaltent/
+          retention-days: 7
