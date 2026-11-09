@@ -2,7 +2,7 @@ name: Verify complete museum and evening navigation
 on:
   push:
     branches: [main, fix/evening-navigation-20261109]
-    paths: ['index.html', 'museum.html', 'workshop.html', 'src/**', 'data/**', 'assets/**', 'scripts/prepare-workshop.mjs', 'scripts/apply-evening-navigation.mjs', 'tests/original-museum-*.mjs', 'tests/evening-navigation-*.mjs', '.github/workflows/restore-original-museum.yml']
+    paths: ['index.html', 'museum.html', 'workshop.html', 'src/**', 'data/**', 'assets/**', 'scripts/prepare-workshop.mjs', 'scripts/prepare-evening-menu.mjs', 'scripts/apply-evening-navigation.mjs', 'tests/original-museum-*.mjs', 'tests/evening-navigation-*.mjs', '.github/workflows/restore-original-museum.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -14,7 +14,7 @@ concurrency:
 jobs:
   restore:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 35
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'museum-candidate' }}
     steps:
@@ -24,6 +24,7 @@ jobs:
           node-version: '22'
       - name: Apply only owner-requested evening and navigation changes
         run: |
+          node scripts/prepare-evening-menu.mjs
           node scripts/apply-evening-navigation.mjs
           node scripts/prepare-workshop.mjs
       - name: Verify original appearance and unchanged models and roads
@@ -42,15 +43,19 @@ jobs:
           node --check src/museum-menu.js
       - name: Serve restored scene
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/original-museum-http.log 2>&1 &
-      - name: Check desktop, mobile, evening reconstructions and admin editing
+      - name: Browser acceptance before publication
+        # Candidates cover all three contexts; main repeats desktop locally and
+        # then all three contexts against the actual deployed site below.
+        env:
+          QA_MODES: ${{ github.ref == 'refs/heads/main' && 'desktop' || 'desktop,mobile,workshop' }}
         run: node tests/original-museum-browser.mjs
       - name: Commit only verified changes and documentation
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src/evening-scene.js src/arrival-flight.js src/museum-menu.js src/evening.css tests/menu-catalog-contract.mjs tests/original-museum-browser.mjs PROJECT_CONTEXT.md
+          git add index.html museum.html workshop.html src/evening-scene.js src/arrival-flight.js src/museum-menu.js src/evening.css tests/menu-catalog-contract.mjs tests/original-museum-browser.mjs tests/evening-navigation-browser-checks.mjs scripts/apply-evening-navigation.mjs PROJECT_CONTEXT.md
           if ! git diff --cached --quiet; then
-            git commit -m 'Keep full museum permanently evening, bound aircraft follow and nest traditions'
+            git commit -m 'Verify unclipped nested traditions and preserve permanent evening navigation'
             git push origin HEAD:${{ github.ref_name }}
           fi
           git rev-parse HEAD > qa-original-museum/source-commit.txt
@@ -66,11 +71,12 @@ jobs:
           path: /tmp/original-museum-pages
       - uses: actions/deploy-pages@v4
         if: github.ref == 'refs/heads/main'
-      - name: Verify published file hashes and all three changes in the public browser
+      - name: Verify published files and all changes on desktop, mobile and workshop
         if: github.ref == 'refs/heads/main'
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_OUT: qa-original-museum/public
+          QA_MODES: desktop,mobile,workshop
           VERIFY_PUBLIC: '1'
         run: node tests/original-museum-browser.mjs
       - name: Preserve evidence
