@@ -43,7 +43,7 @@ function toRows(items,level,rail=false){
  }
  return rows;
 }
-const data={version:'road-lod-prebuilt-v1',projection:'world-xz',sourceFingerprint:bake.sourceFingerprint,displayGradeVersion:bake.displayGradeVersion??null,
+const data={version:'road-lod-prebuilt-v1',projection:'world-xz',ownerRevision:bake.ownerRevision??null,sourceFingerprint:bake.sourceFingerprint,displayGradeVersion:bake.displayGradeVersion??null,
  sourceHash:createHash('sha256').update(JSON.stringify([bake.sourceFingerprint,bake.stats.roadFeatureCount,
   bake.stats.railFeatureCount])).digest('hex').slice(0,16),source:'final-owner-filtered-rendered-paths',
  levels:{

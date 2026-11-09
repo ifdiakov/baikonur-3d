@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
-import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-union-weld-v7-saturn-terrain-clearance';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261109-owner19-v2';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-parity-v3';
 import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v3';
 import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261103-source-matched-pavement-v7';
@@ -25,10 +25,10 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  // the source stencil shader is installed so the new pavement is not clipped.
  const originalMaterial=(name,fallback)=>{
   const match=roadMeshes.find(mesh=>mesh.name===name&&mesh.material?.isMaterial)?.material;
-  return match?match.clone():new THREE.MeshStandardMaterial({color:fallback,roughness:.96,metalness:0,side:THREE.DoubleSide});
+  return match?.isMeshStandardMaterial?match.clone():new THREE.MeshStandardMaterial({color:fallback,roughness:.96,metalness:0,side:THREE.DoubleSide});
  };
  const surfaceMaterials={
-  asphalt:originalMaterial('OSM · единое дорожное полотно',0xadb2b3),
+  asphalt:originalMaterial('OSM · единое дорожное полотно',0x555751),
   ground:originalMaterial('OSM · грунтовые проезды',0xb2a58d),
   highway:originalMaterial('OSM · асфальт трассы',0x555751),
   shoulder:originalMaterial('OSM · единые обочины',0xc5c1b4),
@@ -167,7 +167,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   }
   const joined=stitchEditedRoads(state.added,{existingRoads:base});
   joinReport=joined.adjustments;
-  const styled=joined.roads.map(r=>({...r,profile:deriveEditedRoadStyle(r,base)}));
+  const styled=joined.roads.map(r=>{const profile=deriveEditedRoadStyle(r,base);if(['road-3','road-4','road-8'].includes(r.id)){profile.widthStart=profile.widthEnd=r.width;profile.classId='asphalt';profile.startY=r.points[0][1];profile.endY=r.points.at(-1)[1];}return {...r,profile};});
   styleReport=styled.map(r=>({id:r.id,sourceId:r.profile.sourceId,kind:r.profile.classId,
    widthStart:r.profile.widthStart,widthEnd:r.profile.widthEnd,
    marking:r.profile.marking,marked:r.profile.marked,
@@ -420,6 +420,12 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    // whose browser still holds edits from the preceding release.
    // Preserve their local roads/cuts; merge only missing baseline records.
    if(baselineData?.revision&&snapshot.baselineRevision!==baselineData.revision){
+    if(baselineData.revision==='20261109-owner19-v2'){
+     const backup=ROAD_EDITOR_STORAGE+'-before-owner19-v2';if(!localStorage.getItem(backup))localStorage.setItem(backup,saved);
+     const corrected=new Map(baselineData.added.filter(r=>['road-3','road-4','road-8'].includes(r.id)).map(r=>[r.id,r]));
+     local.added=local.added.map(r=>corrected.has(r.id)?structuredClone(corrected.get(r.id)):r);
+     local.hidden=local.hidden.filter(r=>!/(?:^|-)(172571885|172571880)(?:-|$)/.test(r.sourceId));
+    }
     Object.assign(state,reconcileRoadEdits(local,baselineData));
    }
   }else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}

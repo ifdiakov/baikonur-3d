@@ -13,8 +13,8 @@ export function buildUkssConnections(root,source){
  const railMaterial=new THREE.MeshStandardMaterial({color:0x5d625f,metalness:.62,roughness:.61,side:THREE.DoubleSide});
  const ballastMaterial=new THREE.MeshStandardMaterial({color:0x948a77,roughness:1,side:THREE.DoubleSide});
  const sleeperMaterial=new THREE.MeshStandardMaterial({color:0x716d60,roughness:1});
- const roadMaterial=new THREE.MeshStandardMaterial({color:0x5b5b51,roughness:1,side:THREE.DoubleSide});
- const shoulderMaterial=new THREE.MeshStandardMaterial({color:0xa4987c,roughness:1,side:THREE.DoubleSide});
+ const roadMaterial=new THREE.MeshStandardMaterial({color:0x555751,roughness:1,side:THREE.DoubleSide});
+ const shoulderMaterial=new THREE.MeshStandardMaterial({color:0xc5c1b4,roughness:1,side:THREE.DoubleSide});
  const V=(...v)=>new THREE.Vector3(...v),mix=THREE.MathUtils.lerp;
  const sleepers=[],reports=[];
  function ribbon(samples,width,height,offset,material,name,thickness=0){
@@ -65,7 +65,7 @@ export function buildUkssConnections(root,source){
  const legacyToMetres=1/.687885342706393;
  const roadStart=V(...source.museumRoadSocket),roadEnd=V(-29.7,.0539054715,78).multiplyScalar(legacyToMetres);
  const roadCurve=new THREE.CubicBezierCurve3(roadStart,V(-40,.2,111).multiplyScalar(legacyToMetres),V(-40,.0539054715,78).multiplyScalar(legacyToMetres),roadEnd),roadSamples=sample(roadCurve,64);
- ribbon(roadSamples,()=>2.2/scale,()=>-.045,()=>0,shoulderMaterial,'УКСС · обочина подъезда');
- ribbon(roadSamples,()=>1.8/scale,()=>0,()=>0,roadMaterial,'УКСС · подъезд к площадке');
- return {version:'ukss-source-connections-v3',connected:true,railTracks:reports,road:{socket:source.museumRoadSocket,endpoint:roadEnd.toArray(),sourcePlatformId:25196,gap:0,width:1.8/scale},railAdaptation,sourceStructuresStretched:false,sourceGeometryStretched:railAdaptation.changed};
+ ribbon(roadSamples,()=>3.1/scale,()=>-.045,()=>0,shoulderMaterial,'УКСС · обочина подъезда');
+ ribbon(roadSamples,()=>2.5/scale,()=>0,()=>0,roadMaterial,'УКСС · подъезд к площадке');
+ return {version:'ukss-source-connections-v3',connected:true,railTracks:reports,road:{socket:source.museumRoadSocket,endpoint:roadEnd.toArray(),sourcePlatformId:25196,gap:0,width:2.5/scale},railAdaptation,sourceStructuresStretched:false,sourceGeometryStretched:railAdaptation.changed};
 }

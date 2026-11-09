@@ -234,6 +234,7 @@ function appendJunctionAprons(roads,paths,buckets,terrainHeightAt){
  for(const path of paths){
   const owner=roads.find(r=>r.id===path.id),profile=owner?.profile||{};
   if(!owner)continue;
+  if(['road-3','road-4','road-8'].includes(owner.id))continue; // Shared-axis butt joins, no protruding discs.
   for(const [index,ordinal]of [[0,0],[path.points.length-1,1]]){
    const p=path.points[index],width=path.widths?.[index]??path.width;
    let best=null;

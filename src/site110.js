@@ -309,13 +309,14 @@ export function buildSite110(root){
 
  // Source-traced northern technical area and the few through connections.
  // No speculative web of local roads is added around the complex.
- const buildings=[[-122,-392,52,125,14],[-18,-462,52,118,14],[90,-290,45,147,8],[-2,-55,36,92,6],[113,-25,34,88,6],[-99,131,36,85,6],[-212,265,45,110,6],[-260,350,27,87,5]];
+ const buildings=[[-122,-392,52,125,14],[-18,-462,52,118,14],[90,-290,45,147,8],[-2,-55,36,92,6],[113,-25,34,88,6],[-99,131,36,85,6],[-212,265,45,110,6]];
  for(const [x,z,w,d,h] of buildings)k.hall({x,z,w,d,h,yaw:YAW,roof:'roof',windows:false,gates:1,tag:'source-traced-technical-house'});
  k.path([[-350,415],[-240,265],[-74,77],[65,-102],[219,-310]],8,.12,'asphalt','main-complex-access');
  k.path([[-390,-280],[-380,300],[-350,415]],6,.10,'asphalt','perimeter-service-access');
  const incomingRails=createSite110IncomingRails({pads:SITE110_REFERENCE.pads,ports:SITE110_PORTS.rail,yaw:YAW});
  for(const track of incomingRails.tracks)k.rail(track.points,{gauge:1.52,y:.28,tag:'transporter-incoming-rail'});
  root.userData.site110IncomingRails=incomingRails;
+ root.userData.owner19BuildingClearance={map:[589,342.7],removedLocal:[-260,350],retainedTechnicalBuildings:buildings.length};
  const features=k.finish();
  root.userData.flamePetals={perLaunch:3,launches:2,belowGrade:true};
  root.userData.tracedPads=SITE110_REFERENCE.pads.map(p=>p.centre.slice());

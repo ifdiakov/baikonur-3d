@@ -7,7 +7,7 @@ export function createSite113RoadGrade(anchor){
  const widthScale=id=>String(id).split('-').some(v=>streets.has(v))?.45:1;
  const isBaked=data=>data.displayGradeVersion===version||(!data.displayGradeVersion&&(data.editable||data.levels?.medium?.roads||[]).some(row=>widthScale(row.id)<1&&(row.width??row.w)<=1));
  function adjustWidths(graph){for(const way of graph.ways){const scale=widthScale(way.osmId);way.width*=scale;for(const edge of way.segments)edge.width*=scale;}}
- const baseY=-2.755,roadY=baseY+.025,fade=12;
+ const baseY=-2.755,roadY=baseY+.08,fade=12;
  const bounds={minX:anchor.x-36,maxX:anchor.x+7,minZ:anchor.z-7,maxZ:anchor.z+36};
  function weightAt(x,z){
   const d=Math.max(bounds.minX-x,x-bounds.maxX,bounds.minZ-z,z-bounds.maxZ,0);

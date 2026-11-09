@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {buildOsmTransportNetwork} from './osm-transport.js?v=20261108-owner19-detail-v9';
+import {buildOsmTransportNetwork} from './osm-transport.js?v=20261109-owner19-v2';
 import {createMuseumGeography} from './osm-geography.js';
 import {createCheckpoint7RoadGrade} from './checkpoint7-road-grade.js';
 import {createSite113RoadGrade} from './site113-road-grade.js';

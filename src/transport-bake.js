@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261108-owner19-v1';
-import {shapeOwnerRail} from './owner-rail-curves.js?v=20261108-owner19-v1';
+import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261109-owner19-v2';
+import {shapeOwnerRail} from './owner-rail-curves.js?v=20261109-owner19-v2';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
@@ -35,7 +35,7 @@ function simplifyPoints(points,deviation){
 }
 const packPath=(path,deviation=0)=>{
  const props={};
- for(const key of ['id','label','width','source','vehicleScale','osmWayIds','nodeIds','bridgeDistance','routeIds','joinGap','rampStart','rampEnd','tags','marked','surface','highway','gauge','sections','joins','from','to']){
+ for(const key of ['id','sourceWayId','abandoned','label','width','source','vehicleScale','osmWayIds','nodeIds','bridgeDistance','routeIds','joinGap','rampStart','rampEnd','tags','marked','surface','highway','gauge','sections','joins','from','to']){
   if(path[key]!=null&&typeof path[key]!=='function')props[key]=path[key];
  }
  props.points=simplifyPoints((path.points||[]).map(v=>(v.isVector3?v.toArray():Array.isArray(v)?v:[v.x,v.y,v.z]).map(quantize)),deviation);
@@ -52,7 +52,7 @@ export function serializeTransport({transport,layers,mik112Rail,sourceFingerprin
  if(!plan?.routes?.length)throw Error('No transport graph to bake');
  const scene={
   version:TRANSPORT_BAKE_VERSION,fingerprint,sourceFingerprint,displayGradeVersion,
-  cacheKind:'routes-only',
+  cacheKind:'routes-only',ownerRevision:'20261109-owner19-v2',
   roads:packMany(paths,.02),
   vehicles:{routes:packMany(plan.routes,.015),highway:plan.highway.id,source:plan.source,joins:plan.joins},
   extensions:packMany(paths.displayHighwayExtensions),
@@ -106,8 +106,11 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
   const cut=path.points.findIndex((p,i)=>i>0&&p.x/3.4+650>752.45&&p.z/3.4+522.5>458.75);
   return cut>=2?{...path,points:path.points.slice(0,cut)}:path;
  };
+ const polished=bake.ownerRevision==='20261109-owner19-v2';
+ const applyRoad=(points,id)=>polished?points:polishCachedOwnerAd(points,id);
+ const applyRail=(points,id)=>polished?points:shapeOwnerRail(points,id);
  const paths=unpack(bake.roads,roadGrade).map(trimPhantomSpur)
-  .map(path=>({...path,points:polishCachedOwnerAd(path.points,path.id)}))
+  .map(path=>({...path,points:applyRoad(path.points,path.id)}))
   .filter(path=>path.points.length>1).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired');
  for(const path of paths){
   if(path.id==='gagarin-site2-turnoff'){path.surface='asphalt';path.tags={...(path.tags||{}),highway:'service',surface:'asphalt'};}
@@ -119,8 +122,8 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
  if(!highway)throw Error('Cached highway missing');
  paths.osmVehiclePlan={routes,highway,source:bake.vehicles.source,joins:bake.vehicles.joins,extensions:[]};
  const terrain={roads:unpack(bake.terrain.roads,roadGrade).map(trimPhantomSpur)
-  .map(path=>({...path,points:polishCachedOwnerAd(path.points,path.id)}))
-  .filter(path=>path.points.length>1).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(shapeOwnerRail(path.points,path.id??path.sourceWayId),path).flatMap(run=>clipPad5DuplicateRail(run,path)).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
+  .map(path=>({...path,points:applyRoad(path.points,path.id)}))
+  .filter(path=>path.points.length>1).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(applyRail(path.points,path.id??path.sourceWayId),path).flatMap(run=>clipPad5DuplicateRail(run,path)).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
  const train={...bake.train,path:unpackPath(bake.train.path)};
  const bridge=bake.bridgeBounds?(function(){
   const bbox=new THREE.Box3(new THREE.Vector3(...bake.bridgeBounds.min),new THREE.Vector3(...bake.bridgeBounds.max));
