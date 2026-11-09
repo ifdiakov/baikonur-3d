@@ -51,3 +51,27 @@ jobs:
           name: ci-reliability-evidence
           path: qa-ci/
           retention-days: 7
+  diagnose-public-startup:
+    if: contains(github.event.head_commit.message, '[owner19-diagnostic]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: museum-playwright-${{ runner.os }}-1.57.0
+      - run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Diagnose unmodified published pages and record all failed resources
+        run: node scripts/ci/run-bounded.mjs 210 startup-diagnostic node tests/owner19-startup-diagnostic.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owner19-public-startup-diagnostic
+          path: qa-ci/
+          retention-days: 7
