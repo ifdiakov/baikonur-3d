@@ -6,7 +6,7 @@ const version=hash.digest('hex').slice(0,12),out='public-data/'+version;await mk
 const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
 const page=await browser.newPage({viewport:{width:1400,height:900}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.error(e.message);});
 await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__BAKE_FRAME=()=>pending?.(performance.now());});
-await page.exposeFunction('__WRITE_PUBLIC',async(file,b64)=>{if(!/^[a-zA-Z0-9_./-]+$/.test(file)||file.includes('..'))throw Error('Bad export path');const dest=path.join(out,file);await mkdir(path.dirname(dest),{recursive:true});const data=Buffer.from(b64,'base64');await writeFile(dest,file.endsWith('.gz')?gzipSync(data,{level:9}):data);});
+await page.exposeFunction('__WRITE_PUBLIC',async(file,b64)=>{if(typeof file!=='string'||!/^[\p{L}\p{N}_./-]+$/u.test(file)||file.includes('..')||file.startsWith('/'))throw Error('Bad export path: '+file);const dest=path.join(out,file);await mkdir(path.dirname(dest),{recursive:true});const data=Buffer.from(b64,'base64');await writeFile(dest,file.endsWith('.gz')?gzipSync(data,{level:9}):data);});
 try{
  await page.goto(base+'workshop.html?bakePublic=1&tour=0',{waitUntil:'domcontentloaded',timeout:180000});
  await page.waitForFunction(()=>window.__WORKSHOP_SCENE&&document.body.classList.contains('museum-ready'),null,{timeout:240000});

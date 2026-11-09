@@ -1,6 +1,6 @@
 export const WORKSHOP_STATE_VERSION=1;
 export const WORKSHOP_STORAGE='rockettrip-workshop-scene-v1';
-const safeId=id=>typeof id==='string'&&/^[a-zA-Z0-9_-]{1,120}$/.test(id)&&!['__proto__','constructor','prototype'].includes(id);
+const safeId=id=>typeof id==='string'&&/^[\p{L}\p{N}_-]{1,120}$/u.test(id)&&!['__proto__','constructor','prototype'].includes(id);
 export function validateWorkshopState(input,knownIds=null){
  if(!input||input.version!==1||!input.objects||typeof input.objects!=='object'||Array.isArray(input.objects))throw Error('Нужен файл мастерской версии 1.');
  const objects=Object.create(null),entries=Object.entries(input.objects);
