@@ -24,6 +24,7 @@ window.__BAIKONUR_QA={`);
 }
 let workshop=html.replace(/<title>[^<]+<\/title>/,'<title>Мастерская — Байконур 3D</title>');
 await writeFile('workshop.html',workshop);
+for(const file of ['index.html','workshop.html']){let source=await readFile(file,'utf8');source=source.replace('eveningScene?.refreshRoadEditor(roadEditor);}', 'eveningScene?.refreshRoadEditor(roadEditor);window.__MUSEUM_WORKSHOP?.roadsChanged?.();}');await writeFile(file,source);}
 let editor=await readFile('src/road-editor.js','utf8');
 if(!editor.includes('replaceSnapshot(data)')){
  editor=editor.replace('snapshot:clone,maskAt,roadLightRemoved,','replaceSnapshot(data){const valid=validateRoadEdits(data);checkpoint();Object.assign(state,valid);draft=[];render();return clone();},snapshot:clone,maskAt,roadLightRemoved,');

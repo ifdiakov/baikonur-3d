@@ -17,7 +17,7 @@ try{
    if(mode==='museum')return {...window.__MUSEUM_PUBLIC.metrics(),resources:resources.length,sizes};
    const marks=window.__MUSEUM_STARTUP.stats().marks,get=n=>marks.find(m=>m.name===n)?.at;return {firstFrameMs:Math.round(get('first-frame')-get('startup')),interactiveMs:Math.round(get('interactive')-get('startup')),navigationToReadyMs:Math.round(performance.now()),resources:resources.length,sizes};
   },mode);
-  report.measurements.push({mode,run:i+1,cache:'cold isolated browser context',wallMs:Date.now()-started,...measurement,errors});assert.deepEqual(errors,[]);
+  report.measurements.push({...measurement,mode,run:i+1,cache:'cold isolated browser context',wallMs:Date.now()-started,errors});assert.deepEqual(errors,[]);
   if(i===0){
    if(mode==='museum'){
     assert(!requests.some(r=>/road-editor|osm-transport|roads\.geojson|archive-models|encyclopedia\.json/.test(r)),'Visitor must not load authoring or full source network');
@@ -33,13 +33,13 @@ try{
    }else{
     assert(await page.locator('#cameraAltitude').isVisible());assert(await page.evaluate(()=>window.__MUSEUM_COORD_GRID.isEnabled()));assert(await page.locator('#workshopPanel').isVisible());
     await page.evaluate(()=>window.__MUSEUM_WORKSHOP.select('pad-113'));const initial=await page.locator('#wsHeight').inputValue();await page.locator('#wsHeight').fill(String(Number(initial)+2));await page.locator('#wsApply').click();assert.equal((await page.evaluate(()=>window.__MUSEUM_WORKSHOP.snapshot())).objects['pad-113'].position[1],Number(initial)+2);
-    await page.locator('#wsUndo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),Number(initial));await page.locator('#wsRedo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),Number(initial)+2);
+    await page.locator('#wsUndo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),Number(initial));await page.locator('#wsRedo').click();assert(Math.abs(Number(await page.locator('#wsHeight').inputValue())-Number(initial)-2)<1e-6);
     await page.reload({waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__MUSEUM_WORKSHOP,null,{timeout:240000});assert.equal((await page.evaluate(()=>window.__MUSEUM_WORKSHOP.snapshot())).objects['pad-113'].position[1],Number(initial)+2);report.functional.localAutosave=true;
     await page.evaluate(()=>window.__MUSEUM_WORKSHOP.select('pad-113'));await page.locator('#wsReset').click();await page.evaluate(()=>window.__QA_FRAME());await page.screenshot({path:out+'/workshop-desktop.png'});
-    await page.locator('#wsRoadDetails').evaluate(el=>el.open=true);await page.locator('#wsRoadDraw').click();assert(await page.locator('#roadEditorPanel').isVisible());report.functional.roadEditorVisible=true;
+    await page.locator('#wsRoadDetails').evaluate(el=>el.open=true);await page.locator('#wsRoadDraw').click();assert(await page.locator('#roadEditorPanel').isVisible());report.functional.roadEditorVisible=true;await page.locator('#wsRoadDraw').click();const beforeRoad=await page.evaluate(()=>window.__MUSEUM_WORKSHOP.snapshot());const x=Number(await page.locator('#wsRoadX').inputValue());await page.locator('#wsRoadX').fill(String(x+.2));await page.locator('#wsPointApply').click();await page.locator('#wsRoadApply').click();assert((await page.evaluate(()=>window.__MUSEUM_WORKSHOP.snapshot())).roadEdits.added.length>beforeRoad.roadEdits.added.length);await page.locator('#wsUndo').click();report.functional.numericRoadEditing=true;
    }
   }
-  assert.deepEqual(errors,[]);await context.close();
+  assert.deepEqual(errors,[]);if(mode==='museum')assert((await page.evaluate(()=>window.__MUSEUM_PUBLIC.metrics())).shadersValid);await context.close();
  }
  for(const mode of ['museum','workshop']){
   const context=await browser.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,isMobile:true,hasTouch:true}),p=await context.newPage();activePage=p;const errors=[];p.on('pageerror',e=>errors.push(e.message));

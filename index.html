@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>БАЙКОНУР 3D — виртуальный музей</title>
+<!doctype html><html lang="ru"><head><script>/* PUBLIC_MUSEUM_DEFAULT */if((location.pathname.endsWith('/')||location.pathname.endsWith('/index.html'))&&!location.search&&!location.hash)location.replace('./museum.html');</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>БАЙКОНУР 3D — виртуальный музей</title>
 <link rel="preload" as="image" href="./assets/preloader/soyuz-launch-20261103.webp" type="image/webp" fetchpriority="high">
 <link rel="stylesheet" href="./src/museum-mobile.css?v=20261103-mobile-v1">
 <link rel="stylesheet" href="./src/museum-preloader.css?v=20261105-preloader-gallery-v16">
@@ -617,6 +617,10 @@ import {createExhibitClearance} from './src/exhibit-clearance.js?v=20261031-rock
 import {createInterchangeControls,INTERCHANGE_VIEWS} from './src/interchange-controls.js?v=20261031-interchange-bridge-v1';
 import {facilityAccessInspection} from './src/facility-access-inspection.js?v=20261031-facilities-rails-lighting-v1';
 import {createLaunchCountdown} from './src/launch-countdown.js?v=20261108-unpadded-days-v1';
+// MUSEUM_WORKSHOP_SPLIT_V1: one canonical full scene, two generated entrypoints.
+const IS_WORKSHOP=location.pathname.endsWith('/workshop.html');
+const WORKSHOP_BUILD=new URLSearchParams(location.search).get('workshopBuild')==='1';
+const {validateWorkshopState,applyWorkshopObjects}=await import('./src/workshop-state.js?v=split-v1');
 try{
 const attribution=document.createElement('a');attribution.id='osmAttribution';attribution.href='https://www.openstreetmap.org/copyright';attribution.target='_blank';attribution.rel='noopener';attribution.textContent='© OpenStreetMap contributors';
 const mapAttribution=document.createElement('div');mapAttribution.id='mapAttribution';
@@ -651,7 +655,8 @@ const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./d
  .catch(error=>{console.warn('Optional transport cache not available:',error);return null;});
 const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Authoritative road LOD not available:',error);return null;});
-const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=20261108-no-road-105',{optional:true});
+const publishedWorkshopReady=startup.fetchJSON('./data/workshop-published.json?v=split-v1',{optional:true}).then(data=>validateWorkshopState(data||{version:1,objects:{}}));
+const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=20261108-no-road-105',{optional:true}).then(async roads=>(await publishedWorkshopReady).roadEdits||roads);
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,ownerRoadEdits]=await Promise.all([
@@ -2403,8 +2408,8 @@ roadLOD?.root?.traverse(mesh=>{
  if(mesh.isMesh&&mesh.userData.roadKind==='roads')editorRoadMeshes.push(mesh);
 });
 roadEditor=createRoadEditor({root:layers.roads,camera,canvas:renderer.domElement,groundMeshes:lightingGroundMeshes,
- roadMeshes:editorRoadMeshes,roads:transport.editableRoadPaths(),button:null,readOnly:true,
- terrainHeightAt:(x,z)=>museumTerrainHeightAt(x,z),defaultEdits:ownerRoadEdits,onChange(){eveningScene?.refreshRoadEditor(roadEditor);},
+ roadMeshes:editorRoadMeshes,roads:transport.editableRoadPaths(),button:null,readOnly:!IS_WORKSHOP||WORKSHOP_BUILD,
+ terrainHeightAt:(x,z)=>museumTerrainHeightAt(x,z),defaultEdits:ownerRoadEdits,onChange(){eveningScene?.refreshRoadEditor(roadEditor);window.__MUSEUM_WORKSHOP?.roadsChanged?.();},
  onActiveChange(active){if(active){lightingEditor?.setActive(false);arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();document.getElementById('info').style.display='none';selectSiteCard(null);}}
 });
 const airportObject=objects.find(o=>o.record.id==='airfield');
@@ -2755,6 +2760,13 @@ function syncGagarinTableStatus(){
  el.append(document.createTextNode('Не удалось загрузить стартовый стол. '));
  const retry=document.createElement('button');retry.type='button';retry.textContent='Повторить';
  retry.onclick=()=>gagarinExhibit.table.load();el.append(retry);
+}
+const publishedWorkshop=await publishedWorkshopReady;
+applyWorkshopObjects(objects,publishedWorkshop);
+if(IS_WORKSHOP&&!WORKSHOP_BUILD){
+ const style=document.createElement('link');style.rel='stylesheet';style.href='./src/workshop-panel.css?v=split-v1';document.head.append(style);
+ const {installWorkshop}=await import('./src/workshop-panel.js?v=split-v1');
+ installWorkshop({scene,objects,camera,controls:ctl,canvas:renderer.domElement,roadEditor,transport,terrainHeightAt:museumTerrainHeightAt,altimeter:cameraAltitude,coordinateGrid,published:publishedWorkshop});
 }
 window.__BAIKONUR_QA={np31:()=>{
  const p=site31Observation; if(!p)return {present:false};

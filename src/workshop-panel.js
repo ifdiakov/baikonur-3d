@@ -3,7 +3,7 @@ import {validateWorkshopState,applyWorkshopObjects,WORKSHOP_STORAGE} from './wor
 import {nearestRoadSegment} from './road-editor-core.js';
 export function installWorkshop({scene,objects,camera,controls,canvas,roadEditor,transport,terrainHeightAt,altimeter,coordinateGrid,published}){
  document.body.classList.add('workshop-mode');altimeter?.setEnabled?.(true);coordinateGrid.setEnabled(true);window.__MUSEUM_TRANSPORT_LABELS?.setEnabled?.(true);
- const original=new Map(objects.map(o=>[o.record.id,{position:o.g.position.toArray(),yaw:o.g.rotation.y,scale:1,visible:true}]));
+ const original=new Map(objects.map(o=>[o.record.id,{position:o.g.position.toArray(),yaw:o.g.rotation.y,scale:published?.objects?.[o.record.id]?.scale??1,visible:true}]));
  let state=validateWorkshopState(published||{version:1,objects:{}}),history=[],future=[],activeId=objects[0]?.record.id,roadId='',pointIndex=0,roadDraft=null,moveMode=false;
  const bar=document.createElement('div');bar.id='workshopBar';bar.innerHTML='<b>МАСТЕРСКАЯ БАЙКОНУРА</b><button id="workshopToggle">Инструменты</button><a href="museum.html" target="_blank" rel="noopener">Открыть музей ↗</a>';document.body.append(bar);
  const panel=document.createElement('aside');panel.id='workshopPanel';panel.innerHTML=`<h2>Редактор макета</h2><p class="hint">Черновик сохраняется только в этом браузере. Посетители не видят неопубликованные правки.</p>
@@ -51,5 +51,5 @@ export function installWorkshop({scene,objects,camera,controls,canvas,roadEditor
  $('wsImport').onclick=()=>$('wsFile').click();$('wsFile').onchange=async()=>{try{const file=$('wsFile').files[0];if(!file||file.size>8000000)throw Error('Файл больше 8 МБ.');const valid=validateWorkshopState(JSON.parse(await file.text()));checkpoint();restore(valid);message('Проект загружен и сохранён локально.');}catch(e){message('Импорт отклонён: '+e.message);}};
  window.addEventListener('storage',e=>{if(e.key===WORKSHOP_STORAGE)message('Черновик изменён в другой вкладке. Перед правками обновите страницу.');});
  fillObjects();selectRoad();
- const api={snapshot,select(id){activeId=id;fillObjects();},stats:()=>({version:1,objects:Object.keys(state.objects).length,undo:history.length,roadEditing:true,localDraft:true,authenticatedPublication:false}),restore};window.__MUSEUM_WORKSHOP=api;return api;
+ const api={snapshot,roadsChanged:()=>save(),select(id){activeId=id;fillObjects();},stats:()=>({version:1,objects:Object.keys(state.objects).length,undo:history.length,roadEditing:true,localDraft:true,authenticatedPublication:false}),restore};window.__MUSEUM_WORKSHOP=api;return api;
 }

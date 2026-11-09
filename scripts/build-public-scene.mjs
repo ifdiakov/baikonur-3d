@@ -1,3 +1,4 @@
+import {bakeSiteRoadInk} from './bake-site-road-ink.mjs';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {gzipSync} from 'node:zlib';
 import {createHash} from 'node:crypto';
@@ -12,7 +13,7 @@ const browser=await chromium.launch({headless:true,executablePath:process.env.CH
 const page=await browser.newPage({viewport:{width:1200,height:850}}),errors=[];
 page.on('pageerror',e=>{errors.push(e.message);console.error('PAGEERROR',e.message);});
 await page.addInitScript(()=>{const native=requestAnimationFrame.bind(window);let pending;window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);window.__BUILD_FRAME=()=>pending?.(performance.now());});
-await page.route('**/*',async route=>{if(route.request().resourceType()!=='document')return route.continue();const r=await route.fetch();let text=await r.text();text=text.replace('window.__BAIKONUR_QA={','window.__BUILD={THREE,scene,camera,ctl,renderer,objects,layers,portalArchive,roadEditor,transport,terrainRelief,museumTerrainHeightAt,ground,satelliteGround,outerTerrain,sharedSiloHill,saturnGroup,requestTransportDetail,steppeSurface,roadLOD};window.__BAIKONUR_QA={');await route.fulfill({response:r,body:text});});
+await page.route('**/*',async route=>{if(route.request().resourceType()!=='document')return route.continue();const r=await route.fetch();let text=await r.text();text=text.replace('window.__BAIKONUR_QA={','window.__BUILD={THREE,scene,camera,ctl,renderer,objects,layers,portalArchive,roadEditor,transport,terrainRelief,museumTerrainHeightAt,ground,satelliteGround,outerTerrain,sharedSiloHill,saturnGroup,requestTransportDetail,steppeSurface,roadLOD,riverSurface,portalVoids,ukssCutout};window.__BAIKONUR_QA={');await route.fulfill({response:r,body:text});});
 const writeData=async(path,data)=>{const bytes=gzipSync(Buffer.from(JSON.stringify(data)),{level:9});await writeFile(out+'/'+path,bytes);return {url:out+'/'+path,bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')};};
 function meshSummary(json,id){
  const clean=structuredClone(json);delete clean.images;delete clean.textures;
@@ -24,16 +25,16 @@ function meshSummary(json,id){
   let geo=mesh.geometry;const materials=Array.isArray(mesh.material)?mesh.material:[mesh.material];
   const source=geo.attributes.position;if(!source||!source.count)return;
   geo.computeBoundingBox();const extent=geo.boundingBox.getSize(new THREE.Vector3()).length();
-  let simple=geo.clone();simple.deleteAttribute('uv');simple.deleteAttribute('normal');simple.deleteAttribute('color');simple=mergeVertices(simple,.002);
+  let simple=new THREE.BufferGeometry();const coords=new Float32Array(source.count*3);for(let i=0;i<source.count;i++){coords[i*3]=source.getX(i);coords[i*3+1]=source.getY(i);coords[i*3+2]=source.getZ(i);}simple.setAttribute('position',new THREE.BufferAttribute(coords,3));if(geo.index)simple.setIndex(geo.index.clone());simple=mergeVertices(simple,.002);
   let indices=new Uint32Array(simple.index.array),points=simple.attributes.position.array;
   if(indices.length>3000&&materials.length===1){
-   try{[indices]=MeshoptSimplifier.simplifySloppy(indices,points,3,Math.max(180,Math.floor(indices.length*.08/3)*3),.025);}catch{}
+   try{[indices]=MeshoptSimplifier.simplifySloppy(indices,points,3,null,Math.max(90,Math.floor(indices.length*.035/3)*3),.045);}catch(error){throw Error('Overview simplification failed: '+id+' '+error.message);}
    simple.setIndex(new THREE.BufferAttribute(indices,1));
   }
   simple.computeVertexNormals();const normals=simple.attributes.normal;
   for(let instance=0;instance<(mesh.isInstancedMesh?mesh.count:1);instance++){
    if(mesh.isInstancedMesh){mesh.getMatrixAt(instance,im);world.multiplyMatrices(mesh.matrixWorld,im);}else world.copy(mesh.matrixWorld);
-   const scale=new THREE.Vector3().setFromMatrixScale(world);if(extent*Math.max(scale.x,scale.y,scale.z)<.7)continue;
+   const scale=new THREE.Vector3().setFromMatrixScale(world);const dims=geo.boundingBox.getSize(new THREE.Vector3()).multiply(scale),edges=[dims.x,dims.y,dims.z].sort((a,b)=>a-b);if(edges[2]<1.2||(edges[1]<.32&&edges[2]<9))continue;
    nm.getNormalMatrix(world);const mat=materials[0];if(!mat||mat.opacity<.12)continue;c.copy(mat.color||new THREE.Color(.65,.65,.6));
    for(const ix of indices){v.fromBufferAttribute(simple.attributes.position,ix).applyMatrix4(world);pos.push(Math.round(v.x*100)/100,Math.round(v.y*100)/100,Math.round(v.z*100)/100);v.fromBufferAttribute(normals,ix).applyMatrix3(nm).normalize();normal.push(Math.round(v.x*127),Math.round(v.y*127),Math.round(v.z*127));color.push(Math.round(c.r*255),Math.round(c.g*255),Math.round(c.b*255));}
   }
@@ -56,6 +57,8 @@ try{
   for(let z=0;z<=segments;z++)for(let x=0;x<=segments;x++)heights.push(Math.round(b.museumTerrainHeightAt(bounds[0]+(bounds[2]-bounds[0])*x/segments,bounds[1]+(bounds[3]-bounds[1])*z/segments)*1000)/1000);
   return {version:'museum-public-v1',sites,bounds,segments,heights,camera:{position:b.camera.position.toArray(),target:b.ctl.target.toArray()},sourceRoads:b.transport.editableRoadPaths().length,roadsMode:'baked-into-terrain',createdAt:new Date().toISOString()};
  });
+ seed.camera={position:[260,3300,1900],target:[260,0,-120]};
+ seed.voids=await page.evaluate(()=>{const b=window.__BUILD,T=b.THREE,r=b.portalVoids.exportPolygons(),g=b.objects.find(o=>o.record.id==='pad-250').g;if(b.ukssCutout?.polygon){const points=b.ukssCutout.polygon.map(([x,z])=>{const p=g.localToWorld(new T.Vector3(x,0,z));return [p.x,p.z];});r.push({points,bounds:[Math.min(...points.map(p=>p[0])),Math.min(...points.map(p=>p[1])),Math.max(...points.map(p=>p[0])),Math.max(...points.map(p=>p[1]))]});}return r;});
  seed.models=Object.values(MODEL_CATALOG).map(({id,title})=>({id,title}));
  const overview=[];
  for(let i=0;i<seed.sites.length;i++){
@@ -64,10 +67,12 @@ try{
    b.scene.updateMatrixWorld(true);
    o.g.traverseVisible(m=>{
     if(!m.isMesh||m.isSkinnedMesh)return;
+    const component=m.userData.museumComponent||'';
+    if(component==='murguduk-hill'||component==='internal-access-road'||component==='service-lane'||/asphalt/i.test(m.material?.name||''))return;
     const cleanMat=mat=>{if(materials.has(mat.uuid))return materials.get(mat.uuid);const c=new T.MeshStandardMaterial({color:mat.color||new T.Color(.65,.65,.6),roughness:.9,metalness:0,side:T.DoubleSide,transparent:mat.transparent,opacity:mat.opacity,vertexColors:mat.vertexColors});if(mat.map)c.map=mat.map;materials.set(mat.uuid,c);return c;};
     const mat=Array.isArray(m.material)?m.material.map(cleanMat):cleanMat(m.material);let copy;
     if(m.isInstancedMesh){copy=new T.InstancedMesh(m.geometry,mat,m.count);copy.instanceMatrix=m.instanceMatrix.clone();if(m.instanceColor)copy.instanceColor=m.instanceColor.clone();}else copy=new T.Mesh(m.geometry,mat);
-    copy.matrix.copy(m.matrixWorld);copy.matrixAutoUpdate=false;root.add(copy);
+    copy.name=m.name;copy.userData={museumComponent:m.userData.museumComponent||''};copy.matrix.copy(m.matrixWorld);copy.matrixAutoUpdate=false;root.add(copy);
    });return root.toJSON();
   },i);
   const site=seed.sites[i];site.detail=await writeData('sites/'+site.id+'.json.gz',json);
@@ -80,28 +85,32 @@ try{
   const b=window.__BUILD,T=b.THREE;
   b.scene.fog=null;b.renderer.setPixelRatio(1);b.renderer.setSize(1024,1024);
   const allowed=new Set();
-  const allow=o=>o?.traverse(m=>{if(m.isMesh||m.isLine||m.isPoints)allowed.add(m);});
-  for(const g of [b.ground,b.satelliteGround,...b.outerTerrain.planes,b.terrainRelief.mesh,b.sharedSiloHill.mesh,b.layers.roads,b.layers.rails])allow(g);
+  const allow=o=>o?.traverseVisible(m=>{if(m.isMesh||m.isLine||m.isPoints)allowed.add(m);});
+  for(const layer of [b.layers.roads,b.layers.rails])for(const root of layer.children)if(root.name.startsWith('OpenStreetMap ·'))root.visible=true;
+  for(const g of [b.ground,b.satelliteGround,...b.outerTerrain.planes,b.terrainRelief.mesh,b.sharedSiloHill.mesh,b.layers.roads,b.layers.rails,b.riverSurface.group])allow(g);
+  for(const o of b.objects)o.g.traverseVisible(m=>{const c=m.userData.museumComponent||'';if(m.isMesh&&(c==='internal-access-road'||c==='service-lane'||/asphalt/i.test(m.material?.name||'')))allowed.add(m);});
   b.saturnGroup.traverse(m=>{if(m.userData.museumComponent==='murguduk-hill')allow(m);});
   // Keep ancestors enabled while excluding unrelated sibling buildings.
-  b.scene.traverse(o=>{if(o.isMesh||o.isLine||o.isPoints)o.visible=allowed.has(o);else o.visible=true;});
+  b.scene.traverse(o=>{if(o.isMesh||o.isLine||o.isPoints||o.isSprite)o.visible=allowed.has(o);else o.visible=true;});
   if(b.roadLOD)b.roadLOD.root.visible=false;
-  window.__ATLAS=document.createElement('canvas');window.__ATLAS.width=window.__ATLAS.height=1024;
+  window.__ATLAS=document.createElement('canvas');window.__ATLAS.width=window.__ATLAS.height=1024;window.__FULL_ATLAS=document.createElement('canvas');window.__FULL_ATLAS.width=window.__FULL_ATLAS.height=4096;
  });
  seed.tiles=[];
  for(let z=0;z<4;z++)for(let x=0;x<4;x++){
   const image=await page.evaluate(({x,z,bounds})=>{
    const b=window.__BUILD,T=b.THREE,w=(bounds[2]-bounds[0])/4,h=(bounds[3]-bounds[1])/4,cx=bounds[0]+(x+.5)*w,cz=bounds[1]+(z+.5)*h;
    const cam=new T.OrthographicCamera(-w/2,w/2,h/2,-h/2,.1,30000);cam.position.set(cx,12000,cz);cam.up.set(0,0,-1);cam.lookAt(cx,0,cz);cam.updateMatrixWorld(true);
-   b.renderer.render(b.scene,cam);window.__ATLAS.getContext('2d').drawImage(b.renderer.domElement,x*256,z*256,256,256);
+   b.renderer.render(b.scene,cam);window.__FULL_ATLAS.getContext('2d').drawImage(b.renderer.domElement,x*1024,z*1024,1024,1024);window.__ATLAS.getContext('2d').drawImage(b.renderer.domElement,x*256,z*256,256,256);
    return b.renderer.domElement.toDataURL('image/webp',.87).split(',')[1];
   },{x,z,bounds:seed.bounds});
   const path=`tiles/${x}-${z}.webp`,buffer=Buffer.from(image,'base64');await writeFile(out+'/'+path,buffer);seed.tiles.push({x,z,url:out+'/'+path,bytes:buffer.length});
  }
  const atlas=await page.evaluate(()=>window.__ATLAS.toDataURL('image/webp',.86).split(',')[1]);await writeFile(out+'/terrain-overview.webp',Buffer.from(atlas,'base64'));seed.terrainTexture=out+'/terrain-overview.webp';
+ await bakeSiteRoadInk(page,seed,out);
  seed.build={errors,overviewTriangles:overview.reduce((n,s)=>n+s.p.length/9,0),overviewBytes:seed.overview.bytes,detailBytes:seed.sites.reduce((n,s)=>n+s.detail.bytes,0)};
  if(errors.length)throw Error('Build had browser errors: '+errors.join('; '));
  seed.fingerprint=createHash('sha256').update(JSON.stringify(seed)).digest('hex').slice(0,12);
  await writeFile('data/public-scene.json',JSON.stringify(seed));
+ let html=await readFile('museum.html','utf8');html=html.replace(/(public-museum\.(?:js|css)\?v=)[^'\"<> ]+/g,'$1'+seed.fingerprint);await writeFile('museum.html',html);
  console.log('PUBLIC_SCENE_BAKED',JSON.stringify({...seed.build,sites:seed.sites.length}));
 }finally{await browser.close();}
