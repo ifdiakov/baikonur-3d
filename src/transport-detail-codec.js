@@ -37,3 +37,4 @@ export function unpackTransportLayers(packet){
   o.name=row.name;o.matrix.fromArray(row.matrix);o.matrix.decompose(o.position,o.quaternion,o.scale);o.visible=row.visible;o.renderOrder=row.renderOrder;o.frustumCulled=row.frustumCulled;o.castShadow=row.castShadow;o.receiveShadow=row.receiveShadow;o.userData=row.userData;o.layers.mask=row.layers;
   if(row.children.length)o.add(...row.children.map(node));return o;};
  return Object.fromEntries(Object.entries(packet.roots).map(([key,rows])=>[key,rows.map(node)]));
+}
