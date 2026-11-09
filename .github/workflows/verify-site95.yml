@@ -3,13 +3,13 @@ name: Site 95 housing district
 on:
   pull_request:
     branches: [main]
-    paths: ['src/site95*.js', 'src/archive-buildings.js', 'src/archive-models.js', 'src/archive-manifest.js', 'index.html', 'tests/site95-*.mjs', '.github/workflows/verify-site95.yml']
+    paths: ['src/site95*.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
   push:
-    branches: [main]
-    paths: ['src/site95*.js', 'src/archive-buildings.js', 'src/archive-models.js', 'src/archive-manifest.js', 'index.html', 'tests/site95-*.mjs', '.github/workflows/verify-site95.yml']
+    branches: [main, fix/site95-courtyards-20261109]
+    paths: ['src/site95*.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: site95-${{ github.ref }}
   cancel-in-progress: true
@@ -38,30 +38,47 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: museum-playwright-${{ runner.os }}-1.57.0
+      - name: Prepare the owner-requested courtyard revision only
+        if: steps.ci_scope.outputs.run == 'true'
+        run: node scripts/prepare-site95-courtyards.mjs
       - name: Install verification dependencies
         if: steps.ci_scope.outputs.run == 'true'
         run: |
           npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
           npx playwright install --with-deps chromium
-      - name: Validate source geometry and performance budget
+      - name: Validate source geometry, paths, lighting and budget
         if: steps.ci_scope.outputs.run == 'true'
-        run: node tests/site95-source.mjs
+        run: |
+          node tests/site95-source.mjs
+          node tests/site95-courtyards-source.mjs
       - name: Serve checkout
         if: steps.ci_scope.outputs.run == 'true'
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
-      - name: Inspect town views in museum and on mobile
+      - name: Inspect the real evening museum, mobile screen and admin
         if: steps.ci_scope.outputs.run == 'true'
-        run: node tests/site95-browser.mjs
-      - name: Verify live deployment and repeat browser check
-        if: (github.event_name != 'pull_request') && (steps.ci_scope.outputs.run == 'true')
+        run: node scripts/ci/run-bounded.mjs 420 site95-local node tests/site95-browser.mjs
+      - name: Record the verified prepared files on the candidate branch
+        if: github.ref_name == 'fix/site95-courtyards-20261109' && steps.ci_scope.outputs.run == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/site95.js src/site95-layout.js src/archive-buildings.js src/archive-models.js index.html museum.html workshop.html tests/site95-source.mjs PROJECT_CONTEXT.md docs/WORK_STATUS.md
+          if ! git diff --cached --quiet; then git commit -m 'Site95: verify spacious courts, warm lanterns and preserved museum'; git push origin HEAD:${{ github.ref_name }}; fi
+          git rev-parse HEAD > qa-site95/source-commit.txt
+      - name: Verify live deployment and repeat the actual browser check
+        if: github.ref == 'refs/heads/main' && steps.ci_scope.outputs.run == 'true'
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_PREFIX: public
         run: |
           node scripts/verify-site95-published.mjs
-          node tests/site95-browser.mjs
+          node scripts/ci/run-bounded.mjs 420 site95-public node tests/site95-browser.mjs
       - uses: actions/upload-artifact@v4
-        if: (always()) && (steps.ci_scope.outputs.run == 'true')
+        if: always() && steps.ci_scope.outputs.run == 'true'
         with:
           name: site95-evidence
-          path: qa-site95/
+          path: |
+            qa-site95/
+            qa-ci/site95-*.json
+            qa-ci/site95-*.log
+          retention-days: 7
