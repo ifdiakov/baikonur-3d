@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import {buildOsmTransportNetwork} from './osm-transport.js?v=20261109-owner19-v2';
+import {buildOsmTransportNetwork} from './osm-transport.js?v=20261109-owner19-v3';
 import {createMuseumGeography} from './osm-geography.js';
 import {createCheckpoint7RoadGrade} from './checkpoint7-road-grade.js';
 import {createSite113RoadGrade} from './site113-road-grade.js';
 import {createSite95RoadGrade} from './site95-road-grade.js';
 import {planRailStations} from './rail-stations.js';
-import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry} from './road-geometry-cut.js?v=20261103-source-matched-pavement-v7';
+import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry} from './road-geometry-cut.js?v=20261109-owner19-v3';
 import {packGeometry,unpackGeometry,packTransportLayers} from './transport-detail-codec.js';
 export function buildTransportDetail(input){
  globalThis.devicePixelRatio=input.pixelRatio||1;

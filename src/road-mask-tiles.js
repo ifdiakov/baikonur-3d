@@ -55,6 +55,12 @@ export function partitionRoadMaskStrokes(hidden=[],added=[],{step=8,gradeStep=.2
      const width=Array.isArray(road.widths)?(road.widths[j-1]+road.widths[j])*.5:road.width;
      segment(tiles[index],a,b,width,kind,
       kind==='hidden'?road.sourceId:road.id,j===1&&k===0,j===road.points.length-1&&k===pieces-1);
+     // OWNER19_BUTT_END_GUARD: match the same clipping in the shader mask.
+     if(kind==='added'&&['road-3','road-4','road-8'].includes(road.id)){
+      const part=tiles[index].at(-1),first=road.points[0],last=road.points.at(-1),radius=roadMaskCoverageWidth(width,kind)*.5+.001;
+      const inside=p=>Math.hypot(p[0]-first[0],p[2]-first[2])>=radius&&Math.hypot(p[0]-last[0],p[2]-last[2])>=radius;
+      part.capStart&&=inside(a);part.capEnd&&=inside(b);
+     }
      partCount++;
     }
    }

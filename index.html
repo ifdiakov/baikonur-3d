@@ -542,18 +542,18 @@ import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-soy
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {createTerrainVoids,gagarinVoid} from './src/terrain-voids.js?v=20261103-soyuz-pits-v1';
 import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site95-town-v1';
-import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v2';
+import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261109-owner19-v2';
+import {installArchiveModels} from './src/archive-models.js?v=20261109-owner19-v3';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
-import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v2';
+import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261105-silo106109-flank-flat-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261109-owner19-v2';
-import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261109-owner19-v2';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261109-owner19-v3';
+import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261109-owner19-v3';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261108-pad202-204-shifts-v4';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
 import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261102-progressive-v1';
@@ -568,7 +568,7 @@ import {buildHighwaySigns} from './src/road-signs.js?v=20261105-dirmentobe-east-
 import {buildSaturnIP5} from './src/saturn-ip5.js?v=20261101-saturn-terrain-v5';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainSample,saturnTerrainMeshHeight} from './src/saturn-access.js?v=20261101-saturn-terrain-v5';
 import {createLightingEditor} from './src/lighting-editor.js?v=20261028-museum4-osm-live-v2';
-import {createRoadEditor} from './src/road-editor.js?v=20261109-owner19-v2';
+import {createRoadEditor} from './src/road-editor.js?v=20261109-owner19-v3';
 import {createEastLightingZone} from './src/east-lighting-zone.js?v=20261028-site41-v1';
 import {buildAirport} from './src/airport-models.js?v=20261102-site2-photo-v3';
 import {frameKrayniyTerminal,KRAYNIY_TERMINAL_VIEWS} from './src/airport-views.js?v=20261101-tu204-cpk-v1';
@@ -602,7 +602,7 @@ import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=202
 import {createTuaRocketControls} from './src/rocket-controls.js?v=20261102-site2-photo-v3';
 import {createDeferredKnowledge} from './src/deferred-knowledge.js?v=20261108-site45-choice-v1';
 import {museumCardCopy} from './src/museum-card-copy.js?v=20261103-clean-site-copy-v4';
-import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261109-owner19-v2';
+import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261109-owner19-v3';
 import {createExhibitClearance} from './src/exhibit-clearance.js?v=20261031-rocket-exhibits-v1';
 import {createInterchangeControls,INTERCHANGE_VIEWS} from './src/interchange-controls.js?v=20261031-interchange-bridge-v1';
 import {facilityAccessInspection} from './src/facility-access-inspection.js?v=20261031-facilities-rails-lighting-v1';
@@ -636,12 +636,12 @@ const roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'
  :Promise.resolve(null);
 // The fast path uses two precompiled assets: stable authored route topology
 // and far/medium meshes created ONLY from the filtered final road display.
-const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261109-owner19-v2'):Promise.resolve(null);
-const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz?v=20261109-owner19-v2',{timeoutMs:10000}):null)
+const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261109-owner19-v3'):Promise.resolve(null);
+const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz?v=20261109-owner19-v3',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Optional transport cache not available:',error);return null;});
-const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz?v=20261109-owner19-v2',{timeoutMs:10000}):null)
+const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz?v=20261109-owner19-v3',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Authoritative road LOD not available:',error);return null;});
-const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=20261109-owner19-v2',{optional:true});
+const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=20261109-owner19-v3',{optional:true});
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,ownerRoadEdits]=await Promise.all([
@@ -986,7 +986,7 @@ const preparedBake=await transportBakeReady;
 const preparedLOD=useBakedTransport?await authoritativeLodReady:null;
 if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
  try{
-  const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v2');
+  const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v3');
   const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
   // Load the light cached scene first even when owner-authored road edits
   // have advanced since the last full transport bake. Precise roads are
@@ -1002,7 +1002,7 @@ if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
 if(!transport)transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords,checkpoint7RoadGrade:displayRoadGrade});
 if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
 if(new URLSearchParams(location.search).has('bakeTransport')){
- const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v2');
+ const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v3');
  const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
  window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail,sourceFingerprint,displayGradeVersion:displayRoadGrade.version});
 }
@@ -1041,7 +1041,7 @@ function requestTransportDetail(){
  (async()=>{
   try{
    await startup.paint();
-   const {createTransportDetailJob}=await import('./src/transport-detail-job.js?v=20261109-owner19-v2');
+   const {createTransportDetailJob}=await import('./src/transport-detail-job.js?v=20261109-owner19-v3');
    transportDetailJob=createTransportDetailJob();
    const mikRoot=mik112Exhibit?objects[mik112Index].g:null;mikRoot?.updateWorldMatrix(true,false);
    const result=await transportDetailJob.build({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},

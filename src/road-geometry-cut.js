@@ -272,6 +272,11 @@ export function makeRoadSurfaceCutIndex(hidden=[],added=[],{shoulderExtra=.6,edg
    const width=Math.max(.6,(widths?widths[j]:r.width)+(kind==='hidden'?shoulderExtra+edgeMargin:-.10));
    if(kind==='added'&&nearOld&&!nearOld(r.points[j-1],r.points[j],width)
       &&!nearOld(r.points[j],r.points[j+1],width))continue;
+   // OWNER19_BUTT_END_GUARD: internal rounding must not cross a terminal plane.
+   if(kind==='added'&&['road-3','road-4','road-8'].includes(r.id)){
+    const p=r.points[j],first=r.points[0],last=r.points.at(-1),radius=width*.5+.001;
+    if(Math.hypot(p[0]-first[0],p[2]-first[2])<radius||Math.hypot(p[0]-last[0],p[2]-last[2])<radius)continue;
+   }
    const corner=circleCut(r.points[j],width);corner.gradeTolerance=kind==='hidden'?1.9:1.05;
    corner.kind=kind;corner.roadClass=roadClass;
    const a=r.points[j-1],b=r.points[j+1],dx=b[0]-a[0],dz=b[2]-a[2],d=Math.hypot(dx,dz);

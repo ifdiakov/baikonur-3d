@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261109-owner19-v2';
-import {shapeOwnerRail} from './owner-rail-curves.js?v=20261109-owner19-v2';
+import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261109-owner19-v3';
+import {shapeOwnerRail} from './owner-rail-curves.js?v=20261109-owner19-v3';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
