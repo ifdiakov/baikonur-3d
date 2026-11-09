@@ -22,12 +22,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply minimal changes without replacing the full museum
+      - name: Preserve the full museum and prepare final independent placards
         run: |
           git fetch --no-tags --depth=1 origin 7fa943f25435a49328d21b58e1e103031f0a7fab
           git show 7fa943f25435a49328d21b58e1e103031f0a7fab:index.html > qa-reference.html
           if ! grep -q DETAIL_FIDELITY_V2 index.html; then node scripts/apply-nonblocking-detail.mjs; fi
           node scripts/refine-detail-fidelity.mjs
+          node scripts/finish-detail-release.mjs
           git diff --exit-code 7fa943f25435a49328d21b58e1e103031f0a7fab -- assets data src/osm-transport.js src/evening-scene.js src/arrival-flight.js src/museum-menu.js src/steppe-surface.js src/mzk-sdi.js src/mzk-hall.js src/mzk-sdi-stand.js
           cmp index.html museum.html
       - name: Build isolated worker and browser tools
@@ -37,20 +38,16 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Serve exact original and repaired scene
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/transition-http.log 2>&1 &
-      - name: Measure before and after; compare complete geometry; inspect both building cards
+      - name: Compare exact geometry and verify responsiveness, full card text and unobstructed controls
         env:
           QA_OUT: qa-freeze/local
         run: node tests/transport-transition-browser.mjs
       - name: Record verified source and requirements
         run: |
-          node --input-type=module <<'JS'
-          import {appendFile,readFile} from 'node:fs/promises';
-          if(!(await readFile('PROJECT_CONTEXT.md','utf8')).includes('## 2026-11-09 · Неблокирующая подробная сеть'))await appendFile('PROJECT_CONTEXT.md','\n\n## 2026-11-09 · Неблокирующая подробная сеть\nПри снижении ниже H=450 подробная сеть раньше синхронно строилась на основном потоке. Сборка прежней полной геометрии, вырезание владельческих участков и расчёт станций перенесены в отдельный Worker, с передачей typed buffers без упрощения. До готовности остаётся текущий LOD, основной поток не ждёт расчёта. Повторная сборка ограничена; при ошибке видимая карта сохраняется. Освещение, туман, модели, транспорт, исходная геометрия и материалы не заменяются.\nМЗК и СДИ получили отдельные native-плашки с независимыми точками над существующими зданиями. МЗК: неофициальное название «Спальня Бога» (редакционная формулировка владельца). СДИ: самое высокое здание на космодроме. Модели не копируются и не передвигаются. Прямые виды ?view=mzk и ?view=sdi.\nПриёмка: SHA-256 атрибутов подробных дорог/ЖД/фонарей и материалов совпадает с предыдущей версией. Замер максимальной паузы UI во время подготовки, ввод в поиск, повторные пересечения порога, desktop/mobile/workshop, проверка опубликованных файлов. Рендер остановлен только в измерительном тесте для изоляции расчётов; это НЕ тест FPS или реального смартфона. Полные кадры и плашки проверяются отдельно. Автоматическая публикация через nonblocking-detail.yml; старый восстановительный workflow только ручной.\n');
-          JS
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src PROJECT_CONTEXT.md
-          if ! git diff --cached --quiet; then git commit -m 'Verify exact nonblocking detail and independent MZK SDI cards'; git push origin HEAD:${{ github.ref_name }}; fi
+          git add index.html museum.html workshop.html src tests/transport-transition-browser.mjs PROJECT_CONTEXT.md
+          if ! git diff --cached --quiet; then git commit -m 'Verify responsive full scene and readable independent MZK SDI cards'; git push origin HEAD:${{ github.ref_name }}; fi
           git rev-parse HEAD > qa-freeze/source-commit.txt
       - name: Assemble verified Pages release
         if: github.ref == 'refs/heads/main'
