@@ -9,10 +9,10 @@ for(const path of ['index.html','museum.html','workshop.html']){
  const after=await readFile(path,'utf8');assert.equal(after.replaceAll('site31-observation-platform.js?v=20261109-np-royaltent-v3','site31-observation-platform.js?v=20261108-np-photo-v2'),old(path),'Only NP cache revision may change in '+path);
 }
 const before=old('src/site31-observation-platform.js'),after=await readFile('src/site31-observation-platform.js','utf8');
-const section=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
+const section=(s,a,b)=>{const start=s.indexOf(a),end=s.indexOf(b,start);assert(start>=0&&end>start,'Preservation section missing');return s.slice(start,end);};
 assert.equal(section(after,'export const NP_MAP_POSITION','// All dimensions'),section(before,'export const NP_MAP_POSITION','// All dimensions'),'NP placement, road clearance and orientation changed');
 assert.equal(section(after,' // Portable crowd-control barriers',' for(const [key,geometries] of batches)'),section(before,' // Portable crowd-control barriers',' for(const [key,geometries] of batches)'),'Fencing, flags, toilets, parking or lights changed');
-assert.equal(section(after,' // Plan:','  const height=').includes("const cx of [-11.65,11.65]"),true);
+assert.equal(section(after,' // Plan:','  tentSpecs.push'),section(before,' // Plan:','  const height='),'Tent centres, bases or existing ground changed');
 const changed=git(['diff','--name-only',baseline,'--','src','assets','data']).toString().trim().split('\n').filter(Boolean);
 assert.deepEqual(changed.filter(p=>!['src/site31-observation-platform.js','src/np-royaltent.js'].includes(p)),[],'Unrelated museum resource changed');
 await mkdir('qa-np-royaltent',{recursive:true});await writeFile('qa-np-royaltent/preservation.json',JSON.stringify({passed:true,baseline,entrypointsOnlyCacheRevision:true,positionOrientationPreserved:true,surroundingsPreserved:true,unrelatedAssetsUnchanged:true,changed},null,2));
