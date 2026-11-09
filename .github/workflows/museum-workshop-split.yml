@@ -2,7 +2,7 @@ name: Build and verify museum and workshop
 on:
   push:
     branches: [main, feat/museum-workshop-split-20261109]
-    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', '.github/workflows/museum-workshop-split.yml']
+    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/refine-split-*.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', '.github/workflows/museum-workshop-split.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -28,6 +28,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Validate and prepare workshop
         run: |
+          node scripts/refine-split-v2.mjs
           node tests/workshop-state.mjs
           node scripts/prepare-workshop.mjs
           node --check src/public-museum.js
@@ -35,7 +36,9 @@ jobs:
       - name: Serve source
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/museum-http.log 2>&1 &
       - name: Prepare immutable visitor terrain and models
-        run: node scripts/build-public-scene.mjs 2>&1 | tee /tmp/public-build.log
+        run: |
+          set -o pipefail
+          node scripts/build-public-scene.mjs 2>&1 | tee /tmp/public-build.log
       - name: Measure and functionally test both versions
         env:
           QA_RUNS: '2'
@@ -45,7 +48,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html workshop.html src/road-editor.js assets/public-v1 data/public-scene.json PROJECT_CONTEXT.md
+          git add index.html workshop.html src/road-editor.js src/workshop-panel.js src/public-museum.js src/public-museum.css scripts/prepare-workshop.mjs scripts/build-public-scene.mjs tests/museum-split-browser.mjs assets/public-v1 data/public-scene.json PROJECT_CONTEXT.md
           if ! git diff --cached --quiet; then
             git commit -m 'Build verified visitor scene and workshop entrypoint'
             git push origin HEAD:${{ github.ref_name }}
