@@ -1,0 +1,99 @@
+name: Build and verify museum and workshop
+on:
+  push:
+    branches: [main, feat/museum-workshop-split-20261109]
+    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', '.github/workflows/museum-workshop-split.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: museum-workshop-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    environment:
+      name: github-pages
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install deterministic verification dependencies
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Validate and prepare workshop
+        run: |
+          node tests/workshop-state.mjs
+          node scripts/prepare-workshop.mjs
+          node --check src/public-museum.js
+          node --check src/workshop-panel.js
+      - name: Serve source
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/museum-http.log 2>&1 &
+      - name: Prepare immutable visitor terrain and models
+        run: node scripts/build-public-scene.mjs 2>&1 | tee /tmp/public-build.log
+      - name: Measure and functionally test both versions
+        env:
+          QA_RUNS: '2'
+          QA_OUT: qa-museum-split/local
+        run: node tests/museum-split-browser.mjs
+      - name: Commit verified generated assets to the current branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html workshop.html src/road-editor.js assets/public-v1 data/public-scene.json PROJECT_CONTEXT.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Build verified visitor scene and workshop entrypoint'
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+          git rev-parse HEAD > qa-museum-split/source-commit.txt
+      - name: Assemble verified Pages payload
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p /tmp/museum-pages
+          git archive --format=tar HEAD | tar -xf - -C /tmp/museum-pages
+          rm -rf /tmp/museum-pages/.github /tmp/museum-pages/tests /tmp/museum-pages/scripts
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: /tmp/museum-pages
+      - uses: actions/deploy-pages@v4
+        if: github.ref == 'refs/heads/main'
+      - name: Confirm public revision and repeat real browser tests
+        if: github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_OUT: qa-museum-split/public
+          QA_RUNS: '2'
+        run: |
+          node --input-type=module <<'JS'
+          import {readFile} from 'node:fs/promises';
+          import assert from 'node:assert/strict';
+          for(const f of ['museum.html','workshop.html','data/public-scene.json','src/public-museum.js']){
+            const expected=await readFile(f,'utf8');let okay=false;
+            for(let i=0;i<30;i++){const r=await fetch(process.env.BAIKONUR_URL+f+'?verify='+Date.now());if(r.ok&&(await r.text())===expected){okay=true;break;}await new Promise(r=>setTimeout(r,5000));}
+            assert(okay,'Published revision mismatch: '+f);
+          }
+          console.log('PUBLIC_HASH_PARITY_PASS');
+          JS
+          node tests/museum-split-browser.mjs
+      - name: Preserve build and browser evidence
+        if: always()
+        run: |
+          mkdir -p qa-museum-split
+          cp /tmp/public-build.log qa-museum-split/ 2>/dev/null || true
+          cp /tmp/museum-http.log qa-museum-split/ 2>/dev/null || true
+          cp data/public-scene.json qa-museum-split/ 2>/dev/null || true
+          tar -czf /tmp/split-result-source.tar.gz src/workshop* src/public-museum* scripts/prepare-workshop.mjs scripts/build-public-scene.mjs tests/museum-split-browser.mjs museum.html workshop.html data/public-scene.json assets/public-v1 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: museum-workshop-evidence
+          path: |
+            qa-museum-split/
+            /tmp/split-result-source.tar.gz
+          retention-days: 7
