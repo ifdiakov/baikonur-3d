@@ -562,7 +562,7 @@ import {buildUkssConnections} from './src/ukss-connections.js?v=20261102-site2-p
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261105-silo106109-flank-flat-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261109-owner19-v2';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261109-owner19-v3';
 import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261109-owner19-v2';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261108-pad202-204-shifts-v4';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
@@ -650,10 +650,10 @@ const roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'
  :Promise.resolve(null);
 // The fast path uses two precompiled assets: stable authored route topology
 // and far/medium meshes created ONLY from the filtered final road display.
-const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261109-owner19-v2'):Promise.resolve(null);
-const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz?v=20261109-owner19-v2',{timeoutMs:10000}):null)
+const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261109-owner19-v3'):Promise.resolve(null);
+const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz?v=20261109-owner19-v3',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Optional transport cache not available:',error);return null;});
-const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz?v=20261109-owner19-v2',{timeoutMs:10000}):null)
+const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz?v=20261109-owner19-v3',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Authoritative road LOD not available:',error);return null;});
 const publishedWorkshopReady=startup.fetchJSON('./data/workshop-published.json?v=split-v1',{optional:true}).then(data=>validateWorkshopState(data||{version:1,objects:{}}));
 const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=20261109-owner19-v2',{optional:true}).then(async roads=>(await publishedWorkshopReady).roadEdits||roads);
@@ -1001,7 +1001,7 @@ const preparedBake=await transportBakeReady;
 const preparedLOD=useBakedTransport?await authoritativeLodReady:null;
 if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
  try{
-  const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v2');
+  const {restoreBakedTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v3');
   const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
   // Load the light cached scene first even when owner-authored road edits
   // have advanced since the last full transport bake. Precise roads are
@@ -1017,7 +1017,7 @@ if(preparedBake&&preparedLOD?.version===ROAD_LOD_VERSION){
 if(!transport)transport=buildOsmTransportNetwork({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},legacyData:transportData,geography,point,layers,siteRecords,checkpoint7RoadGrade:displayRoadGrade});
 if(mik112Exhibit)mik112Rail=transport.connectMik112?.(objects[mik112Index].g)||{connected:false,sourceRoute:'osm',version:'osm-mik112-pending'};
 if(new URLSearchParams(location.search).has('bakeTransport')){
- const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v2');
+ const {serializeTransport,transportSourceFingerprint}=await import('./src/transport-bake.js?v=20261109-owner19-v3');
  const sourceFingerprint=transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords});
  window.__BAIKONUR_TRANSPORT_EXPORT=()=>serializeTransport({transport,layers,mik112Rail,sourceFingerprint,displayGradeVersion:displayRoadGrade.version});
 }

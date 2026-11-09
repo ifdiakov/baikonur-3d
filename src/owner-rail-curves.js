@@ -56,3 +56,12 @@ export function matchOwnerTrainToRenderedRail(points,paths){
  let a=closestVertex(points,local[0]),b=closestVertex(points,local.at(-1));if(a.d>2||b.d>2)return points;
  if(a.i>b.i){[a,b]=[b,a];local.reverse();}return [...points.slice(0,a.i),...local.map(p=>p.clone()),...points.slice(b.i+1)];
 }
+
+// Keep the original rounding everywhere outside the repaired shared approach.
+export function roundOwnerRailCorners(points,rawId,round){
+ if(!isOwnerSharedRail(rawId))return round(points,{radius:15});
+ const protectedIndices=[];for(let i=0;i<points.length;i++){const p=points[i],x=p.x/3.4+650,y=p.z/3.4+522.5;if(x>598&&x<615&&y>412&&y<434)protectedIndices.push(i);}
+ if(!protectedIndices.length)return round(points,{radius:15});
+ const first=protectedIndices[0],last=protectedIndices.at(-1),before=points.slice(0,first+1),after=points.slice(last);
+ return [...(before.length>2?round(before,{radius:15}):before).slice(0,-1),...points.slice(first,last+1),...(after.length>2?round(after,{radius:15}):after).slice(1)];
+}

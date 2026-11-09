@@ -1,7 +1,7 @@
 import {SITE254_ACCESS,SITE254_MASK} from './site254-layout.js?v=20261103-site254-e10s5';
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
-import {shapeOwnerRail,missingOwnerRailSeam,makeOwnerRailSeam,matchOwnerTrainToRenderedRail} from './owner-rail-curves.js?v=20261109-owner19-v2';
+import {shapeOwnerRail,missingOwnerRailSeam,makeOwnerRailSeam,matchOwnerTrainToRenderedRail,separateOwnerRailRuns,isOwnerSharedRail,roundOwnerRailCorners} from './owner-rail-curves.js?v=20261109-owner19-v3';
 import {omitOwnerRoadEdge,polishOwnerRoadSamples} from './owner-ad-refinements.js?v=20261109-owner19-v2';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
@@ -894,10 +894,10 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null,sleeperAnchor=null){
   if(points.length<2)return [];
-  const selectedRuns=clipSingleRailAccess(shapeOwnerRail(points,wayId),wayId).flatMap(run=>clipPad5DuplicateRail(run,wayId)),
+  const selectedRuns=clipSingleRailAccess(shapeOwnerRail(points,wayId),wayId).flatMap(run=>clipPad5DuplicateRail(run,wayId)).flatMap(run=>separateOwnerRailRuns(run,wayId)),
    // Apply the same round-curve rule to source ways, yard lines and museum
    // connections, before generating sleepers, ballast and both rail heads.
-   curvedRuns=isAbandoned?selectedRuns:selectedRuns.map(run=>roundRailCorners(run,{radius:15})),
+   curvedRuns=isAbandoned?selectedRuns:selectedRuns.map(run=>roundOwnerRailCorners(run,wayId,roundRailCorners)),
    airportRuns=curvedRuns.flatMap(run=>clipAirportRails(run,wayId,RAIL_PROFILE.gauge)),
    displayed=force?airportRuns:airportRuns.flatMap(run=>railSiteClearance.clipPath(run,{sourceWayId:wayId}).runs),renderedRuns=[];
   for(const visible of displayed){

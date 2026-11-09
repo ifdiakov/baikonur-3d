@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import {polishCachedOwnerAd,OWNER_AD_REFINEMENTS_VERSION} from './owner-ad-refinements.js?v=20261109-owner19-v2';
-import {shapeOwnerRail} from './owner-rail-curves.js?v=20261109-owner19-v2';
+import {shapeOwnerRail,OWNER_RAIL_CURVES_VERSION} from './owner-rail-curves.js?v=20261109-owner19-v3';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
-const fingerprint='road-lod-prebuilt-v1;geometry-v3;'+OWNER_AD_REFINEMENTS_VERSION;
+const fingerprint='road-lod-prebuilt-v1;geometry-v3;'+OWNER_AD_REFINEMENTS_VERSION+';'+OWNER_RAIL_CURVES_VERSION;
 export function transportSourceFingerprint({roads,railways,ownerRoadEdits,siteRecords}){
  // Fast deterministic FNV-1a of the EXACT topology and owner-specified
  // display anchors, so changed roads cannot silently use an obsolete bake.
@@ -52,7 +52,7 @@ export function serializeTransport({transport,layers,mik112Rail,sourceFingerprin
  if(!plan?.routes?.length)throw Error('No transport graph to bake');
  const scene={
   version:TRANSPORT_BAKE_VERSION,fingerprint,sourceFingerprint,displayGradeVersion,
-  cacheKind:'routes-only',ownerRevision:OWNER_AD_REFINEMENTS_VERSION,
+  cacheKind:'routes-only',ownerRevision:OWNER_AD_REFINEMENTS_VERSION,railRevision:OWNER_RAIL_CURVES_VERSION,
   roads:packMany(paths,.02),
   vehicles:{routes:packMany(plan.routes,.015),highway:plan.highway.id,source:plan.source,joins:plan.joins},
   extensions:packMany(paths.displayHighwayExtensions),
