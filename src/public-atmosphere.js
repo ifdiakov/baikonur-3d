@@ -1,0 +1,47 @@
+import * as THREE from 'three';
+import {createLightField} from './light-field.js?v=20261101-highway-fog-v1';
+export const PUBLIC_ATMOSPHERE_VERSION='visitor-atmosphere-20261109-v1';
+const SCALE=3.4/1.45;
+// These are the approved museum's presentation settings, not editor tools.
+export const VISITOR_PALETTE={night:{sky:0x172844,fog:0x202c46,density:.000115,soil:0x53647f,hemi:0x9ab5ee,ground:0x29344b,sun:0xffb488,ambient:.82,direct:.5},day:{sky:0xb7b5a4,fog:0xb7b5a4,density:.00013,soil:0xffffff,hemi:0xbdd7f2,ground:0x62533d,sun:0xffdfb4,ambient:2,direct:2.2}};
+export function createPublicAtmosphere({scene,camera,controls,renderer,data,prepared,heightAt,invalidate,onDistrict,container=document.body}){
+ const root=new THREE.Group();root.name='Пользовательский музей · фланги и свет';scene.add(root);
+ const zoneRoot=new THREE.Group();zoneRoot.name='План флангов и граница города';root.add(zoneRoot);
+ const lightsRoot=new THREE.Group();lightsRoot.name='Огни космодрома';root.add(lightsRoot);
+ const groups=[],cards=[],fields=[];let night=true,flankAlpha=0,overviewAlpha=0,forcePlan=false;
+ const mesh=(positions,color,opacity,order)=>{const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeBoundingSphere();const material=new THREE.MeshBasicMaterial({color,transparent:true,opacity,side:THREE.DoubleSide,depthWrite:false,depthTest:true,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,fog:false,toneMapped:false});const m=new THREE.Mesh(g,material);m.renderOrder=order;zoneRoot.add(m);return m;};
+ for(const z of prepared.zones){const fill=mesh(z.fill,z.color,0,3),outer=mesh(z.borderWide,z.color,0,4),inner=mesh(z.border,z.color,0,5);fill.name=z.zone+' · заливка';outer.name=z.zone+' · сияние';inner.name=z.zone+' · граница';groups.push({z,fill,outer,inner});if(z.key==='city')continue;
+  const el=document.createElement('button');el.className='public-flank-card';el.dataset.flank=z.key;el.style.setProperty('--flank-color','#'+z.color.toString(16).padStart(6,'0'));el.hidden=true;el.setAttribute('aria-label',z.zone+' · '+z.fullName+' · перейти к площадкам');
+  const portrait=document.createElement('img');portrait.alt='Архивный портрет: '+z.fullName;portrait.width=42;portrait.height=52;portrait.loading='lazy';portrait.decoding='async';portrait.dataset.src=z.portrait;
+  const head=document.createElement('span');head.className='public-flank-head';const identity=document.createElement('span'),label=document.createElement('small'),name=document.createElement('strong');label.textContent=z.zone;name.textContent=z.surname;identity.append(label,name);head.append(portrait,identity);const companies=document.createElement('span');companies.className='public-flank-companies';companies.textContent=z.enterprises.join(' · ');const rockets=document.createElement('span');rockets.className='public-flank-rockets';rockets.textContent=z.rockets;el.append(head,companies,rockets);el.title=z.purpose+' '+z.features;el.onclick=()=>{forcePlan=false;onDistrict(z);};container.append(el);cards.push({el,z,portrait});
+ }
+ const cityLabel=document.createElement('span');cityLabel.className='public-city-label';cityLabel.textContent='ГОРОД БАЙКОНУР';cityLabel.hidden=true;container.append(cityLabel);
+ const attribution=document.createElement('a');attribution.className='public-flank-credits';attribution.textContent='Портреты: авторы и источники ↗';attribution.href='assets/flank-portraits/credits.html';attribution.target='_blank';attribution.rel='noopener';attribution.hidden=true;container.append(attribution);
+ const outline=mesh(prepared.outlineBorder,0x83c6cc,0,4);outline.name='Общий контур космодрома';
+ // Lamp positions come from the workshop's bank, road-deletion and power
+ // filters. No inferred replacement roads or editor are loaded by visitors.
+ let lamps=0;for(const f of prepared.fields){if(!f.records.length)continue;const records=f.records.map(r=>{const next={...r};if(!f.name.startsWith('Мачты')&&!f.name.startsWith('Башни')&&!f.name.includes('ВПП')){const base=heightAt(r.x,r.z),delta=base-r.y;next.y=base+.02;if(r.lightY!==undefined)next.lightY=r.lightY+delta;next.poolY=heightAt(r.poolX??r.x,r.poolZ??r.z)+.02;}return next;});lamps+=records.length;const field=createLightField(lightsRoot,records,{name:f.name,poles:f.poles||f.name.startsWith('Дороги'),pools:f.pools,minPixels:f.minPixels,fog:true,distanceFade:[1800,5500],distanceFadeExponent:2,distanceFadeMetric:'ground'});fields.push(field);}
+ const sky=new THREE.Mesh(new THREE.SphereGeometry(12000,32,16),new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,depthTest:false,fog:false,vertexShader:'varying vec3 direction;void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:`varying vec3 direction;void main(){vec3 d=normalize(direction);float h=clamp(d.y,0.,1.);float west=pow(max(0.,-d.x*.86+d.z*.5),5.);vec3 low=mix(vec3(.16,.20,.33),vec3(.62,.31,.22),west*.8);vec3 c=mix(low,vec3(.025,.047,.115),smoothstep(0.,.65,h));c+=exp(-pow((d.y-.025)*13.,2.))*west*vec3(.14,.045,.012);gl_FragColor=vec4(c,1.);
+#include <colorspace_fragment>
+}`}));sky.name='Вечернее небо';sky.renderOrder=-200;sky.frustumCulled=false;root.add(sky);
+ const floodOwners=['pad-1','pad-250','pad-112','pad-23','pad-3','pad-31'].map(id=>data.sites.find(s=>s.id===id)).filter(Boolean);
+ const floods=Array.from({length:matchMedia('(max-width:760px)').matches?1:2},()=>{const l=new THREE.PointLight(0xffc48a,0,75,1.4);l.castShadow=false;root.add(l);return l;});
+ const hemi=scene.children.find(o=>o.isHemisphereLight),sun=scene.children.find(o=>o.isDirectionalLight),project=new THREE.Vector3();
+ function setNight(value){night=!!value;const p=VISITOR_PALETTE[night?'night':'day'];scene.background.setHex(p.sky);scene.fog.color.setHex(p.fog);scene.fog.density=p.density;if(hemi){hemi.color.setHex(p.hemi);hemi.groundColor.setHex(p.ground);hemi.intensity=p.ambient;}if(sun){sun.color.setHex(p.sun);sun.intensity=p.direct;sun.position.set(-700,night?180:1200,500);}sky.visible=night;for(const f of fields){f.setStrength(night?1:0);for(const child of f.root.children)if(child.isPoints||child.material?.isShaderMaterial)child.visible=night;}update();invalidate();}
+ function labelAt(el,center,opacity){project.set(center[0],heightAt(...center)+2,center[1]).project(camera);const visible=opacity>.12&&project.z>-1&&project.z<1&&Math.abs(project.x)<1&&Math.abs(project.y)<1;el.hidden=!visible;if(visible){el.style.left=((project.x*.5+.5)*innerWidth)+'px';el.style.top=((-project.y*.5+.5)*innerHeight)+'px';el.style.opacity=String(opacity);}}
+ function update(){
+  sky.position.copy(camera.position);const h=Math.max(0,camera.position.y-heightAt(controls.target.x,controls.target.z))/SCALE;
+  // Same overview -> flanks -> sites hierarchy as the full museum.
+  flankAlpha=forcePlan?1:THREE.MathUtils.smoothstep(h,560,710)*(1-THREE.MathUtils.smoothstep(h,880,1040));overviewAlpha=THREE.MathUtils.smoothstep(h,1040,1200);
+  for(const {z,fill,outer,inner}of groups){const a=flankAlpha;fill.visible=outer.visible=inner.visible=a>.005;fill.material.opacity=a*.24;outer.material.opacity=a*.15;inner.material.opacity=a*.9;}
+  outline.visible=overviewAlpha>.005;outline.material.opacity=overviewAlpha*.7;
+  for(const {el,z,portrait}of cards){el.hidden=flankAlpha<.12;el.style.opacity=String(flankAlpha);if(!el.hidden&&!portrait.src)portrait.src=portrait.dataset.src;el.style.pointerEvents=flankAlpha>.3?'auto':'none';el.tabIndex=flankAlpha>.3?0:-1;}
+  const city=prepared.zones.find(z=>z.key==='city');if(city){const p=city.polygon,center=[p.reduce((a,v)=>a+v[0],0)/p.length,p.reduce((a,v)=>a+v[1],0)/p.length];labelAt(cityLabel,center,flankAlpha);}attribution.hidden=flankAlpha<.12;
+  document.body.dataset.mapLevel=h>=1040?'overview':h>=560?'flanks':'sites';
+  const near=floodOwners.map(s=>({s,d:Math.hypot(s.center[0]-controls.target.x,s.center[2]-controls.target.z)})).sort((a,b)=>a.d-b.d);
+  floods.forEach((l,i)=>{const n=near[i],active=night&&h<180&&n?.d<120;l.intensity=active?100:0;if(active)l.position.set(n.s.center[0]-9,heightAt(n.s.center[0]-9,n.s.center[2]+8)+13,n.s.center[2]+8);});
+ }
+ function showPlan(){forcePlan=false;const points=prepared.zones.slice(0,3).flatMap(z=>z.polygon),minX=Math.min(...points.map(p=>p[0])),maxX=Math.max(...points.map(p=>p[0])),minZ=Math.min(...points.map(p=>p[1])),maxZ=Math.max(...points.map(p=>p[1]));controls.target.set((minX+maxX)/2,0,(minZ+maxZ)/2);camera.position.copy(controls.target).add(new THREE.Vector3(0,760*SCALE,760*SCALE));camera.zoom=innerWidth<=760?.48:1;camera.updateProjectionMatrix();controls.update();update();invalidate();}
+ const stats=()=>({version:PUBLIC_ATMOSPHERE_VERSION,night,fog:{density:scene.fog.density,color:scene.fog.color.getHexString()},skyVisible:sky.visible,flankAlpha,overviewAlpha,regions:groups.length,flankCards:cards.length,lightRecords:lamps,lightBatches:fields.reduce((n,f)=>n+f.stats().drawCalls,0),dynamicLights:floods.filter(l=>l.intensity>0).length,lightsOn:night,roadMeshes:0,source:prepared.source,fields:prepared.fields.map(f=>({name:f.name,count:f.records.length})),warmRoadLights:prepared.fields.filter(f=>f.name.startsWith('Дороги')).flatMap(f=>f.records).filter(r=>r.style==='cosmodrome').length,coldRoadLights:prepared.fields.filter(f=>f.name.startsWith('Дороги')).flatMap(f=>f.records).filter(r=>r.style==='highway').length});
+ setNight(true);return {update,setNight,showPlan,stats,root,hidePlan(){forcePlan=false;},districtAlpha:()=>flankAlpha};
+}

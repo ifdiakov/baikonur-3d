@@ -1,0 +1,62 @@
+name: Restore visitor atmosphere candidate
+on:
+  push:
+    branches: [fix/visitor-atmosphere-20261109]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: visitor-atmosphere-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Integrate presentation without changing terrain or workshop
+        run: |
+          node scripts/restore-public-atmosphere.mjs
+          node --check src/public-museum.js
+          node --check src/public-atmosphere.js
+      - name: Serve candidate
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/atmosphere-http.log 2>&1 &
+      - name: Export approved lamp positions and terrain-conforming districts
+        run: |
+          set -o pipefail
+          node scripts/export-public-atmosphere.mjs | tee /tmp/atmosphere-export.log
+      - name: Validate terrain, lighting and real visitor rendering
+        run: |
+          node tests/public-atmosphere-geometry.mjs
+          node tests/public-atmosphere-browser.mjs
+      - name: Commit only tested visitor restoration
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          # Existing baked roads, object transforms and workshop must be identical.
+          git diff --exit-code -- index.html workshop.html assets/public-v1 data/public-scene.json src/workshop-panel.js src/road-editor.js
+          git add src/public-museum.js src/public-museum.css museum.html data/public-atmosphere.json.gz PROJECT_CONTEXT.md .github/workflows/museum-workshop-split.yml
+          if ! git diff --cached --quiet; then git commit -m 'Restore visitor fog, flank territories and approved lighting'; fi
+          node scripts/public-build-cache.mjs record
+          git add data/public-build-cache.json
+          if ! git diff --cached --quiet; then git commit -m 'Certify unchanged geometry and verified visitor atmosphere'; fi
+          git push origin HEAD:${{ github.ref_name }}
+          git rev-parse HEAD > qa-public-atmosphere/source-commit.txt
+      - name: Preserve visual and measurement evidence
+        if: always()
+        run: |
+          mkdir -p qa-public-atmosphere
+          cp /tmp/atmosphere-export.log qa-public-atmosphere/ 2>/dev/null || true
+          tar -czf qa-public-atmosphere/restored-source.tar.gz src/public-* museum.html data/public-atmosphere.json.gz scripts/restore-public-atmosphere.mjs scripts/export-public-atmosphere.mjs tests/public-atmosphere-*.mjs 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visitor-atmosphere-candidate
+          path: qa-public-atmosphere/
+          retention-days: 7
