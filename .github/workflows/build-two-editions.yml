@@ -12,6 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
+    if: github.ref != 'refs/heads/main' || !startsWith(github.event.head_commit.message, 'Publish verified workshop')
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     steps:
@@ -27,6 +28,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Prepare workshop and bundled public runtime
         run: |
+          python3 scripts/refine-two-editions.py
           python3 scripts/apply-editions-context.py
           python3 scripts/prepare-two-editions.py
           node tests/workshop-state.mjs
@@ -44,7 +46,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add AGENTS.md PROJECT_CONTEXT.md src/road-editor.js workshop.html museum.html public-app public-data docs/releases/two-editions-20261109.md
+          git add AGENTS.md PROJECT_CONTEXT.md src/workshop-state.js scripts/build-public-data.mjs src/road-editor.js workshop.html museum.html public-app public-data docs/releases/two-editions-20261109.md
           if ! git diff --cached --quiet; then
             git commit -m 'Publish verified workshop and terrain-texture visitor build'
             git push origin HEAD:${{ github.ref_name }}
