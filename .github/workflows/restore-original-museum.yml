@@ -1,92 +1,11 @@
-name: Verify complete museum and evening navigation
+name: Archived original-scene restoration checkpoint
+# The complete museum remains restored. Active checks and deployment are in nonblocking-detail.yml.
 on:
-  push:
-    branches: [main, fix/evening-navigation-20261109]
-    paths: ['index.html', 'museum.html', 'workshop.html', 'src/**', 'data/**', 'assets/**', 'scripts/prepare-workshop.mjs', 'scripts/prepare-evening-menu.mjs', 'scripts/apply-evening-navigation.mjs', 'tests/original-museum-*.mjs', 'tests/evening-navigation-*.mjs', '.github/workflows/restore-original-museum.yml']
   workflow_dispatch:
 permissions:
-  contents: write
-  pages: write
-  id-token: write
-concurrency:
-  group: full-original-museum-${{ github.ref }}
-  cancel-in-progress: true
+  contents: read
 jobs:
-  restore:
+  reference:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
-    environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'museum-candidate' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Apply only owner-requested evening and navigation changes
-        run: |
-          node scripts/prepare-evening-menu.mjs
-          node scripts/apply-evening-navigation.mjs
-          node scripts/prepare-workshop.mjs
-      - name: Verify original appearance and unchanged models and roads
-        run: node tests/original-museum-source.mjs
-      - name: Install real browser checks
-        run: |
-          npm install --no-save three@0.160.1 playwright@1.57.0
-          npx playwright install --with-deps chromium
-      - name: Check evening policy, follow bounds and complete menu
-        run: |
-          node tests/evening-navigation-unit.mjs
-          node tests/arrival-status.mjs
-          node tests/menu-catalog-contract.mjs
-          node --check src/arrival-flight.js
-          node --check src/evening-scene.js
-          node --check src/museum-menu.js
-      - name: Serve restored scene
-        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/original-museum-http.log 2>&1 &
-      - name: Browser acceptance before publication
-        # Candidates cover all three contexts; main repeats desktop locally and
-        # then all three contexts against the actual deployed site below.
-        env:
-          QA_MODES: ${{ github.ref == 'refs/heads/main' && 'desktop' || 'desktop,mobile,workshop' }}
-        run: node tests/original-museum-browser.mjs
-      - name: Commit only verified changes and documentation
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src/evening-scene.js src/arrival-flight.js src/museum-menu.js src/evening.css tests/menu-catalog-contract.mjs tests/original-museum-browser.mjs tests/evening-navigation-browser-checks.mjs scripts/apply-evening-navigation.mjs PROJECT_CONTEXT.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Verify unclipped nested traditions and preserve permanent evening navigation'
-            git push origin HEAD:${{ github.ref_name }}
-          fi
-          git rev-parse HEAD > qa-original-museum/source-commit.txt
-      - name: Assemble full museum without simplified replacement
-        if: github.ref == 'refs/heads/main'
-        run: |
-          mkdir -p /tmp/original-museum-pages
-          git archive HEAD | tar -xf - -C /tmp/original-museum-pages
-          rm -rf /tmp/original-museum-pages/.github /tmp/original-museum-pages/tests /tmp/original-museum-pages/scripts
-      - uses: actions/upload-pages-artifact@v3
-        if: github.ref == 'refs/heads/main'
-        with:
-          path: /tmp/original-museum-pages
-      - uses: actions/deploy-pages@v4
-        if: github.ref == 'refs/heads/main'
-      - name: Verify published files and all changes on desktop, mobile and workshop
-        if: github.ref == 'refs/heads/main'
-        env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
-          QA_OUT: qa-original-museum/public
-          QA_MODES: desktop,mobile,workshop
-          VERIFY_PUBLIC: '1'
-        run: node tests/original-museum-browser.mjs
-      - name: Preserve evidence
-        if: always()
-        run: |
-          mkdir -p qa-original-museum
-          cp /tmp/original-museum-http.log qa-original-museum/ 2>/dev/null || true
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: original-museum-evening-evidence
-          path: qa-original-museum/
-          retention-days: 7
+      - run: echo 'The complete original scene is retained. Use the nonblocking-detail pipeline for current visual parity and live verification. This archived workflow does not deploy.'
