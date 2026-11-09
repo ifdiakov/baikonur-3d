@@ -7,6 +7,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: read
   pages: write
   id-token: write
 concurrency:
@@ -64,8 +65,21 @@ jobs:
         run: |
           node scripts/ci/run-bounded.mjs 300 owner19-cache node scripts/build-owner19-caches.mjs
           node tests/owner19-source.mjs
+      - name: Retrieve passed acceptance interrupted only at publication
+        if: steps.impact.outputs.owner19 == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: nonblocking-detail-evidence
+          run-id: 42682815383
+          github-token: ${{ github.token }}
+          path: qa-ci/prior-owner19
+      - name: Reuse only byte-identical, fully checked application
+        if: steps.impact.outputs.owner19 == 'true'
+        id: reuse
+        run: node scripts/ci/reuse-owner19-acceptance.mjs
       - name: Candidate browser acceptance
-        if: steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true'
+        if: (steps.impact.outputs.runtime == 'true' || steps.impact.outputs.owner19 == 'true') && steps.reuse.outputs.reused != 'true'
         env:
           QA_OUT: qa-freeze/local
         run: |
@@ -81,7 +95,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src data/road-edits-authoritative-20261103.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz scripts/build-authoritative-road-lod.mjs PROJECT_CONTEXT.md
+          git add index.html museum.html workshop.html src data/road-edits-authoritative-20261103.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz scripts/build-authoritative-road-lod.mjs tests/owner19-browser.mjs PROJECT_CONTEXT.md
           if ! git diff --cached --quiet; then git commit -m 'Owner19: verified connected roads, rail curves, town streets and matching caches'; git push origin HEAD:${{ github.ref_name }}; fi
           git rev-parse HEAD > qa-freeze/source-commit.txt
       - name: Assemble verified Pages release
