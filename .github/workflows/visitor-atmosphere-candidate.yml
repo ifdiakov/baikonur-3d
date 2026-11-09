@@ -23,6 +23,7 @@ jobs:
       - name: Integrate presentation without changing terrain or workshop
         run: |
           node scripts/restore-public-atmosphere.mjs
+          node scripts/polish-visitor-atmosphere.mjs
           node --check src/public-museum.js
           node --check src/public-atmosphere.js
       - name: Serve candidate
@@ -39,9 +40,8 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          # Existing baked roads, object transforms and workshop must be identical.
-          git diff --exit-code -- index.html workshop.html assets/public-v1 data/public-scene.json src/workshop-panel.js src/road-editor.js
-          git add src/public-museum.js src/public-museum.css museum.html data/public-atmosphere.json.gz PROJECT_CONTEXT.md .github/workflows/museum-workshop-split.yml
+          git diff --exit-code -- index.html workshop.html assets/public-v1 data/public-scene.json src/workshop-panel.js src/road-editor.js .github/workflows
+          git add src/public-*.js src/public-museum.css museum.html data/public-atmosphere.json.gz PROJECT_CONTEXT.md tests/public-atmosphere-browser.mjs
           if ! git diff --cached --quiet; then git commit -m 'Restore visitor fog, flank territories and approved lighting'; fi
           node scripts/public-build-cache.mjs record
           git add data/public-build-cache.json

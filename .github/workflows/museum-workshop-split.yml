@@ -2,7 +2,7 @@ name: Build and verify museum and workshop
 on:
   push:
     branches: [main, feat/museum-workshop-split-20261109]
-    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/public-build-cache.mjs', 'scripts/bake-site-road-ink.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', 'tests/public-terrain-patch.mjs', 'tests/public-build-cache.mjs', '.github/workflows/museum-workshop-split.yml']
+    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/public-build-cache.mjs', 'scripts/bake-site-road-ink.mjs', 'scripts/build-public-scene.mjs', 'scripts/export-public-atmosphere.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', 'tests/public-terrain-patch.mjs', 'tests/public-build-cache.mjs', 'tests/public-atmosphere-*.mjs', '.github/workflows/museum-workshop-split.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -52,16 +52,25 @@ jobs:
         run: |
           set -o pipefail
           node scripts/build-public-scene.mjs 2>&1 | tee /tmp/public-build.log
+      - name: Refresh visitor atmosphere from the approved workshop
+        if: steps.prepared.outputs.rebuild == 'true'
+        run: node scripts/export-public-atmosphere.mjs
       - name: Measure and functionally test both versions
         env:
           QA_RUNS: '2'
           QA_OUT: qa-museum-split/local
         run: node tests/museum-split-browser.mjs
+      - name: Verify restored visitor atmosphere locally
+        env:
+          ATMOSPHERE_QA_OUT: qa-public-atmosphere/local
+        run: |
+          node tests/public-atmosphere-geometry.mjs
+          node tests/public-atmosphere-browser.mjs
       - name: Commit verified generated assets and certificate
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src scripts tests assets/public-v1 data/public-scene.json PROJECT_CONTEXT.md
+          git add index.html museum.html workshop.html src scripts tests assets/public-v1 data/public-scene.json data/public-atmosphere.json.gz PROJECT_CONTEXT.md
           if ! git diff --cached --quiet; then git commit -m 'Build verified visitor scene and workshop entrypoint'; fi
           node scripts/public-build-cache.mjs record
           git add data/public-build-cache.json
@@ -90,7 +99,7 @@ jobs:
           node --input-type=module <<'JS'
           import {readFile} from 'node:fs/promises';
           import assert from 'node:assert/strict';
-          for(const f of ['museum.html','workshop.html','data/public-scene.json','src/public-museum.js']){
+          for(const f of ['museum.html','workshop.html','data/public-scene.json','src/public-museum.js','src/public-atmosphere.js']){
             const expected=await readFile(f,'utf8');let okay=false;
             for(let i=0;i<30;i++){const r=await fetch(process.env.BAIKONUR_URL+f+'?verify='+Date.now());if(r.ok&&(await r.text())===expected){okay=true;break;}await new Promise(r=>setTimeout(r,5000));}
             assert(okay,'Published revision mismatch: '+f);
@@ -98,6 +107,7 @@ jobs:
           console.log('PUBLIC_HASH_PARITY_PASS');
           JS
           node tests/museum-split-browser.mjs
+          ATMOSPHERE_QA_OUT=qa-public-atmosphere/public node tests/public-atmosphere-browser.mjs
           node --input-type=module <<'JS'
           import {readFile} from 'node:fs/promises';
           import assert from 'node:assert/strict';
@@ -122,5 +132,6 @@ jobs:
           name: museum-workshop-evidence
           path: |
             qa-museum-split/
+            qa-public-atmosphere/
             /tmp/split-result-source.tar.gz
           retention-days: 7
