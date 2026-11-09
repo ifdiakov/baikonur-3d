@@ -1,7 +1,18 @@
 import {readFile,writeFile} from 'node:fs/promises';
 import assert from 'node:assert/strict';
+// This canvas is a CPU-read mask, not the WebGL scene. Keep all drawing,
+// dimensions, blur and pixel values; avoid a synchronous GPU readback.
+{
+ const path='src/terrain-game-detail.js';let text=await readFile(path,'utf8');
+ if(!text.includes("getContext('2d',{willReadFrequently:true})")){
+  assert(text.includes("const ctx=canvas.getContext('2d');"));
+  text=text.replace("const ctx=canvas.getContext('2d');","const ctx=canvas.getContext('2d',{willReadFrequently:true});");
+  await writeFile(path,text);
+ }
+}
 for(const file of ['index.html','museum.html','workshop.html']){
- let s=await readFile(file,'utf8');if(s.includes('// DETAIL_FIDELITY_V2'))continue;
+ let s=await readFile(file,'utf8');s=s.replaceAll('terrain-game-detail.js?v=20261105-seamless-v9','terrain-game-detail.js?v=20261109-readback-v1');
+ if(s.includes('// DETAIL_FIDELITY_V2')){await writeFile(file,s);continue;}
  const r=(before,after)=>{assert(s.includes(before),file+' '+before.slice(0,90));s=s.replace(before,after);};
  r('const ref=mzkSdiParent.g.userData.mzkSdi.views[component].target;','// Anchors are attached after the original archive builder has initialized and cleared its root.');
  r("anchor.position.set(ref[0],0,ref[2]);mzkSdiParent.g.add(anchor);",'');
