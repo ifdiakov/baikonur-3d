@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
 import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261106-site95-town-v1';
-import * as buildings from './archive-buildings.js?v=20261106-site95-town-v1';
+import * as buildings from './archive-buildings.js?v=20261109-site95-courtyards-v2';
 import * as launches from './archive-launches.js?v=20261108-proton-source-v1';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
 import {buildSite31Exhibit,site31Controller,SITE31_VIEWS} from './site31-exhibit.js?v=20261108-site31-lamps-v1';

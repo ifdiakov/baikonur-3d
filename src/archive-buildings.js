@@ -13,7 +13,7 @@ export function protonHalls(root){
  for(const pts of[[[1280,949],[1150,802],[1000,653],[850,540],[807,508]],[[1280,949],[1137,778],[991,623],[861,527]],[[1280,949],[1120,733],[1034,582],[1080,420],[1305,322]],[[1248,924],[1020,824],[845,729],[740,632]],[[20,706],[214,842],[435,971]]])k.rail(pts.map(P));
  k.path([[132,90],[273,180],[417,302],[374,397],[736,685],[987,758]].map(P),7,.16);k.path([[418,302],[550,177],[704,97],[975,202],[1077,431],[901,638]].map(P),5,.14);root.userData.tracedAxes=[{part:'two-main-halls',a:[580,280],b:[838,478]}];return k.finish();
 }
-export {buildSite95 as settlement95} from './site95.js?v=20261106-site95-town-v1';
+export {buildSite95 as settlement95} from './site95.js?v=20261109-site95-courtyards-v2';
 export function mik42Facade(root){
  registerFacilityFloodlights(root,{id:'mik42-roof-floodlight',target:[-59,0,24],beacon:[-59,45.5,-5],
   lamps:[{position:[-59,44,-4.5],normal:[0,0,1],size:[2.3,2.3]}]});
