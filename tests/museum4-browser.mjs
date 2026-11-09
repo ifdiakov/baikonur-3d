@@ -18,7 +18,7 @@ await page.addInitScript(()=>{
 const step=()=>page.evaluate(()=>window.__M4_FRAME());
 async function shot(name){await step();return page.screenshot({path:`${out}/${prefix}-${name}.png`,timeout:90000});}
 try{
- await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
+ await page.goto(base+(base.includes('?')?'&':'?')+'full=1',{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.stats().museumRevision==='20261028-site31-trench-v1',null,{timeout:120000});
  await step();const s=await page.evaluate(()=>window.__BAIKONUR_QA.stats());
  assert.equal(s.sites,97);assert.equal(s.catalogEntries,98);assert.deepEqual(s.catalogAliases,[{id:'sector-east',aliasOf:'pad-43'}]);

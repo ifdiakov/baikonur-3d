@@ -6,7 +6,7 @@ const page=await browser.newPage({viewport:{width:1440,height:900},deviceScaleFa
 const errors=[];
 page.on('pageerror',error=>errors.push(error.message));
 try{
- await page.goto(url,{waitUntil:'domcontentloaded',timeout:90000});
+ await page.goto(url+(url.includes('?')?'&':'?')+'full=1',{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA?.stats?.(),null,{timeout:180000});
  assert.equal(await page.locator('#complexHistoryAccordion').count(),1);
  await page.evaluate(()=>{document.querySelector('#complexHistoryAccordion').open=true;});

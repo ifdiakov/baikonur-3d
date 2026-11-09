@@ -13,7 +13,7 @@ try{
  await page.locator('[data-view="full"]').click();await page.locator('#gear').click();await page.evaluate(()=>window.__MODEL_VIEWER_QA.frame());assert.equal(await page.evaluate(()=>window.__MODEL_VIEWER_QA.stats().gear),false);await page.screenshot({path:`qa-a320/${prefix}-retracted.png`});
  if(process.env.A320_VIEWER_ONLY){assert.deepEqual(evidence.errors,[]);evidence.passed=true;console.log('A320_VIEWER_PASS',JSON.stringify(evidence.viewer));}
  else{
-  await page.goto(base,{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__BAIKONUR_QA?.arrival.stats().aircraft.status==='ready');
+  await page.goto(base+(base.includes('?')?'&':'?')+'full=1',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>window.__BAIKONUR_QA?.arrival.stats().aircraft.status==='ready');
   for(const seconds of [0,84,118,120,123,150,276,300,526]){
    await page.evaluate(t=>{const q=window.__BAIKONUR_QA;q.arrival.seek(t);q.arrival.setFollowing(true);window.__A320_FRAME(performance.now());},seconds);
    const s=await page.evaluate(()=>window.__BAIKONUR_QA.arrival.stats());evidence.poses.push(s);assert.equal(s.aircraft.airframe,'Airbus A320-214');assert.equal(s.aircraft.status,'ready');assert.equal(s.aircraft.gearWheelCount,6);assert.equal(s.aircraft.cabinWindows,82);assert.equal(s.aircraft.error,null);

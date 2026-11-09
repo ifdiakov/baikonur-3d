@@ -71,7 +71,7 @@ async function hierarchy(level,{details=false}={}){
 }
 
 try{
- await page.goto(base,{waitUntil:'domcontentloaded',timeout:90000});
+ await page.goto(base+(base.includes('?')?'&':'?')+'full=1',{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(expected=>window.__BAIKONUR_QA?.stats().museumRevision===expected,revision,{timeout:180000});
  await page.evaluate(()=>window.__BAIKONUR_QA.rockets.whenReady());
  await step();
