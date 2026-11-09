@@ -448,7 +448,9 @@ body.following-arrival #labelLayer{display:none!important}
 
 #site95Views,#site113Views,#site31Views,#site254Views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 #site2Views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}#site95Views button,#site113Views button,#site2Views button{padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#site95Views button:hover,#site113Views button:hover,#site2Views button:hover{background:#3b5969}#site95Views button:focus-visible,#site113Views button:focus-visible,#site2Views button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}#site2LoadStatus{font-size:11px;line-height:1.5;color:#bed0ce;margin:10px 0}
-</style><link rel="stylesheet" href="./src/soyuz-dual-launch.css?v=20261103-launch-v1"><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261109-evening-navigation-v2"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261108-site45-choice-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/camera-altitude.css?v=20261101-altitude-v1"><link rel="stylesheet" href="./src/museum-ui-polish.css?v=20261103-logo-compact-v6"><link rel="stylesheet" href="./src/museum-onboarding.css?v=20261108-standalone-tour-button-v1"><link rel="stylesheet" href="./src/complex-history.css?v=20261103-foundation-v1"></head><body data-preload-museum="true"><div id="view"></div>
+</style><link rel="stylesheet" href="./src/soyuz-dual-launch.css?v=20261103-launch-v1"><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261109-evening-navigation-v2"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261108-site45-choice-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/camera-altitude.css?v=20261101-altitude-v1"><link rel="stylesheet" href="./src/museum-ui-polish.css?v=20261103-logo-compact-v6"><link rel="stylesheet" href="./src/museum-onboarding.css?v=20261108-standalone-tour-button-v1"><link rel="stylesheet" href="./src/complex-history.css?v=20261103-foundation-v1"><style id="buildingCardsReadable">/* BUILDING_CARDS_READABLE_V3 */
+.detail-card[data-site-id="building-mzk"] p,.detail-card[data-site-id="building-sdi"] p{display:block;-webkit-line-clamp:unset;overflow:visible;max-height:none}
+</style></head><body data-preload-museum="true"><div id="view"></div>
 <!-- MUSEUM_PRELOADER_START -->
 <section id="museumLoading" class="museum-loading preloader preloader--gallery" data-state="loading" data-launch-step="0" data-motion="running" aria-label="Подготовка интерактивного музея Байконура">
   <div class="preloader__frame">
@@ -1655,12 +1657,22 @@ function projectToScreen(world){
  return {x,y};
 }
 function placeBuildingCard(el,p,occupied,component){
- const w=el.offsetWidth||236,h=el.offsetHeight||155,low=innerWidth>850?338:8;
+ const w=el.offsetWidth||236,h=el.offsetHeight||200,low=innerWidth>850?338:8;
+ const obstacles=[...occupied];
+ for(const id of ['ui','museumMobileBar','timeDock','nextLaunchPanel','cameraAltitude','workshopPanel']){
+  const node=document.getElementById(id);if(!node)continue;const style=getComputedStyle(node),r=node.getBoundingClientRect();
+  if(style.display!=='none'&&style.visibility!=='hidden'&&Number(style.opacity)>.05&&r.width&&r.height&&r.right>0&&r.left<innerWidth)obstacles.push(r);
+ }
  const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),x0=clamp(p.x+(innerWidth>850?(component==='mzk'?-126:126):0),low+w/2,innerWidth-w/2-8);
- const ys=[p.y,110+h*1.07,innerHeight-100+h*.07];for(const q of occupied)ys.push(q.bottom+12+h*1.07,q.top-12+h*.07);
- const ys2=ys.map(y=>clamp(y,90+h*1.07,innerHeight-80+h*.07)),xs=[x0,low+w/2,innerWidth-w/2-8];let best=null;
- for(const x of xs)for(const y of ys2){const box={left:x-w/2,right:x+w/2,top:y-h*1.07,bottom:y-h*.07};if(occupied.some(q=>!(box.right<q.left-6||box.left>q.right+6||box.bottom<q.top-6||box.top>q.bottom+6)))continue;const score=Math.abs(x-x0)+Math.abs(y-p.y);if(!best||score<best.score)best={x,y,box,score};}
- best??={x:x0,y:ys2[0],box:{left:x0-w/2,right:x0+w/2,top:ys2[0]-h*1.07,bottom:ys2[0]-h*.07}};el.style.left=best.x+'px';el.style.top=best.y+'px';return best.box;
+ const xs=[x0,low+w/2,innerWidth-w/2-8],ys=[p.y,70+h*1.07,innerHeight-20+h*.07];
+ for(const r of obstacles){xs.push(r.left-w/2-10,r.right+w/2+10);ys.push(r.bottom+10+h*1.07,r.top-10+h*.07);}
+ let best=null;
+ for(const rawX of xs)for(const rawY of ys){const x=clamp(rawX,low+w/2,innerWidth-w/2-8),y=clamp(rawY,65+h*1.07,innerHeight-10+h*.07),box={left:x-w/2,right:x+w/2,top:y-h*1.07,bottom:y-h*.07};
+  if(obstacles.some(r=>!(box.right<r.left-6||box.left>r.right+6||box.bottom<r.top-6||box.top>r.bottom+6)))continue;
+  const score=Math.abs(x-x0)+Math.abs(y-p.y);if(!best||score<best.score)best={x,y,box,score};
+ }
+ if(!best){const y=clamp(p.y,65+h*1.07,innerHeight-10+h*.07);best={x:x0,y,box:{left:x0-w/2,right:x0+w/2,top:y-h*1.07,bottom:y-h*.07}};}
+ el.style.left=best.x+'px';el.style.top=best.y+'px';return best.box;
 }
 function updateLabels(){
  // Expanding a compact card on hover changes its collision rectangle. Capture

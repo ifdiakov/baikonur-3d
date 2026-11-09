@@ -45,6 +45,11 @@ try{
    await page.evaluate(()=>__BAIKONUR_QA.openObject('building-mzk'));assert.equal(await page.locator('#title').textContent(),'МЗК');assert((await page.locator('#description').textContent()).includes('Спальня Бога'));
    await page.evaluate(()=>__BAIKONUR_QA.openObject('building-sdi'));assert.equal(await page.locator('#title').textContent(),'СДИ');assert((await page.locator('#description').textContent()).includes('самое высокое'));
    await page.evaluate(()=>{document.getElementById('info').style.display='none';__BAIKONUR_QA.mzkSdi.inspect('all');__STEP();});await page.screenshot({path:out+'/'+mode+'-mzk-sdi.png',timeout:180000});
+   // BUILDING_CARD_OCCLUSION_CHECK: painted text and buttons must remain readable and clickable.
+   const readability=await page.evaluate(()=>['building-mzk','building-sdi'].map(id=>{
+    const card=document.querySelector('.detail-card[data-site-id="'+id+'"]'),text=card.querySelector('p'),button=card.querySelector('.more'),r=button.getBoundingClientRect(),hit=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);
+    return {id,unclipped:text.scrollHeight<=text.clientHeight+1,clickable:button===hit||button.contains(hit)};
+   }));assert(readability.every(r=>r.unclipped&&r.clickable),JSON.stringify(readability));
    const boxes=[];for(const id of ['building-mzk','building-sdi']){const el=page.locator('.detail-card[data-site-id="'+id+'"]');assert(await el.isVisible(),id+' must be visible');const box=await el.boundingBox();assert(box.x>=0&&box.x+box.width<=page.viewportSize().width+1,id+' clipped');boxes.push(box);}
    const [a,b]=boxes;assert(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'Building cards overlap');assert.equal(await page.locator('.site-label[data-site-id="pad-112a"]').isVisible(),false);
   }
