@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 export async function verifyEveningNavigation(page,{mode,out}){
  const report={permanentEvening:false,followBounds:false,nestedTraditions:false};
+ const watchdog=setTimeout(()=>{console.error('REQUESTED_CHANGES_TIMEOUT',mode);page.close().catch(()=>{});},240000);
+ page.setDefaultTimeout(45000);
+ try{
  const openMenu=async()=>{if(mode==='mobile'&&!await page.evaluate(()=>document.body.classList.contains('mobile-menu-open')))await page.locator('#mobileMenuToggle').click();};
  await openMenu();console.log('REQUESTED_CHANGES_BEGIN',mode);
  assert.equal(await page.locator('#museumLightSwitch,#museumDayMode,#museumNightMode').count(),0);
@@ -8,7 +11,7 @@ export async function verifyEveningNavigation(page,{mode,out}){
  assert.equal(await page.evaluate(()=>__BAIKONUR_QA.evening.evening),true);
  assert.equal(await page.evaluate(()=>__BAIKONUR_QA.arrival.stats().appearance.night),true);
  report.permanentEvening=true;
- await page.evaluate(()=>{const q=__BAIKONUR_QA;q.arrival.stopFollowing();q.arrival.seek(0);window.__RESTORE_FRAME();});
+ await page.evaluate(()=>{const q=__BAIKONUR_QA;q.arrival.stopFollowing();q.arrival.seek(0);});
  assert(await page.locator('#arrivalFollow').isDisabled());
  assert.equal(await page.locator('#arrivalFollow').getAttribute('aria-disabled'),'true');
  const cameraBefore=await page.evaluate(()=>__BAIKONUR_QA.cameraState().position);
@@ -22,7 +25,7 @@ export async function verifyEveningNavigation(page,{mode,out}){
   assert(await page.locator('#arrivalFollow').isEnabled());
   await openMenu();await page.locator('#arrivalFollow').click();
   assert.equal(await page.evaluate(()=>__BAIKONUR_QA.arrival.stats().following),true);
-  await page.evaluate(()=>{__BAIKONUR_QA.arrival.seek(380);window.__RESTORE_FRAME();});
+  await page.evaluate(()=>__BAIKONUR_QA.arrival.seek(380));
   assert(await page.locator('#arrivalFollow').isDisabled());
   assert.equal(await page.evaluate(()=>__BAIKONUR_QA.arrival.stats().following),false);
   const c=await page.evaluate(()=>__BAIKONUR_QA.cameraState());
@@ -50,7 +53,7 @@ export async function verifyEveningNavigation(page,{mode,out}){
  await page.locator('#traditionsAccordion [data-museum-action="story:coins-under-tua"]').click();
  await page.waitForFunction(()=>document.querySelector('#info')?.textContent.includes('Монет'));
  assert.equal(await page.evaluate(()=>__BAIKONUR_QA.menu.stats().lastAction),'story:coins-under-tua');
- report.nestedTraditions=true;
+ report.nestedTraditions=true;console.log('NESTED_TRADITIONS_PASS',mode);
  await page.evaluate(()=>{document.getElementById('close')?.click();document.getElementById('mythsAccordion').open=false;document.getElementById('traditionsAccordion').open=false;});
  if(mode==='desktop'){
   await page.evaluate(()=>__BAIKONUR_QA.buranLanding.start());
@@ -62,4 +65,5 @@ export async function verifyEveningNavigation(page,{mode,out}){
  }
  await page.evaluate(()=>{__BAIKONUR_QA.arrival.seek(150);__BAIKONUR_QA.showOverview();window.__RESTORE_FRAME();});
  console.log('REQUESTED_CHANGES_PASS',mode,JSON.stringify(report));return report;
+ }finally{clearTimeout(watchdog);page.setDefaultTimeout(180000);}
 }
