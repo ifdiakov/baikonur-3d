@@ -2,7 +2,7 @@ name: Build and verify museum and workshop
 on:
   push:
     branches: [main, feat/museum-workshop-split-20261109]
-    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/refine-split-*.mjs', 'scripts/bake-site-road-ink.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', '.github/workflows/museum-workshop-split.yml']
+    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/bake-site-road-ink.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', 'tests/public-terrain-patch.mjs', '.github/workflows/museum-workshop-split.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -28,9 +28,8 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Validate and prepare workshop
         run: |
-          node scripts/refine-split-v2.mjs
-          node scripts/refine-split-v3.mjs
           node tests/workshop-state.mjs
+          node tests/public-terrain-patch.mjs
           node scripts/prepare-workshop.mjs
           node --check src/public-museum.js
           node --check src/workshop-panel.js
