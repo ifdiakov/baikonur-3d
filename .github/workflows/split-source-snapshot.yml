@@ -1,0 +1,18 @@
+name: Split source snapshot
+on:
+  push:
+    branches: [feat/museum-workshop-split-20261109]
+    paths: ['.github/workflows/split-source-snapshot.yml']
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: git ls-files -z | tar --null -T - -czf /tmp/baikonur-split-source.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: split-source
+          path: /tmp/baikonur-split-source.tar.gz
+          retention-days: 2
