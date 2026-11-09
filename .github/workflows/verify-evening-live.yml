@@ -1,0 +1,62 @@
+name: Verify published evening workshop
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/verify-evening-live.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-workshop:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser
+        run: |
+          npm install --no-save three@0.160.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Verify unchanged application and record full startup diagnostics
+        run: |
+          node tests/evening-navigation-source.mjs
+          node --input-type=module <<'JS'
+          import {readFile,writeFile} from 'node:fs/promises';
+          import assert from 'node:assert/strict';
+          const path='tests/original-museum-browser.mjs';let s=await readFile(path,'utf8');
+          const anchor="page.setDefaultTimeout(180000);const errors=[],shaderErrors=[],requests=[];";
+          assert(s.includes(anchor));
+          s=s.replace(anchor,anchor+`
+            const diagnostic={mode,errors,shaderErrors,requests,console:[],failedRequests:[]};report.lastContext=diagnostic;
+            page.on('console',m=>{if(m.type()==='error'||m.type()==='warning')diagnostic.console.push({type:m.type(),text:m.text()});});
+            page.on('requestfailed',r=>diagnostic.failedRequests.push({url:r.url(),failure:r.failure()}));
+          `);
+          const nav="await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded',timeout:180000});";
+          assert(s.includes(nav));
+          s=s.replace(nav,`const response=await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded',timeout:180000});
+            diagnostic.navigation={url:response.url(),status:response.status(),headers:response.headers(),servedSha256:digest(await response.body()),expectedSha256:digest(await readFile(workshop?'workshop.html':mobile?'museum.html':'index.html'))};
+            assert.equal(diagnostic.navigation.servedSha256,diagnostic.navigation.expectedSha256,'Browser received a stale entrypoint from the public CDN');
+          `);
+          const wait="await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:240000});";
+          assert(s.includes(wait));
+          s=s.replace(wait,`await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA||document.getElementById('museumLoading')?.dataset.state==='error',null,{timeout:240000});
+            diagnostic.startup=await page.evaluate(()=>({failed:document.getElementById('museumLoading')?.dataset.state==='error',message:document.getElementById('error')?.textContent,stats:window.__MUSEUM_STARTUP?.stats?.()}));
+            assert(!diagnostic.startup.failed,'Public workshop startup failed: '+diagnostic.startup.message+' '+JSON.stringify(diagnostic.console));
+          `);
+          await writeFile(path,s);
+          JS
+      - name: Verify live workshop, all requested changes and editing
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_OUT: qa-evening-live/workshop
+          QA_MODES: workshop
+          VERIFY_PUBLIC: '1'
+        run: node tests/original-museum-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: published-evening-workshop-verification
+          path: qa-evening-live/
+          retention-days: 7
