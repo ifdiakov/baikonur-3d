@@ -8,6 +8,7 @@ import {planRailStations} from './rail-stations.js';
 import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry} from './road-geometry-cut.js?v=20261103-source-matched-pavement-v7';
 import {packGeometry,unpackGeometry,packTransportLayers} from './transport-detail-codec.js';
 export function buildTransportDetail(input){
+ globalThis.devicePixelRatio=input.pixelRatio||1;
  const {data,legacyData,catalog,matches,siteRecords,checkpointAnchor,mik112,stations}=input;
  const geography=createMuseumGeography({catalog,matches}),point=(x,y,z=0)=>new THREE.Vector3((x-650)*3.4,z,(y-522.5)*3.4);
  const town=id=>{const s=siteRecords.find(s=>s.id===id);return{x:(s.x-650)*3.4,z:(s.y-522.5)*3.4};};
