@@ -4,7 +4,7 @@ import {SITE113_VERSION,SITE113_REFERENCE,SITE113_BUILDINGS,SITE113_PATHS,SITE11
 
 export function buildSite113(root){
  const k=archiveKit(root),P=site113Pixel;
- for(const [key,c]of Object.entries({wall:0xb9b7a7,light:0xc8c9c1,concrete:0x949487,roof:0x777e79,dark:0x292f2c,glass:0x475953,rust:0x875239,steel:0x718a89,soil:0x978a6c,asphalt:0x77766a,green:0x76784d,blue:0x658b92}))k.mat[key].color.setHex(c);
+ for(const [key,c]of Object.entries({wall:0xb9b7a7,light:0xc8c9c1,concrete:0x949487,roof:0x777e79,dark:0x292f2c,glass:0x475953,rust:0x875239,steel:0x718a89,soil:0x978a6c,asphalt:0x555751,green:0x76784d,blue:0x658b92}))k.mat[key].color.setHex(c);
  const box=(parent,w,h,d,x,y,z,m,tag)=>k.box(w,h,d,x,y,z,m,tag,0,parent);
  const blocks=[];
  for(const [i,b]of SITE113_BUILDINGS.entries()){
@@ -53,16 +53,9 @@ export function buildSite113(root){
  box(civic,18,.25,8,0,3.55,13,'concrete','site113-community-canopy');
  for(let x=-10;x<=10;x+=2.5)box(civic,1.6,3,.1,x,4.7,11.08,'dark','site113-community-window');
 
- // Owner correction: preserve the inter-block street grid, including its
- // junctions and courtyards, instead of leaving only narrow pale footpaths.
- // Asphalt uses the same dark family as the museum's ordinary AD.
- for(const road of SITE113_PATHS)k.path(road.map(P),3.4,.11,'asphalt','site113-internal-ad');
- for(const road of [
-  [[489,606],[494,692],[537,736],[580,780],[622,825]],
-  [[604,578],[647,622],[690,665],[733,709],[775,752]],
-  [[575,740],[647,622],[758,380]],
-  [[758,380],[836,285],[891,274]],
- ])k.path(road.map(P),2.7,.115,'asphalt','site113-interblock-ad');
+ // Keep the calibrated streets BETWEEN houses, not along their centres.
+ // Pavement -2.675 clears detailed ground (-2.705) by 30 mm.
+ for(const road of SITE113_PATHS)k.path(road.map(P),3.4,.32,'asphalt','site113-internal-ad');
  for(const [u,v,w,d]of [[919,340,70,57],[933,486,76,62],[1004,287,31,27]]){
   const [x,z]=P([u,v]);k.box(w*.319,.12,d*.319,x,.08,z,'concrete','site113-court',Math.PI/4);
  }

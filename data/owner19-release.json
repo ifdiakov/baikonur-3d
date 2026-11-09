@@ -1,0 +1,6 @@
+{
+  "release": "20261109-owner19-v2",
+  "sourceGeometryPrepared": true,
+  "reference": "c3f6a737dc5f9c78332c7db3806251b104bc6456",
+  "test": "tests/owner19-browser.mjs"
+}

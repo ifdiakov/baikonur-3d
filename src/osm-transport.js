@@ -1,8 +1,8 @@
 import {SITE254_ACCESS,SITE254_MASK} from './site254-layout.js?v=20261103-site254-e10s5';
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
-import {shapeOwnerRail,missingOwnerRailSeam,makeOwnerRailSeam} from './owner-rail-curves.js?v=20261108-owner19-v1';
-import {omitOwnerRoadEdge,polishOwnerRoadSamples} from './owner-ad-refinements.js?v=20261108-owner19-v1';
+import {shapeOwnerRail,missingOwnerRailSeam,makeOwnerRailSeam,matchOwnerTrainToRenderedRail} from './owner-rail-curves.js?v=20261109-owner19-v2';
+import {omitOwnerRoadEdge,polishOwnerRoadSamples} from './owner-ad-refinements.js?v=20261109-owner19-v2';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {pruneTerminalBranches} from './transport-pruning.js?v=20261029-transport-cleanup-v2';
 import {pruneUnassignedRailTermini} from './rail-terminal-cleanup.js?v=20261106-site-matched-rail-ends-v1';
@@ -779,12 +779,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  }
  // Tight, owner-verified AD junctions: weld the ordinary paved arms at
  // their shared heights to avoid triangular holes and missing shoulders.
- for(const [x,y,radius] of [[612.5,414.1,2.5],[589.8,377.1,2.65],[585.0,402.6,1.5],[580.2,404.0,1.5]]){
-  const centre=point(x,y,0),grade=terrainDatum(centre,4);
-  centre.y=grade;
-  shoulder.disc(centre,radius+.42,-.055);
-  asphalt.disc(centre,radius);
- }
+
  // Exactly one Gagarin road and one branch to Site 2; these share
  // precise endpoints rather than overlapping guessed centre lines.
  if(gagarinApproach){
@@ -965,7 +960,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // Preserve a single contiguous real railway between the two user-approved
  // endpoints; generate a small bridge only when the visible source leaves a gap.
  if(missingOwnerRailSeam(railPaths)){
-  const continuity=makeOwnerRailSeam(),joined=drawRail(continuity,false,true,RAIL_PROFILE.gauge,'owner-rail-continuity-579-587');
+  const continuity=makeOwnerRailSeam(railPaths),joined=drawRail(continuity,false,true,RAIL_PROFILE.gauge,'owner-rail-continuity-579-587');
   joined.forEach((run,i)=>railPaths.push({id:'owner-rail-continuity-579-587-'+i,
    points:run,width:RAIL_PROFILE.ballastWidth,source:'owner-connection',osmWayIds:[]}));
  }
@@ -1249,7 +1244,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const connectionRuns=drawRail(connectionPoints,false,true,RAIL_PROFILE.gauge,null,connectionFrame,'start');connections++;
  for(const [i,points]of connectionRuns.entries())railPaths.push({id:'gagarin-source-connection-'+i,points,width:RAIL_PROFILE.ballastWidth,source:'museum-model-port',osmWayIds:[]});
  const gagarinJoinGap=connectionPoints.at(-1).distanceTo(graphTrain.nodes[0].position);
- const trainPoints=conformRailPath(roundRailCorners([...connectionPoints,...graphRailRoutePoints(graphTrain).slice(1)],{radius:15}),RAIL_PROFILE.ballastWidth).map(p=>p.clone().add(V(0,RAIL_PROFILE.headY,0))),train={path:distancePath(trainPoints),gauge:RAIL_PROFILE.gauge,source:'OpenStreetMap',surfaceVersion:railSurface.stats.version,from:'Пл. №1 · Гагаринский старт',to:'Тюратам · город',joins:[{from:'museum-pad1-port',to:'osm-rail-network',gap:gagarinJoinGap,tangentDot:connection.getTangent(1).dot(railTangent)}],sections:[{id:'osm-pad1-to-tyuratam'}],osmWayIds:[...new Set(graphTrain.edges.map(e=>e.wayId))]};
+ const trainPoints=matchOwnerTrainToRenderedRail(conformRailPath(roundRailCorners([...connectionPoints,...graphRailRoutePoints(graphTrain).slice(1)],{radius:15}),RAIL_PROFILE.ballastWidth),railPaths).map(p=>p.clone().add(V(0,RAIL_PROFILE.headY,0))),train={path:distancePath(trainPoints),gauge:RAIL_PROFILE.gauge,source:'OpenStreetMap',surfaceVersion:railSurface.stats.version,from:'Пл. №1 · Гагаринский старт',to:'Тюратам · город',joins:[{from:'museum-pad1-port',to:'osm-rail-network',gap:gagarinJoinGap,tangentDot:connection.getTangent(1).dot(railTangent)}],sections:[{id:'osm-pad1-to-tyuratam'}],osmWayIds:[...new Set(graphTrain.edges.map(e=>e.wayId))]};
  for(const f of data.railPoints?.features||[]){const tags=tagsFor(f);if(!['station','halt'].includes(tags.railway)||f.geometry.type!=='Point')continue;const [lon,lat]=f.geometry.coordinates;if(lon<BBOX[0]||lon>BBOX[2]||lat<BBOX[1]||lat>BBOX[3])continue;
   const p=geography.project(lon,lat),at=point(...p,RAIL_NETWORK_GROUND_Y),group=new THREE.Group(),anchor=new THREE.Object3D();group.name=f.properties.name;group.position.copy(at);anchor.position.y=3;group.add(anchor);railRoot.add(group);
   // Station platforms are supplied by the shared lightweight model layer.
@@ -1292,6 +1287,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const ordinarySurfaceClip=clipOrdinaryRoadMeshes([asphalt.mesh,shoulder.mesh,unpaved.mesh,paint.mesh],highwayAsphalt.mesh,[...highwayAsphalt.ownershipPolygons,...bridgeOwnership]);
  checkpoint('pavement-owner');
  clipOrdinaryRoadMeshes([shoulder.mesh],asphalt.mesh,[],{onlyProtruding:true});
+ // At gravel/asphalt joins there is one physical surface, not two lifted sheets.
+ clipOrdinaryRoadMeshes([unpaved.mesh],asphalt.mesh);
  checkpoint('shoulder-owner');
  const bridgeAsphalt=interchangeBridge?.root.getObjectByName('Виадук · asphalt');
  const pavementY=pavementHeightSampler([highwayAsphalt.mesh,bridgeAsphalt]);

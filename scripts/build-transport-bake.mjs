@@ -1,10 +1,11 @@
 import fs from 'node:fs';
 import {gzipSync} from 'node:zlib';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({headless:true,
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,
  args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-webgl','--enable-unsafe-swiftshader']});
 const page=await browser.newPage({viewport:{width:1280,height:800}});
 try{
+ await page.addInitScript(()=>{const raf=requestAnimationFrame.bind(window);window.requestAnimationFrame=fn=>fn.name==='animate'?0:raf(fn);});
  await page.goto('http://127.0.0.1:8765/?tour=0&bakeTransport=1',{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>typeof window.__BAIKONUR_TRANSPORT_EXPORT==='function',null,{timeout:180000});
  const json=await page.evaluate(()=>JSON.stringify(window.__BAIKONUR_TRANSPORT_EXPORT()));

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
-import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261103-road-union-weld-v7-saturn-terrain-clearance';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261109-owner19-v2';
 import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261103-road-parity-v3';
-import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v3';
+import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261109-owner19-v2';
 import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261103-source-matched-pavement-v7';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
@@ -24,11 +24,11 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  // batches), rather than independently chosen editor colors. Copy before
  // the source stencil shader is installed so the new pavement is not clipped.
  const originalMaterial=(name,fallback)=>{
-  const match=roadMeshes.find(mesh=>mesh.name===name&&mesh.material?.isMaterial)?.material;
+  const match=roadMeshes.find(mesh=>mesh.name===name&&mesh.material?.isMaterial&&!mesh.material.isMeshBasicMaterial)?.material;
   return match?match.clone():new THREE.MeshStandardMaterial({color:fallback,roughness:.96,metalness:0,side:THREE.DoubleSide});
  };
  const surfaceMaterials={
-  asphalt:originalMaterial('OSM · единое дорожное полотно',0xadb2b3),
+  asphalt:originalMaterial('OSM · единое дорожное полотно',0x555751),
   ground:originalMaterial('OSM · грунтовые проезды',0xb2a58d),
   highway:originalMaterial('OSM · асфальт трассы',0x555751),
   shoulder:originalMaterial('OSM · единые обочины',0xc5c1b4),

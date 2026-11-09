@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261108-owner19-v1';
-import {shapeOwnerRail} from './owner-rail-curves.js?v=20261108-owner19-v1';
+import {polishCachedOwnerAd,OWNER_AD_REFINEMENTS_VERSION} from './owner-ad-refinements.js?v=20261109-owner19-v2';
+import {shapeOwnerRail} from './owner-rail-curves.js?v=20261109-owner19-v2';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
-const fingerprint='road-lod-prebuilt-v1;geometry-v3;site250a-ukss-passing-road-v1';
+const fingerprint='road-lod-prebuilt-v1;geometry-v3;'+OWNER_AD_REFINEMENTS_VERSION;
 export function transportSourceFingerprint({roads,railways,ownerRoadEdits,siteRecords}){
  // Fast deterministic FNV-1a of the EXACT topology and owner-specified
  // display anchors, so changed roads cannot silently use an obsolete bake.
@@ -35,7 +35,7 @@ function simplifyPoints(points,deviation){
 }
 const packPath=(path,deviation=0)=>{
  const props={};
- for(const key of ['id','label','width','source','vehicleScale','osmWayIds','nodeIds','bridgeDistance','routeIds','joinGap','rampStart','rampEnd','tags','marked','surface','highway','gauge','sections','joins','from','to']){
+ for(const key of ['sourceWayId','abandoned','id','label','width','source','vehicleScale','osmWayIds','nodeIds','bridgeDistance','routeIds','joinGap','rampStart','rampEnd','tags','marked','surface','highway','gauge','sections','joins','from','to']){
   if(path[key]!=null&&typeof path[key]!=='function')props[key]=path[key];
  }
  props.points=simplifyPoints((path.points||[]).map(v=>(v.isVector3?v.toArray():Array.isArray(v)?v:[v.x,v.y,v.z]).map(quantize)),deviation);
@@ -52,7 +52,7 @@ export function serializeTransport({transport,layers,mik112Rail,sourceFingerprin
  if(!plan?.routes?.length)throw Error('No transport graph to bake');
  const scene={
   version:TRANSPORT_BAKE_VERSION,fingerprint,sourceFingerprint,displayGradeVersion,
-  cacheKind:'routes-only',
+  cacheKind:'routes-only',ownerRevision:OWNER_AD_REFINEMENTS_VERSION,
   roads:packMany(paths,.02),
   vehicles:{routes:packMany(plan.routes,.015),highway:plan.highway.id,source:plan.source,joins:plan.joins},
   extensions:packMany(paths.displayHighwayExtensions),
@@ -107,7 +107,7 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
   return cut>=2?{...path,points:path.points.slice(0,cut)}:path;
  };
  const paths=unpack(bake.roads,roadGrade).map(trimPhantomSpur)
-  .map(path=>({...path,points:polishCachedOwnerAd(path.points,path.id)}))
+  .map(path=>({...path,points:bake.ownerRevision===OWNER_AD_REFINEMENTS_VERSION?path.points:polishCachedOwnerAd(path.points,path.id)}))
   .filter(path=>path.points.length>1).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired');
  for(const path of paths){
   if(path.id==='gagarin-site2-turnoff'){path.surface='asphalt';path.tags={...(path.tags||{}),highway:'service',surface:'asphalt'};}
@@ -119,8 +119,8 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
  if(!highway)throw Error('Cached highway missing');
  paths.osmVehiclePlan={routes,highway,source:bake.vehicles.source,joins:bake.vehicles.joins,extensions:[]};
  const terrain={roads:unpack(bake.terrain.roads,roadGrade).map(trimPhantomSpur)
-  .map(path=>({...path,points:polishCachedOwnerAd(path.points,path.id)}))
-  .filter(path=>path.points.length>1).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess(shapeOwnerRail(path.points,path.id??path.sourceWayId),path).flatMap(run=>clipPad5DuplicateRail(run,path)).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
+  .map(path=>({...path,points:bake.ownerRevision===OWNER_AD_REFINEMENTS_VERSION?path.points:polishCachedOwnerAd(path.points,path.id)}))
+  .filter(path=>path.points.length>1).filter(path=>path.id!=='r-site23-saturn-access'&&String(path.id)!=='osm-road-37549252'&&!String(path.id).startsWith('osm-road-37549252-')&&String(path.wayId??path.sourceWayId??'')!=='37549252'&&path.id!=='road-105-repaired'),rails:unpack(bake.terrain.rails).flatMap(path=>clipSingleRailAccess((bake.ownerRevision===OWNER_AD_REFINEMENTS_VERSION?path.points:shapeOwnerRail(path.points,path.sourceWayId??path.id)),path).flatMap(run=>clipPad5DuplicateRail(run,path)).map((points,i)=>({...path,id:(path.id??'rail')+'-selected-'+i,points})))};
  const train={...bake.train,path:unpackPath(bake.train.path)};
  const bridge=bake.bridgeBounds?(function(){
   const bbox=new THREE.Box3(new THREE.Vector3(...bake.bridgeBounds.min),new THREE.Vector3(...bake.bridgeBounds.max));

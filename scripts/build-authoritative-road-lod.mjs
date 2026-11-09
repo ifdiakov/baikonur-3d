@@ -39,11 +39,11 @@ function toRows(items,level,rail=false){
   if(used.has(hash))continue;used.add(hash);
   const points=simplify(row.points,level==='far'?1.25:.22);
   if(points.length<2)continue;
-  rows.push({id:row.id,w:rail?2.4:row.width??4.5,points});
+  rows.push({id:row.id||(row.sourceWayId?'osm-rail-'+row.sourceWayId:'rail'),w:rail?2.4:row.width??4.5,points});
  }
  return rows;
 }
-const data={version:'road-lod-prebuilt-v1',projection:'world-xz',sourceFingerprint:bake.sourceFingerprint,displayGradeVersion:bake.displayGradeVersion??null,
+const data={version:'road-lod-prebuilt-v1',projection:'world-xz',sourceFingerprint:bake.sourceFingerprint,ownerRevision:bake.ownerRevision,displayGradeVersion:bake.displayGradeVersion??null,
  sourceHash:createHash('sha256').update(JSON.stringify([bake.sourceFingerprint,bake.stats.roadFeatureCount,
   bake.stats.railFeatureCount])).digest('hex').slice(0,16),source:'final-owner-filtered-rendered-paths',
  levels:{

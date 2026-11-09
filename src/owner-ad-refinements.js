@@ -1,7 +1,7 @@
 // Owner-directed surgical refinements of the existing AD source geometry.
 // World coordinates use x=(mapX-650)*3.4, z=(mapY-522.5)*3.4.
 // The OSM source data and its graph identities are intentionally unchanged.
-export const OWNER_AD_REFINEMENTS_VERSION='20261108-owner-19-road-fixes-v1';
+export const OWNER_AD_REFINEMENTS_VERSION='20261109-owner19-exact-junctions-v2';
 const map=p=>({x:p.x/3.4+650,y:p.z/3.4+522.5});
 const distance=(p,x,y)=>{const m=map(p);return Math.hypot(m.x-x,m.y-y);};
 export function omitOwnerRoadEdge(edge){
@@ -11,7 +11,7 @@ export function omitOwnerRoadEdge(edge){
  // the main railway and motorway geometries beside these intersections.
  if(id==='172571864'||id==='172441889')return true; // excess arms at AD T-junction 605.7/424.2
  if(id==='172704810'&&mx>556&&my>402)return true; // dead end 558.4/405.2
- if(id==='443174416'||id==='172704752')return true; // user marked dangling road fragments
+ if(['443174416','172704752','172704782','172704807','172704830','172704695','172571880','172571885'].includes(id))return true; // user marked dangling road fragments
  return false;
 }
 const smoothZones=[
@@ -26,10 +26,8 @@ export function polishOwnerRoadSamples(points,wayId){
  const id=String(wayId??'');
  if(!points||points.length<3)return points;
  const zones=smoothZones.filter(z=>z.ids.includes(id));
- const liftAreas=id==='1135822986'?[{x:538.7,y:440.9}]:
-  id==='1135823771'?[{x:543.4,y:446.2}]:[];
  const separate=id==='172704701';
- if(!zones.length&&!liftAreas.length&&!separate)return points;
+ if(!zones.length&&!separate)return points;
  const result=points.map(p=>p.clone());
  // Smooth a bounded number of chords around the owner-selected turns.
  // Each new position uses the ORIGINAL neighbours, avoiding cumulative drift.
@@ -40,13 +38,6 @@ export function polishOwnerRoadSamples(points,wayId){
    const weight=.18*smoothing;
    q.x+=(prior.x+after.x-2*p.x)*weight;
    q.z+=(prior.z+after.z-2*p.z)*weight;
-  }
-  // Adjacent source ramps sometimes occupy an identical depth plane at
-  // X538.7/Y440.9 and X543.4/Y446.2. A small tapered grade offset
-  // eliminates coplanar flicker while keeping both roads and junctions.
-  for(const area of liftAreas){
-   const d=distance(p,area.x,area.y);
-   if(d<4)q.y+=.07*Math.pow(1-d/4,2);
   }
   if(separate){
    const d=distance(p,559.5,406.6);
@@ -64,7 +55,7 @@ export function polishOwnerRoadSamples(points,wayId){
  * when camera crosses a level-of-detail threshold. */
 export function polishCachedOwnerAd(points,rawId){
  const text=String(rawId??''),id=(text.match(/(?:osm-road-|marking-road-)?(\d{7,})(?:-|$)/)||[])[1]||text;
- const removed=['172571864','172441889','443174416','172704752'];
+ const removed=['172571864','172441889','443174416','172704752','172704782','172704807','172704830','172704695','172571880','172571885'];
  if(removed.includes(id))return [];
  let line=points;
  if(id==='172704810'){

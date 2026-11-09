@@ -2,12 +2,12 @@ import * as THREE from 'three';
 // Local vertical correction only: keep the approved OSM street centrelines.
 // The flat museum terrain is at -2.755; use the same 25 mm lift as КПП №7.
 export function createSite113RoadGrade(anchor){
- const version='checkpoint7-site113-grade-v1';
+ const version='checkpoint7-site113-grade-v2-clear-surface';
  const streets=new Set(['172571693','172571703','172571718','172571743','172571754','172571790','172571792','172571808','172571823','172571852','172571888']);
  const widthScale=id=>String(id).split('-').some(v=>streets.has(v))?.45:1;
  const isBaked=data=>data.displayGradeVersion===version||(!data.displayGradeVersion&&(data.editable||data.levels?.medium?.roads||[]).some(row=>widthScale(row.id)<1&&(row.width??row.w)<=1));
  function adjustWidths(graph){for(const way of graph.ways){const scale=widthScale(way.osmId);way.width*=scale;for(const edge of way.segments)edge.width*=scale;}}
- const baseY=-2.755,roadY=baseY+.025,fade=12;
+ const baseY=-2.755,roadY=baseY+.08,fade=12;
  const bounds={minX:anchor.x-36,maxX:anchor.x+7,minZ:anchor.z-7,maxZ:anchor.z+36};
  function weightAt(x,z){
   const d=Math.max(bounds.minX-x,x-bounds.maxX,bounds.minZ-z,z-bounds.maxZ,0);

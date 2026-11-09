@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261108-owner19-v1';
-import {shapeOwnerRail} from './owner-rail-curves.js?v=20261108-owner19-v1';
+import {polishCachedOwnerAd,OWNER_AD_REFINEMENTS_VERSION} from './owner-ad-refinements.js?v=20261109-owner19-v2';
+import {shapeOwnerRail} from './owner-rail-curves.js?v=20261109-owner19-v2';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
 import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 export const ROAD_LOD_VERSION='road-lod-prebuilt-v1';
 const colors={road:0xadb2b3,rail:0x8b8170};
 const phase='prebaked-overview';
-function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads'){
+function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads',alreadyPrepared=false){
  const xyz=[],indices=[];let skipped=0;
  for(const row of rows){
   if(kind==='roads'&&String(row.id)==='37549252'){skipped++;continue;}
@@ -17,9 +17,9 @@ function stripGeometry(rows,geography,point,y,roadGrade=null,kind='roads'){
    if(cut>=2)path=path.slice(0,cut);
   }
   if(kind==='roads'){
-   path=polishCachedOwnerAd(path,row.id);
+   path=alreadyPrepared?path:polishCachedOwnerAd(path,row.id);
    if(path.length<2){skipped++;continue;}
-  }else path=shapeOwnerRail(path,row.id);
+  }else if(!alreadyPrepared)path=shapeOwnerRail(path,row.id);
   if(roadGrade)path=roadGrade.conform(path);
   const runs=kind==='rails'?clipSingleRailAccess(path,row.id).flatMap(run=>clipPad5DuplicateRail(run,row.id)):[path];
   if(!runs.length){skipped++;continue;}
@@ -47,7 +47,7 @@ export function createRoadLOD({data,geography,point,scene,roadGrade=null}){
   const group=new THREE.Group();group.name='Дороги · '+level;root.add(group);
   const stats={};
   for(const kind of ['roads','rails']){
-   const actual=stripGeometry(data.levels[level][kind],geography,point,kind==='roads'?.84:.62,kind==='roads'?roadGrade:null,kind);
+   const actual=stripGeometry(data.levels[level][kind],geography,point,kind==='roads'?.84:.62,kind==='roads'?roadGrade:null,kind,data.ownerRevision===OWNER_AD_REFINEMENTS_VERSION);
    const mat=new THREE.MeshBasicMaterial({color:colors[kind==='roads'?'road':'rail'],side:THREE.DoubleSide,depthWrite:true});
    const mesh=new THREE.Mesh(actual.geometry,mat);
    // The existing RocketTrip physical cutout tool selects exact names.

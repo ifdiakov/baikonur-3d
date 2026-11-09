@@ -4,7 +4,7 @@ import {repairRoadTriangleMesh,ROAD_JUNCTION_REPAIR_VERSION} from './road-juncti
 import {applyEditedRoadEndpointGrades,widthAtEditedRoad,ROAD_EDIT_SHOULDER_EXTRA,ROAD_EDIT_SHOULDER_LIFT,
  ROAD_EDIT_SURFACE_LIFT,ROAD_EDIT_HIGHWAY_LIFT,ROAD_EDIT_PAINT_LIFT,ROAD_EDIT_WHITE_EDGE_WIDTH,
  ROAD_EDIT_WHITE_EDGE_INSET,ROAD_EDIT_CENTER_LINE_WIDTH,ROAD_EDIT_YELLOW_WIDTH,ROAD_EDIT_YELLOW_OFFSET}
- from './road-editor-style.js?v=20261103-road-parity-v3';
+ from './road-editor-style.js?v=20261109-owner19-v2';
 
 export const ROAD_EDIT_MESH_VERSION='stitched-road-union-welded-v6-terrain-clearance';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
@@ -233,7 +233,7 @@ function appendJunctionAprons(roads,paths,buckets,terrainHeightAt){
  const contacts=new Set();
  for(const path of paths){
   const owner=roads.find(r=>r.id===path.id),profile=owner?.profile||{};
-  if(!owner)continue;
+  if(!owner||['road-3','road-8'].includes(owner.id))continue; // Exact T mouths need no circular patches.
   for(const [index,ordinal]of [[0,0],[path.points.length-1,1]]){
    const p=path.points[index],width=path.widths?.[index]??path.width;
    let best=null;
