@@ -46,6 +46,10 @@ export async function verifyEveningNavigation(page,{mode,out}){
  assert.equal(await page.locator('#mythsAccordion').evaluate(e=>e.open),true);
  assert.equal(await page.locator('#traditionsAccordion').evaluate(e=>e.open),true);
  assert(await page.locator('#traditionsAccordion [data-museum-action="story:coins-under-tua"]').isVisible());
+ // NESTED_TRADITIONS_LAYOUT_V1: visible DOM alone is insufficient; no child clipping.
+ const fit=await page.locator('#traditionsAccordion').evaluate(el=>{const group=el.getBoundingClientRect(),entry=el.querySelector('[data-museum-action]').getBoundingClientRect();return {groupBottom:group.bottom,entryBottom:entry.bottom};});
+ assert(fit.entryBottom<=fit.groupBottom+1,'Nested tradition article is clipped by its parent');
+ await page.locator('#traditionsAccordion [data-museum-action="story:coins-under-tua"]').scrollIntoViewIfNeeded();
  assert.equal(await page.locator('#mythsAccordion [data-museum-action]').count(),4);
  assert.equal(await page.locator('#mythsAccordion > summary .sites-accordion-count').textContent(),'4');
  await page.evaluate(()=>window.__RESTORE_FRAME());

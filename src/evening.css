@@ -42,3 +42,8 @@
 #mythsAccordion #traditionsAccordion{margin:8px 0 0;border:1px solid #ffffff20;border-radius:8px}
 #mythsAccordion #traditionsAccordion>summary{padding:9px 7px}
 #mythsAccordion #traditionsAccordion .sites-accordion-title{font-size:9px;letter-spacing:.045em}
+
+/* NESTED_TRADITIONS_LAYOUT_V1 */
+#mythsAccordion #traditionsAccordion{flex:0 0 auto}
+#mythsAccordion #traditionsAccordion>.sites-accordion-body{max-height:none;overflow:visible}
+#mythsAccordion #traditionsAccordion:not([open])>summary .sites-chevron{transform:none}

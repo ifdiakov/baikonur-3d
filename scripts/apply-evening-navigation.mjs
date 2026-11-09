@@ -5,8 +5,10 @@ import {resolve} from 'node:path';
 export const RELEASE='20261109-evening-navigation-v2';
 export const targets=['index.html','museum.html','workshop.html','src/evening-scene.js','src/arrival-flight.js','src/museum-menu.js','src/evening.css'];
 function replaceOnce(text,old,value){assert(text.includes(old),'Expected source not found: '+old.slice(0,100));assert.equal(text.split(old).length,2,'Ambiguous source: '+old.slice(0,80));return text.replace(old,value);}
+const nestedLayoutCSS="\n/* NESTED_TRADITIONS_LAYOUT_V1 */\n#mythsAccordion #traditionsAccordion{flex:0 0 auto}\n#mythsAccordion #traditionsAccordion>.sites-accordion-body{max-height:none;overflow:visible}\n#mythsAccordion #traditionsAccordion:not([open])>summary .sites-chevron{transform:none}\n";
+function finishLayout(path,text){return path==='src/evening.css'&&!text.includes('NESTED_TRADITIONS_LAYOUT_V1')?text+nestedLayoutCSS:text;}
 export function transform(path,text){
- if(text.includes('EVENING_NAVIGATION_V1'))return text;
+ if(text.includes('EVENING_NAVIGATION_V1'))return finishLayout(path,text);
  if(path.endsWith('.html')){
   const start=text.indexOf('<div id="museumLightSwitch"'),end=text.indexOf('</div>\n</div>',start);
   assert(start>0&&end>start,'Original light switch required');
@@ -67,7 +69,7 @@ export function transform(path,text){
  }else if(path==='src/evening.css'){
   text+='\n/* EVENING_NAVIGATION_V1 */\n#arrivalFollow:disabled{opacity:.42;cursor:not-allowed;background:#30425555;border-color:#ffffff1a}\n#arrivalFollow:disabled:hover{background:#30425555;border-color:#ffffff1a}\n#mythsAccordion #traditionsAccordion{margin:8px 0 0;border:1px solid #ffffff20;border-radius:8px}\n#mythsAccordion #traditionsAccordion>summary{padding:9px 7px}\n#mythsAccordion #traditionsAccordion .sites-accordion-title{font-size:9px;letter-spacing:.045em}\n';
  }else throw Error('Unexpected target '+path);
- return text;
+ return finishLayout(path,text);
 }
 export async function apply(){
  for(const path of targets){let text=await readFile(path,'utf8');await writeFile(path,transform(path,text));}
