@@ -1,7 +1,8 @@
+// EVENING_NAVIGATION_V1
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {COMPLEX_HISTORY_MENU} from './complex-history-menu.js?v=20261103-lean-startup-v1';
 
-export const MUSEUM_MENU_VERSION='museum-seven-sections-v13-rd180';
+export const MUSEUM_MENU_VERSION='museum-six-sections-v14-nested-traditions';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -69,7 +70,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
  ]},
  {id:'complexHistoryAccordion',title:'ИСТОРИЯ КОСМОДРОМА',items:COMPLEX_HISTORY_MENU.map(item=>({action:'history:'+item.id,title:item.title,description:item.period+' · '+item.subtitle}))},
  {id:'mythsAccordion',title:'МИФЫ И ЛЕГЕНДЫ',items:[],empty:'Материалы раздела пока не добавлены.'},
- {id:'traditionsAccordion',title:'ТРАДИЦИИ И СУЕВЕРИЯ',items:[],empty:'Истории о традициях и суевериях космодрома готовятся к публикации.'},
+ {id:'traditionsAccordion',parent:'mythsAccordion',title:'ТРАДИЦИИ И СУЕВЕРИЯ',items:[],empty:'Истории о традициях и суевериях космодрома готовятся к публикации.'},
  {id:'graveyardAccordion',title:'КОСМИЧЕСКОЕ КЛАДБИЩЕ',items:[
   {action:'r16-memorial',title:'Катастрофа Р-16',description:'24 октября 1960 · площадка №41'},
   {action:'mik-ruins',title:'Разрушенные пролёты МИК',description:'Площадка №112 · утраченная инфраструктура'}
@@ -95,6 +96,7 @@ export function installMuseumMenu({container,onAction,stories=[]}){
   if(!details)throw new Error('Museum section is missing: '+section.id);
   if(section.catalogue)continue;
   const body=details.querySelector('[data-menu-items]')||details.querySelector('.sites-accordion-body'),counter=details.querySelector('.sites-accordion-count');
+  const nested=[...body.children].filter(child=>child.matches('details.museum-subsection'));
   body.replaceChildren();
   for(const item of section.items){
    const button=document.createElement('button');button.type='button';button.className='museum-menu-entry';button.dataset.museumAction=item.action;
@@ -110,8 +112,11 @@ export function installMuseumMenu({container,onAction,stories=[]}){
    body.append(button);
   }
   if(!section.items.length){const empty=document.createElement('p');empty.className='museum-menu-empty';empty.textContent=section.empty;body.append(empty);}
+  body.append(...nested);
   const count=details.querySelectorAll('[data-museum-action],.entry').length;counter.textContent=String(count);counter.hidden=count===0;
  }
+ // Parent counts include nested stories after both sections have been populated.
+ for(const section of sections){const counter=section.querySelector('.sites-accordion-count');if(section.id==='mythsAccordion'&&counter){const count=section.querySelectorAll('[data-museum-action]').length;counter.textContent=String(count);counter.hidden=count===0;}}
  return {stats:()=>({version:MUSEUM_MENU_VERSION,lastAction,sections:sections.map(section=>{
   const siteIds=[...section.querySelectorAll('[data-site-id]')].map(entry=>entry.dataset.siteId);
   return {id:section.id,open:section.open,

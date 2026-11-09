@@ -1,3 +1,5 @@
+// EVENING_NAVIGATION_V1
+import {verifyEveningNavigation} from './evening-navigation-browser-checks.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
@@ -9,7 +11,7 @@ const digest=b=>createHash('sha256').update(b).digest('hex');
 try{
  if(process.env.VERIFY_PUBLIC==='1'){
   report.publicHashes={};
-  for(const f of ['index.html','museum.html','workshop.html','src/road-editor.js','src/terrain-voids.js','src/workshop-road-editor.js','src/workshop-terrain-voids.js']){
+  for(const f of ['index.html','museum.html','workshop.html','src/road-editor.js','src/terrain-voids.js','src/workshop-road-editor.js','src/workshop-terrain-voids.js','src/evening-scene.js','src/arrival-flight.js','src/arrival-follow-availability.js','src/museum-menu.js','src/evening.css']){
    const expected=digest(await readFile(f));let actual;
    for(let i=0;i<24;i++){const r=await fetch(new URL(f+'?restoration='+Date.now(),base));if(r.ok){actual=digest(Buffer.from(await r.arrayBuffer()));if(actual===expected)break;}await new Promise(r=>setTimeout(r,5000));}
    assert.equal(actual,expected,'Live file mismatch: '+f);report.publicHashes[f]=actual;
@@ -31,6 +33,7 @@ try{
   assert(state.evening.enabled);assert(state.evening.roadLights>100);assert(state.evening.runwayLights>100);assert(state.cars>0);
   assert(!requests.some(url=>/\/src\/public-museum\.js|\/assets\/public-v1\//.test(url)),'Rejected simplified runtime was loaded');
   await page.screenshot({path:out+'/'+mode+'-overview.png',timeout:180000});
+  state.requestedChanges=await verifyEveningNavigation(page,{mode,out});
   if(mode==='desktop'){
    await page.evaluate(async()=>{const q=window.__BAIKONUR_QA;await Promise.all([q.traffic.loadRoadFleet(),q.traffic.loadSprinters(),q.traffic.whenReady()]);});
    const transport=await page.evaluate(()=>__BAIKONUR_QA.traffic.stats());assert(transport.train.modelsReady,'Original train models failed to load');assert.deepEqual(new Set(transport.carStates.map(c=>c.type)),new Set(['land-cruiser','uaz-patriot','uaz-bukhanka','sprinter']));
@@ -40,7 +43,7 @@ try{
    const after=await page.evaluate(()=>({cars:__BAIKONUR_QA.traffic.stats().carStates,train:__BAIKONUR_QA.traffic.stats().train.locomotive,plane:__BAIKONUR_QA.arrival.stats().position}));
    const distance=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]));assert(after.cars.some((c,i)=>distance(c.position,before.cars[i].position)>.001),'Cars did not move');assert(distance(after.train,before.train)>.001,'Train did not move');assert(distance(after.plane,before.plane)>.001,'Aircraft did not move');state.motion={cars:true,train:true,aircraft:true};
    await page.evaluate(()=>{__BAIKONUR_QA.showFlanks();window.__RESTORE_FRAME();});await page.screenshot({path:out+'/desktop-flanks.png',timeout:180000});
-   await page.evaluate(()=>{__BAIKONUR_QA.evening.setEvening(false);window.__RESTORE_FRAME();});assert.equal(await page.evaluate(()=>__BAIKONUR_QA.evening.evening),false);
+   await page.evaluate(()=>{__BAIKONUR_QA.evening.setEvening(false);window.__RESTORE_FRAME();});assert.equal(await page.evaluate(()=>__BAIKONUR_QA.evening.evening),true,'Daylight requests must leave the museum in evening mode');
    await page.evaluate(async()=>{await __BAIKONUR_QA.gagarinTable.load();__BAIKONUR_QA.evening.setEvening(true);__BAIKONUR_QA.gagarinTable.inspect('structure');window.__RESTORE_FRAME();});
    await page.waitForFunction(()=>!__BAIKONUR_QA.stats().transportBake.detailLoading,null,{timeout:240000});await page.evaluate(()=>window.__RESTORE_FRAME());await page.screenshot({path:out+'/desktop-gagarin-night.png',timeout:180000});
   }

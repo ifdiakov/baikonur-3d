@@ -1,3 +1,5 @@
+// EVENING_NAVIGATION_V1
+import {arrivalFollowAvailable} from './arrival-follow-availability.js?v=20261109-evening-navigation-v2';
 import * as THREE from 'three';
 import {captureOrbitSettings,releaseFollowCamera,isCameraTextEntry} from './camera-navigation.js?v=20261101-museum-view-v1';
 import {buildAlrosaAircraft as buildAircraft,AIRCRAFT_SCALE,AIRCRAFT_APPEARANCE_VERSION,AIRCRAFT_LIGHT_FADE,a320Support} from './a320-aircraft.js?v=20261101-a320-tail-v2';
@@ -72,7 +74,7 @@ function buildContrails(parent,path){
  return {mesh,update,stats:()=>({visibleSamples,maxAge:38,emissionAbove:90,cycleDuration:FLIGHT_CYCLE_DURATION,fog:true,distanceFade:[...AIRCRAFT_LIGHT_FADE]})};
 }
 
-export function createArrivalFlight({scene,camera,controls,canvas,airfield,firstAirfield=airfield,complexCenter,container,onFollow,getNavigationBounds}){
+export function createArrivalFlight({scene,camera,controls,canvas,airfield,firstAirfield=airfield,complexCenter,container,onFollow,getNavigationBounds,getFollowBounds=getNavigationBounds}){
  const path=createArrivalPath(airfield,{firstAirfield,complexCenter}),root=new THREE.Group();root.name='Крайний · непрерывный цикл полётов';root.userData.pickable=false;scene.add(root);
  const craft=buildAircraft(root),trail=buildContrails(scene,path);
  let elapsed=0,following=false,paused=false,suppressed=false,lastNow=null,uiSecond=-1,lastTrail=-1,state=path.sample(0),forced=null;
@@ -82,19 +84,28 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
  const labels={inbound:'На подлёте',overflight:'Над космодромом',approach:'Заход на посадку',flare:'Над полосой',rollout:'Пробег до 4/5 ВПП',hold:'Самолёт на стоянке','turn-back':'Разворот для руления','taxi-back':'Возвращение к началу ВПП','turn-takeoff':'Разворот перед взлётом',takeoff:'Разгон и взлёт',departure:'Пролёт через комплекс',away:'За пределами макета'};
  const countdownTitles={inbound:'До стоянки',parking:'До вылета',outbound:'До следующего прилёта'};
  const followTarget=new THREE.Vector3();let savedControls={},lastRelease=null;
+ const canFollow=()=>arrivalFollowAvailable(state,getFollowBounds?.(),suppressed);
+ function syncFollowAvailability(){
+  const available=canFollow(),title=available?(following?'Вращайте мышью или пальцем; колесо — приближение':'Следить за самолётом'):suppressed?'Самолёт недоступен во время реконструкции':'Самолёт за пределами макета';
+  if(follow.disabled===available)follow.disabled=!available;
+  if(follow.title!==title)follow.title=title;
+  const flag=String(!available);if(follow.getAttribute?.('aria-disabled')!==flag)follow.setAttribute('aria-disabled',flag);
+  if(container.dataset.followAvailable!==String(available))container.dataset.followAvailable=String(available);
+  return available;
+ }
  function stopFollowing({releaseCamera=true}={}){
   if(following){
    if(releaseCamera)lastRelease=releaseFollowCamera({camera,controls,savedControls,bounds:getNavigationBounds?.()});
    else Object.assign(controls,savedControls);
   }
-  following=false;lastTrail=-1;root.visible=state.visible&&!suppressed;document.body.classList.remove('following-arrival');follow.textContent='Следить';follow.title='Следить за самолётом';follow.setAttribute('aria-pressed','false');
+  following=false;lastTrail=-1;root.visible=state.visible&&!suppressed;document.body.classList.remove('following-arrival');follow.textContent='Следить';follow.title='Следить за самолётом';follow.setAttribute('aria-pressed','false');syncFollowAvailability();
  }
- function setFollowing(value){if(!value){stopFollowing();return;}if(following)return;
+ function setFollowing(value){if(!value){stopFollowing();return;}if(!syncFollowAvailability())return false;if(following)return true;
   onFollow?.();
   savedControls=captureOrbitSettings(controls);
   Object.assign(controls,{minDistance:5,maxDistance:240,minPolarAngle:.06,maxPolarAngle:Math.PI-.06,enablePan:false,mouseButtons:{LEFT:THREE.MOUSE.ROTATE,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE},touches:{ONE:THREE.TOUCH.ROTATE,TWO:THREE.TOUCH.DOLLY_ROTATE}});
   following=true;lastTrail=-1;root.visible=!suppressed;followTarget.copy(craft.model.position);controls.target.copy(followTarget);camera.position.copy(followTarget).add(V(15,8,18).multiplyScalar(camera.aspect<.8?1.55:1));controls.update();
-  document.body.classList.add('following-arrival');follow.textContent='Свободно';follow.title='Вращайте мышью или пальцем; колесо — приближение';follow.setAttribute('aria-pressed','true');
+  document.body.classList.add('following-arrival');follow.textContent='Свободно';follow.title='Вращайте мышью или пальцем; колесо — приближение';follow.setAttribute('aria-pressed','true');syncFollowAvailability();return true;
  }
  follow.onclick=()=>setFollowing(!following);
  function restart(){elapsed=0;forced=null;lastNow=null;lastTrail=-1;uiSecond=-1;render(0);}
@@ -103,7 +114,7 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
  document.addEventListener('keydown',e=>{if(!isCameraTextEntry(e.target)&&!e.ctrlKey&&!e.metaKey&&!e.altKey&&['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','escape'].includes(e.key.toLowerCase()))stopFollowing();});
  document.addEventListener('visibilitychange',()=>{paused=document.hidden;lastNow=null;});
  const direction=V(0,0,1),rot=new THREE.Quaternion(),bankQ=new THREE.Quaternion(),lastTrailCamera=V(Infinity,Infinity,Infinity);
- function render(t){state=arrivalPose(path,t);const visible=state.visible||following;root.visible=visible&&!suppressed;craft.model.position.copy(state.bodyPosition);
+ function render(t){state=arrivalPose(path,t);if(following&&!canFollow())stopFollowing();syncFollowAvailability();const visible=state.visible||following;root.visible=visible&&!suppressed;craft.model.position.copy(state.bodyPosition);
   const ahead=path.sample(t+.2).heading,turn=new THREE.Vector3().crossVectors(state.heading,ahead).y;
   const banking=!state.onGround&&visible&&(state.segment!=='approach'||state.phaseTime<108);
   const bank=banking?clamp(-turn*12,-.32,.32):0;
@@ -116,14 +127,14 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
   if(Math.abs(t-lastTrail)>.1||lastTrail<0||lastTrailCamera.distanceToSquared(camera.position)>.01){trail.update(t,camera,following);lastTrail=t;lastTrailCamera.copy(camera.position);}
   if(suppressed)trail.mesh.visible=false;
   status=arrivalStatus(statusTimeline,state.cycleTime);
-  const uiKey=state.leg+':'+state.segment+':'+status.seconds;
+  const uiKey=state.leg+':'+state.segment+':'+status.seconds+':'+follow.disabled;
   if(uiKey!==uiSecond){
    uiSecond=uiKey;
    // Only the three major status changes are announced. Reading each second
    // aloud would drown out the map's controls for screen-reader users.
    if(route.textContent!==status.label)route.textContent=status.label;
    clock.textContent=status.seconds+' сек';clock.dateTime='PT'+status.seconds+'S';clock.title=countdownTitles[status.id];
-   label.textContent=labels[state.phase]+(state.segment==='departure'?(state.direction==='northeast'?' · на северо-восток':' · на север'):'');
+   label.textContent=(!canFollow()&&!suppressed?'За пределами макета':labels[state.phase])+(state.segment==='departure'?(state.direction==='northeast'?' · на северо-восток':' · на север'):'');
    container.dataset.leg=String(state.leg);container.dataset.phase=state.segment;
    container.dataset.flightStatus=status.id;container.dataset.flightSeconds=String(status.seconds);
   }
@@ -138,7 +149,7 @@ export function createArrivalFlight({scene,camera,controls,canvas,airfield,first
  render(0);
  return {path,stopFollowing,setFollowing,restart,inspect,setSuppressed(value){suppressed=Boolean(value);lastNow=null;lastTrail=-1;render(elapsed);},setEvening(value){craft.setEvening(value);},seek(seconds){elapsed=Math.max(0,Number.isFinite(seconds)?seconds:0);forced=elapsed;render(elapsed);},resume(){forced=null;lastNow=null;},
   update(now){if(lastNow===null)lastNow=now;if(!paused&&!suppressed&&forced===null)elapsed+=Math.max(0,(now-lastNow)/1000);lastNow=now;render(elapsed);},
-  stats:()=>({appearanceVersion:AIRCRAFT_APPEARANCE_VERSION,appearance:craft.stats(),aircraft:craft.stats(),cameraOffset:camera.position.clone().sub(controls.target).toArray(),lastRelease,version:FLIGHT_CIRCUIT_VERSION,statusVersion:ARRIVAL_STATUS_VERSION,status:{...status},statusTimeline,duration:FLIGHT_CYCLE_DURATION,arrivalDuration:FLIGHT_DURATION,cycleDuration:FLIGHT_CYCLE_DURATION,legDuration:FLIGHT_LEG_DURATION,elapsed:state.cycleTime,totalElapsed:elapsed,phase:state.phase,segment:state.segment,phaseTime:state.phaseTime,phaseRemaining:state.phaseRemaining,leg:state.leg,direction:state.direction,visible:state.visible,suppressed,renderedVisible:root.visible,following,position:state.position.toArray(),velocity:state.velocity.toArray(),
+  stats:()=>({appearanceVersion:AIRCRAFT_APPEARANCE_VERSION,appearance:craft.stats(),aircraft:craft.stats(),cameraOffset:camera.position.clone().sub(controls.target).toArray(),lastRelease,version:FLIGHT_CIRCUIT_VERSION,statusVersion:ARRIVAL_STATUS_VERSION,status:{...status},statusTimeline,duration:FLIGHT_CYCLE_DURATION,arrivalDuration:FLIGHT_DURATION,cycleDuration:FLIGHT_CYCLE_DURATION,legDuration:FLIGHT_LEG_DURATION,elapsed:state.cycleTime,totalElapsed:elapsed,phase:state.phase,segment:state.segment,phaseTime:state.phaseTime,phaseRemaining:state.phaseRemaining,leg:state.leg,direction:state.direction,visible:state.visible,suppressed,renderedVisible:root.visible,following,followAvailable:canFollow(),followBounds:{...getFollowBounds?.()},position:state.position.toArray(),velocity:state.velocity.toArray(),
    attitudeVersion:'positive-approach-v2',pitchDeg:state.pitchDeg,bodyPosition:craft.model.position.toArray(),
    renderedPitchDeg:Math.asin(V(0,0,1).applyQuaternion(craft.model.quaternion).y)*180/Math.PI,
    mainWheelBottom:craft.model.position.y+a320Support(state.pitchDeg*Math.PI/180)*AIRCRAFT_SCALE,

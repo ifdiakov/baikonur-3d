@@ -10,10 +10,11 @@ const [html,catalogue,field,history,railPoints]=await Promise.all([
   readFile(new URL('../index.html',import.meta.url),'utf8'),
   ...['catalog.json','field-research.json','history.json','osm/rail-points.geojson'].map(file=>readFile(new URL('../data/'+file,import.meta.url),'utf8').then(JSON.parse))
 ]);
-const ids=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','complexHistoryAccordion','mythsAccordion','traditionsAccordion','graveyardAccordion'];
-const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','ИСТОРИЯ КОСМОДРОМА','МИФЫ И ЛЕГЕНДЫ','ТРАДИЦИИ И СУЕВЕРИЯ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
-assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.id),ids);
-assert.deepEqual(MUSEUM_SECTIONS.map(section=>section.title),titles);
+// EVENING_NAVIGATION_V1
+const ids=['sitesAccordion','equipmentAccordion','reconstructionsAccordion','complexHistoryAccordion','mythsAccordion','graveyardAccordion'];
+const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','ИСТОРИЯ КОСМОДРОМА','МИФЫ И ЛЕГЕНДЫ','КОСМИЧЕСКОЕ КЛАДБИЩЕ'];
+assert.deepEqual(MUSEUM_SECTIONS.filter(section=>!section.parent).map(section=>section.id),ids);
+assert.deepEqual(MUSEUM_SECTIONS.filter(section=>!section.parent).map(section=>section.title),titles);
 const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html.indexOf('</aside>',asideStart));
 assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the six remaining menu sections in order');
 assert.deepEqual([...aside.matchAll(/<details id="[^"]+" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">([^<]+)<\/span>/g)].map(match=>match[1]),titles,
@@ -105,3 +106,6 @@ for(const input of [1900,1955,1966,1967,1988,2026,2100]){
 assert.equal(history.events.length,18,'Original historical records remain intact');
 assert.ok(history.events.every(event=>/^\d{4}-\d{2}-\d{2}$/.test(event.date)&&event.source?.startsWith('https://')));
 console.log('MENU_CATALOG_CONTRACT_PASS',JSON.stringify({sections:ids.length,launchEntries:expectedLaunch.length+1,launchComplexes:groups.sitesAccordion.length,silos:MUSEUM_SILO_GROUP.siteIds.length,infrastructureSites:groups.infrastructureAccordion.length,sourceStations:stations.length,fieldFinds:field.objects.length,equipmentActions:actions.length,reconstructions:reconstructionActions.length,archiveStories:groupedStories.length,historicalRecords:history.events.length,yearCases:calls.length}));
+
+assert.equal(MUSEUM_SECTIONS.find(s=>s.id==='traditionsAccordion').parent,'mythsAccordion');
+assert.match(aside, /id="mythsAccordion"[\s\S]*id="traditionsAccordion" class="sites-accordion museum-subsection"/);

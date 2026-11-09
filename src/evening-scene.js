@@ -151,17 +151,18 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   if(!isLightAllowed(light.position.x,light.position.z)||!isLightPowered(light.position.x,light.position.z)){excludedByBank.flood++;continue;}
   scene.add(light);floods.push({light,owner:o.g});
  }
- function setEvening(value){evening=!!value;sky.visible=evening;
-  scene.background.set(evening?0x172844:0xb7b5a4);scene.fog.color.set(evening?0x202c46:0xb7b5a4);scene.fog.density=evening?.000115:.00013;
-  hemisphere.color.set(evening?0x9ab5ee:0xbdd7f2);hemisphere.groundColor.set(evening?0x29344b:0x62533d);hemisphere.intensity=evening?.82:2;
-  sun.color.set(evening?0xffb488:0xffdfb4);sun.intensity=evening?.5:2.2;sun.position.set(-700,evening?180:1200,500);
-  for(const [m,c] of originals){m.color.copy(c);if(evening)m.color.multiply(new THREE.Color(0x53647f));}
-  for(const field of fields){if(field.setEvening)field.setEvening(evening);else{field.root.visible=evening;field.setStrength(evening?1:0);}}
-  for(const f of floods)f.light.visible=evening&&f.owner.visible;
-  if(button){button.textContent=evening?'Вечер · огни':'День';button.setAttribute('aria-pressed',String(evening));}
-  if(button)button.title=evening?'Переключить на дневной свет':'Включить вечерний свет';onModeChange?.(evening);
+ // EVENING_NAVIGATION_V1: the public scene and workshop are permanently evening.
+ // Keep the method for callers, but never permit old reconstruction code to enable daylight.
+ function setEvening(){evening=true;sky.visible=true;
+  scene.background.set(0x172844);scene.fog.color.set(0x202c46);scene.fog.density=.000115;
+  hemisphere.color.set(0x9ab5ee);hemisphere.groundColor.set(0x29344b);hemisphere.intensity=.82;
+  sun.color.set(0xffb488);sun.intensity=.5;sun.position.set(-700,180,500);
+  for(const [m,c] of originals)m.color.copy(c).multiply(new THREE.Color(0x53647f));
+  for(const field of fields){if(field.setEvening)field.setEvening(true);else{field.root.visible=true;field.setStrength(1);}}
+  for(const f of floods)f.light.visible=f.owner.visible;
+  onModeChange?.(true);
  }
- button?.addEventListener('click',()=>setEvening(!evening));setEvening(true);
+ button?.remove();setEvening();
  const stationaryLights=[...roadLights,...siteLights,...courtyardLights,...cityLights,...runway,...apron];
  const outsideBankCount=stationaryLights.filter(l=>!permitted(l)).length;
  return {setEvening,refreshRoadEditor,lightPositions:({poweredOnly=false}={})=>stationaryLights.filter(l=>l.visible!==false&&(!poweredOnly||l.powered!==false)).map(l=>[l.x,l.y,l.z]),
@@ -169,7 +170,7 @@ export function buildEveningScene({scene,camera,renderer,sun,layers,objects,road
   get evening(){return evening;},update(now){sky.position.copy(camera.position);facilityLighting.update(now);if(now-lastSync>300){lastSync=now;for(const f of fields)f.sync();for(const f of floods)f.light.visible=evening&&f.owner.visible&&f.owner.parent.visible;}},
   roadLightRecords:()=>roadLights.map(r=>({style:r.style,roadId:r.roadId,stationId:r.stationId,side:r.side,position:[r.x,r.y,r.z],center:r.center,color:r.color,height:r.height,powered:r.powered,brightness:r.brightness,poolRadiusX:r.poolRadiusX,poolRadiusY:r.poolRadiusY})),
   facilityLightRecords:()=>facilityLighting.records(),
-  stats:()=>({version:'evening-road-lighting-v4',evening,roadLights:roadLights.length,site102RemovedRoadLamps,site105RemovedRoadLamps,site105RemovedStationId,excludedByRoadEditor,roadLighting:roadLightLayoutStats(roadLights.filter(l=>l.visible!==false)),roadFixtures:roadField.stats(),facilityLighting:facilityLighting.stats(),siteLights:siteLights.length,runwayLights:runway.length,
+  stats:()=>({version:'evening-road-lighting-v5-locked',evening,permanentEvening:true,roadLights:roadLights.length,site102RemovedRoadLamps,site105RemovedRoadLamps,site105RemovedStationId,excludedByRoadEditor,roadLighting:roadLightLayoutStats(roadLights.filter(l=>l.visible!==false)),roadFixtures:roadField.stats(),facilityLighting:facilityLighting.stats(),siteLights:siteLights.length,runwayLights:runway.length,
    courtyardLights:courtyardLights.map(l=>({siteId:objects.find(o=>o.g===l.owner)?.record.id,position:[l.lightX,l.lightY,l.lightZ],base:[l.x,l.y,l.z],height:l.height})),
    powerFilter:{disabled:stationaryLights.filter(l=>l.powered===false).length,disabledRoads:roadLights.filter(l=>l.powered!==false).length,litSiteIds:[...new Set([...siteLights,...courtyardLights].filter(l=>l.powered!==false).map(l=>objects.find(o=>o.g===l.owner)?.record.id))]},
    airportLighting:{version:AIRPORT_LIGHT_LAYOUT_VERSION,airports:objects.filter(o=>o.g.userData.airport).map(o=>({key:o.g.userData.airport.key,length:o.g.userData.airport.length,approachLength:o.g.userData.airport.approachLength??480,

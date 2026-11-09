@@ -35,3 +35,10 @@
  body.following-arrival #arrivalPanel{display:block!important;margin-top:6px}
  body.following-arrival .navigation-guide,body.following-arrival #timeDock{display:none!important}
 }
+
+/* EVENING_NAVIGATION_V1 */
+#arrivalFollow:disabled{opacity:.42;cursor:not-allowed;background:#30425555;border-color:#ffffff1a}
+#arrivalFollow:disabled:hover{background:#30425555;border-color:#ffffff1a}
+#mythsAccordion #traditionsAccordion{margin:8px 0 0;border:1px solid #ffffff20;border-radius:8px}
+#mythsAccordion #traditionsAccordion>summary{padding:9px 7px}
+#mythsAccordion #traditionsAccordion .sites-accordion-title{font-size:9px;letter-spacing:.045em}
