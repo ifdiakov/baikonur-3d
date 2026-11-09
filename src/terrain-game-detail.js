@@ -170,7 +170,7 @@ diffuseColor.rgb*=mix(vec3(1.0),
 function createClearanceMask({bounds,geography,osmRoads,osmRails,transport,point,pad,site2}){
  const canvas=document.createElement('canvas');
  canvas.width=canvas.height=MASK_RESOLUTION;
- const ctx=canvas.getContext('2d');
+ const ctx=canvas.getContext('2d',{willReadFrequently:true});
  const size=worldMaskSize,unit=MASK_RESOLUTION/size;
  const toXY=(x,z)=>[(x-bounds.minX)*unit,(z-bounds.minZ)*unit];
  const center=toXY((pad.x+site2.x)/2,(pad.z+site2.z)/2);

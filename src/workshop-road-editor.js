@@ -99,6 +99,24 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   if(attached)replaceSourceGeometry();
   return attached;
  }
+ // The deferred network is cut off the UI thread. Keep originals for Undo/Redo.
+ // If the owner edits a road during preparation, recut the latest state before
+ // attaching it; stale deletions must never flash into the visible scene.
+ async function attachRoadMeshesAsync(meshes,cut){
+  const added=(meshes||[]).filter(m=>m?.isMesh&&targets.has(m.name)&&!originals.has(m));
+  if(!added.length)return 0;
+  const all=[...sourceMeshes,...added];
+  const source=all.map(mesh=>({name:mesh.name,geometry:originals.get(mesh)||mesh.geometry}));
+  for(;;){
+   const signature=JSON.stringify([state.hidden,joinedPaths]);
+   const result=await cut({meshes:source,hidden:state.hidden,joinedPaths,sourceRoads:base});
+   if(signature!==JSON.stringify([state.hidden,joinedPaths])){for(const g of result.geometries)g?.dispose();continue;}
+   for(const mesh of added){sourceMeshes.push(mesh);originals.set(mesh,mesh.geometry);maskedMeshNames.push(mesh.name);}
+   for(let i=0;i<all.length;i++){const mesh=all[i],original=originals.get(mesh);if(mesh.geometry!==original)mesh.geometry.dispose();mesh.geometry=result.geometries[i]||original;}
+   physicalCutStats={version:ROAD_GEOMETRY_CUT_VERSION,meshes:sourceMeshes.length,...result.stats};
+   return added.length;
+  }
+ }
  const panel=document.createElement('section');panel.id='roadEditorPanel';panel.hidden=true;
  panel.setAttribute('aria-label','Редактор автомобильных дорог');
  panel.innerHTML='<div class="road-editor-heading"><b>АВТОДОРОГИ</b><button type="button" data-action="close" aria-label="Закрыть редактор">×</button></div>'
@@ -409,7 +427,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  }catch{status.textContent='Сохранённая схема повреждена. Импортируйте её из JSON или очистите правки.';}
  if(!readOnly)button?.addEventListener('click',()=>setActive(!active));
  setMode('draw');
- return {get active(){return active;},setActive,undo,redo,finish,attachRoadMeshes,
+ return {get active(){return active;},setActive,undo,redo,finish,attachRoadMeshes,attachRoadMeshesAsync,
   replaceSnapshot(data){const valid=validateRoadEdits(data);checkpoint();Object.assign(state,valid);draft=[];render();return clone();},snapshot:clone,maskAt,roadLightRemoved,path:id=>{const r=joinedPaths.find(r=>r.id===id);return r?{id:r.id,width:r.width,points:r.points.map(p=>[...p])}:null;},stats:()=>({version:ROAD_EDITOR_VERSION,meshVersion:ROAD_EDIT_MESH_VERSION,readOnly,active,mode,
    added:state.added.length,hidden:state.hidden.length,baselineAdded:baselineData?.added.length||0,baselineHidden:baselineData?.hidden.length||0,baselineRevision:baselineData?.revision||null,styleVersion:ROAD_EDIT_STYLE_VERSION,
    draftPoints:draft.length,history:history.length,sourceRoadPaths:base.length,selectedRoads:routes.length,

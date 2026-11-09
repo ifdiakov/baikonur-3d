@@ -63,8 +63,8 @@ export function createRoadLOD({data,geography,point,scene,roadGrade=null}){
  let current='none';
  function update(height,detailedRoots){
   const requested=height>900?'far':height>350?'medium':'full';
-  if(current===requested)return current;
-  for(const [name,entry]of Object.entries(levels))entry.group.visible=name===requested;
+  if(current!==requested)for(const [name,entry]of Object.entries(levels))entry.group.visible=name===requested;
+  // Newly installed roots must obey the active LOD even without a level change.
   for(const obj of detailedRoots||[])if(obj)obj.visible=requested==='full';
   current=requested;return current;
  }

@@ -133,12 +133,14 @@ export function createRailStations({stations,paths,roads=[],parent,clickable,fir
  }
 
  const api={labels:()=>labels,plans:()=>plans,
-  replan(nextPaths,nextRoads=roads){
-   plans=planRailStations(stations,nextPaths,nextRoads);
+  applyPlans(nextPlans){
+   if(nextPlans.length!==labels.length||nextPlans.some((p,i)=>p.id!==labels[i].id))throw Error('Station plan identity mismatch');
+   plans=nextPlans;
    labels.forEach((s,i)=>{s.plan=plans[i];s.group.position.fromArray(s.plan.position);s.group.rotation.y=s.plan.yaw||0;fillStationDetail(s,i);});
    if(lastCamera)api.update(lastCamera);
    return {count:labels.filter(s=>!s.plan.skipped).length,relocated:plans.filter(p=>p.shiftAlongRail).length,roadCollisionSkips:plans.filter(p=>p.skipped==='road-overlap').length};
   },
+  replan(nextPaths,nextRoads=roads){return api.applyPlans(planRailStations(stations,nextPaths,nextRoads));},
   async load(){
    if(state.status==='ready')return true;if(pending)return pending;state.status='loading';state.error=null;
    pending=(async()=>{try{const source=await loadSource();loadedSource=source;
