@@ -21,18 +21,18 @@ try{
   const file=mode==='baseline'?'qa-reference.html':mode==='workshop'?'workshop.html':'museum.html';
   await page.goto(new URL(file+'?tour=0',base).href,{waitUntil:'domcontentloaded',timeout:180000});
   await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:240000});
-  await page.evaluate(()=>{__BAIKONUR_QA.arrival.pause();__BAIKONUR_QA.traffic.pause();__BAIKONUR_QA.setAltitude(430,'pad-112a');});
+  await page.evaluate(()=>{__BAIKONUR_QA.arrival.seek(80);__BAIKONUR_QA.traffic.seek(80);__BAIKONUR_QA.setAltitude(430,'pad-112a');});
   await page.evaluate(()=>{window.__HEART={start:performance.now(),last:performance.now(),gaps:[],ticks:0};window.__HEART_TIMER=setInterval(()=>{const h=__HEART,now=performance.now();h.gaps.push(now-h.last);h.last=now;h.ticks++;},50);});
   await page.waitForTimeout(150);await page.evaluate(()=>__TRANSITION_DEBUG.requestTransportDetail());
   let inputRoundTripMs=null;
   if(mode!=='baseline'){
-   await page.waitForFunction(()=>__BAIKONUR_QA.stats().transportBake.job?.state==='building');
+   await page.waitForFunction(()=>{const j=__BAIKONUR_QA.stats().transportBake.job;return j?.state==='building'||j?.error;});
    const inputStart=Date.now();await page.locator('#search').evaluate(e=>{e.value='Союз';e.dispatchEvent(new Event('input',{bubbles:true}));});await page.locator('#search').evaluate(e=>{e.value='';e.dispatchEvent(new Event('input',{bubbles:true}));});inputRoundTripMs=Date.now()-inputStart;
    assert(inputRoundTripMs<2500,'UI must respond during worker calculation');
   }
-  await page.waitForFunction(()=>__BAIKONUR_QA.stats().transportBake.detailReady,null,{timeout:300000});await page.waitForTimeout(120);
+  await page.waitForFunction(()=>{const b=__BAIKONUR_QA.stats().transportBake;return b.detailReady||b.job?.error;},null,{timeout:300000});await page.waitForTimeout(120);
   const metric=await page.evaluate(()=>{clearInterval(__HEART_TIMER);return{totalMs:Math.round(performance.now()-__HEART.start),maxTimerGapMs:Math.round(Math.max(...__HEART.gaps)),ticks:__HEART.ticks,bake:__BAIKONUR_QA.stats().transportBake};});
-  console.log('TRANSITION_READY',mode,JSON.stringify(metric));assert.deepEqual(errors,[]);
+  console.log('TRANSITION_READY',mode,JSON.stringify(metric));report.lastMeasurement={mode,...metric};assert(metric.bake.detailReady,JSON.stringify(metric.bake));assert.deepEqual(errors,[]);
   if(mode!=='baseline'){assert.equal(metric.bake.job.state,'ready');assert.equal(metric.bake.attempts,1);assert(metric.maxTimerGapMs<2500,'Preparation must not freeze the UI: '+metric.maxTimerGapMs);}
   const signature=await page.evaluate(async()=>{
    const out=[],roots=[];__TRANSITION_DEBUG.scene.traverse(o=>{if(/^OpenStreetMap · (автодороги|железнодорожные пути)$/.test(o.name))roots.push(o);});
