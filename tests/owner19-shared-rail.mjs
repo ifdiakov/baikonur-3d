@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
 import {gunzipSync} from 'node:zlib';
+import * as THREE from 'three';
+import {roundOwnerRailCorners} from '../src/owner-rail-curves.js';
 const b=JSON.parse(gunzipSync(await readFile('data/osm/transport-geometry-bake-v1.json.gz'))),rails=b.terrain.rails;
 assert.equal(b.railRevision,'20261109-owner19-shared-rail-v3');assert(b.fingerprint.includes(b.railRevision));
 const main=rails.filter(r=>r.sourceWayId==='37547653'),branch=rails.filter(r=>r.sourceWayId==='37548027');
@@ -13,5 +15,9 @@ assert(gaps.every(p=>p.main<.17&&p.branch<.02),'Both exact branch endpoints must
 const interior=[.25,.5,.75].map(t=>endpoints[0].map((v,i)=>v+(endpoints[1][i]-v)*t)),interiorGaps=interior.map(p=>({main:gap(p,main),branch:gap(p,branch)}));
 assert(interiorGaps.every(p=>p.main<.17),'The through-track segments must cover the common approach in 3D');
 assert(interiorGaps.every(p=>p.branch>1),'The branch must not draw a second segment across the common approach');
-await mkdir('qa-owner19',{recursive:true});await writeFile('qa-owner19/shared-rail.json',JSON.stringify({passed:true,revision:b.railRevision,commonTrackDrawnOnce:true,junctionGaps:gaps,interiorGaps},null,2));
+const sample=[[600,440],[600,437],[600,435],[605,430],[605,425],[605,420],[605,413],[610,410],[610,407],[610,404]].map(([x,y])=>new THREE.Vector3((x-650)*3.4,.68,(y-522.5)*3.4));
+let rounded=0;const result=roundOwnerRailCorners(sample,'37547653',ps=>{rounded++;return ps.map(p=>p.clone());});
+assert.equal(rounded,2,'Both untouched outer sections retain the original corner-rounding pass');
+assert(sample.slice(3,7).every(p=>result.includes(p)),'The common approach must retain its exact points');
+await mkdir('qa-owner19',{recursive:true});await writeFile('qa-owner19/shared-rail.json',JSON.stringify({passed:true,revision:b.railRevision,commonTrackDrawnOnce:true,outerCornerRoundingPreserved:true,junctionGaps:gaps,interiorGaps},null,2));
 console.log('OWNER19_SHARED_RAIL_PASS',JSON.stringify({gaps,interiorGaps}));
