@@ -54,6 +54,12 @@ try{
    const [a,b]=boxes;assert(a.x+a.width<=b.x||b.x+b.width<=a.x||a.y+a.height<=b.y||b.y+b.height<=a.y,'Building cards overlap');assert.equal(await page.locator('.site-label[data-site-id="pad-112a"]').isVisible(),false);
   }
   await page.evaluate(()=>{__BAIKONUR_QA.setAltitude(300,'pad-31');__STEP();});await page.screenshot({path:out+'/'+mode+'-detail.png',timeout:180000});assert(await page.evaluate(()=>__BAIKONUR_QA.stats().shadersValid));
+  // NP_ROYALTENT_ACCEPTANCE
+  if(mode!=='baseline'){
+   await page.evaluate(()=>{__BAIKONUR_QA.focusSite('np-31-1');__STEP();});
+   const np=await page.evaluate(()=>__BAIKONUR_QA.np31());assert.equal(np.instanceCount,1);assert(np.visible);assert.equal(np.model.version,'rockettrip-np-royaltent-20261109-v3');assert.equal(np.model.tentSpecs.length,2);assert(np.model.tentSpecs.every(t=>t.chords===12&&t.anchorBolts===16));assert.deepEqual(np.model.mapCoordinates,{x:912.9,y:304.9});assert(await page.evaluate(()=>__BAIKONUR_QA.evening.evening));
+   await page.screenshot({path:out+'/'+mode+'-np-evening.png',timeout:180000});await writeFile(out+'/'+mode+'-np.json',JSON.stringify(np,null,2));
+  }
   if(mode==='workshop'){await page.evaluate(()=>__MUSEUM_WORKSHOP.select('pad-113'));const old=Number(await page.locator('#wsHeight').inputValue());await page.locator('#wsHeight').fill(String(old+1));await page.locator('#wsApply').click();await page.locator('#wsUndo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),old);}
   assert.deepEqual(errors,[]);report.checks.push({mode,...metric,inputRoundTripMs,geometryCount:signature.length,signature,errors});await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();browser=null;
  }

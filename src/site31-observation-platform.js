@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {MUSEUM_METRE} from './museum-scale.js';
+import {appendRoyalTent,NP_TENT_VERSION} from './np-royaltent.js?v=20261109-rt100-v1';
 import {registerFacilityFloodlights} from './facility-light-anchors.js';
 
-export const SITE31_NP_VERSION='rockettrip-np-photo-20261108-v2';
+export const SITE31_NP_VERSION='rockettrip-np-royaltent-20261109-v3';
 export const NP_MAP_POSITION=Object.freeze({x:912.9,y:304.9});
 const V=(...p)=>new THREE.Vector3(...p);
 // The owner's pin is authoritative. Roads are measured, never moved, and
@@ -38,6 +39,9 @@ export function buildSite31Observation({plan}={}){
   earth:new THREE.MeshStandardMaterial({color:0x91836c,roughness:1}),
   gravel:new THREE.MeshStandardMaterial({color:0xb2aaa0,roughness:1}),
   fabric:new THREE.MeshStandardMaterial({color:0xf0eee7,roughness:.91,side:THREE.DoubleSide}),
+  canopy:new THREE.MeshStandardMaterial({color:0xf7f6f0,roughness:.72,metalness:0,side:THREE.DoubleSide}),
+  tentSeam:new THREE.MeshStandardMaterial({color:0xdbdcd5,roughness:.8,side:THREE.DoubleSide}),
+  tentGlass:new THREE.MeshStandardMaterial({color:0xc4d3d8,transparent:true,opacity:.21,roughness:.18,metalness:.08,side:THREE.DoubleSide,depthWrite:false}),
   trim:new THREE.MeshStandardMaterial({color:0xc1c3bf,roughness:.7}),
   metal:new THREE.MeshStandardMaterial({color:0x7e8587,metalness:.65,roughness:.42}),
   turf:new THREE.MeshStandardMaterial({color:0x607146,roughness:1}),
@@ -59,7 +63,7 @@ export function buildSite31Observation({plan}={}){
   };
   logo.src=new URL('../assets/models/sprinter/hood-logo-original-v1.png',import.meta.url).href;
  }
- const batches=new Map(),features=[];
+ const batches=new Map(),features=[],tentSpecs=[];
  function add(geometry,material,name){
   const g=geometry.index?geometry.toNonIndexed():geometry;
   if(material!=='flag')g.deleteAttribute('uv'); // Solid surfaces share a single material batch.
@@ -89,36 +93,8 @@ export function buildSite31Observation({plan}={}){
   const cz=-5.5;
   box('Шатёр · настил',10,.1,10,cx,.07,cz,'gravel');
   box('Шатёр · зелёное покрытие',9.9,.025,9.9,cx,.135,cz,'turf');
-  const height=(x,z)=>{const a=Math.cos(x*Math.PI/10),b=Math.cos(z*Math.PI/10);return .35+4.85*(a+b-a*b)+.7*a*b;};
-  surface('Шатёр · арочная мембрана',(u,v)=>{const x=u*10-5,z=v*10-5;return [cx+x,height(x,z),cz+z];},24,24,'fabric');
-  // Four bowed edge trusses; triangulated webs remain visible under fabric.
-  for(let side=0;side<4;side++){
-   const edge=t=>side===0?[t,-5]:side===1?[5,t]:side===2?[t,5]:[-5,t];
-   const p=(t,drop=0)=>{const [x,z]=edge(t);return [cx+x,height(x,z)-drop,cz+z];};
-   for(let j=0;j<20;j++){
-    const a=-5+j*.5,b=a+.5;
-    rod('Арочная ферма · пояс',p(a,.055),p(b,.055),.055);
-    rod('Арочная ферма · нижний пояс',p(a,.27),p(b,.27),.045);
-    rod('Арочная ферма · раскос',p(a,.055),p(b,.27),.025);
-   }
-   const front=side===0,open=front&&cx<0;
-   // Photo: left pavilion has a wide open arch; right has a double door.
-   for(let j=0;j<40;j++){
-    const a=-5+j*.25,b=a+.25;
-    const bottom=t=>open?Math.max(.25,height(...edge(t))*.70):front&&Math.abs((a+b)/2)<1.1?2.3:.18;
-    surface('Шатёр · тканевая стенка',(u,v)=>{const t=a+(b-a)*u,[x,z]=edge(t),top=height(x,z)-.30,low=Math.min(top,bottom(t));return [cx+x,low+(top-low)*v,cz+z];},1,3,'fabric');
-   }
-  }
-  // Curved roof seams are real geometry, lifted from the membrane.
-  for(const x of [-2.5,0,2.5])for(let j=0;j<24;j++){
-   const a=-5+j*10/24,b=a+10/24;rod('Шов тента',[cx+x,height(x,a)+.018,cz+a],[cx+x,height(x,b)+.018,cz+b],.012,'trim');
-  }
-  for(const x of [-5,5])for(const z of [-5,5])box('Пятка фермы',.48,.12,.48,cx+x,.1,cz+z,'metal');
-  if(cx>0){
-   box('Шатёр · стеклянные двери',2.05,2.05,.04,cx,1.2,cz-5.035,'dark');
-   for(const x of [-1.08,0,1.08])rod('Дверная рама',[cx+x,.15,cz-5.08],[cx+x,2.32,cz-5.08],.035,'trim');
-   rod('Перемычка двери',[cx-1.08,2.32,cz-5.08],[cx+1.08,2.32,cz-5.08],.035,'trim');
-  }else{
+  tentSpecs.push(appendRoyalTent({cx,cz,door:cx>0,add}));
+  if(cx<0){
    for(const x of [-3,3]){
     box('Стол под шатром',1.8,.08,.65,cx+x,1.08,cz+2,'fabric');
     for(const dx of [-.65,.65])rod('Ножка стола',[cx+x+dx,.15,cz+2],[cx+x+dx,1.05,cz+2],.035);
@@ -169,12 +145,12 @@ export function buildSite31Observation({plan}={}){
  for(const [x,y,w,h] of [[4.85,2.3,.06,.42],[5.02,2.48,.28,.06],[5.15,2.39,.06,.2],[5.02,2.3,.28,.06]])box('Парковка · P',w,h,.01,x,y,7.972,'fabric');
  for(const [key,geometries] of batches){
   const merged=mergeGeometries(geometries,false);geometries.forEach(g=>g.dispose());
-  const mesh=new THREE.Mesh(merged,materials[key]);mesh.name='НП · '+key;mesh.receiveShadow=true;mesh.castShadow=true;
+  const mesh=new THREE.Mesh(merged,materials[key]);mesh.name='НП · '+key;mesh.receiveShadow=true;mesh.castShadow=key!=='tentGlass';
   mesh.userData.museumComponent='observation-platform';root.add(mesh);
  }
  const geometry={meshes:root.children.length,triangles:0};root.traverse(o=>{if(o.isMesh)geometry.triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;});
  root.userData.observationPlatform={version:SITE31_NP_VERSION,id:'np-31-1',widthMetres:50,lengthMetres:35,
-  shelters:2,shelterAreaM2:100,parkingDepthMetres:10,wcCabins:6,flagpoles:8,lamps:5,
+  shelters:2,shelterAreaM2:100,tentVersion:NP_TENT_VERSION,tentSpecs,parkingDepthMetres:10,wcCabins:6,flagpoles:8,lamps:5,
   positionBasis:plan.source,mapCoordinates:{...NP_MAP_POSITION},geometry,features,
   references:['1YyLXppTbBCmUx5q20dN3m_qYSS3RAsAC','1X6ZPCmt5y2xr0dQnyc2rFHyljd8r9eF_','1uCzwbDpp7bdzlLVSkWeHd1T33vX8GcYG']};
  return root;

@@ -22,10 +22,13 @@ np.rotation.y=0;np.position.set(0,0,0);np.updateMatrixWorld(true);
 const size=new THREE.Box3().setFromObject(np).getSize(new THREE.Vector3());
 assert(Math.abs(size.x-50*MUSEUM_METRE)<.1&&Math.abs(size.z-35*MUSEUM_METRE)<.1);
 assert(size.y<7*MUSEUM_METRE,'Flagpoles/roofs must not be stretched vertically');
-assert(data.geometry.meshes<=12&&data.geometry.triangles<40000,'NP should stay lightweight');
+assert(data.geometry.meshes<=14&&data.geometry.triangles<72000,'NP should stay lightweight');
 np.traverse(o=>{if(o.isMesh){assert(o.geometry.attributes.normal);assert([...o.geometry.attributes.position.array].every(Number.isFinite));}});
 const source=readFileSync('index.html','utf8'),transport=readFileSync('src/osm-transport.js','utf8');
 assert(source.includes("siteRoot.add(g)"));assert(source.includes("['np','np31-1']"));
 assert(!transport.includes("root.name='НП"),'Transport must not create a duplicate NP after the detailed network loads');
 assert(!source.includes('museum-placed-near-existing-road'));
-console.log('NP_PHOTO_GEOMETRY_PASS',JSON.stringify({size:size.toArray(),...data.geometry}));
+assert.equal(data.tentSpecs.length,2);
+assert.equal(data.tentSpecs[0].openEntrance,true);assert.equal(data.tentSpecs[1].doorLeaves,2);
+for(const tent of data.tentSpecs){assert.equal(tent.height,5.549);assert.equal(tent.entranceHeight,4.413);assert.equal(tent.chords,12);assert.equal(tent.anchorBolts,16);assert.equal(tent.cornerClearPanels,4);}
+console.log('NP_ROYALTENT_GEOMETRY_PASS',JSON.stringify({size:size.toArray(),...data.geometry}));

@@ -21,7 +21,7 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA?.np31?.().present&&document.body.classList.contains('museum-ready'),null,{timeout:240000});
  const state=await page.evaluate(()=>({np:__BAIKONUR_QA.np31(),site:__BAIKONUR_QA.siteState('np-31-1'),camera:__BAIKONUR_QA.cameraState(),transport:__BAIKONUR_QA.stats().transportBake}));
  assert(state.np.visible);assert.equal(state.np.instanceCount,1);assert.deepEqual(state.site.map,[912.9,304.9]);
- assert.equal(state.np.model.version,'rockettrip-np-photo-20261108-v2');assert.equal(state.np.model.shelters,2);
+ assert.equal(state.np.model.version,'rockettrip-np-royaltent-20261109-v3');assert.equal(state.np.model.shelters,2);
  assert(Math.hypot(state.camera.target[0]-state.np.position[0],state.camera.target[2]-state.np.position[2])<2);
  // Let the deferred detailed transport finish and ensure it never adds the old canopy.
  await page.waitForFunction(()=>!__BAIKONUR_QA.stats().transportBake.detailLoading,null,{timeout:180000});
