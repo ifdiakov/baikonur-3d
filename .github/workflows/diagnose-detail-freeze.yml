@@ -1,0 +1,43 @@
+name: Profile detail transition main thread
+on:
+  push:
+    branches: [fix/nonblocking-detail-20261109]
+    paths: ['.github/workflows/diagnose-detail-freeze.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          if ! grep -q DETAIL_FIDELITY_V2 index.html; then node scripts/apply-nonblocking-detail.mjs; fi
+          node scripts/refine-detail-fidelity.mjs
+          npm install --no-save three@0.160.1 playwright@1.57.0 esbuild@0.25.12
+          npx esbuild src/transport-detail-worker-entry.js --bundle --platform=browser --format=esm --minify --outfile=src/transport-detail-worker.bundle.js
+          npx playwright install --with-deps chromium
+      - run: python3 -m http.server 8765 --bind 127.0.0.1 &
+      - name: Collect CPU profile before retaining the strict pause assertion
+        env:
+          QA_MODES: desktop
+          QA_OUT: qa-freeze/profile
+        run: |
+          node --input-type=module <<'JS'
+          import {readFile,writeFile} from 'node:fs/promises';
+          let code=await readFile('tests/transport-transition-browser.mjs','utf8');
+          code=code.replace("await page.waitForTimeout(150);await page.evaluate(()=>__TRANSITION_DEBUG.requestTransportDetail());", "const cdp=await context.newCDPSession(page);await cdp.send('Profiler.enable');await cdp.send('Profiler.setSamplingInterval',{interval:1000});await cdp.send('Profiler.start');await page.waitForTimeout(150);await page.evaluate(()=>__TRANSITION_DEBUG.requestTransportDetail());");
+          code=code.replace("console.log('TRANSITION_READY',mode,JSON.stringify(metric));", "const cpu=await cdp.send('Profiler.stop');await writeFile(out+'/main-thread.cpuprofile',JSON.stringify(cpu.profile));console.log('TRANSITION_READY',mode,JSON.stringify(metric));");
+          await writeFile('tests/profile-detail.generated.mjs',code);
+          await import('./tests/profile-detail.generated.mjs');
+          JS
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: detail-main-thread-profile
+          path: qa-freeze/
+          retention-days: 3
