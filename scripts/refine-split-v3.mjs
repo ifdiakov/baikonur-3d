@@ -1,0 +1,30 @@
+import {readFile,writeFile} from 'node:fs/promises';
+async function edit(file,changes){let s=await readFile(file,'utf8');for(const [a,b]of changes){if(s.includes(b))continue;if(!s.includes(a))throw Error('Expected v3 source not found: '+file+' / '+a.slice(0,70));s=s.replace(a,b);}await writeFile(file,s);}
+await edit('src/terrain-voids.js',[["return {add,mask,update,stats:", `return {add,mask,update,exportPolygons(){update();return items.filter(i=>i.enabled.value).map(i=>{const s=i.shape;let p=s.polygon;if(!p){const rx=s.rx-.04,rz=s.rz-.04;p=s.shape==='rectangle'?[[-rx,-rz],[rx,-rz],[rx,rz],[-rx,rz]]:Array.from({length:40},(_,n)=>[Math.cos(n/40*Math.PI*2)*rx,Math.sin(n/40*Math.PI*2)*rz]);p=p.map(([x,z])=>[x+(s.x||0),z+(s.z||0)]);}const points=p.map(([x,z])=>{const w=new THREE.Vector3(x,0,z).applyMatrix4(i.root.matrixWorld);return [w.x,w.z];});return {points,bounds:[Math.min(...points.map(p=>p[0])),Math.min(...points.map(p=>p[1])),Math.max(...points.map(p=>p[0])),Math.max(...points.map(p=>p[1]))]};});},stats:`]]);
+await edit('scripts/build-public-scene.mjs',[
+ ["import {mkdir,readFile,writeFile}","import {bakeSiteRoadInk} from './bake-site-road-ink.mjs';\nimport {mkdir,readFile,writeFile}"],
+ ["steppeSurface,roadLOD,riverSurface};", "steppeSurface,roadLOD,riverSurface,portalVoids,ukssCutout};"],
+ ["seed.models=Object.values(MODEL_CATALOG)", "seed.voids=await page.evaluate(()=>{const b=window.__BUILD,T=b.THREE,r=b.portalVoids.exportPolygons(),g=b.objects.find(o=>o.record.id==='pad-250').g;if(b.ukssCutout?.polygon){const points=b.ukssCutout.polygon.map(([x,z])=>{const p=g.localToWorld(new T.Vector3(x,0,z));return [p.x,p.z];});r.push({points,bounds:[Math.min(...points.map(p=>p[0])),Math.min(...points.map(p=>p[1])),Math.max(...points.map(p=>p[0])),Math.max(...points.map(p=>p[1]))]});}return r;});\n seed.models=Object.values(MODEL_CATALOG)"],
+ ["window.__ATLAS.width=window.__ATLAS.height=1024;", "window.__ATLAS.width=window.__ATLAS.height=1024;window.__FULL_ATLAS=document.createElement('canvas');window.__FULL_ATLAS.width=window.__FULL_ATLAS.height=4096;"],
+ ["b.renderer.render(b.scene,cam);window.__ATLAS", "b.renderer.render(b.scene,cam);window.__FULL_ATLAS.getContext('2d').drawImage(b.renderer.domElement,x*1024,z*1024,1024,1024);window.__ATLAS"],
+ ["seed.build={errors,overviewTriangles:", "await bakeSiteRoadInk(page,seed,out);\n seed.build={errors,overviewTriangles:"],
+ ["await writeFile('data/public-scene.json',JSON.stringify(seed));", "await writeFile('data/public-scene.json',JSON.stringify(seed));\n let html=await readFile('museum.html','utf8');html=html.replace(/(public-museum\\.(?:js|css)\\?v=)[^'\\\"<> ]+/g,'$1'+seed.fingerprint);await writeFile('museum.html',html);"]
+]);
+await edit('src/public-museum.js',[
+ ["import * as THREE from 'three';", "import * as THREE from 'three';\nimport {buildSurfacePatch,maskTerrain} from './public-terrain-patch.js';"],
+ ["scene.add(mesh);tiles.push({x,z,mesh", "maskTerrain(mat,data.voids||[],[l+x*(r-l)/cols,t+z*(b-t)/cols,l+(x+1)*(r-l)/cols,t+(z+1)*(b-t)/cols]);scene.add(mesh);tiles.push({x,z,mesh"],
+ ["t.mesh.geometry.setAttribute('uv',new THREE.BufferAttribute(t.localUV,2));", "t.mesh.geometry.attributes.uv.copyArray(t.localUV);t.mesh.geometry.attributes.uv.needsUpdate=true;"],
+ ["v.t.mesh.geometry.setAttribute('uv',new THREE.BufferAttribute(v.t.atlasUV,2));", "v.t.mesh.geometry.attributes.uv.copyArray(v.t.atlasUV);v.t.mesh.geometry.attributes.uv.needsUpdate=true;"],
+ ["scene.add(root);details.set(id,root);", "if(s.terrainPatch){const texture=await materialTexture(s.terrainPatch.url);root.add(buildSurfacePatch({bounds:s.terrainPatch.bounds,worldBounds:data.bounds,segments:data.segments,heights:data.heights,texture,night,voids:data.voids||[]}));}scene.add(root);details.set(id,root);"],
+ ["Math.max(1.7,mobile?2.5:1.8)", "(mobile?2:1.25)"],
+ ["for(const t of tiles)t.mesh.material.color.setHex(night?0x737e87:0xffffff);", "for(const t of tiles)t.mesh.material.color.setHex(night?0x737e87:0xffffff);for(const root of details.values())root.traverse(o=>{if(o.userData.publicTerrainPatch)o.material.color.setHex(night?0x737e87:0xffffff);});"],
+ ["return h[k]*(1-fx)*(1-fz)+h[k+1]*fx*(1-fz)+h[k+n+1]*(1-fx)*fz+h[k+n+2]*fx*fz;", "return fx+fz<=1?h[k]+(h[k+1]-h[k])*fx+(h[k+n+1]-h[k])*fz:h[k+n+2]+(h[k+n+1]-h[k+n+2])*(1-fx)+(h[k+1]-h[k+n+2])*(1-fz);"],
+ ["sourceFingerprint:data.fingerprint", "shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),terrainVoids:(data.voids||[]).length,sourceFingerprint:data.fingerprint"]
+]);
+await edit('tests/museum-split-browser.mjs',[
+ ["assert.equal(Number(await page.locator('#wsHeight').inputValue()),Number(initial)+2);", "assert(Math.abs(Number(await page.locator('#wsHeight').inputValue())-Number(initial)-2)<1e-6);"],
+ ["assert.deepEqual(errors,[]);await context.close();", "assert.deepEqual(errors,[]);if(mode==='museum')assert((await page.evaluate(()=>window.__MUSEUM_PUBLIC.metrics())).shadersValid);await context.close();"],
+ ["report.functional.roadEditorVisible=true;", "report.functional.roadEditorVisible=true;await page.locator('#wsRoadDraw').click();const beforeRoad=await page.evaluate(()=>window.__MUSEUM_WORKSHOP.snapshot());const x=Number(await page.locator('#wsRoadX').inputValue());await page.locator('#wsRoadX').fill(String(x+.2));await page.locator('#wsPointApply').click();await page.locator('#wsRoadApply').click();assert((await page.evaluate(()=>window.__MUSEUM_WORKSHOP.snapshot())).roadEdits.added.length>beforeRoad.roadEdits.added.length);await page.locator('#wsUndo').click();report.functional.numericRoadEditing=true;"]
+]);
+let html=await readFile('index.html','utf8');if(!html.includes('PUBLIC_MUSEUM_DEFAULT')){html=html.replace('<head>',`<head><script>/* PUBLIC_MUSEUM_DEFAULT */if((location.pathname.endsWith('/')||location.pathname.endsWith('/index.html'))&&!location.search&&!location.hash)location.replace('./museum.html');</script>`);await writeFile('index.html',html);}
+console.log('SPLIT_V3_TERRAIN_AND_ACCEPTANCE_READY');

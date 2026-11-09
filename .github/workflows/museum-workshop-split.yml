@@ -2,7 +2,7 @@ name: Build and verify museum and workshop
 on:
   push:
     branches: [main, feat/museum-workshop-split-20261109]
-    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/refine-split-*.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', '.github/workflows/museum-workshop-split.yml']
+    paths: ['museum.html', 'index.html', 'src/**', 'data/**', 'scripts/prepare-workshop.mjs', 'scripts/refine-split-*.mjs', 'scripts/bake-site-road-ink.mjs', 'scripts/build-public-scene.mjs', 'tests/museum-split-browser.mjs', 'tests/workshop-state.mjs', '.github/workflows/museum-workshop-split.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -29,6 +29,7 @@ jobs:
       - name: Validate and prepare workshop
         run: |
           node scripts/refine-split-v2.mjs
+          node scripts/refine-split-v3.mjs
           node tests/workshop-state.mjs
           node scripts/prepare-workshop.mjs
           node --check src/public-museum.js
@@ -48,7 +49,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html workshop.html src/road-editor.js src/workshop-panel.js src/public-museum.js src/public-museum.css scripts/prepare-workshop.mjs scripts/build-public-scene.mjs tests/museum-split-browser.mjs assets/public-v1 data/public-scene.json PROJECT_CONTEXT.md
+          git add index.html museum.html workshop.html src scripts tests assets/public-v1 data/public-scene.json PROJECT_CONTEXT.md
           if ! git diff --cached --quiet; then
             git commit -m 'Build verified visitor scene and workshop entrypoint'
             git push origin HEAD:${{ github.ref_name }}
@@ -91,7 +92,7 @@ jobs:
           cp /tmp/public-build.log qa-museum-split/ 2>/dev/null || true
           cp /tmp/museum-http.log qa-museum-split/ 2>/dev/null || true
           cp data/public-scene.json qa-museum-split/ 2>/dev/null || true
-          tar -czf /tmp/split-result-source.tar.gz src/workshop* src/public-museum* scripts/prepare-workshop.mjs scripts/build-public-scene.mjs tests/museum-split-browser.mjs museum.html workshop.html data/public-scene.json assets/public-v1 2>/dev/null || true
+          tar -czf /tmp/split-result-source.tar.gz src/workshop* src/public-* src/terrain-voids.js scripts/prepare-workshop.mjs scripts/build-public-scene.mjs scripts/bake-site-road-ink.mjs tests/museum-split-browser.mjs museum.html workshop.html data/public-scene.json assets/public-v1 2>/dev/null || true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
