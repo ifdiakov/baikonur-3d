@@ -1,0 +1,94 @@
+name: Verify and publish the 19 owner geometry corrections
+on:
+  push:
+    branches: [main, fix/owner19-geometry-20261109]
+    paths: ['index.html','museum.html','workshop.html','src/**','data/**','tests/owner19-*.mjs','scripts/repair-owner19.mjs','.github/workflows/owner19-geometry.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+concurrency:
+  group: owner19-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  geometry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'github-pages' || 'museum-candidate' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Apply only the requested source geometry corrections
+        run: node scripts/repair-owner19.mjs
+      - name: Install browser and geometry verification
+        run: |
+          npm install --no-save three@0.160.1 playwright@1.57.0
+          npx playwright install --with-deps chromium
+      - name: Serve the complete original museum
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/owner19-http.log 2>&1 &
+      - name: Rebuild coherent transport cache and overview from corrected geometry
+        run: |
+          node scripts/build-transport-bake.mjs
+          node scripts/build-authoritative-road-lod.mjs
+      - name: Check original appearance contract, UKSS access and 19 locations
+        run: |
+          node tests/owner19-source.mjs
+          node tests/site250a-geometry.mjs
+          node tests/owner19-browser.mjs
+      - name: Check the independent workshop still edits objects and roads
+        env:
+          QA_MODES: workshop
+          QA_OUT: qa-owner19/workshop
+        run: node tests/original-museum-browser.mjs
+      - name: Commit tested source and generated transport together
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html museum.html workshop.html src data scripts/build-transport-bake.mjs scripts/build-authoritative-road-lod.mjs PROJECT_CONTEXT.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Apply verified owner19 geometry and matching transport cache; preserve full museum'
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+          git rev-parse HEAD > qa-owner19/source-commit.txt
+      - name: Assemble the full museum and independent admin
+        if: github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p /tmp/owner19-pages
+          git archive HEAD | tar -xf - -C /tmp/owner19-pages
+          rm -rf /tmp/owner19-pages/.github /tmp/owner19-pages/tests /tmp/owner19-pages/scripts
+      - uses: actions/upload-pages-artifact@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          path: /tmp/owner19-pages
+      - uses: actions/deploy-pages@v4
+        if: github.ref == 'refs/heads/main'
+      - name: Verify the deployed revision and repeat all 19 browser checks
+        if: github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_OUT: qa-owner19/public
+          VERIFY_PUBLIC: '1'
+        run: node tests/owner19-browser.mjs
+      - name: Verify the public workshop
+        if: github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_MODES: workshop
+          QA_OUT: qa-owner19/public-workshop
+        run: node tests/original-museum-browser.mjs
+      - name: Preserve the exact tested source and screenshots
+        if: always()
+        run: |
+          mkdir -p qa-owner19
+          cp /tmp/owner19-http.log qa-owner19/ 2>/dev/null || true
+          tar -czf qa-owner19/tested-source.tar.gz index.html museum.html workshop.html src data/owner19-release.json data/road-edits-authoritative-20261103.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz tests/owner19-*.mjs 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: owner19-geometry-evidence
+          path: qa-owner19/
+          retention-days: 7

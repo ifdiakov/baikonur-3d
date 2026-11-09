@@ -1,48 +1,42 @@
 import * as THREE from 'three';
-// Owner railway corrections. Existing source graph remains authoritative.
-export const OWNER_RAIL_CURVES_VERSION='20261108-targeted-rail-connections-v1';
-const map=p=>[p.x/3.4+650,p.z/3.4+522.5];
-const near=(p,x,y,r)=>Math.hypot(...map(p).map((v,i)=>v-[x,y][i]))<r;
-const w=(x,y,ref)=>new THREE.Vector3((x-650)*3.4,ref?.y??-2.755,(y-522.5)*3.4);
-/** Shape the Site 5 approach into a long tangent-continuous curve between
- * registered owner endpoints; never alter the train's through source. */
-export function shapeOwnerRail(points,wayId){
- if(points.length<4)return points;
- const id=String(wayId??'');
- if(id!=='37548027')return points;
- let first=points.findIndex(p=>near(p,607.2,416.4,.5)),
-     last=points.findIndex(p=>near(p,600.35,429.44,.65));
- if(first<0||last<=first+1)return points;
- const a=points[first],b=points[last];
- const controls=[a,w(605.2,420.9,a),w(604.6,425.7,b),b];
- const spline=new THREE.CatmullRomCurve3(controls,false,'centripetal',.45);
- const samples=Array.from({length:37},(_,i)=>{
-  const p=spline.getPoint(i/36),y=a.y+(b.y-a.y)*i/36;
-  p.y=y;return p;
- });
- return [...points.slice(0,first),...samples,...points.slice(last+1)];
+export const OWNER_RAIL_CURVES_VERSION='20261109-owner19-continuous-rail-v2';
+const w=(x,z,y=.653)=>new THREE.Vector3((x-650)*3.4,y,(z-522.5)*3.4);
+const idOf=id=>String(id??'').match(/\d{7,}/)?.[0]||String(id??'');
+const planar=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z);
+// One bounded alignment drives ballast, rails, sleepers, cache and vehicles.
+const profiles={
+ '37547653':[[609.6,431.32],[607.25,428.7],[604.6,425.7],[605.2,420.9],[608.3,414.62]],
+ '37546649':[[539.45,439.2],[538.2,436.9],[538.2,434.7],[537.9,431.5],[539.2,426.9]],
+ '37548027':[[607.76,415.31],[605.2,420.9],[604.6,425.7],[600.35,429.44]]
+};
+function closestVertex(points,target){let best=-1,d=Infinity;for(let i=0;i<points.length;i++){const n=planar(points[i],target);if(n<d){d=n;best=i;}}return {i:best,d};}
+export function shapeOwnerRail(points,rawId){
+ const spec=profiles[idOf(rawId)];if(!spec||points.length<4)return points;
+ let a=closestVertex(points,w(...spec[0])),b=closestVertex(points,w(...spec.at(-1)));
+ if(a.d>5||b.d>5||Math.abs(a.i-b.i)<2)return points;
+ let control=spec;if(a.i>b.i){[a,b]=[b,a];control=[...spec].reverse();}
+ const first=points[a.i],last=points[b.i],knots=control.map(([x,z],i)=>w(x,z,i===0?first.y:i===control.length-1?last.y:Math.max(.653,first.y+(last.y-first.y)*i/(control.length-1))));
+ knots[0]=first.clone();knots[knots.length-1]=last.clone();
+ const curve=new THREE.CatmullRomCurve3(knots,false,'centripetal');
+ const count=Math.max(60,Math.ceil(curve.getLength()/.45)),samples=curve.getPoints(count);
+ // Preserve the crossing datum while rounding the horizontal alignment.
+ for(const p of samples){const z=p.z/3.4+522.5;if((idOf(rawId)==='37546649'&&z>=433&&z<=438)||(idOf(rawId)!=='37546649'&&z>=419.5&&z<=427))p.y=Math.max(.653,p.y);}
+ return [...points.slice(0,a.i),...samples,...points.slice(b.i+1)];
 }
-/** Does a display rail actually cover all checkpoints in the desired seam? */
-export function missingOwnerRailSeam(railPaths){
- const ends=[[579,389],[581.1,387],[583.2,385],[585.3,383],[587.4,380.9]];
- return ends.some(([x,y])=>{
-  const p=w(x,y),threshold=3.1;
-  for(const line of railPaths){
-   const pts=line.points||[];
-   // Fast bounding-box prefilter avoids scanning thousands of remote rails.
-   if(!pts.some(v=>Math.abs(v.x-p.x)<18&&Math.abs(v.z-p.z)<18))continue;
-   for(let i=1;i<pts.length;i++){
-    const a=pts[i-1],b=pts[i],dx=b.x-a.x,dz=b.z-a.z,len=dx*dx+dz*dz;
-    if(!len)continue;
-    const t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.z-a.z)*dz)/len));
-    if(Math.hypot(p.x-a.x-t*dx,p.z-a.z-t*dz)<threshold)return false;
-   }
-  }
-  return true;
- });
+export function missingOwnerRailSeam(paths){const mid=w(583.2,385);return !paths.some(r=>r.points.some(p=>planar(p,mid)<2));}
+// Join real trimmed ends, including height and tangent, instead of drawing
+// a separate piece at the ground datum below the existing rail heads.
+export function makeOwnerRailSeam(paths){
+ const find=target=>{let best=null;for(const r of paths){if(!String(r.id).includes('37546649'))continue;for(const i of [0,r.points.length-1]){const p=r.points[i],d=planar(p,target);if(!best||d<best.d)best={p,inner:r.points[i===0?Math.min(3,r.points.length-1):Math.max(0,i-3)],d};}}return best;};
+ const a=find(w(579,389)),b=find(w(587.4,380.9));if(!a||!b||a.d>5||b.d>5)throw Error('Owner railway seam endpoints are not present');
+ const reach=Math.min(12,planar(a.p,b.p)/3),ta=a.p.clone().sub(a.inner).setY(0).normalize(),tb=b.inner.clone().sub(b.p).setY(0).normalize();
+ const c1=a.p.clone().addScaledVector(ta,reach),c2=b.p.clone().addScaledVector(tb,-reach),curve=new THREE.CubicBezierCurve3(a.p,c1,c2,b.p),out=curve.getPoints(Math.ceil(curve.getLength()/.5));
+ out.forEach((p,i)=>{const t=i/(out.length-1);p.y=a.p.y+(b.p.y-a.p.y)*t*t*(3-2*t);});return out;
 }
-export function makeOwnerRailSeam(){
- const points=[[579,389],[581.1,387.1],[583.2,385],[585.3,383],[587.4,380.9]];
- const path=new THREE.CatmullRomCurve3(points.map(([x,y])=>w(x,y)),false,'centripetal',.35);
- return Array.from({length:41},(_,i)=>path.getPoint(i/40));
+export function matchOwnerTrainToRenderedRail(points,paths){
+ const rendered=paths.find(r=>r.id==='osm-rail-37547653');if(!rendered)return points;
+ const local=rendered.points.filter(p=>{const x=p.x/3.4+650,y=p.z/3.4+522.5;return x>598&&x<615&&y>412&&y<433;});if(local.length<4)return points;
+ let a=closestVertex(points,local[0]),b=closestVertex(points,local.at(-1));if(a.d>2||b.d>2)return points;
+ if(a.i>b.i){[a,b]=[b,a];local.reverse();}
+ return [...points.slice(0,a.i),...local.map(p=>p.clone()),...points.slice(b.i+1)];
 }

@@ -1,63 +1,11 @@
-name: Bake detailed road geometry offline
+name: Transport bake archive
+# Avoid publishing stale cache data over a concurrent verified release.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'src/transport-bake.js'
-      - 'src/osm-transport.js'
-      - 'src/site250a-through-road.js'
-      - 'src/road-surface.js'
-      - 'data/osm/roads.geojson'
-      - 'data/osm/railways.geojson'
-      - 'data/osm/catalog-matches.json'
-      - 'data/road-edits-authoritative-20261103.json'
-      - 'data/catalog.json'
-      - 'scripts/build-transport-bake.mjs'
-      - 'scripts/build-authoritative-road-lod.mjs'
-      - '.github/workflows/bake-transport-meshes.yml'
 permissions:
-  contents: write
-concurrency:
-  group: baikonur-transport-baker
-  cancel-in-progress: true
+  contents: read
 jobs:
-  bake:
+  archive:
     runs-on: ubuntu-24.04
-    timeout-minutes: 24
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Install Chromium
-        run: |
-          npm install --no-save playwright@1.57.0
-          npx playwright install --with-deps chromium
-      - name: Export full road mesh from production renderer
-        run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 &
-          sleep 2
-          node scripts/build-transport-bake.mjs
-      - name: Generate source-correct author-filtered LOD
-        run: node scripts/build-authoritative-road-lod.mjs
-      - name: Commit compressed precompiled road network
-        run: |
-          # Binary gzip output cannot be rebased. Reapply the newly produced
-          # two assets onto the latest main and commit there (fast-forward only).
-          cp data/osm/transport-geometry-bake-v1.json.gz /tmp/baikonur-transport-bake.gz
-          cp data/osm/road-lod-authoritative-v1.json.gz /tmp/baikonur-authoritative-lod.gz
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          for attempt in 1 2 3 4; do
-            git fetch origin main
-            git reset --hard origin/main
-            cp /tmp/baikonur-transport-bake.gz data/osm/transport-geometry-bake-v1.json.gz
-            cp /tmp/baikonur-authoritative-lod.gz data/osm/road-lod-authoritative-v1.json.gz
-            git add data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz
-            if git diff --cached --quiet; then exit 0; fi
-            git commit -m "build: bake owner-filtered road and rail LOD"
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 3
-          done
-          exit 1
+      - run: echo 'Transport preparation is included atomically in owner19-geometry.yml, with source parity and browser acceptance before publication.'
