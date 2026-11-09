@@ -1,3 +1,4 @@
+# CI_RELIABILITY_V1
 name: Verify fast Baikonur loading
 on:
   push:
@@ -26,14 +27,32 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+      - name: Select relevant checks before downloading tools
+        id: ci_scope
+        run: node scripts/ci/impact.mjs verify-loading-optimization.yml
       - uses: actions/setup-node@v4
+        if: steps.ci_scope.outputs.run == 'true'
         with:
           node-version: '22'
+      - name: Reuse downloaded verification dependencies
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: museum-npm-${{ runner.os }}-v1
+      - name: Reuse matching browser binaries
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: museum-playwright-${{ runner.os }}-1.57.0
       - name: Install geometry and browser tests
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           npm install --no-save three@0.160.1 playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Verify optimized load path and history contracts
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           node tests/transport-bake.mjs
           node tests/road-prebuilt-lod.mjs
@@ -41,12 +60,13 @@ jobs:
           node tests/complex-history.mjs
           node tests/menu-catalog-contract.mjs
       - name: Profile actual first frame and on-demand history
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 &
           sleep 2
           node tests/loading-profile-browser.mjs
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: (always()) && (steps.ci_scope.outputs.run == 'true')
         with:
           name: loading-profile
           path: qa-loading/

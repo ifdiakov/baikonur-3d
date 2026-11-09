@@ -1,3 +1,4 @@
+# CI_RELIABILITY_V1
 name: Verify hidden authoring overlays
 on:
   push:
@@ -22,31 +23,51 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+      - name: Select relevant checks before downloading tools
+        id: ci_scope
+        run: node scripts/ci/impact.mjs verify-authoring-overlays.yml
       - uses: actions/setup-node@v4
+        if: steps.ci_scope.outputs.run == 'true'
         with:
           node-version: '22'
+      - name: Reuse downloaded verification dependencies
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: museum-npm-${{ runner.os }}-v1
+      - name: Reuse matching browser binaries
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: museum-playwright-${{ runner.os }}-1.57.0
       - name: Apply targeted owner change on isolated release branch
-        if: github.ref_name == 'fix/hide-authoring-overlays-20261109'
+        if: (github.ref_name == 'fix/hide-authoring-overlays-20261109') && (steps.ci_scope.outputs.run == 'true')
         run: |
           if ! grep -q 'coordinate-grid-v5-default-hidden' src/coordinate-grid.js; then
             python3 scripts/hide-authoring-overlays-20261109.py
           fi
       - name: Check changed JavaScript
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           node --check src/camera-altitude.js
           node --check src/coordinate-grid.js
           node --check src/transport-reference-labels.js
           node --check tests/authoring-overlays-browser.mjs
       - name: Install browser verification dependencies
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Serve checkout
+        if: steps.ci_scope.outputs.run == 'true'
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
       - name: Check real desktop and mobile museum rendering
+        if: steps.ci_scope.outputs.run == 'true'
         run: node tests/authoring-overlays-browser.mjs
       - name: Commit verified changes to release branch only
-        if: github.ref_name == 'fix/hide-authoring-overlays-20261109'
+        if: (github.ref_name == 'fix/hide-authoring-overlays-20261109') && (steps.ci_scope.outputs.run == 'true')
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -57,19 +78,19 @@ jobs:
           fi
           echo VERIFIED_RELEASE_SHA=$(git rev-parse HEAD)
       - name: Verify public file hashes and browser rendering after Pages deploy
-        if: github.ref_name == 'main'
+        if: (github.ref_name == 'main') && (steps.ci_scope.outputs.run == 'true')
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_PREFIX: public
         run: node tests/authoring-overlays-browser.mjs
       - name: Preserve release source evidence
-        if: always()
+        if: (always()) && (steps.ci_scope.outputs.run == 'true')
         run: |
           mkdir -p qa-authoring-overlays
           git diff -- src/camera-altitude.js src/coordinate-grid.js src/transport-reference-labels.js index.html PROJECT_CONTEXT.md > qa-authoring-overlays/source.patch
           git rev-parse HEAD > qa-authoring-overlays/release-sha.txt
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: (always()) && (steps.ci_scope.outputs.run == 'true')
         with:
           name: authoring-overlays-evidence-${{ github.ref_name == 'main' && 'public' || 'candidate' }}
           path: qa-authoring-overlays/

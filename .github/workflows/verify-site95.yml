@@ -1,3 +1,4 @@
+# CI_RELIABILITY_V1
 name: Site 95 housing district
 on:
   pull_request:
@@ -18,21 +19,41 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+      - name: Select relevant checks before downloading tools
+        id: ci_scope
+        run: node scripts/ci/impact.mjs verify-site95.yml
       - uses: actions/setup-node@v4
+        if: steps.ci_scope.outputs.run == 'true'
         with:
           node-version: '22'
+      - name: Reuse downloaded verification dependencies
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: museum-npm-${{ runner.os }}-v1
+      - name: Reuse matching browser binaries
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: museum-playwright-${{ runner.os }}-1.57.0
       - name: Install verification dependencies
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Validate source geometry and performance budget
+        if: steps.ci_scope.outputs.run == 'true'
         run: node tests/site95-source.mjs
       - name: Serve checkout
+        if: steps.ci_scope.outputs.run == 'true'
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
       - name: Inspect town views in museum and on mobile
+        if: steps.ci_scope.outputs.run == 'true'
         run: node tests/site95-browser.mjs
       - name: Verify live deployment and repeat browser check
-        if: github.event_name != 'pull_request'
+        if: (github.event_name != 'pull_request') && (steps.ci_scope.outputs.run == 'true')
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_PREFIX: public
@@ -40,7 +61,7 @@ jobs:
           node scripts/verify-site95-published.mjs
           node tests/site95-browser.mjs
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: (always()) && (steps.ci_scope.outputs.run == 'true')
         with:
           name: site95-evidence
           path: qa-site95/

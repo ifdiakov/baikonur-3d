@@ -1,3 +1,4 @@
+import {canonicalSignature} from '../scripts/ci/signature.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
@@ -39,7 +40,7 @@ try{
    return rows.sort((a,b)=>a.name.localeCompare(b.name));
   });
   await writeFile(out+'/'+mode+'-geometry.json',JSON.stringify(signature,null,2));
-  if(mode==='baseline')reference={signature,...metric};else if(reference)assert.deepEqual(signature,reference.signature,'Original road, rail, lamp and material data differs');
+  if(mode==='baseline')reference={signature,...metric};else if(reference)assert.deepEqual(canonicalSignature(signature),canonicalSignature(reference.signature),'Original road, rail, lamp and material data differs');
   if(mode!=='baseline'){
    for(const h of [760,430,300,760,300])await page.evaluate(h=>{__BAIKONUR_QA.setAltitude(h,'pad-112a');__TRANSITION_DEBUG.requestTransportDetail();},h);assert.equal(await page.evaluate(()=>__TRANSITION_DEBUG.bake().attempts),1);
    await page.evaluate(()=>__BAIKONUR_QA.openObject('building-mzk'));assert.equal(await page.locator('#title').textContent(),'МЗК');assert((await page.locator('#description').textContent()).includes('Спальня Бога'));

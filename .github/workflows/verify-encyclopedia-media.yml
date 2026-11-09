@@ -1,3 +1,4 @@
+# CI_RELIABILITY_V1
 name: Encyclopedia media and 3D cards
 on:
   push:
@@ -30,25 +31,45 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Select relevant checks before downloading tools
+        id: ci_scope
+        run: node scripts/ci/impact.mjs verify-encyclopedia-media.yml
       - uses: actions/setup-node@v4
+        if: steps.ci_scope.outputs.run == 'true'
         with:
           node-version: '22'
+      - name: Reuse downloaded verification dependencies
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: museum-npm-${{ runner.os }}-v1
+      - name: Reuse matching browser binaries
+        if: steps.ci_scope.outputs.run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: museum-playwright-${{ runner.os }}-1.57.0
       - name: Static media contracts and source mappings
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           node --check src/encyclopedia-3d.js
           node tests/encyclopedia-media-data.mjs
       - name: Install browser tests
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           npm install --no-save playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Serve the museum
+        if: steps.ci_scope.outputs.run == 'true'
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 &
           sleep 2
       - name: Verify the encyclopedia card imagery and 3D
+        if: steps.ci_scope.outputs.run == 'true'
         run: node tests/encyclopedia-media-browser.mjs
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: (always()) && (steps.ci_scope.outputs.run == 'true')
         with:
           name: encyclopedia-media-visuals
           path: qa-encyclopedia-media/
