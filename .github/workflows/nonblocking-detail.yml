@@ -36,6 +36,7 @@ jobs:
           npm install --no-save three@0.160.1 playwright@1.57.0 esbuild@0.25.12
           npx esbuild src/transport-detail-worker-entry.js --bundle --platform=browser --format=esm --minify --outfile=src/transport-detail-worker.bundle.js
           npx playwright install --with-deps chromium
+          node tests/site31-observation.mjs
       - name: Serve exact original and repaired scene
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/transition-http.log 2>&1 &
       - name: Compare exact geometry and verify responsiveness, full card text and unobstructed controls
@@ -70,6 +71,15 @@ jobs:
           REFERENCE_REPORT: qa-freeze/local/report.json
           VERIFY_PUBLIC: '1'
         run: node tests/transport-transition-browser.mjs
+      - name: Verify published tent revision and actual evening close-ups
+        if: github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_OUT: qa-freeze/np-public
+          QA_MODES: desktop
+          FIXTURE: '0'
+          VERIFY_PUBLIC: '1'
+        run: node tests/np-royaltent-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
