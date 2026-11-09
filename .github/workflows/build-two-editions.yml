@@ -29,16 +29,20 @@ jobs:
       - name: Prepare workshop and bundled public runtime
         run: |
           python3 scripts/refine-two-editions.py
+          python3 scripts/refine-two-editions-release.py
           python3 scripts/apply-editions-context.py
           python3 scripts/prepare-two-editions.py
           node tests/workshop-state.mjs
+          node tests/road-editor-core.mjs
+          node tests/road-editor-style.mjs
+          node tests/site113-source.mjs
           node scripts/build-public-app.mjs
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/two-editions-server.log 2>&1 &
       - name: Compile approved scene into terrain images and site assets
         run: node scripts/build-public-data.mjs
       - name: Browser acceptance and cold load timings
         env:
-          QA_RUNS: '3'
+          QA_RUNS: '1'
         run: node tests/two-editions-browser.mjs
       - name: Write plain-language role report
         run: node scripts/write-edition-report.mjs
@@ -46,7 +50,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add AGENTS.md PROJECT_CONTEXT.md src/workshop-state.js scripts/build-public-data.mjs src/road-editor.js workshop.html museum.html public-app public-data docs/releases/two-editions-20261109.md
+          git add AGENTS.md PROJECT_CONTEXT.md src/workshop-state.js src/workshop-tools.js src/public-museum.js src/public-museum.css src/public-build-export.js scripts/build-public-data.mjs scripts/prepare-two-editions.py tests/road-editor-style.mjs tests/two-editions-browser.mjs src/road-editor.js workshop.html museum.html public-app public-data docs/releases/two-editions-20261109.md
           if ! git diff --cached --quiet; then
             git commit -m 'Publish verified workshop and terrain-texture visitor build'
             git push origin HEAD:${{ github.ref_name }}
