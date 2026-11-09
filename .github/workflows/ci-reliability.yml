@@ -5,71 +5,45 @@ on:
     paths: ['scripts/ci/**','scripts/apply-ci-reliability.mjs','tests/ci-reliability.mjs','.github/workflows/**']
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: ci-reliability-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   policy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 4
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Apply delivery controls without editing the application
+      - name: Confirm committed controls need no generated changes
         run: |
           node scripts/apply-ci-reliability.mjs
           node scripts/ci/fix-signature.mjs
+          git diff --exit-code
       - name: Test selection, strict comparisons, failure reporting and deadlines
         run: node tests/ci-reliability.mjs
-      - name: Verify unchanged website and preserved test commands
+      - name: Verify preparation did not change the application and old test commands remain
         run: |
           git diff --exit-code -- src assets data index.html museum.html workshop.html
+          git fetch --no-tags --depth=1 origin 0e51ec655d05d7f52fbbc3bb38868824b552e63d
           python3 - <<'PY'
           import pathlib,re,subprocess
+          base='0e51ec655d05d7f52fbbc3bb38868824b552e63d'
           for f in pathlib.Path('.github/workflows').glob('*.yml'):
             text=f.read_text()
             if not text.startswith('# CI_RELIABILITY_V1\n') or f.name=='nonblocking-detail.yml': continue
-            old=subprocess.check_output(['git','show','HEAD:'+str(f)],text=True)
+            old=subprocess.check_output(['git','show',base+':'+str(f)],text=True)
             old_tests=set(re.findall(r'node ((?:tests|scripts)/[^\s;]+\.mjs)',old))
             new_tests=set(re.findall(r'node ((?:tests|scripts)/[^\s;]+\.mjs)',text))
             assert old_tests <= new_tests,(f,old_tests-new_tests)
-          print('APPLICATION_UNCHANGED_AND_EXISTING_TEST_COMMANDS_RETAINED')
+          print('APPLICATION_PREPARATION_UNCHANGED_AND_EXISTING_TEST_COMMANDS_RETAINED')
           PY
-      - name: Reuse browser verification downloads
-        if: github.ref_name == 'fix/ci-reliability-20261109'
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.npm
-            ~/.cache/ms-playwright
-          key: museum-ci-live-${{ runner.os }}-playwright1.57.0-three0.160.1
-      - name: Install live acceptance tools once
-        if: github.ref_name == 'fix/ci-reliability-20261109'
+      - name: Record actual change classification
         run: |
-          npm install --no-save three@0.160.1 playwright@1.57.0
-          npx playwright install --with-deps chromium
-      - name: Verify the already-published tents without repeating unchanged road construction
-        if: github.ref_name == 'fix/ci-reliability-20261109'
-        env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
-          QA_OUT: qa-ci/live
-          QA_MODES: desktop,mobile,workshop
-          FIXTURE: '0'
-          VERIFY_PUBLIC: '1'
-        run: node scripts/ci/run-bounded.mjs 300 targeted-live node tests/np-royaltent-browser.mjs
-      - name: Record verified policy on candidate branch only
-        if: github.ref_name == 'fix/ci-reliability-20261109'
-        run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add .github/workflows PROJECT_CONTEXT.md tests/transport-transition-browser.mjs
-          if ! git diff --cached --quiet; then
-            git commit -m 'Gate unrelated tests, fix snapshot comparison and require verified release evidence'
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          node scripts/ci/impact.mjs release
           git rev-parse HEAD > qa-ci/source-commit.txt
       - uses: actions/upload-artifact@v4
         if: always()
