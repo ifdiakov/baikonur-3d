@@ -19,11 +19,13 @@ export function workflowPaths(source){
 export function classify(changes,patterns=null){
  const meaningful=changes.filter(c=>!infrastructure(c.path)&&!(ENTRYPOINTS.includes(c.path)&&c.before!==null&&c.after!==null&&normalizeEntry(c.before)===normalizeEntry(c.after)));
  const appChanges=changes.filter(c=>!infrastructure(c.path)&&!c.path.startsWith('tests/')&&!c.path.startsWith('scripts/'));
- const runtime=appChanges.length>0;
+ const adminFiles=new Set(['workshop.html','src/workshop-panel.js','src/workshop-panel.css','src/workshop-network-core.js','src/workshop-network-editor.js','src/workshop-rail-editor.js','src/workshop-state-network.js']);
+ const workshopOnly=appChanges.length>0&&appChanges.every(c=>adminFiles.has(c.path));
+ const runtime=appChanges.length>0&&!workshopOnly;
  const npPaths=new Set(['src/np-royaltent.js','src/site31-observation-platform.js']);
  const npOnly=runtime&&meaningful.some(c=>npPaths.has(c.path))&&meaningful.every(c=>npPaths.has(c.path)||c.path.startsWith('tests/np-royaltent')||c.path.startsWith('tests/site31-observation')||c.path==='tests/fixtures/np-photo.html'||c.path==='tests/transport-transition-browser.mjs'||c.path==='scripts/apply-np-royaltent.mjs');
  const selected=!patterns||!patterns.length?meaningful.length>0:meaningful.some(c=>patterns.some(p=>matches(c.path,p)));
- return {run:selected,runtime,profile:!runtime?'infrastructure':npOnly?'np':'full',meaningful:meaningful.map(c=>c.path),cacheOnlyEntries:changes.filter(c=>ENTRYPOINTS.includes(c.path)&&!meaningful.includes(c)).map(c=>c.path)};
+ return {run:selected,runtime,profile:workshopOnly?'workshop':!runtime?'infrastructure':npOnly?'np':'full',meaningful:meaningful.map(c=>c.path),cacheOnlyEntries:changes.filter(c=>ENTRYPOINTS.includes(c.path)&&!meaningful.includes(c)).map(c=>c.path)};
 }
 export function readChanges(base){
  const git=args=>execFileSync('git',args,{encoding:'utf8',maxBuffer:64*1024*1024,timeout:30000});

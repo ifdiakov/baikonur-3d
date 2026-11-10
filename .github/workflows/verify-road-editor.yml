@@ -1,8 +1,8 @@
 # CI_RELIABILITY_V1
-name: Live road editor smoke check
+name: Workshop road and railway editor — verified
 on:
   push:
-    branches: [main]
+    branches: [main, fix/workshop-network-20261110]
     paths:
       - 'src/road-editor.js'
       - 'src/road-editor-core.js'
@@ -20,21 +20,37 @@ on:
       - 'tests/road-editor-*.mjs'
       - '.github/workflows/verify-road-editor.yml'
       - 'index.html'
+      - 'workshop.html'
+      - 'src/workshop-*.js'
+      - 'src/workshop-panel.css'
+      - 'tests/workshop-network-*.mjs'
+      - 'scripts/prepare-workshop-network.mjs'
   workflow_dispatch:
 concurrency:
-  group: rockettrip-road-editor-${{ github.sha }}
+  group: rockettrip-road-editor-${{ github.ref }}
   cancel-in-progress: true
 permissions:
-  contents: read
+  contents: write
 jobs:
   editor:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Select relevant checks before downloading tools
         id: ci_scope
-        run: node scripts/ci/impact.mjs verify-road-editor.yml
+        env:
+          CI_BASE: ${{ github.ref_name == 'fix/workshop-network-20261110' && '62a5329c7723b617d35dc7952fad06c746cfd07f' || '' }}
+        run: |
+          node scripts/ci/impact.mjs verify-road-editor.yml
+          node --input-type=module - <<'JS'
+          import fs from 'node:fs';
+          const r=JSON.parse(fs.readFileSync('qa-ci/impact-verify-road-editor.yml.json'));
+          const all=!r.meaningful||process.env.GITHUB_EVENT_NAME==='workflow_dispatch';
+          const network=all||r.meaningful.some(p=>p==='workshop.html'||p.startsWith('src/workshop-')||p.startsWith('tests/workshop-network-')||p==='scripts/prepare-workshop-network.mjs');
+          const legacy=all||r.meaningful.some(p=>p==='index.html'||p==='src/osm-transport.js'||p.startsWith('src/road-')||p.startsWith('tests/road-')||p.startsWith('data/road-edits-'));
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`network=${network}\nlegacy=${legacy}\n`);
+          JS
       - uses: actions/setup-node@v4
         if: steps.ci_scope.outputs.run == 'true'
         with:
@@ -51,8 +67,16 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: museum-playwright-${{ runner.os }}-1.57.0
-      - name: Syntax and deterministic road editing
-        if: steps.ci_scope.outputs.run == 'true'
+      - name: Prepare admin-only network controls
+        if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.network == 'true'
+        run: |
+          node scripts/prepare-workshop-network.mjs
+          node --check src/workshop-panel.js
+          node --check src/workshop-network-editor.js
+          node --check src/workshop-rail-editor.js
+          git diff --exit-code -- index.html museum.html data assets
+      - name: Syntax and deterministic legacy road editing when relevant
+        if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.legacy == 'true'
         run: |
           node --check src/road-editor.js
           node --check src/road-editor-core.js
@@ -73,16 +97,50 @@ jobs:
           node tests/road-editor-mesh.mjs
           node tests/road-junction-repair.mjs
           node tests/road-geometry-cut.mjs
+      - name: Verify network topology, rail meshes, project compatibility and scope
+        if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.network == 'true'
+        run: node tests/workshop-network-source.mjs
       - name: Serve checkout
-        if: steps.ci_scope.outputs.run == 'true'
+        if: steps.ci_scope.outputs.run == 'true' && (github.ref != 'refs/heads/main' || steps.ci_scope.outputs.legacy == 'true')
         run: |
           python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/baikonur-road-editor.log 2>&1 &
           curl --retry 6 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/ --output /dev/null
-      - name: Browser test for visible editor and saved changes
-        if: steps.ci_scope.outputs.run == 'true'
+      - name: Legacy browser check when affected
+        if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.legacy == 'true'
         run: node tests/road-editor-browser.mjs
+      - name: Candidate actual mouse editing, deletion, undo and persistence
+        if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.network == 'true' && github.ref != 'refs/heads/main'
+        env:
+          QA_PREFIX: local
+        run: node scripts/ci/run-bounded.mjs 600 workshop-network-local node tests/workshop-network-browser.mjs
+      - name: Record verified prepared admin entrypoint only
+        if: github.ref_name == 'fix/workshop-network-20261110'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add workshop.html src/workshop-panel.js src/workshop-network-editor.js PROJECT_CONTEXT.md docs/WORK_STATUS.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Integrate verified add/delete AD and railway tools into workshop only'
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+          git rev-parse HEAD > qa-workshop-network/source-commit.txt
+      - name: Verify published files and repeat actual workshop acceptance
+        if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.network == 'true' && github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+          VERIFY_PUBLIC: '1'
+        run: |
+          git diff --exit-code -- workshop.html src
+          node scripts/ci/run-bounded.mjs 720 workshop-network-public node tests/workshop-network-browser.mjs
+          git rev-parse HEAD > qa-workshop-network/source-commit.txt
       - uses: actions/upload-artifact@v4
-        if: (always()) && (steps.ci_scope.outputs.run == 'true')
+        if: always() && steps.ci_scope.outputs.run == 'true'
         with:
           name: road-editor-qa
-          path: qa-road-editor/
+          path: |
+            qa-road-editor/
+            qa-workshop-network/
+            qa-ci/workshop-network-*.json
+            qa-ci/workshop-network-*.log
+          retention-days: 7
