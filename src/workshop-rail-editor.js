@@ -21,6 +21,8 @@ export function buildRailModel(row,{materials=null}={}){
    if(depth)pos.push(top[0],top[1]-depth,top[2],top[3],top[4]-depth,top[5]);
    if(i){const n=depth?4:2,a=(i-1)*n,b=i*n;idx.push(a,b,a+1,a+1,b,b+1);if(depth)idx.push(a,a+2,b,a+2,b+2,b,a+1,b+1,a+3,a+3,b+1,b+3);}
   }
+  // Top faces must point up; reverse side faces consistently as well.
+  for(let i=0;i<idx.length;i+=3)[idx[i+1],idx[i+2]]=[idx[i+2],idx[i+1]];
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3));g.setIndex(idx);g.computeVertexNormals();g.computeBoundingSphere();return g;
  }
  const ballast=new THREE.Mesh(strip(R.ballastWidth,0,R.ballastY),m.ballast);ballast.name='Новый балласт';ballast.receiveShadow=true;root.add(ballast);
