@@ -12,12 +12,17 @@ const report={passed:false,base:localFiles?'Local candidate files; not a publish
  environment:'Chromium; software WebGL; desktop and mobile viewport emulation. Animation is advanced by the test, not an FPS or physical-device measurement.',checks:[]};
 const hash=b=>createHash('sha256').update(b).digest('hex');
 let browser,page,activeMode;
+const runStarted=performance.now();
+const progress=phase=>console.log('MIK112_PROGRESS',activeMode,phase,Math.round((performance.now()-runStarted)/1000)+'s');
 
 async function frame(){await page.evaluate(()=>window.__MIK112_FRAME());}
-async function capture(name){await frame();await page.screenshot({path:`${out}/${prefix}-${activeMode}-${name}.png`,timeout:90000});}
+async function capture(name){
+ progress('capture-start:'+name);await frame();
+ await page.screenshot({path:`${out}/${prefix}-${activeMode}-${name}.png`,timeout:90000});
+ progress('capture-complete:'+name);
+}
 async function timeline(year){
  await page.locator('#year').evaluate((el,value)=>{el.value=String(value);el.dispatchEvent(new Event('input',{bubbles:true}));},year);
- await frame();
 }
 async function modelView(view){
  await page.evaluate(view=>{
@@ -31,7 +36,6 @@ async function modelView(view){
   d.camera.position.copy(root.localToWorld(target.add(offset)));d.ctl.update();d.camera.updateMatrixWorld(true);d.ctl.enableDamping=damping;
   window.__BAIKONUR_QA.setLabelsVisible(false);document.getElementById('info').style.display='none';
  },view);
- await frame();
 }
 
 // Inspect rendered geometry, including instance transforms and actual rail
@@ -165,6 +169,7 @@ try{
   await page.waitForFunction(()=>document.body.classList.contains('museum-ready')||document.getElementById('error')?.textContent,null,{timeout:150000});
   assert.equal(await page.locator('#error').textContent(),'');
   assert(await page.evaluate(()=>!!window.__MIK112_TEST),'The full museum, not a replacement model fixture, must be running');
+  progress('startup-ready');
   await page.evaluate(()=>{__BAIKONUR_QA.openObject('pad-112');__MIK112_FRAME();});
   await page.waitForFunction(()=>__BAIKONUR_QA.stats().mik112.tua.status==='ready',null,{timeout:90000});
   await frame();
@@ -190,6 +195,7 @@ try{
   assert(application.rail.connected);assert.equal(application.rail.tracks.length,4);assert.equal(application.admin,mode==='workshop');assert(application.evening);
   assert(!requests.some(u=>u.includes('/src/buran-loss.js?')),'The reconstruction must remain lazy');
   state.application=application;
+  progress('model-and-rails-checked');
 
   // Real callout and card interactions, including ownership after GLB loading.
   await page.locator('#close').click();await page.evaluate(()=>{__BAIKONUR_QA.setLabelsVisible(true);__MIK112_FRAME();});
@@ -203,6 +209,7 @@ try{
   assert(state.picking.meshCount>0&&state.picking.allTua);
   await page.locator('#tua112Controls button').filter({hasText:'МИК-112'}).click();assert.equal(await page.locator('#title').textContent(),'МИК-112');assert(await page.locator('#buranLossStart').isVisible());
   if(mobile){const info=await page.locator('#info').boundingBox();assert(info&&info.x>=-1&&info.x+info.width<=391,'MIK card fits the mobile screen');}
+  progress('independent-cards-checked');
   await capture('card');
 
   await modelView('overview');await capture('three-open-bays');
@@ -215,6 +222,7 @@ try{
   await timeline(2026);const currentAgain=await measure();
   assert.deepEqual(currentAgain.geometrySnapshot,m.geometrySnapshot,'Changing the year must not mutate the model buffers or transforms');
   assert.deepEqual(currentAgain.roofProbes,m.roofProbes);
+  progress('history-and-current-state-checked');
 
   // Exercise the production reconstruction and prove exact restoration of
   // camera/control state, modern geometry, and all hidden/restored groups.
@@ -227,7 +235,7 @@ try{
   state.lossInitialGlazing=await glazingState();
   assert.deepEqual(state.lossInitialGlazing.temporary,{exists:true,visible:true,panes:20},'Before collapse the temporary upper glazing is physically present');
   assert(!state.lossInitialGlazing.original.visible,'The original historical group stays hidden during reconstruction');
-  await page.locator('#buranLossSeek').fill('28');await page.locator('#buranLossSeek').dispatchEvent('input');await frame();
+  await page.locator('#buranLossSeek').fill('28');await page.locator('#buranLossSeek').dispatchEvent('input');
   state.loss=await page.evaluate(()=>__BAIKONUR_QA.buranLoss.stats());
   assert.equal(state.loss.time,28);assert(state.loss.active);assert(!state.loss.payload.intactVisible&&state.loss.payload.fragmentsVisible);assert(!state.loss.structure.dustVisible);assert.equal(state.loss.structure.flames,0);
   const hidden=await measure();assert(!hidden.groups.historicalVisible&&!hidden.groups.ruinsVisible);
@@ -244,6 +252,7 @@ try{
   await timeline(1988);state.restoredHistoricalGlazing=await glazingState();
   assert.deepEqual(state.restoredHistoricalGlazing.original,{exists:true,visible:true,panes:20},'Shared original glazing survives reconstruction disposal');
   await timeline(2026);assert(!(await glazingState()).original.visible);
+  progress('loss-and-exact-restoration-checked');
   await modelView('overview');await capture('restored-current-ruins');
   if(mode==='workshop'){
    await page.evaluate(()=>__MUSEUM_WORKSHOP.select('pad-112'));
@@ -253,6 +262,7 @@ try{
    assert(Math.abs(await page.evaluate(()=>__MIK112_TEST.root.position.y)-before)>0.1,'Workshop height edits the actual model transform');
    await page.locator('#wsUndo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),height);
    assert.equal(await page.evaluate(()=>__MIK112_TEST.root.position.y),before);state.workshopHeightUndo=true;
+   progress('workshop-height-undo-checked');
   }
   assert(await page.evaluate(()=>__BAIKONUR_QA.stats().shadersValid));assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);
   assert.deepEqual(failedRequests,[],'All model and reconstruction requests must complete');

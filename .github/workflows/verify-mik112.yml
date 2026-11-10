@@ -13,6 +13,12 @@ jobs:
   mik112:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [desktop, mobile, workshop]
+    env:
+      QA_MODES: ${{ matrix.mode }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -62,12 +68,14 @@ jobs:
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1
           npx playwright install --with-deps chromium
-          node tests/buran-loss-source.mjs
-          if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then node tests/bridge-sign112-source.mjs; fi
-          if [ '${{ steps.scope.outputs.target }}' = mik112 ]; then
-            node tests/mik112-metric-geometry.mjs
-            node tests/mik112-rail-layout.mjs
-            node tests/bridge-sign112-source.mjs
+          if [ '${{ matrix.mode }}' = desktop ]; then
+            node tests/buran-loss-source.mjs
+            if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then node tests/bridge-sign112-source.mjs; fi
+            if [ '${{ steps.scope.outputs.target }}' = mik112 ]; then
+              node tests/mik112-metric-geometry.mjs
+              node tests/mik112-rail-layout.mjs
+              node tests/bridge-sign112-source.mjs
+            fi
           fi
       - name: Serve full museum candidate
         if: github.ref != 'refs/heads/main'
@@ -78,7 +86,7 @@ jobs:
           QA_PREFIX: local
         run: node scripts/ci/run-bounded.mjs 720 mik112-local node tests/${{ steps.scope.outputs.target }}-browser.mjs
       - name: Record only verified prepared application files on the candidate
-        if: startsWith(github.ref_name, 'fix/')
+        if: startsWith(github.ref_name, 'fix/') && matrix.mode == 'desktop'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -103,7 +111,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mik112-bridge-sign-evidence
+          name: mik112-${{ matrix.mode }}-evidence
           path: |
             qa-mik112/
             qa-buran-loss/
