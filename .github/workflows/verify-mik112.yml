@@ -1,10 +1,11 @@
-name: MIK112 and Energia transporters — verified publication
-# Historical schematic checks are retained for manual inspection.
-# The OSM live product is checked and released by verify-osm-release.yml.
+name: MIK112 and Buran loss — verified integration
 on:
+  push:
+    branches: [main, fix/buran-loss-integration-20261110]
+    paths: ['src/buran-loss*','scripts/prepare-buran-loss.mjs','tests/buran-loss-*.mjs','.github/workflows/verify-mik112.yml']
   workflow_dispatch:
 concurrency:
-  group: museum-mik112
+  group: museum-mik112-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: write
@@ -14,84 +15,59 @@ jobs:
     timeout-minutes: 16
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate current museum source
+      - name: Prepare only the approved MIK112 integration
         run: |
-          node -e 'const fs=require("fs");fs.writeFileSync("/tmp/mik112-main.mjs",fs.readFileSync("index.html","utf8").match(/<script type="module">([\s\S]*?)<\/script>/)[1])'
-          node --check /tmp/mik112-main.mjs
-          node --check --input-type=module < src/mik112.js
-          node --check --input-type=module < src/mik112-rail.js
-          node --check tests/mik112-browser.mjs
-      - name: Install browser and vendor source for reproducibility
+          node scripts/prepare-buran-loss.mjs
+          node --check src/buran-loss.js
+          node --check src/buran-loss-scene.js
+          cmp index.html museum.html
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: museum-mik112-Linux-playwright1.57.0-three0.160.1
+      - name: Install browser and source checks
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1
           npx playwright install --with-deps chromium
-          mkdir -p qa-mik112/vendor
-          cp node_modules/three/build/three.module.js qa-mik112/vendor/
-          cp node_modules/three/examples/jsm/controls/OrbitControls.js qa-mik112/vendor/
-      - name: Start preview server
-        run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/mik112-server.log 2>&1 &
-          sleep 2
-      - name: Verify local geometry and browser rendering before publishing
-        id: local
-        run: node tests/mik112-browser.mjs
-      - name: Record tested revision
-        id: commit
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-      - name: Confirm exact current public assets
-        id: publicassets
-        run: |
-          set -e
-          for n in $(seq 1 24); do
-            ok=1
-            for file in index.html src/mik112.js src/mik112-rail.js data/catalog.json data/transport-network.json; do
-              if ! curl -fsSL --retry 2 --max-time 20 "https://ifdiakov.github.io/baikonur-3d/$file?verify=${GITHUB_SHA}&attempt=$n" -o /tmp/mik112-public-asset \
-                 || ! cmp -s "$file" /tmp/mik112-public-asset; then ok=0; break; fi
-            done
-            if [ "$ok" = 1 ]; then exit 0; fi
-            sleep 8
-          done
-          exit 1
-      - name: Test published WebGL scene
-        id: publicbrowser
+          node tests/buran-loss-source.mjs
+      - name: Serve full museum candidate
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/buran-loss-server.log 2>&1 &
+      - name: Verify full museum, mobile and workshop before publication
         env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
-          QA_PREFIX: public
-        run: node tests/mik112-browser.mjs
-      - name: Record verified release
-        if: success()
-        env:
-          TARGET: ${{ steps.commit.outputs.sha }}
-          RUN_ID: ${{ github.run_id }}
+          QA_PREFIX: local
+        run: node scripts/ci/run-bounded.mjs 480 buran-loss-local node tests/buran-loss-browser.mjs
+      - name: Record only verified prepared entrypoints on the candidate
+        if: github.ref_name == 'fix/buran-loss-integration-20261110'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-mik112.json",JSON.stringify({targetCommit:process.env.TARGET,runId:process.env.RUN_ID,local:"success",publicBrowser:"success",version:"1.3-photo-frames",mapPlacement:[640,361],scale:0.14,transporterSide:"north-east",checkedAt:new Date().toISOString()},null,2)+"\n")'
-          git add data/qa-mik112.json
-          git commit -m 'ci: record verified MIK112 scale, opposite-end transporters and plan placement'
-          for attempt in 1 2 3; do
-            git pull --rebase origin main
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 4
-          done
-          exit 1
-      - name: Save screenshots and exact tested source
+          git add index.html museum.html workshop.html PROJECT_CONTEXT.md docs/WORK_STATUS.md
+          if ! git diff --cached --quiet; then
+            git commit -m 'Integrate verified Buran loss into the complete museum and workshop'
+            git push origin HEAD:${{ github.ref_name }}
+          fi
+          git rev-parse HEAD > qa-buran-loss/source-commit.txt
+      - name: Check published files and repeat full browser acceptance
+        if: github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+          VERIFY_PUBLIC: '1'
+        run: |
+          git diff --exit-code -- index.html museum.html workshop.html src
+          node scripts/ci/run-bounded.mjs 480 buran-loss-public node tests/buran-loss-browser.mjs
+          git rev-parse HEAD > qa-buran-loss/source-commit.txt
+      - uses: actions/upload-artifact@v4
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: mik112-browser-qa
+          name: buran-loss-integration-evidence
           path: |
-            qa-mik112/
-            index.html
-            src/
-            data/*.json
-            assets/
-            baykonur-plan.png
-            scripts/*mik112.mjs
-            tests/mik112-browser.mjs
-          if-no-files-found: ignore
+            qa-buran-loss/
+            qa-ci/buran-loss-*.json
+            qa-ci/buran-loss-*.log
+          retention-days: 7
