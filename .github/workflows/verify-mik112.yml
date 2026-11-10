@@ -2,7 +2,7 @@ name: MIK112, bridge and highway sign — verified integration
 on:
   push:
     branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110]
-    paths: ['src/buran-loss*','src/mik112-cards.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','tests/buran-loss-*.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
+    paths: ['src/buran-loss*','src/mik112-cards.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','scripts/refine-mik112-callouts.mjs','tests/buran-loss-*.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
   workflow_dispatch:
 concurrency:
   group: museum-mik112-${{ github.ref }}
@@ -28,7 +28,7 @@ jobs:
             target=bridge-sign112
           elif [[ -n "$BEFORE" && "$BEFORE" != 0000000000000000000000000000000000000000 ]]; then
             git fetch --no-tags --depth=1 origin "$BEFORE"
-            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112)'; then target=bridge-sign112; fi
+            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112|refine-mik112-callouts)'; then target=bridge-sign112; fi
           elif [[ -f src/mik112-cards.js ]]; then
             target=bridge-sign112
           fi
@@ -36,7 +36,10 @@ jobs:
       - name: Prepare the approved integration only
         run: |
           node scripts/prepare-buran-loss.mjs
-          if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then node scripts/prepare-bridge-sign112.mjs; fi
+          if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then
+            node scripts/prepare-bridge-sign112.mjs
+            node scripts/refine-mik112-callouts.mjs
+          fi
           node --check src/buran-loss.js
           node --check src/buran-loss-scene.js
           cmp index.html museum.html
