@@ -1065,6 +1065,7 @@ function requestTransportDetail(){
    await roadEditor.attachRoadMeshesAsync(newlyBuilt,spec=>transportDetailJob.cut(spec));
    railStations.applyPlans(result.stationPlans);
    for(const key of ['roads','rails'])layers[key].add(...result.roots[key]);
+   window.__MUSEUM_WORKSHOP?.networkChangedRoots?.();
    for(const root of result.roots.roads)applyBridgeGroundSurfaces(root,{referenceMaterial:satelliteGround.material,steppeSurface,registerGroundSurface,width:W*S,height:H*S});
    detailedTransportRoots=roots;detailTransportReady=true;
    roadLOD?.update(camera.position.y/SCENE_SCALE,detailedTransportRoots);
@@ -2789,13 +2790,13 @@ const sceneSelection=installSceneSelection({element:renderer.domElement,camera,c
    if(index===INTERCHANGE_SELECTION_INDEX){focusInterchange();return;}
    focus(index);
    if(mesh?.userData.museumComponent==='tua-imported-model'||mesh?.userData.rocketExhibitKey?.startsWith('tua-')){focusMik112('tua');showRocketKnowledge('tua','pad-112',false);}
-  },blocked:()=>Boolean(lightingEditor?.active)||Boolean(roadEditor?.active)||Boolean(energiaLaunch?.isActive()),
+  },blocked:()=>Boolean(lightingEditor?.active)||Boolean(roadEditor?.active)||Boolean(window.__MUSEUM_NETWORK_EDITOR?.active)||Boolean(energiaLaunch?.isActive()),
  onNavigate:()=>{if(energiaLaunch?.isActive()){energiaLaunch.setManualCamera();return;}++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();if(fly){fly=false;}}
 });
 const smoothMapCamera=createMapCameraSmoothing({
  canvas:renderer.domElement,camera,controls:ctl,
  canNavigate:()=>!modelInspector.isOpen()&&!energiaLaunch?.isActive()&&!puaLoading?.isActive()&&
-  !document.body.classList.contains('buran-landing-active')&&!fly&&!lightingEditor?.active&&!roadEditor?.active&&
+  !document.body.classList.contains('buran-landing-active')&&!fly&&!lightingEditor?.active&&!roadEditor?.active&&!window.__MUSEUM_NETWORK_EDITOR?.active&&
   !document.body.classList.contains('following-arrival')&&
   !document.body.classList.contains('following-train')&&
   !document.body.classList.contains('buran-landing-active')
@@ -2816,8 +2817,8 @@ function syncGagarinTableStatus(){
 const publishedWorkshop=await publishedWorkshopReady;
 applyWorkshopObjects(objects,publishedWorkshop);
 if(IS_WORKSHOP&&!WORKSHOP_BUILD){
- const style=document.createElement('link');style.rel='stylesheet';style.href='./src/workshop-panel.css?v=split-v4';document.head.append(style);
- const {installWorkshop}=await import('./src/workshop-panel.js?v=split-v1');
+ const style=document.createElement('link');style.rel='stylesheet';style.href='./src/workshop-panel.css?v=20261110-network-v1';document.head.append(style);
+ const {installWorkshop}=await import('./src/workshop-panel.js?v=20261110-network-v1');
  installWorkshop({scene,objects,camera,controls:ctl,canvas:renderer.domElement,roadEditor,transport,terrainHeightAt:museumTerrainHeightAt,altimeter:cameraAltitude,coordinateGrid,published:publishedWorkshop});
 }
 window.__BAIKONUR_QA={np31:()=>{
