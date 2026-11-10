@@ -42,6 +42,14 @@ for(const path of ['index.html','museum.html','workshop.html']){
  s=s.replace("if(new URLSearchParams(location.search).get('view')==='gagarin')", "if(new URLSearchParams(location.search).get('view')==='buran-loss')openMenuSite('pad-112');\nif(new URLSearchParams(location.search).get('view')==='gagarin')");
  writeFileSync(path,s);
 }
+// Actual UI correction, not a forced test click through the authoring panel.
+for(const path of ['index.html','museum.html','workshop.html']){
+ let s=readFileSync(path,'utf8');
+ if(!s.includes('id="mikCollapseChrome"')){
+  const css='<style id="mikCollapseChrome">body.workshop-mode #info.tua-active{z-index:155!important}@media(min-width:851px){body.workshop-mode #info.tua-active{right:350px!important;left:auto!important;top:60px!important;bottom:auto!important;width:310px!important;max-width:310px!important;max-height:calc(100dvh - 180px)!important}}body.mik112-collapse-active #museumMobileBar,body.mik112-collapse-active #workshopBar,body.mik112-collapse-active #cameraAltitude,body.mik112-collapse-active #coordinateGridHud{display:none!important}</style>';
+  assert(s.includes('</head>'));s=s.replace('</head>',css+'</head>');writeFileSync(path,s);
+ }
+}
 {
  const path='src/mik112.js';let s=readFileSync(path,'utf8');
  if(!s.includes('reconstructionCradles')){
