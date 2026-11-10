@@ -30,13 +30,13 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           target=buran-loss
-          if [[ '${{ github.ref_name }}' == 'fix/mik112-photo-20261110' ]]; then
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' || '${{ github.ref_name }}' == 'fix/mik112-photo-20261110' ]]; then
             target=mik112
           elif [[ '${{ github.ref_name }}' == 'fix/bridge-sign112-20261110' ]]; then
             target=bridge-sign112
           elif [[ -n "$BEFORE" && "$BEFORE" != 0000000000000000000000000000000000000000 ]]; then
             git fetch --no-tags --depth=1 origin "$BEFORE"
-            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/mik112(-materials|-photo-detail)?\.js$|^tests/mik112-)'; then
+            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/mik112(-materials|-photo-detail)?\.js$|^tests/mik112-|^\.github/workflows/verify-mik112\.yml$)'; then
               target=mik112
             elif git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112|refine-mik112-callouts)'; then target=bridge-sign112; fi
           elif [[ -f src/mik112-cards.js ]]; then
