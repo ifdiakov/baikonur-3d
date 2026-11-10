@@ -590,7 +590,7 @@ import {organisationLogo,setOrganisationBrand} from './src/organisation-logos.js
 // BRIDGE_SIGN112_V1
 import {applyBridgeGroundSurfaces} from './src/bridge-ground-surface.js?v=20261110-v1';
 import {createMik112Cards,TUA112_CARD_ID} from './src/mik112-cards.js?v=20261110-v1';
-import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261102-site2-photo-v3';
+import {MIK112,buildMik112,connectMik112Rails} from './src/mik112.js?v=20261110-photo-ruins-v1';
 import {loadTuaExhibit} from './src/tua-exhibit.js?v=20261031-rocket-exhibits-v1';
 import {adaptTuaRails} from './src/tua-rails.js?v=20261031-facilities-rails-lighting-v1';
 import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-exhibits-v1';
@@ -2732,7 +2732,7 @@ async function requestBuranLoss(){
  button.disabled=true;button.textContent='Загрузка реконструкции…';
  try{
   if(!buranLoss){
-   const {createBuranLoss}=await import('./src/buran-loss.js?v=20261110-v1');
+   const {createBuranLoss}=await import('./src/buran-loss.js?v=20261110-photo-v2');
    buranLoss=createBuranLoss({root:objects[mik112Index].g,model:mik112Exhibit,camera,controls:ctl,
     onBeforeStart:()=>{window.__MUSEUM_ONBOARDING?.cancel?.();cancelBuranRequest();puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});energiaLaunch?.stop({releaseCamera:false});soyuzLaunch?.stop({releaseCamera:false});arrivalFlight?.stopFollowing({releaseCamera:false});groundTraffic?.stopFollowing();fly=false;setMobileMenu(false);},onStop:()=>updateLabels()});
   }

@@ -3,7 +3,7 @@ import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import * as THREE from 'three';
 import {createLossStructure,createHistoricalPayload,BURAN_LOSS_HISTORY,lossPhase} from '../src/buran-loss-scene.js';
 const checks=[];const check=(name,fn)=>{fn();checks.push({name,passed:true});};
-for(const path of ['index.html','museum.html','workshop.html']){const html=readFileSync(path,'utf8');check(path+' only hall exhibit removed',()=>{assert(!html.includes("rocketExhibits.add('mik112-hall'"));assert(html.includes("rocketExhibits.add('tua-'+index"));assert(html.includes("buranLossStart.textContent='Гибель Бурана'"));assert(html.includes("import('./src/buran-loss.js?v=20261110-v1')"));assert(html.includes('buranLoss?.update(now)'));});}
+for(const path of ['index.html','museum.html','workshop.html']){const html=readFileSync(path,'utf8');check(path+' only hall exhibit removed',()=>{assert(!html.includes("rocketExhibits.add('mik112-hall'"));assert(html.includes("rocketExhibits.add('tua-'+index"));assert(html.includes("buranLossStart.textContent='Гибель Бурана'"));assert(html.includes("import('./src/buran-loss.js?v=20261110-photo-v2')"));assert(html.includes('buranLoss?.update(now)'));});}
 check('Date and high bays explicitly sourced',()=>{assert.equal(BURAN_LOSS_HISTORY.date,'2002-05-12');assert.equal(BURAN_LOSS_HISTORY.photoDate,'2002-05-13');assert.deepEqual(BURAN_LOSS_HISTORY.bays,[3,4,5]);});
 const structure=createLossStructure();const snapshot=()=>[...structure.panels.instanceMatrix.array,...structure.trusses.instanceMatrix.array];
 structure.seek(0);const before=snapshot();structure.seek(28);const after=snapshot();
