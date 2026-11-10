@@ -1,8 +1,8 @@
-name: MIK112 and Buran loss — verified integration
+name: MIK112, bridge and highway sign — verified integration
 on:
   push:
-    branches: [main, fix/buran-loss-integration-20261110]
-    paths: ['src/buran-loss*','scripts/prepare-buran-loss.mjs','tests/buran-loss-*.mjs','.github/workflows/verify-mik112.yml']
+    branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110]
+    paths: ['src/buran-loss*','src/mik112-cards.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','tests/buran-loss-*.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
   workflow_dispatch:
 concurrency:
   group: museum-mik112-${{ github.ref }}
@@ -12,15 +12,31 @@ permissions:
 jobs:
   mik112:
     runs-on: ubuntu-24.04
-    timeout-minutes: 16
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Prepare only the approved MIK112 integration
+      - name: Select the relevant existing acceptance suite
+        id: scope
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          target=buran-loss
+          if [[ '${{ github.ref_name }}' == 'fix/bridge-sign112-20261110' ]]; then
+            target=bridge-sign112
+          elif [[ -n "$BEFORE" && "$BEFORE" != 0000000000000000000000000000000000000000 ]]; then
+            git fetch --no-tags --depth=1 origin "$BEFORE"
+            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112)'; then target=bridge-sign112; fi
+          elif [[ -f src/mik112-cards.js ]]; then
+            target=bridge-sign112
+          fi
+          echo "target=$target" >> "$GITHUB_OUTPUT"
+      - name: Prepare the approved integration only
         run: |
           node scripts/prepare-buran-loss.mjs
+          if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then node scripts/prepare-bridge-sign112.mjs; fi
           node --check src/buran-loss.js
           node --check src/buran-loss-scene.js
           cmp index.html museum.html
@@ -30,46 +46,51 @@ jobs:
             ~/.npm
             ~/.cache/ms-playwright
           key: museum-mik112-Linux-playwright1.57.0-three0.160.1
-      - name: Install browser and source checks
+      - name: Install browser and run source checks
         run: |
           npm install --no-save playwright@1.57.0 three@0.160.1
           npx playwright install --with-deps chromium
           node tests/buran-loss-source.mjs
+          if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then node tests/bridge-sign112-source.mjs; fi
       - name: Serve full museum candidate
         if: github.ref != 'refs/heads/main'
-        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/buran-loss-server.log 2>&1 &
-      - name: Verify full museum, mobile and workshop before publication
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/mik112-server.log 2>&1 &
+      - name: Verify the actual scene, mobile layout and workshop
         if: github.ref != 'refs/heads/main'
         env:
           QA_PREFIX: local
-        run: node scripts/ci/run-bounded.mjs 480 buran-loss-local node tests/buran-loss-browser.mjs
-      - name: Record only verified prepared entrypoints on the candidate
-        if: github.ref_name == 'fix/buran-loss-integration-20261110'
+        run: node scripts/ci/run-bounded.mjs 720 mik112-local node tests/${{ steps.scope.outputs.target }}-browser.mjs
+      - name: Record only verified prepared application files on the candidate
+        if: startsWith(github.ref_name, 'fix/')
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html PROJECT_CONTEXT.md docs/WORK_STATUS.md
+          git add index.html museum.html workshop.html src/road-signs.js data/road-signs.json PROJECT_CONTEXT.md docs/WORK_STATUS.md
           if ! git diff --cached --quiet; then
-            git commit -m 'Integrate verified Buran loss into the complete museum and workshop'
+            git commit -m 'Integrate verified bridge soil, Dirmentobe sign and separate MIK112 transporter cards'
             git push origin HEAD:${{ github.ref_name }}
           fi
-          git rev-parse HEAD > qa-buran-loss/source-commit.txt
-      - name: Check published files and repeat full browser acceptance
+          mkdir -p qa-mik112-release
+          git rev-parse HEAD > qa-mik112-release/source-commit.txt
+      - name: Verify published hashes and repeat actual browser acceptance
         if: github.ref == 'refs/heads/main'
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_PREFIX: public
           VERIFY_PUBLIC: '1'
         run: |
-          git diff --exit-code -- index.html museum.html workshop.html src
-          node scripts/ci/run-bounded.mjs 480 buran-loss-public node tests/buran-loss-browser.mjs
-          git rev-parse HEAD > qa-buran-loss/source-commit.txt
+          git diff --exit-code -- index.html museum.html workshop.html src data/road-signs.json
+          node scripts/ci/run-bounded.mjs 720 mik112-public node tests/${{ steps.scope.outputs.target }}-browser.mjs
+          mkdir -p qa-mik112-release
+          git rev-parse HEAD > qa-mik112-release/source-commit.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: buran-loss-integration-evidence
+          name: mik112-bridge-sign-evidence
           path: |
             qa-buran-loss/
-            qa-ci/buran-loss-*.json
-            qa-ci/buran-loss-*.log
+            qa-bridge-sign112/
+            qa-mik112-release/
+            qa-ci/mik112-*.json
+            qa-ci/mik112-*.log
           retention-days: 7
