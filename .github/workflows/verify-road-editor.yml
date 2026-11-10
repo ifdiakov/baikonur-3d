@@ -3,28 +3,7 @@ name: Workshop road and railway editor — verified
 on:
   push:
     branches: [main, fix/workshop-network-20261110]
-    paths:
-      - 'src/road-editor.js'
-      - 'src/road-editor-core.js'
-      - 'src/road-editor-mesh.js'
-      - 'src/road-junction-repair.js'
-      - 'tests/road-junction-repair.mjs'
-      - 'src/road-geometry-cut.js'
-      - 'tests/road-geometry-cut.mjs'
-      - 'src/road-editor-style.js'
-      - 'src/road-mask-tiles.js'
-      - 'tests/road-mask-tiles.mjs'
-      - 'data/road-edits-authoritative-20261103.json'
-      - 'src/road-editor.css'
-      - 'src/osm-transport.js'
-      - 'tests/road-editor-*.mjs'
-      - '.github/workflows/verify-road-editor.yml'
-      - 'index.html'
-      - 'workshop.html'
-      - 'src/workshop-*.js'
-      - 'src/workshop-panel.css'
-      - 'tests/workshop-network-*.mjs'
-      - 'scripts/prepare-workshop-network.mjs'
+    paths: ['src/road-editor.js','src/road-editor-core.js','src/road-editor-mesh.js','src/road-junction-repair.js','tests/road-junction-repair.mjs','src/road-geometry-cut.js','tests/road-geometry-cut.mjs','src/road-editor-style.js','src/road-mask-tiles.js','tests/road-mask-tiles.mjs','data/road-edits-authoritative-20261103.json','src/road-editor.css','src/osm-transport.js','tests/road-editor-*.mjs','.github/workflows/verify-road-editor.yml','index.html','workshop.html','src/workshop-*.js','src/workshop-panel.css','tests/workshop-network-*.mjs','scripts/prepare-workshop-network.mjs']
   workflow_dispatch:
 concurrency:
   group: rockettrip-road-editor-${{ github.ref }}
@@ -55,15 +34,13 @@ jobs:
         if: steps.ci_scope.outputs.run == 'true'
         with:
           node-version: '22'
-      - name: Reuse downloaded verification dependencies
+      - uses: actions/cache@v4
         if: steps.ci_scope.outputs.run == 'true'
-        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: museum-npm-${{ runner.os }}-v1
-      - name: Reuse matching browser binaries
+      - uses: actions/cache@v4
         if: steps.ci_scope.outputs.run == 'true'
-        uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: museum-playwright-${{ runner.os }}-1.57.0
@@ -75,7 +52,12 @@ jobs:
           node --check src/workshop-network-editor.js
           node --check src/workshop-rail-editor.js
           git diff --exit-code -- index.html museum.html data assets
-      - name: Syntax and deterministic legacy road editing when relevant
+      - name: Install 3D browser dependencies
+        if: steps.ci_scope.outputs.run == 'true'
+        run: |
+          npm install --no-save playwright@1.57.0 three@0.160.1
+          npx playwright install --with-deps chromium
+      - name: Legacy scheme checks retained for relevant source changes
         if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.legacy == 'true'
         run: |
           node --check src/road-editor.js
@@ -86,15 +68,10 @@ jobs:
           node tests/road-editor-style.mjs
           node tests/road-editor-core.mjs
           node tests/road-mask-tiles.mjs
-      - name: Install 3D browser dependencies
-        if: steps.ci_scope.outputs.run == 'true'
-        run: |
-          npm install --no-save playwright@1.57.0 three@0.160.1
-          npx playwright install --with-deps chromium
-      - name: Verify repaired road mesh topology and physical source cutouts
-        if: steps.ci_scope.outputs.run == 'true'
-        run: |
           node tests/road-editor-mesh.mjs
+      - name: Verify physical source cuts and junction restoration
+        if: steps.ci_scope.outputs.run == 'true'
+        run: |
           node tests/road-junction-repair.mjs
           node tests/road-geometry-cut.mjs
       - name: Verify network topology, rail meshes, project compatibility and scope
