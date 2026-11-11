@@ -5,6 +5,8 @@ const base='https://museum.rockettrip.space/workshop.html?draft=private&view=bad
 const ok=(name,fn)=>{fn();checks.push(name);};
 ok('public link has no admin state',()=>{const url=new URL(makeShareURL({kind:'site',id:'pad-112'},base));assert.equal(url.pathname,'/museum.html');assert.equal(url.searchParams.get('share'),'site:pad-112');assert.equal(url.searchParams.get('draft'),null);assert.equal(url.hash,'');});
 ok('legacy hostname resolves to HTTPS custom domain',()=>assert(makeShareURL({kind:'site',id:'pad-1'},'http://ifdiakov.github.io/baikonur-3d/workshop.html').startsWith('https://museum.rockettrip.space/museum.html?')));
+const catalogue=JSON.parse(await readFile('data/catalog.json','utf8'));
+ok('all catalogue identifiers including Cyrillic letters round-trip',()=>{for(const entry of catalogue.sites){const target={kind:'site',id:entry.id};assert.deepEqual(parseShareTarget(new URL(makeShareURL(target,base)).search),target);}});
 ok('distinct objects get distinct URLs',()=>assert.notEqual(makeShareURL({kind:'site',id:'pad-112'},base),makeShareURL({kind:'site',id:'tua-112'},base)));
 for(const kind of ['site','rocket','model','story','history','event','research','view'])ok('round trip '+kind,()=>{const target={kind,id:'example-1'};assert.deepEqual(parseShareTarget(new URL(makeShareURL(target,base)).search),target);});
 ok('article uses its existing encyclopedia anchor',()=>assert.equal(makeShareURL({kind:'article',id:'r7'},base),'https://museum.rockettrip.space/encyclopedia.html#r7'));

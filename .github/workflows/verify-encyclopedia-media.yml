@@ -10,13 +10,14 @@ on:
   workflow_dispatch:
 permissions:
   contents: write
+  actions: read
 concurrency:
   group: encyclopedia-media-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 22
     steps:
       - uses: actions/checkout@v4
       - name: Select relevant checks before downloading tools
@@ -46,6 +47,7 @@ jobs:
           node tests/encyclopedia-media-data.mjs
       - name: Install browser tests
         if: steps.ci_scope.outputs.run == 'true'
+        timeout-minutes: 4
         run: |
           npm install --no-save playwright@1.57.0
           npx playwright install --with-deps chromium
@@ -68,11 +70,13 @@ jobs:
       - name: Check exact published revision and real public controls
         if: steps.ci_scope.outputs.run == 'true' && github.ref == 'refs/heads/main'
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           BAIKONUR_URL: https://museum.rockettrip.space/
           VERIFY_PUBLIC: '1'
           QA_PREFIX: public
         run: |
           git diff --exit-code -- index.html museum.html workshop.html encyclopedia.html workshop/model.html src
+          node scripts/ci/wait-pages-publication.mjs
           node scripts/ci/run-bounded.mjs 480 card-share-public node tests/card-share-browser.mjs
           git rev-parse HEAD > qa-card-share/source-commit.txt
       - uses: actions/upload-artifact@v4
@@ -84,4 +88,5 @@ jobs:
             qa-encyclopedia-media/
             qa-ci/card-share-*
             qa-ci/encyclopedia-media-*
+            qa-ci/mik112-pages-publication.json
           retention-days: 7

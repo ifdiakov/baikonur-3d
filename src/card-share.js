@@ -2,7 +2,7 @@
 export const CARD_SHARE_VERSION='20261111-share-v1';
 export const SHARE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-3"/><path d="M16 1v4C7 5 5.5 11 6.5 16c1.5-4.5 4.5-6 9.5-6v4l7-6.5L16 1Z"/></svg>';
 const KINDS=new Set(['site','rocket','model','story','history','event','research','view','article']);
-const ID=/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,99}$/;
+const ID=/^[\p{L}\p{N}][\p{L}\p{N}._-]{0,99}$/u;
 export const SHARE_EVENTS=Object.freeze({
  'soyuz-launch-1':{site:'pad-1',title:'Запуск «Союза» · Гагаринский старт',button:'soyuzLaunchStart'},
  'soyuz-launch-31':{site:'pad-31',title:'Запуск «Союза» · площадка №31',button:'soyuzLaunchStart'},
