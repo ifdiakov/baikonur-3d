@@ -3,7 +3,7 @@ import {readFile,writeFile,mkdir,access} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
 
-const version='3.0-photo-ruins-20261110';
+const version='3.1-photo-facades-20261111';
 const localFiles=process.env.QA_LOCAL_FILES==='1';
 const base=process.env.BAIKONUR_URL||(localFiles?'https://ifdiakov.github.io/baikonur-3d/':'http://127.0.0.1:8765/');
 const prefix=process.env.QA_PREFIX||'local',out=process.env.QA_OUT||'qa-mik112';
@@ -27,8 +27,8 @@ async function timeline(year){
 async function modelView(view){
  await page.evaluate(view=>{
   const d=window.__MIK112_TEST,T=d.THREE,root=d.root;
-  const target=new T.Vector3(-28,22,-22);
-  const offsets={overview:[-280,245,-340],top:[0,520,.01],facade:[-340,145,300]};
+  const target=new T.Vector3(...(view==='gates'?[-45,24,-118]:view==='working-portal'?[55,16,119]:[-28,22,-22]));
+  const offsets={overview:[-280,245,-340],top:[0,520,.01],facade:[-340,145,300],gates:[-25,55,-190],'working-portal':[65,55,160]};
   const offset=new T.Vector3(...offsets[view]);
   if(innerWidth<700)offset.multiplyScalar(1.6);
   const damping=d.ctl.enableDamping;d.ctl.enableDamping=false;d.ctl.update();
@@ -40,8 +40,8 @@ async function modelView(view){
 
 // Inspect rendered geometry, including instance transforms and actual rail
 // heads. The model's feature declarations alone cannot make these checks pass.
-async function measure(){
- return page.evaluate(()=>{
+async function measure(includePayloads=false){
+ return page.evaluate(includePayloads=>{
   const d=window.__MIK112_TEST,T=d.THREE,root=d.root,model=d.mik112Exhibit;
   root.updateWorldMatrix(true,true);
   const inverse=root.matrixWorld.clone().invert(),matrix=new T.Matrix4(),instance=new T.Matrix4(),p=new T.Vector3();
@@ -81,7 +81,7 @@ async function measure(){
     if(!matrix.elements.every(Number.isFinite))finite=false;
     const bounds=new T.Box3();for(let j=0;j<g.attributes.position.count;j++)bounds.expandByPoint(p.fromBufferAttribute(g.attributes.position,j).applyMatrix4(matrix));
     const size=bounds.getSize(new T.Vector3()),center=bounds.getCenter(new T.Vector3());
-    if(near(size.y,50)&&near(size.z,1)&&near(center.z,-119.3))doorLeaves.push({center:center.toArray(),size:size.toArray()});
+    if(near(size.y,38)&&near(size.z,1)&&near(center.z,-119.3))doorLeaves.push({center:center.toArray(),size:size.toArray()});
    }
   });
   const visibleMeshes=[];root.traverseVisible(o=>{if(o.isMesh)visibleMeshes.push(o);});
@@ -99,11 +99,22 @@ async function measure(){
    railProbes.push({trackIndex,side,localY:hit?root.worldToLocal(hit.point.clone()).y:null});
   }
   const stairs=[];root.traverse(o=>{if(o.userData.museumComponent==='mik112-fire-stair')stairs.push({name:o.name,...actualBounds(o)});});
+  const facadeProbes=[];
+  for(const x of [-71,-19])for(const [height,expected]of [[20,'museum / doorMetal'],[44,'museum / wall']]){
+   ray.set(root.localToWorld(new T.Vector3(x,2.6+height,-145)),new T.Vector3(0,0,1).transformDirection(root.matrixWorld));
+   const hit=ray.intersectObjects(visibleMeshes,false)[0];facadeProbes.push({x,height,expected,material:hit?.object.material.name||null});
+  }
+  for(const [height,expected]of [[7,'museum / dark'],[22,'museum / wall']]){
+   ray.set(root.localToWorld(new T.Vector3(42.5,2.6+height,145)),new T.Vector3(0,0,-1).transformDirection(root.matrixWorld));
+   const hit=ray.intersectObjects(visibleMeshes,false)[0];facadeProbes.push({x:42.5,height,expected,material:hit?.object.material.name||null});
+  }
+  const payloads=[];
+  if(includePayloads)root.traverse(o=>{const entry=o.userData.rocketExhibit;if(entry?.key?.startsWith('tua-'))payloads.push({key:entry.key,status:entry.status,...actualBounds(o)});});
   return {stats:JSON.parse(JSON.stringify(model.stats())),root:{scale:root.scale.toArray(),yaw:root.rotation.y,position:root.position.toArray()},
-   finite,triangles,drawCalls,vertices,features,doorLeaves:doorLeaves.sort((a,b)=>a.center[0]-b.center[0]),roofProbes,railMeshes:railMeshes.length,railProbes,stairs,
+   finite,triangles,drawCalls,vertices,features,doorLeaves:doorLeaves.sort((a,b)=>a.center[0]-b.center[0]),roofProbes,railMeshes:railMeshes.length,railProbes,stairs,facadeProbes,payloads,
    groups:{historical:!!historical,ruins:!!ruins,facade:!!facade,historicalVisible:historical?.visible,ruinsVisible:ruins?.visible,facadeVisible:facade?.visible},
    geometrySnapshot:meshRows,transporters:model.transporterRoots.map(o=>({position:o.position.toArray(),rotationY:o.rotation.y,children:o.children.map(c=>c.name)}))};
- });
+ },includePayloads);
 }
 
 async function glazingState(){
@@ -123,7 +134,7 @@ try{
  if(process.env.VERIFY_PUBLIC==='1'){
   assert(!localFiles,'Public proof cannot be generated from local request substitution');
   report.publicHashes={};
-  const files=['index.html','museum.html','workshop.html','src/mik112.js','src/mik112-materials.js','src/mik112-cards.js',
+  const files=['index.html','museum.html','workshop.html','src/mik112.js','src/mik112-rail-plan.js','src/mik112-materials.js','src/mik112-cards.js',
    'src/buran-loss.js','src/buran-loss-scene.js','src/buran-loss.css'];
   try{await access('src/mik112-photo-detail.js');files.push('src/mik112-photo-detail.js');}catch{}
   for(const file of files){
@@ -165,15 +176,16 @@ try{
    await route.fulfill(response?{response,body}:{body,contentType});
   });
   const entry=mode==='workshop'?'workshop.html':'museum.html';
-  await page.goto(new URL(entry+'?site=pad-112&tour=0&v=mik112-photo-20261110',base).href,{waitUntil:'domcontentloaded',timeout:90000});
+  await page.goto(new URL(entry+'?site=pad-112&tour=0&v=mik112-photo-20261111',base).href,{waitUntil:'domcontentloaded',timeout:90000});
   await page.waitForFunction(()=>document.body.classList.contains('museum-ready')||document.getElementById('error')?.textContent,null,{timeout:150000});
   assert.equal(await page.locator('#error').textContent(),'');
   assert(await page.evaluate(()=>!!window.__MIK112_TEST),'The full museum, not a replacement model fixture, must be running');
   progress('startup-ready');
   await page.evaluate(()=>{__BAIKONUR_QA.openObject('pad-112');__MIK112_FRAME();});
   await page.waitForFunction(()=>__BAIKONUR_QA.stats().mik112.tua.status==='ready',null,{timeout:90000});
+  await page.waitForFunction(()=>{const p=__BAIKONUR_QA.stats().rockets.placements.filter(p=>p.key.startsWith('tua-'));return p.length===2&&p.every(p=>p.status==='ready');},null,{timeout:90000});
   await frame();
-  const state={mode,initial:await measure()};
+  const state={mode,initial:await measure(true)};
   const m=state.initial;
   assert.equal(m.stats.version,version);assert(m.finite);assert.equal(m.stats.transporterCount,2);
   assert.deepEqual(m.root.scale,[.14,.14,.14]);assert.equal(m.root.yaw,-Math.PI/4);
@@ -181,8 +193,16 @@ try{
   assert.equal(m.stats.roofState,'photo-ruined');assert.equal(m.stats.tua.status,'ready');
   assert.equal(m.transporters.length,2);assert(m.transporters.every(t=>t.children.some(name=>name.startsWith('ТУА «Кузнечик» · исходная модель'))));
   assert.deepEqual(m.transporters.map(t=>t.position),[[-71,4.305,-183],[-19,4.305,-183]]);
-  assert.equal(m.doorLeaves.length,2,'The two actual 50 m high door leaves must exist');
-  for(let i=0;i<2;i++){assert(Math.abs(m.doorLeaves[i].center[0]-[-71,-19][i])<1e-4);assert(m.doorLeaves[i].size[0]>25);}
+  assert.equal(m.doorLeaves.length,2,'The two actual 38 m door leaves must exist below a broad white wall');
+  for(let i=0;i<2;i++){assert(Math.abs(m.doorLeaves[i].center[0]-[-71,-19][i])<1e-4);assert(Math.abs(m.doorLeaves[i].size[0]-40)<1e-3);assert.equal(m.stats.railGates[i].clearHeight,38);}
+  assert.equal(m.facadeProbes.length,6);assert(m.facadeProbes.every(p=>p.material===p.expected),'Real high and low facade surfaces match the photo-proportioned openings');
+  assert.equal(m.features['high-gate-continuous-canopy'],1);
+  assert.equal(m.payloads.length,2);
+  for(const payload of m.payloads){
+   const gate=m.doorLeaves[Number(payload.key.slice(-1))];assert.equal(payload.status,'ready');
+   assert(gate.center[1]+gate.size[1]/2-payload.max[1]>=2,'Decoded Energia–Buran geometry clears the reduced doorway by two metres');
+   assert(payload.min[0]>gate.center[0]-gate.size[0]/2&&payload.max[0]<gate.center[0]+gate.size[0]/2,'Decoded payload fits the actual gate width');
+  }
   assert.equal(m.stats.railLayout.trackCount,4);assert.equal(m.stats.railLayout.tracksPerGate,2);
   assert.equal(m.railMeshes,8,'Four tracks must have eight actual continuous running rails');
   assert.equal(m.railProbes.length,8);assert(m.railProbes.every(p=>Number.isFinite(p.localY)&&Math.abs(p.localY-4.305)<5e-4),'Actual rail heads must meet the existing four ports');
@@ -213,7 +233,10 @@ try{
   await capture('card');
 
   await modelView('overview');await capture('three-open-bays');
-  if(mode==='desktop'){await modelView('top');await capture('roof-plan');await modelView('facade');await capture('glazing-and-fire-stairs');}
+  if(mode==='desktop'){
+   await modelView('top');await capture('roof-plan');await modelView('facade');await capture('glazing-and-fire-stairs');
+   await modelView('gates');await capture('gate-facade');await modelView('working-portal');await capture('low-working-entrance');
+  }
   await timeline(1988);state.historical=await measure();
   assert(state.historical.groups.historicalVisible&&!state.historical.groups.ruinsVisible);
   assert.equal(state.historical.stats.roofState,'historical-intact');
@@ -247,6 +270,8 @@ try{
   assert.deepEqual(state.afterLoss.model.geometrySnapshot,state.beforeLoss.model.geometrySnapshot,'Modern facade, ruins and historical buffers must be unchanged by the reconstruction');
   assert.deepEqual(state.afterLoss.model.groups,state.beforeLoss.model.groups);
   assert.deepEqual(state.afterLoss.model.roofProbes,state.beforeLoss.model.roofProbes);
+  assert.deepEqual(state.afterLoss.model.doorLeaves,state.beforeLoss.model.doorLeaves);
+  assert.deepEqual(state.afterLoss.model.facadeProbes,state.beforeLoss.model.facadeProbes);
   assert(!state.afterLoss.reconstruction.active);assert.equal(state.afterLoss.reconstruction.structure,null);assert(await page.locator('#buranLossPanel').isHidden());
   assert(!(await glazingState()).temporary.exists,'The temporary glazing clone is removed after reconstruction');
   await timeline(1988);state.restoredHistoricalGlazing=await glazingState();

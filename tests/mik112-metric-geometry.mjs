@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {buildMik112,MIK112,MIK112_HALL_ROCKET_MOUNT} from '../src/mik112.js';
 
 const root=new THREE.Group();root.scale.setScalar(MIK112.scale);const exhibit=buildMik112(root,{year:2026});
-assert.equal(MIK112.version,'3.0-photo-ruins-20261110');
+assert.equal(MIK112.version,'3.1-photo-facades-20261111');
 assert.equal(MIK112.units,'metres');assert.equal(MIK112.scale,.14);
 assert.deepEqual(MIK112.dimensions,{length:240,width:190,high:{length:240,width:120,height:56,bays:3},low:{length:240,width:70,height:30,bays:2}});
 assert.equal(exhibit.stats().features['hall-column'],undefined);
@@ -75,6 +75,23 @@ assert.equal(runways.length,6,'Two real crane runway webs per high bay');
 // Glass fills a real opening in the facade; an opaque concrete wall behind a
 // decorative glass overlay would fail these exterior-to-interior rays.
 const visible=[];root.traverseVisible(o=>{if(o.isMesh)visible.push(o);});
+const facadeProbes=[];
+for(const x of [-71,-19])for(const [height,material]of [[20,'museum / doorMetal'],[44,'museum / wall']]){
+ ray.set(root.localToWorld(new THREE.Vector3(x,2.6+height,-145)),new THREE.Vector3(0,0,1).transformDirection(root.matrixWorld));
+ const hit=ray.intersectObjects(visible,false)[0];assert(hit);assert.equal(hit.object.material.name,material);
+ facadeProbes.push({x,height,material:hit.object.material.name});
+}
+for(const [height,material]of [[7,'museum / dark'],[22,'museum / wall']]){
+ ray.set(root.localToWorld(new THREE.Vector3(42.5,2.6+height,145)),new THREE.Vector3(0,0,-1).transformDirection(root.matrixWorld));
+ const hit=ray.intersectObjects(visible,false)[0];assert(hit);assert.equal(hit.object.material.name,material,'The working low portal has an actual solid upper wall');
+ facadeProbes.push({x:42.5,height,material:hit.object.material.name});
+}
+const canopyProbes=[];
+for(const x of [-71,-45,-19]){
+ ray.set(root.localToWorld(new THREE.Vector3(x,38,-121.3)),new THREE.Vector3(0,1,0));
+ const hit=ray.intersectObjects(visible,false)[0];assert(hit);assert.equal(hit.object.material.name,'museum / dark');
+ const y=root.worldToLocal(hit.point.clone()).y;assert(y>40.75&&y<41.1,'Continuous canopy clears both full door apertures');canopyProbes.push({x,y});
+}
 const inward=new THREE.Vector3(1,0,0).transformDirection(root.matrixWorld),glazingProbes=[];
 // Keep these sightlines clear of the retained service annex at z=-92.
 for(const z of [-64.5,-52.5,7.5,67.5]){
@@ -118,4 +135,4 @@ assert(mount.clearWidth>23.9);assert(mount.position[1]+18.65<2.6+52);
 assert(mount.position[2]>-110&&mount.position[2]+58.815<110);
 assert(exhibit.stats().noPolePolygons.length>=5);
 console.log('MIK112_METRIC_GEOMETRY_PASS',JSON.stringify({version:MIK112.version,dimensions:MIK112.dimensions,historicalColumns:internalColumns.length,modernDetachedColumns:0,photoMaterials:photoMaterials.size,museumCradles:2,
- roofProbes:modernProbes.length,historicalRoofProbes:historicalProbes.length,glazingProbes:glazingProbes.length,fireStairs:stairs.length,debrisInstances,sharedDebrisGeometries:debrisGeometries.size,hallTriangles,hallDrawCalls,newLightSources:lights,mount}));
+ roofProbes:modernProbes.length,historicalRoofProbes:historicalProbes.length,glazingProbes:glazingProbes.length,facadeProbes,canopyProbes,fireStairs:stairs.length,debrisInstances,sharedDebrisGeometries:debrisGeometries.size,hallTriangles,hallDrawCalls,newLightSources:lights,mount}));

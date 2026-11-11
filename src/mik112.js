@@ -2,15 +2,15 @@ import * as THREE from 'three';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {createSurfacePalette} from './surface-materials.js';
 import {applyMik112PhotoFinishes} from './mik112-materials.js?v=20261110-photo-ruins-v1';
-import {MIK112_RAIL_LAYOUT} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v4';
+import {MIK112_RAIL_LAYOUT} from './mik112-rail-plan.js?v=20261111-gates-v2';
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {buildMik112PhotoDetails} from './mik112-photo-detail.js?v=20261110-photo-v1';
+import {buildMik112PhotoDetails} from './mik112-photo-detail.js?v=20261111-facades-v1';
 
 // Site 112, NOT the neighbouring MZK/SDI at 112A. Photo-interpreted exterior.
 // Sources: RocketTrip Drive 1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk (MIK),
 // 1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3 (two Energia transporter/erectors).
 // Recognisable proportions and photo layout, not a measured engineering model.
-export const MIK112={version:'3.0-photo-ruins-20261110',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002,units:'metres',
+export const MIK112={version:'3.1-photo-facades-20261111',scale:.14,yaw:-Math.PI/4,roofCollapseYear:2002,units:'metres',
  dimensions:{length:240,width:190,high:{length:240,width:120,height:56,bays:3},low:{length:240,width:70,height:30,bays:2}},
  dimensionsSource:'https://www.buran.ru/htm/foto7.htm'};
 export const TUA_ROCKET_MOUNT=Object.freeze({position:[0,15.3603466749,-26.0709070005],rotation:[Math.PI/2,0,0],units:'metres',source:'Recovered source payload centre axis and aft datum'});
@@ -93,12 +93,15 @@ export function buildMik112(root,{year=2026}={}){
   highWallStart=gate.centerX+highGateOuterWidth/2;
  }
  if(highWallStart<25)box(25-highWallStart,56,2,(25+highWallStart)/2,floor+28,-119,'wall','high-gate-wall-panel');
- const doorAssemblies=[...MIK112_RAIL_LAYOUT.gates.map(gate=>[gate.centerX,highGateOuterWidth,56,false]),[42.5,35,30,true],[77.5,35,30,false]];
- for(const [cx,w,h,opening] of doorAssemblies){
+ // The photographs show a broad opaque wall above the TUA doors and the
+ // working low-hall opening. Heights are photo estimates, not surveyed doors.
+ const lowWorkingDoorHeight=14;
+ const doorAssemblies=[...MIK112_RAIL_LAYOUT.gates.map(gate=>[gate.centerX,highGateOuterWidth,56,false,MIK112_RAIL_LAYOUT.clearHeight]),[42.5,35,30,true,lowWorkingDoorHeight],[77.5,35,30,false,24]];
+ for(const [cx,w,h,opening,dh] of doorAssemblies){
   count(h===56?'energia-gate':'low-hall-gate');
-  const dw=w-7,dh=h-6,face=h===56?-1:1;
+  const dw=w-7,lintelHeight=h-dh,face=h===56?-1:1;
   for(const side of [-1,1])box(3.5,h,2,cx+side*(w/2-1.75),floor+h/2,face*119,'wall','door-pier');
-  box(w,6,2,cx,floor+h-3,face*119,'wall','door-lintel');
+  box(w,lintelHeight,2,cx,floor+dh+lintelHeight/2,face*119,'wall',h===56?'high-gate-spandrel':opening?'low-working-spandrel':'door-lintel');
   if(opening){
    // A recessed doorway with visible crane girders, not a rocket pasted on the facade.
    box(dw,dh,1,cx,floor+dh/2,106,'dark','open-door-interior');
@@ -108,6 +111,13 @@ export function buildMik112(root,{year=2026}={}){
   for(let x=cx-dw/2;x<cx+dw/2+.1;x+=2.1)box(.16,dh,.23,x,floor+dh/2,face*119.95,'seam','door-rib');
   for(let y=8;y<dh;y+=5.8)box(dw,.18,.22,cx,floor+y,face*119.98,'seam','door-horizontal-seam');
  }
+ // One continuous shallow dark canopy spans both TUA doors, as on the
+ // drone photograph. Its underside stays above the full 38 m opening.
+ const canopyLeft=MIK112_RAIL_LAYOUT.gates[0].centerX-highGateOuterWidth/2;
+ const canopyRight=MIK112_RAIL_LAYOUT.gates.at(-1).centerX+highGateOuterWidth/2;
+ const highGateCanopy={width:canopyRight-canopyLeft,depth:1.8,thickness:.42,
+  center:[(canopyLeft+canopyRight)/2,floor+MIK112_RAIL_LAYOUT.clearHeight+.38,-120.65]};
+ box(highGateCanopy.width,highGateCanopy.thickness,highGateCanopy.depth,...highGateCanopy.center,'dark','high-gate-continuous-canopy');
  // Retained low hall: its smaller windows and panel rhythm remain separate
  // from the tall facade's broad glazing band reconstructed below.
  for(let z=-114;z<=114;z+=12){
@@ -132,7 +142,13 @@ export function buildMik112(root,{year=2026}={}){
  box(9,46,10,33,floor+23,110,'wall','stair-tower');
  registerFacilityBeacon(root,{id:'mik112-stair-tower',position:[33,floor+46,110],kind:'tower'});
  for(let y=8;y<44;y+=6)box(9.25,2.4,10.2,33,floor+y,110,'glass','tower-glass-belt');
- for(const [x,z,w,d,h] of [[120,-95,52,27,12],[115,57,42,63,9],[65,144,62,18,10],[-113,-92,32,30,9]]){
+ // The ground view places this low service volume beside the working door,
+ // toward the striped tower/high-bay junction. The satellite views support
+ // a corner-side volume, not the former 62 m bar across both low-hall gates.
+ // Its compact footprint is a photo interpretation; keep the rail entry free.
+ const lowEntryWing={x:12,z:129,width:24,depth:18,height:10};
+ const lowEntryWingNoPole=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([sx,sz])=>[lowEntryWing.x+sx*(lowEntryWing.width/2+2),lowEntryWing.z+sz*(lowEntryWing.depth/2+2)]);
+ for(const [x,z,w,d,h] of [[120,-95,52,27,12],[115,57,42,63,9],[lowEntryWing.x,lowEntryWing.z,lowEntryWing.width,lowEntryWing.depth,lowEntryWing.height],[-113,-92,32,30,9]]){
   box(w,h,d,x,floor+h/2,z,'wall','service-wing');box(w+1,.6,d+1,x,floor+h+.3,z,'roof','service-roof');
   for(let xx=x-w/2+4;xx<x+w/2;xx+=5.5)box(3,2,.18,xx,floor+h*.6,z+d/2+.12,'glass','annex-window');
  }
@@ -253,13 +269,21 @@ export function buildMik112(root,{year=2026}={}){
    [[-98,-256],[28,-256],[28,-121],[-98,-121]],
    [[92,-111],[148,-111],[148,-79],[92,-79]],
    [[91,23],[138,23],[138,91],[91,91]],
-   [[32,132],[98,132],[98,156],[32,156]],
+   lowEntryWingNoPole,
    [[-132,-110],[-95,-110],[-95,-74],[-132,-74]]
   ],
   photoFolders:['1XTQD9tVRTeWIUVF-uzdAMIXLXh5SuVTk','1y-yzVIkCtzPMEaksDM70qWyD8K8PZnE3'],
   evidence:'Original MIK/TUA photographs plus six MIK photographs uploaded by the owner on 2026-11-10: overhead ruins, internal walls, collapsed trusses, drone view and the glazed side facade.',
   photoReconstruction,
-  accuracy:'Main hall dimensions from the post-collapse commission report; facade, roof condition and annexes interpreted from the inspected photos. Museum rocket mounting is a display, not an operational reconstruction.',
+  accuracy:'Main hall dimensions from the post-collapse commission report; facade, door heights, roof condition and annexes interpreted from the inspected photos. Museum rocket mounting is a display, not an operational reconstruction.',
+  facadeOpenings:{
+   energia:{count:2,clearWidth:MIK112_RAIL_LAYOUT.clearWidth,clearHeight:MIK112_RAIL_LAYOUT.clearHeight,wallHeight:56,spandrelHeight:56-MIK112_RAIL_LAYOUT.clearHeight,canopy:highGateCanopy,
+    basis:'Photo estimate from the TUA-side drone facade; checked against the imported museum payload envelope, not a surveyed door dimension.'},
+   lowWorking:{centerX:42.5,faceZ:120,clearWidth:28,clearHeight:lowWorkingDoorHeight,wallHeight:30,spandrelHeight:30-lowWorkingDoorHeight,
+    sideAnnex:{center:[lowEntryWing.x,floor+lowEntryWing.height/2,lowEntryWing.z],size:[lowEntryWing.width,lowEntryWing.height,lowEntryWing.depth],noPolePolygon:lowEntryWingNoPole,
+     basis:'Compact corner-side service volume inferred from the working-facade and satellite photographs; no surveyed annex dimensions.'},
+    basis:'Conservative photo estimate from the older working-hall facade photograph; no calibrated Soyuz transporter is installed at this opening.'}
+  },
   instancedBatches:batches.size,meshCount:all.length,railEntries,railHeadEntries,railGates,year,
   railLayout:{version:MIK112_RAIL_LAYOUT.version,energiaGates:2,tracksPerGate:2,trackCount:4,railHeadY:MIK112_RAIL_LAYOUT.railHeadY,
    railGaugeMetres:RAIL_PROFILE.gauge/MIK112.scale,sourceSwitches:railGates.map(gate=>gate.sourceNodeId)},

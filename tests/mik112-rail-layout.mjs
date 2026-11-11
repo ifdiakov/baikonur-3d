@@ -50,16 +50,17 @@ assert.deepEqual(exhibit.railHeadEntries,[[-82.4,4.305,-258.5],[-59.6,4.305,-258
 assert.deepEqual(manifest.placements.map(placement=>placement.position),[[-71,4.305,-183],[-19,4.305,-183]]);
 assert.deepEqual(root.scale.toArray(),[.14,.14,.14]);assert.equal(root.rotation.y,-Math.PI/4);
 
-// Count the actual full-height facade leaves, not just declared gate metadata.
+// Count the actual photo-proportioned facade leaves, not just declared metadata.
 const matrix=new THREE.Matrix4(),p=new THREE.Vector3(),q=new THREE.Quaternion(),s=new THREE.Vector3(),leaves=[];
 root.traverse(mesh=>{
  if(!mesh.isInstancedMesh||mesh.parent!==root)return;
  for(let i=0;i<mesh.count;i++){
   mesh.getMatrixAt(i,matrix);assert(matrix.elements.every(Number.isFinite));matrix.decompose(p,q,s);
-  if(Math.abs(s.y-50)<1e-5&&Math.abs(s.z-1)<1e-5&&Math.abs(p.z+119.3)<1e-5)leaves.push({center:p.clone(),size:s.clone()});
+  if(Math.abs(s.y-MIK112_RAIL_LAYOUT.clearHeight)<1e-5&&Math.abs(s.z-1)<1e-5&&Math.abs(p.z+119.3)<1e-5)leaves.push({center:p.clone(),size:s.clone()});
  }
 });
 leaves.sort((a,b)=>a.center.x-b.center.x);assert.equal(leaves.length,2);
+assert.equal(MIK112_RAIL_LAYOUT.clearHeight,38,'Photo-based gate height preserves a broad solid wall above the openings');
 for(let i=0;i<2;i++){
  const leaf=leaves[i],gate=stats.railGates[i],carrier=manifest.placements[i];
  assert(Math.abs(leaf.center.x-carrier.position[0])<1e-6,'Each visible gate is directly behind its fixed carrier');
@@ -68,6 +69,39 @@ for(let i=0;i<2;i++){
   const entry=exhibit.railHeadEntries[index];
   assert(Math.abs(entry[0]-gate.centerX)+RAIL_METRES.gauge/2+RAIL_METRES.headWidth/2<leaf.size.x/2,'Both full track sections fit through their own gate');
  }
+}
+
+// Check the real front surfaces at door and upper-wall elevations. This catches
+// a reduced metadata value with an unchanged full-height metal facade.
+root.updateWorldMatrix(true,true);
+const visibleMeshes=[];root.traverseVisible(o=>{if(o.isMesh)visibleMeshes.push(o);});
+const facadeRay=new THREE.Raycaster(),inward=new THREE.Vector3(0,0,1).transformDirection(root.matrixWorld),facadeProbes=[];
+for(const gate of stats.railGates)for(const [height,material]of [[20,'museum / doorMetal'],[44,'museum / wall']]){
+ facadeRay.set(root.localToWorld(new THREE.Vector3(gate.centerX,2.6+height,-145)),inward);
+ const hit=facadeRay.intersectObjects(visibleMeshes,false)[0];assert(hit);
+ assert.equal(hit.object.material.name,material,'The high facade has metal below and actual solid concrete above');
+ facadeProbes.push({gate:gate.id,height,material:hit.object.material.name});
+}
+
+// Actual imported placement changes the payload datum. Apply that placement
+// before testing every available museum load against the drawn gate bounds.
+exhibit.replaceTransporters([new THREE.Group(),new THREE.Group()],manifest.placements,{version:manifest.version,status:'ready'});
+const payloadClearances=[];
+for(const [index,mount]of exhibit.rocketMounts().tua.entries()){
+ const gate=leaves[index],gateTop=gate.center.y+gate.size.y/2;
+ const pose=new THREE.Matrix4().compose(new THREE.Vector3(...mount.position),new THREE.Quaternion(...mount.quaternion),new THREE.Vector3(1,1,1));
+ for(const id of ['energia-polyus','energia-buran','energia','energia-m']){
+  const asset=read('assets/models/rockets/'+id+'.json');assert.equal(asset.normalization.unit,'metre');
+  const bounds=new THREE.Box3(new THREE.Vector3(...asset.bounds.min),new THREE.Vector3(...asset.bounds.max)).applyMatrix4(pose);
+  const topClearance=gateTop-bounds.max.y;
+  const sideClearance=Math.min(bounds.min.x-(gate.center.x-gate.size.x/2),gate.center.x+gate.size.x/2-bounds.max.x);
+  assert(topClearance>=2,'Every museum load retains at least two metres above its measured bounding envelope');
+  assert(sideClearance>=3,'Every museum load fits between the actual gate leaves');
+  payloadClearances.push({gate:index,model:id,topClearance,sideClearance});
+ }
+ const vehiclePose=new THREE.Matrix4().compose(new THREE.Vector3(...manifest.placements[index].position),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,manifest.placements[index].rotationY,0)),new THREE.Vector3(1,1,1));
+ const vehicleBounds=new THREE.Box3(new THREE.Vector3(...manifest.bounds.min),new THREE.Vector3(...manifest.bounds.max)).applyMatrix4(vehiclePose);
+ assert(vehicleBounds.max.y<gateTop&&vehicleBounds.min.x>gate.center.x-gate.size.x/2&&vehicleBounds.max.x<gate.center.x+gate.size.x/2);
 }
 const towerBeacon=root.userData.facilityLighting.beacons.find(beacon=>beacon.id==='mik112-stair-tower');
 assert.deepEqual(towerBeacon.position,[33,48.6,110],'The beacon belongs to the actual existing tower roof');
@@ -96,4 +130,4 @@ assert.equal(snapshot(),before,'The museum rail approaches must preserve origina
 assert.equal(JSON.stringify(source),sourceBefore);
 console.log('MIK112_RAIL_LAYOUT_PASS',JSON.stringify({gates:leaves.length,tracks:tracks.length,sourceSwitches:plan.gates.map(gate=>gate.sourceNodeId),
  destinationRoutes:plan.destinationRoutes.length,connectedSourceSegments,protectedSourceEdges:plan.protectedEdges.size,replacedDisplayEdges:plan.replacedEdges.size,
- approachSamples,minEndTangentDot,gauge:RAIL_METRES.gauge,headWidth:RAIL_METRES.headWidth}));
+ approachSamples,minEndTangentDot,gauge:RAIL_METRES.gauge,headWidth:RAIL_METRES.headWidth,gateHeight:MIK112_RAIL_LAYOUT.clearHeight,facadeProbes,payloadClearances}));

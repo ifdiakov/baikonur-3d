@@ -2,8 +2,10 @@ import * as THREE from 'three';
 
 // The two owner-confirmed Energia doors follow the already calibrated TUA
 // placements. Their four approach ports stay fixed in MIK-local metres.
+// The 38 m opening is a facade photo estimate, checked against the museum
+// payload envelope. It is not a measured door dimension or a rail-plan change.
 export const MIK112_RAIL_LAYOUT=Object.freeze({
- version:'mik112-two-gates-osm-rails-v1',faceZ:-120,clearWidth:40,clearHeight:50,
+ version:'mik112-two-gates-osm-rails-v1',faceZ:-120,clearWidth:40,clearHeight:38,
  railHeadY:4.305,entryZ:-258.5,
  gates:Object.freeze([
   Object.freeze({id:'mik112-energia-1',centerX:-71,trackIndices:Object.freeze([0,1]),entryTrackXs:Object.freeze([-82.4,-59.6]),sourceNodeId:'1834612063',sourceWayId:'172571288'}),

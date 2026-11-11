@@ -3,7 +3,7 @@ import * as THREE from 'three';
 // Exterior and surviving structure interpreted from the owner's six MIK-112
 // photographs received 2026-11-10. Positions of fractures are visual, not a
 // survey or an assertion about the engineering sequence of the 2002 collapse.
-export const MIK112_PHOTO_VERSION='20261110-photo-v1';
+export const MIK112_PHOTO_VERSION='20261111-facades-v1';
 const random=(i,seed=0)=>{const a=Math.sin(i*127.1+seed*311.7)*43758.5453;return a-Math.floor(a);};
 const V=(...v)=>new THREE.Vector3(...v);
 
@@ -58,7 +58,7 @@ export function buildMik112PhotoDetails({root,intact,ruins,floor,box,beam,rod,in
    for(const zz of [z-5.7,z,z+5.7])box(.5,h,.16,-94.2,floor+48+h/2,zz,'steel','broken-window-mullion',modern);
    for(let yy=48;yy<48+h;yy+=3.6)box(.5,.16,11.45,-94.2,floor+yy,z,'steel','broken-window-transom',modern);
   }else if(h>.7){
-   box(1.05,h,4+random(bay,4)*5,-94.1,floor+48+h/2,z+random(bay,5)*2,'wall','torn-upper-wall',modern);
+   tilted(shards[bay%3],[h*1.25,1.05,5+random(bay,4)*6],[-94.1,floor+48+h*.32,z+(random(bay,5)-.5)*3.4],[0,(random(bay,12)-.5)*.025,Math.PI/2+(random(bay,13)-.5)*.07],'concrete','torn-upper-wall');
    beam([-94.1,floor+48,z-5],[-93.8,floor+48+h+1.4,z-2],.16,.18,'rust','broken-window-mullion',modern);
   }
   // A chipped cap and a few exposed bars make the silhouette irregular.
@@ -69,6 +69,7 @@ export function buildMik112PhotoDetails({root,intact,ruins,floor,box,beam,rod,in
  // Two full-height *wall assemblies* separate the three high bays. Their
  // piers connect spandrels and crane runways; they are never detached poles.
  // The lower portals and upper window bands remain open between those walls.
+ const partitionFragments=[];
  for(const [wallIndex,x]of [-55,-15].entries()){
   for(const [bottom,top]of [[1,8],[14,20],[26,32],[38,47.5]])box(1.35,top-bottom,236,x,floor+(bottom+top)/2,0,'wall','interior-partition-wall',modern);
   for(let row=0;row<20;row++){
@@ -79,10 +80,19 @@ export function buildMik112PhotoDetails({root,intact,ruins,floor,box,beam,rod,in
     for(const zz of [z+1.0,z+6,z+11])box(1.65,6,.14,x,floor+y,zz,'steel','interior-window-mullion',modern);
     box(1.64,.18,10.6,x,floor+y-3,z+5.85,'steel','interior-window-mullion',modern);
    }
-   // Roof edge over the partition is ragged, with no line of free columns.
-   const remnantHeight=2+random(row,12+wallIndex)*3.2;
-   box(1.45,remnantHeight,5+random(row,20+wallIndex)*4.5,x,floor+47.5+remnantHeight/2,z+3,'wall','partition-upper-remnant',modern);
    for(const side of [-1,1])beam([x+side*.9,floor+11,z],[x+side*.9,floor+16,z+4.4],.19,.24,'steel','partition-bracing',modern);
+  }
+  // Fractures do not repeat at the 12 m pier spacing. Reuse the chipped slab
+  // meshes on edge, with unequal lengths, shallow tilts and irregular gaps.
+  // Each piece overlaps the connected spandrel below: no detached columns.
+  let edgeZ=-118,fragment=0;
+  while(edgeZ<117){
+   const i=wallIndex*40+fragment,length=Math.min(8+random(i,60)*14,118-edgeZ);
+   const height=.65+Math.pow(random(i,61),1.25)*4.6,z=edgeZ+length/2;
+   const rotation=[(random(i,64)-.5)*.025,(random(i,65)-.5)*.035,Math.PI/2+(random(i,66)-.5)*.085];
+   tilted(shards[(fragment+wallIndex)%3],[height,1.2+random(i,63)*.4,length],[x+(random(i,67)-.5)*.12,floor+47.5+height*.25,z],rotation,'concrete','partition-upper-remnant');
+   partitionFragments.push({wallX:x,centerZ:z,length,height});
+   edgeZ+=length+.3+random(i,62)*4.8;fragment++;
   }
  }
 
@@ -171,6 +181,7 @@ export function buildMik112PhotoDetails({root,intact,ruins,floor,box,beam,rod,in
  }
  return {version:MIK112_PHOTO_VERSION,photoCount:6,highBays:3,connectedPartitionWalls:2,craneRunways:runways.length,
   transverseRemnantRows:crossLines,sharedDebrisGeometries:shards.length,debrisSlabs:slabCount,fireStairs:stairs.length,
+  partitionUpperFragments:partitionFragments.length,partitionFractures:partitionFragments,
   facadeWindowBand:[floor+2.8,floor+13.8],newTextureDownloads:0,newLightSources:0,
   interpretation:'Photo-based facade and surviving ruin structure; fracture positions are illustrative. Original site placement, measured envelope, two gates and four rail approaches remain unchanged.'};
 }

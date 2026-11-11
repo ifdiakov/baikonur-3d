@@ -1,18 +1,45 @@
 name: MIK112 model and reconstruction — verified integration
 on:
   push:
-    branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110, fix/mik112-photo-20261110]
-    paths: ['src/buran-loss*','src/mik112*.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','scripts/refine-mik112-callouts.mjs','tests/mik112-*.mjs','tests/buran-loss-*.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
+    branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110, fix/mik112-photo-20261110, fix/mik112-reference-20261111]
+    paths: ['src/buran-loss*','src/mik112*.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','scripts/refine-mik112-callouts.mjs','scripts/ci/wait-pages-publication.mjs','tests/mik112-*.mjs','tests/buran-loss-*.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
   workflow_dispatch:
 concurrency:
   group: museum-mik112-${{ github.ref }}
   cancel-in-progress: true
-permissions:
-  contents: write
 jobs:
+  pages_publication:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for successful Pages publication of this exact commit
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/wait-pages-publication.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mik112-pages-gate-attempt-${{ github.run_attempt }}
+          path: qa-ci/mik112-pages-publication.json
+          retention-days: 7
   mik112:
+    needs: pages_publication
+    # An explicit status predicate lets candidates run after the skipped gate.
+    if: ${{ !cancelled() && (github.ref != 'refs/heads/main' || needs.pages_publication.result == 'success') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
+    permissions:
+      contents: write
     strategy:
       fail-fast: false
       matrix:
@@ -30,13 +57,13 @@ jobs:
           BEFORE: ${{ github.event.before }}
         run: |
           target=buran-loss
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' || '${{ github.ref_name }}' == 'fix/mik112-photo-20261110' ]]; then
+          if [[ '${{ github.event_name }}' == 'workflow_dispatch' || '${{ github.ref_name }}' == 'fix/mik112-photo-20261110' || '${{ github.ref_name }}' == 'fix/mik112-reference-20261111' ]]; then
             target=mik112
           elif [[ '${{ github.ref_name }}' == 'fix/bridge-sign112-20261110' ]]; then
             target=bridge-sign112
           elif [[ -n "$BEFORE" && "$BEFORE" != 0000000000000000000000000000000000000000 ]]; then
             git fetch --no-tags --depth=1 origin "$BEFORE"
-            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/mik112(-materials|-photo-detail)?\.js$|^tests/mik112-|^\.github/workflows/verify-mik112\.yml$)'; then
+            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/mik112(-materials|-photo-detail|-rail-plan)?\.js$|^tests/mik112-|^scripts/ci/wait-pages-publication\.mjs$|^\.github/workflows/verify-mik112\.yml$)'; then
               target=mik112
             elif git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112|refine-mik112-callouts)'; then target=bridge-sign112; fi
           elif [[ -f src/mik112-cards.js ]]; then
@@ -69,6 +96,7 @@ jobs:
           npm install --no-save playwright@1.57.0 three@0.160.1
           npx playwright install --with-deps chromium
           if [ '${{ matrix.mode }}' = desktop ]; then
+            node tests/mik112-publish-gate.mjs
             node tests/buran-loss-source.mjs
             if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then node tests/bridge-sign112-source.mjs; fi
             if [ '${{ steps.scope.outputs.target }}' = mik112 ]; then
@@ -111,7 +139,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mik112-${{ matrix.mode }}-evidence
+          name: mik112-${{ matrix.mode }}-evidence-attempt-${{ github.run_attempt }}
           path: |
             qa-mik112/
             qa-buran-loss/
