@@ -1,4 +1,4 @@
-name: Generate prebuilt road overview LOD
+name: Prepare road LOD artifact without rewriting main
 on:
   workflow_dispatch:
   push:
@@ -9,28 +9,31 @@ on:
       - 'data/osm/railways.geojson'
       - '.github/workflows/build-road-lod.yml'
 permissions:
-  contents: write
+  contents: read
+concurrency:
+  group: road-lod-proposal-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   compile:
     runs-on: ubuntu-24.04
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Compile exact-source overview lines
-        run: node scripts/build-road-lod.mjs
-      - name: Publish compiled LOD with stable source file
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/osm/road-lod-prebuilt-v1.json
-          if git diff --cached --quiet; then exit 0; fi
-          git commit -m "build: regenerate cached map road LOD"
-          for attempt in 1 2 3; do
-            git fetch origin main
-            git rebase origin/main
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 3
-          done
-          exit 1
+          node scripts/build-road-lod.mjs
+          mkdir -p qa-road-lod
+          git rev-parse HEAD > qa-road-lod/source-commit.txt
+      - name: Keep the generated proposal with its source revision
+        uses: actions/upload-artifact@v4
+        with:
+          name: road-lod-proposal
+          path: |
+            data/osm/road-lod-prebuilt-v1.json
+            qa-road-lod/source-commit.txt
+          retention-days: 7
