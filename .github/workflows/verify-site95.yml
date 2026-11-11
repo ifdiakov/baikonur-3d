@@ -1,12 +1,12 @@
 # CI_RELIABILITY_V1
-name: Site 95 housing district
+name: Site 95 and neighbouring support facilities
 on:
   pull_request:
     branches: [main]
-    paths: ['src/site95*.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
+    paths: ['src/site95*.js','src/site92*.js','src/site82.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','tests/site92-82-*.mjs','scripts/tasks/apply-site92-82.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
   push:
-    branches: [main, fix/site95-courtyards-20261109]
-    paths: ['src/site95*.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
+    branches: [main, fix/site95-courtyards-20261109, fix/site92-82-20261111]
+    paths: ['src/site95*.js','src/site92*.js','src/site82.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','tests/site92-82-*.mjs','scripts/tasks/apply-site92-82.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -15,6 +15,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   verify:
+    if: ${{ github.ref_name != 'fix/site92-82-20261111' && !contains(github.event.head_commit.message, '[site92-82]') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
@@ -81,4 +82,72 @@ jobs:
             qa-site95/
             qa-ci/site95-*.json
             qa-ci/site95-*.log
+          retention-days: 7
+  support:
+    if: github.ref_name == 'fix/site92-82-20261111' || contains(github.event.head_commit.message, '[site92-82]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: museum-support-${{ runner.os }}-pw1.57.0
+          restore-keys: museum-playwright-${{ runner.os }}-1.57.0
+      - name: Install verification tools
+        run: |
+          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0 esbuild@0.25.12
+          npx playwright install --with-deps chromium
+      - name: Prepare isolated candidate only
+        if: github.ref_name == 'fix/site92-82-20261111'
+        run: |
+          node scripts/tasks/apply-site92-82.mjs
+          npx esbuild src/transport-detail-worker-entry.js --bundle --platform=browser --format=esm --minify --outfile=src/transport-detail-worker.bundle.js
+      - name: Serve exact scene
+        if: github.ref_name == 'fix/site92-82-20261111'
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/site92-82-server.log 2>&1 &
+      - name: Build matching roads before acceptance
+        if: github.ref_name == 'fix/site92-82-20261111'
+        run: node scripts/ci/run-bounded.mjs 300 site92-82-cache node scripts/build-owner19-caches.mjs
+      - name: Check models and preserved neighbouring town
+        run: |
+          node --experimental-vm-modules scripts/ci/fast-check.mjs
+          node tests/site92-82-source.mjs
+          node tests/site95-source.mjs
+          node tests/site95-courtyards-source.mjs
+      - name: Inspect actual museum and workshop
+        env:
+          BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
+          VERIFY_PUBLIC: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+          QA_PREFIX: ${{ github.ref == 'refs/heads/main' && 'public' || 'local' }}
+        run: |
+          for mode in desktop mobile workshop; do
+            QA_MODE=$mode node scripts/ci/run-bounded.mjs 240 site92-82-$mode node tests/site92-82-browser.mjs
+          done
+      - name: Save tested candidate without modifying main
+        if: github.ref_name == 'fix/site92-82-20261111'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html museum.html workshop.html src/archive-buildings.js src/archive-models.js src/archive-manifest.js src/osm-geography.js src/transport-detail-worker.bundle.js data/catalog.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz
+          if ! git diff --cached --quiet; then git commit -m '[site92-82] Verified detailed 92 moved clear of 95 and buried 82 with matching transport'; git push origin HEAD:${{ github.ref_name }}; fi
+      - name: Record exact checked source
+        if: always()
+        run: |
+          mkdir -p qa-site92-82
+          git rev-parse HEAD > qa-site92-82/source-commit.txt
+          cp /tmp/site92-82-server.log qa-site92-82/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site92-82-evidence
+          path: |
+            qa-site92-82/
+            qa-ci/site92-82-*
+            qa-owner19/cache-build.json
           retention-days: 7
