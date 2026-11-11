@@ -19,7 +19,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/audit-delivery.mjs
       - name: Package exact current text sources for local diagnosis
+        if: always()
         run: |
+          mkdir -p qa-delivery
           git archive --format=tar.gz HEAD .github scripts tests src data docs AGENTS.md PROJECT_CONTEXT.md index.html museum.html workshop.html > /tmp/delivery-source.tar.gz
           cp /tmp/delivery-source.tar.gz qa-delivery/
       - uses: actions/upload-artifact@v4
