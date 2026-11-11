@@ -91,6 +91,7 @@ export function createEnergiaBuranEffects({root,rocket,camera,channels}){
  groundRoot.userData={pickable:false,museumComponent:'buran-launch-ground-effects'};
  groundRoot.visible=false;root.add(groundRoot);
  const exhaust=createEnergiaRocketExhaust({rocket});
+ const rocketLight=exhaust.root.children.find(child=>child.isPointLight);
  const gasMaterial=nozzleFlameMaterial(0xffb15b);
  // The shader's turbulence is measured in local metres. A full-length shared
  // cylinder avoids magnifying its tail deformation by scaling a unit tube.
@@ -236,6 +237,9 @@ export function createEnergiaBuranEffects({root,rocket,camera,channels}){
    ground:Object.fromEntries(['steam','water','gas','smoke','light','plume'].map(key=>[key,clamp(finite(input.ground?.[key]))]))};
   groundRoot.visible=true;
   exhaust.seek({time:lastSample.time,...lastSample.engine});
+  // This concrete pad needs less reflected light to retain the three ramp
+  // edges and the transparent steam. The shared UKSS flame stays calibrated.
+  rocketLight.intensity*=.10;
   gasMaterial.uniforms.uPower.value=lastSample.ground.gas*.88;
   gasMaterial.uniforms.uTime.value=lastSample.time;
   for(const [channelIndex,channel]of ducts.entries())for(const [index,jet]of channel.emitters.entries()){
@@ -243,7 +247,7 @@ export function createEnergiaBuranEffects({root,rocket,camera,channels}){
    const pulse=1+.045*Math.sin(lastSample.time*7+index*1.8+channelIndex*2.1);
    jet.scale.set(pulse,channel.length/5/26*1.06,pulse);
   }
-  lights.forEach((light,index)=>{light.intensity=22*lastSample.ground.light*(.94+.06*Math.sin(lastSample.time*7+index*1.7));});
+  lights.forEach((light,index)=>{light.intensity=5.5*lastSample.ground.light*(.94+.06*Math.sin(lastSample.time*7+index*1.7));});
   writeSmoke(lastSample);
   return stats();
  }

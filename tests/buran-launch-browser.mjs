@@ -12,7 +12,8 @@ const publicFiles = [
   'src/archive-kit.js', 'src/museum-menu.js', 'src/site110.js',
   'src/site110-kinematics.js', 'src/buran-launch.js', 'src/buran-launch.css',
   'src/buran-launch-history.js', 'src/energia-buran-effects.js',
-  'src/energia-rocket-exhaust.js', 'src/energia-polyus-launch.js', 'src/energia-plasma-shader.js'
+  'src/energia-rocket-exhaust.js', 'src/energia-polyus-launch.js', 'src/energia-plasma-shader.js',
+  'src/workshop-panel.css'
 ];
 await mkdir(out, {recursive: true});
 const report = {passed: false, version, base, checks: [],
@@ -238,6 +239,18 @@ try {
     assert(baseline.finite && baseline.stationaryInstances > 100 && baseline.movingInstances > 0);
     const result = {mode, initial, card, baseline, pendingCancel, phases: []}; progress('startup-ready');
 
+    if (mode === 'workshop') {
+      await page.locator('#buranLaunchStart').scrollIntoViewIfNeeded();
+      result.workshopStartHitTest = await page.locator('#buranLaunchStart').evaluate(button => {
+        const rect = button.getBoundingClientRect(), x = rect.x + rect.width / 2, y = rect.y + rect.height / 2;
+        const hit = document.elementFromPoint(x, y);
+        return {clickable: hit === button || button.contains(hit), centre: [x, y],
+          button: {x: rect.x, y: rect.y, width: rect.width, height: rect.height},
+          hit: hit ? {tag: hit.tagName, id: hit.id, class: hit.getAttribute('class'), editor: Boolean(hit.closest('#workshopPanel'))} : null};
+      });
+      report.lastProbe = {mode, kind: 'workshop-launch-button-hit-test', ...result.workshopStartHitTest};
+      assert(result.workshopStartHitTest.clickable, 'Workshop launch CTA is covered: ' + JSON.stringify(result.workshopStartHitTest));
+    }
     await page.locator('#buranLaunchStart').click();
     await page.waitForFunction(() => __BAIKONUR_QA.buranLaunch.stats()?.active, null, {timeout: 120000});
     let state = await stats(); assert.equal(state.version, version); assert.equal(state.time, -90);
@@ -307,6 +320,26 @@ try {
     assert.deepEqual(reverse.rocket, at3.rocket); assert.deepEqual(reverse.effects.channels, at3.effects.channels);
     assert.deepEqual((await geometry()).moving, at3Geometry.moving, 'Reverse seek reproduces the same actual moving matrices');
     await page.locator('#buranLaunchTrenches').click(); assert.equal((await stats()).view, 'trenches');
+    result.trenchProjection = await page.evaluate(() => {
+      const {THREE: T, camera} = __BURAN_LAUNCH_TEST;
+      camera.updateMatrixWorld(true);
+      const panel = document.getElementById('buranLaunchPanel').getBoundingClientRect();
+      const outlets = __BAIKONUR_QA.buranLaunch.stats().effects.channels.map(channel => {
+        const ndc = new T.Vector3(...channel.worldOutlet).project(camera);
+        return {id: channel.id, world: channel.worldOutlet, ndc: ndc.toArray(),
+          x: (ndc.x + 1) * innerWidth / 2, y: (1 - ndc.y) * innerHeight / 2};
+      });
+      return {width: innerWidth, height: innerHeight, panelTop: panel.top, outlets};
+    });
+    report.lastProbe = {mode, kind: 'three-outlet-screen-projection', ...result.trenchProjection};
+    assert.equal(result.trenchProjection.outlets.length, 3);
+    for (const outlet of result.trenchProjection.outlets) {
+      const {width, height, panelTop} = result.trenchProjection;
+      assert(outlet.ndc.every(Number.isFinite) && outlet.ndc[2] >= -1 && outlet.ndc[2] <= 1,
+        'Trench outlet must be inside the camera depth range: ' + JSON.stringify(outlet));
+      assert(outlet.x >= 12 && outlet.x <= width - 12 && outlet.y >= 0 && outlet.y <= height && outlet.y <= panelTop - 10,
+        'Trench outlet is offscreen or covered by the panel: ' + JSON.stringify({outlet, width, height, panelTop}));
+    }
     await capture('three-gas-channels');
     if (mobile) {
       const panel = await page.locator('#buranLaunchPanel').boundingBox();

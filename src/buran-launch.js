@@ -44,7 +44,7 @@ export function createBuranLaunch({siteRoot,camera,controls,getEntry,onBeforeSta
  document.body.append(panel);const $=id=>panel.querySelector('#'+id);
  for(const source of Object.values(SOURCES)){const a=document.createElement('a');a.href=source.url;a.target='_blank';a.rel='noopener noreferrer';a.textContent=source.title+' ↗';$('buranLaunchSources').append(a);}
  let active=false,playing=false,time=START,last=null,saved=null,sceneRestore=null,effects=null,disposed=false;
- let view='follow',detached=false,detachedAt=null,rate='auto',lastSample=null,restored=null,lastUIKey='';
+ let view='follow',detached=false,detachedAt=null,rate='auto',lastSample=null,restored=null,lastUIKey='',framing=null;
  const followTarget=vec(),initialTarget=vec(),initialEye=vec();
 
  function copyCamera(eye,target){
@@ -134,17 +134,49 @@ export function createBuranLaunch({siteRoot,camera,controls,getEntry,onBeforeSta
  function seek(next){if(!active)return false;time=clamp(Number.isFinite(Number(next))?Number(next):START,START,END);last=performance.now();apply();return time;}
  function pause(){playing=false;last=null;if(lastSample)updateUI(lastSample);return true;}
  function resume(){if(!active)return false;if(time>=END)seek(START);playing=true;last=performance.now();updateUI(lastSample);return true;}
+ function frameTrenches(){
+  // Fit the real three outlets and their nearby vapour into the usable screen
+  // above the controls. A portrait viewport needs a wider camera distance,
+  // rather than the same desktop offset with one mouth hidden by the panel.
+  const small=innerWidth<700,panelBox=panel.getBoundingClientRect();
+  const maxHeight=parseFloat(getComputedStyle(panel).maxHeight)||innerHeight*(small?.43:.48);
+  const top=small?72:66,bottom=Math.max(top+80,Math.min(panelBox.top,innerHeight-maxHeight-(small?8:18))-16);
+  const rect={left:small?18:Math.min(350,innerWidth*.24),right:innerWidth-22,top,bottom};
+  const focus=siteRoot.localToWorld(vec(...rig.frame.padOrigin).add(vec(0,18,0)));
+  const points=rig.channels.flatMap(channel=>{
+   const outlet=vec(...channel.outlet),direction=outlet.clone().sub(vec(...channel.throat)).setY(0).normalize();
+   const side=vec(-direction.z,0,direction.x).multiplyScalar(channel.width*.65);
+   return [outlet.clone().add(side),outlet.clone().sub(side),outlet.clone().addScaledVector(direction,55).add(vec(0,20,0))];
+  });
+  points.push(vec(...rig.frame.padOrigin),vec(...rig.frame.padOrigin).add(vec(0,74,0)));
+  points.forEach(p=>siteRoot.localToWorld(p));
+  const direction=vec(.7,2.2,1).applyAxisAngle(Y,rig.frame.padYaw).transformDirection(siteRoot.matrixWorld);
+  const probe=camera.clone(),ndcX=(rect.left+rect.right)/innerWidth-1,ndcY=1-(rect.top+rect.bottom)/innerHeight;
+  let distance=360*siteRoot.getWorldScale(vec()).y,eye,target,projected=[];
+  for(let attempt=0;attempt<26;attempt++){
+   probe.position.copy(focus).addScaledVector(direction,distance);probe.lookAt(focus);probe.updateMatrixWorld(true);
+   const halfHeight=distance*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/camera.zoom;
+   const shift=vec(1,0,0).applyQuaternion(probe.quaternion).multiplyScalar(-ndcX*halfHeight*camera.aspect)
+    .addScaledVector(vec(0,1,0).applyQuaternion(probe.quaternion),-ndcY*halfHeight);
+   eye=probe.position.clone().add(shift);target=focus.clone().add(shift);probe.position.copy(eye);probe.lookAt(target);probe.updateMatrixWorld(true);
+   projected=points.map(point=>{const p=point.clone().project(probe);return {x:(p.x+1)*innerWidth/2,y:(1-p.y)*innerHeight/2,z:p.z};});
+   if(projected.every(p=>p.x>=rect.left&&p.x<=rect.right&&p.y>=rect.top&&p.y<=rect.bottom&&p.z>-1&&p.z<1))break;
+   distance*=1.12;
+  }
+  copyCamera(eye,target);framing={view:'trenches',rect,distance,points:projected};
+ }
  function setView(next){
   if(!active||!['overview','trenches','follow'].includes(next))return false;
-  view=next;detached=false;detachedAt=null;
+  view=next;detached=false;detachedAt=null;framing=null;
   if(view==='follow'){
    const direction=camera.position.clone().sub(controls.target);if(direction.lengthSq()<.01)direction.set(26,18,30);
    direction.setLength(clamp(direction.length(),15,90));
    const target=initialTarget.clone().lerp(rocketTarget(),smooth(0,8,time));copyCamera(target.clone().add(direction),target);
    followTarget.copy(target);
-  }else{
-   const origin=vec(...rig.frame.padOrigin),target=origin.clone().add(vec(0,view==='trenches'?-6:23,0));
-   const eyeOffset=view==='trenches'?vec(205,200,235):vec(145,110,170);
+  }else if(view==='trenches')frameTrenches();
+  else{
+   const origin=vec(...rig.frame.padOrigin),target=origin.clone().add(vec(0,23,0));
+   const eyeOffset=vec(145,110,170);
    if(innerWidth<700)eyeOffset.multiplyScalar(1.18);
    eyeOffset.applyAxisAngle(Y,rig.frame.padYaw);
    copyCamera(siteRoot.localToWorld(target.clone().add(eyeOffset)),siteRoot.localToWorld(target));
@@ -169,7 +201,7 @@ export function createBuranLaunch({siteRoot,camera,controls,getEntry,onBeforeSta
    altitudeMetres:lastSample?.ascent.altitudeMetres||0,ascent:lastSample?.ascent||sampleBuranAscent(START),
    rocket:rocket?{position:rocket.position.toArray(),quaternion:rocket.quaternion.toArray(),scale:rocket.scale.toArray(),worldPosition:rocket.getWorldPosition(vec()).toArray(),basePosition:saved?.position.toArray()||restored?.position||null,visible:rocket.visible,sourceModel:getEntry().modelId}:null,
    camera:{following:active&&view==='follow'&&!detached,detached,detachedAt,target:controls.target.toArray(),position:camera.position.toArray(),initialPosition:initialEye.toArray(),initialTarget:saved?.target.toArray()||initialTarget.toArray()},
-   effects:effects?.stats()||null,rig:rig.stats(),restored,sourceCount:Object.keys(SOURCES).length,
+   effects:effects?.stats()||null,rig:rig.stats(),restored,framing,sourceCount:Object.keys(SOURCES).length,
    assumptions:['platform-angle-and-unrecorded-motion-intervals','illustrative-initial-ascent','museum-evening-light']};
  }
  $('buranLaunchClose').onclick=()=>stop();$('buranLaunchPlay').onclick=()=>playing?pause():resume();
@@ -181,7 +213,8 @@ export function createBuranLaunch({siteRoot,camera,controls,getEntry,onBeforeSta
   if(/INPUT|TEXTAREA|SELECT/.test(event.target?.tagName)||event.target?.isContentEditable)return;
   if(event.code==='Space'&&event.target?.tagName!=='BUTTON'){event.preventDefault();playing?pause():resume();}};
  const visibilityChanged=()=>{last=null;};document.addEventListener('visibilitychange',visibilityChanged);
+ const resize=()=>{if(active&&view==='trenches')frameTrenches();};window.addEventListener('resize',resize);
  window.addEventListener('keydown',keydown);
  return {start,stop,seek,pause,resume,setView,setManualCamera,update,stats,isActive:()=>active,
-  dispose(){if(disposed)return;stop();disposed=true;panel.remove();stylesheet.remove();window.removeEventListener('keydown',keydown);document.removeEventListener('visibilitychange',visibilityChanged);}};
+  dispose(){if(disposed)return;stop();disposed=true;panel.remove();stylesheet.remove();window.removeEventListener('keydown',keydown);window.removeEventListener('resize',resize);document.removeEventListener('visibilitychange',visibilityChanged);}};
 }

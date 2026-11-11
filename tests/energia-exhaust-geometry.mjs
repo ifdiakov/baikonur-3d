@@ -160,7 +160,8 @@ for(const [index,channel]of lift.channels.entries()){
   assert.equal(emitter.depthTest,true);
  }
 }
-assert.ok(lift.lightIntensities.every(value=>value>0&&value<=22),'Reflected ground light has a bounded intensity');
+assert.equal(lift.engine.movingLightIntensity,165,'Site 110 attenuates its own moving light without changing the UKSS calibration');
+assert.ok(lift.lightIntensities.every(value=>value>0&&value<=5.5),'Reflected ground light preserves the concrete channel edges');
 const particleMeshes=fx.root.children.filter(child=>child.isInstancedMesh);
 assert.equal(particleMeshes.length,1,'Smoke and water reuse a single instanced batch');
 const particles=particleMeshes[0],alpha=particles.geometry.getAttribute('aSmokeDensity');
@@ -172,7 +173,8 @@ assert.ok(alpha.array.some(value=>value>0)&&alpha.array.every(value=>value>=0&&v
 assert.ok(particles.instanceMatrix.array.every(Number.isFinite));
 const particleState=()=>sha(Buffer.concat([Buffer.from(particles.instanceMatrix.array.buffer),Buffer.from(alpha.array.buffer)]));
 const originalParticles=particleState();fx.seek(sampleEnergiaBuranEffects(-50));
-fx.seek(sampleEnergiaBuranEffects(3,{altitudeMetres:12}));
+assert.equal(fx.seek(sampleEnergiaBuranEffects(3,{altitudeMetres:12})).engine.movingLightIntensity,165,
+ 'Repeated seeks reset source light power before the Site 110 attenuation');
 assert.equal(particleState(),originalParticles,'Backward seeking reconstructs the same particle matrices and density');
 const independent=fx.seek({time:3,altitudeMetres:12,engine:{core:1,boosters:1},ground:{}});
 assert.equal(independent.engine.engineNozzleGlowVisible,8);
