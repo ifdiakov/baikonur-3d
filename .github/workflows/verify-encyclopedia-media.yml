@@ -1,27 +1,15 @@
 # CI_RELIABILITY_V1
-name: Encyclopedia media and 3D cards
+name: Encyclopedia media and card sharing
 on:
   push:
-    branches: [main]
-    paths:
-      - 'encyclopedia.html'
-      - 'index.html'
-      - 'data/encyclopedia.json'
-      - 'src/encyclopedia-3d.js'
-      - 'tests/encyclopedia-media-*.mjs'
-      - '.github/workflows/verify-encyclopedia-media.yml'
+    branches: [main, fix/card-share-20261111]
+    paths: ['encyclopedia.html','index.html','data/encyclopedia.json','src/encyclopedia-3d.js','src/card-share*','src/model-viewer.js','src/model-inspector.js','scripts/prepare-card-share.mjs','tests/card-share-*.mjs','tests/encyclopedia-media-*.mjs','.github/workflows/verify-encyclopedia-media.yml']
   pull_request:
     branches: [main]
-    paths:
-      - 'encyclopedia.html'
-      - 'index.html'
-      - 'data/encyclopedia.json'
-      - 'src/encyclopedia-3d.js'
-      - 'tests/encyclopedia-media-*.mjs'
-      - '.github/workflows/verify-encyclopedia-media.yml'
+    paths: ['encyclopedia.html','index.html','data/encyclopedia.json','src/encyclopedia-3d.js','src/card-share*','tests/card-share-*.mjs','tests/encyclopedia-media-*.mjs']
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 concurrency:
   group: encyclopedia-media-${{ github.ref }}
   cancel-in-progress: true
@@ -38,21 +26,22 @@ jobs:
         if: steps.ci_scope.outputs.run == 'true'
         with:
           node-version: '22'
-      - name: Reuse downloaded verification dependencies
+      - uses: actions/cache@v4
         if: steps.ci_scope.outputs.run == 'true'
-        uses: actions/cache@v4
         with:
           path: ~/.npm
           key: museum-npm-${{ runner.os }}-v1
-      - name: Reuse matching browser binaries
+      - uses: actions/cache@v4
         if: steps.ci_scope.outputs.run == 'true'
-        uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
           key: museum-playwright-${{ runner.os }}-1.57.0
-      - name: Static media contracts and source mappings
+      - name: Prepare and validate sharing without changing scene geometry
         if: steps.ci_scope.outputs.run == 'true'
         run: |
+          node scripts/prepare-card-share.mjs
+          node --check src/card-share.js
+          node tests/card-share-source.mjs
           node --check src/encyclopedia-3d.js
           node tests/encyclopedia-media-data.mjs
       - name: Install browser tests
@@ -60,16 +49,39 @@ jobs:
         run: |
           npm install --no-save playwright@1.57.0
           npx playwright install --with-deps chromium
-      - name: Serve the museum
-        if: steps.ci_scope.outputs.run == 'true'
+      - name: Serve candidate
+        if: steps.ci_scope.outputs.run == 'true' && github.ref != 'refs/heads/main'
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/card-share-http.log 2>&1 &
+      - name: Check candidate sharing and retained encyclopedia
+        if: steps.ci_scope.outputs.run == 'true' && github.ref != 'refs/heads/main'
         run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 &
-          sleep 2
-      - name: Verify the encyclopedia card imagery and 3D
-        if: steps.ci_scope.outputs.run == 'true'
-        run: node tests/encyclopedia-media-browser.mjs
+          node scripts/ci/run-bounded.mjs 480 card-share-local node tests/card-share-browser.mjs
+          node scripts/ci/run-bounded.mjs 180 encyclopedia-media-local node tests/encyclopedia-media-browser.mjs
+      - name: Record only verified prepared source on candidate
+        if: steps.ci_scope.outputs.run == 'true' && github.ref_name == 'fix/card-share-20261111'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html museum.html workshop.html encyclopedia.html workshop/model.html src/model-viewer.js src/model-inspector.js PROJECT_CONTEXT.md docs/WORK_STATUS.md
+          if ! git diff --cached --quiet; then git commit -m 'Integrate verified sharing into all museum card types'; git push origin HEAD:${{ github.ref_name }}; fi
+          git rev-parse HEAD > qa-card-share/source-commit.txt
+      - name: Check exact published revision and real public controls
+        if: steps.ci_scope.outputs.run == 'true' && github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://museum.rockettrip.space/
+          VERIFY_PUBLIC: '1'
+          QA_PREFIX: public
+        run: |
+          git diff --exit-code -- index.html museum.html workshop.html encyclopedia.html workshop/model.html src
+          node scripts/ci/run-bounded.mjs 480 card-share-public node tests/card-share-browser.mjs
+          git rev-parse HEAD > qa-card-share/source-commit.txt
       - uses: actions/upload-artifact@v4
-        if: (always()) && (steps.ci_scope.outputs.run == 'true')
+        if: always() && steps.ci_scope.outputs.run == 'true'
         with:
-          name: encyclopedia-media-visuals
-          path: qa-encyclopedia-media/
+          name: card-share-evidence
+          path: |
+            qa-card-share/
+            qa-encyclopedia-media/
+            qa-ci/card-share-*
+            qa-ci/encyclopedia-media-*
+          retention-days: 7

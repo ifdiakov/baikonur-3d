@@ -1,0 +1,22 @@
+import assert from 'node:assert/strict';
+import {readFile,mkdir,writeFile} from 'node:fs/promises';
+import {makeShareURL,parseShareTarget,shareTarget,SHARE_EVENTS,SHARE_ICON} from '../src/card-share.js';
+const base='https://museum.rockettrip.space/workshop.html?draft=private&view=bad#state',checks=[];
+const ok=(name,fn)=>{fn();checks.push(name);};
+ok('public link has no admin state',()=>{const url=new URL(makeShareURL({kind:'site',id:'pad-112'},base));assert.equal(url.pathname,'/museum.html');assert.equal(url.searchParams.get('share'),'site:pad-112');assert.equal(url.searchParams.get('draft'),null);assert.equal(url.hash,'');});
+ok('legacy hostname resolves to HTTPS custom domain',()=>assert(makeShareURL({kind:'site',id:'pad-1'},'http://ifdiakov.github.io/baikonur-3d/workshop.html').startsWith('https://museum.rockettrip.space/museum.html?')));
+ok('distinct objects get distinct URLs',()=>assert.notEqual(makeShareURL({kind:'site',id:'pad-112'},base),makeShareURL({kind:'site',id:'tua-112'},base)));
+for(const kind of ['site','rocket','model','story','history','event','research','view'])ok('round trip '+kind,()=>{const target={kind,id:'example-1'};assert.deepEqual(parseShareTarget(new URL(makeShareURL(target,base)).search),target);});
+ok('article uses its existing encyclopedia anchor',()=>assert.equal(makeShareURL({kind:'article',id:'r7'},base),'https://museum.rockettrip.space/encyclopedia.html#r7'));
+ok('untrusted routes rejected',()=>{for(const query of ['?share=site:../../x','?share=javascript:alert(1)','?share=site:__proto__/x','?share=site:','?share='+('x'.repeat(200))])assert.equal(parseShareTarget(query),null);assert.throws(()=>makeShareURL({kind:'admin',id:'x'},base));});
+ok('events point to existing start buttons',()=>assert(Object.values(SHARE_EVENTS).every(x=>x.site&&x.title)));
+ok('icon is vector with no image request',()=>{assert.match(SHARE_ICON,/<svg /);assert.doesNotMatch(SHARE_ICON,/image|https?:/);});
+const target={kind:'site',id:'pad-95',title:'Площадка 95'},noop=()=>{};let nativeData,copied,manual,notices=[];
+let r=await shareTarget(target,{base,navigator:{canShare:()=>true,share:async data=>{nativeData=data;}},onStatus:noop,onManual:noop});assert.equal(r.status,'shared');assert.equal(nativeData.url,makeShareURL(target,base));checks.push('native share payload');
+r=await shareTarget(target,{base,navigator:{share:async()=>{throw Object.assign(new Error(),{name:'AbortError'});},clipboard:{writeText:async()=>{throw Error('must not copy after cancel');}}},onStatus:()=>{throw Error('must not show success after cancel');},onManual:()=>{throw Error('must not show fallback after cancel');}});assert.equal(r.status,'cancelled');checks.push('cancel has no false success or clipboard effect');
+r=await shareTarget(target,{base,navigator:{clipboard:{writeText:async text=>{copied=text;}}},onStatus:text=>notices.push(text),onManual:noop});assert.equal(r.status,'copied');assert.equal(copied,nativeData.url);assert.deepEqual(notices,['Ссылка скопирована']);checks.push('clipboard only confirms after success');
+r=await shareTarget(target,{base,navigator:{share:async()=>{throw Error('blocked')},clipboard:{writeText:async()=>{throw Error('denied')}}},onStatus:()=>{throw Error('false confirmation')},onManual:url=>{manual=url}});assert.equal(r.status,'manual');assert.equal(manual,nativeData.url);checks.push('permission denial exposes selectable URL');
+for(const file of ['index.html','museum.html','workshop.html']){const s=await readFile(file,'utf8');assert.match(s,/installMuseumSharing/);assert.match(s,/function openSharedTarget/);assert.match(s,/CARD_SHARING_V1/);}
+assert.equal(await readFile('index.html','utf8'),await readFile('museum.html','utf8'));checks.push('both museum entries identical; workshop integrated');
+assert.match(await readFile('src/model-viewer.js','utf8'),/createShareButton/);assert.match(await readFile('encyclopedia.html','utf8'),/encyclopedia-card-wrap/);checks.push('viewer and encyclopedia share controls present');
+await mkdir('qa-card-share',{recursive:true});await writeFile('qa-card-share/source-report.json',JSON.stringify({passed:true,checks},null,2));console.log('CARD_SHARE_SOURCE_PASS',checks.length);
