@@ -34,6 +34,19 @@ try{
  const target=await page.evaluate(()=>__MUSEUM_SHARE.current());assert.equal(target.kind,expected.kind);assert.equal(target.id,expected.id);report.checks.push('Incoming object link opens correct card');
  const coverage=await page.evaluate(()=>({targets:__MUSEUM_SHARE.targets().length,valid:__MUSEUM_SHARE.targets().every(t=>!!__MUSEUM_SHARE.url(t)),missing:[...document.querySelectorAll('.site-label,.detail-card')].filter(e=>e.querySelectorAll(':scope > .museum-share-button').length!==1).length}));
  assert(coverage.targets>90&&coverage.valid);assert.equal(coverage.missing,0);report.coverage=coverage;
+ // Check the real production stylesheet for each actual card state, restoring
+ // classes immediately; do not invent a second UI or alter the application.
+ const visibility=await page.evaluate(()=>{
+  const hidden=e=>getComputedStyle(e).display==='none';
+  const compact=[...document.querySelectorAll('.site-label>.museum-share-button,#arrivalPanel>.museum-share-button,#nextLaunchPanel>.museum-share-button')];
+  const card=document.querySelector('.detail-card'),button=card?.querySelector(':scope > .museum-share-button');
+  if(!card||!button)throw Error('Detailed map card missing');
+  const original=card.className;let unselected,expanded,collapsed;
+  try{card.classList.remove('is-selected','is-collapsed');unselected=hidden(button);card.classList.add('is-selected');expanded=!hidden(button);card.classList.add('is-collapsed');collapsed=hidden(button);}finally{card.className=original;}
+  return {compactCount:compact.length,compactHidden:compact.every(hidden),unselectedHidden:unselected,expandedVisible:expanded,collapsedHidden:collapsed};
+ });
+ assert(visibility.compactCount>=coverage.targets);for(const [key,value]of Object.entries(visibility))if(key!=='compactCount')assert.equal(value,true,'Share visibility: '+key);
+ assert(await page.locator('#infoShare').isVisible());report.visibility=visibility;report.checks.push('Share hidden on compact labels/docks and collapsed/unselected map cards; visible only in expanded cards');
  async function copy(locator,kind,id,scope=page){
   await page.bringToFront();await locator.click();await scope.waitForFunction(()=>document.querySelector('.museum-share-toast')?.textContent==='Ссылка скопирована в буфер обмена',null,{timeout:10000});
   const value=await scope.evaluate(()=>window.__REAL_CLIPBOARD.readText()),u=new URL(value);
@@ -67,7 +80,7 @@ try{
   await page.evaluate(()=>__MUSEUM_SHARE.open({kind:'model',id:'rd180'}));await page.waitForFunction(()=>__BAIKONUR_QA.modelInspector.stats().ready,null,{timeout:90000,polling:200});
   const frame=page.frames().find(f=>f.url().includes('/workshop/model.html'));assert(frame);await copy(frame.locator('.intro > .museum-share-button'),'model','rd180',frame);await page.screenshot({path:out+'/equipment-copy.png',timeout:60000});report.checks.push('Actual 3D-viewer iframe copies public model link');
   await page.goto(new URL('encyclopedia.html#r7',base).href,{waitUntil:'domcontentloaded',timeout:90000});await page.waitForSelector('#detail > .museum-share-button');
-  assert.equal(await page.locator('#cards .museum-share-button').count(),await page.locator('#cards .card').count());assert.equal(await page.locator('button button').count(),0);await copy(page.locator('#detail > .museum-share-button'),'article','r7');report.checks.push('Encyclopedia article/card sharing and valid button nesting');
+  assert.equal(await page.locator('#cards .museum-share-button').count(),await page.locator('#cards .card').count());assert.equal(await page.locator('#cards .museum-share-button:visible').count(),0);assert.equal(await page.locator('button button').count(),0);await copy(page.locator('#detail > .museum-share-button'),'article','r7');report.checks.push('Encyclopedia sharing only in opened article, not compact list cards; valid button nesting');
  }
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);report.passed=true;
 }catch(e){report.error=e.stack;await page?.screenshot({path:out+'/failure.png',timeout:20000}).catch(()=>{});process.exitCode=1;}
