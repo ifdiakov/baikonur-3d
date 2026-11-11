@@ -113,7 +113,7 @@ jobs:
       matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
     env:
       QA_MODES: ${{ matrix.mode }}
-      BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
+      BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://museum.rockettrip.space/' || 'http://127.0.0.1:8765/' }}
       QA_PREFIX: ${{ github.ref == 'refs/heads/main' && 'public' || 'local' }}
     steps:
       - uses: actions/checkout@v4

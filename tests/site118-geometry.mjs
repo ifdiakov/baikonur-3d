@@ -69,7 +69,7 @@ export function assertSite118Measurement(result,{manifest,ground=false,picking=f
   for(const part of result.geometry){const expected=manifest.retained.find(p=>p.name===part.part);assert(expected);assert.equal(part.triangles,expected.triangles);assert.equal(part.vertices,expected.vertices);
     for(const side of ['min','max'])for(let i=0;i<3;i++)assert(Math.abs(part.bounds[side][i]-expected.bounds[side][i])<2e-5,part.part+' actual bounds');}
   assert.deepEqual(result.root.scale,[.14,.14,.14]);assert.equal(result.root.yaw,-2.106);
-  assert(Math.abs(result.root.position[0]+374.5118549553936)<1e-7);assert(Math.abs(result.root.position[2]+403.32546068210706)<1e-7);
+  assert(Math.abs(result.root.position[0]+371.94137309308445)<1e-7);assert(Math.abs(result.root.position[2]+407.6606911252946)<1e-7);
   assert(Math.abs(result.root.position[1]+2.755)<1e-9,'The preserved underground pipes must not redefine the surface datum');
   assert.equal(result.contacts.length,15);assert.equal(result.negativeProbes.length,6);
   assert.deepEqual(new Set(result.contacts.map(p=>p.role)),new Set(['building-foundation','equipment-base','fence-foundation']));
@@ -81,4 +81,50 @@ export function assertSite118Measurement(result,{manifest,ground=false,picking=f
   for(const probe of result.negativeProbes){assert.deepEqual(probe.hits,[],'A removed source lawn/yard slab is still rendered: '+probe.id);if(ground)assert(probe.ground,'The existing museum ground remains visible below '+probe.id);}
   if(picking){assert(result.picking);assert.equal(result.picking.records,1);assert.equal(result.picking.picked,4);assert.equal(result.picking.unique,4);
     for(const key of ['missing','stale','wrongIndex'])assert.deepEqual(result.picking[key],[],key+' source picking');}
+}
+
+// The failed candidate showed the medium-road ribbon over this small source
+// exhibit. Limit visibility rays to its real footprint/above-ground vertices
+// and visible road/LOD roots; this is not a scene-wide collision scan.
+export function measureSite118RoadOcclusion(options={}){
+  const d=globalThis.__SITE118_TEST,T=options.THREE||d?.THREE,root=options.root||d?.objects.find(o=>o.record.id==='pad-118')?.g;
+  const camera=options.camera||d?.camera,roadRoots=options.roadRoots||d?.roadRoots?.(),ground=new Set(options.groundMeshes||d?.groundMeshes||[]);
+  if(!T||!root||!camera||!roadRoots)throw Error('Site 118 road visibility inputs are unavailable');
+  root.updateWorldMatrix(true,true);camera.updateWorldMatrix(true,false);
+  const inverse=root.matrixWorld.clone().invert(),bounds=new T.Box3(),point=new T.Vector3(),own=new Set(),parts=[];
+  root.traverse(m=>{own.add(m);if(!m.isMesh)return;const vertices=[],p=m.geometry.attributes.position;
+    for(let i=0;i<p.count;i++){point.fromBufferAttribute(p,i).applyMatrix4(m.matrixWorld).applyMatrix4(inverse);if(point.y>=0){vertices.push({vertex:i,point:point.clone()});bounds.expandByPoint(point);}}
+    if(vertices.length)parts.push({mesh:m.name,vertices});
+  });
+  const samples=[];
+  for(const u of [0,.5,1])for(const v of [0,.5,1])samples.push({id:`footprint-${u}-${v}`,local:new T.Vector3(T.MathUtils.lerp(bounds.min.x,bounds.max.x,u),.25,T.MathUtils.lerp(bounds.min.z,bounds.max.z,v))});
+  for(const part of parts){const middle=(Math.min(...part.vertices.map(v=>v.point.x))+Math.max(...part.vertices.map(v=>v.point.x)))/2;
+    for(const side of [-1,1]){const candidates=part.vertices.filter(v=>side<0?v.point.x<=middle:v.point.x>middle);if(!candidates.length)continue;
+      const top=candidates.reduce((a,b)=>b.point.y>a.point.y?b:a);samples.push({id:`${part.mesh}-upper-${side}`,mesh:part.mesh,vertex:top.vertex,local:top.point});}
+  }
+  const eye=camera.getWorldPosition(new T.Vector3()),region=new T.Box3().expandByPoint(eye),visible=m=>{for(let p=m;p;p=p.parent)if(!p.visible)return false;return true;};
+  for(const sample of samples){sample.world=root.localToWorld(sample.local.clone());region.expandByPoint(sample.world);}region.expandByScalar(.05);
+  const candidates=[],seen=new Set();
+  for(const group of roadRoots){group.updateWorldMatrix(true,true);group.traverse(m=>{
+    if(!m.isMesh||seen.has(m)||own.has(m)||ground.has(m)||!visible(m)||m.userData.roadKind==='rails'||!m.layers.test(camera.layers))return;
+    seen.add(m);if(![m.material].flat().some(mat=>mat.visible!==false&&!mat.transparent&&mat.opacity>=.95))return;
+    const box=new T.Box3().setFromObject(m);if(box.intersectsBox(region))candidates.push({mesh:m,box});
+  });}
+  const ray=new T.Raycaster(),probe=new T.Vector3();
+  const probes=samples.map(sample=>{
+    const distance=eye.distanceTo(sample.world),direction=sample.world.clone().sub(eye).normalize();
+    // Trace the vertex-to-camera segment from the camera end so FrontSide
+    // materials obey the same face-culling rule as the visible rendering.
+    ray.set(eye,direction);ray.near=camera.near;ray.far=Math.max(camera.near,distance-.001);
+    const nearby=candidates.filter(c=>ray.ray.intersectBox(c.box,probe)).map(c=>c.mesh);
+    const hit=ray.intersectObjects(nearby,false).find(h=>{const m=Array.isArray(h.object.material)?h.object.material[h.face?.materialIndex||0]:h.object.material;return m?.visible!==false&&!m?.transparent&&m?.opacity>=.95;});
+    let occluder=null;if(hit){const mesh=hit.object,mat=Array.isArray(mesh.material)?mesh.material[hit.face?.materialIndex||0]:mesh.material,parents=[];
+      for(let p=mesh.parent;p;p=p.parent)parents.push({name:p.name,type:p.type,component:p.userData.museumComponent||null});
+      occluder={name:mesh.name,component:mesh.userData.museumComponent||null,roadKind:mesh.userData.roadKind||null,
+        world:hit.point.toArray(),distance:hit.distance,instanceId:hit.instanceId??null,parents,
+        material:{name:mat.name,type:mat.type,color:mat.color?'#'+mat.color.getHexString():null,side:mat.side,opacity:mat.opacity,transparent:mat.transparent,depthTest:mat.depthTest,depthWrite:mat.depthWrite}};
+    }
+    return {id:sample.id,mesh:sample.mesh||null,vertex:sample.vertex??null,local:sample.local.toArray(),world:sample.world.toArray(),occluder};
+  });
+  return {camera:eye.toArray(),candidateMeshes:candidates.length,rays:probes.length,blocked:probes.filter(p=>p.occluder).length,probes};
 }

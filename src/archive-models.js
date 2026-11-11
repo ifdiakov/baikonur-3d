@@ -6,7 +6,7 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261111-site118-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261111-site118-v2';
 import * as buildings from './archive-buildings.js?v=20261109-site95-courtyards-v2';
 import * as launches from './archive-launches.js?v=20261111-proton-civil-v1';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
@@ -33,6 +33,13 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
  for(const spec of ARCHIVE_MAP){
   const i=objects.findIndex(o=>o.record.id===spec.id);if(i<0)throw Error('Missing archive site '+spec.id);
   const o=objects[i],root=o.g;root.clear();root.scale.setScalar(spec.scale);root.rotation.y=spec.yaw;root.position.y=spec.elevation??-2.72;
+  if(spec.modelOffsetMetres){
+   // A compound centroid is not a surveyed building anchor. Place the source
+   // structures inside the same territory, clear of its existing service road.
+   const offset=new THREE.Vector3(...spec.modelOffsetMetres).multiplyScalar(spec.scale).applyQuaternion(root.quaternion);
+   root.userData.archivePlacement={catalogAnchor:root.position.toArray(),offsetMetres:[...spec.modelOffsetMetres],offsetWorld:offset.toArray()};
+   root.position.add(offset);
+  }
   for(let n=clickable.length-1;n>=0;n--)if(clickable[n].userData.idx===i)clickable.splice(n,1);
   if(spec.id==='kpp-7'){
    if(!checkpoint7Placement)throw Error('КПП №7: отсутствует привязка к дороге');

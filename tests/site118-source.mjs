@@ -65,8 +65,10 @@ for(const p of manifest.contacts){assert(!p.mesh.startsWith('Cylinder'));assert.
 const catalog=await readJSON('data/catalog.json'),matches=await readJSON('data/osm/catalog-matches.json');
 const site=createMuseumGeography({catalog,matches}).sites.find(s=>s.id==='pad-118'),spec=ARCHIVE_MAP.find(s=>s.id==='pad-118');
 assert(site&&spec);assert.equal(spec.kind,'site118');assert.equal(spec.scale,.14);assert.equal(spec.yaw,-2.106);
+assert.deepEqual(spec.modelOffsetMetres,[-36,0,0]);
 assert(Math.abs(site.x-539.8494544248842)<1e-9&&Math.abs(site.y-403.8748645052626)<1e-9,'Preserve the current geographic anchor');
 const root=new THREE.Group();root.position.set((site.x-650)*3.4,-2.755,(site.y-522.5)*3.4);root.scale.setScalar(spec.scale);root.rotation.y=spec.yaw;
+root.position.add(new THREE.Vector3(...spec.modelOffsetMetres).multiplyScalar(spec.scale).applyQuaternion(root.quaternion));
 const events=[];root.addEventListener('museum-exhibit-loaded',event=>events.push(event));
 let calls=0,fail=true,release;const held=new Promise(resolve=>release=resolve);
 buildSite118Exhibit(root,{autoLoad:false,loadSource:async options=>{assert.equal(options.consumer,'museum-site118');calls++;if(fail)throw Error('Injected source network error');await held;return {scene:source.clone(true),manifest};}});

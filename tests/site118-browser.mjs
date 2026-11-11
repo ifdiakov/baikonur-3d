@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir,readFile,readdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
-import {measureSite118,assertSite118Measurement} from './site118-geometry.mjs';
+import {measureSite118,assertSite118Measurement,measureSite118RoadOcclusion} from './site118-geometry.mjs';
 
 const base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/';
 const prefix=process.env.QA_PREFIX||'local',out=process.env.QA_OUT||'qa-site118';
@@ -40,6 +40,19 @@ async function publishedBytes(){
 }
 const frame=()=>page.evaluate(()=>window.__SITE118_FRAME());
 const measure=()=>page.evaluate(measureSite118,{manifest});
+async function waitForDetailedTransport(result){
+  const start=performance.now(),state=()=>page.evaluate(()=>__BAIKONUR_QA.stats().transportBake);
+  result.transport={before:await state()};await save();progress('waiting-existing-transport-worker');
+  if(result.transport.before.enabled)assert.equal(result.transport.before.attempts,1,'The first real frame starts one existing worker; the test never retries it');
+  try{
+    await page.waitForFunction(()=>{const b=__BAIKONUR_QA.stats().transportBake;
+      return b.detailReady||b.job?.error||b.attempts>1||(b.attempts>0&&!b.detailLoading&&!b.detailReady);
+    },null,{timeout:240000,polling:500});
+  }finally{result.transport.after=await state();result.transport.waitedMs=Math.round(performance.now()-start);await save();}
+  const b=result.transport.after;assert(b.detailReady&&!b.detailLoading,'Full transport did not finish: '+JSON.stringify(b));
+  if(b.enabled){assert.equal(b.attempts,1);assert.equal(b.job?.builds,1);assert.equal(b.job?.mode,'worker');assert.equal(b.job?.state,'ready');assert.equal(b.job?.error,null);}
+  progress('actual-transport-detail-ready');
+}
 async function click(selector){
   const element=page.locator(selector);await element.scrollIntoViewIfNeeded();
   const hit=await element.evaluate(el=>{const r=el.getBoundingClientRect(),front=document.elementFromPoint(r.x+r.width/2,r.y+r.height/2);return {clickable:front===el||el.contains(front),front:front?.id||front?.className,rect:{x:r.x,y:r.y,width:r.width,height:r.height}};});
@@ -48,7 +61,12 @@ async function click(selector){
   await element.click();
 }
 async function capture(name){
-  progress('capture-start:'+name);await frame();
+  progress('capture-start:'+name);
+  assert(await page.evaluate(()=>__BAIKONUR_QA.stats().transportBake.detailReady),'Every acceptance frame requires installed detailed transport');
+  await frame();
+  report.lastFrameTransport=await page.evaluate(()=>({bake:__BAIKONUR_QA.stats().transportBake,lod:__BAIKONUR_QA.stats().roadLOD.mode}));
+  assert(report.lastFrameTransport.bake.detailReady&&!report.lastFrameTransport.bake.detailLoading);
+  if(report.lastFrameTransport.bake.enabled)assert.equal(report.lastFrameTransport.lod,'full','The fresh frame must hide the preview road ribbons');
   await page.screenshot({path:`${out}/${prefix}-${activeMode}-${name}.png`,timeout:90000});
   report.lastCapture={mode:activeMode,name};await save();progress('capture-complete:'+name);
 }
@@ -102,10 +120,13 @@ try{
       if(request.resourceType()!=='document'||!/(?:^|\/)(?:index|museum|workshop)\.html$/.test(url.pathname))return route.continue();
       const response=await route.fetch(),html=await response.text(),marker='window.__BAIKONUR_QA={';
       assert.equal(html.split(marker).length,2,'The existing full-museum QA marker is unique');
-      await route.fulfill({response,body:html.replace(marker,'window.__SITE118_TEST={THREE,scene,camera,ctl,objects,clickable,portalArchive,groundMeshes:[ground,satelliteGround,...outerTerrain.planes,terrainRelief.mesh]};'+marker)});
+      await route.fulfill({response,body:html.replace(marker,'window.__SITE118_TEST={THREE,scene,camera,ctl,objects,clickable,portalArchive,roadRoots:()=>[layers.roads,roadLOD?.root].filter(Boolean),groundMeshes:[ground,satelliteGround,...outerTerrain.planes,terrainRelief.mesh]};'+marker)});
     });
     const entry=mode==='workshop'?'workshop.html':'museum.html';
-    await page.goto(new URL(entry+'?view=site118&tour=0&v=20261111-site118-v1',base).href,{waitUntil:'domcontentloaded',timeout:90000});
+    await page.goto(new URL(entry+'?view=site118&tour=0&v=20261111-site118-v2',base).href,{waitUntil:'domcontentloaded',timeout:90000});
+    result.navigation=await page.evaluate(()=>({href:location.href,isSecureContext,webCrypto:Boolean(globalThis.crypto?.subtle)}));await save();
+    assert(result.navigation.isSecureContext&&result.navigation.webCrypto,'Source integrity verification requires a secure context and WebCrypto: '+JSON.stringify(result.navigation));
+    if(process.env.VERIFY_PUBLIC==='1'){const actual=new URL(result.navigation.href);assert.equal(actual.protocol,'https:');assert.equal(actual.hostname,'museum.rockettrip.space','Public acceptance must run on the canonical HTTPS host');}
     await page.waitForFunction(()=>document.body.classList.contains('museum-ready')||document.getElementById('error')?.textContent,null,{timeout:180000});
     assert.equal(await page.locator('#error').textContent(),'');
     assert(await page.evaluate(()=>Boolean(window.__SITE118_TEST&&window.__BAIKONUR_QA?.site118)),'The complete museum must supply Site 118');
@@ -114,6 +135,7 @@ try{
     await page.evaluate(()=>__BAIKONUR_QA.evening.setEvening(true));await frame();
     result.initial=await measure();assertSite118Measurement(result.initial,{manifest,ground:true,picking:true});
     progress('source-loaded-and-real-contacts-checked');
+    await waitForDetailedTransport(result);
 
     // Source selection comes through the normal on-map card. A numbered
     // industrial site must not be added to the launch-only sidebar category.
@@ -132,7 +154,10 @@ try{
 
     for(const view of ['all','ground','top']){
       await click(`[data-site118-view="${view}"]`);await capture(view);
-      const projected=await projection();result.views[view]=projected;assertProjection(projected,view);
+      const projected=await projection(),occlusion=await page.evaluate(measureSite118RoadOcclusion);
+      result.views[view]={...projected,transport:report.lastFrameTransport,occlusion};await save();assertProjection(projected,view);
+      assert(occlusion.rays>=13&&occlusion.rays<=15,'Use a bounded footprint/roof/fence probe set');
+      assert.equal(occlusion.blocked,0,'External road geometry obscures Site 118: '+JSON.stringify(occlusion.probes.filter(p=>p.occluder)));
     }
     result.loaded=await measure();assertSite118Measurement(result.loaded,{manifest,ground:true,picking:true});
     assert.deepEqual(result.loaded.geometry,result.initial.geometry,'Changing real views keeps exactly one source model and unchanged meshes');

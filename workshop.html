@@ -1,4 +1,4 @@
-<!doctype html><html lang="ru"><head><!-- EVENING_NAVIGATION_V1 --><script>/* PUBLIC_MUSEUM_DEFAULT */if((location.pathname.endsWith('/')||location.pathname.endsWith('/index.html'))&&!location.search&&!location.hash)location.replace('./museum.html');</script><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Мастерская — Байконур 3D</title>
+<!doctype html><html lang="ru"><head><!-- EVENING_NAVIGATION_V1 --><script>/* PUBLIC_MUSEUM_DEFAULT */if((location.pathname.endsWith('/')||location.pathname.endsWith('/index.html'))&&!location.search&&!location.hash)location.replace('./museum.html');</script><meta charset="utf-8"><script>if(location.protocol==='http:'&&location.hostname==='museum.rockettrip.space'){const secureUrl=new URL(location.href);secureUrl.protocol='https:';location.replace(secureUrl.href);}</script><meta name="viewport" content="width=device-width,initial-scale=1"><title>Мастерская — Байконур 3D</title>
 <link rel="preload" as="image" href="./assets/preloader/soyuz-launch-20261103.webp" type="image/webp" fetchpriority="high">
 <link rel="stylesheet" href="./src/museum-mobile.css?v=20261103-mobile-v1">
 <link rel="stylesheet" href="./src/museum-preloader.css?v=20261105-preloader-gallery-v16">
@@ -582,7 +582,7 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261111-site118-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261111-site118-v2';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
@@ -2951,7 +2951,7 @@ function syncGagarinTableStatus(){
 const publishedWorkshop=await publishedWorkshopReady;
 applyWorkshopObjects(objects,publishedWorkshop);
 if(IS_WORKSHOP&&!WORKSHOP_BUILD){
- const style=document.createElement('link');style.rel='stylesheet';style.href='./src/workshop-panel.css?v=20261111-proton-civil-v1';document.head.append(style);
+ const style=document.createElement('link');style.rel='stylesheet';style.href='./src/workshop-panel.css?v=20261111-site118-v2';document.head.append(style);
  const {installWorkshop}=await import('./src/workshop-panel.js?v=20261110-network-v1');
  installWorkshop({scene,objects,camera,controls:ctl,canvas:renderer.domElement,roadEditor,transport,terrainHeightAt:museumTerrainHeightAt,altimeter:cameraAltitude,coordinateGrid,published:publishedWorkshop});
 }
