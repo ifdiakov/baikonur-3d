@@ -74,11 +74,17 @@ jobs:
             target=bridge-sign112
           elif [[ -n "$BEFORE" && "$BEFORE" != 0000000000000000000000000000000000000000 ]]; then
             git fetch --no-tags --depth=1 origin "$BEFORE"
-            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/buran-launch|^tests/(buran-launch-|site110-launch-rig\.mjs$|energia-exhaust-geometry\.mjs$|energia-launch-node\.mjs$)|^src/energia-(rocket-exhaust|buran-effects|polyus-launch)\.js$|^src/site110(-kinematics)?\.js$|^src/archive-kit\.js$)'; then
+            changed_paths=$(git diff --name-only "$BEFORE" HEAD)
+            if printf '%s\n' "$changed_paths" | grep -Eq '(^src/buran-launch|^tests/(buran-launch-|site110-launch-rig\.mjs$|energia-exhaust-geometry\.mjs$|energia-launch-node\.mjs$)|^src/energia-(rocket-exhaust|buran-effects|polyus-launch)\.js$|^src/site110(-kinematics)?\.js$|^src/archive-kit\.js$)'; then
               target=buran-launch
-            elif git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/mik112(-materials|-photo-detail|-rail-plan)?\.js$|^tests/mik112-|^scripts/ci/wait-pages-publication\.mjs$|^\.github/workflows/verify-mik112\.yml$)'; then
+            elif printf '%s\n' "$changed_paths" | grep -Ev '^tests/mik112-publish-gate\.mjs$' | grep -Eq '(^src/mik112(-materials|-photo-detail|-rail-plan)?\.js$|^tests/mik112-)'; then
               target=mik112
-            elif git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112|refine-mik112-callouts)'; then target=bridge-sign112; fi
+            elif printf '%s\n' "$changed_paths" | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112|refine-mik112-callouts)'; then
+              target=bridge-sign112
+            elif printf '%s\n' "$changed_paths" | grep -Eq '^(scripts/ci/wait-pages-publication\.mjs|tests/mik112-publish-gate\.mjs|\.github/workflows/verify-mik112\.yml)$' &&
+                 ! printf '%s\n' "$changed_paths" | grep -Ev '^(scripts/ci/wait-pages-publication\.mjs|tests/mik112-publish-gate\.mjs|\.github/workflows/verify-mik112\.yml|PROJECT_CONTEXT\.md|docs/.*)$' | grep -q .; then
+              if [[ -f src/buran-launch.js ]]; then target=buran-launch; else target=mik112; fi
+            fi
           elif [[ -f src/mik112-cards.js ]]; then
             target=bridge-sign112
           fi
