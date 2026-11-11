@@ -6,7 +6,7 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261111-proton-civil-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261111-site118-v1';
 import * as buildings from './archive-buildings.js?v=20261109-site95-courtyards-v2';
 import * as launches from './archive-launches.js?v=20261111-proton-civil-v1';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
@@ -18,7 +18,10 @@ import {buildSite41} from './site41.js?v=20261102-site2-photo-v3';
 import {SITE45_VIEWS} from './site45.js?v=20261102-site2-photo-v3';
 import {protonPositionController} from './proton-launch.js?v=20261111-proton-civil-v1';
 import {SITE41_VIEWS} from './site41-profile.js?v=20261101-r16-exhibit-v1';
+import {buildSite118Exhibit,site118Controller,SITE118_PROFILE} from './site118-source.js?v=20261111-site118-v1';
+import {MUSEUM_CAMERA_MIN_Y} from './camera-navigation.js?v=20261103-camera-min-h1-v1';
 export function buildArchiveModel(root,entry){
+ if(entry.kind==='site118')return buildSite118Exhibit(root);
  const builders={site113:buildSite113,site250a:buildSite250a,site254:buildSite254,cyclone:buildCycloneComplex,'seven-winds':buildSevenWinds,silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildSite41,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:buildSite110,soyuz:buildSite31Exhibit,zenit:launches.zenit45,city:photoCity};
  if(entry.kind==='silo')return buildSiloPad(root,{siteId:entry.id,title:entry.title,activation:'height'});
  if(entry.kind==='proton')return launches.protonComplex(root,entry.id);
@@ -29,7 +32,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
  const records=[],silos=[],sdiGates=[],protons=[];
  for(const spec of ARCHIVE_MAP){
   const i=objects.findIndex(o=>o.record.id===spec.id);if(i<0)throw Error('Missing archive site '+spec.id);
-  const o=objects[i],root=o.g;root.clear();root.scale.setScalar(spec.scale);root.rotation.y=spec.yaw;root.position.y=-2.72;
+  const o=objects[i],root=o.g;root.clear();root.scale.setScalar(spec.scale);root.rotation.y=spec.yaw;root.position.y=spec.elevation??-2.72;
   for(let n=clickable.length-1;n>=0;n--)if(clickable[n].userData.idx===i)clickable.splice(n,1);
   if(spec.id==='kpp-7'){
    if(!checkpoint7Placement)throw Error('КПП №7: отсутствует привязка к дороге');
@@ -55,6 +58,9 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
    if(m.isMesh){m.userData.idx=i;clickable.push(m);}
   });
   const bounds=new THREE.Box3().setFromObject(root);
+  // The source asset loads after the map becomes interactive. Its measured
+  // bounds keep catalogue focus finite without adding a placeholder surface.
+  if(spec.kind==='site118'&&bounds.isEmpty())bounds.set(new THREE.Vector3(...SITE118_PROFILE.bounds.min),new THREE.Vector3(...SITE118_PROFILE.bounds.max)).applyMatrix4(root.matrixWorld);
   const entry={...spec,version:ARCHIVE_VERSION,features,bounds:bounds.getSize(new THREE.Vector3()).toArray(),centre:bounds.getCenter(new THREE.Vector3()).toArray(),index:i};
   o.archive=entry;o.type='archive-'+spec.kind;root.userData.archiveModel=entry;records.push(entry);
  }
@@ -71,6 +77,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   if(o.record.id==='pad-250a')return inspectSite250a('all',camera,controls);
   if(o.record.id==='pad-95')return inspectSite95('all',camera,controls);
   if(o.record.id==='pad-113')return inspectSite113('all',camera,controls);
+  if(o.record.id==='pad-118')return inspectSite118('all',camera,controls);
   if(o.record.id==='pad-254')return inspectSite254('all',camera,controls);
   if(o.record.id==='pad-2')return inspectSite2('all',camera,controls);
   if(o.archive.kind==='mzk')return inspectMzkSdi('all',camera,controls);
@@ -80,6 +87,9 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
  function protonPosition(siteId,index=0){return objects.find(o=>o.record.id===siteId)?.g.children.filter(g=>g.userData.protonLaunch)[index];}
  function inspectProtonCivil(root,view,camera,controls){
   const v=root?.userData.protonCivil?.views?.[view];if(!v)return false;
+  return fitArchiveView(root,v,view,camera,controls,'protonCivilFraming');
+ }
+ function fitArchiveView(root,v,view,camera,controls,stateKey,minEyeY=-Infinity){
   root.updateWorldMatrix(true,false);
   const width=globalThis.innerWidth||1024,height=globalThis.innerHeight||Math.round(width/camera.aspect),mobile=width<=850;
   const rect={left:mobile?14:350,right:width-18,top:mobile?64:28,bottom:height-(mobile?210:140)};
@@ -107,11 +117,18 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
     .addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(probe.quaternion),-ndcY*halfHeight);
    eye=probe.position.clone().add(shift);target=focus.clone().add(shift);probe.position.copy(eye);probe.lookAt(target);probe.updateMatrixWorld(true);
    const projected=points.map(p=>{const n=p.clone().project(probe);return {x:(n.x+1)*width/2,y:(1-n.y)*height/2,z:n.z};});
-   if(projected.every(p=>p.x>=rect.left&&p.x<=rect.right&&p.y>=rect.top&&p.y<=rect.bottom&&p.z>-1&&p.z<1))break;
+   if(eye.y>=minEyeY&&projected.every(p=>p.x>=rect.left&&p.x<=rect.right&&p.y>=rect.top&&p.y<=rect.bottom&&p.z>-1&&p.z<1))break;
    distance*=1.1;
   }
   const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.copy(eye);controls.target.copy(target);controls.update();camera.updateMatrixWorld(true);controls.enableDamping=damping;
-  root.userData.protonCivilFraming={view,rect,width,height,distance,shelterId:v.shelterId??null};return true;
+  root.userData[stateKey]={view,rect,width,height,distance,shelterId:v.shelterId??null};return true;
+ }
+ function inspectSite118(view,camera,controls){
+  const root=objects.find(o=>o.record.id==='pad-118')?.g;if(!root)return false;
+  globalThis.window?.__MUSEUM_STARTUP?.promote?.('site118-source',95);
+  site118Controller(root)?.load();
+  const key=SITE118_PROFILE.views[view]?view:'all';
+  return fitArchiveView(root,SITE118_PROFILE.views[key],key,camera,controls,'site118Framing',MUSEUM_CAMERA_MIN_Y+.02);
  }
  function inspectProton(siteId,view,camera,controls,index=0){
   if(view==='civil-entry'||view==='civil-plan')return inspectProtonCivil(objects.find(o=>o.record.id===siteId)?.g,view,camera,controls);
@@ -207,5 +224,5 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   return true;
  }
  const site2=()=>objects.find(o=>o.record.id==='pad-2')?.g;
- return {inspectSite95,site95Stats:()=>objects.find(o=>o.record.id==='pad-95')?.g.userData.site95Model,inspectSite113,site113Stats:()=>objects.find(o=>o.record.id==='pad-113')?.g.userData.site113Model,inspectCheckpoint7,checkpoint7Stats:()=>objects.find(o=>o.record.id==='kpp-7')?.g.userData.checkpoint7Model,inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{protons.forEach(p=>p.update(now,camera));silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
+ return {inspectSite118,site118Stats:()=>objects.find(o=>o.record.id==='pad-118')?.g.userData.site118Model,loadSite118:()=>site118Controller(objects.find(o=>o.record.id==='pad-118')?.g)?.load(),inspectSite95,site95Stats:()=>objects.find(o=>o.record.id==='pad-95')?.g.userData.site95Model,inspectSite113,site113Stats:()=>objects.find(o=>o.record.id==='pad-113')?.g.userData.site113Model,inspectCheckpoint7,checkpoint7Stats:()=>objects.find(o=>o.record.id==='kpp-7')?.g.userData.checkpoint7Model,inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{protons.forEach(p=>p.update(now,camera));silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
 }

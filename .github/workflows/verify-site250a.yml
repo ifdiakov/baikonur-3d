@@ -1,60 +1,180 @@
-name: Site 250A reference model
+name: Site 250A reference model and Site 118 source integration
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'src/site250a*'
-      - 'src/archive-models.js'
-      - 'src/archive-manifest.js'
-      - 'src/facility-ports.js'
-      - 'tests/site250a*'
-      - 'scripts/verify-site250a-published.mjs'
-      - '.github/workflows/verify-site250a.yml'
+    paths: ['src/site250a*', 'src/site118*', 'src/archive-models.js', 'src/archive-manifest.js', 'src/facility-ports.js', 'src/workshop-panel.css', 'assets/models/site118/**', 'tests/site250a*', 'tests/site118*', 'scripts/*site118*', 'scripts/source-models/site118/**', 'scripts/verify-site250a-published.mjs', '.github/workflows/verify-site250a.yml']
   push:
-    branches: [main]
-    paths:
-      - 'src/site250a*'
-      - 'tests/site250a*'
-      - 'scripts/verify-site250a-published.mjs'
-      - '.github/workflows/verify-site250a.yml'
+    branches: [main, fix/site118-industry-20261111]
+    paths: ['src/site250a*', 'src/site118*', 'assets/models/site118/**', 'tests/site250a*', 'tests/site118*', 'scripts/*site118*', 'scripts/source-models/site118/**', 'scripts/verify-site250a-published.mjs', 'src/workshop-panel.css', '.github/workflows/verify-site250a.yml']
   workflow_dispatch:
+    inputs:
+      target:
+        description: Acceptance target (auto selects from the actual diff)
+        type: choice
+        options: [auto, site250a, site118]
+        default: auto
 permissions:
   contents: read
 concurrency:
   group: site250a-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  verify:
+  select:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
-    env:
-      BAIKONUR_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:8765/' || 'https://ifdiakov.github.io/baikonur-3d/' }}
-      QA_PREFIX: ${{ github.event_name == 'pull_request' && 'local' || 'public' }}
+    timeout-minutes: 3
+    outputs:
+      selected: ${{ steps.scope.outputs.selected }}
+      targets: ${{ steps.scope.outputs.targets }}
+      matrix: ${{ steps.scope.outputs.matrix }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Select the existing reference-model acceptance paths
+        id: scope
+        env:
+          REQUESTED_TARGET: ${{ inputs.target || 'auto' }}
+          CI_BASE: ${{ github.ref == 'refs/heads/fix/site118-industry-20261111' && 'cbde4fe88a47341b05a811c79d26cbb82966dafc' || '' }}
+        run: |
+          node --input-type=module - verify-site250a.yml <<'NODE'
+          import fs from 'node:fs';
+          import {main,infrastructure} from './scripts/ci/impact.mjs';
+          const impact=main(),request=process.env.REQUESTED_TARGET||'auto';
+          if(!['auto','site250a','site118'].includes(request))throw Error('Unknown requested target');
+          const files=impact.files||[],meaningful=impact.meaningful||[];
+          const site118=p=>/^(?:src\/site118[^/]*|assets\/models\/site118\/|tests\/site118[^/]*|scripts\/[^/]*site118[^/]*|scripts\/source-models\/site118\/)/.test(p);
+          const site250a=p=>/^(?:src\/site250a[^/]*|tests\/site250a[^/]*|scripts\/verify-site250a-published\.mjs$)/.test(p);
+          const shared=new Set(['index.html','museum.html','workshop.html','credits.html','src/archive-models.js','src/archive-manifest.js','src/workshop-panel.css','data/catalog.json']);
+          let targets=[],reason='Known model paths in the actual diff';
+          if(request!=='auto'){targets=[request];reason='Explicit requested acceptance';}
+          else if(impact.reason){targets=['site250a','site118'];reason=impact.reason;}
+          else{
+            if(files.some(site250a))targets.push('site250a');
+            if(files.some(site118))targets.push('site118');
+            const unknown=meaningful.filter(p=>!site250a(p)&&!site118(p)&&!shared.has(p)&&!infrastructure(p));
+            if(unknown.length||(!targets.length&&(meaningful.length||files.includes('.github/workflows/verify-site250a.yml')))){
+              targets=['site250a','site118'];reason='FAIL_CLOSED: shared or unclassified changes require both existing acceptance paths';
+            }
+          }
+          const include=targets.flatMap(target=>target==='site118'?['desktop','mobile','workshop'].map(mode=>({target,mode})):[{target,mode:'legacy'}]);
+          const report={targets,reason,impact,matrix:{include},sourceCommit:process.env.GITHUB_SHA};
+          fs.mkdirSync('qa-ci',{recursive:true});fs.writeFileSync('qa-ci/site-reference-selection.json',JSON.stringify(report,null,2)+'\n');
+          // An unknown diff selects both suites. The job-level if skips the
+          // inert matrix entry when a known diff contains no relevant change.
+          const matrix={include:include.length?include:[{target:'site250a',mode:'legacy'}]};
+          fs.appendFileSync(process.env.GITHUB_OUTPUT,`selected=${targets.length>0}\ntargets=${JSON.stringify(targets)}\nmatrix=${JSON.stringify(matrix)}\n`);
+          console.log('SITE_REFERENCE_SCOPE',JSON.stringify(report));
+          NODE
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site-reference-selection-attempt-${{ github.run_attempt }}
+          path: |
+            qa-ci/site-reference-selection.json
+            qa-ci/impact-verify-site250a.yml.json
+          retention-days: 7
+  pages_publication:
+    needs: select
+    if: github.ref == 'refs/heads/main' && contains(fromJSON(needs.select.outputs.targets), 'site118')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 14
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Wait for Pages to publish this checkout and its build artifact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/wait-pages-publication.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: site118-pages-gate-attempt-${{ github.run_attempt }}
+          path: qa-ci/mik112-pages-publication.json
+          retention-days: 7
+  verify:
+    needs: [select, pages_publication]
+    # Candidates/PRs and legacy 250A can follow a skipped gate. A required
+    # public Site 118 gate must succeed before any public matrix begins.
+    if: ${{ !cancelled() && needs.select.result == 'success' && needs.select.outputs.selected == 'true' && (github.ref != 'refs/heads/main' || !contains(fromJSON(needs.select.outputs.targets), 'site118') || needs.pages_publication.result == 'success') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.matrix) }}
+    env:
+      QA_MODES: ${{ matrix.mode }}
+      BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
+      QA_PREFIX: ${{ github.ref == 'refs/heads/main' && 'public' || 'local' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: site-reference-${{ runner.os }}-playwright1.57.0-three0.160.1
       - name: Install verification dependencies
         run: |
           npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
           npx playwright install --with-deps chromium
-      - name: Geometry and road connection
+      - name: Preserve the original Site 250A geometry and road checks
+        if: matrix.target == 'site250a'
         run: |
           node tests/site250a-geometry.mjs
           node tests/road-editor-startup.mjs
-      - name: Serve checkout
-        run: python3 -m http.server 8765 --bind 127.0.0.1 &
-      - name: Wait for publication
-        if: github.event_name != 'pull_request'
+      - name: Validate the actual Site 118 source, contacts and loader
+        if: matrix.target == 'site118' && matrix.mode == 'desktop'
+        run: |
+          node tests/site118-source.mjs
+          node tests/menu-catalog-contract.mjs
+          node tests/road-editor-startup.mjs
+      - name: Record the exact accepted source
+        run: |
+          mkdir -p qa-site250a qa-site118
+          git rev-parse HEAD > qa-site250a/source-commit.txt
+          git rev-parse HEAD > qa-site118/source-commit.txt
+      - name: Serve the complete museum candidate
+        if: github.ref != 'refs/heads/main'
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/site-reference-server.log 2>&1 &
+      - name: Preserve the original Site 250A published-byte check
+        if: matrix.target == 'site250a' && github.ref == 'refs/heads/main'
         run: node scripts/verify-site250a-published.mjs
-      - name: Museum day, night, details and mobile
+      - name: Preserve the original Site 250A museum and mobile scenario
+        if: matrix.target == 'site250a'
         timeout-minutes: 7
         run: node tests/site250a-browser.mjs
+      - name: Inspect the candidate Site 118 in the complete evening museum
+        if: matrix.target == 'site118' && github.ref != 'refs/heads/main'
+        run: node scripts/ci/run-bounded.mjs 720 site118-local-${{ matrix.mode }} node tests/site118-browser.mjs
+      - name: Match all published Site 118 bytes and inspect the public museum
+        if: matrix.target == 'site118' && github.ref == 'refs/heads/main'
+        env:
+          VERIFY_PUBLIC: '1'
+        run: |
+          git diff --exit-code -- index.html museum.html workshop.html src assets/models/site118
+          node scripts/ci/run-bounded.mjs 720 site118-public-${{ matrix.mode }} node tests/site118-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: site250a-evidence
+          name: ${{ matrix.target }}-${{ matrix.mode }}-evidence-attempt-${{ github.run_attempt }}
           path: |
-            qa-site250a/*.png
-            qa-site250a/*.json
+            qa-site250a/
+            qa-site118/
+            qa-ci/site118-*.json
+            qa-ci/site118-*.log
+          retention-days: 7

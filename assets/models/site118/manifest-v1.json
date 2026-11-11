@@ -1,0 +1,780 @@
+{
+  "version": "site118-drive-20261111-v1",
+  "sourceFile": "sewage_facility.glb",
+  "sourceDriveId": "1ohcMUcDMZRJTHadaqJMcMTbBSVP7-Ozb",
+  "sourceBytes": 2169164,
+  "sourceSha256": "ac477f190f9314fd1a1d6c4abf81282dc2c7081ed2b1ed0336349d4acaf39938",
+  "sourceTriangles": 10955,
+  "author": "novusod",
+  "sourceUrl": "https://sketchfab.com/3d-models/sewage-facility-d71e815da4b84667b3fc3572de77f831",
+  "license": "CC BY 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+  "normalization": {
+    "unit": "metre",
+    "up": "+Y",
+    "scale": 1,
+    "translation": [
+      3.5928113821939682,
+      0,
+      8.949184891265213
+    ],
+    "sourceGroundY": 0,
+    "modelGroundY": 0,
+    "worldGroundY": -2.755,
+    "interpretation": "Original source units retained 1:1 and displayed as metres; this asset is an illustrative industrial exhibit, not a survey of Site 118."
+  },
+  "adaptation": {
+    "removed": [
+      {
+        "sourceNodeId": 8,
+        "sourcePart": "Gate_2",
+        "kind": "source-yard-road-or-walkway-covering",
+        "componentSeed": 7159,
+        "triangles": 48,
+        "sourceTriangleIndices": [
+          3624,
+          3625,
+          3626,
+          3627,
+          3628,
+          3629,
+          3630,
+          3631,
+          3632,
+          3633,
+          3634,
+          3635,
+          3648,
+          3649,
+          3650,
+          3651,
+          3652,
+          3653,
+          3654,
+          3655,
+          3656,
+          3657,
+          3658,
+          3659,
+          3660,
+          3661,
+          3662,
+          3663,
+          3664,
+          3665,
+          3666,
+          3667,
+          3668,
+          3669,
+          3670,
+          3671,
+          3672,
+          3673,
+          3674,
+          3675,
+          3676,
+          3677,
+          3678,
+          3679,
+          3680,
+          3681,
+          3682,
+          3683
+        ],
+        "sourceBounds": {
+          "min": [
+            -18.946578222130977,
+            -0.09979802156067258,
+            -33.71449089850468
+          ],
+          "max": [
+            36.276008465211575,
+            0.12170950753337986,
+            -10.023156550566547
+          ],
+          "size": [
+            55.222586687342556,
+            0.22150752909405244,
+            23.69133434793813
+          ]
+        }
+      },
+      {
+        "sourceNodeId": 8,
+        "sourcePart": "Gate_2",
+        "kind": "source-yard-road-or-walkway-covering",
+        "componentSeed": 7257,
+        "triangles": 36,
+        "sourceTriangleIndices": [
+          3684,
+          3685,
+          3686,
+          3687,
+          3688,
+          3689,
+          3690,
+          3691,
+          3692,
+          3693,
+          3694,
+          3695,
+          3696,
+          3697,
+          3698,
+          3699,
+          3700,
+          3701,
+          3702,
+          3703,
+          3704,
+          3705,
+          3706,
+          3707,
+          3708,
+          3709,
+          3710,
+          3711,
+          3752,
+          3753,
+          3754,
+          3755,
+          3756,
+          3757,
+          3758,
+          3759
+        ],
+        "sourceBounds": {
+          "min": [
+            -43.72661864706291,
+            -0.09978711791752765,
+            -2.800582671260095
+          ],
+          "max": [
+            -30.04757739806014,
+            0.12171269383619945,
+            17.197662825265475
+          ],
+          "size": [
+            13.679041249002765,
+            0.2214998117537271,
+            19.99824549652557
+          ]
+        }
+      },
+      {
+        "sourceNodeId": 8,
+        "sourcePart": "Gate_2",
+        "kind": "source-yard-road-or-walkway-covering",
+        "componentSeed": 7114,
+        "triangles": 12,
+        "sourceTriangleIndices": [
+          3636,
+          3637,
+          3638,
+          3639,
+          3640,
+          3641,
+          3642,
+          3643,
+          3644,
+          3645,
+          3646,
+          3647
+        ],
+        "sourceBounds": {
+          "min": [
+            -28.930337149493084,
+            -0.09978905466793492,
+            -23.35935406953653
+          ],
+          "max": [
+            -18.946101349856562,
+            0.12171020176720256,
+            -10.029119462313822
+          ],
+          "size": [
+            9.984235799636522,
+            0.22149925643513746,
+            13.330234607222707
+          ]
+        }
+      },
+      {
+        "sourceNodeId": 8,
+        "sourcePart": "Gate_2",
+        "kind": "source-yard-road-or-walkway-covering",
+        "componentSeed": 7265,
+        "triangles": 10,
+        "sourceTriangleIndices": [
+          3712,
+          3713,
+          3714,
+          3715,
+          3716,
+          3717,
+          3718,
+          3719,
+          3720,
+          3721
+        ],
+        "sourceBounds": {
+          "min": [
+            -16.709541108076312,
+            -0.09978978193554561,
+            10.048327486023567
+          ],
+          "max": [
+            -13.387831228016019,
+            0.12170951513403369,
+            17.197663925746056
+          ],
+          "size": [
+            3.3217098800602933,
+            0.2214992970695793,
+            7.1493364397224894
+          ]
+        }
+      },
+      {
+        "sourceNodeId": 8,
+        "sourcePart": "Gate_2",
+        "kind": "source-yard-road-or-walkway-covering",
+        "componentSeed": 7285,
+        "triangles": 10,
+        "sourceTriangleIndices": [
+          3722,
+          3723,
+          3724,
+          3725,
+          3726,
+          3727,
+          3728,
+          3729,
+          3730,
+          3731
+        ],
+        "sourceBounds": {
+          "min": [
+            0.18590566926792018,
+            -0.09979253455222636,
+            10.048330455452284
+          ],
+          "max": [
+            3.507615549327904,
+            0.12170676251703136,
+            17.197664987826144
+          ],
+          "size": [
+            3.321709880059984,
+            0.22149929706925772,
+            7.14933453237386
+          ]
+        }
+      },
+      {
+        "sourceNodeId": 8,
+        "sourcePart": "Gate_2",
+        "kind": "source-yard-road-or-walkway-covering",
+        "componentSeed": 7305,
+        "triangles": 10,
+        "sourceTriangleIndices": [
+          3732,
+          3733,
+          3734,
+          3735,
+          3736,
+          3737,
+          3738,
+          3739,
+          3740,
+          3741
+        ],
+        "sourceBounds": {
+          "min": [
+            13.983205054338976,
+            -0.09979478241695477,
+            10.048332022284558
+          ],
+          "max": [
+            17.30491493439896,
+            0.12170451465230295,
+            17.19766655465841
+          ],
+          "size": [
+            3.3217098800599825,
+            0.22149929706925772,
+            7.149334532373853
+          ]
+        }
+      },
+      {
+        "sourceNodeId": 8,
+        "sourcePart": "Gate_2",
+        "kind": "source-yard-road-or-walkway-covering",
+        "componentSeed": 7325,
+        "triangles": 10,
+        "sourceTriangleIndices": [
+          3742,
+          3743,
+          3744,
+          3745,
+          3746,
+          3747,
+          3748,
+          3749,
+          3750,
+          3751
+        ],
+        "sourceBounds": {
+          "min": [
+            29.166794032629348,
+            -0.09979675744003241,
+            -1.6793817989126083
+          ],
+          "max": [
+            36.31613047109686,
+            0.12170078567952199,
+            1.6423280824029405
+          ],
+          "size": [
+            7.149336438467515,
+            0.22149754311955439,
+            3.321709881315549
+          ]
+        }
+      },
+      {
+        "sourceNodeId": 12,
+        "sourcePart": "Grass_4",
+        "kind": "source-lawn-coverings",
+        "triangles": 150,
+        "entireMesh": true
+      }
+    ],
+    "retainedBelowGround": "Cylinder_3 is the original underground pipe network. Its geometry remains below source Y=0; no excavation or vertical relocation is introduced.",
+    "geometryDecimated": false,
+    "retainedSourceStructuresPreserved": true,
+    "originalStructureTexturePreserved": true
+  },
+  "bounds": {
+    "min": [
+      -33.49562072753906,
+      -13.230589866638184,
+      -19.012693405151367
+    ],
+    "max": [
+      34.66902160644531,
+      9.403701782226562,
+      19.012693405151367
+    ],
+    "size": [
+      68.16464233398438,
+      22.634291648864746,
+      38.025386810302734
+    ]
+  },
+  "aboveGroundBounds": {
+    "min": [
+      -33.49562072753906,
+      0,
+      -19.012693405151367
+    ],
+    "max": [
+      33.49562072753906,
+      9.403701782226562,
+      19.012693405151367
+    ],
+    "size": [
+      66.99124145507812,
+      9.403701782226562,
+      38.025386810302734
+    ]
+  },
+  "retained": [
+    {
+      "name": "Cube_0",
+      "sourceNodeId": 4,
+      "sourceNodeName": "Object_4",
+      "sourceMeshId": 0,
+      "sourceTriangles": 5647,
+      "triangles": 5647,
+      "vertices": 8828,
+      "bounds": {
+        "min": [
+          -32.87542724609375,
+          -0.7238224148750305,
+          -1.1325056552886963
+        ],
+        "max": [
+          33.49562072753906,
+          9.0016508102417,
+          19.012693405151367
+        ],
+        "size": [
+          66.37104797363281,
+          9.72547322511673,
+          20.145199060440063
+        ]
+      },
+      "geometrySha256": {
+        "POSITION": "b4e538869b62f5a029c0909dcc653e1e8c143d4c257eedd2584bb4a8ac0abd7f",
+        "NORMAL": "ab9ca8fd412567c0e76f0a4ef6969a8cc4d0bb359373a72b1c0589af0e915c92",
+        "TEXCOORD_0": "ce909a07497e84ab7ad7c741a715f7fe3e0bfcc106d5aee91d7abe88196ff091",
+        "indices": "031198ec4341fb83df9f4f4c1e4062bf591fd21d7d15f3ede2331b2d13f05750"
+      }
+    },
+    {
+      "name": "Siding_1",
+      "sourceNodeId": 6,
+      "sourceNodeName": "Object_6",
+      "sourceMeshId": 1,
+      "sourceTriangles": 324,
+      "triangles": 324,
+      "vertices": 612,
+      "bounds": {
+        "min": [
+          -33.49562072753906,
+          -1.6979084014892578,
+          -16.0233154296875
+        ],
+        "max": [
+          -25.290382385253906,
+          9.403701782226562,
+          6.37007474899292
+        ],
+        "size": [
+          8.205238342285156,
+          11.10161018371582,
+          22.39339017868042
+        ]
+      },
+      "geometrySha256": {
+        "POSITION": "e118c2f46bab0b9d4923032b6ddd0f676985b057b4067ed92459420748b8a3af",
+        "NORMAL": "ca3496894da8018ddb7c47fe0bbb72b0cc7ca61b25e410a119df80b0a63bba2d",
+        "TEXCOORD_0": "a19a1c79e8faf52627c075c65d2f045450728ff503af0340ced1fc3784723faa",
+        "indices": "2dc5f3e72749240575e4ca284599214201621a6bec292308526a113a7d1b3acc"
+      }
+    },
+    {
+      "name": "Gate_2",
+      "sourceNodeId": 8,
+      "sourceNodeName": "Object_8",
+      "sourceMeshId": 2,
+      "sourceTriangles": 3760,
+      "triangles": 3624,
+      "vertices": 7078,
+      "bounds": {
+        "min": [
+          -25.675952911376953,
+          -0.7238260507583618,
+          -19.012693405151367
+        ],
+        "max": [
+          33.30591583251953,
+          5.6788649559021,
+          -0.5217548608779907
+        ],
+        "size": [
+          58.981868743896484,
+          6.402691006660461,
+          18.490938544273376
+        ]
+      },
+      "geometrySha256": {
+        "POSITION": "b5830d44f464cabf860106cd982ea1f2b162594c5e8e7bacaa861829df402bb2",
+        "NORMAL": "9711c0cdfb02ce1529971603eff0a5fd99333004f070ab217167a2b5c16ec608",
+        "TEXCOORD_0": "ef6c0c6b1916b486e6fd3fb9ec22cc8cdceda28b6dfa9ccd45dcc4de47e2b864",
+        "indices": "049341db5a10794a58580c650db9a55c91e8e8ea2d25776d153c257f76972828"
+      }
+    },
+    {
+      "name": "Cylinder_3",
+      "sourceNodeId": 10,
+      "sourceNodeName": "Object_10",
+      "sourceMeshId": 3,
+      "sourceTriangles": 1074,
+      "triangles": 1074,
+      "vertices": 1692,
+      "bounds": {
+        "min": [
+          -31.991233825683594,
+          -13.230589866638184,
+          1.474761962890625
+        ],
+        "max": [
+          34.66902160644531,
+          -0.024852752685546875,
+          17.87492561340332
+        ],
+        "size": [
+          66.6602554321289,
+          13.205737113952637,
+          16.400163650512695
+        ]
+      },
+      "geometrySha256": {
+        "POSITION": "c6c1cbd3cc1812d0d6abfe75b81906fa6012e0243ed1b2f7b865a477d79f9c7e",
+        "NORMAL": "46ce1917723b306b9b10c41b6c3cc4dbc66748a872e1643c152f9f46d3c15afc",
+        "TEXCOORD_0": "219d5889e66f606d3c3be2f3fe5d0d51fa929c78e7684a6512a0a06fe21c59f8",
+        "indices": "b5cb6bddf3c1b3794294ed0e66a94770ed7dc1e5cd40d213f6efe22de38936de"
+      }
+    }
+  ],
+  "contacts": [
+    {
+      "id": "main-front-foundation",
+      "mesh": "Cube_0",
+      "vertex": 2845,
+      "point": [
+        33.27685546875,
+        -0.4610211253166199,
+        -0.6063121557235718
+      ],
+      "role": "building-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "main-rear-foundation",
+      "mesh": "Cube_0",
+      "vertex": 2869,
+      "point": [
+        33.27685546875,
+        -0.4610211253166199,
+        19.012693405151367
+      ],
+      "role": "building-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "main-east-foundation",
+      "mesh": "Cube_0",
+      "vertex": 5029,
+      "point": [
+        33.49562072753906,
+        -0.4610211253166199,
+        -1.1143252849578857
+      ],
+      "role": "building-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "main-west-foundation",
+      "mesh": "Cube_0",
+      "vertex": 5053,
+      "point": [
+        -25.99146270751953,
+        -0.4610211253166199,
+        -0.9225159287452698
+      ],
+      "role": "building-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "external-pump-base",
+      "mesh": "Cube_0",
+      "vertex": 7763,
+      "point": [
+        -32.82343292236328,
+        -0.7238224148750305,
+        17.012182235717773
+      ],
+      "role": "equipment-base",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "glazed-building-foundation",
+      "mesh": "Siding_1",
+      "vertex": 6,
+      "point": [
+        -25.290388107299805,
+        -1.6979084014892578,
+        -15.714502334594727
+      ],
+      "role": "building-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "fence-return-base",
+      "mesh": "Gate_2",
+      "vertex": 0,
+      "point": [
+        32.7586784362793,
+        -0.6116352081298828,
+        -7.023341655731201
+      ],
+      "role": "fence-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "fence-east-base",
+      "mesh": "Gate_2",
+      "vertex": 168,
+      "point": [
+        33.30591583251953,
+        -0.6172354817390442,
+        -18.490808486938477
+      ],
+      "role": "fence-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "fence-front-east-base",
+      "mesh": "Gate_2",
+      "vertex": 1488,
+      "point": [
+        19.622556686401367,
+        -0.6172332763671875,
+        -18.504648208618164
+      ],
+      "role": "fence-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "fence-front-middle-base",
+      "mesh": "Gate_2",
+      "vertex": 2625,
+      "point": [
+        19.678543090820312,
+        -0.6172312498092651,
+        -18.509069442749023
+      ],
+      "role": "fence-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "fence-front-west-base",
+      "mesh": "Gate_2",
+      "vertex": 3744,
+      "point": [
+        -6.604126453399658,
+        -0.6172289848327637,
+        -18.50906753540039
+      ],
+      "role": "fence-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "gatehouse-foundation",
+      "mesh": "Gate_2",
+      "vertex": 4769,
+      "point": [
+        -6.690793514251709,
+        -0.7048982977867126,
+        -18.95607566833496
+      ],
+      "role": "building-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "fence-office-return-base",
+      "mesh": "Gate_2",
+      "vertex": 5338,
+      "point": [
+        -25.675952911376953,
+        -0.6172258257865906,
+        -14.91750431060791
+      ],
+      "role": "fence-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "fence-entry-return-base",
+      "mesh": "Gate_2",
+      "vertex": 5443,
+      "point": [
+        -15.887950897216797,
+        -0.6172273755073547,
+        -14.411359786987305
+      ],
+      "role": "fence-foundation",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    },
+    {
+      "id": "yard-pump-base",
+      "mesh": "Gate_2",
+      "vertex": 6792,
+      "point": [
+        29.66581916809082,
+        -0.7238260507583618,
+        -8.62070083618164
+      ],
+      "role": "equipment-base",
+      "maximumGap": 0.025,
+      "maximumEmbedDepth": 1.75
+    }
+  ],
+  "groundNegativeProbes": [
+    {
+      "id": "former-west-lawn",
+      "point": [
+        -37.40718861780603,
+        0,
+        20.94918489126521
+      ]
+    },
+    {
+      "id": "former-north-lawn",
+      "point": [
+        3.5928113821939682,
+        0,
+        -22.05081510873479
+      ]
+    },
+    {
+      "id": "former-yard",
+      "point": [
+        9.592811382193968,
+        0,
+        -11.050815108734787
+      ]
+    },
+    {
+      "id": "former-drive",
+      "point": [
+        -12.407188617806032,
+        0,
+        -21.05081510873479
+      ]
+    },
+    {
+      "id": "former-back-walk",
+      "point": [
+        5.392811382193968,
+        0,
+        22.94918489126521
+      ]
+    },
+    {
+      "id": "former-side-asphalt",
+      "point": [
+        18.59281138219397,
+        0,
+        -3.0508151087347866
+      ]
+    }
+  ],
+  "asset": {
+    "file": "model-v1.glb",
+    "bytes": 1486920,
+    "sha256": "fa1eba6a556c81ccaa65c992e07827927ef285bc10f44279f70b0833bbc372cc",
+    "triangles": 10669,
+    "primitives": 4,
+    "materials": 1,
+    "textures": 1,
+    "textureSha256": "c76a8041b292cd6f2689e6d2442c31354dad3a58d03354c891c704f9f767add6"
+  }
+}
