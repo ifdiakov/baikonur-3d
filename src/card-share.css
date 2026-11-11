@@ -15,3 +15,8 @@
 .museum-share-dialog{max-width:min(460px,calc(100vw - 32px));box-sizing:border-box;padding:22px;border:1px solid #83969f;border-radius:12px;background:#172b34;color:#fff;font:14px/1.5 Arial,sans-serif}.museum-share-dialog::backdrop{background:#0008}.museum-share-dialog h2{margin:0 0 10px}.museum-share-dialog input{width:100%;box-sizing:border-box;padding:10px;color:#fff;background:#0d1b22;border:1px solid #8099a5;border-radius:5px}.museum-share-dialog button{margin-top:14px;padding:9px 16px}
 @media(pointer:coarse){.museum-share-button{min-height:44px}.site-label>.museum-share-button.is-compact{width:36px;height:36px;min-height:36px}}
 @media(max-width:600px){#complexHistoryPanel>.museum-share-button{position:static;margin:8px 12px}#complexHistoryPanel .complex-history__identity{padding-right:0}.museum-share-toast{bottom:70px}}
+/* The countdown dock has a fixed height: keep its share control inside it. */
+#nextLaunchPanel{position:relative}
+#nextLaunchPanel>.museum-share-button{position:absolute;right:12px;bottom:10px;z-index:1;margin:0;min-width:30px;width:30px;min-height:26px;height:26px;padding:4px}
+#nextLaunchPanel>.museum-share-button>span{display:none}
+#nextLaunchPanel .next-launch__footer{padding-right:36px}
