@@ -2,7 +2,7 @@ name: Verify fast and reliable delivery controls
 on:
   push:
     branches: [main, fix/delivery-repair-20261111]
-    paths: ['scripts/ci/**','tests/ci-reliability.mjs','.github/workflows/**']
+    paths: ['scripts/ci/**','tests/ci-reliability.mjs','tests/delivery-policy.mjs','.github/workflows/**','AGENTS.md','docs/CURRENT_WORK.md']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,10 +16,18 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Capture compact delivery diagnosis and exact sources
+      - name: Test selection, real failures and deadlines
+        run: |
+          node tests/ci-reliability.mjs
+          node tests/delivery-policy.mjs
+          node --experimental-vm-modules scripts/ci/fast-check.mjs
+          git diff --exit-code
+      - name: Snapshot delivery evidence without changing application files
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/audit-delivery.mjs
@@ -27,5 +35,7 @@ jobs:
         if: always()
         with:
           name: delivery-diagnosis
-          path: qa-delivery/
+          path: |
+            qa-delivery/
+            qa-ci/
           retention-days: 7

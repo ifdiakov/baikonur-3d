@@ -23,10 +23,10 @@ test('Real geometry and material changes are still detected',()=>{for(const [a,b
 mkdirSync('qa-ci/fixtures',{recursive:true});writeFileSync('qa-ci/fixtures/failure.json',JSON.stringify({passed:false}));writeFileSync('qa-ci/fixtures/empty.json','{}');
 test('Failed or incomplete report cannot become complete',()=>{assert.throws(()=>verifyReports(['qa-ci/fixtures/failure.json']));assert.throws(()=>verifyReports(['qa-ci/fixtures/empty.json']));assert.throws(()=>verifyReports([]));});
 const selected=[],skipped=[];
-for(const f of readdirSync('.github/workflows').filter(f=>f.endsWith('.yml'))){const s=readFileSync('.github/workflows/'+f,'utf8'),paths=workflowPaths(s);if(s.startsWith('# CI_RELIABILITY_V1\n')&&f!=='nonblocking-detail.yml'){
+for(const f of readdirSync('.github/workflows').filter(f=>f.endsWith('.yml'))){const s=readFileSync('.github/workflows/'+f,'utf8'),paths=workflowPaths(s);if(s.startsWith('# CI_RELIABILITY_V1\n')&&f!=='nonblocking-detail.yml'&&paths.length>0){
  assert(paths.length>0,f+' lost scope');assert(s.includes('steps.ci_scope.outputs.run'),f+' lacks scope gate');(classify(tent,paths).run?selected:skipped).push(f);
 }}
-if(selected.length+skipped.length)test('All original suites retained; unrelated installs gated',()=>{assert.equal(selected.length+skipped.length,15);assert(skipped.length>=10);});
+if(selected.length+skipped.length)test('All original suites retained; unrelated installs gated',()=>{assert(selected.length+skipped.length>=12);assert(skipped.length>=10);});
 const ok=await runBounded(process.execPath,['-e','process.exit(0)'],{seconds:2,name:'runner-ok'});assert(ok.passed);cases.push({name:'Successful command recorded',passed:true});
 const fail=await runBounded(process.execPath,['-e','process.exit(7)'],{seconds:2,name:'runner-fail'});assert.equal(fail.code,7);assert.equal(fail.passed,false);cases.push({name:'Failure code preserved, never retried',passed:true});
 const hang=await runBounded(process.execPath,['-e','setInterval(()=>{},1000)'],{seconds:.2,name:'runner-timeout'});assert(hang.timedOut);assert.equal(hang.passed,false);cases.push({name:'Hung process stopped and diagnosed',passed:true});

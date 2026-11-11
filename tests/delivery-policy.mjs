@@ -1,0 +1,31 @@
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync,mkdtempSync,mkdirSync,rmSync} from 'node:fs';
+import {spawnSync} from 'node:child_process';
+import {tmpdir} from 'node:os';
+import {join,resolve} from 'node:path';
+import {selectDeliveryChecks} from '../scripts/ci/delivery-policy.mjs';
+import {classify,matches} from '../scripts/ci/impact.mjs';
+const checks=[],test=(name,fn)=>{fn();checks.push({name,passed:true});};
+const choose=(name,paths,patterns)=>selectDeliveryChecks(name,paths.map(path=>({path})),patterns,matches).run;
+test('An entrypoint change does not retest unrelated buildings',()=>assert.equal(choose('verify-site95.yml',['index.html','src/card-share.js'],['index.html','src/site95*.js']),false));
+test('Changed model still selects its full specialist suite',()=>assert(choose('verify-site95.yml',['index.html','src/site95.js'],['index.html','src/site95*.js'])));
+test('Rail edits do not run building tests',()=>assert.equal(choose('verify-site95.yml',['src/workshop-rail-editor.js'],['index.html','src/site95*.js']),false));
+test('Own workflow changes remain checked',()=>assert(choose('verify-site95.yml',['.github/workflows/verify-site95.yml'],['src/site95*.js'])));
+test('Shared rendering changes select specialist tests',()=>assert(choose('verify-site95.yml',['src/evening-scene.js'],['src/site95*.js'])));
+test('The historical 38-browser matrix is not an automatic task',()=>assert.equal(choose('verify-osm-release.yml',['src/evening-scene.js'],['src/**']),false));
+test('JS cache revision is not treated as code logic',()=>assert.deepEqual(classify([{path:'src/archive-models.js',before:"import x from './site95.js?v=a';",after:"import x from './site95.js?v=b';"}]).meaningful,[]));
+test('Real shared module logic is retained',()=>assert.equal(classify([{path:'src/archive-models.js',before:'export const x=1;',after:'export const x=2;'}]).meaningful.length,1));
+test('Missing old text is not considered a cache-only change',()=>assert.equal(classify([{path:'index.html',before:null,after:'new'}]).meaningful.length,1));
+const old=readFileSync('.github/workflows/verify-osm-release.yml','utf8'),fast=readFileSync('.github/workflows/nonblocking-detail.yml','utf8');
+test('Full regression remains available with its complete matrix',()=>{assert(!/^  push:/m.test(old));assert(old.includes('workflow_dispatch:'));assert(old.includes('target: [local, public]'));assert(old.includes('road-editor]'));});
+test('Fast checks cannot write or publish an unverified rebuild',()=>{assert(fast.includes('contents: read'));assert(!/git push|git commit|actions\/deploy-pages|apply-owner19|77da663d/.test(fast));});
+const dir=mkdtempSync(join(tmpdir(),'museum-fast-check-'));mkdirSync(join(dir,'src'));const html='<script type="module">import "./src/a.js";</script>';
+for(const p of ['index.html','museum.html','workshop.html'])writeFileSync(join(dir,p),html);
+const run=()=>spawnSync(process.execPath,['--experimental-vm-modules',resolve('scripts/ci/fast-check.mjs')],{cwd:dir,encoding:'utf8',timeout:5000});
+try{
+ writeFileSync(join(dir,'src/a.js'),'export const x=1;');test('Valid integration passes',()=>assert.equal(run().status,0));
+ writeFileSync(join(dir,'src/a.js'),'export const =;');test('Syntax error blocks integration',()=>assert.notEqual(run().status,0));
+ writeFileSync(join(dir,'src/a.js'),'import "./missing.js";');test('Missing module blocks integration',()=>assert.notEqual(run().status,0));
+ writeFileSync(join(dir,'src/a.js'),'export const x=1;');writeFileSync(join(dir,'museum.html'),html+'different');test('Diverging public entrypoints block integration',()=>assert.notEqual(run().status,0));
+}finally{rmSync(dir,{recursive:true,force:true});}
+mkdirSync('qa-delivery',{recursive:true});writeFileSync('qa-delivery/policy.json',JSON.stringify({passed:true,checks},null,2));console.log('DELIVERY_POLICY_PASS',checks.length);
