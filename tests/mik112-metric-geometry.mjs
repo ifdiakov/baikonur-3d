@@ -81,10 +81,10 @@ for(const x of [-71,-19])for(const [height,material]of [[20,'museum / doorMetal'
  const hit=ray.intersectObjects(visible,false)[0];assert(hit);assert.equal(hit.object.material.name,material);
  facadeProbes.push({x,height,material:hit.object.material.name});
 }
-for(const [height,material]of [[7,'museum / dark'],[22,'museum / wall']]){
- ray.set(root.localToWorld(new THREE.Vector3(42.5,2.6+height,145)),new THREE.Vector3(0,0,-1).transformDirection(root.matrixWorld));
- const hit=ray.intersectObjects(visible,false)[0];assert(hit);assert.equal(hit.object.material.name,material,'The working low portal has an actual solid upper wall');
- facadeProbes.push({x:42.5,height,material:hit.object.material.name});
+for(const [x,height,material]of [[42.5,7,'museum / dark'],[42.5,22,'museum / wall'],[41.1,7,'museum / dark'],[42.5,8,'museum / dark']]){
+ ray.set(root.localToWorld(new THREE.Vector3(x,2.6+height,145)),new THREE.Vector3(0,0,-1).transformDirection(root.matrixWorld));
+ const hit=ray.intersectObjects(visible,false)[0];assert(hit);assert.equal(hit.object.material.name,material,'The working portal is clear of facade ribs below its solid upper wall');
+ facadeProbes.push({x,height,material:hit.object.material.name});
 }
 const canopyProbes=[];
 for(const x of [-71,-45,-19]){

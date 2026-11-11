@@ -108,8 +108,10 @@ export function buildMik112(root,{year=2026}={}){
    box(dw*.46,dh,1,cx+dw*.27,floor+dh/2,119.5,'doorMetal','sliding-door-leaf');
    box(dw-3,1,2,cx,floor+dh-3,111,'yellow','overhead-crane');
   }else box(dw,dh,1,cx,floor+dh/2,face*119.3,'doorMetal','closed-sliding-door');
-  for(let x=cx-dw/2;x<cx+dw/2+.1;x+=2.1)box(.16,dh,.23,x,floor+dh/2,face*119.95,'seam','door-rib');
-  for(let y=8;y<dh;y+=5.8)box(dw,.18,.22,cx,floor+y,face*119.98,'seam','door-horizontal-seam');
+  const detailWidth=opening?dw*.46:dw,detailX=opening?cx+dw*.27:cx;
+  const ribStart=detailX-detailWidth/2+(opening ? .08 : 0),ribEnd=detailX+detailWidth/2+(opening ? -.08 : .1);
+  for(let x=ribStart;x<ribEnd;x+=2.1)box(.16,dh,.23,x,floor+dh/2,face*119.95,'seam','door-rib');
+  for(let y=8;y<dh;y+=5.8)box(detailWidth,.18,.22,detailX,floor+y,face*119.98,'seam','door-horizontal-seam');
  }
  // One continuous shallow dark canopy spans both TUA doors, as on the
  // drone photograph. Its underside stays above the full 38 m opening.

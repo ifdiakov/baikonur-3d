@@ -104,9 +104,9 @@ async function measure(includePayloads=false){
    ray.set(root.localToWorld(new T.Vector3(x,2.6+height,-145)),new T.Vector3(0,0,1).transformDirection(root.matrixWorld));
    const hit=ray.intersectObjects(visibleMeshes,false)[0];facadeProbes.push({x,height,expected,material:hit?.object.material.name||null});
   }
-  for(const [height,expected]of [[7,'museum / dark'],[22,'museum / wall']]){
-   ray.set(root.localToWorld(new T.Vector3(42.5,2.6+height,145)),new T.Vector3(0,0,-1).transformDirection(root.matrixWorld));
-   const hit=ray.intersectObjects(visibleMeshes,false)[0];facadeProbes.push({x:42.5,height,expected,material:hit?.object.material.name||null});
+  for(const [x,height,expected]of [[42.5,7,'museum / dark'],[42.5,22,'museum / wall'],[41.1,7,'museum / dark'],[42.5,8,'museum / dark']]){
+   ray.set(root.localToWorld(new T.Vector3(x,2.6+height,145)),new T.Vector3(0,0,-1).transformDirection(root.matrixWorld));
+   const hit=ray.intersectObjects(visibleMeshes,false)[0];facadeProbes.push({x,height,expected,material:hit?.object.material.name||null});
   }
   const payloads=[];
   if(includePayloads)root.traverse(o=>{const entry=o.userData.rocketExhibit;if(entry?.key?.startsWith('tua-'))payloads.push({key:entry.key,status:entry.status,...actualBounds(o)});});
@@ -195,7 +195,7 @@ try{
   assert.deepEqual(m.transporters.map(t=>t.position),[[-71,4.305,-183],[-19,4.305,-183]]);
   assert.equal(m.doorLeaves.length,2,'The two actual 38 m door leaves must exist below a broad white wall');
   for(let i=0;i<2;i++){assert(Math.abs(m.doorLeaves[i].center[0]-[-71,-19][i])<1e-4);assert(Math.abs(m.doorLeaves[i].size[0]-40)<1e-3);assert.equal(m.stats.railGates[i].clearHeight,38);}
-  assert.equal(m.facadeProbes.length,6);assert(m.facadeProbes.every(p=>p.material===p.expected),'Real high and low facade surfaces match the photo-proportioned openings');
+  assert.equal(m.facadeProbes.length,8);assert(m.facadeProbes.every(p=>p.material===p.expected),'Real facades match the photo-proportioned openings, with no metal ribs across the working entrance');
   assert.equal(m.features['high-gate-continuous-canopy'],1);
   assert.equal(m.payloads.length,2);
   for(const payload of m.payloads){
