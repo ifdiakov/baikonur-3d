@@ -6,8 +6,8 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261111-site118-v2';
-import * as buildings from './archive-buildings.js?v=20261109-site95-courtyards-v2';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261111-site92-82-v1';
+import * as buildings from './archive-buildings.js?v=20261111-site92-82-v1';
 import * as launches from './archive-launches.js?v=20261111-proton-civil-v1';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
 import {buildSite31Exhibit,site31Controller,SITE31_VIEWS} from './site31-exhibit.js?v=20261108-site31-lamps-v1';
@@ -22,7 +22,7 @@ import {buildSite118Exhibit,site118Controller,SITE118_PROFILE} from './site118-s
 import {MUSEUM_CAMERA_MIN_Y} from './camera-navigation.js?v=20261103-camera-min-h1-v1';
 export function buildArchiveModel(root,entry){
  if(entry.kind==='site118')return buildSite118Exhibit(root);
- const builders={site113:buildSite113,site250a:buildSite250a,site254:buildSite254,cyclone:buildCycloneComplex,'seven-winds':buildSevenWinds,silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildSite41,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:buildSite110,soyuz:buildSite31Exhibit,zenit:launches.zenit45,city:photoCity};
+ const builders={buried82:buildings.buildSite82,site113:buildSite113,site250a:buildSite250a,site254:buildSite254,cyclone:buildCycloneComplex,'seven-winds':buildSevenWinds,silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildSite41,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:buildSite110,soyuz:buildSite31Exhibit,zenit:launches.zenit45,city:photoCity};
  if(entry.kind==='silo')return buildSiloPad(root,{siteId:entry.id,title:entry.title,activation:'height'});
  if(entry.kind==='proton')return launches.protonComplex(root,entry.id);
  if(!builders[entry.kind])throw Error('Unknown archive model '+entry.kind);

@@ -267,6 +267,9 @@ function makeVehicleRoute(id,label,graphRoute,conform=points=>points){
 }
 
 export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,checkpoint7RoadGrade=null}){
+ // Move physical halls, not established roads or remote railway junctions.
+ const displayedSiteRecords=siteRecords;
+ siteRecords=siteRecords.map(s=>s.id==='pad-92'&&s.geoSource?.displayOffset?{...s,x:s.x-s.geoSource.displayOffset[0],y:s.y-s.geoSource.displayOffset[1]}:s);
  const started=Date.now(),roadGraph=buildOsmGraph(data.roads.features,{geography,point}),railGraph=buildOsmGraph(data.railways.features,{geography,point,rail:true});
  checkpoint7RoadGrade?.adjustWidths?.(roadGraph);
  const buildPhases=[],checkpoint=name=>{
@@ -473,7 +476,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const site41Replacement=createSite41RoadReplacement(roadGraph);
  // Reserve the same compact museum footprint as each detailed shaft model.
  for(const id of SILO_SITE_IDS){const site=siteRecords.find(s=>s.id===id);if(site)masks.set(id,{center:point(site.x,site.y,0),radius:10.5});}
- const railSiteClearance=createRailSiteClearancePlan({siteRecords,point}),railFootprintSites=new Set(railSiteClearance.siteIds);
+ const railSiteClearance=createRailSiteClearancePlan({siteRecords:displayedSiteRecords,point}),railFootprintSites=new Set(railSiteClearance.siteIds);
  function masked(p,tags,margin=0,sourceWayId=null){for(const [id,m] of masks){if(id==='pad-2'&&sourceWayId===SITE2_PRIMARY_WAY_ID)continue;if(TWIN_SILO_IDS.has(id)&&['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;if(sourceWayId===INDUSTRIAL_THROUGH_ROAD&&INDUSTRIAL_THROUGH_SITES.has(id))continue;const dx=p.x-m.center.x,dz=p.z-m.center.z,c=Math.cos(m.yaw||0),s=Math.sin(m.yaw||0),x=dx*c-dz*s,z=dx*s+dz*c;if(m.rectangle){if(['trunk','primary','secondary','tertiary','unclassified'].includes(tags.highway?.replace('_link','')))continue;const r=m.rectangle;if(Math.abs(x)<r.halfX+margin&&z>r.minZ-margin&&z<r.maxZ+margin)return true;}else if(x*x+z*z<(m.radius+margin)**2)return true;}return false;}
  function ownerMainlineCorridor(p){
   const x=p.x/3.4+650,y=p.z/3.4+522.5,dx=8.4,dy=-8.1,t=((x-579)*dx+(y-389)*dy)/(dx*dx+dy*dy);

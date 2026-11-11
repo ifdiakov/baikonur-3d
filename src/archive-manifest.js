@@ -13,6 +13,7 @@ import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-fa
 export const PORTAL_ROOT={id:'1icCqS39u4lNhiC6phSECwj_qMVX5dCci',name:'_для портала Байконур',satelliteFolder:'13945qa4Yp9IOGmxexgLAMyW9-Ez6VIuc'};
 export const ARCHIVE_VERSION='1.0-portal-photo-pass';
 export const ARCHIVE_MAP=[
+ {id:'pad-82',kind:'buried82',title:'Заглублённое сооружение · пл.82',scale:MUSEUM_METRE,yaw:0,elevation:-2.755,orientation:'owner-directed-buried-structure',modelVersion:'20261111-site82-buried-v1'},
  {id:'pad-118',kind:'site118',title:'Промышленная площадка · пл.118',scale:MUSEUM_METRE,yaw:-2.106,elevation:-2.755,modelOffsetMetres:[-36,0,0],folder:'1AyvjgpCjACeS0YwV1w_TUWI025sLKwKN',sourceFile:'1ohcMUcDMZRJTHadaqJMcMTbBSVP7-Ozb',orientation:'museum-placement-inside-compound-clear-of-existing-service-roads',modelVersion:'site118-drive-20261111-v1'},
  {id:'pad-113',kind:'site113',title:'Городок · пл.113',scale:MUSEUM_METRE,yaw:0,folder:SITE113_REFERENCE.folder,satellite:SITE113_REFERENCE.satellite,orientation:SITE113_REFERENCE.registration,modelVersion:SITE113_VERSION},
  {id:'kpp-7',kind:'checkpoint',title:'КПП №7',scale:MUSEUM_METRE,yaw:0,folder:CHECKPOINT7_REFERENCE.folder,modelVersion:CHECKPOINT7_VERSION,orientation:'owner-directed-road-axis-between-bridge-and-saturn'},

@@ -1436,7 +1436,10 @@
       "publicReferences": [
         "https://portal.baikonuradm.ru/index.php?mod=npb1&npbid=38"
       ],
-      "contentSource": "reviewed-sites-workbook-20261028"
+      "contentSource": "reviewed-sites-workbook-20261028",
+      "titleShort": "Заглублённое сооружение",
+      "titleFull": "пл. №82 · Заглублённое сооружение",
+      "modelStatus": "Заглублённый тип сооружения — по указанию владельца. Геометрия и размеры музейно-интерпретационные; отдельное историческое назначение требует подтверждения."
     },
     {
       "id": "pad-83",

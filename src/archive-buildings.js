@@ -1,3 +1,5 @@
+import {detailSite92Hall,site92RailApproach,SITE92_VERSION} from './site92-detail.js?v=20261111-v2';
+export {buildSite82} from './site82.js?v=20261111-v1';
 import * as THREE from 'three';
 import {buildSite2Museum} from './site2-museum.js?v=20261103-site2-main-road-v1';
 import {installSite2Exhibit} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
@@ -7,11 +9,11 @@ import {buildAirport} from './airport-models.js?v=20261102-site2-photo-v3';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
 export function protonHalls(root){
- const k=archiveKit(root),P=imageFrame([680,450],.60);const hall=(p,w,d,h,opts={})=>{const[x,z]=P(p);return k.hall({x,z,w:w*.6,d:d*.6,h,yaw:imageAxisYaw([0,0],[260,198]),...opts});};
+ const k=archiveKit(root),P=imageFrame([680,450],.60);const hall=(p,w,d,h,opts={})=>{const[x,z]=P(p);const hall=k.hall({x,z,w:w*.6,d:d*.6,h,yaw:imageAxisYaw([0,0],[260,198]),...opts});detailSite92Hall(k,hall,{w:w*.6,d:d*.6,h,main:!!opts.monitor});return hall;};
  hall([708,378],82,393,25,{roof:'blue',monitor:true,gates:2});hall([635,469],78,393,25,{roof:'blue',monitor:true,gates:2});hall([485,420],27,105,8,{floors:2,wall:'light'});hall([600,515],46,122,11,{floors:2});hall([700,590],27,105,8,{floors:2,wall:'light'});hall([270,747],88,192,13,{roof:'dark',gates:2});hall([508,626],64,116,6);hall([215,182],38,135,7,{roof:'blue'});hall([958,134],47,68,5,{roof:'blue'});hall([850,128],30,53,5,{roof:'blue'});
  for(const p of[[443,180],[416,211],[457,141]]){const[x,z]=P(p);k.tank(x,z,3.2,9);}
- for(const pts of[[[1280,949],[1150,802],[1000,653],[850,540],[807,508]],[[1280,949],[1137,778],[991,623],[861,527]],[[1280,949],[1120,733],[1034,582],[1080,420],[1305,322]],[[1248,924],[1020,824],[845,729],[740,632]],[[20,706],[214,842],[435,971]]])k.rail(pts.map(P));
- k.path([[132,90],[273,180],[417,302],[374,397],[736,685],[987,758]].map(P),7,.16);k.path([[418,302],[550,177],[704,97],[975,202],[1077,431],[901,638]].map(P),5,.14);root.userData.tracedAxes=[{part:'two-main-halls',a:[580,280],b:[838,478]}];return k.finish();
+ let railIndex=0;for(const pts of[[[1280,949],[1150,802],[1000,653],[850,540],[807,508]],[[1280,949],[1137,778],[991,623],[861,527]],[[1280,949],[1120,733],[1034,582],[1080,420],[1305,322]],[[1248,924],[1020,824],[845,729],[740,632]],[[20,706],[214,842],[435,971]]])k.rail(site92RailApproach(pts.map(P),railIndex++));
+ k.path(site92RailApproach([[132,90],[273,180],[417,302],[374,397],[736,685],[987,758]].map(P),2),7,.16);k.path(site92RailApproach([[418,302],[550,177],[704,97],[975,202],[1077,431],[901,638]].map(P),2),5,.14);root.userData.tracedAxes=[{part:'two-main-halls',a:[580,280],b:[838,478]}];root.userData.site92Model={version:SITE92_VERSION,mainHalls:2,retainedBuildings:10,displayOffsetMap:[-5,-2.5]};return {...k.finish(),model:root.userData.site92Model};
 }
 export {buildSite95 as settlement95} from './site95.js?v=20261109-site95-courtyards-v2';
 export function mik42Facade(root){

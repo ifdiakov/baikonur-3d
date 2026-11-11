@@ -3,7 +3,7 @@ export function createTransportDetailJob(){
  let worker=null,serial=0;const waiting=new Map(),report={mode:'worker',state:'idle',builds:0,buildMs:0,cutMs:0,error:null};
  const fail=error=>{for(const p of waiting.values()){clearTimeout(p.timer);p.reject(error);}waiting.clear();report.error=String(error.message||error);report.state='error';worker?.terminate();worker=null;};
  function request(action,input){
-  if(!worker){worker=new Worker(new URL('./transport-detail-worker.bundle.js?v=20261109-owner19-v3',import.meta.url),{type:'module'});
+  if(!worker){worker=new Worker(new URL('./transport-detail-worker.bundle.js?v=20261111-site92-82-v1',import.meta.url),{type:'module'});
    worker.onerror=e=>{e.preventDefault();fail(Error(e.message||'Transport worker failed'));};
    worker.onmessage=({data})=>{const p=waiting.get(data.id);if(!p)return;waiting.delete(data.id);clearTimeout(p.timer);if(data.error){p.reject(Error(data.error));return;}report[p.action==='cut'?'cutMs':'buildMs']=data.elapsedMs;p.resolve(data.value);};
   }
