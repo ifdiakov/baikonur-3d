@@ -3,10 +3,10 @@ name: Site 95 and neighbouring support facilities
 on:
   pull_request:
     branches: [main]
-    paths: ['src/site95*.js','src/site92*.js','src/site82.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','tests/site92-82-*.mjs','scripts/tasks/apply-site92-82.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
+    paths: ['src/site95*.js','src/site92*.js','src/site82.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','tests/site92-82-*.mjs','scripts/tasks/*site92*.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
   push:
     branches: [main, fix/site95-courtyards-20261109, fix/site92-82-20261111]
-    paths: ['src/site95*.js','src/site92*.js','src/site82.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','tests/site92-82-*.mjs','scripts/tasks/apply-site92-82.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
+    paths: ['src/site95*.js','src/site92*.js','src/site82.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','index.html','tests/site95-*.mjs','tests/site92-82-*.mjs','scripts/tasks/*site92*.mjs','scripts/prepare-site95-courtyards.mjs','.github/workflows/verify-site95.yml']
   workflow_dispatch:
 permissions:
   contents: write
@@ -107,6 +107,7 @@ jobs:
         if: github.ref_name == 'fix/site92-82-20261111'
         run: |
           node scripts/tasks/apply-site92-82.mjs
+          node scripts/tasks/site92-yard-stability.mjs
           npx esbuild src/transport-detail-worker-entry.js --bundle --platform=browser --format=esm --minify --outfile=src/transport-detail-worker.bundle.js
       - name: Serve exact scene
         if: github.ref_name == 'fix/site92-82-20261111'
@@ -134,7 +135,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src/archive-buildings.js src/archive-models.js src/archive-manifest.js src/osm-geography.js src/transport-detail-worker.bundle.js data/catalog.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz
+          git add index.html museum.html workshop.html src/archive-buildings.js src/archive-models.js src/archive-manifest.js src/osm-geography.js src/osm-transport.js src/transport-detail-job.js src/transport-detail-worker.bundle.js data/catalog.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz
           if ! git diff --cached --quiet; then git commit -m '[site92-82] Verified detailed 92 moved clear of 95 and buried 82 with matching transport'; git push origin HEAD:${{ github.ref_name }}; fi
       - name: Record exact checked source
         if: always()
