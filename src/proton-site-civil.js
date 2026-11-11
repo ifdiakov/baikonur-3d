@@ -224,11 +224,45 @@ function equipmentYard(k,root,d){
  return {data:{id:d.id,position:d.position,yaw:d.yaw,width:d.width,depth:d.depth,vessels:d.count,footprint:polygon(g,rect(d.width,d.depth))},obstacle:polygon(g,rect(d.width,d.depth,1.5))};
 }
 
+function applyCivilPhotoMaterials(materials){
+ for(const [key,color]of Object.entries({soil:0xc1ad88,concrete:0xcfc3a9,wall:0xc7baa0,light:0xd8cbb2,roof:0x627675,blue:0x608c92,green:0x3e4b3d,asphalt:0x797a6c}))materials[key].color.setHex(color);
+ // The surrounding steppe has an unlit, evening-tinted material. A neutral
+ // PBR cover under the blue evening hemisphere otherwise becomes a separate
+ // dark violet block. Keep the Standard lighting and add only soft local
+ // diffuse bounce; emissive stays zero and no scene lights are introduced.
+ const surface=materials.concrete.onBeforeCompile,updateTransform=materials.concrete.onBeforeRender;
+ for(const [key,fill,period,wear,relief,tone]of [
+  ['soil',.19,16,.10,.018,.45],['concrete',.26,12,.17,.024,.70],
+  ['wall',.23,16,.16,.018,.70],['light',.26,12,.12,.018,.60]
+ ]){
+  const material=materials[key];material.roughness=.99;material.metalness=0;
+  // Reuse the kit's existing concrete map for fine dust/age variation: no
+  // extra texture, decal, surface or draw batch is needed on the earth cover.
+  material.extensions={...material.extensions,derivatives:true};material.onBeforeRender=updateTransform;
+  material.onBeforeCompile=shader=>{
+   surface(shader);
+   shader.uniforms.museumPeriod.value=period;shader.uniforms.museumWear.value=wear;
+   shader.uniforms.museumRelief.value=relief;shader.uniforms.museumStain.value.setHex(key==='soil'?0x89765b:0x8f826d);
+   shader.uniforms.protonCivilDiffuseFill={value:fill};shader.uniforms.protonCivilToneStrength={value:tone};
+   shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>
+    uniform float protonCivilDiffuseFill,protonCivilToneStrength;
+   `).replace('diffuseColor.rgb*=museumTexel.r;',
+    'diffuseColor.rgb*=mix(1.0,museumTexel.r,protonCivilToneStrength);')
+    .replace('#include <aomap_fragment>',`
+     float civilSkyFacing=max(normalize(vMuseumNormal).y,0.0);
+     reflectedLight.indirectDiffuse+=material.diffuseColor*protonCivilDiffuseFill*(0.72+0.28*civilSkyFacing);
+     #include <aomap_fragment>
+    `);
+  };
+  material.customProgramCacheKey=()=> 'museum-surface-v1-proton-civil-dust-v1';
+ }
+}
+
 export function buildProtonCivil(siteRoot,{siteId,planOrigin,metresPerPixel}){
  const layout=PROTON_CIVIL_LAYOUT[siteId];if(!layout)throw new Error('Unknown Proton civil plan '+siteId);
  const root=new THREE.Group();root.name='Протон · обвалованные сооружения и дорожки';root.userData.museumComponent='proton-civil';siteRoot.add(root);
  const k=archiveKit(root),P=([x,z])=>[(x-planOrigin[0])*metresPerPixel,(z-planOrigin[1])*metresPerPixel];
- for(const [key,color]of Object.entries({soil:'#a5a194',concrete:'#afafa2',wall:'#b8b9ae',light:'#c3c4b8',roof:'#627675',blue:'#608c92',green:'#4b6252',asphalt:'#797a6c'}))k.mat[key].color.set(color);
+ applyCivilPhotoMaterials(k.mat);
  const plan=d=>({...d,id:siteId+'-'+d.id,position:[P(d.pixel)[0],0,P(d.pixel)[1]],width:d.size[0]*metresPerPixel,depth:d.size[1]*metresPerPixel,yaw:d.yaw+(d.front===1?Math.PI:0)});
  const shelters=[],surfaceBuildings=[],yards=[],paths=[];
  const definitions=[...layout.shelters,...(layout.flankShelters||[])].map(plan);

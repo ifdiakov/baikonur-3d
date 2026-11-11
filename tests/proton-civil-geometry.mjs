@@ -121,6 +121,94 @@ export function measureProtonCivil(options) {
     terrainMaskKind: 'GPU fragment discard; CPU ground-plane intersections do not prove a rendered excavation'};
 }
 
+// Only the five generic neighbors implicated by the first candidate's plan
+// images. This checks their rendered geometry, not their declared scale.
+export function measureProtonNeighborClearance(options) {
+  const seam = globalThis.__PROTON_TEST, T = options.THREE || seam?.THREE, objects = options.objects || seam?.objects;
+  const ids = {'pad-81': ['pad-82', 'pad-84', 'sector-nw2'], 'pad-200': ['pad-201', 'pad-202']}[options.siteId];
+  if (!ids || !T || !objects) throw new Error('Missing Proton neighbor measurement context');
+  const root = objects.find(o => o.record.id === options.siteId)?.g;
+  if (!root?.userData.protonCivil) throw new Error('Missing actual Proton civil root');
+  root.updateWorldMatrix(true, true);
+  const meta = root.userData.protonCivil, civilMeshes = [], neighborMeshes = [], owners = new Map();
+  const visible = mesh => {
+    for (let o = mesh; o; o = o.parent) if (!o.visible) return false;
+    return [mesh.material].flat().some(material => material?.visible !== false);
+  };
+  root.traverse(group => {
+    if (group.userData.museumComponent === 'proton-civil') group.traverse(mesh => {if (mesh.isMesh && visible(mesh)) civilMeshes.push(mesh);});
+  });
+  if (!civilMeshes.length) throw new Error('No visible civil geometry to protect');
+  const union = new T.Box3(); for (const mesh of civilMeshes) union.union(new T.Box3().setFromObject(mesh, true));
+  const civilTop = union.max.y, scale = root.getWorldScale(new T.Vector3()).y, neighbors = [];
+  for (const id of ids) {
+    const neighbor = objects.find(o => o.record.id === id)?.g; if (!neighbor) throw new Error('Missing neighboring site ' + id);
+    neighbor.updateWorldMatrix(true, true); let meshes = 0;
+    neighbor.traverse(mesh => {
+      if (!mesh.isMesh || !visible(mesh)) return;
+      meshes++; neighborMeshes.push(mesh); owners.set(mesh, id); union.union(new T.Box3().setFromObject(mesh, true));
+    });
+    neighbors.push({id, visibleMeshes: meshes, position: neighbor.getWorldPosition(new T.Vector3()).toArray(),
+      worldScale: neighbor.getWorldScale(new T.Vector3()).toArray(), blockedSamples: 0});
+  }
+  const down = new T.Vector3(0, -1, 0), surfaces = [], features = [];
+  for (const path of options.pathProbes || []) {
+    const feature = {id: path.id, kind: 'path', attempted: path.samples.length, actualSurfaceSamples: 0, blockedSamples: 0}; features.push(feature);
+    for (const sample of path.samples) {
+      if (!sample.pointWorld?.every(Number.isFinite)) throw new Error('A path probe has no actual civil surface: ' + path.id);
+      surfaces.push({feature, world: sample.pointWorld}); feature.actualSurfaceSamples++;
+    }
+  }
+  const inside = (x, z, polygon) => {
+    let yes = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const a = polygon[i], b = polygon[j]; if ((a[1] > z) !== (b[1] > z) && x < (b[0] - a[0]) * (z - a[1]) / (b[1] - a[1]) + a[0]) yes = !yes;
+    }
+    return yes;
+  };
+  for (const [kind, definitions] of [['yard', meta.yards], ['building', meta.surfaceBuildings]]) for (const item of definitions) {
+    const polygon = item.footprint, centre = polygon.reduce((sum, p) => [sum[0] + p[0] / polygon.length, sum[1] + p[1] / polygon.length], [0, 0]);
+    const contour = polygon.map(p => {const distance = Math.hypot(p[0] - centre[0], p[1] - centre[1]); return p.map((v, i) => v + (centre[i] - v) * Math.min(.3 / distance, .1));});
+    const samples = [centre];
+    for (let i = 0; i < contour.length; i++) {
+      const a = contour[i], b = contour[(i + 1) % contour.length], n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / 3));
+      for (let j = 0; j < n; j++) samples.push([a[0] + (b[0] - a[0]) * j / n, a[1] + (b[1] - a[1]) * j / n]);
+    }
+    // Interior samples also cover rows of separate small buildings whose
+    // common catalogue footprint contains open gaps between the buildings.
+    const xs = polygon.map(p => p[0]), zs = polygon.map(p => p[1]);
+    for (let x = Math.min(...xs) + 3; x < Math.max(...xs); x += 6) for (let z = Math.min(...zs) + 3; z < Math.max(...zs); z += 6) if (inside(x, z, polygon)) samples.push([x, z]);
+    const feature = {id: item.id, kind, attempted: samples.length, actualSurfaceSamples: 0, blockedSamples: 0}; features.push(feature);
+    for (const [x, z] of samples) {
+      const p = root.localToWorld(new T.Vector3(x, 0, z)); p.y = civilTop + scale * 2;
+      const hit = new T.Raycaster(p, down, 0, 16 * scale).intersectObjects(civilMeshes, false)[0];
+      if (!hit) continue; // Empty gaps are not claimed to be a roof or slab.
+      surfaces.push({feature, world: hit.point.toArray()}); feature.actualSurfaceSamples++;
+    }
+  }
+  const blockers = [], epsilon = scale * .03, top = union.max.y + scale * 2; let blockedSamples = 0;
+  for (const sample of surfaces) {
+    const [x, y, z] = sample.world, ray = new T.Raycaster(new T.Vector3(x, top, z), down, 0, top - y);
+    const hit = ray.intersectObjects(neighborMeshes, false).find(hit => hit.point.y > y + epsilon);
+    if (!hit) continue;
+    const id = owners.get(hit.object); blockedSamples++; sample.feature.blockedSamples++; neighbors.find(neighbor => neighbor.id === id).blockedSamples++;
+    if (blockers.length < 48) blockers.push({neighbor: id, feature: sample.feature.id, kind: sample.feature.kind,
+      surfaceWorld: sample.world, obstacleWorld: hit.point.toArray(), excessHeightMetres: (hit.point.y - y) / scale,
+      mesh: hit.object.name || hit.object.geometry.type, instanceId: hit.instanceId ?? null});
+  }
+  return {siteId: options.siteId, neighbors, features, testedSurfaceSamples: surfaces.length, blockedSamples, blockers,
+    verticalToleranceMetres: .03, method: 'Actual visible neighboring meshes above independently measured civil surfaces; no scale-only assertions'};
+}
+
+export function assertProtonNeighborClearance(report) {
+  const expected = {'pad-81': ['pad-82', 'pad-84', 'sector-nw2'], 'pad-200': ['pad-201', 'pad-202']}[report.siteId];
+  assert.deepEqual(report.neighbors.map(neighbor => neighbor.id), expected);
+  assert(report.features.some(feature => feature.kind === 'path') && report.features.some(feature => feature.kind === 'yard') && report.features.some(feature => feature.kind === 'building'));
+  for (const feature of report.features) assert(feature.actualSurfaceSamples >= 4, 'Physical surfaces were sampled for ' + feature.id);
+  assert(report.testedSurfaceSamples > 100);
+  assert.equal(report.blockedSamples, 0, 'Neighboring generic geometry covers Proton civil detail: ' + JSON.stringify(report.blockers));
+}
+
 const close = (actual, expected, epsilon, message) => assert(Number.isFinite(actual) && Math.abs(actual - expected) <= epsilon,
   `${message}: expected ${expected}, actual ${actual}`);
 const distance = (a, b) => Math.hypot(...a.map((v, i) => v - b[i]));

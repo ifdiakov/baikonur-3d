@@ -946,7 +946,23 @@ const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSit
   footprint.scale.set(.5,1,.5);g.add(footprint);
   g.userData.illustrativeFootprint={horizontalScale:.5,sourceAnchorPreserved:true,railClearanceMinimum:4.55};
  }
- g.traverse(m=>{if(m.isMesh){m.userData.idx=i;clickable.push(m)}});
+ // These neighbouring catalogue markers have illustrative, not surveyed,
+ // buildings. Their former 196×164 m footprints covered the photo-traced
+ // Proton service yards and approaches; preserve every anchor and height.
+ const protonNeighbourScale={'pad-82':.5,'pad-84':.5,'pad-201':.35,'pad-202':.5}[siteRecords[i]?.id];
+ if(protonNeighbourScale){
+  const footprint=new THREE.Group();footprint.name='Компактный контур соседних служебных зданий';
+  for(const child of [...g.children])footprint.add(child);
+  footprint.scale.set(protonNeighbourScale,1,protonNeighbourScale);g.add(footprint);
+  g.userData.illustrativeFootprint={horizontalScale:protonNeighbourScale,sourceAnchorPreserved:true,basis:'clearance-for-photo-traced-proton-81-200'};
+ }
+ if(siteRecords[i]?.id==='sector-nw2'){
+  // This catalogue entry is a provisional district, not an identified hall.
+  // Keep its card/anchor without a fictitious building over Site 81 paths.
+  g.traverse(m=>{if(m.isMesh){m.visible=false;m.userData.pickable=false;}});
+  g.userData.protonPlaceholderSuppressed=true;g.userData.skipGenericSiteLights=true;
+ }
+ g.traverse(m=>{if(m.isMesh&&m.userData.pickable!==false){m.userData.idx=i;clickable.push(m)}});
  objects.push({g,name,from,type,x,y,record:siteRecords[i]});
 }
 // Keep the introduction responsive while preserving the original site order.

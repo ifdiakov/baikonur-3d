@@ -3,7 +3,7 @@ import {createHash} from 'node:crypto';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
 import {MODEL_CATALOG, MODEL_VIEWER_VERSION} from '../src/model-catalog.js';
-import {measureProtonCivil, assertProtonCivil} from './proton-civil-geometry.mjs';
+import {measureProtonCivil, assertProtonCivil, measureProtonNeighborClearance, assertProtonNeighborClearance} from './proton-civil-geometry.mjs';
 
 const base = process.env.BAIKONUR_URL || 'http://127.0.0.1:8765/';
 const prefix = process.env.QA_PREFIX || 'local', out = process.env.QA_OUT || 'qa-inspector';
@@ -230,6 +230,9 @@ try {
         const projection = await screenProjection(siteId, view); state.views[view] = projection; report.lastProjection = projection;
         assertProjection(projection);
       }
+      state.neighborClearance = await page.evaluate(measureProtonNeighborClearance, {siteId, pathProbes: state.civil.probes.paths});
+      assertProtonNeighborClearance(state.neighborClearance);
+      progress(siteId + '-neighbor-geometry-clear');
       // Exercise the existing source-model LOD in the complete museum. Civil
       // works are siblings of that LOD, so loading the GLB must not hide them.
       const beforeSecond = await camera(); await click('[data-proton-position="1"]');
