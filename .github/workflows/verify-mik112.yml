@@ -1,9 +1,15 @@
 name: MIK112 model and reconstruction — verified integration
 on:
   push:
-    branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110, fix/mik112-photo-20261110, fix/mik112-reference-20261111]
-    paths: ['src/buran-loss*','src/mik112*.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','scripts/refine-mik112-callouts.mjs','scripts/ci/wait-pages-publication.mjs','tests/mik112-*.mjs','tests/buran-loss-*.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
+    branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110, fix/mik112-photo-20261110, fix/mik112-reference-20261111, fix/buran-launch-1988-20261111]
+    paths: ['src/buran-loss*','src/buran-launch*','src/mik112*.js','src/site110*.js','src/archive-kit.js','src/archive-models.js','src/museum-menu.js','src/energia-rocket-exhaust.js','src/energia-buran-effects.js','src/energia-polyus-launch.js','src/energia-plasma-shader.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','scripts/refine-mik112-callouts.mjs','scripts/ci/wait-pages-publication.mjs','tests/mik112-*.mjs','tests/buran-loss-*.mjs','tests/buran-launch-*.mjs','tests/energia-launch-node.mjs','tests/energia-exhaust-geometry.mjs','tests/site110-launch-rig.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
   workflow_dispatch:
+    inputs:
+      target:
+        description: Acceptance profile (auto preserves the branch selection)
+        type: choice
+        default: auto
+        options: [auto, mik112, buran-loss, bridge-sign112, buran-launch]
 concurrency:
   group: museum-mik112-${{ github.ref }}
   cancel-in-progress: true
@@ -55,24 +61,32 @@ jobs:
         id: scope
         env:
           BEFORE: ${{ github.event.before }}
+          REQUESTED_TARGET: ${{ inputs.target }}
         run: |
           target=buran-loss
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' || '${{ github.ref_name }}' == 'fix/mik112-photo-20261110' || '${{ github.ref_name }}' == 'fix/mik112-reference-20261111' ]]; then
+          if [[ -n "$REQUESTED_TARGET" && "$REQUESTED_TARGET" != auto ]]; then
+            target="$REQUESTED_TARGET"
+          elif [[ '${{ github.ref_name }}' == 'fix/buran-launch-1988-20261111' ]]; then
+            target=buran-launch
+          elif [[ '${{ github.event_name }}' == 'workflow_dispatch' || '${{ github.ref_name }}' == 'fix/mik112-photo-20261110' || '${{ github.ref_name }}' == 'fix/mik112-reference-20261111' ]]; then
             target=mik112
           elif [[ '${{ github.ref_name }}' == 'fix/bridge-sign112-20261110' ]]; then
             target=bridge-sign112
           elif [[ -n "$BEFORE" && "$BEFORE" != 0000000000000000000000000000000000000000 ]]; then
             git fetch --no-tags --depth=1 origin "$BEFORE"
-            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/mik112(-materials|-photo-detail|-rail-plan)?\.js$|^tests/mik112-|^scripts/ci/wait-pages-publication\.mjs$|^\.github/workflows/verify-mik112\.yml$)'; then
+            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/buran-launch|^tests/(buran-launch-|site110-launch-rig\.mjs$|energia-exhaust-geometry\.mjs$|energia-launch-node\.mjs$)|^src/energia-(rocket-exhaust|buran-effects|polyus-launch)\.js$|^src/site110(-kinematics)?\.js$|^src/archive-kit\.js$)'; then
+              target=buran-launch
+            elif git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/mik112(-materials|-photo-detail|-rail-plan)?\.js$|^tests/mik112-|^scripts/ci/wait-pages-publication\.mjs$|^\.github/workflows/verify-mik112\.yml$)'; then
               target=mik112
             elif git diff --name-only "$BEFORE" HEAD | grep -Eq '(^src/(bridge-ground-surface|mik112-cards|road-signs)\.js$|^data/road-signs\.json$|bridge-sign112|refine-mik112-callouts)'; then target=bridge-sign112; fi
           elif [[ -f src/mik112-cards.js ]]; then
             target=bridge-sign112
           fi
+          case "$target" in mik112|buran-loss|bridge-sign112|buran-launch) ;; *) echo 'Unknown acceptance target'; exit 2 ;; esac
           echo "target=$target" >> "$GITHUB_OUTPUT"
       - name: Prepare the approved integration only
         run: |
-          if [ '${{ steps.scope.outputs.target }}' != mik112 ]; then node scripts/prepare-buran-loss.mjs; fi
+          if [ '${{ steps.scope.outputs.target }}' != mik112 ] && [ '${{ steps.scope.outputs.target }}' != buran-launch ]; then node scripts/prepare-buran-loss.mjs; fi
           if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then
             node scripts/prepare-bridge-sign112.mjs
             node scripts/refine-mik112-callouts.mjs
@@ -83,6 +97,13 @@ jobs:
             node --check src/mik112.js
             node --check src/mik112-materials.js
             node --check src/mik112-photo-detail.js
+          fi
+          if [ '${{ steps.scope.outputs.target }}' = buran-launch ]; then
+            node --check src/buran-launch.js
+            node --check src/buran-launch-history.js
+            node --check src/energia-buran-effects.js
+            node --check src/site110-kinematics.js
+            node --check src/energia-rocket-exhaust.js
           fi
           cmp index.html museum.html
       - uses: actions/cache@v4
@@ -97,7 +118,16 @@ jobs:
           npx playwright install --with-deps chromium
           if [ '${{ matrix.mode }}' = desktop ]; then
             node tests/mik112-publish-gate.mjs
-            node tests/buran-loss-source.mjs
+            if [ '${{ steps.scope.outputs.target }}' = buran-launch ]; then
+              node tests/buran-launch-source.mjs
+              node tests/energia-exhaust-geometry.mjs
+              node tests/energia-launch-node.mjs
+              node tests/site110-geometry.mjs
+              node tests/site110-launch-rig.mjs
+              node tests/menu-catalog-contract.mjs
+            else
+              node tests/buran-loss-source.mjs
+            fi
             if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then node tests/bridge-sign112-source.mjs; fi
             if [ '${{ steps.scope.outputs.target }}' = mik112 ]; then
               node tests/mik112-metric-geometry.mjs
@@ -114,7 +144,7 @@ jobs:
           QA_PREFIX: local
         run: node scripts/ci/run-bounded.mjs 720 mik112-local node tests/${{ steps.scope.outputs.target }}-browser.mjs
       - name: Record only verified prepared application files on the candidate
-        if: startsWith(github.ref_name, 'fix/') && matrix.mode == 'desktop'
+        if: startsWith(github.ref_name, 'fix/') && matrix.mode == 'desktop' && steps.scope.outputs.target != 'buran-launch'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
@@ -123,6 +153,11 @@ jobs:
             git commit -m 'Integrate verified bridge soil, Dirmentobe sign and separate MIK112 transporter cards'
             git push origin HEAD:${{ github.ref_name }}
           fi
+          mkdir -p qa-mik112-release
+          git rev-parse HEAD > qa-mik112-release/source-commit.txt
+      - name: Record the Buran launch revision without modifying source files
+        if: github.ref != 'refs/heads/main' && steps.scope.outputs.target == 'buran-launch'
+        run: |
           mkdir -p qa-mik112-release
           git rev-parse HEAD > qa-mik112-release/source-commit.txt
       - name: Verify published hashes and repeat actual browser acceptance
@@ -139,10 +174,11 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mik112-${{ matrix.mode }}-evidence-attempt-${{ github.run_attempt }}
+          name: ${{ steps.scope.outputs.target == 'buran-launch' && 'buran-launch' || 'mik112' }}-${{ matrix.mode }}-evidence-attempt-${{ github.run_attempt }}
           path: |
             qa-mik112/
             qa-buran-loss/
+            qa-buran-launch/
             qa-bridge-sign112/
             qa-mik112-release/
             qa-ci/mik112-*.json

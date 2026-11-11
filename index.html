@@ -546,7 +546,7 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261109-site95-courtyards-v2';
+import {installArchiveModels} from './src/archive-models.js?v=20261111-buran-launch-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
@@ -579,7 +579,7 @@ import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPosition
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261109-overlays-off-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261102-site2-photo-v3';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
-import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261103-energia-keep-camera-steam-v12';
+import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261111-shared-exhaust-v13';
 import {createSoyuzDualLaunch} from './src/soyuz-dual-launch.js?v=20261103-dual-site-launch-v1';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261108-road-fleet-v1';
 import {createCoordinateGrid} from './src/coordinate-grid.js?v=20261109-overlays-off-v1';
@@ -598,7 +598,7 @@ import {installLabelMapGestures} from './src/label-map-gestures.js?v=20261103-la
 import {createMapCameraSmoothing,smoothingAlpha,MUSEUM_DAMPING_AT_60FPS} from './src/map-camera-smoothing.js?v=20261103-smooth-map-camera-v1';
 import {installModelInspector} from './src/model-inspector.js?v=20261108-rd180-v1';
 import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261108-rd180-v1';
-import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261109-evening-navigation-v2';
+import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261111-buran-launch-v1';
 import {MUSEUM_METRE,MUSEUM_MAP_SCALE} from './src/museum-scale.js?v=20261102-silo-height-v1';
 import {CYCLONE_MOUNTS} from './src/cyclone-launch.js?v=20261102-site2-photo-v3';
 import {SITE41_R16_MOUNT} from './src/site41-profile.js?v=20261101-r16-exhibit-v1';
@@ -606,7 +606,7 @@ import {createRocketExhibits,ROCKET_MODELS} from './src/rocket-exhibits.js?v=202
 import {createTuaRocketControls} from './src/rocket-controls.js?v=20261102-site2-photo-v3';
 import {createDeferredKnowledge} from './src/deferred-knowledge.js?v=20261108-site45-choice-v1';
 import {museumCardCopy} from './src/museum-card-copy.js?v=20261103-clean-site-copy-v4';
-import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261109-owner19-v3';
+import {SITE110_REFERENCE,SITE110_ROCKET_MOUNT} from './src/site110.js?v=20261111-buran-launch-v1';
 import {createExhibitClearance} from './src/exhibit-clearance.js?v=20261031-rocket-exhibits-v1';
 import {createInterchangeControls,INTERCHANGE_VIEWS} from './src/interchange-controls.js?v=20261031-interchange-bridge-v1';
 import {facilityAccessInspection} from './src/facility-access-inspection.js?v=20261031-facilities-rails-lighting-v1';
@@ -1617,6 +1617,7 @@ const flanks=[
 // Restore the readable flank cards while retaining the colored terrain zones.
 const flankCards=createFlankTerritories({flanks,point,camera,container:labelLayer});
 function showFlanks(){
+ cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
  document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open');
  puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});setMobileMenu(false);
@@ -1884,7 +1885,7 @@ function ensurePlanAssets(){
  plan.rotation.x=-Math.PI/2;plan.position.y=-.2;plan.renderOrder=4;layers.plan.add(plan);registerGroundSurface(plan);
  loadServiceReference();
 }
-let currentObject=0;let currentResearch=null;let lightingEditor=null;let roadEditor=null;let eveningScene=null;let arrivalFlight=null;let groundTraffic=null;let buranLanding=null;let buranLoss=null,buranLossRequest=0;let puaLoading=null;let energiaLaunch=null;let soyuzLaunch=null;let soyuzRequestGeneration=0;
+let currentObject=0;let currentResearch=null;let lightingEditor=null;let roadEditor=null;let eveningScene=null;let arrivalFlight=null;let groundTraffic=null;let buranLanding=null;let buranLoss=null,buranLossRequest=0;let buranLaunch=null,buranLaunchRequest=0;let puaLoading=null;let energiaLaunch=null;let soyuzLaunch=null;let soyuzRequestGeneration=0;
 let buranRequestGeneration=0;
 function cancelBuranRequest(){
  buranRequestGeneration++;
@@ -1892,6 +1893,7 @@ function cancelBuranRequest(){
  if(button?.dataset.pending){delete button.dataset.pending;button.disabled=false;button.textContent='ПОСАДКА БУРАНА';}
 }
 function requestBuranLanding(){
+ cancelBuranLaunch({restoreCamera:false});
  const entry=rocketExhibits.get('site110');if(!entry)return false;
  cancelBuranRequest();const generation=buranRequestGeneration;
  if(entry.status==='ready')return buranLanding.start();
@@ -2082,6 +2084,7 @@ function setInfoOrganisation(organisation,role=""){
  brand.parentElement.hidden=brand.hidden&&!roleText.textContent;
 }
 function focus(i){
+ cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
  cancelBuranRequest();
@@ -2189,6 +2192,9 @@ function focus(i){
  let energiaViews=document.getElementById('energiaViews');if(!energiaViews){energiaViews=document.createElement('div');energiaViews.id='energiaViews';energiaViews.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';document.getElementById('description').after(energiaViews);}
  energiaViews.replaceChildren();energiaViews.hidden=r.id!=='pad-110';energiaViews.style.display=energiaViews.hidden?'none':'flex';
  if(r.id==='pad-110')for(const [label,view]of [['Весь комплекс','all'],['Старт с ракетой','left'],['Второй старт','right'],['Газоотвод','trench'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.textContent=label;b.className='detail-button';b.onclick=()=>portalArchive.inspectSite110(view,camera,ctl);energiaViews.append(b);}
+ let buranLaunchStart=document.getElementById('buranLaunchStart');
+ if(!buranLaunchStart){buranLaunchStart=document.createElement('button');buranLaunchStart.id='buranLaunchStart';buranLaunchStart.type='button';buranLaunchStart.className='detail-button';buranLaunchStart.textContent='СТАРТ «ЭНЕРГИИ — БУРАНА» · 15.11.1988';buranLaunchStart.title='Отсчёт, площадки обслуживания и три газоотвода';buranLaunchStart.style.cssText='margin:0 0 12px;border-color:#b69b66;color:#e4ce9e;white-space:normal';buranLaunchStart.onclick=requestBuranLaunch;energiaViews.after(buranLaunchStart);}
+ buranLaunchStart.hidden=r.id!=='pad-110';buranLaunchStart.style.display=buranLaunchStart.hidden?'none':'block';
  let site45Views=document.getElementById('site45Views');if(!site45Views){site45Views=document.createElement('div');site45Views.id='site45Views';document.getElementById('description').after(site45Views);}site45Views.replaceChildren();site45Views.hidden=r.id!=='pad-45';site45Views.style.display='';
  if(r.id==='pad-45'){
   const note=document.createElement('p');note.className='period-note';note.textContent='Ракеты площадки №45 · выберите модель для просмотра';site45Views.append(note);
@@ -2391,7 +2397,8 @@ renderList();
 for(const {search}of Object.values(catalogueLists))search.oninput=renderList;
 
 // Historical data remains available; the compact dock controls only the year.
-function setMuseumYear(year){
+function setMuseumYear(year,stopReconstruction=true){
+ if(stopReconstruction)cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
  const val=Math.min(2026,Math.max(1955,Math.round(year)));
  document.getElementById('year').value=String(val);
@@ -2456,15 +2463,16 @@ eveningScene=buildEveningScene({scene,camera,renderer,sun,layers,objects,roads:t
 eveningScene.refreshRoadEditor(roadEditor);
 arrivalFlight=createArrivalFlight({scene,camera,controls:ctl,canvas:renderer.domElement,airfield:airportObject.g,complexCenter:point(...geography.project(63.33,45.94)),container:document.getElementById('arrivalPanel'),
  getNavigationBounds:()=>museumCameraBounds,getFollowBounds:()=>arrivalMapBounds,
- onFollow(){cancelBuranRequest();groundTraffic?.stopFollowing();fly=false;document.getElementById('info').style.display='none';}});
+ onFollow(){cancelBuranLaunch({restoreCamera:false});cancelBuranRequest();groundTraffic?.stopFollowing();fly=false;document.getElementById('info').style.display='none';}});
 arrivalFlight.setEvening(eveningScene.evening);
 groundTraffic=createGroundTraffic({layers,transport,camera,controls:ctl,canvas:renderer.domElement,button:null,
- onFollow(){cancelBuranRequest();arrivalFlight.stopFollowing({releaseCamera:false});fly=false;document.getElementById('info').style.display='none';}});
+ onFollow(){cancelBuranLaunch({restoreCamera:false});cancelBuranRequest();arrivalFlight.stopFollowing({releaseCamera:false});fly=false;document.getElementById('info').style.display='none';}});
 groundTraffic.setEvening(eveningScene.evening);
 
 buranLanding=createBuranLanding({scene,camera,controls:ctl,airfield:objects.find(o=>o.record.id==='pad-251').g,
  getSourceBuran:()=>rocketExhibits.get('site110')?.holder.children[0],getNavigationBounds:()=>museumCameraBounds,
  onStart(){
+  cancelBuranLaunch({restoreCamera:false});
   puaLoading?.stop({releaseCamera:false});
   arrivalFlight.stopFollowing({releaseCamera:false});groundTraffic.stopFollowing();fly=false;setMobileMenu(false);
   document.getElementById('info').style.display='none';
@@ -2490,6 +2498,7 @@ buranLanding=createBuranLanding({scene,camera,controls:ctl,airfield:objects.find
  }});
 
 puaLoading=createPuaLoading({airfield:objects.find(o=>o.record.id==='pad-251').g,camera,controls:ctl,onStart(){
+ cancelBuranLaunch({restoreCamera:false});
  buranLanding.stop({releaseCamera:false});arrivalFlight.stopFollowing({releaseCamera:false});groundTraffic.stopFollowing();fly=false;setMobileMenu(false);
  document.getElementById('info').style.display='none';
  const previous={year:Number(document.getElementById('year').value),evening:eveningScene.evening,city:layers.city.visible,sites:layers.sites.visible};
@@ -2500,6 +2509,7 @@ puaLoading=createPuaLoading({airfield:objects.find(o=>o.record.id==='pad-251').g
 energiaLaunch=createEnergiaPolyusLaunch({
  scene,camera,controls:ctl,siteRoot:ukssGroup,renderer,objects,getEntry:()=>rocketExhibits.get('ukss'),
  onStart(){
+  cancelBuranLaunch({restoreCamera:false});
   puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});
   arrivalFlight.stopFollowing({releaseCamera:false});groundTraffic.stopFollowing();fly=false;setMobileMenu(false);
   document.getElementById('info').style.display='none';
@@ -2513,6 +2523,7 @@ soyuzLaunch=createSoyuzDualLaunch({
  camera,controls:ctl,padRoots:{'pad-1':padGroup,'pad-31':site31Root},
  getEntry:id=>rocketExhibits.get(id==='pad-1'?'gagarin':'site31'),
  onStart(id){
+  cancelBuranLaunch({restoreCamera:false});
   ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});
   puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});
   arrivalFlight.stopFollowing({releaseCamera:false});groundTraffic.stopFollowing();
@@ -2565,6 +2576,7 @@ async function requestEnergiaLaunch(){
 
 document.getElementById('ui').addEventListener('click',e=>{if(e.target.closest('[data-museum-action]'))return;if(!e.target.closest('#arrivalPanel'))arrivalFlight.stopFollowing();groundTraffic.stopFollowing();});
 function showOverview(topDown=false){
+ cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
  ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();
@@ -2636,6 +2648,7 @@ function openComplexHistory(id){
  });
 }
 function openMuseumAction(action){
+ cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
  document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open');
@@ -2666,6 +2679,7 @@ function openMuseumAction(action){
   case 'mig25ru':case 'mig25':modelInspector.open(['mig25']);break;
   case 'mriya':openMenuSite('pad-251');document.querySelector('#airportViews button:last-child')?.click();break;
   case 'energia-reconstruction':openMenuSite('pad-250');break;
+  case 'buran-launch-reconstruction':openMenuSite('pad-110');portalArchive.inspectSite110('left',camera,ctl);break;
   case 'buran-landing-reconstruction':openMenuSite('pad-251');break;
   case 'buran-loading-reconstruction':openMenuSite('pad-251');break;
   case 'flanks-history':showFlanks();break;
@@ -2721,6 +2735,47 @@ document.getElementById('mik112All').onclick=()=>focusMik112('all');
 document.getElementById('mik112Tua').onclick=()=>focus(tua112Index);
 document.getElementById('mik112Top').onclick=()=>focusMik112('top');
 
+// BURAN_LAUNCH_1988_INTEGRATION_V1 — lazy reconstruction, complete existing scene.
+function cancelBuranLaunch(options={restoreCamera:false}){
+ ++buranLaunchRequest;buranLaunch?.stop(options);
+ const button=document.getElementById('buranLaunchStart');
+ if(button?.dataset.pending){delete button.dataset.pending;button.disabled=false;button.textContent='СТАРТ «ЭНЕРГИИ — БУРАНА» · 15.11.1988';}
+}
+async function requestBuranLaunch(){
+ const token=++buranLaunchRequest,button=document.getElementById('buranLaunchStart'),entry=rocketExhibits.get('site110');
+ if(!entry)return false;
+ if(button){button.disabled=true;button.dataset.pending='true';button.textContent='ЗАГРУЗКА «ЭНЕРГИИ — БУРАНА»…';}
+ rocketExhibits.prioritizeSite('pad-110');
+ try{
+  const ready=entry.status==='error'?rocketExhibits.setModel('site110','energia-buran'):entry.pending;
+  const [module]=await Promise.all([import('./src/buran-launch.js?v=20261111-buran-launch-v1'),ready]);
+  if(token!==buranLaunchRequest)return false;
+  if(rocketExhibits.get('site110')?.status!=='ready')throw new Error('Не удалось загрузить ракету');
+  if(!buranLaunch)buranLaunch=module.createBuranLaunch({siteRoot:site110Root,camera,controls:ctl,getEntry:()=>rocketExhibits.get('site110'),
+   onBeforeStart(){
+    window.__MUSEUM_ONBOARDING?.cancel?.();cancelBuranRequest();
+    ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
+    ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
+    puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});
+    arrivalFlight.stopFollowing({releaseCamera:false});groundTraffic.stopFollowing();
+    fly=false;setMobileMenu(false);document.getElementById('info').style.display='none';
+   },
+   onStart(){
+    const previous={year:Number(document.getElementById('year').value),evening:eveningScene.evening,sites:layers.sites.visible,city:layers.city.visible,suppressed:Boolean(arrivalFlight.stats().suppressed)};
+    setMuseumYear(1988,false);layers.sites.visible=true;layers.city.visible=true;eveningScene.setEvening(true);arrivalFlight.setSuppressed(true);
+    const hidden=[],airport=objects.find(o=>o.record.id==='pad-251')?.g;
+    airport?.traverse(o=>{if(o.isGroup&&o.name.startsWith('Ан-225 «Мрия» с «Бураном»')){hidden.push([o,o.visible]);o.visible=false;}});
+    return ()=>{for(const [object,visible]of hidden)object.visible=visible;setMuseumYear(previous.year,false);layers.sites.visible=previous.sites;layers.city.visible=previous.city;eveningScene.setEvening(previous.evening);arrivalFlight.setSuppressed(previous.suppressed);};
+   },
+   onStop(){updateLabels();if(cardObjects[currentObject]?.record.id==='pad-110')document.getElementById('info').style.display='block';}
+  });
+  return buranLaunch.start();
+ }catch(error){if(token!==buranLaunchRequest)return false;console.warn('Buran launch reconstruction:',error);if(button){button.title=error.message;button.textContent='НЕ УДАЛОСЬ ЗАГРУЗИТЬ · ПОВТОРИТЬ';}return false;}
+ finally{if(token===buranLaunchRequest&&button){delete button.dataset.pending;button.disabled=false;if(!button.textContent.startsWith('НЕ УДАЛОСЬ'))button.textContent='СТАРТ «ЭНЕРГИИ — БУРАНА» · 15.11.1988';}}
+}
+
+window.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('buranLaunchStart')?.dataset.pending){event.preventDefault();cancelBuranLaunch({restoreCamera:false});}});
+
 // BURAN_LOSS_INTEGRATION_V1
 async function requestBuranLoss(){
  const token=++buranLossRequest,button=document.getElementById('buranLossStart');
@@ -2729,7 +2784,7 @@ async function requestBuranLoss(){
   if(!buranLoss){
    const {createBuranLoss}=await import('./src/buran-loss.js?v=20261110-photo-v2');
    buranLoss=createBuranLoss({root:objects[mik112Index].g,model:mik112Exhibit,camera,controls:ctl,
-    onBeforeStart:()=>{window.__MUSEUM_ONBOARDING?.cancel?.();cancelBuranRequest();puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});energiaLaunch?.stop({releaseCamera:false});soyuzLaunch?.stop({releaseCamera:false});arrivalFlight?.stopFollowing({releaseCamera:false});groundTraffic?.stopFollowing();fly=false;setMobileMenu(false);},onStop:()=>updateLabels()});
+    onBeforeStart:()=>{cancelBuranLaunch({restoreCamera:false});window.__MUSEUM_ONBOARDING?.cancel?.();cancelBuranRequest();puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});energiaLaunch?.stop({releaseCamera:false});soyuzLaunch?.stop({releaseCamera:false});arrivalFlight?.stopFollowing({releaseCamera:false});groundTraffic?.stopFollowing();fly=false;setMobileMenu(false);},onStop:()=>updateLabels()});
   }
   if(token!==buranLossRequest)return false;
   return await buranLoss.start();
@@ -2738,14 +2793,14 @@ async function requestBuranLoss(){
 }
 const buranLossStart=document.createElement('button');buranLossStart.id='buranLossStart';buranLossStart.type='button';buranLossStart.textContent='Гибель Бурана';buranLossStart.title='12 мая 2002 · историческая реконструкция обрушения МИК-112';buranLossStart.onclick=requestBuranLoss;document.getElementById('mik112Controls').append(buranLossStart);
 
-document.getElementById('close').onclick=()=>{cancelBuranRequest();setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('year').oninput=e=>setMuseumYear(+e.target.value,false);const keys=new Set(),keyboardVelocity=new THREE.Vector2();
+document.getElementById('close').onclick=()=>{cancelBuranLaunch({restoreCamera:false});cancelBuranRequest();setGagarinDetailView(false);document.getElementById('info').style.display='none';};document.getElementById('year').oninput=e=>{const year=+e.target.value;cancelBuranLaunch({restoreCamera:false});setMuseumYear(year,false);};const keys=new Set(),keyboardVelocity=new THREE.Vector2();
 window.addEventListener('keydown',e=>{if(!document.body.classList.contains('museum-ready')||isCameraTextEntry(e.target)||e.ctrlKey||e.metaKey||e.altKey)return;const k=e.key.toLowerCase();if(['w','a','s','d','arrowup','arrowdown','arrowleft','arrowright','shift'].includes(k)){keys.add(k);e.preventDefault()}});
 window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur',()=>{keys.clear();keyboardVelocity.set(0,0)});
 let terrainDetailRequested=false,lastFrame=performance.now();
 function moveCamera(dt){
  const step=Math.max(0,Math.min(.06,dt));if(!step)return;
- if(energiaLaunch?.isActive()||puaLoading?.isActive()||document.body.classList.contains('buran-landing-active')||
+ if(buranLaunch?.isActive()||energiaLaunch?.isActive()||puaLoading?.isActive()||document.body.classList.contains('buran-landing-active')||
    document.body.classList.contains('following-arrival')||document.body.classList.contains('following-train')){
   keyboardVelocity.set(0,0);return;
  }
@@ -2784,12 +2839,12 @@ const sceneSelection=installSceneSelection({element:renderer.domElement,camera,c
    if(index===INTERCHANGE_SELECTION_INDEX){focusInterchange();return;}
    focus(index);
    if(mesh?.userData.museumComponent==='tua-imported-model'||mesh?.userData.rocketExhibitKey?.startsWith('tua-')){focusMik112('tua');showRocketKnowledge('tua','pad-112',false);}
-  },blocked:()=>Boolean(lightingEditor?.active)||Boolean(roadEditor?.active)||Boolean(energiaLaunch?.isActive()),
- onNavigate:()=>{if(energiaLaunch?.isActive()){energiaLaunch.setManualCamera();return;}++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();if(fly){fly=false;}}
+  },blocked:()=>Boolean(lightingEditor?.active)||Boolean(roadEditor?.active)||Boolean(energiaLaunch?.isActive())||Boolean(buranLaunch?.isActive()),
+ onNavigate:()=>{if(buranLaunch?.isActive()){buranLaunch.setManualCamera();return;}if(energiaLaunch?.isActive()){energiaLaunch.setManualCamera();return;}++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();if(fly){fly=false;}}
 });
 const smoothMapCamera=createMapCameraSmoothing({
  canvas:renderer.domElement,camera,controls:ctl,
- canNavigate:()=>!modelInspector.isOpen()&&!energiaLaunch?.isActive()&&!puaLoading?.isActive()&&
+ canNavigate:()=>!modelInspector.isOpen()&&!buranLaunch?.isActive()&&!energiaLaunch?.isActive()&&!puaLoading?.isActive()&&
   !document.body.classList.contains('buran-landing-active')&&!fly&&!lightingEditor?.active&&!roadEditor?.active&&
   !document.body.classList.contains('following-arrival')&&
   !document.body.classList.contains('following-train')&&
@@ -2994,16 +3049,16 @@ window.__BAIKONUR_QA={np31:()=>{
  }
  ctl.update();constrainMuseumCamera();ctl.enableDamping=damping;camera.updateMatrixWorld(true);updateLabels();
  return {view,target:ctl.target.toArray(),minimumClearance:7*MUSEUM_METRE,attemptedClearance:view==='clearance'?.02:null};
-},inspectSaturnRelief(){ctl.target.copy(saturnGroup.localToWorld(new THREE.Vector3(0,-12,0)));camera.position.copy(saturnGroup.localToWorld(new THREE.Vector3(420,390,480)));ctl.update();camera.updateMatrixWorld(true);},buranLoss:{start:requestBuranLoss,seek:t=>buranLoss?.seek(t),pause:()=>buranLoss?.pause(),resume:()=>buranLoss?.resume(),stop:()=>buranLoss?.stop(),view:v=>buranLoss?.setView(v),stats:()=>buranLoss?.stats()||{active:false,loaded:false}},inspectMik112:focusMik112,renderStats(){return{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}},stats(){return{loading:startup.stats(),museumRevision:MUSEUM_REVISION,interchangeView,rockets:rocketExhibits.stats(),knowledge:museumKnowledge.stats(),clearance:exhibitClearance.stats(),commonMetre:MUSEUM_METRE,krayniyTerminalView,mapHierarchy:{...mapHierarchy},geography:geography.stats(),eastLightingZone:eastLightingZone.stats(),render:{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles},catalogEntries:catalog.sites.length,catalogAliases:catalog.sites.filter(r=>r.aliasOf).map(r=>({id:r.id,aliasOf:r.aliasOf})),portalArchive:portalArchive.stats(),silos:portalArchive.silos(),terrainVoids:portalVoids.stats(),gagarinGround:{rootY:padGroup.position.y,rimY:padGroup.position.y+GAGARIN_RIM_Y*GAGARIN_SCALE,floorY:padGroup.position.y+padGroup.userData.gagarinModel.terrainDatum.channelFloorY*GAGARIN_SCALE,groundY:-2.755,railHeadY:padGroup.position.y+GAGARIN_RAIL_PORT[1]*GAGARIN_SCALE},traffic:groundTraffic.stats(),evening:eveningScene.stats(),arrival:arrivalFlight.stats(),buranLanding:buranLanding.stats(),energiaLaunch:energiaLaunch?.stats(),soyuzLaunch:soyuzLaunch?.stats(),buranLandingScene:{year:Number(document.getElementById('year').value),evening:eveningScene.evening,mriyaVisible:(()=>{let visible=false;objects.find(o=>o.record.id==='pad-251').g.traverse(m=>{if(m.isGroup&&m.name.startsWith('Ан-225 «Мрия» с «Бураном»')&&m.visible)visible=true;});return visible;})(),modernAircraftVisible:arrivalFlight.stats().renderedVisible,modernAircraftSuppressed:arrivalFlight.stats().suppressed},sphericalVessels:objects.flatMap(o=>{const a=[];o.g.traverse(m=>{if(m.userData.sphericalVessel){const v=m.getWorldScale(new THREE.Vector3());a.push(v.toArray());}});return a;}),airports:objects.filter(o=>o.g.userData.airport).map(o=>({id:o.record.id,...o.g.userData.airport,worldLength:o.g.userData.airport.length*o.g.scale.x})),mik112:mik112Exhibit?.stats(),mik112Index,mik112Placement:objects[mik112Index]?[objects[mik112Index].record.x,objects[mik112Index].record.y]:null,mik112Rail:mik112Rail?{connected:mik112Rail.connected,sourceRoute:mik112Rail.sourceRoute,tracks:mik112Rail.tracks,stemSamples:mik112Rail.stemSamples,joinGap:mik112Rail.joinGap,version:mik112Rail.version,sourceSwitches:mik112Rail.sourceSwitches,sourceRoutes:mik112Rail.sourceRoutes,destinationRoutes:mik112Rail.destinationRoutes,replacedSourceEdges:mik112Rail.replacedSourceEdges,railGauge:mik112Rail.railGauge,railProfile:mik112Rail.railProfile}:null,uiRevision:MUSEUM_REVISION,menu:museumMenu.stats(),labelsVisible,lighting:lightingEditor.stats(),roadEditor:roadEditor.stats(),sites:objects.length,stations:stationObjects.length,railStations:railStations.stats(),saturn:saturnGroup.userData.saturnModel,saturnIndex,saturnScale:saturnGroup.scale.x,saturnPlacement:[saturnSite.record.x,saturnSite.record.y],highwaySigns:highwaySigns.stats(),flankCardLayout:flankCards.stats().layout,flankCards:flankCards.stats(),flankCardRects:flanks.filter(f=>f.el.style.display==='flex').map(f=>{const b=f.el.getBoundingClientRect();return {id:f.key,x:b.x,y:b.y,w:b.width,h:b.height}}),cameraMinElevationDeg:30,outerTerrain:outerTerrain.stats(),riverCoverage:riverStats,sceneScale:SCENE_SCALE,modelScale:MODEL_SCALE,transport:transport.stats(),roadLOD:roadLOD?.stats()??{version:ROAD_LOD_VERSION,mode:'awaiting-cache'},transportBake:{enabled:transportFromBake,detailReady:detailTransportReady,detailLoading:detailTransportLoading,job:transportDetailJob?.stats()??null,attempts:transportDetailAttempts},visibleSites:objects.filter(o=>o.g.visible).length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,surfaceMaterials:{gagarin:padGroup.userData.surfaceMaterials,ukss:ukssGroup.userData.surfaceMaterials},gagarin:padGroup.userData.gagarinModel,ukss:ukssGroup.userData.ukssModel,ukssConnections:ukssGroup.userData.ukssConnections,ukssIndex,ukssScale:ukssGroup.scale.x,ukssPlacement:[ukssSite.record.x,ukssSite.record.y],ukssTerrainCutout:groundMaterials.size,ukssCutoutEnabled:ukssCutout.enabled.value,shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:{...scene.userData.terrainStyle,surface:steppeSurface.stats()},terrainRelief:terrainRelief.stats(),terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(document.getElementById('info').classList.contains('terminal-active')&&document.getElementById('info').style.display==='block')setKrayniyTerminalView(krayniyTerminalView,{collapseDetails:false});else if(mapHierarchy.level==='overview'&&!document.body.classList.contains('following-arrival')&&!document.body.classList.contains('buran-landing-active'))applyOverviewFrame(overviewTopDown);if(buranLanding.isOverviewActive())buranLanding.overview();updateLabels()});function animate(){requestAnimationFrame(animate);const now=performance.now();if(modelInspector.isOpen()){lastFrame=now;return;}const frameDt=Math.max(0,Math.min(.09,(now-lastFrame)/1000));moveCamera(frameDt);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100*SCENE_SCALE,780*SCENE_SCALE,Math.sin(angle)*1100*SCENE_SCALE);ctl.target.set(0,0,0)}arrivalFlight.update(now);groundTraffic.update(now);railStations.update(camera);puaLoading.update(now);buranLanding.update(now);buranLoss?.update(now);energiaLaunch?.update(now);soyuzLaunch?.update(now);
+},inspectSaturnRelief(){ctl.target.copy(saturnGroup.localToWorld(new THREE.Vector3(0,-12,0)));camera.position.copy(saturnGroup.localToWorld(new THREE.Vector3(420,390,480)));ctl.update();camera.updateMatrixWorld(true);},buranLaunch:{start:requestBuranLaunch,seek:t=>buranLaunch?.seek(t),pause:()=>buranLaunch?.pause(),resume:()=>buranLaunch?.resume(),stop:()=>{++buranLaunchRequest;return buranLaunch?.stop();},setView:v=>buranLaunch?.setView(v),stats:()=>buranLaunch?.stats()||{active:false,loaded:false}},buranLoss:{start:requestBuranLoss,seek:t=>buranLoss?.seek(t),pause:()=>buranLoss?.pause(),resume:()=>buranLoss?.resume(),stop:()=>buranLoss?.stop(),view:v=>buranLoss?.setView(v),stats:()=>buranLoss?.stats()||{active:false,loaded:false}},inspectMik112:focusMik112,renderStats(){return{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles}},stats(){return{loading:startup.stats(),museumRevision:MUSEUM_REVISION,interchangeView,rockets:rocketExhibits.stats(),knowledge:museumKnowledge.stats(),clearance:exhibitClearance.stats(),commonMetre:MUSEUM_METRE,krayniyTerminalView,mapHierarchy:{...mapHierarchy},geography:geography.stats(),eastLightingZone:eastLightingZone.stats(),render:{drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles},catalogEntries:catalog.sites.length,catalogAliases:catalog.sites.filter(r=>r.aliasOf).map(r=>({id:r.id,aliasOf:r.aliasOf})),portalArchive:portalArchive.stats(),silos:portalArchive.silos(),terrainVoids:portalVoids.stats(),gagarinGround:{rootY:padGroup.position.y,rimY:padGroup.position.y+GAGARIN_RIM_Y*GAGARIN_SCALE,floorY:padGroup.position.y+padGroup.userData.gagarinModel.terrainDatum.channelFloorY*GAGARIN_SCALE,groundY:-2.755,railHeadY:padGroup.position.y+GAGARIN_RAIL_PORT[1]*GAGARIN_SCALE},traffic:groundTraffic.stats(),evening:eveningScene.stats(),arrival:arrivalFlight.stats(),buranLanding:buranLanding.stats(),energiaLaunch:energiaLaunch?.stats(),soyuzLaunch:soyuzLaunch?.stats(),buranLandingScene:{year:Number(document.getElementById('year').value),evening:eveningScene.evening,mriyaVisible:(()=>{let visible=false;objects.find(o=>o.record.id==='pad-251').g.traverse(m=>{if(m.isGroup&&m.name.startsWith('Ан-225 «Мрия» с «Бураном»')&&m.visible)visible=true;});return visible;})(),modernAircraftVisible:arrivalFlight.stats().renderedVisible,modernAircraftSuppressed:arrivalFlight.stats().suppressed},sphericalVessels:objects.flatMap(o=>{const a=[];o.g.traverse(m=>{if(m.userData.sphericalVessel){const v=m.getWorldScale(new THREE.Vector3());a.push(v.toArray());}});return a;}),airports:objects.filter(o=>o.g.userData.airport).map(o=>({id:o.record.id,...o.g.userData.airport,worldLength:o.g.userData.airport.length*o.g.scale.x})),mik112:mik112Exhibit?.stats(),mik112Index,mik112Placement:objects[mik112Index]?[objects[mik112Index].record.x,objects[mik112Index].record.y]:null,mik112Rail:mik112Rail?{connected:mik112Rail.connected,sourceRoute:mik112Rail.sourceRoute,tracks:mik112Rail.tracks,stemSamples:mik112Rail.stemSamples,joinGap:mik112Rail.joinGap,version:mik112Rail.version,sourceSwitches:mik112Rail.sourceSwitches,sourceRoutes:mik112Rail.sourceRoutes,destinationRoutes:mik112Rail.destinationRoutes,replacedSourceEdges:mik112Rail.replacedSourceEdges,railGauge:mik112Rail.railGauge,railProfile:mik112Rail.railProfile}:null,uiRevision:MUSEUM_REVISION,menu:museumMenu.stats(),labelsVisible,lighting:lightingEditor.stats(),roadEditor:roadEditor.stats(),sites:objects.length,stations:stationObjects.length,railStations:railStations.stats(),saturn:saturnGroup.userData.saturnModel,saturnIndex,saturnScale:saturnGroup.scale.x,saturnPlacement:[saturnSite.record.x,saturnSite.record.y],highwaySigns:highwaySigns.stats(),flankCardLayout:flankCards.stats().layout,flankCards:flankCards.stats(),flankCardRects:flanks.filter(f=>f.el.style.display==='flex').map(f=>{const b=f.el.getBoundingClientRect();return {id:f.key,x:b.x,y:b.y,w:b.width,h:b.height}}),cameraMinElevationDeg:30,outerTerrain:outerTerrain.stats(),riverCoverage:riverStats,sceneScale:SCENE_SCALE,modelScale:MODEL_SCALE,transport:transport.stats(),roadLOD:roadLOD?.stats()??{version:ROAD_LOD_VERSION,mode:'awaiting-cache'},transportBake:{enabled:transportFromBake,detailReady:detailTransportReady,detailLoading:detailTransportLoading,job:transportDetailJob?.stats()??null,attempts:transportDetailAttempts},visibleSites:objects.filter(o=>o.g.visible).length,flankDistricts:flankDistricts.state(),collapsedSiteCount:collapsedSites.size,surfaceMaterials:{gagarin:padGroup.userData.surfaceMaterials,ukss:ukssGroup.userData.surfaceMaterials},gagarin:padGroup.userData.gagarinModel,ukss:ukssGroup.userData.ukssModel,ukssConnections:ukssGroup.userData.ukssConnections,ukssIndex,ukssScale:ukssGroup.scale.x,ukssPlacement:[ukssSite.record.x,ukssSite.record.y],ukssTerrainCutout:groundMaterials.size,ukssCutoutEnabled:ukssCutout.enabled.value,shadersValid:renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),gagarinPlacement:{mapPixel:[pad1.record.x,pad1.record.y],rotationY:padGroup.rotation.y},gagarinRocketVisible:gagarinExhibit.rocket.visible,gagarinDetailView,gagarinScale:padGroup.scale.x,gagarinFlameEast:Math.round(new THREE.Vector3(0,0,-1).applyQuaternion(padGroup.quaternion).x*100)/100,historyEvents:historyEvents.length,researchObjects:researchObjects.length,roadCount:layers.roads.children.length,railCount:layers.rails.children.length,heroOpacity:document.getElementById('hero').style.opacity,terrain:{...scene.userData.terrainStyle,surface:steppeSurface.stats()},terrainRelief:terrainRelief.stats(),terrainExtent:ground.geometry.parameters.width,serviceReference:scene.userData.serviceReference}}};window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);if(document.getElementById('info').classList.contains('terminal-active')&&document.getElementById('info').style.display==='block')setKrayniyTerminalView(krayniyTerminalView,{collapseDetails:false});else if(mapHierarchy.level==='overview'&&!document.body.classList.contains('following-arrival')&&!document.body.classList.contains('buran-landing-active'))applyOverviewFrame(overviewTopDown);if(buranLanding.isOverviewActive())buranLanding.overview();updateLabels()});function animate(){requestAnimationFrame(animate);const now=performance.now();if(modelInspector.isOpen()){lastFrame=now;return;}const frameDt=Math.max(0,Math.min(.09,(now-lastFrame)/1000));moveCamera(frameDt);lastFrame=now;if(fly){angle+=.0018;camera.position.set(Math.cos(angle)*1100*SCENE_SCALE,780*SCENE_SCALE,Math.sin(angle)*1100*SCENE_SCALE);ctl.target.set(0,0,0)}arrivalFlight.update(now);groundTraffic.update(now);railStations.update(camera);puaLoading.update(now);buranLanding.update(now);buranLoss?.update(now);buranLaunch?.update(now);energiaLaunch?.update(now);soyuzLaunch?.update(now);
  ctl.dampingFactor=1-Math.pow(1-MUSEUM_DAMPING_AT_60FPS,Math.max(1/180,Math.min(.09,frameDt))*60);
  ctl.update();smoothMapCamera.update(frameDt);
  window.__MUSEUM_ONBOARDING?.update(now);
- if(!energiaLaunch?.isActive()&&!soyuzLaunch?.isActive())constrainMuseumCamera();eveningScene.update(now);portalArchive.update(now,camera,ctl.target);mriyaController?.update(camera);gameTerrain?.update();roadLOD?.update(detailTransportReady?camera.position.y/SCENE_SCALE:Math.max(360,camera.position.y/SCENE_SCALE),detailedTransportRoots);
+ if(!buranLaunch?.isActive()&&!energiaLaunch?.isActive()&&!soyuzLaunch?.isActive())constrainMuseumCamera();eveningScene.update(now);portalArchive.update(now,camera,ctl.target);mriyaController?.update(camera);gameTerrain?.update();roadLOD?.update(detailTransportReady?camera.position.y/SCENE_SCALE:Math.max(360,camera.position.y/SCENE_SCALE),detailedTransportRoots);
  if(transportFromBake&&!detailTransportReady&&camera.position.y/SCENE_SCALE<450){
   const intro=window.__MUSEUM_ONBOARDING?.stats?.();
   if(!intro?.active&&!intro?.pendingStart)requestTransportDetail();
  }
- steppeSurface.updateDetail(camera.position.y/SCENE_SCALE);if(camera.position.y<250&&!terrainDetailRequested){terrainDetailRequested=true;startup.promote('game-terrain-pilot',100);steppeSurface.requestDetail();}updateLabels();portalVoids.update();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;buranLanding.syncOverlay();transportLabels.draw(now);renderer.render(scene,camera)}if(new URLSearchParams(location.search).get('view')==='motovoz')groundTraffic.setFollowing(true);if(new URLSearchParams(location.search).get('view')==='cars')groundTraffic.focusCars();if(new URLSearchParams(location.search).get('view')==='sprinter')groundTraffic.focusSprinter();if(new URLSearchParams(location.search).get('view')==='flanks')showFlanks();if(new URLSearchParams(location.search).get('view')==='silo'){const requested=new URLSearchParams(location.search).get('site')||'pad-109';const id=objects.some(o=>o.record.id===requested&&o.archive?.kind==='silo')?requested:'pad-109';focus(objects.findIndex(o=>o.record.id===id));if(new URLSearchParams(location.search).get('detail')==='1')portalArchive.inspectSilo('close',camera,ctl,id);}if(new URLSearchParams(location.search).get('view')==='ukss'){focus(ukssIndex);inspectUkss(new URLSearchParams(location.search).get('detail')||'overview');}if(new URLSearchParams(location.search).get('view')==='krayniy')inspectKrayniyTerminal(new URLSearchParams(location.search).get('detail')||'airside');if(['mzk','sdi'].includes(new URLSearchParams(location.search).get('view'))){const params=new URLSearchParams(location.search),component=params.get('detail')==='sdi'||params.get('view')==='sdi'?'sdi':'mzk';focus(cardObjects.findIndex(o=>o.component===component));if(params.get('doors')==='open')portalArchive.setSdiGateOpen(true);}if(new URLSearchParams(location.search).get('view')==='hotel')focus(objects.findIndex(o=>o.record.id==='pad-75'));if(new URLSearchParams(location.search).get('view')==='site41'){focus(objects.findIndex(o=>o.record.id==='pad-41'));portalArchive.inspectSite41(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='mriya'){const i=objects.findIndex(o=>o.record.id==='pad-251');if(i>=0){focus(i);document.querySelector('#airportViews button:last-child')?.click();document.getElementById('info').style.display='none';}}if(new URLSearchParams(location.search).get('view')==='site110'){openMenuSite('pad-110');portalArchive.inspectSite110(new URLSearchParams(location.search).get('detail')||'left',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='buran-landing'){openMenuSite('pad-251');requestBuranLanding();}
+ steppeSurface.updateDetail(camera.position.y/SCENE_SCALE);if(camera.position.y<250&&!terrainDetailRequested){terrainDetailRequested=true;startup.promote('game-terrain-pilot',100);steppeSurface.requestDetail();}updateLabels();portalVoids.update();ukssCutout.enabled.value=ukssGroup.visible&&ukssGroup.parent.visible?1:0;buranLanding.syncOverlay();transportLabels.draw(now);renderer.render(scene,camera)}if(new URLSearchParams(location.search).get('view')==='motovoz')groundTraffic.setFollowing(true);if(new URLSearchParams(location.search).get('view')==='cars')groundTraffic.focusCars();if(new URLSearchParams(location.search).get('view')==='sprinter')groundTraffic.focusSprinter();if(new URLSearchParams(location.search).get('view')==='flanks')showFlanks();if(new URLSearchParams(location.search).get('view')==='silo'){const requested=new URLSearchParams(location.search).get('site')||'pad-109';const id=objects.some(o=>o.record.id===requested&&o.archive?.kind==='silo')?requested:'pad-109';focus(objects.findIndex(o=>o.record.id===id));if(new URLSearchParams(location.search).get('detail')==='1')portalArchive.inspectSilo('close',camera,ctl,id);}if(new URLSearchParams(location.search).get('view')==='ukss'){focus(ukssIndex);inspectUkss(new URLSearchParams(location.search).get('detail')||'overview');}if(new URLSearchParams(location.search).get('view')==='krayniy')inspectKrayniyTerminal(new URLSearchParams(location.search).get('detail')||'airside');if(['mzk','sdi'].includes(new URLSearchParams(location.search).get('view'))){const params=new URLSearchParams(location.search),component=params.get('detail')==='sdi'||params.get('view')==='sdi'?'sdi':'mzk';focus(cardObjects.findIndex(o=>o.component===component));if(params.get('doors')==='open')portalArchive.setSdiGateOpen(true);}if(new URLSearchParams(location.search).get('view')==='hotel')focus(objects.findIndex(o=>o.record.id==='pad-75'));if(new URLSearchParams(location.search).get('view')==='site41'){focus(objects.findIndex(o=>o.record.id==='pad-41'));portalArchive.inspectSite41(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='mriya'){const i=objects.findIndex(o=>o.record.id==='pad-251');if(i>=0){focus(i);document.querySelector('#airportViews button:last-child')?.click();document.getElementById('info').style.display='none';}}if(new URLSearchParams(location.search).get('view')==='site110'){openMenuSite('pad-110');portalArchive.inspectSite110(new URLSearchParams(location.search).get('detail')||'left',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='buran-launch'){openMenuSite('pad-110');portalArchive.inspectSite110('left',camera,ctl);}if(new URLSearchParams(location.search).get('view')==='buran-landing'){openMenuSite('pad-251');requestBuranLanding();}
 if(new URLSearchParams(location.search).get('view')==='gagarin')window.__BAIKONUR_QA.gagarinTable.inspect(new URLSearchParams(location.search).get('detail')||'structure');
 if(new URLSearchParams(location.search).get('view')==='site31'){openMenuSite('pad-31');portalArchive.inspectSite31(new URLSearchParams(location.search).get('detail')||'all',camera,ctl);}
 if(new URLSearchParams(location.search).get('view')==='depot')window.__BAIKONUR_QA.focusSite('kosmotrans-depot');

@@ -199,7 +199,7 @@ try{
  await openSection('traditionsAccordion');
  assert.equal(await page.locator('#traditionsAccordion [data-museum-action]').count(),1,'Recorded crew coin anecdote belongs to traditions');
  await openSection('reconstructionsAccordion');
- assert.equal(await page.locator('#reconstructionsAccordion [data-museum-action]').count(),8,'Real animations are grouped separately from static exhibits');
+ assert.equal(await page.locator('#reconstructionsAccordion [data-museum-action]').count(),11,'Real animations are grouped separately from static exhibits');
  const archiveActions=await page.locator('.museum-section [data-museum-action^="story:"]').evaluateAll(nodes=>nodes.map(node=>node.dataset.museumAction));
  assert.equal(archiveActions.length,6,'Six themed archive stories remain in the navigation; other records stay in site knowledge');
  assert.equal(new Set(archiveActions).size,archiveActions.length,'No archival story is listed twice');

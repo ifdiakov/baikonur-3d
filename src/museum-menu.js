@@ -2,7 +2,7 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
 import {COMPLEX_HISTORY_MENU} from './complex-history-menu.js?v=20261103-lean-startup-v1';
 
-export const MUSEUM_MENU_VERSION='museum-six-sections-v14-nested-traditions';
+export const MUSEUM_MENU_VERSION='museum-six-sections-v15-buran-launch';
 
 // Use the reviewed catalogue and the same silo roster as the rendered models.
 // Technical complexes, measurement sites, hotels and rail stations are not
@@ -60,6 +60,7 @@ export const MUSEUM_SECTIONS=Object.freeze([
   {action:'soyuz-launch-1',title:'Запуск «Союза» · Гагаринский старт',description:'Площадка №1 · механизмы «тюльпана», двигатели и газоотвод'},
   {action:'soyuz-launch-31',title:'Запуск «Союза» · площадка №31',description:'Площадка №31/6 · предстартовые операции и отрыв'},
   {action:'energia-reconstruction',title:'Запуск «Энергии — Полюс» · 1987',description:'УКСС · открыть карточку и запустить реконструкцию'},
+  {action:'buran-launch-reconstruction',title:'Старт «Энергии — Бурана» · 1988',description:'Площадка 110 · отсчёт, обслуживание и три газоотвода'},
   {action:'buran-landing-reconstruction',title:'Посадка «Бурана» · 1988',description:'Юбилейный · запуск реконструкции в карточке аэродрома'},
   {action:'buran-loading-reconstruction',title:'Погрузка «Бурана» · ПУА-100',description:'Юбилейный · анимация погрузки в карточке'},
   {action:'flight-cycle',title:'Рейс Москва — Крайний — Москва',description:'Заход на посадку · стоянка · взлёт'},

@@ -1,13 +1,15 @@
 import * as THREE from 'three';
 import {registerFacilityFloodlights,registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
+import {archiveKit} from './archive-kit.js?v=20261111-launch-motion-v1';
+import {createSite110LaunchRig} from './site110-kinematics.js?v=20261111-buran-launch-v1';
+export {getSite110LaunchRig} from './site110-kinematics.js?v=20261111-buran-launch-v1';
 import {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
 import {createSite110IncomingRails} from './site110-incoming-rails.js?v=20261031-facilities-rails-lighting-v5';
 export {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
 
 // Physical metres, Y up, X east and Z south. The application applies one
 // museum metres-to-world scale to this entire complex and to its rocket.
-export const SITE110_VERSION='site110-rectangular-ducts-v2';
+export const SITE110_VERSION='site110-launch-rig-20261111-v1';
 export const SITE110_REFERENCE=Object.freeze({
  originLonLat:[63.3077,45.9635], axes:{x:'east',y:'up',z:'south'}, units:'metres',
  sources:[
@@ -61,7 +63,7 @@ const V=(...p)=>new THREE.Vector3(...p);
 const transform=(x,y,z,cx,cz,yaw)=>[cx+Math.cos(yaw)*x+Math.sin(yaw)*z,y,cz-Math.sin(yaw)*x+Math.cos(yaw)*z];
 
 export function buildSite110(root){
- const k=archiveKit(root), padMetadata=[], floodlights=[];
+ const k=archiveKit(root), padMetadata=[], floodlights=[];let launchChannels=[];
  root.name='Площадка 110 · стартовый комплекс «Энергия — Буран»';
  k.mat.concrete.color.set(0xb4b0a2);k.mat.steel.color.set(0x727c79);
  k.mat.light.color.set(0xd7d7cc);k.mat.rust.color.set(0x8f6450);
@@ -108,21 +110,24 @@ export function buildSite110(root){
    const n=Math.ceil(length/4);for(let i=0;i<n;i++){const t=i/n,u=(i+1)/n;k.rod([THREE.MathUtils.lerp(pa[0],pb[0],t),y-.6,THREE.MathUtils.lerp(pa[1],pb[1],t)],[THREE.MathUtils.lerp(pa[0],pb[0],u),y+1.2,THREE.MathUtils.lerp(pa[1],pb[1],u)],.1,'steel',tag+'-brace',parent);}
   }
  }
- function pipe(parent,points,r=1,colour='light',tag='process-duct'){
+ function pipe(parent,points,r=1,colour='light',tag='process-duct',lastMotion=null){
   for(let i=1;i<points.length;i++){
-   k.rod(points[i-1],points[i],r,colour,tag,parent);
-   const a=V(...points[i-1]),b=V(...points[i]),dir=b.clone().sub(a).normalize(),len=a.distanceTo(b),n=Math.max(1,Math.ceil(len/5));
-   for(let j=0;j<n;j++){
-    const p=a.clone().lerp(b,(j+.5)/n);
-    k.rod(p.clone().addScaledVector(dir,-.075).toArray(),p.clone().addScaledVector(dir,.075).toArray(),r+.065,'steel',tag+'-joint',parent);
-   }
+   const segment=()=>{
+    k.rod(points[i-1],points[i],r,colour,tag,parent);
+    const a=V(...points[i-1]),b=V(...points[i]),dir=b.clone().sub(a).normalize(),len=a.distanceTo(b),n=Math.max(1,Math.ceil(len/5));
+    for(let j=0;j<n;j++){
+     const p=a.clone().lerp(b,(j+.5)/n);
+     k.rod(p.clone().addScaledVector(dir,-.075).toArray(),p.clone().addScaledVector(dir,.075).toArray(),r+.065,'steel',tag+'-joint',parent);
+    }
+   };
+   if(lastMotion&&i===points.length-1)k.captureMotion(lastMotion,segment);else segment();
   }
  }
  function ladder(parent,x,z,y0,y1,w=.85){
   for(const s of [-1,1])k.rod([x+s*w/2,y0,z],[x+s*w/2,y1,z],.06,'light','access-ladder',parent);
   for(let y=y0;y<y1;y+=.65)k.rod([x-w/2,y,z],[x+w/2,y,z],.045,'steel','ladder-rung',parent);
  }
- function servicePylon(parent,{x,z,h=60,sign=1,mobile=false}){
+ function servicePylon(parent,{x,z,h=60,sign=1,mobile=false,launchMotion=false}){
   const w=mobile?10:8.4,d=mobile?12:10.5,stem=mobile?h*.72:h;
   k.box(w+3,2.2,d+3,x,1.1,z,'concrete','service-tower-foundation',0,parent);
   frame(parent,{x,z,y:2.2,w,d,h:stem-2.2,bays:Math.round(stem/5),tag:mobile?'pivoting-tower':'fixed-service-pylon'});
@@ -138,8 +143,11 @@ export function buildSite110(root){
   const levels=mobile?[h*.66,h*.77,h*.88,h*.95]:[18,29,40.5,49.5,56];
   for(let n=0;n<levels.length;n++){
    const y=levels[n],extension=mobile?(n===3?23:20):(n===2?11:8.2),px=x-sign*(w/2+extension/2-1.1),pz=z+(n%2?1.4:-1.4);
-   platform(parent,{x:px,z:pz,y,w:extension,d:mobile?17:10.2,colour:n===levels.length-1?'rust':'light',tag:mobile?'pivoting-cantilever':'fixed-pylon-platform'});
-   for(const dz of [-3.8,3.8])k.rod([x,y-4.5,z+dz],[px-sign*(extension/2-1),y-.8,pz+dz],.28,'steel','cantilever-diagonal',parent);
+   const cantilever=()=>{
+    platform(parent,{x:px,z:pz,y,w:extension,d:mobile?17:10.2,colour:n===levels.length-1?'rust':'light',tag:mobile?'pivoting-cantilever':'fixed-pylon-platform'});
+    for(const dz of [-3.8,3.8])k.rod([x,y-4.5,z+dz],[px-sign*(extension/2-1),y-.8,pz+dz],.28,'steel','cantilever-diagonal',parent);
+   };
+   if(launchMotion&&n<4)k.captureMotion('left-platform-y'+String(y).replace('.','_'),cantilever);else cantilever();
   }
   if(mobile){
    frame(parent,{x:x-sign*7,z,y:stem,w:12,d:10,h:h-stem,bays:5,colour:'rust',tag:'pivoting-upper-head',decks:false});
@@ -263,13 +271,17 @@ export function buildSite110(root){
   g.name=isLeft?'Левая позиция · «Энергия — Буран»':'Правая позиция · незавершённое переоборудование';
   launchTable(g);
   if(isLeft){
-   servicePylon(g,{x:-20,z:-9,h:60,sign:-1});servicePylon(g,{x:20,z:-9,h:60,sign:1});
+   launchChannels=ducts.map((duct,index)=>{
+    const centerline=row=>[cx+Math.cos(duct.angle)*row.u,row.y,cz+Math.sin(duct.angle)*row.u];
+    return {id:'left-duct-'+(index+1),throat:centerline(duct.rows[0]),outlet:centerline(duct.rows.at(-1)),width:duct.width};
+   });
+   servicePylon(g,{x:-20,z:-9,h:60,sign:-1,launchMotion:true});servicePylon(g,{x:20,z:-9,h:60,sign:1});
    // Large duct routes, folding access galleries and the narrow rear mast
    // are separate from the rocket, whose volume remains a clear mounting slot.
    frame(g,{x:0,z:-21,w:4.6,d:5.6,h:52,bays:10,tag:'rear-umbilical-mast',decks:true});
    registerFacilityBeacon(g,{id:'site110-rear-umbilical-mast',position:[2.3,52,-18.2],kind:'service-mast'});
-   gallery(g,[-20,-9],[-9,-8],43,3.6,'left-umbilical-walkway');
-   gallery(g,[20,-9],[9,-8],50,3.6,'right-umbilical-walkway');
+   k.captureMotion('left-walkway-y43',()=>gallery(g,[-20,-9],[-9,-8],43,3.6,'left-umbilical-walkway'));
+   k.captureMotion('right-walkway-y50',()=>gallery(g,[20,-9],[9,-8],50,3.6,'right-umbilical-walkway'));
    // safck.htm distinguishes two inclined enclosed passages: the regular
    // lift and the emergency slide. Both lead from the cabin-access platform
    // to the same ground refuge; they are not mirrored fuel pipes.
@@ -279,7 +291,7 @@ export function buildSite110(root){
    k.box(15,4.8,17,-35,2.4,80,'concrete','crew-refuge-bunker',0,g);
    k.box(2.5,2.8,.18,-35,1.4,88.6,'dark','crew-refuge-door',0,g);
    k.box(8,3.6,6,-15,43.8,14,'light','crew-transfer-cabin',0,g);
-   for(const side of [-1,1])for(let i=0;i<3;i++)pipe(g,[[side*(30+i*.65),2,-31],[side*(23+i*.65),34,-18],[side*12,34,-7+i*.7]],.21,'steel','feed-line-bundle');
+   for(const side of [-1,1])for(let i=0;i<3;i++)pipe(g,[[side*(30+i*.65),2,-31],[side*(23+i*.65),34,-18],[side*12,34,-7+i*.7]],.21,'steel','feed-line-bundle',side===1&&i===1?'late-feed-interface':null);
   }else{
    servicePylon(g,{x:-27,z:-10,h:100,sign:-1,mobile:true});
    servicePylon(g,{x:24,z:-9,h:60,sign:1});
@@ -328,5 +340,13 @@ export function buildSite110(root){
   dimensionSources:SITE110_REFERENCE.dimensionSources,estimated:SITE110_REFERENCE.estimated,
   dimensionConfidence:SITE110_REFERENCE.dimensionConfidence,
   ...features};
+ const [cx,cz]=SITE110_REFERENCE.pads[0].centre;
+ const launchRig=createSite110LaunchRig({root,padOrigin:[cx,0,cz],padYaw:YAW,channels:launchChannels,
+  rocketAnchor:{...SITE110_ROCKET_MOUNT,position:[...SITE110_ROCKET_MOUNT.position],rotation:[0,YAW+Math.PI,0],exhibitKey:'site110'},
+  tableAnchor:{position:[cx,BASE,cz],centre:[cx,0,cz],topY:BASE,plateTopY:5.25,innerRadius:8.2,outerRadius:13,shaftBottomY:-23},
+  motions:id=>k.motion(id),materials:k.mat});
+ const rigStats=launchRig.stats();
+ root.userData.site110Model.launchRig={version:launchRig.version,frame:launchRig.frame,rocketAnchor:launchRig.rocketAnchor,tableAnchor:launchRig.tableAnchor,
+  channels:launchRig.channels,movingParts:launchRig.movingParts,interpretation:rigStats.interpretation};
  return features;
 }

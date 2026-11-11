@@ -65,10 +65,11 @@ const equipment=MUSEUM_SECTIONS.find(section=>section.id==='equipmentAccordion')
 assert.deepEqual([...actions].sort(),['rd180','soyuz5','cyclone-2','proton','n1','r16','mig25','zenit-3sl','r7','energia-polyus','energia-buran','energia','energia-m','tua','mriya','sprinter','silo'].sort(),'Physical exhibits remain in the equipment section while animations move to reconstructions');
 const reconstructions=MUSEUM_SECTIONS.find(section=>section.id==='reconstructionsAccordion');
 const reconstructionActions=reconstructions.items.map(item=>item.action);
-assert.deepEqual([...reconstructionActions].sort(),['soyuz-launch-1','soyuz-launch-31','energia-reconstruction','buran-landing-reconstruction','buran-loading-reconstruction','flight-cycle','train-cycle','silo-cycle','aircraft','train'].sort(),
+assert.deepEqual([...reconstructionActions].sort(),['soyuz-launch-1','soyuz-launch-31','energia-reconstruction','buran-launch-reconstruction','buran-landing-reconstruction','buran-loading-reconstruction','flight-cycle','train-cycle','silo-cycle','aircraft','train'].sort(),
  'Active launches, landings, loading and transit animations have their own menu');
 assert.ok(!reconstructionActions.includes('energia-polyus'),'A rocket exhibit is not an animation');
 assert.ok(html.includes("case 'energia-reconstruction':openMenuSite('pad-250');break;"),'UKSS launch is entered through the site card, not a second launch button');
+assert.ok(html.includes("case 'buran-launch-reconstruction':openMenuSite('pad-110');portalArchive.inspectSite110('left',camera,ctl);break;"),'The1988 launch opens the left site110 card');
 assert.ok(html.includes("case 'buran-landing-reconstruction':openMenuSite('pad-251');break;"));
 assert.ok(html.includes("case 'buran-loading-reconstruction':openMenuSite('pad-251');break;"));
 assert.equal(new Set([...actions,...reconstructionActions]).size,actions.length+reconstructionActions.length,'Physical exhibits and animated actions have no duplicates');
@@ -86,16 +87,16 @@ assert(MUSEUM_SECTIONS.find(section=>section.id==='graveyardAccordion').items.so
 assert.equal(actions[0],'zenit-3sl','The independently added source model is preserved as the first equipment item');
 assert.ok(html.includes("case 'zenit-3sl':openMenuSite('pad-45');portalArchive.inspectSite45('rocket',camera,ctl);break;"),'Zenit opens its site card and the universal model inspector');
 assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='traditionsAccordion').items.length,0);
-assert.equal(reconstructionActions.length,10);
+assert.equal(reconstructionActions.length,11);
 assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='graveyardAccordion').items.length,2);
 assert.equal(MUSEUM_SECTIONS.find(section=>section.id==='toursAccordion'),undefined,'The menu data no longer publishes a tours section');
 
 // Run the actual extracted year setter, not a duplicate of its logic. Removing
 // the event DOM must not leave null accesses or change historical visibility.
-const yearStart=html.indexOf('function setMuseumYear(year)'),yearEnd=html.indexOf('\nsetMuseumYear(2026);',yearStart);
+const yearStart=html.indexOf('function setMuseumYear(year,stopReconstruction=true)'),yearEnd=html.indexOf('\nsetMuseumYear(2026);',yearStart);
 assert.ok(yearStart>0&&yearEnd>yearStart);
 const elements={year:{value:'2026'},yearVal:{textContent:'2026'}},objects=[1955,1967,1988,undefined].map(from=>({from,g:{visible:true}}));
-const calls=[],context={document:{getElementById:id=>elements[id]},objects,mik112Exhibit:{setYear:year=>calls.push(year)},mik112Rail:{group:{visible:true}},camera:{updateMatrixWorld(){}},updateLabels(){}};
+let launchStops=0;const calls=[],context={cancelBuranLaunch(){launchStops++;},buranLossRequest:0,buranLoss:null,document:{getElementById:id=>elements[id]},objects,mik112Exhibit:{setYear:year=>calls.push(year)},mik112Rail:{group:{visible:true}},camera:{updateMatrixWorld(){}},updateLabels(){}};
 vm.createContext(context);vm.runInContext(html.slice(yearStart,yearEnd),context);
 for(const input of [1900,1955,1966,1967,1988,2026,2100]){
   context.setMuseumYear(input);const year=Math.max(1955,Math.min(2026,input));
@@ -103,6 +104,8 @@ for(const input of [1900,1955,1966,1967,1988,2026,2100]){
   assert.equal(context.mik112Rail.group.visible,year>=1967);
   objects.forEach(object=>assert.equal(object.g.visible,object.from===undefined||year>=object.from));
 }
+assert.equal(launchStops,7,'Changing the year explicitly exits the launch');
+context.setMuseumYear(1988,false);assert.equal(launchStops,7,'Internal reconstruction year changes do not recursively stop the launch');
 assert.equal(history.events.length,18,'Original historical records remain intact');
 assert.ok(history.events.every(event=>/^\d{4}-\d{2}-\d{2}$/.test(event.date)&&event.source?.startsWith('https://')));
 console.log('MENU_CATALOG_CONTRACT_PASS',JSON.stringify({sections:ids.length,launchEntries:expectedLaunch.length+1,launchComplexes:groups.sitesAccordion.length,silos:MUSEUM_SILO_GROUP.siteIds.length,infrastructureSites:groups.infrastructureAccordion.length,sourceStations:stations.length,fieldFinds:field.objects.length,equipmentActions:actions.length,reconstructions:reconstructionActions.length,archiveStories:groupedStories.length,historicalRecords:history.events.length,yearCases:calls.length}));
