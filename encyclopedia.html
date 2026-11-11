@@ -58,14 +58,15 @@ main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px
  .card>b{font-size:15px}.card>.small{font-size:11px}
  .detail-model-stage{height:300px}
 }
-</style><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script></head>
+</style><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><link rel="stylesheet" href="./src/card-share.css?v=20261111-share-v1"></head>
 <body><header><nav><a href="./index.html">← ВЕРНУТЬСЯ В 3D-МАКЕТ</a><strong>ГРАНД-МАКЕТ · БАЙКОНУР</strong></nav></header>
 <main><span class="meta">Цифровой архив · открытая база знаний</span><h1>Энциклопедия Байконура</h1>
 <p class="lead">Ракеты, космические корабли, стартовые площадки, главные конструкторы и предприятия ракетно-космической отрасли. Откройте любой объект, чтобы исследовать связи между людьми, техникой и инфраструктурой.</p>
 <label for="search" class="small">Поиск по названиям, датам и описаниям</label><input id="search" type="search" placeholder="Например: Протон, Глушко, площадка 31, ЦЭНКИ">
 <section style="margin:0 0 22px;padding:16px 18px;border:1px solid #526078;border-radius:8px;background:#182c3f"><span class="meta">Новая экскурсия · 25 минут</span><h2 style="font-size:19px;margin:9px 0">История освоения космоса: пять сюжетов</h2><p class="small">От первых запусков с Байконура до «Энергии—Бурана». Основано на исторических сюжетах и критическом разборе публицистического источника.</p><a style="color:#e4c68a" href="./docs/excursions/history-of-space-habr-186610.md">Конспект экскурсии и исходная статья ↗</a></section><div class="tabs" id="tabs" aria-label="Разделы"></div><div class="layout"><section class="cards" id="cards" aria-live="polite"></section><aside class="detail" id="detail" aria-live="polite"><h2>Выберите статью</h2><p class="small">Здесь появятся исторические сведения, источники и связанные материалы.</p></aside></div></main>
 <footer>Энциклопедия развивается. Годы, названия организаций и распределение инженерных ролей относятся к указанным историческим периодам; непроверенные связи не подменяют доказанные факты.</footer>
-<script>
+<script type="module">
+import {createShareButton} from './src/card-share.js?v=20261111-share-v1';
 (async()=>{
 const $=s=>document.querySelector(s);
 const state={type:'all',q:'',id:null};let data,displayedDetailId=null;
@@ -184,7 +185,7 @@ function render(){
   b.type='button';b.dataset.articleId=x.id;
   const media=createMedia(x,false);if(media)b.append(media);
   b.append(el('span','meta',data.types[x.type]),el('b','',x.name),el('span','small',x.period));
-  b.onclick=()=>open(x.id);cards.append(b);
+  b.onclick=()=>open(x.id);const wrapper=el('div','encyclopedia-card-wrap');wrapper.append(b,createShareButton({kind:'article',id:x.id,title:x.name}));cards.append(wrapper);
  });
  if(!matches.length)cards.append(el('p','empty','Ничего не найдено'));
  // Filtering the list must not repeatedly destroy the same WebGL model.
@@ -200,6 +201,7 @@ function render(){
  const media=createMedia(x,true);
  if(media)detail.append(media);
  detail.append(el('span','meta',data.types[x.type]),el('h2','',x.name),el('p','small',x.period),el('p','',x.summary));
+ detail.append(createShareButton({kind:'article',id:x.id,title:x.name}));
  appendMediaCredit(detail,x);
  if(x.modelChoices?.length){
   detail.append(el('h3','','Выбрать ракету · 3D'));const choices=el('div','article-model-choices');choices.setAttribute('role','group');choices.setAttribute('aria-label','Выбор ракеты площадки');

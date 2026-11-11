@@ -1,3 +1,4 @@
+import {createShareButton} from './card-share.js?v=20261111-share-v1';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261108-rd180-v1';
@@ -11,6 +12,7 @@ const container=document.getElementById('modelView'),status=document.getElementB
 const choices=(params.get('models')||Object.keys(MODEL_CATALOG).join(',')).split(',').map(resolveModelId).filter((x,i,a)=>MODEL_CATALOG[x]&&a.indexOf(x)===i);
 if(!choices.length)choices.push('soyuz');for(const id of choices){const option=document.createElement('option');option.value=id;option.textContent=MODEL_CATALOG[id].title;select.append(option);}
 let current=choices.includes(resolveModelId(params.get('model')))?resolveModelId(params.get('model')):choices[0],model=null,renderer=null,observer=null,request=null,generation=0,raf=0,disposed=false;
+document.getElementById('modelSubtitle').after(createShareButton(()=>({kind:'model',id:current,title:MODEL_CATALOG[current].title})));
 function renderIntro(id){
  select.value=id;
  const spec=MODEL_CATALOG[id];document.title=spec.title+' · RocketTrip';document.getElementById('modelTitle').textContent=spec.title;document.getElementById('modelSubtitle').textContent=spec.subtitle;renderModelFacts(spec,document.getElementById('modelFacts'),document.getElementById('modelFactSources'));document.querySelector('.intro').scrollTop=0;document.getElementById('modelSources').open=false;

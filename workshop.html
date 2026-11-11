@@ -487,7 +487,7 @@ body.following-arrival #labelLayer{display:none!important}
 @media(min-width:1000px){body.workshop-mode:has(#workshopPanel:not([hidden])) #info:has(#tua112Controls:not([hidden])){right:350px!important;left:auto!important;top:205px!important;max-height:calc(100dvh - 310px)!important;width:min(360px,calc(100vw - 700px))!important}}
 </style><link rel="stylesheet" href="./src/soyuz-dual-launch.css?v=20261103-launch-v1"><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261109-evening-navigation-v2"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261108-site45-choice-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/camera-altitude.css?v=20261101-altitude-v1"><link rel="stylesheet" href="./src/museum-ui-polish.css?v=20261103-logo-compact-v6"><link rel="stylesheet" href="./src/museum-onboarding.css?v=20261108-standalone-tour-button-v1"><link rel="stylesheet" href="./src/complex-history.css?v=20261103-foundation-v1"><style id="buildingCardsReadable">/* BUILDING_CARDS_READABLE_V3 */
 .detail-card[data-site-id="building-mzk"] p,.detail-card[data-site-id="building-sdi"] p{display:block;-webkit-line-clamp:unset;overflow:visible;max-height:none}
-</style><link rel="stylesheet" href="./src/buran-loss.css?v=20261110-v1"></head><body data-preload-museum="true"><div id="view"></div>
+</style><link rel="stylesheet" href="./src/buran-loss.css?v=20261110-v1"><link rel="stylesheet" href="./src/card-share.css?v=20261111-share-v1"></head><body data-preload-museum="true"><div id="view"></div>
 <!-- MUSEUM_PRELOADER_START -->
 <section id="museumLoading" class="museum-loading preloader preloader--gallery" data-state="loading" data-launch-step="0" data-motion="running" aria-label="Подготовка интерактивного музея Байконура">
   <div class="preloader__frame">
@@ -574,6 +574,8 @@ body.following-arrival #labelLayer{display:none!important}
    <button id="museumTourStart" class="museum-tour-replay" type="button" aria-label="Повторить обучение управлению музеем, 29 секунд">↻ ОБУЧЕНИЕ · 29 СЕК</button>
  </div>
 </details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261103-onboarding-v2"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
+import {installMuseumSharing,SHARE_EVENTS} from './src/card-share.js?v=20261111-share-v1';
+import {COMPLEX_HISTORY_MENU as SHARE_HISTORY_MENU} from './src/complex-history-menu.js?v=20261103-lean-startup-v1';
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-soyuz-pits-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
@@ -632,7 +634,7 @@ import {adaptTuaRails} from './src/tua-rails.js?v=20261031-facilities-rails-ligh
 import {installSceneSelection} from './src/scene-selection.js?v=20261031-rocket-exhibits-v1';
 import {installLabelMapGestures} from './src/label-map-gestures.js?v=20261103-label-gesture-bridge-v1';
 import {createMapCameraSmoothing,smoothingAlpha,MUSEUM_DAMPING_AT_60FPS} from './src/map-camera-smoothing.js?v=20261103-smooth-map-camera-v1';
-import {installModelInspector} from './src/model-inspector.js?v=20261108-rd180-v1';
+import {installModelInspector} from './src/model-inspector.js?v=20261111-share-v1';
 import {modelsForObject,modelsForKnowledge,MODEL_CATALOG} from './src/model-catalog.js?v=20261108-rd180-v1';
 import {installMuseumMenu,museumCatalogueSection,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,isMuseumSilo} from './src/museum-menu.js?v=20261111-buran-launch-v1';
 import {MUSEUM_METRE,MUSEUM_MAP_SCALE} from './src/museum-scale.js?v=20261102-silo-height-v1';
@@ -2151,7 +2153,41 @@ function setInfoOrganisation(organisation,role=""){
  roleText.textContent=role||(organisationLogo(organisation)?organisation:"");
  brand.parentElement.hidden=brand.hidden&&!roleText.textContent;
 }
+// CARD_SHARING_V1: public links only; site and story state come from the real cards.
+let sharedEventSelection=null;
+function shareCardTarget(index){const o=cardObjects[index];return o?{kind:'site',id:o.record.id,title:o.record.titleFull||o.mapTitle||o.name}:null;}
+function shareInfoTarget(){
+ if(sharedEventSelection)return {...sharedEventSelection,title:document.getElementById('title').textContent};
+ if(activeKnowledge)return {kind:activeKnowledge.kind==='story'?'story':'rocket',id:activeKnowledge.id,title:document.getElementById('title').textContent};
+ if(currentResearch?.kind==='bridge')return {kind:'view',id:'south-interchange',title:'Мост и южная развязка'};
+ if(currentResearch?.id)return {kind:'research',id:currentResearch.id,title:currentResearch.title};
+ return shareCardTarget(currentObject);
+}
+async function openSharedTarget(target){
+ const {kind,id}=target;
+ if(kind==='site')return openMenuSite(id);
+ if(kind==='model')return Object.hasOwn(MODEL_CATALOG,id)?modelInspector.open([id]):false;
+ if(kind==='rocket'){
+  if(!museumKnowledge.getRocket(id))return false;
+  const site=({soyuz:'pad-1',energia:'pad-112','energia-m':'pad-112','energia-polyus':'pad-250','energia-buran':'pad-110',buran:'pad-110',tua:'tua-112',proton:'pad-81',zenit:'pad-45'})[id];
+  return !!site&&showRocketKnowledge(id,site);
+ }
+ if(kind==='story')return showArchiveStory(id);
+ if(kind==='history')return SHARE_HISTORY_MENU.some(item=>item.id===id)?openComplexHistory(id):false;
+ if(kind==='view')return id==='south-interchange'?focusInterchange('bridge'):false;
+ if(kind==='research'){startup.promote?.('museum-history',90);await historicalDataReady;const item=researchObjects.find(item=>item.id===id);if(!item)return false;showResearch(item);return true;}
+ if(kind==='event'){
+  const event=SHARE_EVENTS[id];if(!event||!openMenuSite(event.site))return false;
+  // A shared event opens its card, not an unsolicited animation or sound.
+  sharedEventSelection={kind:'event',id};document.getElementById('title').textContent=event.title;
+  if(event.button){const button=document.getElementById(event.button);if(button){button.hidden=false;button.style.display='';button.focus({preventScroll:true});}}
+  return true;
+ }
+ return false;
+}
+
 function focus(i){
+ sharedEventSelection=null;
  cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
@@ -2323,6 +2359,7 @@ function focus(i){
  ctl.update();camera.updateMatrixWorld(true);updateLabels();
 }
 function showResearch(item){
+ sharedEventSelection=null;
  const protonControls=document.getElementById('protonViews');if(protonControls){protonControls.hidden=true;protonControls.style.display='none';}
  for(const id of ['site118Views','site118LoadStatus']){const el=document.getElementById(id);if(el){el.hidden=true;el.style.display='none';}}
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
@@ -2688,6 +2725,7 @@ function openMenuSite(id){
  focus(index);return true;
 }
 function showRocketKnowledge(id,siteId,move=true){
+ sharedEventSelection=null;
  const record=museumKnowledge.getRocket(id);if(!record)return false;
  if(move&&!openMenuSite(siteId))return false;
  activeKnowledge={kind:'rocket',id};currentResearch=null;syncModelCard(modelsForKnowledge(id));
@@ -2699,6 +2737,7 @@ function showRocketKnowledge(id,siteId,move=true){
  syncUkssControls();syncTuaControls();syncRocketLoadStatus();return true;
 }
 function showArchiveStory(id){
+ sharedEventSelection=null;
  const record=museumKnowledge.getStory(id);if(!record)return false;
  if(record.siteId)openMenuSite(record.siteId);
  activeKnowledge={kind:'story',id};currentResearch=null;syncModelCard(record.siteId?modelsForObject({id:record.siteId}):[]);
@@ -2780,6 +2819,7 @@ function openMuseumAction(action){
 const museumMenu=installMuseumMenu({container:document.getElementById('ui'),onAction:openMuseumAction,stories:museumKnowledge.storiesMenu()});
 const INTERCHANGE_SELECTION_INDEX=-1;
 function focusInterchange(view='bridge'){
+ sharedEventSelection=null;
  const bridge=transport.stats().interchange?.bridges.find(b=>b.osmWayId==='172422627');
  if(!bridge)return null;
  document.getElementById('info').classList.remove('proton-active','proton-details-open','site118-active','site118-details-open');
@@ -3176,6 +3216,10 @@ window.__MUSEUM_ONBOARDING?.attach({camera,controls:ctl,
   focusGagarin:()=>focus(0),isObjectFocused:()=>Number.isInteger(currentObject)&&currentObject>=0&&document.getElementById('info').style.display==='block'});
 // Owner19: one overlapping house is omitted at source in site110.js.
 if(new URLSearchParams(location.search).get('view')==='buran-loss'){openMenuSite('pad-112');focusMik112('all');}
+const cardSharing=installMuseumSharing({cardTarget:shareCardTarget,infoTarget:shareInfoTarget,openTarget:openSharedTarget,
+ historyTarget:()=>({kind:'history',id:complexHistoryPanel?.stats().current||'purpose',title:document.querySelector('.complex-history__title')?.textContent||'История космодрома'}),
+ soyuzSite:()=>soyuzLaunch?.stats().siteId});
+window.__MUSEUM_SHARE={...cardSharing,open:openSharedTarget,targets:()=>cardObjects.map((_,i)=>shareCardTarget(i))};
 animate();startup.ready();
 if(new URLSearchParams(location.search).get('view')==='pua'){openMenuSite('pad-251');let puaAttempts=0;const startPua=()=>{if(puaLoading.start())return;const state=puaLoading.stats();if(!state.ready&&puaAttempts++<180)setTimeout(startPua,500);};startPua();}
 }catch(err){window.__MUSEUM_STARTUP?.fail(err);document.getElementById('error').style.display='block';document.getElementById('error').textContent='Ошибка загрузки 3D: '+err.message;console.error(err)}

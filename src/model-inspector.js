@@ -20,8 +20,8 @@ export function installModelInspector({onOpen=()=>{},onClose=()=>{}}={}){
   const allowed=[...new Set((ids||[]).map(resolveModelId))].filter(id=>MODEL_CATALOG[id]);if(!allowed.length)return false;
   selected=resolveModelId(selected);if(!allowed.includes(selected))selected=allowed[0];
   if(!dialog.open){opener=document.activeElement;closed=false;onOpen();dialog.showModal();}
-  frame?.remove();frame=document.createElement('iframe');frame.title='3D-модель · '+MODEL_CATALOG[selected].title;frame.setAttribute('allow','fullscreen');frame.className='model-inspector-frame';
-  const url=new URL('./workshop/model.html?v=20261108-rd180-v1',location.href);url.searchParams.set('v',MODEL_VIEWER_VERSION+'-autorotate-v2');url.searchParams.set('embed','1');url.searchParams.set('model',selected);url.searchParams.set('models',allowed.join(','));
+  frame?.remove();frame=document.createElement('iframe');frame.title='3D-модель · '+MODEL_CATALOG[selected].title;frame.setAttribute('allow','fullscreen; web-share; clipboard-write');frame.className='model-inspector-frame';
+  const url=new URL('./workshop/model.html?v=20261108-rd180-v1',location.href);url.searchParams.set('v',MODEL_VIEWER_VERSION+'-autorotate-v2-share-v1');url.searchParams.set('embed','1');url.searchParams.set('model',selected);url.searchParams.set('models',allowed.join(','));
   frame.src=url.href;content.replaceChildren(frame);active=selected;ready=false;close.focus();return true;
  }
  return {open,close:hide,isOpen:()=>dialog.open,stats:()=>({open:dialog.open,modelId:active,ready,frames:content.querySelectorAll('iframe').length})};
