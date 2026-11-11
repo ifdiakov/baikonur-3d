@@ -71,10 +71,21 @@ for(const file of ['index.html','museum.html','workshop.html']){
 {
  const path='encyclopedia.html';let s=await readFile(path,'utf8');if(!s.includes('createShareButton')){
   s=s.replace('</head>',`<link rel="stylesheet" href="./src/card-share.css?v=${version}"></head>`);
-  s=s.replace('<script type="module">',`<script type="module">\nimport {createShareButton} from './src/card-share.js?v=${version}';`);
+  const scriptTag=s.includes('<script type="module">')?'<script type="module">':'<script>';
+  assert(s.includes(scriptTag),'Encyclopedia application script missing');
+  s=s.replace(scriptTag,`<script type="module">\nimport {createShareButton} from './src/card-share.js?v=${version}';`);
   assert(s.includes('b.onclick=()=>open(x.id);cards.append(b);'));
   s=s.replace('b.onclick=()=>open(x.id);cards.append(b);',`b.onclick=()=>open(x.id);const wrapper=el('div','encyclopedia-card-wrap');wrapper.append(b,createShareButton({kind:'article',id:x.id,title:x.name}));cards.append(wrapper);`);
   s=s.replace('appendMediaCredit(detail,x);',"detail.append(createShareButton({kind:'article',id:x.id,title:x.name}));\n appendMediaCredit(detail,x);");await writeFile(path,s);
+ }
+}
+// The encyclopedia originally uses a classic script. Its share import must be
+// a real module binding, including previously generated candidate versions.
+{
+ const path='encyclopedia.html';let s=await readFile(path,'utf8');
+ if(!s.includes('import {createShareButton}')){
+  assert(s.includes('<script>'),'Encyclopedia classic script not found');
+  s=s.replace('<script>',`<script type="module">\nimport {createShareButton} from './src/card-share.js?v=${version}';`);await writeFile(path,s);
  }
 }
 assert.equal(await readFile('index.html','utf8'),await readFile('museum.html','utf8'));

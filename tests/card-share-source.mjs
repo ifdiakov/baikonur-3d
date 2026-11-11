@@ -21,4 +21,5 @@ r=await shareTarget(target,{base,navigator:{share:async()=>{throw Error('blocked
 for(const file of ['index.html','museum.html','workshop.html']){const s=await readFile(file,'utf8');assert.match(s,/installMuseumSharing/);assert.match(s,/function openSharedTarget/);assert.match(s,/CARD_SHARING_V1/);}
 assert.equal(await readFile('index.html','utf8'),await readFile('museum.html','utf8'));checks.push('both museum entries identical; workshop integrated');
 assert.match(await readFile('src/model-viewer.js','utf8'),/createShareButton/);assert.match(await readFile('encyclopedia.html','utf8'),/encyclopedia-card-wrap/);checks.push('viewer and encyclopedia share controls present');
+assert.match(await readFile('encyclopedia.html','utf8'),/<script type="module">\s*import \{createShareButton\}/);checks.push('encyclopedia share function is actually imported');
 await mkdir('qa-card-share',{recursive:true});await writeFile('qa-card-share/source-report.json',JSON.stringify({passed:true,checks},null,2));console.log('CARD_SHARE_SOURCE_PASS',checks.length);
