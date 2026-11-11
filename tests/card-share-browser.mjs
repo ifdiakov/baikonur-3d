@@ -33,7 +33,9 @@ try{
   assert(await page.locator('.museum-share-toast').isVisible());await page.screenshot({path:out+'/'+prefix+'-'+mode+'-card.png'});
   if(admin){assert(await page.locator('#cameraAltitude').isVisible());assert(await page.locator('#workshopPanel').isVisible());}
   if(mode==='desktop'){
-   for(const id of ['tua-112','pad-250а','mzk','sdi']){
+   // pad-250a is the rendered canonical card; Cyrillic pad-250а is an
+   // intentionally hidden catalogue alias, not a second physical card.
+   for(const id of ['tua-112','pad-250a','mzk','sdi']){
     const match=await page.evaluate(id=>__MUSEUM_SHARE.targets().find(t=>id==='tua-112'||id.startsWith('pad-')?t.id===id:t.id.includes(id)),id);assert(match,'Missing separate card '+id);
     assert(await page.evaluate(t=>__MUSEUM_SHARE.open(t),match));await page.locator('#infoShare').click();assert.equal(new URL(await page.evaluate(()=>__COPIED_SHARE)).searchParams.get('share'),'site:'+match.id);
    }
