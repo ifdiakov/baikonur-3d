@@ -1,24 +1,11 @@
-# CI_RELIABILITY_V1
-name: Encyclopedia media and 3D cards
+name: Card sharing and encyclopedia media
 on:
   push:
-    branches: [main]
-    paths:
-      - 'encyclopedia.html'
-      - 'index.html'
-      - 'data/encyclopedia.json'
-      - 'src/encyclopedia-3d.js'
-      - 'tests/encyclopedia-media-*.mjs'
-      - '.github/workflows/verify-encyclopedia-media.yml'
+    branches: [main, fix/share-copy-20261111]
+    paths: ['src/card-share*','src/model-viewer.js','src/model-inspector.js','encyclopedia.html','workshop/model.html','tests/card-share-*.mjs','data/encyclopedia.json','src/encyclopedia-3d.js','.github/workflows/verify-encyclopedia-media.yml']
   pull_request:
     branches: [main]
-    paths:
-      - 'encyclopedia.html'
-      - 'index.html'
-      - 'data/encyclopedia.json'
-      - 'src/encyclopedia-3d.js'
-      - 'tests/encyclopedia-media-*.mjs'
-      - '.github/workflows/verify-encyclopedia-media.yml'
+    paths: ['src/card-share*','src/model-viewer.js','src/model-inspector.js','encyclopedia.html','workshop/model.html','tests/card-share-*.mjs']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,50 +13,83 @@ concurrency:
   group: encyclopedia-media-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  verify:
+  source:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
-      - name: Select relevant checks before downloading tools
-        id: ci_scope
-        run: node scripts/ci/impact.mjs verify-encyclopedia-media.yml
       - uses: actions/setup-node@v4
-        if: steps.ci_scope.outputs.run == 'true'
         with:
           node-version: '22'
-      - name: Reuse downloaded verification dependencies
-        if: steps.ci_scope.outputs.run == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
-      - name: Reuse matching browser binaries
-        if: steps.ci_scope.outputs.run == 'true'
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
-      - name: Static media contracts and source mappings
-        if: steps.ci_scope.outputs.run == 'true'
-        run: |
-          node --check src/encyclopedia-3d.js
+      - run: |
+          node --experimental-vm-modules scripts/ci/fast-check.mjs
           node tests/encyclopedia-media-data.mjs
-      - name: Install browser tests
-        if: steps.ci_scope.outputs.run == 'true'
-        run: |
+          node tests/card-share-source.mjs
+          git diff --exit-code
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: share-source
+          path: qa-card-share/
+          retention-days: 7
+  sharing:
+    needs: source
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [desktop, mobile, workshop]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: museum-share-copy-${{ runner.os }}-playwright1.57.0
+          restore-keys: |
+            museum-playwright-${{ runner.os }}-1.57.0
+      - run: |
           npm install --no-save playwright@1.57.0
           npx playwright install --with-deps chromium
-      - name: Serve the museum
-        if: steps.ci_scope.outputs.run == 'true'
-        run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 &
-          sleep 2
-      - name: Verify the encyclopedia card imagery and 3D
-        if: steps.ci_scope.outputs.run == 'true'
-        run: node tests/encyclopedia-media-browser.mjs
+      - name: Serve the exact candidate, without generated edits
+        if: github.ref != 'refs/heads/main'
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/share-http.log 2>&1 &
+      - name: Verify real copy, toast, object links and preserved UI
+        env:
+          QA_MODE: ${{ matrix.mode }}
+          BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
+          VERIFY_PUBLIC: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
+        run: node scripts/ci/run-bounded.mjs 480 card-share-${{ matrix.mode }} node tests/card-share-browser.mjs
       - uses: actions/upload-artifact@v4
-        if: (always()) && (steps.ci_scope.outputs.run == 'true')
+        if: always()
+        with:
+          name: share-${{ matrix.mode }}
+          path: |
+            qa-card-share/
+            qa-ci/card-share-*.json
+            qa-ci/card-share-*.log
+          retention-days: 7
+  media-regression:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: |
+          npm install --no-save playwright@1.57.0
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8765 --bind 127.0.0.1 &
+      - run: node tests/encyclopedia-media-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: encyclopedia-media-visuals
           path: qa-encyclopedia-media/

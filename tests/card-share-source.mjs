@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
+import {validShareTarget,parseShareTarget,makeShareURL,shareTarget,CARD_SHARE_VERSION} from '../src/card-share.js';
+const checks=[];
+const test=async(name,fn)=>{await fn();checks.push({name,passed:true});};
+const base='https://example.test/museum/workshop.html?draft=private&view=ukss#old',target={kind:'site',id:'pad-112'};
+await test('Public object link removes admin, draft and old parameters',()=>{const u=new URL(makeShareURL(target,base));assert.equal(u.pathname,'/museum/museum.html');assert.equal(u.searchParams.get('share'),'site:pad-112');assert.equal(u.searchParams.get('draft'),null);assert.equal(u.searchParams.get('view'),null);assert.equal(u.hash,'');});
+await test('All target types round trip, including Cyrillic',()=>{for(const kind of ['site','rocket','model','story','history','event','research','view']){const t={kind,id:'пл-250а'};assert.deepEqual(parseShareTarget(new URL(makeShareURL(t,base)).search),t);}});
+await test('Distinct objects never share one URL',()=>assert.notEqual(makeShareURL(target,base),makeShareURL({kind:'site',id:'tua-112'},base)));
+await test('Articles open the exact encyclopedia article',()=>assert.equal(new URL(makeShareURL({kind:'article',id:'r7'},base)).hash,'#r7'));
+await test('Invalid and duplicate inputs rejected',()=>{for(const x of [null,{}, {kind:'script',id:'x'},{kind:'site',id:'<img>'},{kind:'site',id:'../112'}])assert(!validShareTarget(x));assert.equal(parseShareTarget('?share=site:a&share=site:b'),null);assert.throws(()=>makeShareURL(target,'javascript:alert(1)'));});
+await test('Copies before confirming; never invokes native share',async()=>{const events=[];const r=await shareTarget(target,{base,navigator:{share:()=>{throw Error('must not be called');},clipboard:{writeText:async t=>events.push(['write',t])}},onStatus:t=>events.push(['status',t]),copyFallback:()=>{throw Error('not needed');}});assert.equal(r.status,'copied');assert.equal(events[0][1],r.url);assert.match(events[1][1],/Ссылка скопирована/);});
+await test('Permission denial uses real legacy copy',async()=>{let text='';const r=await shareTarget(target,{base,navigator:{clipboard:{writeText:async()=>{throw Error('denied');}}},copyFallback:t=>(text=t,true),onStatus:()=>{},onManual:()=>{throw Error('unexpected');}});assert.equal(text,r.url);assert.equal(r.status,'copied');});
+await test('Unsupported clipboard uses fallback',async()=>assert.equal((await shareTarget(target,{base,navigator:{},copyFallback:()=>true,onStatus:()=>{}})).status,'copied'));
+await test('Both denied never produce false confirmation',async()=>{const messages=[];let manual;const r=await shareTarget(target,{base,navigator:{},copyFallback:()=>false,onStatus:t=>messages.push(t),onManual:t=>manual=t});assert.equal(r.status,'manual');assert.equal(manual,r.url);assert(messages.every(t=>!t.startsWith('Ссылка скопирована')));});
+await test('Hanging clipboard call is bounded',async()=>assert.equal((await shareTarget(target,{base,timeoutMs:15,navigator:{clipboard:{writeText:()=>new Promise(()=>{})}},copyFallback:()=>true,onStatus:()=>{}})).status,'copied'));
+await test('No sharing menu called',async()=>{const s=await readFile('src/card-share.js','utf8');assert(!/navigation\??\.share\(/.test(s));});
+await mkdir('qa-card-share',{recursive:true});await writeFile('qa-card-share/source-report.json',JSON.stringify({passed:true,version:CARD_SHARE_VERSION,checks},null,2));console.log('CARD_SHARE_SOURCE_PASS',checks.length);
