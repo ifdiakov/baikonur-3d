@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {buildProtonPosition} from './proton-launch.js?v=20261108-proton-source-v1';
+import {buildProtonPosition} from './proton-launch.js?v=20261111-proton-civil-v1';
+import {buildProtonCivil} from './proton-site-civil.js?v=20261111-proton-civil-v1';
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {flamePetal} from './flame-petals.js';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
@@ -17,22 +18,24 @@ export const PROTON_METRIC_REFERENCE=Object.freeze({
 });
 function protonPosition(parent,x,z,yaw,serviceZ){
  const g=new THREE.Group();g.name='Стартовая позиция Протона';g.position.set(x,0,z);g.rotation.y=yaw;parent.add(g);
- g.userData.archivePart=buildProtonPosition(g,{serviceZ,sharedVehicle:true});return g;
+ g.userData.archivePart=buildProtonPosition(g,{serviceZ,sharedVehicle:true,includeLegacyVaults:false});return g;
 }
 export function protonComplex(root,id){
  const k=archiveKit(root),is81=id==='pad-81',reference=PROTON_METRIC_REFERENCE[id]||PROTON_METRIC_REFERENCE['pad-200'],origin=is81?[650,475]:[710,484],m=reference.metresPerPixel,P=imageFrame(origin,m);
  const pads=is81?[[508,238,416,447],[892,504,754,700]]:[[565,261,425,434],[913,556,779,715]];
  const positions=[];for(const [x,z,ex,ez] of pads){const [px,pz]=P([x,z]);positions.push(protonPosition(root,px,pz,imageAxisYaw([x,z],[ex,ez]),Math.hypot(ex-x,ez-z)*m));}root.userData.protonPositions=positions.map((p,i)=>({index:i,localPosition:p.position.toArray(),yaw:p.rotation.y,...p.userData.protonLaunch}));
- const buildings=is81?[[779,322,46,95,-.8],[708,429,31,87,-.6],[544,539,31,89,-.6],[223,697,49,96,.9],[223,783,67,113,.9],[351,490,25,65,-.4],[308,487,17,39,-.4],[326,548,20,46,-.4],[341,603,22,45,-.4],[638,588,23,48,-.6],[482,830,27,45,-.4]]:[[779,390,52,83,-.88],[675,470,31,60,-.6],[540,515,35,99,.86],[629,617,28,57,.84],[1000,649,27,52,-.6],[422,588,22,45,-.6],[197,256,24,48,-.6],[156,274,19,38,-.6],[214,223,18,38,-.6]];
- for(const [ix,iz,w,d,yaw] of buildings){const [x,z]=P([ix,iz]);k.hall({x,z,w:w*m,d:d*m,h:5,yaw,gates:1,windows:false,roof:'concrete',tag:'satellite-service-building'});}
+ const civil=buildProtonCivil(root,{siteId:id,planOrigin:origin,metresPerPixel:m});
  const routes=is81?[[[150,902],[295,868],[423,715],[451,525],[416,447]],[[295,868],[469,735],[622,716],[754,700]],[[294,868],[511,766],[695,762],[807,731],[892,640]],[[140,927],[177,646],[221,416],[279,128],[721,31],[1110,293],[1190,552],[1005,790],[479,974]]]:[[[45,406],[188,464],[330,476],[425,434]],[[49,406],[234,570],[428,690],[593,751],[779,715]],[[49,406],[255,633],[430,774],[640,839],[795,800],[889,733]]];
- routes.forEach((p,i)=>i<3?k.rail(p.map(P),{gauge:1.52}):k.path(p.map(P),4,.14));const tanks=is81?[[606,414],[621,448],[587,443],[614,384]]:[[634,539],[674,505],[610,572]];tanks.forEach(p=>{const[x,z]=P(p);k.tank(x,z,3.2,6.5);});root.userData.tracedPads=pads.map(p=>p.slice(0,2));
+ routes.forEach((p,i)=>i<3?k.rail(p.map(P),{gauge:1.52}):k.path(p.map(P),4,.14));root.userData.tracedPads=pads.map(p=>p.slice(0,2));
  const physical={units:'metres',localScale:1,planMetresPerPixel:m,planCalibration:'distance-between-two-named-parked-service-gantries',
   planSource:'./data/osm/source-overpass.json.gz',osmNodeIds:reference.osmNodeIds,osmAnchorsLonLat:reference.osmAnchorsLonLat,imageAnchors:reference.imageAnchors,
   gantrySeparationMetres:reference.gantrySeparationMetres,padSeparationMetres:Math.hypot(pads[1][0]-pads[0][0],pads[1][1]-pads[0][1])*m,
   railGaugeMetres:1.52,heightsSurveyed:false,absoluteMapAnchorSurveyed:false,
   referenceVehicle:{name:'Proton-M / Breeze-M, standard 4.1 m fairing',heightMetres:58.2,source:'https://www.ilslaunch.com/launch-vehicle/proton-breeze-m/'}};
- root.userData.physicalUnits=physical;return {...k.finish(),physical};
+ root.userData.physicalUnits=physical;const report=k.finish();
+ for(const [tag,count]of Object.entries(civil.features))report.features[tag]=(report.features[tag]||0)+count;
+ for(const key of ['primitiveCount','meshCount','batches'])report[key]+=civil[key];
+ return {...report,physical,civil:civil.model};
 }
 export function energia110(root){
  const k=archiveKit(root),P=imageFrame([589,484],.42),centres=[[442,492],[727,710]];
@@ -63,4 +66,4 @@ export function soyuz31(root){
 export {buildSite45 as zenit45} from './site45.js?v=20261102-site2-photo-v3';
 
 // Export the same module instance used by protonComplex for geometry checks.
-export {buildProtonPosition,protonPositionController} from './proton-launch.js?v=20261108-proton-source-v1';
+export {buildProtonPosition,protonPositionController} from './proton-launch.js?v=20261111-proton-civil-v1';

@@ -152,7 +152,7 @@ function trackAndGallery(k,serviceZ){
  for(const dx of [-.42,.42])k.rod([x+dx,y-.5,z0],[x+dx,y-.5,end],.18,'steel','gallery-process-pipe');
  k.path([[-20,38],[-20,serviceZ+30],[20,serviceZ+30],[20,38]],4,.12,'asphalt','tower-service-road');
 }
-function mastsAndUtilities(k){
+function mastsAndUtilities(k,includeLegacyVaults){
  for(const [index,[x,z]]of [[-42,-33],[42,-33],[-42,58],[42,58]].entries()){
   k.box(8,1.2,8,x,.6,z,'concrete','lightning-mast-foot');
   for(let j=0;j<12;j++){const y=1.2+j*6.5,w=(5.5-j*.34)/2,wn=(5.5-(j+1)*.34)/2,material=j%2?'red':'light';for(const sx of [-1,1])for(const sz of [-1,1])k.rod([x+sx*w,y,z+sz*w],[x+sx*wn,y+6.5,z+sz*wn],.18,material,'proton-banded-mast');for(const s of [-1,1]){k.rod([x-w,y,z+s*w],[x+wn,y+6.5,z+s*wn],.10,material,'mast-cross-brace');k.rod([x+w,y,z+s*w],[x-wn,y+6.5,z+s*wn],.10,material,'mast-cross-brace');k.rod([x+s*w,y,z-w],[x+s*wn,y+6.5,z+wn],.10,material,'mast-cross-brace');k.rod([x+s*w,y,z+w],[x+s*wn,y+6.5,z-wn],.10,material,'mast-cross-brace');}}
@@ -164,7 +164,7 @@ function mastsAndUtilities(k){
   const lamps=[];for(let c=0;c<4;c++)for(let r=0;r<6;r++){const px=x+(c-1.5)*1.1,py=27.6+r*.97;k.box(.78,.66,.18,px,py,z-.22,'light','floodlight-lens');lamps.push({position:[px,py,z-.32],normal:[0,0,-1],size:[.78,.66]});}
   registerFacilityFloodlights(k.root,{id:'proton-board-'+index,lamps,target:[0,.3,0]});
  }
- for(const x of [-36,36]){
+ if(includeLegacyVaults)for(const x of [-36,36]){
   // Low earth-covered utility vaults rather than tall hangars at the apron.
   k.box(15,4.8,62,x,2.35,83,'concrete','service-vault');k.box(15.5,.3,63,x,4.9,83,'soil','earth-covered-vault-roof');
   for(const s of [-1,1])plate(k,[[x+s*7.8,4.9,51],[x+s*15,.1,51],[x+s*15,.1,115],[x+s*7.8,4.9,115]],'soil','vault-earth-slope');
@@ -172,10 +172,10 @@ function mastsAndUtilities(k){
  }
 }
 
-export function buildProtonPosition(root,{serviceZ=300,sharedVehicle=false,rocketVisible=true,sourceLoader=null}={}){
+export function buildProtonPosition(root,{serviceZ=300,sharedVehicle=false,rocketVisible=true,sourceLoader=null,includeLegacyVaults=true}={}){
  const core=new THREE.Group();root.add(core);const k=archiveKit(core);k.mat.green.color.set('#365b45');k.mat.concrete.color.set('#929b97');k.mat.red.color.set('#966c62');softenPaint(k.mat.green);
  launchInterface(k);flameDucts(k);
- const surroundings=new THREE.Group();root.add(surroundings);const external=archiveKit(surroundings);trackAndGallery(external,serviceZ);mastsAndUtilities(external);const externalReport=external.finish();
+ const surroundings=new THREE.Group();root.add(surroundings);const external=archiveKit(surroundings);trackAndGallery(external,serviceZ);mastsAndUtilities(external,includeLegacyVaults);const externalReport=external.finish();
  const tower=new THREE.Group();tower.position.z=serviceZ;root.add(tower);const towerReport=serviceTower(tower);
  const vehicle=sharedVehicle?(sharedRocket??=createProtonRocket({detail:'map'})):createProtonRocket({detail:'map'});
  const rocket=sharedVehicle?vehicle.root.clone(true):vehicle.root;rocket.name='Протон-М · музейный экспонат на старте';rocket.position.y=-1.1;rocket.visible=rocketVisible;root.add(rocket);

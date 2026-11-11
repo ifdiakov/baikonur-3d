@@ -377,6 +377,23 @@ body.following-arrival #labelLayer{display:none!important}
  #info.terminal-active>p:last-child{margin:8px 0 0;font-size:8px!important}
  #info.terminal-active.terminal-details-open .orgrow{margin:10px 0}#info.terminal-active.terminal-details-open #infoExtra{margin-top:10px}
 }
+#protonViews{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+#protonViews .detail-button{min-height:38px;padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}
+#protonViews .detail-button:hover,#protonViews .detail-button[aria-pressed=true]{background:#3b5969}
+#protonViews .detail-button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
+@media(max-width:850px){
+ body:has(#info.proton-active[style*="display: block"]) #museumIdentity{display:none!important}
+ #info.proton-active{top:auto!important;bottom:var(--museum-dock-reserve,200px)!important;z-index:14;height:auto;max-height:300px!important;padding:12px}
+ #info.proton-active #title{display:block;padding-right:28px;line-height:1.4}
+ #info.proton-active .close{position:absolute;right:10px;top:8px;min-width:32px;min-height:32px}
+ #info.proton-active:not(.proton-details-open) .orgrow,#info.proton-active:not(.proton-details-open) #infoPurpose,#info.proton-active:not(.proton-details-open) #description{display:none}
+ #info.proton-active #protonViews{gap:6px;margin:8px 0}
+ #info.proton-active #protonViews .detail-button{min-height:40px;font-size:11px;padding:8px 10px}
+ #info.proton-active #detailMore,#info.proton-active #modelCardButton{min-height:36px;margin:5px 0;padding:9px;font-size:10px}
+ #info.proton-active>p:last-child{display:none}
+ #info.proton-active.proton-details-open{max-height:calc(100dvh - 250px)!important}
+}
+
 #cycloneViews .detail-button{padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#cycloneViews .detail-button:hover{background:#3b5969}#cycloneViews .detail-button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}
 
 
@@ -546,7 +563,7 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261111-buran-launch-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261111-proton-civil-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
@@ -730,7 +747,7 @@ ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MUSEUM_METRE;ctl.maxDistance=3300
 const steppeSurfaceReady=loadSatelliteReference().then(satellite=>createSteppeSurface({renderer,satellite}));
 let overviewAltitudeLimit=1650,overviewTopDown=false;
 function applyOverviewFrame(topDown=false){
- document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open');
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open','proton-active','proton-details-open');
  const ui=document.getElementById('ui').getBoundingClientRect(),hero=document.getElementById('hero');
  const rightBounds=getComputedStyle(hero).display==='none'?null:hero.getBoundingClientRect();
  const fit=fitOverviewCamera({width:innerWidth,height:innerHeight,outline:FLANK_OUTLINE,uiRect:ui,heroRect:rightBounds,dockTop:museumDockTop(),topDown});
@@ -1619,7 +1636,7 @@ const flankCards=createFlankTerritories({flanks,point,camera,container:labelLaye
 function showFlanks(){
  cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
- document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open');
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open','proton-active','proton-details-open');
  puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});setMobileMenu(false);
  arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();fly=false;
  labelsVisible=true;document.getElementById('info').style.display='none';
@@ -2206,9 +2223,10 @@ function focus(i){
  let cycloneViews=document.getElementById('cycloneViews');if(!cycloneViews){cycloneViews=document.createElement('div');cycloneViews.id='cycloneViews';document.getElementById('description').after(cycloneViews);}cycloneViews.replaceChildren();cycloneViews.hidden=r.id!=='pad-90';cycloneViews.style.cssText='display:'+(cycloneViews.hidden?'none':'flex')+';flex-wrap:wrap;gap:8px;margin:12px 0';
  if(r.id==='pad-90'){for(const [view,label]of [['all','Два старта'],['rocket','Циклон-2'],['table','Стартовый стол'],['erector','Установщик'],['top','Сверху']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.dataset.cycloneView=view;b.onclick=()=>portalArchive.inspectCyclone(view,camera,ctl);cycloneViews.append(b);}const b=document.createElement('button');b.type='button';b.className='detail-button';b.id='cycloneRocketToggle';const sync=()=>{b.textContent=rocketExhibits.stats().placements.find(x=>x.key==='cyclone-0')?.visible?'Убрать ракеты':'Показать ракеты';};b.onclick=()=>{const visible=!rocketExhibits.stats().placements.find(x=>x.key==='cyclone-0')?.visible;for(let i=0;i<2;i++)rocketExhibits.setVisible('cyclone-'+i,visible);sync();};sync();cycloneViews.append(b);}
  let protonViews=document.getElementById('protonViews');if(!protonViews){protonViews=document.createElement('div');protonViews.id='protonViews';protonViews.setAttribute('aria-label','Ракурсы стартов Протона');document.getElementById('description').after(protonViews);}
- protonViews.replaceChildren();protonViews.hidden=o.archive?.kind!=='proton';protonViews.style.cssText='display:'+ (protonViews.hidden?'none':'flex')+';flex-wrap:wrap;gap:8px;margin:12px 0';
+ protonViews.replaceChildren();protonViews.hidden=o.archive?.kind!=='proton';protonViews.style.display=protonViews.hidden?'none':'flex';
+ document.getElementById('info').classList.toggle('proton-active',o.archive?.kind==='proton');document.getElementById('info').classList.remove('proton-details-open');
  if(o.archive?.kind==='proton'){
-  let positionIndex=0;for(const [view,label,index]of [['launch','Первый старт',0],['launch','Второй старт',1],['interface','Опоры'],['duct','Газоходы'],['tower','Башня'],['top','Сверху']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.dataset.protonView=view;if(index!==undefined)b.dataset.protonPosition=index;b.onclick=()=>{if(index!==undefined)positionIndex=index;portalArchive.inspectProton(r.id,view,camera,ctl,positionIndex);for(const button of protonViews.querySelectorAll('[data-proton-view]'))button.setAttribute('aria-pressed',String(button===b));};protonViews.append(b);}
+  let positionIndex=0;for(const [view,label,index]of [['civil-entry','Укрытия'],['civil-plan','Территория'],['launch','Первый старт',0],['launch','Второй старт',1],['interface','Опоры'],['duct','Газоходы'],['tower','Башня'],['top','Сверху']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.dataset.protonView=view;if(index!==undefined)b.dataset.protonPosition=index;b.onclick=()=>{if(index!==undefined)positionIndex=index;portalArchive.inspectProton(r.id,view,camera,ctl,positionIndex);for(const button of protonViews.querySelectorAll('[data-proton-view]'))button.setAttribute('aria-pressed',String(button===b));};protonViews.append(b);}
   const b=document.createElement('button');b.type='button';b.className='detail-button';b.id='protonRocketToggle';const sync=()=>{const visible=portalArchive.protonStats(r.id)?.[0].rocketVisible;b.textContent=visible?'Убрать ракеты':'Показать ракеты';b.setAttribute('aria-pressed',String(visible));};b.onclick=()=>{portalArchive.setProtonRocketVisible(r.id,!portalArchive.protonStats(r.id)?.[0].rocketVisible);sync();};sync();protonViews.append(b);
  }
  let site41Views=document.getElementById('site41Views');if(!site41Views){site41Views=document.createElement('div');site41Views.id='site41Views';site41Views.style.cssText='display:flex;flex-wrap:wrap;gap:8px;margin:12px 0';site41Views.setAttribute('aria-label','Ракурсы площадки 41');document.getElementById('description').after(site41Views);}
@@ -2245,6 +2263,7 @@ function focus(i){
  ctl.update();camera.updateMatrixWorld(true);updateLabels();
 }
 function showResearch(item){
+ const protonControls=document.getElementById('protonViews');if(protonControls){protonControls.hidden=true;protonControls.style.display='none';}
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
  puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});document.getElementById('buranLandingStart')?.setAttribute('hidden','');document.getElementById('puaLoadingStart')?.setAttribute('hidden','');
  syncModelCard([]);
@@ -2252,7 +2271,7 @@ function showResearch(item){
  arrivalFlight?.stopFollowing();
  groundTraffic?.stopFollowing();
  setGagarinDetailView(false);
- document.getElementById('info').classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open');
+ document.getElementById('info').classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open','proton-active','proton-details-open');
  currentResearch=item;activeKnowledge=null;syncRocketLoadStatus();
  syncUkssControls();syncTuaControls();syncTerminalControls();
  document.getElementById('mik112Controls').hidden=true;
@@ -2303,6 +2322,7 @@ document.getElementById("detailMore").onclick=()=>{
  if(r.id==='kpp-7')document.getElementById('info').classList.toggle('checkpoint7-details-open',isHidden);
  if(r.id==='pad-113')document.getElementById('info').classList.toggle('site113-details-open',isHidden);
  if(r.id==='pad-95')document.getElementById('info').classList.toggle('site95-details-open',isHidden);
+ if(r.id==='pad-81'||r.id==='pad-200')document.getElementById('info').classList.toggle('proton-details-open',isHidden);
  if(r.id==='pad-31')document.getElementById('info').classList.toggle('site31-details-open',isHidden);
  if(r.id==='pad-250')document.getElementById('info').classList.toggle('ukss-details-open',isHidden);
  if(r.id==='pad-112')document.getElementById('info').classList.toggle('tua-details-open',isHidden);
@@ -2651,7 +2671,7 @@ function openMuseumAction(action){
  cancelBuranLaunch({restoreCamera:false});
  ++buranLossRequest;buranLoss?.stop({restoreCamera:false});
  ++soyuzRequestGeneration;soyuzLaunch?.stop({releaseCamera:false});
- document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open');
+ document.getElementById('info')?.classList.remove('site31-active','site31-details-open','site250a-active','site250a-details-open','checkpoint7-active','checkpoint7-details-open','site113-active','site113-details-open','site95-active','site95-details-open','proton-active','proton-details-open');
  ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});cancelBuranRequest();
  arrivalFlight.stopFollowing();groundTraffic.stopFollowing();fly=false;
  setMobileMenu(false);setGagarinDetailView(false);
@@ -2700,6 +2720,8 @@ const INTERCHANGE_SELECTION_INDEX=-1;
 function focusInterchange(view='bridge'){
  const bridge=transport.stats().interchange?.bridges.find(b=>b.osmWayId==='172422627');
  if(!bridge)return null;
+ document.getElementById('info').classList.remove('proton-active','proton-details-open');
+ const protonControls=document.getElementById('protonViews');if(protonControls){protonControls.hidden=true;protonControls.style.display='none';}
  const selected=INTERCHANGE_VIEWS.some(([id])=>id===view)?view:'bridge';
  setMobileMenu(false);if(lightingEditor?.active)lightingEditor.setActive(false);if(roadEditor?.active)roadEditor.setActive(false);
  arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();fly=false;

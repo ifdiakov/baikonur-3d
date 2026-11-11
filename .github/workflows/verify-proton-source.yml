@@ -2,10 +2,10 @@ name: Proton source models
 on:
   pull_request:
     branches: [main]
-    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
+    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'src/workshop-panel.css', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
   push:
-    branches: [main]
-    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
+    branches: [main, fix/proton-civil-20261111]
+    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'src/workshop-panel.css', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,30 +13,95 @@ concurrency:
   group: proton-source-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  verify:
+  pages_publication:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 14
+    permissions:
+      actions: read
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Wait for Pages to publish the actual checkout and artifact
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci/wait-pages-publication.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proton-pages-gate-attempt-${{ github.run_attempt }}
+          path: qa-ci/mik112-pages-publication.json
+          retention-days: 7
+  verify:
+    needs: pages_publication
+    # Candidate and PR matrices must still run when the public gate is skipped.
+    if: ${{ !cancelled() && (github.ref != 'refs/heads/main' || needs.pages_publication.result == 'success') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [desktop, mobile, workshop]
+    env:
+      QA_MODES: ${{ matrix.mode }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Record impact and the exact source revision
+        run: |
+          node scripts/ci/impact.mjs verify-proton-source.yml
+          mkdir -p qa-inspector
+          git rev-parse HEAD > qa-inspector/source-commit.txt
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: proton-source-${{ runner.os }}-playwright1.57.0-three0.160.1-gltf4.2.1
       - name: Install verification dependencies
         run: |
           npm install --no-save three@0.160.1 meshoptimizer@0.25.0 @gltf-transform/core@4.2.1 @gltf-transform/extensions@4.2.1 playwright@1.57.0
           npx playwright install --with-deps chromium
       - name: Validate source models, LOD and placement
+        if: matrix.mode == 'desktop'
         run: |
           node tests/proton-source.mjs
           node tests/proton-launch-geometry.mjs
           node tests/soyuz5-source.mjs
           node tests/menu-catalog-contract.mjs
-      - name: Serve checkout
-        run: python3 -m http.server 8765 --bind 127.0.0.1 &
-      - name: Inspect models and both launch sites
-        run: node tests/proton-launch-browser.mjs
+      - name: Serve the complete museum candidate
+        if: github.ref != 'refs/heads/main'
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/proton-server.log 2>&1 &
+      - name: Inspect candidate models, shelters and approaches
+        if: github.ref != 'refs/heads/main'
+        env:
+          QA_PREFIX: local
+        run: node scripts/ci/run-bounded.mjs 720 proton-local-${{ matrix.mode }} node tests/proton-launch-browser.mjs
+      - name: Verify published bytes and inspect the actual public scene
+        if: github.ref == 'refs/heads/main'
+        env:
+          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          QA_PREFIX: public
+          VERIFY_PUBLIC: '1'
+        run: |
+          git diff --exit-code -- index.html museum.html workshop.html src assets/models/proton
+          node scripts/ci/run-bounded.mjs 720 proton-public-${{ matrix.mode }} node tests/proton-launch-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: proton-source-evidence
-          path: qa-inspector/
+          name: proton-source-${{ matrix.mode }}-evidence-attempt-${{ github.run_attempt }}
+          path: |
+            qa-inspector/
+            qa-ci/impact-verify-proton-source.yml.json
+            qa-ci/proton-*.json
+            qa-ci/proton-*.log
+          retention-days: 7

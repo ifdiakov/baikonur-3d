@@ -6,9 +6,9 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261106-site95-town-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261111-proton-civil-v1';
 import * as buildings from './archive-buildings.js?v=20261109-site95-courtyards-v2';
-import * as launches from './archive-launches.js?v=20261108-proton-source-v1';
+import * as launches from './archive-launches.js?v=20261111-proton-civil-v1';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
 import {buildSite31Exhibit,site31Controller,SITE31_VIEWS} from './site31-exhibit.js?v=20261108-site31-lamps-v1';
 import {buildSiloPad,siloController} from './silo-pad.js?v=20261102-site2-photo-v3';
@@ -16,7 +16,7 @@ import {buildSevenWinds} from './seven-winds.js?v=20261102-site2-photo-v3';
 import {buildSite110,SITE110_VIEWS} from './site110.js?v=20261111-buran-launch-v1';
 import {buildSite41} from './site41.js?v=20261102-site2-photo-v3';
 import {SITE45_VIEWS} from './site45.js?v=20261102-site2-photo-v3';
-import {protonPositionController} from './proton-launch.js?v=20261108-proton-source-v1';
+import {protonPositionController} from './proton-launch.js?v=20261111-proton-civil-v1';
 import {SITE41_VIEWS} from './site41-profile.js?v=20261101-r16-exhibit-v1';
 export function buildArchiveModel(root,entry){
  const builders={site113:buildSite113,site250a:buildSite250a,site254:buildSite254,cyclone:buildCycloneComplex,'seven-winds':buildSevenWinds,silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildSite41,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:buildSite110,soyuz:buildSite31Exhibit,zenit:launches.zenit45,city:photoCity};
@@ -78,7 +78,43 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   controls.target.copy(c);camera.position.copy(c).add(new THREE.Vector3(.75,.92,1.0).multiplyScalar(r));return true;
  }
  function protonPosition(siteId,index=0){return objects.find(o=>o.record.id===siteId)?.g.children.filter(g=>g.userData.protonLaunch)[index];}
+ function inspectProtonCivil(root,view,camera,controls){
+  const v=root?.userData.protonCivil?.views?.[view];if(!v)return false;
+  root.updateWorldMatrix(true,false);
+  const width=globalThis.innerWidth||1024,height=globalThis.innerHeight||Math.round(width/camera.aspect),mobile=width<=850;
+  const rect={left:mobile?14:350,right:width-18,top:mobile?64:28,bottom:height-(mobile?210:140)};
+  const visibleBox=id=>{const element=globalThis.document?.getElementById(id);return element?.getClientRects().length?element.getBoundingClientRect():null;};
+  const info=visibleBox('info'),editor=visibleBox('workshopPanel'),dock=visibleBox('timeDock'),menu=visibleBox('ui');
+  if(mobile){if(info)rect.bottom=Math.min(rect.bottom,info.top-14);}
+  else{
+   if(menu)rect.left=Math.min(width*.34,menu.right+14);
+   for(const box of [info,editor])if(box&&box.left>width*.4)rect.right=Math.min(rect.right,box.left-16);
+  }
+  if(dock)rect.bottom=Math.min(rect.bottom,dock.top-14);
+  if(rect.right-rect.left<180)rect.left=18;
+  rect.bottom=Math.max(rect.top+140,rect.bottom);
+  const focus=root.localToWorld(new THREE.Vector3(...v.target)),originalEye=root.localToWorld(new THREE.Vector3(...v.eye));
+  const direction=originalEye.clone().sub(focus).normalize(),spherical=new THREE.Spherical().setFromVector3(direction);
+  spherical.phi=THREE.MathUtils.clamp(spherical.phi,(controls.minPolarAngle||0)+.002,(controls.maxPolarAngle||Math.PI)-.002);direction.setFromSpherical(spherical);
+  const points=(v.framePoints?.length?v.framePoints:[v.target]).map(p=>root.localToWorld(new THREE.Vector3(...p)));
+  const probe=camera.clone(),ndcX=(rect.left+rect.right)/width-1,ndcY=1-(rect.top+rect.bottom)/height;
+  probe.updateProjectionMatrix();
+  let distance=Math.max(controls.minDistance||.1,originalEye.distanceTo(focus)*.45),eye,target;
+  for(let attempt=0;attempt<38;attempt++){
+   probe.position.copy(focus).addScaledVector(direction,distance);probe.lookAt(focus);probe.updateMatrixWorld(true);
+   const halfHeight=distance*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/camera.zoom;
+   const shift=new THREE.Vector3(1,0,0).applyQuaternion(probe.quaternion).multiplyScalar(-ndcX*halfHeight*camera.aspect)
+    .addScaledVector(new THREE.Vector3(0,1,0).applyQuaternion(probe.quaternion),-ndcY*halfHeight);
+   eye=probe.position.clone().add(shift);target=focus.clone().add(shift);probe.position.copy(eye);probe.lookAt(target);probe.updateMatrixWorld(true);
+   const projected=points.map(p=>{const n=p.clone().project(probe);return {x:(n.x+1)*width/2,y:(1-n.y)*height/2,z:n.z};});
+   if(projected.every(p=>p.x>=rect.left&&p.x<=rect.right&&p.y>=rect.top&&p.y<=rect.bottom&&p.z>-1&&p.z<1))break;
+   distance*=1.1;
+  }
+  const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.copy(eye);controls.target.copy(target);controls.update();camera.updateMatrixWorld(true);controls.enableDamping=damping;
+  root.userData.protonCivilFraming={view,rect,width,height,distance,shelterId:v.shelterId??null};return true;
+ }
  function inspectProton(siteId,view,camera,controls,index=0){
+  if(view==='civil-entry'||view==='civil-plan')return inspectProtonCivil(objects.find(o=>o.record.id===siteId)?.g,view,camera,controls);
   const root=protonPosition(siteId,index);if(!root)return false;protonPositionController(root).loadSource();const v=root.userData.protonLaunch.views[view]||root.userData.protonLaunch.views.launch;
   root.updateWorldMatrix(true,false);controls.target.copy(root.localToWorld(new THREE.Vector3(...v.target)));camera.position.copy(root.localToWorld(new THREE.Vector3(...v.eye)));controls.update();return true;
  }
