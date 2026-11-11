@@ -8,7 +8,9 @@ export function keepOwnerTownRoadEdge(edge){
  const a=map(edge.a.position),b=map(edge.b.position),x=(a.x+b.x)/2,y=(a.y+b.y)/2;
  return x>556&&x<572&&y>404&&y<419;
 }
-const removed=new Set(['172571864','172441889','172571782','172441896','443174416','172704752','172704782']);
+// This obsolete source spur was already invisible under the old Site92 mask.
+// Keep it removed when the halls move: it crosses the approved Site95 homes.
+const removed=new Set(['172961129','172571864','172441889','172571782','172441896','443174416','172704752','172704782']);
 export function omitOwnerRoadEdge(edge){
  const id=String(edge.wayId);if(removed.has(id))return true;
  const a=map(edge.a.position),b=map(edge.b.position);

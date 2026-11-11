@@ -30,3 +30,16 @@ export function detailSite92Hall(k,hall,{w,d,h,main=false}){
   }
  }
 }
+// Move halls, not remote railway junctions. The three hall spurs keep their
+// existing outside alignment, then continue smoothly to the shifted gates.
+export function site92RailApproach(points,index){
+ const compensation=SITE92_SHIFT_MAP.map(v=>-v*3.4/.14);
+ const fixed=points.map(p=>p.map((v,k)=>v+compensation[k]));
+ if(index===2||index===4)return fixed;
+ const start=fixed.at(-1),previous=fixed.at(-2),end=points.at(-1);
+ const length=Math.hypot(end[0]-start[0],end[1]-start[1]),d=Math.hypot(start[0]-previous[0],start[1]-previous[1]);
+ const tangent=start.map((v,k)=>(v-previous[k])/d),c1=start.map((v,k)=>v+tangent[k]*length*.3),c2=end.map((v,k)=>v-tangent[k]*length*.3);
+ const n=Math.max(20,Math.ceil(length/2));
+ for(let j=1;j<=n;j++){const t=j/n,u=1-t;fixed.push(start.map((v,k)=>u*u*u*v+3*u*u*t*c1[k]+3*u*t*t*c2[k]+t*t*t*end[k]));}
+ return fixed;
+}
