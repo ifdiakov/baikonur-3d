@@ -27,14 +27,14 @@ try{
   await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__MUSEUM_SHARE,null,{timeout:180000});
   assert(await page.evaluate(()=>__MUSEUM_SHARE.ready),'Shared target not opened');await page.evaluate(()=>__SHARE_FRAME());
   const target=await page.evaluate(()=>__MUSEUM_SHARE.current());assert.equal(target.kind,expected.kind);assert.equal(target.id,expected.id);
-  const coverage=await page.evaluate(()=>({targets:__MUSEUM_SHARE.targets().length,buttons:document.querySelectorAll('#labelLayer .museum-share-button').length,duplicateCards:[...document.querySelectorAll('.site-label,.detail-card')].filter(e=>e.querySelectorAll(':scope > .museum-share-button').length!==1).length}));
-  assert.equal(coverage.buttons,coverage.targets*2);assert.equal(coverage.duplicateCards,0);
+  const coverage=await page.evaluate(()=>({targets:__MUSEUM_SHARE.targets().length,validLinks:__MUSEUM_SHARE.targets().map(t=>__MUSEUM_SHARE.url(t)).length,buttons:document.querySelectorAll('#labelLayer .museum-share-button').length,duplicateCards:[...document.querySelectorAll('.site-label,.detail-card')].filter(e=>e.querySelectorAll(':scope > .museum-share-button').length!==1).length}));
+  assert.equal(coverage.validLinks,coverage.targets);assert.equal(coverage.buttons,coverage.targets*2);assert.equal(coverage.duplicateCards,0);
   await page.locator('#infoShare').click();let copied=await page.evaluate(()=>__COPIED_SHARE),parsed=new URL(copied);assert.equal(parsed.searchParams.get('share'),expected.kind+':'+expected.id);assert(!copied.includes('workshop.html'));assert.equal(parsed.searchParams.get('draft'),null);
   assert(await page.locator('.museum-share-toast').isVisible());await page.screenshot({path:out+'/'+prefix+'-'+mode+'-card.png'});
   if(admin){assert(await page.locator('#cameraAltitude').isVisible());assert(await page.locator('#workshopPanel').isVisible());}
   if(mode==='desktop'){
-   for(const id of ['tua-112','mzk','sdi']){
-    const match=await page.evaluate(id=>__MUSEUM_SHARE.targets().find(t=>id==='tua-112'?t.id===id:t.id.includes(id)),id);assert(match,'Missing separate card '+id);
+   for(const id of ['tua-112','pad-250а','mzk','sdi']){
+    const match=await page.evaluate(id=>__MUSEUM_SHARE.targets().find(t=>id==='tua-112'||id.startsWith('pad-')?t.id===id:t.id.includes(id)),id);assert(match,'Missing separate card '+id);
     assert(await page.evaluate(t=>__MUSEUM_SHARE.open(t),match));await page.locator('#infoShare').click();assert.equal(new URL(await page.evaluate(()=>__COPIED_SHARE)).searchParams.get('share'),'site:'+match.id);
    }
    assert(await page.evaluate(()=>__MUSEUM_SHARE.open({kind:'story',id:'abort-51'})));await page.locator('#infoShare').click();assert.equal(new URL(await page.evaluate(()=>__COPIED_SHARE)).searchParams.get('share'),'story:abort-51');
@@ -45,7 +45,6 @@ try{
    await page.waitForFunction(()=>__BAIKONUR_QA.buranLoss.stats().active,null,{timeout:90000});await page.evaluate(()=>{__BAIKONUR_QA.buranLoss.pause();__SHARE_FRAME();});
    assert.equal(await page.locator('#buranLossPanel > .museum-share-button').count(),1);await page.locator('#buranLossPanel > .museum-share-button').click();assert.equal(new URL(await page.evaluate(()=>__COPIED_SHARE)).searchParams.get('share'),'event:buran-loss');await page.screenshot({path:out+'/'+prefix+'-event.png'});
    await page.locator('#buranLossClose').click();
-   // Native API payload and cancellation; this does not send anything externally.
    await page.evaluate(()=>Object.defineProperty(navigator,'share',{configurable:true,value:async data=>{window.__NATIVE_SHARE=data;}}));await page.locator('#infoShare').click();assert.equal(new URL(await page.evaluate(()=>__NATIVE_SHARE.url)).searchParams.get('share'),'event:buran-loss');
    await page.evaluate(()=>{window.__COPIED_SHARE=null;Object.defineProperty(navigator,'share',{configurable:true,value:async()=>{throw new DOMException('Cancelled','AbortError');}});});await page.locator('#infoShare').click();assert.equal(await page.evaluate(()=>__COPIED_SHARE),null);
    await page.evaluate(()=>{Object.defineProperty(navigator,'share',{configurable:true,value:undefined});Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('Permission denied');}}});});

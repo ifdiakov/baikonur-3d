@@ -45,12 +45,13 @@ jobs:
           node tests/card-share-source.mjs
           node --check src/encyclopedia-3d.js
           node tests/encyclopedia-media-data.mjs
-      - name: Install browser tests
+      - name: Install browser tests using existing runner libraries
         if: steps.ci_scope.outputs.run == 'true'
         timeout-minutes: 4
         run: |
-          npm install --no-save playwright@1.57.0
-          npx playwright install --with-deps chromium
+          npm install --no-save --prefer-offline --no-audit playwright@1.57.0
+          npx playwright install chromium
+          node --input-type=module -e "import {chromium} from 'playwright';const b=await chromium.launch({headless:true,args:['--no-sandbox']});await b.close();console.log('BROWSER_RUNTIME_READY');"
       - name: Serve candidate
         if: steps.ci_scope.outputs.run == 'true' && github.ref != 'refs/heads/main'
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/card-share-http.log 2>&1 &
