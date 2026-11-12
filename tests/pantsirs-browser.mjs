@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict';
+import {mkdir,readFile,writeFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
+import {chromium} from 'playwright';
+const mode=process.env.QA_MODE||'desktop',base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-pantsirs/'+mode;
+await mkdir(out,{recursive:true});const report={passed:false,mode,base,checks:[],hashes:{},environment:'Actual complete evening museum in Chromium/SwiftShader. Mobile is viewport emulation. Manual frame stepping only in tests; not FPS.'};
+const errors=[],shaderErrors=[];let browser,page;
+try{
+ if(process.env.VERIFY_PUBLIC==='1'){
+  const files=['index.html','museum.html','workshop.html','src/earth-covered-shelters.js','src/site92.js','src/site92-layout.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','src/rail-site-clearance.js','src/transport-detail-job.js','src/transport-detail-worker.bundle.js','data/catalog.json','data/osm/transport-geometry-bake-v1.json.gz','data/osm/road-lod-authoritative-v1.json.gz'];
+  const hash=b=>createHash('sha256').update(b).digest('hex'),expected=Object.fromEntries(await Promise.all(files.map(async f=>[f,hash(await readFile(f))])));let pending=[...files];const end=Date.now()+180000;
+  do{await Promise.all(pending.map(async f=>{try{const r=await fetch(new URL(f+'?pantsir='+expected[f].slice(0,16),base),{signal:AbortSignal.timeout(12000)});if(r.ok&&hash(Buffer.from(await r.arrayBuffer()))===expected[f])report.hashes[f]=expected[f];}catch{}}));pending=files.filter(f=>!report.hashes[f]);if(pending.length)await new Promise(r=>setTimeout(r,5000));}while(pending.length&&Date.now()<end);
+  assert.deepEqual(pending,[],'Public source/bake/worker mismatch');
+ }
+ browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
+ const mobile=mode==='mobile',admin=mode==='workshop',context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1440,height:960},deviceScaleFactor:1,isMobile:mobile,hasTouch:mobile,serviceWorkers:'block'});
+ page=await context.newPage();page.setDefaultTimeout(45000);page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION/.test(m.text()))shaderErrors.push(m.text());});
+ await context.addInitScript(()=>{const raf=requestAnimationFrame.bind(window);let frame;window.requestAnimationFrame=f=>f.name==='animate'?(frame=f,0):raf(f);window.__PANTSIR_FRAME=()=>frame?.(performance.now());});
+ await page.route('**/*',async r=>{if(r.request().resourceType()!=='document')return r.continue();const response=await r.fetch(),html=(await response.text()).replace('window.__BAIKONUR_QA={','window.__PANTSIR_QA={THREE,objects,scene,camera,ctl,renderer,portalVoids,terrainRelief,requestTransportDetail};window.__BAIKONUR_QA={');await r.fulfill({response,body:html});});
+ await page.goto(new URL((admin?'workshop':'museum')+'.html?share=site%3Apad-82&tour=0',base).href,{waitUntil:'domcontentloaded',timeout:90000});
+ await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__PANTSIR_QA&&window.__MUSEUM_SHARE,null,{timeout:180000,polling:250});
+ assert(await page.evaluate(()=>__MUSEUM_SHARE.ready));await page.evaluate(()=>{__PANTSIR_FRAME();__PANTSIR_QA.requestTransportDetail();});
+ await page.waitForFunction(()=>__BAIKONUR_QA.stats().transportBake.detailReady,null,{timeout:150000,polling:250});await page.evaluate(()=>__PANTSIR_FRAME());
+ report.models=await page.evaluate(()=>{const {objects,THREE,portalVoids}=__PANTSIR_QA;return Object.fromEntries(['pad-82','pad-83','pad-92','pad-95'].map(id=>{const o=objects.find(o=>o.record.id===id),g=o.g,p=g.userData.pantsirModel;let landingY=null;
+  if(p){const origin=g.localToWorld(new THREE.Vector3(0,20,p.front+3)),ray=new THREE.Raycaster(origin,new THREE.Vector3(0,-1,0));landingY=ray.intersectObject(g,true)[0]?.point.y;}
+  return [id,{model:p||g.userData.site92Model||g.userData.site95Model,scale:g.scale.toArray(),position:g.position.toArray(),landingY,cutouts:portalVoids.stats().items.filter(v=>v.shape.source?.includes(id)).length}];}));});
+ for(const id of ['pad-82','pad-83']){const s=report.models[id];assert(s.model?.buried);assert.equal(s.model.version,'20261112-earth-covered-v1');assert.equal(s.cutouts,1);assert(s.landingY<s.position[1]-.6);}
+ assert.equal(report.models['pad-95'].model.buildings.length,51);assert.equal(report.models['pad-92'].model.buildings.length,10);assert(await page.evaluate(()=>__BAIKONUR_QA.evening.evening));assert(await page.evaluate(()=>__BAIKONUR_QA.stats().shadersValid));report.checks.push('Both recessed models, actual geometry, terrain cuts, unchanged95 and matching transport worker');
+ for(const id of ['pad-82','pad-83']){assert(await page.evaluate(id=>__MUSEUM_SHARE.open({kind:'site',id}),id));assert((await page.locator('#title').innerText()).includes('Панцирь'));assert(await page.locator('#infoShare').isVisible());}report.checks.push('Both real cards and retained expanded-only sharing');
+ async function pose(id,view){await page.evaluate(({id,view})=>{const d=__PANTSIR_QA,g=d.objects.find(o=>o.record.id===id).g;__BAIKONUR_QA.setLabelsVisible(false);const poses={front:[[68,64,123],[0,-1,14]],top:[[5,145,44],[0,0,14]],hall:[[360,240,310],[-45,8,-30]],neighbours:[[350,600,550],[100,0,20]]},[eye,target]=poses[view];d.ctl.enableDamping=false;d.ctl.target.copy(g.localToWorld(new d.THREE.Vector3(...target)));d.camera.position.copy(g.localToWorld(new d.THREE.Vector3(...eye)));d.ctl.update();d.camera.updateMatrixWorld(true);d.renderer.render(d.scene,d.camera);},{id,view});}
+ if(mode==='desktop'){
+  for(const [id,view]of [['pad-82','front'],['pad-82','top'],['pad-83','front'],['pad-92','hall'],['pad-92','neighbours']]){await pose(id,view);await page.screenshot({path:out+'/'+id+'-'+view+'.png',timeout:60000});}
+ }else{await pose('pad-83','front');await page.screenshot({path:out+'/shelter.png',timeout:60000});}
+ if(admin){assert(await page.locator('#cameraAltitude').isVisible());assert(await page.locator('#workshopPanel').isVisible());await page.evaluate(()=>__MUSEUM_WORKSHOP.select('pad-82'));const h=Number(await page.locator('#wsHeight').inputValue());await page.locator('#wsHeight').fill(String(h+.2));await page.locator('#wsApply').click();await page.locator('#wsUndo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),h);report.checks.push('Altimeter, editor, height adjustment and undo retained');}
+ assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);report.passed=true;
+}catch(e){report.error=e.stack;await page?.screenshot({path:out+'/failure.png',timeout:20000}).catch(()=>{});process.exitCode=1;}
+finally{report.errors=errors;report.shaderErrors=shaderErrors;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser?.close();}console.log('PANTSIRS_BROWSER',mode,report.passed);
