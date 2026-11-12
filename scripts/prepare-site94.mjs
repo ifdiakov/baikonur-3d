@@ -42,5 +42,13 @@ edit('tests/map-group-removal-source.mjs',s=>{
  s=s.replace('assert.deepEqual(display,original.filter(r=>!removed.has(r.id)));',"assert.deepEqual(display.filter(r=>r.id!=='pad-94'),original.filter(r=>!removed.has(r.id)&&!['pad-94','pad-94а'].includes(r.id)));");
  s=s.replace('for(const r of display)assert.equal(',"for(const r of display.filter(r=>r.id!=='pad-94'))assert.equal(");return s;
 });
+// Keep the original integration anchors idempotent; finish only the earth material.
+edit('src/archive-models.js',s=>{
+ s=s.replace('import {connectSite94}', 'import {connectSite94,applySite94Ground}');
+ const anchor="  if(spec.kind==='site94')connectSite94(root,roadPaths);";
+ s=once(s,anchor,anchor+"\n  if(spec.kind==='site94')applySite94Ground(root,{referenceMaterial:referenceGroundMaterial,steppeSurface,width,height});");
+ return s.replace(/(site94-road-grade\.js\?v=)[\w.-]+/g,'$120261112-site94-ground-v2');
+});
+for(const file of ['index.html','museum.html','workshop.html'])edit(file,s=>s.replace(/(archive-models\.js\?v=)[\w.-]+/g,'$120261112-site94-ground-v2'));
 assert.equal(read('index.html','utf8'),read('museum.html','utf8'));
 console.log('SITE94_UNIFIED_PREPARED');

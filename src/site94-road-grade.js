@@ -26,5 +26,28 @@ export function connectSite94(root,roads=[]){
  }
  area(SITE94_STREETS.roads,'roads','asphalt');area(SITE94_STREETS.shoulders,'shoulder','soil');area(SITE94_STREETS.earth,'earth','soil');
  const result=k.finish(),gateHeights=data.ports.map(([x,y,z])=>({x,z,grade:grade(x,z),difference:grade(x,z)-y}));
+ root.traverse(m=>{if(m.isMesh&&m.material===k.mat.soil)m.userData.site94Earth=true;});
  data.serviceRoads={sourceWayCount:SITE94_STREETS.ids.length,meshCount:result.meshCount,unioned:true,source:'existing project OSM snapshot',join:local.toArray(),matchedMainRoad:!!road,triangles,maxEdge,gateHeights,slopingEarth:true,mainRoadClipped:true};
+}
+
+// Match the surrounding satellite ground in world coordinates. These are earth
+// shoulders/slopes, not a second asphalt apron; reuse the existing texture.
+export function applySite94Ground(root,{referenceMaterial,steppeSurface,width,height}){
+ if(!referenceMaterial?.map||!steppeSurface?.apply||!(width>0&&height>0))throw Error('Site94 ground reference unavailable');
+ const material=new THREE.MeshBasicMaterial({map:referenceMaterial.map,color:referenceMaterial.color.clone(),side:THREE.DoubleSide,vertexColors:true});
+ material.name='94 / 94А · общая текстура степи';material.forceSinglePass=true;steppeSurface.apply(material);
+ root.updateWorldMatrix(true,true);const old=new Set(),v=new THREE.Vector3(),normal=new THREE.Vector3(),normalMatrix=new THREE.Matrix3();let meshCount=0;
+ root.traverse(m=>{
+  if(!m.isMesh||!m.userData.site94Earth)return;
+  old.add(m.material);normalMatrix.getNormalMatrix(m.matrixWorld);
+  const pa=m.geometry.attributes.position,na=m.geometry.attributes.normal,uv=new Float32Array(pa.count*2),colors=new Float32Array(pa.count*3);
+  for(let i=0;i<pa.count;i++){
+   v.fromBufferAttribute(pa,i).applyMatrix4(m.matrixWorld);uv[i*2]=v.x/width+.5;uv[i*2+1]=.5-v.z/height;
+   normal.fromBufferAttribute(na,i).applyMatrix3(normalMatrix).normalize();const tone=.98+.02*Math.max(0,normal.y);colors.set([tone,tone,tone],i*3);
+  }
+  m.geometry.setAttribute('uv',new THREE.BufferAttribute(uv,2));m.geometry.setAttribute('color',new THREE.BufferAttribute(colors,3));m.material=material;meshCount++;
+ });
+ for(const previous of old)previous.dispose();
+ if(!meshCount){material.dispose();throw Error('Site94 earth geometry missing');}
+ root.userData.site94Model.serviceRoads.sharedSoil=true;root.userData.site94Model.serviceRoads.earthMeshCount=meshCount;
 }
