@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as THREE from 'three';
+import {SITE94_VERSION,canonicalSite94,mergeSite94Records} from '../src/site94-records.js';
+import {buildSite94,connectSite94} from '../src/site94.js';
+import {visibleMapSites} from '../src/map-visible-sites.js';
+import {createMuseumGeography} from '../src/osm-geography.js';
+import {ARCHIVE_MAP} from '../src/archive-manifest.js';
+const cases=[];function check(name,fn){fn();cases.push(name);}
+const catalog=JSON.parse(fs.readFileSync('data/catalog.json')),matches=JSON.parse(fs.readFileSync('data/osm/catalog-matches.json'));
+const raw=createMuseumGeography({catalog,matches}).sites.filter(r=>!r.aliasOf&&r.render!==false),before=JSON.stringify(raw),shown=visibleMapSites(raw),record=shown.find(r=>r.id==='pad-94');
+check('One visible object, both original geographies retained',()=>{assert.equal(shown.filter(r=>canonicalSite94(r.id)==='pad-94').length,1);assert.equal(record.mergedMembers.length,2);assert.equal(JSON.stringify(raw),before);assert.equal(record.x,raw.find(r=>r.id==='pad-94').x);});
+check('Alias variants resolve; unrelated IDs remain unchanged',()=>{for(const a of ['pad-94а','pad-94А','pad-94a','pad-94A'])assert.equal(canonicalSite94(a),'pad-94');assert.equal(canonicalSite94('pad-194'),'pad-194');});
+check('Other records are preserved by identity',()=>{for(const r of shown)if(r.id!=='pad-94')assert.equal(r,raw.find(o=>o.id===r.id));});
+check('Merge is idempotent and preserves former descriptive text',()=>{assert.deepEqual(mergeSite94Records(shown),shown);assert(record.mergedMembers.every(r=>r.note));});
+check('One archive registration',()=>{assert.equal(ARCHIVE_MAP.filter(r=>r.id==='pad-94').length,1);assert(!ARCHIVE_MAP.some(r=>r.id==='pad-94а'));});
+const root=new THREE.Group();root.scale.setScalar(.14);root.position.set((record.x-650)*3.4,-2.72,(record.y-522.5)*3.4);root.userData.site94Members=record.mergedMembers;const built=buildSite94(root);connectSite94(root,[]);
+let triangles=0,draws=0;root.traverse(o=>{if(!o.isMesh)return;draws++;const p=o.geometry.attributes.position;for(const n of p.array)assert(Number.isFinite(n));triangles+=(o.geometry.index?.count||p.count)/3*(o.count||1);});
+check('Photo details and geometry budget',()=>{assert.equal(root.userData.site94Model.version,SITE94_VERSION);assert.equal(root.userData.site94Model.footprints.length,10);for(const t of ['sliding-gate-leaf','upper-storey','window-recess','brick-chimney','external-ladder','door-track-canopy'])assert(built.features['site94-'+t]>0);assert(triangles<30000);assert(draws<=22);});
+check('Actual open right-hand gate, not a painted black facade',()=>{root.updateMatrixWorld(true);const [x,,z]=root.userData.site94Model.gate;const origin=root.localToWorld(new THREE.Vector3(x+4,3,z+4)),dir=new THREE.Vector3(0,0,-1);const hit=new THREE.Raycaster(origin,dir).intersectObject(root,true)[0];assert(hit);assert(root.worldToLocal(hit.point.clone()).z<z-2);});
+check('South part stays at its former geographic offset',()=>{const a=raw.find(r=>r.id==='pad-94'),b=raw.find(r=>r.id==='pad-94а');assert(Math.abs(root.userData.site94Model.southOffset[1]-(b.y-a.y)*3.4/.14)<1e-6);});
+check('Shared original service streets use unioned surfaces',()=>{assert(root.userData.site94Model.serviceRoads.unioned);assert.equal(root.userData.site94Model.serviceRoads.sourceWayCount,18);});
+fs.mkdirSync('qa-site94',{recursive:true});fs.writeFileSync('qa-site94/source-report.json',JSON.stringify({passed:true,cases,triangles,draws,built,model:root.userData.site94Model},null,2));console.log('SITE94_SOURCE_PASS',cases.length,triangles,draws);
