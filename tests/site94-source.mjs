@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as THREE from 'three';
 import {SITE94_VERSION,canonicalSite94,mergeSite94Records} from '../src/site94-records.js';
-import {buildSite94,connectSite94} from '../src/site94.js';
+import {buildSite94} from '../src/site94.js';
+import {connectSite94} from '../src/site94-road-grade.js';
 import {visibleMapSites} from '../src/map-visible-sites.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {ARCHIVE_MAP} from '../src/archive-manifest.js';
@@ -20,4 +21,5 @@ check('Photo details and geometry budget',()=>{assert.equal(root.userData.site94
 check('Actual open right-hand gate, not a painted black facade',()=>{root.updateMatrixWorld(true);const [x,,z]=root.userData.site94Model.gate;const origin=root.localToWorld(new THREE.Vector3(x+4,3,z+4)),dir=new THREE.Vector3(0,0,-1);const hit=new THREE.Raycaster(origin,dir).intersectObject(root,true)[0];assert(hit);assert(root.worldToLocal(hit.point.clone()).z<z-2);});
 check('South part stays at its former geographic offset',()=>{const a=raw.find(r=>r.id==='pad-94'),b=raw.find(r=>r.id==='pad-94а');assert(Math.abs(root.userData.site94Model.southOffset[1]-(b.y-a.y)*3.4/.14)<1e-6);});
 check('Shared original service streets use unioned surfaces',()=>{assert(root.userData.site94Model.serviceRoads.unioned);assert.equal(root.userData.site94Model.serviceRoads.sourceWayCount,18);});
+check('Roads remain at door sill level and sampled grade cannot form long elevated wedges',()=>{const r=root.userData.site94Model.serviceRoads;assert(r.maxEdge<=12.01);assert(r.gateHeights.every(g=>g.difference<.06));assert(r.slopingEarth&&r.mainRoadClipped);});
 fs.mkdirSync('qa-site94',{recursive:true});fs.writeFileSync('qa-site94/source-report.json',JSON.stringify({passed:true,cases,triangles,draws,built,model:root.userData.site94Model},null,2));console.log('SITE94_SOURCE_PASS',cases.length,triangles,draws);
