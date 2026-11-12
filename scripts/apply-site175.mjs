@@ -18,5 +18,9 @@ edit('data/catalog.json',s=>{
 });
 edit('tests/all-silos-geometry.mjs',s=>s.replace('SILO_SITE_IDS.length,31','SILO_SITE_IDS.length,32').replace('Object.keys(shader.uniforms).length,31','Object.keys(shader.uniforms).length,SILO_SITE_IDS.length').replace('any of the 31 shafts','any shaft'));
 edit('tests/silo-browser.mjs',s=>s.replace('result.length,31','result.length,SILO_SITE_IDS.length'));
+edit('workshop.html',s=>s.includes('id="site175AdminCard"')?s:s.replace('</head>',`<style id="site175AdminCard">
+/* Keep silo actions accessible beside the existing editor and below the altimeter. */
+@media(min-width:1000px){body.workshop-mode:has(#workshopPanel:not([hidden])) #info:has(#siloViews:not([hidden])){right:384px!important;left:auto!important;top:205px!important;max-height:calc(100dvh - 310px)!important;width:min(360px,calc(100vw - 760px))!important}}
+</style></head>`));
 assert.equal(read('index.html','utf8'),read('museum.html','utf8'));
 console.log('SITE175_SHPU_PREPARED');
