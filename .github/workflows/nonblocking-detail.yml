@@ -3,7 +3,7 @@ name: Fast source and scene checks
 on:
   push:
     branches: [main, 'fix/**']
-    paths: ['index.html','museum.html','workshop.html','src/**','data/**','assets/**','scripts/ci/fast-check.mjs','tests/delivery-smoke.mjs','.github/workflows/nonblocking-detail.yml']
+    paths: ['index.html','museum.html','workshop.html','src/**','data/**','assets/**','scripts/ci/fast-check.mjs','scripts/apply-map-group-removal.mjs','tests/map-group-removal-*.mjs','tests/delivery-smoke.mjs','.github/workflows/nonblocking-detail.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,15 +14,37 @@ jobs:
   source:
     runs-on: ubuntu-24.04
     timeout-minutes: 3
+    permissions:
+      contents: write
+    outputs:
+      sha: ${{ steps.freeze.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          persist-credentials: ${{ github.ref_name == 'fix/remove-map-groups-20261112' }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Prepare this isolated candidate, never main
+        if: github.ref_name == 'fix/remove-map-groups-20261112'
+        run: node scripts/apply-map-group-removal.mjs
       - run: node --experimental-vm-modules scripts/ci/fast-check.mjs
-      - run: git diff --exit-code
+      - run: node tests/map-group-removal-source.mjs
+      - name: Freeze exact tested candidate inputs
+        id: freeze
+        run: |
+          if [ "${{ github.ref_name }}" = "fix/remove-map-groups-20261112" ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add index.html museum.html workshop.html docs/CURRENT_WORK.md
+            if ! git diff --cached --quiet; then
+              git commit -m 'Remove nine display groups while preserving road inputs and remaining models'
+              git push origin HEAD:${{ github.ref_name }}
+            fi
+          fi
+          git diff --exit-code
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          git rev-parse HEAD > qa-delivery/source-commit.txt
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -39,6 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ needs.source.outputs.sha }}
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
@@ -57,7 +80,7 @@ jobs:
       - name: Serve the exact candidate without generated edits
         if: github.ref != 'refs/heads/main'
         run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/delivery-http.log 2>&1 &
-      - name: Check one real render and retained controls
+      - name: Check removed groups and retained real scene
         env:
           QA_MODE: ${{ matrix.mode }}
           BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
