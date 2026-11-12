@@ -45,7 +45,7 @@ export function buildShelterRoadAccess(root,plan){
  const inv=root.matrixWorld.clone().invert(),normal=V(plan.normal),tangent=V(plan.tangent),scale=plan.scale;
  const p0=root.localToWorld(new THREE.Vector3(1.7,.025,plan.startZ));
  const p3=V(plan.edge),forward=new THREE.Vector3(Math.sin(plan.yaw),0,Math.cos(plan.yaw));
- const length=Math.hypot(p3.x-p0.x,p3.z-p0.z),p1=p0.clone().addScaledVector(forward,length*.28),p2=p3.clone().addScaledVector(normal,length*.28);
+ const length=Math.hypot(p3.x-p0.x,p3.z-p0.z),p1=p0.clone().addScaledVector(forward,length*.28),p2=p3.clone().addScaledVector(forward,-length*.28);
  const curve=new THREE.CubicBezierCurve3(p0,p1,p2,p3),count=32,rows=[];
  const mouth=Math.max(13.4*scale,Math.min(3.8,plan.roadWidth*1.20));
  // Select the tangent sign that agrees with the approaching road's left/right.
@@ -55,14 +55,26 @@ export function buildShelterRoadAccess(root,plan){
  let maxGrade=0;
  for(let i=0;i<=count;i++){
   const t=i/count,c=curve.getPoint(t),dir=curve.getTangent(t);dir.y=0;dir.normalize();
-  const right=i===0?startRight:i===count?roadRight:new THREE.Vector3(dir.z,0,-dir.x);
+  const right=new THREE.Vector3(dir.z,0,-dir.x).lerp(roadRight,ease(clamp((t-.65)/.35,0,1))).normalize();
+  if(i===0)right.copy(startRight);
   c.y=THREE.MathUtils.lerp(p0.y,p3.y,ease(t));
   const width=THREE.MathUtils.lerp(13.4*scale,mouth,ease(clamp((t-.55)/.45,0,1)));
   rows.push({c,right,width,t});
   if(i){const prev=rows[i-1].c;maxGrade=Math.max(maxGrade,Math.abs(c.y-prev.y)/Math.hypot(c.x-prev.x,c.z-prev.z));}
  }
  const geometries={asphalt:[],shoulder:[],earth:[]},indices={asphalt:[],shoulder:[],earth:[]};
- function quad(key,a,b,c,d){const pos=geometries[key],idx=indices[key],n=pos.length/3;for(const v of [a,b,c,d])pos.push(...v.clone().applyMatrix4(inv).toArray());idx.push(n,n+2,n+1,n+1,n+2,n+3);}
+ function quad(key,a,b,c,d){
+  // Clip every layer at the existing road edge. A straight oblique approach
+  // meets the road cleanly, without a hairpin or coplanar pavement overlap.
+  const input=[a,b,d,c],poly=[],q=V(plan.join),distance=v=>v.clone().sub(q).dot(normal)-plan.roadWidth/2;
+  for(let i=0;i<input.length;i++){
+   const from=input[i],to=input[(i+1)%input.length],da=distance(from),db=distance(to),ia=da>=-1e-8,ib=db>=-1e-8;
+   if(ia)poly.push(from);
+   if(ia!==ib){const v=from.clone().lerp(to,da/(da-db));if(key==='asphalt')v.y=q.y+v.clone().sub(q).dot(tangent)*plan.roadSlope;poly.push(v);}
+  }
+  if(poly.length<3)return;
+  const pos=geometries[key],idx=indices[key],n=pos.length/3;for(const v of poly)pos.push(...v.clone().applyMatrix4(inv).toArray());for(let i=1;i+1<poly.length;i++)idx.push(n,n+i+1,n+i);
+ }
  function edge(row,side,extra=0,drop=0){const v=row.c.clone().addScaledVector(row.right,side*(row.width/2+extra));v.y-=drop;
   // Final cross-section is precisely the existing asphalt boundary, including
   // its along-road grade. No second coplanar asphalt layer is put over it.
@@ -82,7 +94,7 @@ export function buildShelterRoadAccess(root,plan){
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(geometries[key],3));g.setIndex(indices[key]);g.computeVertexNormals();
   const mesh=new THREE.Mesh(g,materials[key]);mesh.name='Подъезд · '+key;mesh.receiveShadow=true;mesh.userData.shelterDrive=key;mesh.userData.groundSurface=true;if(key==='earth')mesh.userData.pantsirEarth=true;root.add(mesh);
  }
- root.userData.shelterAccess={version:SHELTER_ACCESS_VERSION,roadId:plan.roadId,yaw:plan.yaw,roadWidth:plan.roadWidth,join:plan.join,edge:plan.edge,sourceSegment:plan.sourceSegment,start:p0.toArray(),end:p3.toArray(),maxGrade,length:curve.getLength(),centreline:rows.map(r=>r.c.toArray()),joinEdges:[edge(rows.at(-1),-1).toArray(),edge(rows.at(-1),1).toArray()],roadGraphUnchanged:true,triangleCount:count*10};
+ root.userData.shelterAccess={version:SHELTER_ACCESS_VERSION,roadId:plan.roadId,yaw:plan.yaw,roadWidth:plan.roadWidth,join:plan.join,edge:plan.edge,sourceSegment:plan.sourceSegment,start:p0.toArray(),end:p3.toArray(),maxGrade,length:curve.getLength(),centreline:rows.map(r=>r.c.toArray()),joinEdges:[edge(rows.at(-1),-1).toArray(),edge(rows.at(-1),1).toArray()],roadGraphUnchanged:true,triangleCount:Object.values(indices).reduce((n,a)=>n+a.length/3,0)};
  return root.userData.shelterAccess;
 }
 export function shelterAccessView(root){
