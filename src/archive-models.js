@@ -1,3 +1,4 @@
+import {buildSite94,connectSite94} from './site94.js?v=20261112-site94-94a-photo-v1';
 import {planShelterRoadAccess,buildShelterRoadAccess,shelterAccessView} from './shelter-road-access.js?v=20261112-road-facing-v1';
 import {buildEarthCoveredShelter,applyShelterGround} from './earth-covered-shelters.js?v=20261112-road-facing-v1';
 import {buildSite113} from './site113.js?v=20261109-owner19-v3';
@@ -8,7 +9,7 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261112-site175-shpu-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261112-site94-94a-photo-v1';
 import * as buildings from './archive-buildings.js?v=20261112-pantsirs-v1';
 import * as launches from './archive-launches.js?v=20261111-proton-civil-v1';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
@@ -23,6 +24,7 @@ import {SITE41_VIEWS} from './site41-profile.js?v=20261101-r16-exhibit-v1';
 import {buildSite118Exhibit,site118Controller,SITE118_PROFILE} from './site118-source.js?v=20261111-site118-v1';
 import {MUSEUM_CAMERA_MIN_Y} from './camera-navigation.js?v=20261103-camera-min-h1-v1';
 export function buildArchiveModel(root,entry){
+ if(entry.kind==='site94')return buildSite94(root);
  if(entry.kind==='pantsir')return buildEarthCoveredShelter(root,entry.id);
  if(entry.kind==='site118')return buildSite118Exhibit(root);
  const builders={site113:buildSite113,site250a:buildSite250a,site254:buildSite254,cyclone:buildCycloneComplex,'seven-winds':buildSevenWinds,silo:buildSiloPad,'proton-halls':buildings.protonHalls,settlement:buildings.settlement95,mik42:buildings.mik42Facade,mzk:buildings.mzk112a,yubileiny:buildings.yubileiny,checkpoint:buildings.checkpoint7,observation:buildings.observationPoint,nedelin:buildSite41,buran:buildings.buranMuseum,cleanroom:buildings.cleanroom,energia:buildSite110,soyuz:buildSite31Exhibit,zenit:launches.zenit45,city:photoCity};
@@ -53,7 +55,9 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   root.name=spec.title;
   const accessPlan=spec.kind==='pantsir'?planShelterRoadAccess(root,spec.id,roadPaths):null;
   if(accessPlan)root.rotation.y=accessPlan.yaw;
+  if(spec.kind==='site94')root.userData.site94Members=o.record.mergedMembers;
   const built=buildArchiveModel(root,spec);
+  if(spec.kind==='site94')connectSite94(root,roadPaths);
   if(accessPlan)buildShelterRoadAccess(root,accessPlan);
   if(spec.kind==='pantsir')applyShelterGround(root,{referenceMaterial:referenceGroundMaterial,steppeSurface,width,height});
   // Builder handles belong to the live scene, not the serializable catalogue
@@ -82,6 +86,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   if(o.record.id==='kpp-7')return inspectCheckpoint7('all',camera,controls);
   if(o.archive.kind==='seven-winds')return inspectHotel('all',camera,controls);
   if(o.archive.kind==='pantsir')return fitArchiveView(o.g,shelterAccessView(o.g),'all',camera,controls,'pantsirFraming');
+  if(o.record.id==='pad-94')return inspectSite94('all',camera,controls);
   if(o.record.id==='pad-31')return inspectSite31('all',camera,controls);
   if(o.record.id==='pad-110')return inspectSite110('all',camera,controls);
   if(o.archive.kind==='proton')return inspectProton(o.record.id,'launch',camera,controls);
@@ -99,6 +104,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   const b=new THREE.Box3().setFromObject(o.g),size=b.getSize(new THREE.Vector3()),c=b.getCenter(new THREE.Vector3()),r=Math.max(size.x,size.z,size.y*2);
   controls.target.copy(c);camera.position.copy(c).add(new THREE.Vector3(.75,.92,1.0).multiplyScalar(r));return true;
  }
+ function inspectSite94(view,camera,controls){const root=objects.find(o=>o.record.id==='pad-94')?.g;if(!root?.userData.site94Model)return false;const v=root.userData.site94Model.views[view]||root.userData.site94Model.views.all;return fitArchiveView(root,v,view,camera,controls,'site94Framing');}
  function protonPosition(siteId,index=0){return objects.find(o=>o.record.id===siteId)?.g.children.filter(g=>g.userData.protonLaunch)[index];}
  function inspectProtonCivil(root,view,camera,controls){
   const v=root?.userData.protonCivil?.views?.[view];if(!v)return false;
@@ -239,5 +245,5 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   return true;
  }
  const site2=()=>objects.find(o=>o.record.id==='pad-2')?.g;
- return {inspectSite118,site118Stats:()=>objects.find(o=>o.record.id==='pad-118')?.g.userData.site118Model,loadSite118:()=>site118Controller(objects.find(o=>o.record.id==='pad-118')?.g)?.load(),inspectSite95,site95Stats:()=>objects.find(o=>o.record.id==='pad-95')?.g.userData.site95Model,inspectSite113,site113Stats:()=>objects.find(o=>o.record.id==='pad-113')?.g.userData.site113Model,inspectCheckpoint7,checkpoint7Stats:()=>objects.find(o=>o.record.id==='kpp-7')?.g.userData.checkpoint7Model,inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{protons.forEach(p=>p.update(now,camera));silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
+ return {inspectSite94,site94Stats:()=>objects.find(o=>o.record.id==='pad-94')?.g.userData.site94Model,inspectSite118,site118Stats:()=>objects.find(o=>o.record.id==='pad-118')?.g.userData.site118Model,loadSite118:()=>site118Controller(objects.find(o=>o.record.id==='pad-118')?.g)?.load(),inspectSite95,site95Stats:()=>objects.find(o=>o.record.id==='pad-95')?.g.userData.site95Model,inspectSite113,site113Stats:()=>objects.find(o=>o.record.id==='pad-113')?.g.userData.site113Model,inspectCheckpoint7,checkpoint7Stats:()=>objects.find(o=>o.record.id==='kpp-7')?.g.userData.checkpoint7Model,inspectSite250a,site250aStats:()=>objects.find(o=>o.record.id==='pad-250a')?.g.userData.site250aModel,site31Stats:()=>objects.find(o=>o.record.id==='pad-31')?.g.userData.site31Model,loadSite31:()=>site31Controller(objects.find(o=>o.record.id==='pad-31')?.g)?.load(),inspectSite254,site254Stats:()=>objects.find(o=>o.record.id==='pad-254')?.g.userData.site254Model,inspectSite2,site2Stats:()=>site2()?.userData.site2Model,loadSite2:()=>site2Controller(site2())?.load(),setSdiGateOpen:(open,now)=>sdiGates[0]?.setOpen(open,now),sdiGateStats:()=>sdiGates[0]?.stats(),focus,inspectCyclone,inspectProton,setProtonRocketVisible,protonStats,inspectHotel,inspectMzkSdi,inspectSite31,inspectSite110,inspectSite41,inspectSite45,inspectSilo:(view,camera,controls,siteId='pad-109')=>silos.find(s=>s.siteId===siteId)?.inspect(view,camera,controls),update:(now,camera,target)=>{protons.forEach(p=>p.update(now,camera));silos.forEach(s=>s.update(now,camera,target));sdiGates.forEach(g=>g.update(now));},silos:()=>silos.map(s=>s.stats()),stats:()=>({version:ARCHIVE_VERSION,count:records.length,models:records})};
 }

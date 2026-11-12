@@ -485,6 +485,9 @@ body.following-arrival #labelLayer{display:none!important}
 #site95Views,#site113Views,#site31Views,#site254Views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 #site2Views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}#site95Views button,#site113Views button,#site2Views button{padding:9px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;font:600 12px Arial;cursor:pointer}#site95Views button:hover,#site113Views button:hover,#site2Views button:hover{background:#3b5969}#site95Views button:focus-visible,#site113Views button:focus-visible,#site2Views button:focus-visible{outline:2px solid #e7b78c;outline-offset:2px}#site2LoadStatus{font-size:11px;line-height:1.5;color:#bed0ce;margin:10px 0}
 @media(min-width:1000px){body.workshop-mode:has(#workshopPanel:not([hidden])) #info:has(#tua112Controls:not([hidden])){right:350px!important;left:auto!important;top:205px!important;max-height:calc(100dvh - 310px)!important;width:min(360px,calc(100vw - 700px))!important}}
+
+#site94Views button{padding:8px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;cursor:pointer;font:600 12px Arial}
+@media(min-width:1000px){body.workshop-mode:has(#workshopPanel:not([hidden])) #info:has(#site94Views:not([hidden])){right:370px!important;top:205px!important;width:310px!important;max-height:calc(100dvh - 310px)!important}}
 </style><link rel="stylesheet" href="./src/soyuz-dual-launch.css?v=20261103-launch-v1"><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261109-evening-navigation-v2"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261108-site45-choice-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/camera-altitude.css?v=20261101-altitude-v1"><link rel="stylesheet" href="./src/museum-ui-polish.css?v=20261103-logo-compact-v6"><link rel="stylesheet" href="./src/museum-onboarding.css?v=20261108-standalone-tour-button-v1"><link rel="stylesheet" href="./src/complex-history.css?v=20261103-foundation-v1"><style id="buildingCardsReadable">/* BUILDING_CARDS_READABLE_V3 */
 .detail-card[data-site-id="building-mzk"] p,.detail-card[data-site-id="building-sdi"] p{display:block;-webkit-line-clamp:unset;overflow:visible;max-height:none}
 </style><link rel="stylesheet" href="./src/buran-loss.css?v=20261110-v1"><link rel="stylesheet" href="./src/card-share.css?v=20261111-share-v1"></head><body data-preload-museum="true"><div id="view"></div>
@@ -576,7 +579,9 @@ body.following-arrival #labelLayer{display:none!important}
 </details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261103-onboarding-v2"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import {installMuseumSharing,SHARE_EVENTS} from './src/card-share.js?v=20261111-share-v1';
 import {COMPLEX_HISTORY_MENU as SHARE_HISTORY_MENU} from './src/complex-history-menu.js?v=20261103-lean-startup-v1';
-import {visibleMapSites} from './src/map-visible-sites.js?v=20261112-remove-groups-v1';
+import {visibleMapSites} from './src/map-visible-sites.js?v=20261112-site94-94a-photo-v1';
+// SITE94_UNIFIED_V1
+import {canonicalSite94} from './src/site94-records.js?v=20261112-site94-94a-photo-v1';
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-soyuz-pits-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
@@ -585,7 +590,7 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261112-site175-shpu-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261112-site94-94a-photo-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
@@ -2267,6 +2272,10 @@ function focus(i){
  let site254Views=document.getElementById('site254Views');if(!site254Views){site254Views=document.createElement('div');site254Views.id='site254Views';site254Views.className='detail-views';document.getElementById('description').after(site254Views);}
  site254Views.replaceChildren();site254Views.hidden=r.id!=='pad-254';site254Views.style.display=site254Views.hidden?'none':'flex';
  if(r.id==='pad-254')for(const [label,view]of [['Весь МИК','all'],['Вход и площадь','entrance'],['Крыша','roof'],['Ж/д ворота','rail'],['Сверху','top']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.textContent=label;b.onclick=()=>portalArchive.inspectSite254(view,camera,ctl);site254Views.append(b);}
+ let site94Views=document.getElementById('site94Views');
+ if(!site94Views){site94Views=document.createElement('div');site94Views.id='site94Views';site94Views.className='detail-views';document.getElementById('description').after(site94Views);}
+ site94Views.replaceChildren();site94Views.hidden=r.id!=='pad-94';site94Views.style.cssText='display:'+(site94Views.hidden?'none':'flex')+';gap:6px;flex-wrap:wrap;margin:10px 0';
+ if(r.id==='pad-94')for(const [label,view]of [['Весь комплекс','all'],['94 · главный корпус','hall'],['94А · ворота','gates']]){const b=document.createElement('button');b.type='button';b.className='detail-button';b.dataset.site94View=view;b.textContent=label;b.onclick=()=>portalArchive.inspectSite94(view,camera,ctl);site94Views.append(b);}
  let site95Views=document.getElementById('site95Views');
  if(!site95Views){site95Views=document.createElement('div');site95Views.id='site95Views';site95Views.className='detail-views';document.getElementById('site254Views').after(site95Views);}
  document.getElementById('info').classList.toggle('site95-active',r.id==='pad-95');document.getElementById('info').classList.remove('site95-details-open');
@@ -2711,7 +2720,7 @@ function setLayerVisible(name,visible){
  if(name==='rails'&&!layers[name].visible)groundTraffic.stopFollowing();
  updateLabels();return layers[name].visible;
 }
-function openMenuSite(id){
+function openMenuSite(id){id=canonicalSite94(id);
  const index=cardObjects.findIndex(o=>o.record.id===id);if(index<0)return false;
  if(!cardObjects[index].g.visible)setMuseumYear(2026,false);
  focus(index);return true;
@@ -2738,7 +2747,7 @@ function showArchiveStory(id){
  document.getElementById('description').textContent='Материал из архива buran.ru';
  const extra=document.getElementById('infoExtra');extra.replaceChildren();museumKnowledge.renderStory(id,extra,{includeTitle:false});extra.style.display='block';
  document.getElementById('detailMore').textContent='СВЕРНУТЬ';document.getElementById('info').style.display='block';
- for(const selector of ['#soyuzLaunchStart','#gagarinTableStatus','#site31Views','#site31LoadStatus','#airportViews','#buranLandingStart','#puaLoadingStart','#siloViews','#hotelViews','#site2Views','#site254Views','#site113Views','#site95Views','#site250aViews','#site2LoadStatus','#mzkViews','#sdiGateToggle','#energiaViews','#site41Views','#site45Views','#cycloneViews','#protonViews','#site118Views','#site118LoadStatus']){const el=document.querySelector(selector);if(el){el.hidden=true;el.style.display='none';}}
+ for(const selector of ['#soyuzLaunchStart','#gagarinTableStatus','#site31Views','#site31LoadStatus','#airportViews','#buranLandingStart','#puaLoadingStart','#siloViews','#hotelViews','#site2Views','#site254Views','#site113Views','#site95Views','#site94Views','#site250aViews','#site2LoadStatus','#mzkViews','#sdiGateToggle','#energiaViews','#site41Views','#site45Views','#cycloneViews','#protonViews','#site118Views','#site118LoadStatus']){const el=document.querySelector(selector);if(el){el.hidden=true;el.style.display='none';}}
  document.getElementById('mik112Controls').hidden=true;document.getElementById('rocketExhibitToggle').hidden=true;
  syncUkssControls();syncTuaControls();syncRocketLoadStatus();return true;
 }
@@ -2980,7 +2989,7 @@ function syncGagarinTableStatus(){
  const retry=document.createElement('button');retry.type='button';retry.textContent='Повторить';
  retry.onclick=()=>gagarinExhibit.table.load();el.append(retry);
 }
-window.__BAIKONUR_QA={np31:()=>{
+window.__BAIKONUR_QA={site94:{stats:portalArchive.site94Stats,inspect:view=>portalArchive.inspectSite94(view,camera,ctl)},np31:()=>{
  const p=site31Observation; if(!p)return {present:false};
  const model=p.g.userData.observationPlatform;
  const box=new THREE.Box3().setFromObject(p.g),projected=[];

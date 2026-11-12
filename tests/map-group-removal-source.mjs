@@ -5,11 +5,11 @@ import {createMuseumGeography} from '../src/osm-geography.js';
 const catalog=JSON.parse(readFileSync('data/catalog.json')),matches=JSON.parse(readFileSync('data/osm/catalog-matches.json'));
 const geography=createMuseumGeography({catalog,matches});
 const original=geography.sites.filter(r=>!r.aliasOf&&r.render!==false),snapshot=JSON.stringify(original),display=visibleMapSites(original),removed=new Set(REMOVED_MAP_GROUPS.map(([id])=>id));
-assert.equal(removed.size,9);assert.equal(original.length-display.length,9);
+assert.equal(removed.size,9);assert.equal(original.length-display.length,10);
 for(const [id,name]of REMOVED_MAP_GROUPS){assert(original.some(r=>r.id===id&&r.name===name));assert(!display.some(r=>r.id===id));}
 assert.equal(JSON.stringify(original),snapshot,'Transport/registration inputs were mutated');
-assert.deepEqual(display,original.filter(r=>!removed.has(r.id)));
-for(const r of display)assert.equal(original.find(x=>x.id===r.id),r,'Retained record identity changed');
+assert.deepEqual(display.filter(r=>r.id!=='pad-94'),original.filter(r=>!removed.has(r.id)&&!['pad-94','pad-94а'].includes(r.id)));
+for(const r of display.filter(r=>r.id!=='pad-94'))assert.equal(original.find(x=>x.id===r.id),r,'Retained record identity changed');
 for(const id of ['pad-1','pad-31','pad-81','pad-82','pad-83','pad-92','pad-95','pad-112','pad-113','pad-175','pad-200','city'])assert(display.some(r=>r.id===id),id+' must remain');
 for(const path of ['index.html','museum.html','workshop.html']){
  const s=readFileSync(path,'utf8');
