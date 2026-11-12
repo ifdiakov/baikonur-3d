@@ -1,7 +1,8 @@
+import {SITE92_HALLS,SITE92_YAW,site92Point,site92HallPosition} from './site92-layout.js?v=20261112-pantsirs-v1';
 import {RAIL_PROFILE} from './rail-profile.js?v=20261031-facilities-rails-lighting-v1';
 import {rectangleSegmentInterval} from './exhibit-road-filter.js?v=20261030-river-roads-signs-v1';
 
-export const RAIL_SITE_CLEARANCE_VERSION='rail-building-footprints-v1';
+export const RAIL_SITE_CLEARANCE_VERSION='rail-building-footprints-site92-v2';
 
 // These are footprints of the displayed museum models, not surveyed buildings.
 // Their dimensions and transforms come directly from archive-buildings.js
@@ -9,17 +10,12 @@ export const RAIL_SITE_CLEARANCE_VERSION='rail-building-footprints-v1';
 // archive-manifest.js. The rail network keeps its archived OSM coordinates.
 // The supplied railway scheme establishes which yards should remain visible:
 // https://drive.google.com/file/d/1gONZXQYrHThNCu7M8wwifIM05SIdF7_6/view
-const HALL92_YAW=Math.atan2(260,198);
-const HALL92_IMAGE_ROWS=[
- [708,378,82,393],[635,469,78,393],[485,420,27,105],
- [600,515,46,122],[700,590,27,105],[270,747,88,192],
- [508,626,64,116],[215,182,38,135],[958,134,47,68],
- [850,128,30,53]
-];
-const image92=([x,z])=>[(x-680)*.60,(z-450)*.60];
+const HALL92_YAW=SITE92_YAW;
+const HALL92_IMAGE_ROWS=SITE92_HALLS;
+const image92=site92Point;
 const rectangle=(id,x,z,width,depth,yaw=0)=>({id,kind:'rectangle',x,z,width,depth,yaw});
 const footprints92=HALL92_IMAGE_ROWS.map(([ix,iz,w,d],i)=>{
- const [x,z]=image92([ix,iz]);
+ const [x,z]=site92HallPosition(i);
  const depth=d*.60,minZ=-depth/2-.4;
  // hall() places windows at zz+2.9 with depth 4.6. The last window can
  // extend past the front roof edge, so the solid envelope is asymmetric.
@@ -47,7 +43,7 @@ const footprints42=[
 ];
 
 export const RAIL_SITE_FOOTPRINTS=Object.freeze([
- {siteId:'pad-92',scale:.14,yaw:0,modelSource:'src/archive-buildings.js:protonHalls',
+ {siteId:'pad-92',scale:.14,yaw:0,modelSource:'src/site92.js:buildSite92',
   sourceReference:'way/454633553',formerCircleRadius:25,footprints:footprints92},
  {siteId:'pad-42',scale:.28,yaw:0,modelSource:'src/archive-buildings.js:mik42Facade',
   sourceReference:'museum-photo-facade; absolute azimuth unverified',formerCircleRadius:22,footprints:footprints42}

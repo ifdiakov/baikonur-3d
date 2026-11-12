@@ -30,7 +30,7 @@ import {createSite110RailFan} from './site110-rail-fan.js?v=20261031-facilities-
 import {buildHighwayDisplay} from './highway-display.js?v=20261102-site2-photo-v3';
 import {smoothRailGraph,graphRailRoutePoints} from './rail-surface.js?v=20261102-rail-scheme-v1';
 import {createRailSchemePlan,RAIL_SCHEME_REFERENCE} from './rail-scheme.js?v=20261102-rail-scheme-v1';
-import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261102-rail-scheme-v1';
+import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261112-pantsirs-v1';
 import {createRailCrossingProfile} from './rail-crossing-profile.js?v=20261102-rail-scheme-v1';
 import {separateRailGraphFromRoads,straightenPad5Rail,roundRailCorners,buildRailRoadIndex,findRailRoadCrossings,buildRailCrossingSignals} from './rail-road-clearance.js?v=20261108-all-rail-curves-v2';
 

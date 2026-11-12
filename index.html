@@ -584,14 +584,14 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261111-site118-v2';
+import {installArchiveModels} from './src/archive-models.js?v=20261112-pantsirs-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261105-silo106109-flank-flat-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
 import {createFlankTerritories} from './src/flank-territories.js?v=20261101-bottom-docks-v1';
-import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261109-owner19-v3';
+import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261112-pantsirs-v1';
 import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261109-owner19-v3';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261108-pad202-204-shifts-v4';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
@@ -679,15 +679,15 @@ const roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'
 // The fast path uses two precompiled assets: stable authored route topology
 // and far/medium meshes created ONLY from the filtered final road display.
 const transportBakeModule=useBakedTransport?import('./src/transport-bake.js?v=20261109-owner19-v3'):Promise.resolve(null);
-const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz?v=20261109-owner19-v3',{timeoutMs:10000}):null)
+const transportBakeReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/transport-geometry-bake-v1.json.gz?v=20261112-pantsirs-v1',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Optional transport cache not available:',error);return null;});
-const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz?v=20261109-owner19-v3',{timeoutMs:10000}):null)
+const authoritativeLodReady=transportBakeModule.then(m=>m?m.fetchTransportBake('./data/osm/road-lod-authoritative-v1.json.gz?v=20261112-pantsirs-v1',{timeoutMs:10000}):null)
  .catch(error=>{console.warn('Authoritative road LOD not available:',error);return null;});
 const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-20261103.json?v=20261109-owner19-v3',{optional:true});
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,ownerRoadEdits]=await Promise.all([
- './data/catalog.json?v=20261106-site95-town-v1','./data/osm/catalog-matches.json','./data/osm/roads.geojson?v=8681815663cf','./data/osm/railways.geojson?v=6652ccc2127c',
+ './data/catalog.json?v=20261112-pantsirs-v1','./data/osm/catalog-matches.json','./data/osm/roads.geojson?v=8681815663cf','./data/osm/railways.geojson?v=6652ccc2127c',
  './data/osm/rail-points.geojson?v=b1676d9b3ec7','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson?v=65f8a2f3f082','./data/osm/places.geojson','./data/transport-network.json?v=20261108-remove-rw2nep',ownerRoadEditsReady
 ].map(x=>typeof x==='string'?loadMuseumData(x):x));
 const museumKnowledge=createDeferredKnowledge({startup,onNavigate:action=>openMuseumAction(action)});
@@ -1101,7 +1101,7 @@ function requestTransportDetail(){
  (async()=>{
   try{
    await startup.paint();
-   const {createTransportDetailJob}=await import('./src/transport-detail-job.js?v=20261109-owner19-v3');
+   const {createTransportDetailJob}=await import('./src/transport-detail-job.js?v=20261112-pantsirs-v1');
    transportDetailJob=createTransportDetailJob();
    const mikRoot=mik112Exhibit?objects[mik112Index].g:null;mikRoot?.updateWorldMatrix(true,false);
    const result=await transportDetailJob.build({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},

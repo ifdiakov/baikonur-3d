@@ -6,13 +6,7 @@ import {buildMzkSdi} from './mzk-sdi.js?v=20261102-site2-photo-v3';
 import {buildAirport} from './airport-models.js?v=20261102-site2-photo-v3';
 import {archiveKit,imageAxisYaw,imageFrame} from './archive-kit.js?v=20261102-site2-photo-v3';
 // Hand-interpreted owner photographs. Heights and hidden geometry are approximate.
-export function protonHalls(root){
- const k=archiveKit(root),P=imageFrame([680,450],.60);const hall=(p,w,d,h,opts={})=>{const[x,z]=P(p);return k.hall({x,z,w:w*.6,d:d*.6,h,yaw:imageAxisYaw([0,0],[260,198]),...opts});};
- hall([708,378],82,393,25,{roof:'blue',monitor:true,gates:2});hall([635,469],78,393,25,{roof:'blue',monitor:true,gates:2});hall([485,420],27,105,8,{floors:2,wall:'light'});hall([600,515],46,122,11,{floors:2});hall([700,590],27,105,8,{floors:2,wall:'light'});hall([270,747],88,192,13,{roof:'dark',gates:2});hall([508,626],64,116,6);hall([215,182],38,135,7,{roof:'blue'});hall([958,134],47,68,5,{roof:'blue'});hall([850,128],30,53,5,{roof:'blue'});
- for(const p of[[443,180],[416,211],[457,141]]){const[x,z]=P(p);k.tank(x,z,3.2,9);}
- for(const pts of[[[1280,949],[1150,802],[1000,653],[850,540],[807,508]],[[1280,949],[1137,778],[991,623],[861,527]],[[1280,949],[1120,733],[1034,582],[1080,420],[1305,322]],[[1248,924],[1020,824],[845,729],[740,632]],[[20,706],[214,842],[435,971]]])k.rail(pts.map(P));
- k.path([[132,90],[273,180],[417,302],[374,397],[736,685],[987,758]].map(P),7,.16);k.path([[418,302],[550,177],[704,97],[975,202],[1077,431],[901,638]].map(P),5,.14);root.userData.tracedAxes=[{part:'two-main-halls',a:[580,280],b:[838,478]}];return k.finish();
-}
+export {buildSite92 as protonHalls} from './site92.js?v=20261112-pantsirs-v1';
 export {buildSite95 as settlement95} from './site95.js?v=20261109-site95-courtyards-v2';
 export function mik42Facade(root){
  registerFacilityFloodlights(root,{id:'mik42-roof-floodlight',target:[-59,0,24],beacon:[-59,45.5,-5],
