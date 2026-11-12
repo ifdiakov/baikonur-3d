@@ -6,7 +6,7 @@ function once(s,a,b){if(s.includes(b))return s;assert(s.includes(a),'Missing int
 edit('src/archive-buildings.js',s=>{if(s.includes('buildSite92 as protonHalls'))return s;const a=s.indexOf('export function protonHalls(root){'),b=s.indexOf('\nexport ',a+10);assert(a>0&&b>a);return s.slice(0,a)+"export {buildSite92 as protonHalls} from './site92.js?v="+version+"';"+s.slice(b);});
 edit('src/archive-models.js',s=>{
  s=once(s,"export function buildArchiveModel(root,entry){","export function buildArchiveModel(root,entry){\n if(entry.kind==='pantsir')return buildEarthCoveredShelter(root,entry.id);");
- if(!s.includes("import {buildEarthCoveredShelter}"))s="import {buildEarthCoveredShelter} from './earth-covered-shelters.js?v="+version+"';\n"+s;
+ if(!s.includes("import {buildEarthCoveredShelter"))s="import {buildEarthCoveredShelter} from './earth-covered-shelters.js?v="+version+"';\n"+s;
  return s.replace(/(archive-(?:manifest|buildings)\.js\?v=)[\w.-]+/g,'$1'+version);
 });
 edit('src/archive-manifest.js',s=>{
@@ -26,6 +26,16 @@ edit('src/osm-transport.js',s=>s.replace(/(rail-site-clearance\.js\?v=)[\w.-]+/g
 edit('src/transport-detail-job.js',s=>s.replace(/(transport-detail-worker\.bundle\.js\?v=)[\w.-]+/g,'$1'+version));
 for(const file of ['index.html','museum.html','workshop.html'])edit(file,s=>s.replace(/((?:archive-models\.js|archive-manifest\.js|osm-transport\.js|transport-detail-job\.js|catalog\.json|transport-geometry-bake-v1\.json\.gz|road-lod-authoritative-v1\.json\.gz)\?v=)[\w.-]+/g,'$1'+version));
 edit('data/catalog.json',s=>{const c=JSON.parse(s);for(const n of [82,83]){const o=c.sites.find(r=>r.id==='pad-'+n);assert(o);Object.assign(o,{titleShort:'Панцирь',titleFull:'пл. №'+n+' · Панцирь',purposeShort:'Заглублённое сооружение — панцирь',modelStatus:'Тип уточнён владельцем: заглублённый панцирь. Геометрия и размеры — музейная интерпретация, не обмерная реконструкция.',modelTypeOwnerConfirmed:'earth-covered-shelter'});}return JSON.stringify(c,null,2)+'\n';});
+edit('src/archive-models.js',s=>{
+ s=s.replace('import {buildEarthCoveredShelter}', 'import {buildEarthCoveredShelter,applyShelterGround}');
+ s=once(s,'export function installArchiveModels({objects,clickable,voids,checkpoint7Placement})', 'export function installArchiveModels({objects,clickable,voids,checkpoint7Placement,steppeSurface,referenceGroundMaterial,width,height})');
+ s=once(s,'  const built=buildArchiveModel(root,spec);',"  const built=buildArchiveModel(root,spec);\n  if(spec.kind==='pantsir')applyShelterGround(root,{referenceMaterial:referenceGroundMaterial,steppeSurface,width,height});");
+ const marker="  if(o.record.id==='pad-31')return inspectSite31('all',camera,controls);";
+ const call="  if(o.archive.kind==='pantsir'){const p=o.g.userData.pantsirModel,w=p.width/2+8;return fitArchiveView(o.g,{eye:[68,64,p.end+70],target:[0,-1,14],framePoints:[[-w,0,-p.depth/2-8],[w,3.2,-p.depth/2-8],[-w,0,p.end+8],[w,0,p.end+8]]},'all',camera,controls,'pantsirFraming');}\n";
+ if(!s.includes("o.archive.kind==='pantsir'"))s=once(s,marker,call+marker);
+ return s;
+});
+for(const file of ['index.html','museum.html','workshop.html'])edit(file,s=>once(s,'const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids,checkpoint7Placement:', 'const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids,steppeSurface,referenceGroundMaterial:satelliteGround.material,width:W*S,height:H*S,checkpoint7Placement:'));
 assert.equal(read('index.html','utf8'),read('museum.html','utf8'));
 mkdirSync('qa-pantsirs',{recursive:true});
 console.log('PANTSIRS_PREPARED: rebuild worker/routes before candidate browser acceptance');

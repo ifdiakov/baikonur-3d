@@ -38,6 +38,13 @@ export function buildEarthCoveredShelter(root,siteId){
   k.rod([x,p.floor+1.0,landing],[x,1.0,end],.045,'steel','pantsir-handrail');
   for(let i=0;i<=6;i++){const t=i/6,y=p.floor*(1-t),z=landing+(end-landing)*t;k.rod([x,y,z],[x,y+1.0,z],.035,'steel','pantsir-handrail-post');}
  }
+ // Retaining fascia seals the gap between the gate and the soil-covered vault.
+ const frontHeight=x=>-.08+(p.crown+.85)*Math.pow(Math.max(0,1-(Math.abs(x)/(w+8))**2),1.3);
+ for(let x=-w;x<w;x++){
+  const bottom=Math.abs(x+.5)<4?p.floor+3.65:p.floor;
+  k.quad([x,bottom,front+.06],[x,frontHeight(x),front+.06],[x+1,frontHeight(x+1),front+.06],[x+1,bottom,front+.06],'concrete','pantsir-sealed-fascia');
+ }
+ for(const x of [-3.8,3.8])k.box(.4,3.65,.75,x,p.floor+1.825,front-.25,'concrete','pantsir-gate-jamb');
  // One continuous smooth earth cap, feathered into ground at its perimeter.
  // No earth quad spans the entrance or ramp. End shoulders stop beside the portal.
  const nx=36,nz=32,positions=[],indices=[],uv=[];
@@ -59,5 +66,19 @@ export function buildEarthCoveredShelter(root,siteId){
  const excavation=[[-w-0.1,back-.1],[w+.1,back-.1],[w+.1,front],[8.6,front],[8.6,end],[-5.15,end],[-5.15,front],[-w-.1,front]];
  k.cutouts.push({polygon:excavation,source:'Owner-confirmed pantsir '+siteId+'; interpretive recessed access'});
  root.userData.pantsirModel={version:PANTSIR_VERSION,siteId,...p,front,landing,end,buried:true,dimensionsSurveyed:false,excavation};
- return {...k.finish(),pantsir:root.userData.pantsirModel};
+ const result=k.finish();root.traverse(m=>{if(m.isMesh&&m.material===k.mat.soil)m.userData.pantsirEarth=true;});
+ return {...result,pantsir:root.userData.pantsirModel};
+}
+
+// Use the surrounding registered ground colour, not an unlit grey roof.
+// Do not register these meshes for excavation masking: that would cut their own cover.
+export function applyShelterGround(root,{referenceMaterial,steppeSurface,width,height}){
+ if(!referenceMaterial?.map||!steppeSurface?.apply)throw Error('Shelter ground reference unavailable');
+ const material=new THREE.MeshBasicMaterial({map:referenceMaterial.map,color:referenceMaterial.color.clone(),side:THREE.DoubleSide,vertexColors:true});
+ material.name='Панцирь · общая текстура степи';material.forceSinglePass=true;steppeSurface.apply(material);
+ root.updateWorldMatrix(true,true);const old=new Set();
+ root.traverse(m=>{if(!m.isMesh||!m.userData.pantsirEarth)return;old.add(m.material);const pa=m.geometry.attributes.position,na=m.geometry.attributes.normal,uv=[],colors=[],v=new THREE.Vector3();
+  for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m.matrixWorld);uv.push(v.x/width+.5,.5-v.z/height);const tone=.92+.08*Math.max(0,na.getY(i));colors.push(tone,tone,tone);}
+  m.geometry.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));m.geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));m.material=material;
+ });for(const m of old)m.dispose();root.userData.pantsirModel.sharedSoil=true;
 }
