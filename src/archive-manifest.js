@@ -6,7 +6,7 @@ import {SITE254_YAW,SITE254_REFERENCE,SITE254_VERSION} from './site254-layout.js
 import {SEVEN_WINDS_LAYOUT,SEVEN_WINDS_VERSION} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import {CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
-import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
+import {SILO_SITE_IDS} from './silo-sites.js?v=20261112-site175-shpu-v1';
 import {SITE31_YAW,SITE31_REFERENCE} from './site31-trench-profile.js?v=20261103-soyuz-pits-v1';
 import {SITE41_VERSION,SITE41_REFERENCE} from './site41-profile.js?v=20261031-facilities-rails-lighting-v1';
 // Scope is ONLY the confirmed owner folder, never the whole Google Drive.

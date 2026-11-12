@@ -1,4 +1,4 @@
-import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
+import {SILO_SITE_IDS} from './silo-sites.js?v=20261112-site175-shpu-v1';
 import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261108-rd180-v1';
 export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION;
 const definitions={

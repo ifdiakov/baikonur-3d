@@ -64,7 +64,7 @@ try{
   await page.evaluate(id=>window.__BAIKONUR_QA.focusSite(id),id);
   await page.getByRole('button',{name:'К шахте',exact:true}).click();
   const result=await page.evaluate(()=>{window.__SILO_FRAME();const q=window.__BAIKONUR_QA,start=performance.now();q.silo.update(start);for(let i=1;i<=250;i++)q.silo.update(start+i*1000/60);return q.silo.stats().map(s=>({id:s.siteId,state:s.state,steam:s.steamVisible,detail:s.detailVisible,distance:s.cameraDistance}));});
-  assert.equal(result.length,31);assert.equal(result.find(s=>s.id===id).state,'open',id+' must open');
+  assert.equal(result.length,SILO_SITE_IDS.length);assert.equal(result.find(s=>s.id===id).state,'open',id+' must open');
   assert.deepEqual(result.filter(s=>s.state==='open').map(s=>s.id),[id],'Each shaft opens independently');
   checked.push({id,distance:result.find(s=>s.id===id).distance});
   if(['pad-70','pad-131','pad-194','pad-246'].includes(id)){await page.locator('#close').click();await page.evaluate(()=>window.__SILO_FRAME());await screenshot(id);}

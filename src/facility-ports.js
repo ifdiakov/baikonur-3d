@@ -4,7 +4,7 @@ import {SITE2_ACCESS} from './site2-layout.js?v=20261103-site2-main-road-v1';
 import {SEVEN_WINDS_LAYOUT} from './seven-winds-layout.js?v=20261101-hotel-v3';
 import {CYCLONE_PORTS} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
-import {SILO_SITE_IDS} from './silo-sites.js?v=20261029-all-silos-v2';
+import {SILO_ROAD_SITE_IDS as SILO_SITE_IDS} from './silo-sites.js?v=20261112-site175-shpu-v1';
 import {SITE31_YAW} from './site31-trench-profile.js?v=20261028-museum4-osm-live-v2';
 import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {SITE110_PORTS} from './site110-ports.js?v=20261031-facilities-rails-lighting-v1';
