@@ -579,6 +579,7 @@ body.following-arrival #labelLayer{display:none!important}
 </details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261103-onboarding-v2"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import {installMuseumSharing,SHARE_EVENTS} from './src/card-share.js?v=20261111-share-v1';
 import {COMPLEX_HISTORY_MENU as SHARE_HISTORY_MENU} from './src/complex-history-menu.js?v=20261103-lean-startup-v1';
+import {visibleMapSites} from './src/map-visible-sites.js?v=20261112-remove-groups-v1';
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-soyuz-pits-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
@@ -907,12 +908,15 @@ const historicalDataReady=startup.defer(async()=>{
  const [historyData,researchData]=await Promise.all([startup.fetchJSON('./data/history.json',{optional:true}),startup.fetchJSON('./data/field-research.json',{optional:true})]);
  historyEvents=historyData?.events||[];researchObjects=researchData?.objects||[];renderList();
 },{key:'museum-history',priority:30});
-const sites=siteRecords.map(s=>[s.name,s.x,s.y,s.model,s.firstYear]);
+// OWNER_REMOVED_MAP_GROUPS_V1: keep transport anchors and legacy seeds unchanged.
+const displayedSiteRecords=visibleMapSites(siteRecords);
+const originalSiteIndices=new Map(siteRecords.map((record,index)=>[record.id,index]));
+const sites=displayedSiteRecords.map(s=>[s.name,s.x,s.y,s.model,s.firstYear]);
 const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSite(s,i){
  const [name,x,y,type,from]=s;
  const parent=type==='city'||type==='air'?layers.city:siteRoot;
  const g=new THREE.Group();g.position.copy(point(x,y));g.scale.setScalar(MODEL_SCALE);parent.add(g);
- const seed=(i*17)%11;
+ const seed=(originalSiteIndices.get(displayedSiteRecords[i].id)*17)%11;
  const concrete=material(0x898880),stone=material(0x999386),glass=material(0x425966),pale=material(0xbbb4a7),darkRoof=material(0x6b7d7d);
  function shed(w,h,d,x,y,z,roofMaterial=darkRoof){
   block(g,w,h,d,x,y+h/2,z,stone);
@@ -956,7 +960,7 @@ const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSit
  }else if(type==='air'){
   // Yubileiny is built once by its archive builder below. Constructing a
   // temporary Krayniy here also downloaded an unused second Tu-204.
-  g.rotation.y=2.06;if(siteRecords[i].id!=='pad-251')buildAirport(g,'krayniy');
+  g.rotation.y=2.06;if(displayedSiteRecords[i].id!=='pad-251')buildAirport(g,'krayniy');
  }else{
   block(g,48,1.2,46,0,.8,0,concrete);
   shed(24,6,19,0,1,0);
@@ -964,7 +968,7 @@ const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSit
  // 110A has an illustrative building footprint around an immutable OSM
  // anchor. Its former oversize yard concealed the source-aligned 110 rails.
  // Compact only that footprint, keeping its anchor and all vertical levels.
- if(siteRecords[i]?.id==='pad-110a'){
+ if(displayedSiteRecords[i]?.id==='pad-110a'){
   const footprint=new THREE.Group();footprint.name='110А · компактный контур технических зданий';
   for(const child of [...g.children])footprint.add(child);
   footprint.scale.set(.5,1,.5);g.add(footprint);
@@ -973,21 +977,15 @@ const objects=[];const clickable=[];const siteRoot=layers.sites;function makeSit
  // These neighbouring catalogue markers have illustrative, not surveyed,
  // buildings. Their former 196×164 m footprints covered the photo-traced
  // Proton service yards and approaches; preserve every anchor and height.
- const protonNeighbourScale={'pad-82':.5,'pad-84':.5,'pad-201':.35,'pad-202':.5}[siteRecords[i]?.id];
+ const protonNeighbourScale={'pad-82':.5,'pad-84':.5,'pad-201':.35,'pad-202':.5}[displayedSiteRecords[i]?.id];
  if(protonNeighbourScale){
   const footprint=new THREE.Group();footprint.name='Компактный контур соседних служебных зданий';
   for(const child of [...g.children])footprint.add(child);
   footprint.scale.set(protonNeighbourScale,1,protonNeighbourScale);g.add(footprint);
   g.userData.illustrativeFootprint={horizontalScale:protonNeighbourScale,sourceAnchorPreserved:true,basis:'clearance-for-photo-traced-proton-81-200'};
  }
- if(siteRecords[i]?.id==='sector-nw2'){
-  // This catalogue entry is a provisional district, not an identified hall.
-  // Keep its card/anchor without a fictitious building over Site 81 paths.
-  g.traverse(m=>{if(m.isMesh){m.visible=false;m.userData.pickable=false;}});
-  g.userData.protonPlaceholderSuppressed=true;g.userData.skipGenericSiteLights=true;
- }
  g.traverse(m=>{if(m.isMesh&&m.userData.pickable!==false){m.userData.idx=i;clickable.push(m)}});
- objects.push({g,name,from,type,x,y,record:siteRecords[i]});
+ objects.push({g,name,from,type,x,y,record:displayedSiteRecords[i]});
 }
 // Keep the introduction responsive while preserving the original site order.
 let siteBatchStarted=performance.now();
