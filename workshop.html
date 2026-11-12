@@ -585,6 +585,8 @@ import {COMPLEX_HISTORY_MENU as SHARE_HISTORY_MENU} from './src/complex-history-
 import {visibleMapSites} from './src/map-visible-sites.js?v=20261112-site94-94a-photo-v1';
 // SITE94_UNIFIED_V1
 import {canonicalSite94} from './src/site94-records.js?v=20261112-site94-94a-photo-v1';
+// KRAYNIY_CAMERA_LABELS_V1
+import {siteLabelVisibility,includeKrayniyCameraArea} from './src/map-view-policy.js?v=20261112-krayniy-labels-v1';
 import * as THREE from 'three';import{OrbitControls}from'three/addons/controls/OrbitControls.js';
 import {buildGagarinPad,GAGARIN_RIM_Y} from './src/gagarin-pad.js?v=20261103-soyuz-pits-v1';
 import {GAGARIN_RAIL_PORT} from './src/gagarin-metric-profile.js?v=20261031-facilities-rails-lighting-v1';
@@ -1754,8 +1756,7 @@ function updateLabels(){
  const heroAlpha=smooth(880,1170);
  const overviewAlpha=smooth(1040,1200);
  const flankAlpha=smooth(560,710)*(1-smooth(880,1040));
- const siteAlpha=smooth(225,365)*(1-smooth(470,560));
- const detailAlpha=1-smooth(225,370);
+ const {siteAlpha,detailAlpha}=siteLabelVisibility(y);
  mapHierarchy={level:y>=1040?'overview':y>=560?'flanks':'sites',altitude:y,
   overviewAlpha:show?overviewAlpha:0,flankAlpha:show?flankAlpha:0,siteAlpha:show?siteAlpha:0,detailAlpha:show?detailAlpha:0};
  document.body.dataset.mapLevel=mapHierarchy.level;
@@ -1774,7 +1775,7 @@ function updateLabels(){
   o.g.getWorldPosition(l.world);l.world.y+=o.record.id==='pad-118'?((o.g.userData.site118Model?.aboveGroundBounds?.max[1]??0)*o.g.scale.y+.9):l.i===0?Math.max(10,75*GAGARIN_SCALE):l.i===ukssIndex?Math.max(12,48*UKSS_SCALE):l.i===mik112Index?78*MIK112.scale:l.i===saturnIndex?72*SATURN_SCALE:Math.max(10,38*MODEL_SCALE);
   const p=projectToScreen(l.world);if(!p){el.style.display="none";continue}
   const near=camera.position.distanceTo(l.world);
-  el.classList.toggle("compact",near>600);el.style.display="flex";
+  el.classList.add("compact");el.style.display="flex";
   el.style.left=p.x+"px";el.style.top=p.y+"px";
   el.style.pointerEvents=siteAlpha>.25?"auto":"none";
   el.style.setProperty("--level-alpha",siteAlpha.toFixed(3));
@@ -2583,7 +2584,9 @@ roadEditor=createRoadEditor({root:layers.roads,camera,canvas:renderer.domElement
  terrainHeightAt:(x,z)=>museumTerrainHeightAt(x,z),defaultEdits:ownerRoadEdits,onChange(){eveningScene?.refreshRoadEditor(roadEditor);window.__MUSEUM_WORKSHOP?.roadsChanged?.();},
  onActiveChange(active){if(active){lightingEditor?.setActive(false);arrivalFlight?.stopFollowing();groundTraffic?.stopFollowing();document.getElementById('info').style.display='none';selectSiteCard(null);}}
 });
-const museumCameraBounds={minX:(Math.min(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,maxX:(Math.max(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,minZ:(Math.min(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S,maxZ:(Math.max(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S};
+const flankCameraBounds={minX:(Math.min(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,maxX:(Math.max(...FLANK_OUTLINE.map(p=>p[0]))-W/2)*S,minZ:(Math.min(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S,maxZ:(Math.max(...FLANK_OUTLINE.map(p=>p[1]))-H/2)*S};
+const krayniyCameraBox=new THREE.Box3().setFromObject(objects.find(o=>o.record.id==='airfield').g);
+const museumCameraBounds=includeKrayniyCameraArea(flankCameraBounds,krayniyCameraBox);
 const arrivalMapBounds={minX:Math.min(museumCameraBounds.minX,(geography.bounds.minX-W/2)*S),maxX:Math.max(museumCameraBounds.maxX,(geography.bounds.maxX-W/2)*S),minZ:Math.min(museumCameraBounds.minZ,(geography.bounds.minY-H/2)*S),maxZ:Math.max(museumCameraBounds.maxZ,(geography.bounds.maxY-H/2)*S)};
 const airportObject=objects.find(o=>o.record.id==='airfield');
 eveningScene=buildEveningScene({scene,camera,renderer,sun,layers,objects,roads:transport.roadPaths(),airfield:airportObject.g,groundMeshes:lightingGroundMeshes,
