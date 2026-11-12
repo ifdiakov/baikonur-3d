@@ -1,5 +1,5 @@
 import {buildSite94} from './site94.js?v=20261112-site94-94a-photo-v1';
-import {connectSite94} from './site94-road-grade.js?v=20261112-site94-94a-photo-v1';
+import {connectSite94,applySite94Ground} from './site94-road-grade.js?v=20261112-site94-ground-v2';
 import {planShelterRoadAccess,buildShelterRoadAccess,shelterAccessView} from './shelter-road-access.js?v=20261112-road-facing-v1';
 import {buildEarthCoveredShelter,applyShelterGround} from './earth-covered-shelters.js?v=20261112-road-facing-v1';
 import {buildSite113} from './site113.js?v=20261109-owner19-v3';
@@ -59,6 +59,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   if(spec.kind==='site94')root.userData.site94Members=o.record.mergedMembers;
   const built=buildArchiveModel(root,spec);
   if(spec.kind==='site94')connectSite94(root,roadPaths);
+  if(spec.kind==='site94')applySite94Ground(root,{referenceMaterial:referenceGroundMaterial,steppeSurface,width,height});
   if(accessPlan)buildShelterRoadAccess(root,accessPlan);
   if(spec.kind==='pantsir')applyShelterGround(root,{referenceMaterial:referenceGroundMaterial,steppeSurface,width,height});
   // Builder handles belong to the live scene, not the serializable catalogue
