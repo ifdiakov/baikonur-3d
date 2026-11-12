@@ -75,7 +75,7 @@ export function buildEarthCoveredShelter(root,siteId){
 export function applyShelterGround(root,{referenceMaterial,steppeSurface,width,height}){
  if(!referenceMaterial?.map||!steppeSurface?.apply)throw Error('Shelter ground reference unavailable');
  const material=new THREE.MeshBasicMaterial({map:referenceMaterial.map,color:referenceMaterial.color.clone(),side:THREE.DoubleSide,vertexColors:true});
- material.name='Панцирь · общая текстура степи';material.forceSinglePass=true;steppeSurface.apply(material);
+ material.name='Сооружение · общая текстура степи';material.forceSinglePass=true;steppeSurface.apply(material);
  root.updateWorldMatrix(true,true);const old=new Set();
  root.traverse(m=>{if(!m.isMesh||!m.userData.pantsirEarth)return;old.add(m.material);const pa=m.geometry.attributes.position,na=m.geometry.attributes.normal,uv=[],colors=[],v=new THREE.Vector3();
   for(let i=0;i<pa.count;i++){v.fromBufferAttribute(pa,i).applyMatrix4(m.matrixWorld);uv.push(v.x/width+.5,.5-v.z/height);const tone=.92+.08*Math.max(0,na.getY(i));colors.push(tone,tone,tone);}

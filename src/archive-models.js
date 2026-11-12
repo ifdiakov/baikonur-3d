@@ -1,4 +1,5 @@
-import {buildEarthCoveredShelter,applyShelterGround} from './earth-covered-shelters.js?v=20261112-pantsirs-v1';
+import {planShelterRoadAccess,buildShelterRoadAccess,shelterAccessView} from './shelter-road-access.js?v=20261112-road-facing-v1';
+import {buildEarthCoveredShelter,applyShelterGround} from './earth-covered-shelters.js?v=20261112-road-facing-v1';
 import {buildSite113} from './site113.js?v=20261109-owner19-v3';
 import {buildSite250a} from './site250a.js?v=20261103-site250a-photo-v1';
 import {buildSite254} from './site254.js?v=20261103-site254-e10s5';
@@ -7,7 +8,7 @@ import {sdiController} from './mzk-sdi-stand.js?v=20261102-site2-photo-v3';
 import * as THREE from 'three';
 import {site2Controller} from './site2-exhibit.js?v=20261103-site2-main-road-v1';
 import {buildCycloneComplex,CYCLONE_VIEWS} from './cyclone-launch.js?v=20261102-site2-photo-v3';
-import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261112-pantsirs-v1';
+import {ARCHIVE_MAP,ARCHIVE_VERSION} from './archive-manifest.js?v=20261112-road-facing-v1';
 import * as buildings from './archive-buildings.js?v=20261112-pantsirs-v1';
 import * as launches from './archive-launches.js?v=20261111-proton-civil-v1';
 import {photoCity} from './archive-city.js?v=20261102-site2-photo-v3';
@@ -30,7 +31,7 @@ export function buildArchiveModel(root,entry){
  if(!builders[entry.kind])throw Error('Unknown archive model '+entry.kind);
  return builders[entry.kind](root);
 }
-export function installArchiveModels({objects,clickable,voids,checkpoint7Placement,steppeSurface,referenceGroundMaterial,width,height}){
+export function installArchiveModels({objects,clickable,voids,checkpoint7Placement,steppeSurface,referenceGroundMaterial,width,height,roadPaths=[]}){
  const records=[],silos=[],sdiGates=[],protons=[];
  for(const spec of ARCHIVE_MAP){
   const i=objects.findIndex(o=>o.record.id===spec.id);if(i<0)throw Error('Missing archive site '+spec.id);
@@ -50,7 +51,10 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
    [o.record.x,o.record.y]=checkpoint7Placement.map;
   }
   root.name=spec.title;
+  const accessPlan=spec.kind==='pantsir'?planShelterRoadAccess(root,spec.id,roadPaths):null;
+  if(accessPlan)root.rotation.y=accessPlan.yaw;
   const built=buildArchiveModel(root,spec);
+  if(accessPlan)buildShelterRoadAccess(root,accessPlan);
   if(spec.kind==='pantsir')applyShelterGround(root,{referenceMaterial:referenceGroundMaterial,steppeSurface,width,height});
   // Builder handles belong to the live scene, not the serializable catalogue
   // report. In particular, a rocket holder points back through its parents.
@@ -71,13 +75,13 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   // The source asset loads after the map becomes interactive. Its measured
   // bounds keep catalogue focus finite without adding a placeholder surface.
   if(spec.kind==='site118'&&bounds.isEmpty())bounds.set(new THREE.Vector3(...SITE118_PROFILE.bounds.min),new THREE.Vector3(...SITE118_PROFILE.bounds.max)).applyMatrix4(root.matrixWorld);
-  const entry={...spec,version:ARCHIVE_VERSION,features,bounds:bounds.getSize(new THREE.Vector3()).toArray(),centre:bounds.getCenter(new THREE.Vector3()).toArray(),index:i};
+  const entry={...spec,yaw:root.rotation.y,version:ARCHIVE_VERSION,features,bounds:bounds.getSize(new THREE.Vector3()).toArray(),centre:bounds.getCenter(new THREE.Vector3()).toArray(),index:i};
   o.archive=entry;o.type='archive-'+spec.kind;root.userData.archiveModel=entry;records.push(entry);
  }
  function focus(index,camera,controls){const o=objects[index];if(!o?.archive)return false;
   if(o.record.id==='kpp-7')return inspectCheckpoint7('all',camera,controls);
   if(o.archive.kind==='seven-winds')return inspectHotel('all',camera,controls);
-  if(o.archive.kind==='pantsir'){const p=o.g.userData.pantsirModel,w=p.width/2+8;return fitArchiveView(o.g,{eye:[68,64,p.end+70],target:[0,-1,14],framePoints:[[-w,0,-p.depth/2-8],[w,3.2,-p.depth/2-8],[-w,0,p.end+8],[w,0,p.end+8]]},'all',camera,controls,'pantsirFraming');}
+  if(o.archive.kind==='pantsir')return fitArchiveView(o.g,shelterAccessView(o.g),'all',camera,controls,'pantsirFraming');
   if(o.record.id==='pad-31')return inspectSite31('all',camera,controls);
   if(o.record.id==='pad-110')return inspectSite110('all',camera,controls);
   if(o.archive.kind==='proton')return inspectProton(o.record.id,'launch',camera,controls);

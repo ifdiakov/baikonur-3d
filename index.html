@@ -584,7 +584,7 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261112-pantsirs-v1';
+import {installArchiveModels} from './src/archive-models.js?v=20261112-road-facing-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
@@ -687,7 +687,7 @@ const ownerRoadEditsReady=startup.fetchJSON('./data/road-edits-authoritative-202
 startup.stage('Загружаем карту космодрома…',1);
 const loadMuseumData=path=>startup.fetchJSON(path);
 const [catalog,osmMatches,osmRoads,osmRails,osmStations,osmFacilities,osmAirports,osmRiver,osmRiverWater,osmPlaces,transportData,ownerRoadEdits]=await Promise.all([
- './data/catalog.json?v=20261112-pantsirs-v1','./data/osm/catalog-matches.json','./data/osm/roads.geojson?v=8681815663cf','./data/osm/railways.geojson?v=6652ccc2127c',
+ './data/catalog.json?v=20261112-road-facing-v1','./data/osm/catalog-matches.json','./data/osm/roads.geojson?v=8681815663cf','./data/osm/railways.geojson?v=6652ccc2127c',
  './data/osm/rail-points.geojson?v=b1676d9b3ec7','./data/osm/facilities.geojson','./data/osm/airports.geojson','./data/osm/river.geojson','./data/osm/river-water.geojson?v=65f8a2f3f082','./data/osm/places.geojson','./data/transport-network.json?v=20261108-remove-rw2nep',ownerRoadEditsReady
 ].map(x=>typeof x==='string'?loadMuseumData(x):x));
 const museumKnowledge=createDeferredKnowledge({startup,onNavigate:action=>openMuseumAction(action)});
@@ -1876,7 +1876,7 @@ saturnGroup.traverse(o=>{
 });
 // Coordinates are provisional — the numbered facility itself is documented.
 // PORTAL_ARCHIVE_INTEGRATION: owner folder only; unlocated studies stay off the map.
-const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids,steppeSurface,referenceGroundMaterial:satelliteGround.material,width:W*S,height:H*S,checkpoint7Placement:checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography,roadPaths:transport.roadPaths()})});
+const portalArchive=installArchiveModels({objects,clickable,roadPaths:transport.roadPaths(),voids:portalVoids,steppeSurface,referenceGroundMaterial:satelliteGround.material,width:W*S,height:H*S,checkpoint7Placement:checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography,roadPaths:transport.roadPaths()})});
 // DETAIL_FIDELITY_V2
 for(const card of mzkSdiCards){const part=mzkSdiParent.g.userData.mzkSdi[card.component];const center=part.center||[part.position[0],part.position[2]];card.g.position.set(center[0],part.dimensions.height,center[1]);mzkSdiParent.g.add(card.g);card.archive=mzkSdiParent.archive;}
 
