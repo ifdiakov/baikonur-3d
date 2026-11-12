@@ -1,8 +1,8 @@
 name: Left flank models — targeted acceptance
 on:
   push:
-    branches: [main, fix/pantsirs-82-83-20261112, fix/site95-courtyards-20261109]
-    paths: ['src/site95*.js','src/site92*.js','src/earth-covered-shelters.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','src/rail-site-clearance.js','scripts/*pantsir*.mjs','tests/pantsirs-*.mjs','tests/site95-*.mjs','.github/workflows/verify-site95.yml']
+    branches: [main, fix/shelter-road-access-20261112, fix/pantsirs-82-83-20261112, fix/site95-courtyards-20261109]
+    paths: ['src/site95*.js','src/site92*.js','src/earth-covered-shelters.js','src/shelter-road-access.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','src/rail-site-clearance.js','scripts/*pantsir*.mjs','scripts/prepare-shelter-access.mjs','tests/shelter-access-*.mjs','tests/pantsirs-*.mjs','tests/site95-*.mjs','.github/workflows/verify-site95.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 5
     outputs:
       sha: ${{ steps.revision.outputs.sha }}
     steps:
@@ -24,36 +24,28 @@ jobs:
           node-version: '22'
       - uses: actions/cache@v4
         with:
-          path: |
-            ~/.npm
-            ~/.cache/ms-playwright
-          key: museum-left-flank-${{ runner.os }}-playwright1.57.0-three0.160.1
-      - run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0 esbuild@0.25.12
-          npx playwright install --with-deps chromium
-      - name: Prepare isolated candidate and matching worker/caches only
-        if: github.ref_name == 'fix/pantsirs-82-83-20261112'
-        run: |
-          python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pantsir-build.log 2>&1 &
-          node scripts/ci/run-bounded.mjs 300 pantsir-build node scripts/build-pantsir-release.mjs
+          path: ~/.npm
+          key: museum-npm-${{ runner.os }}-v1
+      - run: npm install --no-save three@0.160.1 meshoptimizer@0.25.0
+      - name: Prepare only road-facing structures and names
+        run: node scripts/prepare-shelter-access.mjs
       - name: Require unchanged committed release on main
         if: github.ref == 'refs/heads/main'
-        run: |
-          node scripts/prepare-pantsirs.mjs
-          git diff --exit-code
-      - name: Validate both shelters, shifted92 and preserved95
+        run: git diff --exit-code
+      - name: Validate entrances, driveway joins and retained surrounding models
         run: |
           REQUIRE_BUILT=1 node tests/pantsirs-source.mjs
+          node tests/shelter-access-source.mjs
           node tests/site95-source.mjs
           node --experimental-vm-modules scripts/ci/fast-check.mjs
-      - name: Record exact candidate inputs before browser matrix, never modify main
-        if: github.ref_name == 'fix/pantsirs-82-83-20261112'
+      - name: Freeze candidate inputs before browser acceptance, never modify main
+        if: github.ref_name == 'fix/shelter-road-access-20261112'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src/archive-buildings.js src/archive-models.js src/archive-manifest.js src/rail-site-clearance.js src/osm-transport.js src/transport-detail-job.js src/transport-detail-worker.bundle.js data/catalog.json data/osm/transport-geometry-bake-v1.json.gz data/osm/road-lod-authoritative-v1.json.gz
+          git add index.html museum.html workshop.html src/archive-models.js src/archive-manifest.js src/earth-covered-shelters.js data/catalog.json tests/pantsirs-source.mjs
           if ! git diff --cached --quiet; then
-            git commit -m 'Prepare matched82/83 shelters and shifted92 candidate inputs for browser acceptance'
+            git commit -m 'Connect82/83 entrances to existing roads and remove rejected public label'
             git push origin HEAD:${{ github.ref_name }}
           fi
       - name: Record tested revision
@@ -64,11 +56,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pantsirs-source
-          path: |
-            qa-pantsirs/
-            qa-ci/pantsir-build.*
-            qa-owner19/cache-build.json
+          name: shelter-access-source
+          path: qa-pantsirs/
           retention-days: 7
   browser:
     needs: prepare
@@ -96,18 +85,18 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Serve exact candidate
         if: github.ref != 'refs/heads/main'
-        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/pantsir-browser.log 2>&1 &
-      - name: Inspect complete museum and actual published revision on main
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/shelter-access-browser.log 2>&1 &
+      - name: Inspect real road joins and entrances on the complete map
         env:
           QA_MODE: ${{ matrix.mode }}
           BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
           VERIFY_PUBLIC: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
-        run: node scripts/ci/run-bounded.mjs 420 pantsir-${{ matrix.mode }} node tests/pantsirs-browser.mjs
+        run: node scripts/ci/run-bounded.mjs 420 shelter-access-${{ matrix.mode }} node tests/shelter-access-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pantsirs-${{ matrix.mode }}
+          name: shelter-access-${{ matrix.mode }}
           path: |
             qa-pantsirs/
-            qa-ci/pantsir-${{ matrix.mode }}.*
+            qa-ci/shelter-access-${{ matrix.mode }}.*
           retention-days: 7
