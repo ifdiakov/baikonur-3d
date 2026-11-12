@@ -1,4 +1,4 @@
-import {buildEarthCoveredShelter} from './earth-covered-shelters.js?v=20261112-pantsirs-v1';
+import {buildEarthCoveredShelter,applyShelterGround} from './earth-covered-shelters.js?v=20261112-pantsirs-v1';
 import {buildSite113} from './site113.js?v=20261109-owner19-v3';
 import {buildSite250a} from './site250a.js?v=20261103-site250a-photo-v1';
 import {buildSite254} from './site254.js?v=20261103-site254-e10s5';
@@ -30,7 +30,7 @@ export function buildArchiveModel(root,entry){
  if(!builders[entry.kind])throw Error('Unknown archive model '+entry.kind);
  return builders[entry.kind](root);
 }
-export function installArchiveModels({objects,clickable,voids,checkpoint7Placement}){
+export function installArchiveModels({objects,clickable,voids,checkpoint7Placement,steppeSurface,referenceGroundMaterial,width,height}){
  const records=[],silos=[],sdiGates=[],protons=[];
  for(const spec of ARCHIVE_MAP){
   const i=objects.findIndex(o=>o.record.id===spec.id);if(i<0)throw Error('Missing archive site '+spec.id);
@@ -51,6 +51,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
   }
   root.name=spec.title;
   const built=buildArchiveModel(root,spec);
+  if(spec.kind==='pantsir')applyShelterGround(root,{referenceMaterial:referenceGroundMaterial,steppeSurface,width,height});
   // Builder handles belong to the live scene, not the serializable catalogue
   // report. In particular, a rocket holder points back through its parents.
   const {rocket:rocketHandle,...features}=built;
@@ -76,6 +77,7 @@ export function installArchiveModels({objects,clickable,voids,checkpoint7Placeme
  function focus(index,camera,controls){const o=objects[index];if(!o?.archive)return false;
   if(o.record.id==='kpp-7')return inspectCheckpoint7('all',camera,controls);
   if(o.archive.kind==='seven-winds')return inspectHotel('all',camera,controls);
+  if(o.archive.kind==='pantsir'){const p=o.g.userData.pantsirModel,w=p.width/2+8;return fitArchiveView(o.g,{eye:[68,64,p.end+70],target:[0,-1,14],framePoints:[[-w,0,-p.depth/2-8],[w,3.2,-p.depth/2-8],[-w,0,p.end+8],[w,0,p.end+8]]},'all',camera,controls,'pantsirFraming');}
   if(o.record.id==='pad-31')return inspectSite31('all',camera,controls);
   if(o.record.id==='pad-110')return inspectSite110('all',camera,controls);
   if(o.archive.kind==='proton')return inspectProton(o.record.id,'launch',camera,controls);

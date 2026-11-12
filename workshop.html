@@ -1882,7 +1882,7 @@ saturnGroup.traverse(o=>{
 });
 // Coordinates are provisional — the numbered facility itself is documented.
 // PORTAL_ARCHIVE_INTEGRATION: owner folder only; unlocated studies stay off the map.
-const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids,checkpoint7Placement:checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography,roadPaths:transport.roadPaths()})});
+const portalArchive=installArchiveModels({objects,clickable,voids:portalVoids,steppeSurface,referenceGroundMaterial:satelliteGround.material,width:W*S,height:H*S,checkpoint7Placement:checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography,roadPaths:transport.roadPaths()})});
 // DETAIL_FIDELITY_V2
 for(const card of mzkSdiCards){const part=mzkSdiParent.g.userData.mzkSdi[card.component];const center=part.center||[part.position[0],part.position[2]];card.g.position.set(center[0],part.dimensions.height,center[1]);mzkSdiParent.g.add(card.g);card.archive=mzkSdiParent.archive;}
 
