@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {SILO_SITE_IDS,SILO_ROAD_SITE_IDS} from '../src/silo-sites.js';
+import {ARCHIVE_MAP} from '../src/archive-manifest.js';
+import {FACILITY_PORTS} from '../src/facility-ports.js';
+import {modelsForObject} from '../src/model-catalog.js';
+const s=JSON.parse(fs.readFileSync('data/catalog.json')).sites.find(s=>s.id==='pad-175');
+assert.deepEqual([s.x,s.y],[196,121]);assert.equal(SILO_SITE_IDS.filter(s=>s==='pad-175').length,1);assert.equal(SILO_SITE_IDS.length,32);
+assert.equal(SILO_ROAD_SITE_IDS.length,31);assert(!SILO_ROAD_SITE_IDS.includes('pad-175'));assert.equal(FACILITY_PORTS['pad-175'],undefined,'Model-only correction must not change the baked network');
+assert.equal(ARCHIVE_MAP.filter(s=>s.id==='pad-175').length,1);assert.equal(ARCHIVE_MAP.find(s=>s.id==='pad-175').kind,'silo');assert.deepEqual(modelsForObject(s),['silo']);assert.match(s.titleFull,/Шахтная пусковая установка/);assert.match(s.note,/Стрела/);assert.equal(s.modelTypeOwnerConfirmed,'launch-silo');
+fs.mkdirSync('qa-site175',{recursive:true});fs.writeFileSync('qa-site175/source.json',JSON.stringify({passed:true,map:[196,121],model:'silo',sites:32,roadPorts:31,networkUnchanged:true,historicalNotePreserved:true},null,2));console.log('SITE175_SOURCE_PASS');
