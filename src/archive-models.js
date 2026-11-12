@@ -1,4 +1,5 @@
-import {buildSite94,connectSite94} from './site94.js?v=20261112-site94-94a-photo-v1';
+import {buildSite94} from './site94.js?v=20261112-site94-94a-photo-v1';
+import {connectSite94} from './site94-road-grade.js?v=20261112-site94-94a-photo-v1';
 import {planShelterRoadAccess,buildShelterRoadAccess,shelterAccessView} from './shelter-road-access.js?v=20261112-road-facing-v1';
 import {buildEarthCoveredShelter,applyShelterGround} from './earth-covered-shelters.js?v=20261112-road-facing-v1';
 import {buildSite113} from './site113.js?v=20261109-owner19-v3';
