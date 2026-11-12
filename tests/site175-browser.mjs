@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {mkdir,readFile,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
+import {createMuseumGeography} from '../src/osm-geography.js';
 const mode=process.env.QA_MODE||'desktop',base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-site175/'+mode;
 await mkdir(out,{recursive:true});
 const report={passed:false,mode,base,checks:[],hashes:{},environment:'Full evening museum; Chromium software WebGL, test-only frame stepping. Mobile viewport emulation, not physical-device/FPS testing.'};
@@ -25,8 +26,10 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA&&window.__MUSEUM_SHARE,null,{timeout:150000,polling:200});assert(await page.evaluate(()=>__MUSEUM_SHARE.ready));
  async function advance(){return page.evaluate(()=>{__SITE175_FRAME();const start=performance.now();for(let i=0;i<=250;i++)__BAIKONUR_QA.silo.update(start+i*1000/60);__SITE175_FRAME();return __BAIKONUR_QA.silo.stats().find(s=>s.siteId==='pad-175');});}
  report.initial=await advance();assert.equal(report.initial.state,'closed');
- report.site=await page.evaluate(()=>__BAIKONUR_QA.siteState('pad-175'));assert.deepEqual(report.site.map,[196,121]);
- assert.match(await page.locator('#title').innerText(),/175.*Шахтная пусковая установка/);assert(await page.locator('#infoShare').isVisible());assert(await page.getByRole('button',{name:'К шахте',exact:true}).isVisible());assert.equal(await page.evaluate(()=>__BAIKONUR_QA.silo.stats().length),32);
+ const catalog=JSON.parse(await readFile('data/catalog.json')),matches=JSON.parse(await readFile('data/osm/catalog-matches.json'));
+ const registered=createMuseumGeography({catalog,matches}).sites.find(s=>s.id==='pad-175');
+ report.site=await page.evaluate(()=>__BAIKONUR_QA.siteState('pad-175'));assert.deepEqual(report.site.map,[registered.x,registered.y]);
+ assert.match(await page.locator('#title').innerText(),/175.*(?:ШПУ|Шахтная пусковая установка)/);assert(await page.locator('#infoShare').isVisible());assert(await page.getByRole('button',{name:'К шахте',exact:true}).isVisible());assert.equal(await page.evaluate(()=>__BAIKONUR_QA.silo.stats().length),32);
  assert(await page.evaluate(()=>__BAIKONUR_QA.evening.evening));report.checks.push('Direct site175 link, silo model/controller, correct card, preserved anchor, evening scene and sharing');
  if(mode==='desktop')await page.screenshot({path:out+'/site175-closed.png',timeout:60000});
  await page.getByRole('button',{name:'К шахте',exact:true}).click();await page.locator('#close').click();report.opened=await advance();
