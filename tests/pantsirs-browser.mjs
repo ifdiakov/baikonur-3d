@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
 const mode=process.env.QA_MODE||'desktop',base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-pantsirs/'+mode;
 await mkdir(out,{recursive:true});const report={passed:false,mode,base,checks:[],hashes:{},environment:'Actual complete evening museum in Chromium/SwiftShader. Mobile is viewport emulation. Manual frame stepping only in tests; not FPS.'};
-const errors=[],shaderErrors=[];let browser,page;
+const errors=[],shaderErrors=[],failedRequests=[],consoleErrors=[];let browser,page;
 try{
  if(process.env.VERIFY_PUBLIC==='1'){
   const files=['index.html','museum.html','workshop.html','src/earth-covered-shelters.js','src/site92.js','src/site92-layout.js','src/archive-buildings.js','src/archive-models.js','src/archive-manifest.js','src/rail-site-clearance.js','src/transport-detail-job.js','src/transport-detail-worker.bundle.js','data/catalog.json','data/osm/transport-geometry-bake-v1.json.gz','data/osm/road-lod-authoritative-v1.json.gz'];
@@ -14,13 +14,15 @@ try{
  }
  browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
  const mobile=mode==='mobile',admin=mode==='workshop',context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1440,height:960},deviceScaleFactor:1,isMobile:mobile,hasTouch:mobile,serviceWorkers:'block'});
- page=await context.newPage();page.setDefaultTimeout(45000);page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION/.test(m.text()))shaderErrors.push(m.text());});
+ page=await context.newPage();page.setDefaultTimeout(45000);page.on('pageerror',e=>errors.push(e.message));page.on('requestfailed',r=>failedRequests.push({url:r.url(),error:r.failure()?.errorText}));page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION/.test(m.text()))shaderErrors.push(m.text());});
  await context.addInitScript(()=>{const raf=requestAnimationFrame.bind(window);let frame;window.requestAnimationFrame=f=>f.name==='animate'?(frame=f,0):raf(f);window.__PANTSIR_FRAME=()=>frame?.(performance.now());});
- await page.route('**/*',async r=>{if(r.request().resourceType()!=='document')return r.continue();const response=await r.fetch(),html=(await response.text()).replace('window.__BAIKONUR_QA={','window.__PANTSIR_QA={THREE,objects,scene,camera,ctl,renderer,portalVoids,terrainRelief,requestTransportDetail};window.__BAIKONUR_QA={');await r.fulfill({response,body:html});});
- await page.goto(new URL((admin?'workshop':'museum')+'.html?share=site%3Apad-82&tour=0',base).href,{waitUntil:'domcontentloaded',timeout:90000});
+ await page.route('**/*',async r=>{if(r.request().resourceType()!=='document')return r.continue();const response=await r.fetch({maxRedirects:0});if(response.status()>=300&&response.status()<400)return r.fulfill({response});const html=(await response.text()).replace('window.__BAIKONUR_QA={','window.__PANTSIR_QA={THREE,objects,scene,camera,ctl,renderer,portalVoids,terrainRelief,requestTransportDetail};window.__BAIKONUR_QA={');await r.fulfill({response,body:html});});
+ let entryURL=new URL((admin?'workshop':'museum')+'.html?share=site%3Apad-82&tour=0',base).href;report.requestedURL=entryURL;
+ if(process.env.VERIFY_PUBLIC==='1'){const resolved=await fetch(entryURL,{signal:AbortSignal.timeout(15000)});assert(resolved.ok);entryURL=resolved.url;assert.equal(new URL(entryURL).searchParams.get('share'),'site:pad-82');}
+ report.navigationURL=entryURL;await page.goto(entryURL,{waitUntil:'domcontentloaded',timeout:90000});
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__PANTSIR_QA&&window.__MUSEUM_SHARE,null,{timeout:180000,polling:250});
  assert(await page.evaluate(()=>__MUSEUM_SHARE.ready));await page.evaluate(()=>{__PANTSIR_FRAME();__PANTSIR_QA.requestTransportDetail();});
- await page.waitForFunction(()=>__BAIKONUR_QA.stats().transportBake.detailReady,null,{timeout:150000,polling:250});await page.evaluate(()=>__PANTSIR_FRAME());
+ await page.waitForFunction(()=>{const b=__BAIKONUR_QA.stats().transportBake;return b.detailReady||b.job?.error||b.job?.state==='error';},null,{timeout:150000,polling:250});report.transport=await page.evaluate(()=>__BAIKONUR_QA.stats().transportBake);assert(report.transport.detailReady,'Transport failed: '+JSON.stringify(report.transport));await page.evaluate(()=>__PANTSIR_FRAME());
  report.models=await page.evaluate(()=>{const {objects,THREE,portalVoids}=__PANTSIR_QA;return Object.fromEntries(['pad-82','pad-83','pad-92','pad-95'].map(id=>{const o=objects.find(o=>o.record.id===id),g=o.g,p=g.userData.pantsirModel;let landingY=null;
   if(p){const origin=g.localToWorld(new THREE.Vector3(0,20,p.front+3)),ray=new THREE.Raycaster(origin,new THREE.Vector3(0,-1,0));landingY=ray.intersectObject(g,true)[0]?.point.y;}
   return [id,{model:p||g.userData.site92Model||g.userData.site95Model,scale:g.scale.toArray(),position:g.position.toArray(),landingY,cutouts:portalVoids.stats().items.filter(v=>v.shape.source?.includes(id)).length}];}));});
@@ -33,5 +35,5 @@ try{
  }else{await pose('pad-83','front');await page.screenshot({path:out+'/shelter.png',timeout:60000});}
  if(admin){assert(await page.locator('#cameraAltitude').isVisible());assert(await page.locator('#workshopPanel').isVisible());await page.evaluate(()=>__MUSEUM_WORKSHOP.select('pad-82'));const h=Number(await page.locator('#wsHeight').inputValue());await page.locator('#wsHeight').fill(String(h+.2));await page.locator('#wsApply').click();await page.locator('#wsUndo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),h);report.checks.push('Altimeter, editor, height adjustment and undo retained');}
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);report.passed=true;
-}catch(e){report.error=e.stack;await page?.screenshot({path:out+'/failure.png',timeout:20000}).catch(()=>{});process.exitCode=1;}
-finally{report.errors=errors;report.shaderErrors=shaderErrors;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser?.close();}console.log('PANTSIRS_BROWSER',mode,report.passed);
+}catch(e){report.error=e.stack;report.runtime=await page?.evaluate(()=>({url:location.href,transport:window.__BAIKONUR_QA?.stats().transportBake,loading:window.__BAIKONUR_QA?.stats().loading})).catch(()=>null);await page?.screenshot({path:out+'/failure.png',timeout:20000}).catch(()=>{});process.exitCode=1;}
+finally{report.errors=errors;report.shaderErrors=shaderErrors;report.failedRequests=failedRequests;report.consoleErrors=consoleErrors;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser?.close();}console.log('PANTSIRS_BROWSER',mode,report.passed);
