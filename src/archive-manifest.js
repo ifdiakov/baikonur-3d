@@ -1,3 +1,4 @@
+import {isMapSiteHidden} from './map-visible-sites.js?v=20261112-site94-94a-photo-v1';
 import {SITE95_VERSION,SITE95_REFERENCE} from './site95-layout.js?v=20261106-site95-town-v1';
 import {SITE113_VERSION,SITE113_REFERENCE} from './site113-layout.js?v=20261105-site113-town-v1';
 import {CHECKPOINT7_VERSION,CHECKPOINT7_REFERENCE} from './checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
@@ -36,7 +37,7 @@ export const ARCHIVE_MAP=[
  {id:'pad-42',kind:'mik42',title:'Технический комплекс · пл.42',scale:.28,yaw:0,folder:'1nhy66WCjZaGYK8VsVlEQHRre4IjkzzDZ',orientation:'not-verified-no-overhead',photo:'1r6uD1fJtqkjFbk6eoR4rrJ981SVr8whK'},
  {id:'pad-112a',kind:'mzk',title:'МЗК и СДИ · пл.112А',scale:.14,yaw:-Math.PI/4,folder:'1a4VpXEGG-mpSwTvBy-Nb0GBIY4KUKR09',orientation:'osm-component-centres-and-axes-photo-facades',photo:'1VhiQ85kYW0ZEfYMEZnxHgEurrrA0HesJ',modelVersion:'mzk-sdi-photo-v3',photoSetDate:'2026-10-30'},
  {id:'city',kind:'city',title:'Город Байконур · спутниковый план',scale:.20,yaw:0,satellite:'1URocxjo-ZAYAWIIrBhBGMfwx1BKhKkGT',orientation:'image-traced',completeness:'first-pass'}
-];
+].filter(spec=>!isMapSiteHidden(spec.id));
 export const ARCHIVE_GALLERY=[
  {id:'np-rockettrip',kind:'observation',title:'НП RocketTrip',folder:'1WO0cKko5TsAK26X1xpR9-sOo5auDDtGR',photo:'1X6ZPCmt5y2xr0dQnyc2rFHyljd8r9eF_',note:'Модель двух укрытий. Точная точка и азимут на карте не подтверждены.'},
  {id:'kpp-7',kind:'checkpoint',title:'КПП №7',folder:'1Q-MRnlsJmvVGdW78jIqdnuI9UoJlVCZl',photo:'1WS2Ofp7NbMl4CV65HqNEWpfST-bfzivk',note:'Фасад и проезды по пяти фотографиям. На карте — дорога от города между мостом и поворотом на «Сатурн».'},

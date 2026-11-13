@@ -13,6 +13,16 @@ export const REMOVED_MAP_GROUPS=Object.freeze([
  ['sector-south-junction','Южная транспортная группа']
 ].map(Object.freeze));
 const removedIds=new Set(REMOVED_MAP_GROUPS.map(([id])=>id));
+// Owner-requested reversible map hiding. Keep archival records, history and
+// transport anchors intact. Latin/Cyrillic suffixes resolve to the same site.
+export const HIDDEN_MAP_SITE_IDS=Object.freeze([
+ 'pad-130','pad-96','pad-98','pad-97','pad-3а','pad-3б','pad-111','pad-2b',
+ 'pad-110a','pad-182','pad-204','pad-89','pad-174','pad-91','pad-92а','pad-93'
+]);
+const normalizeSiteId=id=>String(id??'').trim().toLowerCase().replace(/а/g,'a').replace(/б/g,'b');
+const hiddenSiteIds=new Set(HIDDEN_MAP_SITE_IDS.map(normalizeSiteId));
+export const isMapSiteHidden=id=>hiddenSiteIds.has(normalizeSiteId(id));
+
 const site91Purpose='Техническая площадка Байконура с заправочно-нейтрализационной станцией (ЗНС). Наземная инфраструктура комплекса обеспечивает подготовку космических аппаратов и разгонных блоков: заправку компонентами ракетного топлива и сжатыми газами, контроль рабочей среды, сбор и нейтрализацию паров и промышленных стоков.';
 // Editorial update only. Do not infer a new building, alias, foundation date,
 // operating status or road anchor from the historical station description.
@@ -33,6 +43,6 @@ export const SITE91_EDITORIAL=Object.freeze({
 });
 export function visibleMapSites(records){
  if(!Array.isArray(records))throw new TypeError('Expected registered site records');
- return mergeSite94Records(records.filter(record=>!removedIds.has(record.id))).map(record=>record.id==='pad-91'
+ return mergeSite94Records(records.filter(record=>!removedIds.has(record.id)&&!isMapSiteHidden(record.id))).map(record=>record.id==='pad-91'
   ?{...record,...SITE91_EDITORIAL,publicReferences:[...SITE91_EDITORIAL.publicReferences]}:record);
 }

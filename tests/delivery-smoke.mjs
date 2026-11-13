@@ -1,4 +1,6 @@
 import {checkOnboardingRoute} from './onboarding-route-browser.mjs';
+import {visibleMapSites} from '../src/map-visible-sites.js';
+import {createMuseumGeography} from '../src/osm-geography.js';
 import {checkRemovedMapGroups} from './map-group-removal-browser-checks.mjs';
 import {installCameraLabelProbe,checkCameraLabels} from './camera-labels-browser.mjs';
 import assert from 'node:assert/strict';
@@ -6,12 +8,12 @@ import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
 const mode=process.env.QA_MODE||'desktop',base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-delivery/'+mode,cameraLabels=process.env.QA_CAMERA_LABELS==='1',onboardingRoute=process.env.QA_ONBOARDING_ROUTE==='1';
-await mkdir(out,{recursive:true});const report={passed:false,mode,base,coverage:'Complete scene and retained controls; nine removed groups; optional exact camera/label profile. Software WebGL and mobile viewport emulation, not physical phone or FPS.'},errors=[],failed=[];let browser,page;
+await mkdir(out,{recursive:true});const report={passed:false,mode,base,coverage:'Complete scene and retained controls; nine removed groups and sixteen hidden sites; optional exact camera/label profile. Software WebGL and mobile viewport emulation, not physical phone or FPS.'},errors=[],failed=[];let browser,page;
 const hash=b=>createHash('sha256').update(b).digest('hex');
 try{
  const entry=mode==='workshop'?'workshop.html':'museum.html';
  if(process.env.VERIFY_PUBLIC==='1'){
-  report.hashes={};const names=[entry,'src/museum-startup.js','src/steppe-surface.js','src/workshop-panel.js','src/map-visible-sites.js',...(onboardingRoute?['src/museum-onboarding.js']:[]),...(cameraLabels?['src/map-view-policy.js','src/camera-navigation.js','src/airport-views.js']:[])];
+  report.hashes={};const names=[entry,'src/museum-startup.js','src/steppe-surface.js','src/workshop-panel.js','src/map-visible-sites.js','src/archive-manifest.js',...(onboardingRoute?['src/museum-onboarding.js']:[]),...(cameraLabels?['src/map-view-policy.js','src/camera-navigation.js','src/airport-views.js']:[])];
   for(const name of names){const expected=hash(await readFile(name)),deadline=Date.now()+120000;let actual;
    do{const r=await fetch(new URL(name+'?verify='+expected.slice(0,16),base),{signal:AbortSignal.timeout(12000)});if(r.ok)actual=hash(Buffer.from(await r.arrayBuffer()));if(actual===expected)break;await new Promise(r=>setTimeout(r,3000));}while(Date.now()<deadline);
    assert.equal(actual,expected,'Public bytes do not match '+name);report.hashes[name]=actual;
@@ -27,7 +29,10 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:120000,polling:200});report.readyMs=Date.now()-start;
  await page.evaluate(()=>window.__DELIVERY_FRAME());
  report.scene=await page.evaluate(()=>{const q=__BAIKONUR_QA,s=q.stats();return {sites:s.sites,shadersValid:s.shadersValid,evening:q.evening.evening,admin:!!window.__MUSEUM_WORKSHOP,menu:document.querySelectorAll('#ui .sites-accordion-title').length,canvas:!!document.querySelector('#view canvas')};});
- assert(report.scene.sites>80);assert(report.scene.shadersValid);assert(report.scene.evening);assert(report.scene.canvas);assert(report.scene.menu>=4);assert.equal(report.scene.admin,mode==='workshop');
+ const catalogue=JSON.parse(await readFile('data/catalog.json','utf8')),matches=JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'));
+ const registered=createMuseumGeography({catalog:catalogue,matches}).sites.filter(r=>!r.aliasOf&&r.render!==false);
+ // The existing NP31-1 exhibit is added separately from the source catalogue.
+ report.expectedSites=visibleMapSites(registered).length+1;assert(await page.evaluate(()=>!!__BAIKONUR_QA.siteState('np-31-1')));assert.equal(report.scene.sites,report.expectedSites,'Scene must contain exactly the visible registered sites');assert(report.scene.shadersValid);assert(report.scene.evening);assert(report.scene.canvas);assert(report.scene.menu>=4);assert.equal(report.scene.admin,mode==='workshop');
  if(mode==='workshop'){assert(await page.locator('#workshopPanel').isVisible());assert(await page.locator('#cameraAltitude').isVisible());}
  await page.screenshot({path:out+'/overview.png',timeout:60000});
  report.groupRemoval=await checkRemovedMapGroups(page,mode);
