@@ -19,7 +19,7 @@
     { end: 14000, title: 'МАСШТАБ И РАКУРС',
       hint: mobile ? 'Два пальца — масштаб и вращение.' : 'Колёсико — масштаб. Правая кнопка — поворот.' },
     { end: 20000, title: 'СТАРТОВЫЕ ПЛОЩАДКИ',
-      hint: 'Выберите объект на карте, чтобы открыть его историю и 3D-модель.' },
+      hint: 'УКСС «Энергия»: выберите объект на карте, чтобы открыть его историю и 3D-модель.' },
     { end: 25000, title: 'ИССЛЕДУЙТЕ ОБЪЕКТЫ',
       hint: 'Камеру можно вращать вокруг выбранного сооружения.' },
     { end: 29000, title: 'ЦИФРОВЫЕ РЕКОНСТРУКЦИИ',
@@ -190,9 +190,9 @@
     api.camera.lookAt(api.controls.target);
     api.camera.updateMatrixWorld(true);
   }
-  function runMove() {
+  function runMove(complete = false) {
     if (!move) return;
-    const t = Math.max(0, Math.min(1, (elapsed - move.at) / move.duration));
+    const t = complete ? 1 : Math.max(0, Math.min(1, (elapsed - move.at) / move.duration));
     const u = ease(t);
     api.camera.position.copy(move.from.eye).lerp(move.to.eye, u);
     api.controls.target.copy(move.from.target).lerp(move.to.target, u);
@@ -210,6 +210,8 @@
   function enterStage(i) {
     // Finish the last flank-flight sample exactly, even after a dropped frame.
     if (currentStage === 0 && i !== 0 && flyover) runFlankFlyover(true);
+    // Finish a camera leg before the next stage replaces it, even after a dropped frame.
+    if (move) runMove(true);
     currentStage = i;
     const s = stages[i];
     title.textContent = s.title;
@@ -227,12 +229,12 @@
     } else if (i === 2 && !initiallyFocused) {
       tweenTo(zoomDestination(), 6000);
     } else if (i === 3) {
-      if (!initiallyFocused && typeof api?.focusGagarin === 'function') {
+      if (!initiallyFocused && typeof api?.focusUkss === 'function') {
         // Focus updates the real site card. Capture its destination pose,
         // then instantly restore the current camera BEFORE the next render.
         const from = pose();
         try {
-          api.focusGagarin();
+          api.focusUkss();
           selectedDuringDemo = true;
           const destination = pose();
           setPose(from);
@@ -240,7 +242,7 @@
           tweenTo(destination, 6000, Math.min(400, distance * .17));
         } catch (error) {
           setPose(from);
-          console.warn('Tour: could not focus Gagarin launch site', error);
+          console.warn('Tour: could not focus UKSS', error);
         }
       }
       highlight(document.getElementById('info'));

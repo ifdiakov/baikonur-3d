@@ -66,7 +66,7 @@ const controls={target:initialTarget.clone(),enabled:true,enableDamping:true,upd
 let focused=0;
 tour.attach({camera,controls,
  flankTourPose(){return {eye:new V(0,760*2.3448276,760*2.3448276),target:new V(0,0,0)};},
- focusGagarin(){focused++;camera.position.set(200,100,300);controls.target.set(190,0,220);},
+ focusUkss(){focused++;camera.position.set(200,100,300);controls.target.set(190,0,220);},
  isObjectFocused:()=>false
 });
 tour.ready();
@@ -85,10 +85,12 @@ assert(flyEye.y<initialEye.y);
 tour.update(3100);
 assert.equal(tour.stats().step,1,'Flank intro must end at 3 seconds');
 assert.equal(tour.stats().flyingFlanks,false);
-assert.equal(focused,0,'Gagarin focus must not interrupt the opening flyover');
+assert.equal(focused,0,'UKSS focus must not interrupt the opening flyover');
 tour.update(8100);assert.equal(tour.stats().step,2);
 tour.update(14100);assert.equal(tour.stats().step,3);assert.equal(focused,1);
 tour.update(20100);assert.equal(tour.stats().step,4);
+assert.equal(controls.target.distanceTo(new V(190,0,220)),0,'The orbit must start at the exact UKSS destination, not an unfinished flight point');
+assert(camera.position.distanceTo(new V(200,100,300))<1e-9,'The completed flight must reach the UKSS eye pose');
 tour.update(25100);assert.equal(tour.stats().step,5);
 tour.update(29100);assert.equal(tour.stats().active,false);
 assert.equal(camera.position.distanceTo(initialEye),0,'Natural completion must restore the original camera eye');
@@ -126,7 +128,7 @@ function autoForReturningVisitor(search,webdriver=false){
   localStorage:win.localStorage,URLSearchParams,console,Math,requestAnimationFrame:win.requestAnimationFrame
  },{filename:'returning-visitor-onboarding.js'});
  const tour=win.__MUSEUM_ONBOARDING;
- tour.attach({camera,controls,focusGagarin(){},flankTourPose(){return {eye:initialEye.clone(),target:initialTarget.clone()};},isObjectFocused:()=>false});
+ tour.attach({camera,controls,focusUkss(){},flankTourPose(){return {eye:initialEye.clone(),target:initialTarget.clone()};},isObjectFocused:()=>false});
  tour.ready();
  return tour.stats().pendingStart;
 }
@@ -137,3 +139,24 @@ assert.equal(autoForReturningVisitor('',true),false,'Automated browser runs supp
 
 console.log('ONBOARDING_FLANK_FLYOVER_PASS',JSON.stringify({introMs:3000,totalMs:29000,steps:6,
  zoomDelta:Math.round(initialEye.y-zoomEye.y),flyTarget:[flyTarget.x,flyTarget.z]}));
+
+// One site ID in every entrypoint; no dependency on catalogue ordering.
+for(const file of ['index.html','museum.html','workshop.html']){
+ const html=readFileSync(new URL('../'+file,import.meta.url),'utf8');
+ assert(html.includes("focusUkss:()=>openMenuSite('pad-250')"),file+' uses stable UKSS ID');
+ assert(!html.includes('focusGagarin:'),file+' must not register the old target');
+ assert(html.includes('museum-onboarding.js?v=20261113-onboarding-ukss-v1'),file+' cache revision');
+}
+assert(source.includes('УКСС «Энергия»'));
+assert(!source.includes('focusGagarin'));
+// A late frame in the approach must still start the fly-around at the UKSS.
+camera.position.copy(initialEye);controls.target.copy(initialTarget);
+assert(tour.replay());
+for(const at of [40000,43000,48000,54000,57000,61000])tour.update(at);
+assert.equal(tour.stats().step,4);
+assert.equal(controls.target.distanceTo(new V(190,0,220)),0);
+tour.update(65000);tour.update(69000);
+assert.equal(camera.position.distanceTo(initialEye),0);
+assert.equal(controls.target.distanceTo(initialTarget),0);
+assert.equal(controls.enabled,true);
+console.log('ONBOARDING_UKSS_ROUTE_PASS');

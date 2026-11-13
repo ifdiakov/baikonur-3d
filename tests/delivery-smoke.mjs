@@ -1,16 +1,17 @@
+import {checkOnboardingRoute} from './onboarding-route-browser.mjs';
 import {checkRemovedMapGroups} from './map-group-removal-browser-checks.mjs';
 import {installCameraLabelProbe,checkCameraLabels} from './camera-labels-browser.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
-const mode=process.env.QA_MODE||'desktop',base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-delivery/'+mode,cameraLabels=process.env.QA_CAMERA_LABELS==='1';
+const mode=process.env.QA_MODE||'desktop',base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-delivery/'+mode,cameraLabels=process.env.QA_CAMERA_LABELS==='1',onboardingRoute=process.env.QA_ONBOARDING_ROUTE==='1';
 await mkdir(out,{recursive:true});const report={passed:false,mode,base,coverage:'Complete scene and retained controls; nine removed groups; optional exact camera/label profile. Software WebGL and mobile viewport emulation, not physical phone or FPS.'},errors=[],failed=[];let browser,page;
 const hash=b=>createHash('sha256').update(b).digest('hex');
 try{
  const entry=mode==='workshop'?'workshop.html':'museum.html';
  if(process.env.VERIFY_PUBLIC==='1'){
-  report.hashes={};const names=[entry,'src/museum-startup.js','src/steppe-surface.js','src/workshop-panel.js','src/map-visible-sites.js',...(cameraLabels?['src/map-view-policy.js','src/camera-navigation.js','src/airport-views.js']:[])];
+  report.hashes={};const names=[entry,'src/museum-startup.js','src/steppe-surface.js','src/workshop-panel.js','src/map-visible-sites.js',...(onboardingRoute?['src/museum-onboarding.js']:[]),...(cameraLabels?['src/map-view-policy.js','src/camera-navigation.js','src/airport-views.js']:[])];
   for(const name of names){const expected=hash(await readFile(name)),deadline=Date.now()+120000;let actual;
    do{const r=await fetch(new URL(name+'?verify='+expected.slice(0,16),base),{signal:AbortSignal.timeout(12000)});if(r.ok)actual=hash(Buffer.from(await r.arrayBuffer()));if(actual===expected)break;await new Promise(r=>setTimeout(r,3000));}while(Date.now()<deadline);
    assert.equal(actual,expected,'Public bytes do not match '+name);report.hashes[name]=actual;
@@ -31,6 +32,7 @@ try{
  await page.screenshot({path:out+'/overview.png',timeout:60000});
  report.groupRemoval=await checkRemovedMapGroups(page,mode);
  await page.screenshot({path:out+'/retained-site175.png',timeout:60000});
+ if(onboardingRoute)report.onboardingRoute=await checkOnboardingRoute(page,mode,out);
  if(cameraLabels)report.cameraLabels=await checkCameraLabels(page,mode,out);
  assert(await page.evaluate(()=>__BAIKONUR_QA.stats().shadersValid));assert.deepEqual(errors,[]);assert.deepEqual(failed,[]);report.passed=true;
 }catch(e){report.error=e.stack;await page?.screenshot({path:out+'/failure.png',timeout:20000}).catch(()=>{});process.exitCode=1;}finally{report.errors=errors;report.failedRequests=failed;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser?.close();}
