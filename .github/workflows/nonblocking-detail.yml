@@ -3,7 +3,7 @@ name: Fast source and scene checks
 on:
   push:
     branches: [main, 'fix/**']
-    paths: ['index.html','museum.html','workshop.html','src/**','data/**','assets/**','scripts/ci/fast-check.mjs','scripts/apply-map-group-removal.mjs','scripts/apply-camera-labels.mjs','tests/camera-labels-*.mjs','tests/map-group-removal-*.mjs','tests/delivery-smoke.mjs','.github/workflows/nonblocking-detail.yml']
+    paths: ['index.html','museum.html','workshop.html','src/**','data/**','assets/**','scripts/ci/fast-check.mjs','scripts/apply-map-group-removal.mjs','scripts/apply-camera-labels.mjs','scripts/prepare-onboarding-ukss.mjs','tests/onboarding-*.mjs','tests/camera-labels-*.mjs','tests/map-group-removal-*.mjs','tests/delivery-smoke.mjs','.github/workflows/nonblocking-detail.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -19,40 +19,52 @@ jobs:
     outputs:
       sha: ${{ steps.freeze.outputs.sha }}
       camera: ${{ steps.scope.outputs.camera }}
+      tour: ${{ steps.scope.outputs.tour }}
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: ${{ github.ref_name == 'fix/remove-map-groups-20261112' || github.ref_name == 'fix/camera-labels-20261112' }}
+          persist-credentials: ${{ github.ref_name == 'fix/remove-map-groups-20261112' || github.ref_name == 'fix/camera-labels-20261112' || github.ref_name == 'fix/onboarding-ukss-20261113' }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Select targeted camera acceptance
+      - name: Select targeted camera and tour acceptance
         id: scope
         env:
           BEFORE: ${{ github.event.before }}
         run: |
           profile=1
-          if [ '${{ github.event_name }}' != 'workflow_dispatch' ] && [ '${{ github.ref_name }}' != 'fix/camera-labels-20261112' ] && git fetch --no-tags --depth=1 origin "$BEFORE"; then
+          tour=1
+          if [ '${{ github.event_name }}' != 'workflow_dispatch' ] && git fetch --no-tags --depth=1 origin "$BEFORE"; then
             profile=0
+            tour=0
             if git diff --name-only "$BEFORE" HEAD | grep -Eq '(map-view-policy|camera-navigation|airport-views|apply-camera-labels|camera-labels-)'; then profile=1; fi
+            if git diff --name-only "$BEFORE" HEAD | grep -Eq '(onboarding|delivery-smoke|nonblocking-detail)'; then tour=1; fi
           fi
+          if [ '${{ github.ref_name }}' = 'fix/camera-labels-20261112' ]; then profile=1; fi
+          if [ '${{ github.ref_name }}' = 'fix/onboarding-ukss-20261113' ]; then tour=1; fi
           echo "camera=$profile" >> "$GITHUB_OUTPUT"
+          echo "tour=$tour" >> "$GITHUB_OUTPUT"
       - name: Prepare isolated group-removal candidate, never main
         if: github.ref_name == 'fix/remove-map-groups-20261112'
         run: node scripts/apply-map-group-removal.mjs
       - name: Prepare isolated camera candidate, never main
         if: github.ref_name == 'fix/camera-labels-20261112'
         run: node scripts/apply-camera-labels.mjs
+      - name: Prepare isolated UKSS tour candidate, never main
+        if: github.ref_name == 'fix/onboarding-ukss-20261113'
+        run: node scripts/prepare-onboarding-ukss.mjs
       - run: node --experimental-vm-modules scripts/ci/fast-check.mjs
       - run: node tests/map-group-removal-source.mjs
       - run: node tests/camera-labels-source.mjs
+      - run: node tests/onboarding-flank-flyover.mjs
       - name: Freeze exact tested candidate inputs
         id: freeze
         run: |
-          if [ "${{ github.ref_name }}" = "fix/remove-map-groups-20261112" ] || [ "${{ github.ref_name }}" = "fix/camera-labels-20261112" ]; then
+          if [ "${{ github.ref_name }}" = "fix/remove-map-groups-20261112" ] || [ "${{ github.ref_name }}" = "fix/camera-labels-20261112" ] || [ "${{ github.ref_name }}" = "fix/onboarding-ukss-20261113" ]; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add index.html museum.html workshop.html docs/CURRENT_WORK.md
+            if [ "${{ github.ref_name }}" = "fix/onboarding-ukss-20261113" ]; then git add src/museum-onboarding.js tests/onboarding-flank-flyover.mjs tests/delivery-smoke.mjs; fi
             if ! git diff --cached --quiet; then
               git commit -m 'Freeze exact targeted museum inputs before browser acceptance'
               git push origin HEAD:${{ github.ref_name }}
@@ -100,6 +112,7 @@ jobs:
         env:
           QA_MODE: ${{ matrix.mode }}
           QA_CAMERA_LABELS: ${{ needs.source.outputs.camera }}
+          QA_ONBOARDING_ROUTE: ${{ needs.source.outputs.tour }}
           BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
           VERIFY_PUBLIC: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
         run: node scripts/ci/run-bounded.mjs 360 smoke-${{ matrix.mode }} node tests/delivery-smoke.mjs
