@@ -17,7 +17,10 @@ const removedIds=new Set(REMOVED_MAP_GROUPS.map(([id])=>id));
 // transport anchors intact. Latin/Cyrillic suffixes resolve to the same site.
 export const HIDDEN_MAP_SITE_IDS=Object.freeze([
  'pad-130','pad-96','pad-98','pad-97','pad-3а','pad-3б','pad-111','pad-2b',
- 'pad-110a','pad-182','pad-204','pad-89','pad-174','pad-91','pad-92а','pad-93'
+ 'pad-110a','pad-182','pad-204','pad-89','pad-174','pad-91','pad-92а','pad-93',
+ // 22A has no standalone record in the current catalogue. Reserve its hiding
+ // policy without inventing a model or confusing it with the existing 2A.
+ 'pad-57','pad-22a','pad-84'
 ]);
 const normalizeSiteId=id=>String(id??'').trim().toLowerCase().replace(/а/g,'a').replace(/б/g,'b');
 const hiddenSiteIds=new Set(HIDDEN_MAP_SITE_IDS.map(normalizeSiteId));
