@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {REMOVED_MAP_GROUPS,HIDDEN_MAP_SITE_IDS} from '../src/map-visible-sites.js';
 export async function checkRemovedMapGroups(page,mode){
- const retained=['pad-1','pad-2','pad-2a','pad-3','pad-31','pad-81','pad-82','pad-83','pad-92','pad-94','pad-95','pad-110','pad-112','pad-112a','pad-113','pad-175','pad-200','pad-202','pad-250','airfield'];
+ const retained=['pad-1','pad-2','pad-3','pad-31','pad-81','pad-82','pad-83','pad-92','pad-94','pad-95','pad-110','pad-112','pad-112a','pad-113','pad-175','pad-200','pad-202','pad-250','airfield'];
  const result=await page.evaluate(({groups,hidden,retained})=>{
   const ids=__MUSEUM_SHARE.targets().map(t=>t.id),options=[...document.querySelectorAll('#wsObject option')].map(o=>o.value);
   const inspect=id=>({id,inScene:__BAIKONUR_QA.siteState(id)!==null,inCards:ids.includes(id),inMenu:!!document.querySelector('[data-site-id="'+id+'"]'),inEditor:options.includes(id)});
@@ -10,10 +10,10 @@ export async function checkRemovedMapGroups(page,mode){
  for(const row of [...result.groups,...result.hiddenSites])for(const key of ['inScene','inCards','inMenu','inEditor'])assert.equal(row[key],false,row.id+' still present in '+key);
  for(const row of result.retained){assert(row.scene,'Retained model missing '+row.id);assert(row.card,'Retained card missing '+row.id);}
  assert(!result.silos.includes('pad-174'),'Hidden174 silo still installed');assert(result.silos.includes('pad-175'),'175 silo lost');
- const rejected=[...REMOVED_MAP_GROUPS.map(([id])=>id),...HIDDEN_MAP_SITE_IDS,'pad-3A','pad-3А','pad-3Б','pad-2Б','pad-110А','pad-92А','pad-22А','pad-22а','pad-22A'];
+ const rejected=[...REMOVED_MAP_GROUPS.map(([id])=>id),...HIDDEN_MAP_SITE_IDS,'pad-3A','pad-3А','pad-3Б','pad-2Б','pad-110А','pad-92А','pad-22А','pad-22а','pad-22A','pad-2A','pad-2А','pad-2а'];
  for(const id of rejected)assert.equal(await page.evaluate(id=>__MUSEUM_SHARE.open({kind:'site',id}),id),false,'Hidden link reopened '+id);
- // 2A is not22A. Retain the real2A model, its title and card selection.
- const selections=['pad-2','pad-2a','pad-3','pad-92','pad-110','pad-94','pad-175'];
+ // The latest instruction hides2A, not site2 and its existing museum model.
+ const selections=['pad-2','pad-3','pad-92','pad-110','pad-94','pad-175'];
  for(const id of selections){
   assert(await page.evaluate(id=>__MUSEUM_SHARE.open({kind:'site',id}),id));
   assert.equal((await page.evaluate(()=>__MUSEUM_SHARE.current())).id,id);
@@ -25,5 +25,5 @@ export async function checkRemovedMapGroups(page,mode){
   assert(await page.locator('#cameraAltitude').isVisible());
  }
  await page.evaluate(()=>__DELIVERY_FRAME());
- return {...result,passed:true,hiddenCount:HIDDEN_MAP_SITE_IDS.length,rejectedLinkCount:rejected.length,remainingCardSelectionChecked:selections,requestedSitesAbsent:['pad-57','pad-22a','pad-84']};
+ return {...result,passed:true,hiddenCount:HIDDEN_MAP_SITE_IDS.length,rejectedLinkCount:rejected.length,remainingCardSelectionChecked:selections,requestedSitesAbsent:['pad-2a'],priorSitesStillHidden:['pad-57','pad-22a','pad-84']};
 }

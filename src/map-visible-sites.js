@@ -20,7 +20,9 @@ export const HIDDEN_MAP_SITE_IDS=Object.freeze([
  'pad-110a','pad-182','pad-204','pad-89','pad-174','pad-91','pad-92а','pad-93',
  // 22A has no standalone record in the current catalogue. Reserve its hiding
  // policy without inventing a model or confusing it with the existing 2A.
- 'pad-57','pad-22a','pad-84'
+ 'pad-57','pad-22a','pad-84',
+ // Subsequent owner instruction explicitly hides the existing 2A as well.
+ 'pad-2a'
 ]);
 const normalizeSiteId=id=>String(id??'').trim().toLowerCase().replace(/а/g,'a').replace(/б/g,'b');
 const hiddenSiteIds=new Set(HIDDEN_MAP_SITE_IDS.map(normalizeSiteId));
