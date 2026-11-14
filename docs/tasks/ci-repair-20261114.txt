@@ -1,0 +1,15 @@
+CI/CD repair · 14.11.2026
+Base: 97b639cdf463a53ce22a5882bced63811f927a77
+Candidate: fix/ci-repair-20261114
+
+Scope: current menu visibility, 32 archival / 31 visible silos, Proton visible-neighbor contract, real clipboard event/feedback verification, measured numerical/visual smoke phases, locked QA dependencies, read-only workflows and exact-SHA aggregate acceptance.
+Application src, HTML, CSS, data, model assets, Worker and cache bytes are intentionally unchanged. No hidden menu or site is restored.
+
+Local verification: complete menu contract, delivery-policy, ci-reliability, ci-contracts including negative regressions, fast syntax/import check (273 modules / 3 entrypoints), model input rejection, card sharing source and workshop state passed. New candidate browser checks and exact public acceptance remain pending at the time of this commit.
+
+The shared QA lock preserves Playwright 1.57.0 / Three 0.160.1 / meshoptimizer 0.25.0; the explicitly manual historical matrix retains meshoptimizer 1.3.0 under its own lock. No application libraries are upgraded.
+All 56 YAML definitions are structurally validated. Historical preparation scripts emit a source SHA and patch artifact instead of writing to branches. Remaining verifiers no longer apply previous one-off integration scripts before acceptance.
+The aggregate candidate-acceptance waits for every workflow actually selected by the push diff on the exact SHA. Conditional skips are reported as not_run, not as passing browser tests.
+
+Delivery status is tracked locally under .tools/ci-repair/checkpoint.json and the workspace CI repair report; do not infer publication or browser success from this pre-acceptance note.
+Previous unfinished museum tasks remain open.

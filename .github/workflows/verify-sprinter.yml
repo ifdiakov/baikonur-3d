@@ -3,14 +3,8 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
-    paths:
-      - 'assets/models/sprinter/**'
-      - 'src/sprinter-source.js'
-      - 'src/road-vehicles.js'
-      - 'src/ground-traffic.js'
-      - 'tests/sprinter-*.mjs'
-      - '.github/workflows/verify-sprinter.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['assets/models/sprinter/**', 'src/sprinter-source.js', 'src/road-vehicles.js', 'src/ground-traffic.js', 'tests/sprinter-*.mjs', '.github/workflows/verify-sprinter.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,12 +20,14 @@ jobs:
       QA_PREFIX: ${{ github.event_name == 'pull_request' && 'local' || 'public' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install verification dependencies
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Check model, wheel pivots and recovery
         run: |

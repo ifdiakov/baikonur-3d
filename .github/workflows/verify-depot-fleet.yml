@@ -2,19 +2,8 @@
 name: Kosmotrans depot and road fleet
 on:
   push:
-    branches: [main, codex/kosmotrans-depot-fleet]
-    paths:
-      - 'index.html'
-      - 'src/kosmotrans-depot.js'
-      - 'src/road-fleet.js'
-      - 'src/road-vehicles.js'
-      - 'src/ground-traffic.js'
-      - 'assets/models/kosmotrans-depot/**'
-      - 'assets/models/road-fleet/**'
-      - 'tests/depot-fleet*.mjs'
-      - 'tests/road-fleet.mjs'
-      - 'tests/fixtures/depot-fleet.html'
-      - '.github/workflows/verify-depot-fleet.yml'
+    branches: [main, codex/kosmotrans-depot-fleet, fix/ci-repair-20261114]
+    paths: ['index.html', 'src/kosmotrans-depot.js', 'src/road-fleet.js', 'src/road-vehicles.js', 'src/ground-traffic.js', 'assets/models/kosmotrans-depot/**', 'assets/models/road-fleet/**', 'tests/depot-fleet*.mjs', 'tests/road-fleet.mjs', 'tests/fixtures/depot-fleet.html', '.github/workflows/verify-depot-fleet.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -27,6 +16,8 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         run: node scripts/ci/impact.mjs verify-depot-fleet.yml
@@ -39,17 +30,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - name: Reuse matching browser binaries
         if: steps.ci_scope.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Install geometry and browser tooling
         if: steps.ci_scope.outputs.run == 'true'
         run: |
-          npm install --no-save three@0.160.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Check asset budgets and routing
         if: steps.ci_scope.outputs.run == 'true'

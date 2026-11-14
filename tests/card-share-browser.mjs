@@ -5,7 +5,7 @@ import {chromium} from 'playwright';
 const mode=process.env.QA_MODE||'desktop',base=process.env.BAIKONUR_URL||'http://127.0.0.1:8765/',out='qa-card-share/'+mode;
 await mkdir(out,{recursive:true});
 const report={passed:false,mode,base,checks:[],hashes:{},environment:'Chromium/SwiftShader. Real clipboard write/read; permission-failure paths additionally simulated. Mobile screen/touch emulation, not a physical-device or FPS test.'};
-let browser,page;const errors=[],shaderErrors=[];
+let browser,page,context;const errors=[],shaderErrors=[];
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const files=['index.html','museum.html','workshop.html','encyclopedia.html','workshop/model.html','src/card-share.js','src/card-share.css','src/model-viewer.js','src/model-inspector.js'];
 try{
@@ -17,7 +17,8 @@ try{
  }
  browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--disable-gpu-sandbox']});
  const mobile=mode==='mobile',admin=mode==='workshop';
- const context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1440,height:960},deviceScaleFactor:1,isMobile:mobile,hasTouch:mobile,permissions:['clipboard-read','clipboard-write'],serviceWorkers:'block'});
+ context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1440,height:960},deviceScaleFactor:1,isMobile:mobile,hasTouch:mobile,permissions:['clipboard-read','clipboard-write'],serviceWorkers:'block'});
+ await context.tracing.start({screenshots:false,snapshots:true,sources:true});
  await context.addInitScript(()=>{
   const raf=requestAnimationFrame.bind(window);let step;
   window.requestAnimationFrame=fn=>fn.name==='animate'?(step=fn,0):fn.name==='animateModel'?0:raf(fn);
@@ -48,7 +49,24 @@ try{
  assert(visibility.compactCount>=coverage.targets);for(const [key,value]of Object.entries(visibility))if(key!=='compactCount')assert.equal(value,true,'Share visibility: '+key);
  assert(await page.locator('#infoShare').isVisible());report.visibility=visibility;report.checks.push('Share hidden on compact labels/docks and collapsed/unselected map cards; visible only in expanded cards');
  async function copy(locator,kind,id,scope=page){
-  await page.bringToFront();await locator.click();await scope.waitForFunction(()=>document.querySelector('.museum-share-toast')?.textContent==='Ссылка скопирована в буфер обмена',null,{timeout:10000});
+  await page.bringToFront();
+  // Arm before the gesture. A stale toast/status from a previous click must
+  // never pass this operation; no render-frame polling or synthetic clicks.
+  await scope.evaluate(()=>{
+   window.__COPY_RESULT=null;window.__COPY_DIAGNOSTICS={started:performance.now(),focus:document.hasFocus(),origin:location.origin,visibility:document.visibilityState,clicks:[]};
+   document.addEventListener('click',event=>{window.__COPY_DIAGNOSTICS.clicks.push({id:event.target.id,tag:event.target.tagName});},{once:true,capture:true});
+   document.addEventListener('museum-shared',event=>{
+    const toast=document.querySelector('.museum-share-toast');
+    window.__COPY_RESULT={...event.detail,toast:toast?.textContent,toastVisible:!!toast&&!toast.hidden&&getComputedStyle(toast).display!=='none',elapsedMs:performance.now()-window.__COPY_DIAGNOSTICS.started};
+   },{once:true});
+  });
+  await locator.click();
+  try{await scope.waitForFunction(()=>window.__COPY_RESULT,null,{timeout:10000,polling:100});}
+  catch(error){report.copyFailure=await scope.evaluate(()=>({diagnostics:window.__COPY_DIAGNOSTICS,focus:document.hasFocus(),toast:document.querySelector('.museum-share-toast')?.textContent,busy:document.querySelector('[aria-busy="true"]')?.id,manual:!!document.querySelector('.museum-share-dialog[open]')}));throw error;}
+  const result=await scope.evaluate(()=>window.__COPY_RESULT);
+  (report.copyOperations??=[]).push({kind,id,...result});
+  assert.equal(result.status,'copied','Actual copy operation failed: '+JSON.stringify(result));
+  assert.equal(result.toast,'Ссылка скопирована в буфер обмена');assert(result.toastVisible,'Confirmation must be visible when copying completes');
   const value=await scope.evaluate(()=>window.__REAL_CLIPBOARD.readText()),u=new URL(value);
   assert.equal(kind==='article'?u.hash.slice(1):u.searchParams.get('share'),kind==='article'?id:kind+':'+id);
   assert(!u.pathname.includes('/workshop'));assert.equal(u.searchParams.get('draft'),null);
@@ -84,5 +102,6 @@ try{
  }
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);report.passed=true;
 }catch(e){report.error=e.stack;await page?.screenshot({path:out+'/failure.png',timeout:20000}).catch(()=>{});process.exitCode=1;}
-finally{report.errors=errors;report.shaderErrors=shaderErrors;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser?.close();}
+finally{await context?.tracing.stop({path:out+'/trace.zip'}).catch(()=>{});report.errors=errors;report.shaderErrors=shaderErrors;await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser?.close();}
 console.log('CARD_SHARE_BROWSER',JSON.stringify(report));
+

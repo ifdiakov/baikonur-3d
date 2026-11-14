@@ -1,12 +1,8 @@
 name: Optimize preloader gallery
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'assets/preloader/_source-04.webp'
-      - '.github/workflows/optimize-preloader.yml'
+  workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: optimize-preloader-gallery
   cancel-in-progress: true
@@ -16,6 +12,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Install Pillow
         run: python3 -m pip install --quiet Pillow
       - name: Optimize gallery WebP files
@@ -33,14 +31,14 @@ jobs:
               im.save(p,'WEBP',quality=76,method=4,exact=True)
               print(name, p.stat().st_size, im.size)
           PY
-      - name: Commit optimized runtime images
+      - name: Record exact source without publishing
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add assets/preloader/soyuz-v1.webp assets/preloader/energia-v1.webp assets/preloader/railway-v1.webp assets/preloader/antenna-v1.webp
-          if git diff --cached --quiet; then
-            echo "Nothing to optimize"
-            exit 0
-          fi
-          git commit -m "Optimize preloader gallery WebP assets"
-          git push
+          mkdir -p qa-proposal
+          git rev-parse HEAD > qa-proposal/source-commit.txt
+          git diff --binary > qa-proposal/proposal.patch
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prepared-proposal
+          path: qa-proposal/
+          retention-days: 7

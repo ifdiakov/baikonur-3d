@@ -2,19 +2,11 @@
 name: Verify launch countdown
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/launch-countdown.js'
-      - 'index.html'
-      - 'tests/launch-countdown-format.mjs'
-      - '.github/workflows/verify-launch-countdown.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['src/launch-countdown.js', 'index.html', 'tests/launch-countdown-format.mjs', '.github/workflows/verify-launch-countdown.yml']
   pull_request:
     branches: [main]
-    paths:
-      - 'src/launch-countdown.js'
-      - 'index.html'
-      - 'tests/launch-countdown-format.mjs'
-      - '.github/workflows/verify-launch-countdown.yml'
+    paths: ['src/launch-countdown.js', 'index.html', 'tests/launch-countdown-format.mjs', '.github/workflows/verify-launch-countdown.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -24,6 +16,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         run: node scripts/ci/impact.mjs verify-launch-countdown.yml
@@ -36,13 +30,13 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - name: Reuse matching browser binaries
         if: steps.ci_scope.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Check countdown formatting at days 100 and 10
         if: steps.ci_scope.outputs.run == 'true'
         run: |

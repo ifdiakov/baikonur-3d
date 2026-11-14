@@ -1,10 +1,8 @@
 name: Restore visitor atmosphere candidate
 on:
-  push:
-    branches: [fix/visitor-atmosphere-20261109]
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: visitor-atmosphere-${{ github.ref }}
   cancel-in-progress: true
@@ -14,11 +12,13 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Integrate presentation without changing terrain or workshop
         run: |
@@ -36,18 +36,11 @@ jobs:
         run: |
           node tests/public-atmosphere-geometry.mjs
           node tests/public-atmosphere-browser.mjs
-      - name: Commit only tested visitor restoration
+      - name: Record exact source without publishing
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git diff --exit-code -- index.html workshop.html assets/public-v1 data/public-scene.json src/workshop-panel.js src/road-editor.js .github/workflows
-          git add src/public-*.js src/public-museum.css museum.html data/public-atmosphere.json.gz PROJECT_CONTEXT.md tests/public-atmosphere-browser.mjs
-          if ! git diff --cached --quiet; then git commit -m 'Restore visitor fog, flank territories and approved lighting'; fi
-          node scripts/public-build-cache.mjs record
-          git add data/public-build-cache.json
-          if ! git diff --cached --quiet; then git commit -m 'Certify unchanged geometry and verified visitor atmosphere'; fi
-          git push origin HEAD:${{ github.ref_name }}
-          git rev-parse HEAD > qa-public-atmosphere/source-commit.txt
+          mkdir -p qa-proposal
+          git rev-parse HEAD > qa-proposal/source-commit.txt
+          git diff --binary > qa-proposal/proposal.patch
       - name: Preserve visual and measurement evidence
         if: always()
         run: |
@@ -59,4 +52,10 @@ jobs:
         with:
           name: visitor-atmosphere-candidate
           path: qa-public-atmosphere/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prepared-proposal
+          path: qa-proposal/
           retention-days: 7

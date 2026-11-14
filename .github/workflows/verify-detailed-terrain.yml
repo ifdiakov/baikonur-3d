@@ -1,13 +1,8 @@
 name: Verify detailed steppe materials
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/terrain-material-atlas.js'
-      - 'src/terrain-game-detail.js'
-      - 'tests/detailed-terrain-materials.mjs'
-      - 'tests/detailed-terrain-browser.mjs'
-      - '.github/workflows/verify-detailed-terrain.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['src/terrain-material-atlas.js', 'src/terrain-game-detail.js', 'tests/detailed-terrain-materials.mjs', 'tests/detailed-terrain-browser.mjs', '.github/workflows/verify-detailed-terrain.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,12 +12,14 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install minimal Three.js and browser test dependencies
         run: |
-          npm install --no-save three@0.160.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Validate five-material PBR atlas and terrain shader contracts
         run: node tests/detailed-terrain-materials.mjs

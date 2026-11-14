@@ -358,6 +358,7 @@ async function captureGroundContactView(page,{row,height,name,out}){
 }
 
 export async function checkTransportGroundContact(page,{mode,out}={}){
+ const geometryStarted=performance.now();
  const result={passed:false,mode,groundVersion:TRANSPORT_GROUND_VERSION,
   coverage:'Actual sampled road/rail triangles against real soil within production camera bounds; explicit 106/109 and Saturn regions; bounded sampling of the two named distant highway meshes beyond those bounds; far/medium/full, software WebGL. Source bridges and actual model-port support are documented separately. Not an exhaustive collision proof or physical-phone/FPS test.',phases:[],shots:[]};
  try{
@@ -383,23 +384,6 @@ export async function checkTransportGroundContact(page,{mode,out}={}){
   const full=result.phases[2],all=result.phases.flatMap(phase=>phase.meshes.flatMap(mesh=>mesh.rows.map(row=>({...row,lod:phase.lod,mesh:mesh.name,kind:mesh.kind}))));
   result.failures=all.filter(row=>row.status==='failure');result.exceptions=all.filter(row=>row.exception);
   result.counts={samples:all.length,contact:all.filter(row=>row.status==='ground-contact').length,exceptions:result.exceptions.length,failures:result.failures.length};
-  if(mode==='desktop'){
-   const rows=full.meshes.flatMap(mesh=>mesh.rows.map(row=>({...row,kind:mesh.kind}))),views=[];
-   for(const kind of ['roads','rail-ballast']){
-    const candidates=rows.filter(r=>r.kind===kind&&r.status==='ground-contact'&&r.region==='stratified');
-    const outer=kind==='roads'?candidates.filter(r=>r.point[0]>2210&&r.scope==='museum-camera-bounds'):[];
-    const row=(outer.length?outer:candidates).sort((a,b)=>Math.abs(a.gap-.025)-Math.abs(b.gap-.025))[0];
-    if(row)views.push({name:kind,row});
-   }
-   const hill=rows.filter(r=>r.kind==='roads'&&r.regions.includes('shared-silo-hill-106-109')).sort((a,b)=>Math.abs(b.gap??999)-Math.abs(a.gap??999))[0];
-   if(hill)views.push({name:'silo-hill',row:hill});
-   const saturn=rows.filter(r=>r.kind==='roads'&&r.regions.includes('owner-road-31-saturn')).sort((a,b)=>Math.abs(b.gap??999)-Math.abs(a.gap??999))[0];
-   if(saturn)views.push({name:'saturn-transition',row:saturn});
-   const modelRail=rows.filter(r=>r.kind==='rail-ballast'&&r.regions.some(region=>region.startsWith('rail-foundation-mik112'))).sort((a,b)=>b.point[1]-a.point[1])[0];
-   if(modelRail)views.push({name:'model-rail-approach',row:modelRail});
-   if(result.failures.length)views.push({name:'worst-gap',row:[...result.failures].sort((a,b)=>Math.abs(b.gap??999)-Math.abs(a.gap??999))[0]});
-   for(const view of views)for(const height of [1200,100])result.shots.push(await captureGroundContactView(page,{row:view.row,height,name:'ground-'+view.name+'-'+(height===100?'full':'far'),out}));
-  }
   for(const phase of result.phases){
    assert(phase.meshes.some(m=>m.kind==='roads'&&m.samples>=12),'No meaningful actual road sample: '+phase.lod);
    assert(phase.meshes.some(m=>m.kind==='rail-ballast'&&m.samples>=12),'No meaningful actual ballast sample: '+phase.lod);
@@ -420,6 +404,39 @@ export async function checkTransportGroundContact(page,{mode,out}={}){
   assert(full.ownerRoad31&&full.meshes.some(m=>m.kind==='roads'&&m.name.startsWith('Единое полотно редактора')&&m.rows.some(r=>r.regions.includes('owner-road-31-saturn'))),'Missing actual editor road-31 triangles on the Saturn transition');
   assert(full.bridgeChecks.length>0&&full.bridgeChecks.every(b=>b.passed),'Source road bridges lack their real supporting deck: '+JSON.stringify(full.bridgeChecks));
   assert.equal(result.failures.length,0,'Transport floating/buried relative to actual soil: '+JSON.stringify(result.failures.slice(0,12)));
+  result.geometryPassed=true;
+  result.geometryMs=Math.round(performance.now()-geometryStarted);
+  assert(result.geometryMs<360000,'Ground numerical acceptance exceeded 360s');
+  await writeFile(out+'/transport-ground-contact.json',JSON.stringify(result,null,2));
+  console.log('GROUND_GEOMETRY_PASS',JSON.stringify({counts:result.counts,elapsedMs:result.geometryMs}));
+  if(mode==='desktop'){
+   const rows=full.meshes.flatMap(mesh=>mesh.rows.map(row=>({...row,kind:mesh.kind}))),views=[];
+   for(const kind of ['roads','rail-ballast']){
+    const candidates=rows.filter(r=>r.kind===kind&&r.status==='ground-contact'&&r.region==='stratified');
+    const outer=kind==='roads'?candidates.filter(r=>r.point[0]>2210&&r.scope==='museum-camera-bounds'):[];
+    const row=(outer.length?outer:candidates).sort((a,b)=>Math.abs(a.gap-.025)-Math.abs(b.gap-.025))[0];
+    if(row)views.push({name:kind,row});
+   }
+   const hill=rows.filter(r=>r.kind==='roads'&&r.regions.includes('shared-silo-hill-106-109')).sort((a,b)=>Math.abs(b.gap??999)-Math.abs(a.gap??999))[0];
+   if(hill)views.push({name:'silo-hill',row:hill});
+   const saturn=rows.filter(r=>r.kind==='roads'&&r.regions.includes('owner-road-31-saturn')).sort((a,b)=>Math.abs(b.gap??999)-Math.abs(a.gap??999))[0];
+   if(saturn)views.push({name:'saturn-transition',row:saturn});
+   const modelRail=rows.filter(r=>r.kind==='rail-ballast'&&r.regions.some(region=>region.startsWith('rail-foundation-mik112'))).sort((a,b)=>b.point[1]-a.point[1])[0];
+   if(modelRail)views.push({name:'model-rail-approach',row:modelRail});
+   if(result.failures.length)views.push({name:'worst-gap',row:[...result.failures].sort((a,b)=>Math.abs(b.gap??999)-Math.abs(a.gap??999))[0]});
+   const screenshotStart=performance.now();
+   for(const view of views)for(const height of [1200,100]){
+    assert(performance.now()-screenshotStart<480000,'Ground screenshot phase exceeded its separate 480s budget');
+    const name='ground-'+view.name+'-'+(height===100?'full':'far'),started=performance.now();
+    result.pendingShot=name;console.log('GROUND_SHOT_START',name);
+    await writeFile(out+'/transport-ground-contact.json',JSON.stringify(result,null,2));
+    const shot=await captureGroundContactView(page,{row:view.row,height,name,out});
+    shot.elapsedMs=Math.round(performance.now()-started);result.shots.push(shot);result.pendingShot=null;
+    console.log('GROUND_SHOT_COMPLETE',name,shot.elapsedMs);
+    await writeFile(out+'/transport-ground-contact.json',JSON.stringify(result,null,2));
+   }
+   result.screenshotsMs=Math.round(performance.now()-screenshotStart);
+  }
   result.passed=true;
   // Keep the smoke log readable; the companion artifact preserves every
   // sampled coordinate, measured gap, source proof and failure verbatim.
@@ -429,3 +446,4 @@ export async function checkTransportGroundContact(page,{mode,out}={}){
  }catch(error){result.error=error.stack;throw error;}
  finally{await writeFile(out+'/transport-ground-contact.json',JSON.stringify(result,null,2));}
 }
+

@@ -1,8 +1,8 @@
 name: MIK112 model and reconstruction — verified integration
 on:
   push:
-    branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110, fix/mik112-photo-20261110, fix/mik112-reference-20261111, fix/buran-launch-1988-20261111, fix/energia-effects-20261114]
-    paths: ['src/buran-loss*','src/buran-launch*','src/mik112*.js','src/site110*.js','src/archive-kit.js','src/archive-models.js','src/museum-menu.js','src/energia-rocket-exhaust.js','src/energia-buran-effects.js','src/energia-polyus-launch.js','src/energia-ground-*.js','src/energia-plasma-shader.js','src/bridge-ground-surface.js','src/road-signs.js','data/road-signs.json','scripts/prepare-buran-loss.mjs','scripts/prepare-bridge-sign112.mjs','scripts/refine-mik112-callouts.mjs','scripts/ci/wait-pages-publication.mjs','tests/mik112-*.mjs','tests/buran-loss-*.mjs','tests/buran-launch-*.mjs','tests/energia-launch-node.mjs','tests/energia-launch-browser.mjs','tests/energia-surface-browser.mjs','tests/energia-ground-occlusion.mjs','tests/energia-background-loading.mjs','tests/energia-exhaust-geometry.mjs','tests/site110-launch-rig.mjs','tests/bridge-sign112-*.mjs','.github/workflows/verify-mik112.yml']
+    branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110, fix/mik112-photo-20261110, fix/mik112-reference-20261111, fix/buran-launch-1988-20261111, fix/energia-effects-20261114, fix/ci-repair-20261114]
+    paths: ['src/buran-loss*', 'src/buran-launch*', 'src/mik112*.js', 'src/site110*.js', 'src/archive-kit.js', 'src/archive-models.js', 'src/museum-menu.js', 'src/energia-rocket-exhaust.js', 'src/energia-buran-effects.js', 'src/energia-polyus-launch.js', 'src/energia-ground-*.js', 'src/energia-plasma-shader.js', 'src/bridge-ground-surface.js', 'src/road-signs.js', 'data/road-signs.json', 'scripts/prepare-buran-loss.mjs', 'scripts/prepare-bridge-sign112.mjs', 'scripts/refine-mik112-callouts.mjs', 'scripts/ci/wait-pages-publication.mjs', 'tests/mik112-*.mjs', 'tests/buran-loss-*.mjs', 'tests/buran-launch-*.mjs', 'tests/energia-launch-node.mjs', 'tests/energia-launch-browser.mjs', 'tests/energia-surface-browser.mjs', 'tests/energia-ground-occlusion.mjs', 'tests/energia-background-loading.mjs', 'tests/energia-exhaust-geometry.mjs', 'tests/site110-launch-rig.mjs', 'tests/bridge-sign112-*.mjs', '.github/workflows/verify-mik112.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   workflow_dispatch:
     inputs:
       target:
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     permissions:
-      contents: write
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -54,6 +54,8 @@ jobs:
       QA_MODES: ${{ matrix.mode }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -64,6 +66,7 @@ jobs:
           REQUESTED_TARGET: ${{ inputs.target }}
         run: |
           target=buran-loss
+          if [[ '${{ github.ref_name }}' == 'fix/ci-repair-20261114' ]]; then target=buran-launch; fi
           if [[ -n "$REQUESTED_TARGET" && "$REQUESTED_TARGET" != auto ]]; then
             target="$REQUESTED_TARGET"
           elif [[ '${{ github.ref_name }}' == 'fix/energia-effects-20261114' ]]; then
@@ -96,11 +99,7 @@ jobs:
           echo "target=$target" >> "$GITHUB_OUTPUT"
       - name: Prepare the approved integration only
         run: |
-          if [ '${{ steps.scope.outputs.target }}' != mik112 ] && [ '${{ steps.scope.outputs.target }}' != buran-launch ] && [ '${{ steps.scope.outputs.target }}' != energia-surface ]; then node scripts/prepare-buran-loss.mjs; fi
-          if [ '${{ steps.scope.outputs.target }}' = bridge-sign112 ]; then
-            node scripts/prepare-bridge-sign112.mjs
-            node scripts/refine-mik112-callouts.mjs
-          fi
+          git diff --exit-code
           node --check src/buran-loss.js
           node --check src/buran-loss-scene.js
           if [ '${{ steps.scope.outputs.target }}' = mik112 ]; then
@@ -122,11 +121,11 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/ms-playwright
-          key: museum-mik112-Linux-playwright1.57.0-three0.160.1
+          key: museum-mik112-Linux-playwright1.57.0-three0.160.1-${{ hashFiles('package-lock.json') }}
       - name: Install browser and run source checks
         if: steps.scope.outputs.target != 'energia-surface' || matrix.mode == 'desktop'
         run: |
-          npm install --no-save playwright@1.57.0 three@0.160.1
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
           if [ '${{ matrix.mode }}' = desktop ]; then
             node tests/mik112-publish-gate.mjs
@@ -160,16 +159,10 @@ jobs:
         env:
           QA_PREFIX: local
         run: node scripts/ci/run-bounded.mjs 720 mik112-local node tests/${{ steps.scope.outputs.target }}-browser.mjs
-      - name: Record only verified prepared application files on the candidate
+      - name: Record exact source without publishing
         if: startsWith(github.ref_name, 'fix/') && matrix.mode == 'desktop' && steps.scope.outputs.target != 'buran-launch' && steps.scope.outputs.target != 'energia-surface'
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add index.html museum.html workshop.html src/road-signs.js data/road-signs.json PROJECT_CONTEXT.md docs/WORK_STATUS.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Integrate verified bridge soil, Dirmentobe sign and separate MIK112 transporter cards'
-            git push origin HEAD:${{ github.ref_name }}
-          fi
+          git diff --exit-code
           mkdir -p qa-mik112-release
           git rev-parse HEAD > qa-mik112-release/source-commit.txt
       - name: Record the launch revision without modifying source files

@@ -1,11 +1,8 @@
 name: Verify NP RoyalTent detail candidate
 on:
-  push:
-    branches: [fix/np-royaltent-detail-20261109]
-    paths: ['src/np-royaltent.js','src/site31-observation-platform.js','scripts/apply-np-royaltent.mjs','tests/np-royaltent-*.mjs','.github/workflows/np-royaltent-candidate.yml']
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: np-royaltent-candidate
   cancel-in-progress: true
@@ -15,6 +12,8 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -26,7 +25,7 @@ jobs:
           node tests/np-royaltent-preservation.mjs
       - name: Install deterministic rendering tests
         run: |
-          npm install --no-save three@0.160.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Verify geometry and construction dimensions
         run: node tests/site31-observation.mjs
@@ -36,16 +35,11 @@ jobs:
         env:
           QA_OUT: qa-np-royaltent/local
         run: node tests/np-royaltent-browser.mjs
-      - name: Commit only verified integration and requirements
+      - name: Record exact source without publishing
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/site31-observation-platform.js index.html museum.html workshop.html tests/site31-observation.mjs tests/site31-observation-browser.mjs tests/fixtures/np-photo.html tests/transport-transition-browser.mjs PROJECT_CONTEXT.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Integrate verified RoyalTent NP detail without changing original museum appearance'
-            git push origin HEAD:${{ github.ref_name }}
-          fi
-          git rev-parse HEAD > qa-np-royaltent/source-commit.txt
+          mkdir -p qa-proposal
+          git rev-parse HEAD > qa-proposal/source-commit.txt
+          git diff --binary > qa-proposal/proposal.patch
       - name: Preserve evidence
         if: always()
         run: |
@@ -56,4 +50,10 @@ jobs:
         with:
           name: np-royaltent-candidate-evidence
           path: qa-np-royaltent/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: prepared-proposal
+          path: qa-proposal/
           retention-days: 7

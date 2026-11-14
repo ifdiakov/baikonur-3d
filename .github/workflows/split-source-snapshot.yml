@@ -1,8 +1,6 @@
 name: Split source snapshot
 on:
-  push:
-    branches: [feat/museum-workshop-split-20261109]
-    paths: ['.github/workflows/split-source-snapshot.yml']
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -10,6 +8,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - run: git ls-files -z | tar --null -T - -czf /tmp/baikonur-split-source.tar.gz
       - uses: actions/upload-artifact@v4
         with:

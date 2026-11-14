@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths: ['src/rail-stations.js', 'src/rail-road-clearance.js', 'src/osm-transport.js', 'index.html', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', 'tests/rail-road-clearance.mjs', '.github/workflows/verify-rail-stations.yml']
   push:
-    branches: [main]
+    branches: [main, fix/ci-repair-20261114]
     paths: ['src/rail-stations.js', 'src/rail-road-clearance.js', 'src/osm-transport.js', 'index.html', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', 'tests/rail-road-clearance.mjs', '.github/workflows/verify-rail-stations.yml']
   workflow_dispatch:
 permissions:
@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         run: node scripts/ci/impact.mjs verify-rail-stations.yml
@@ -31,17 +33,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - name: Reuse matching browser binaries
         if: steps.ci_scope.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Install verification dependencies
         if: steps.ci_scope.outputs.run == 'true'
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Validate asset, track placement, shared model and recovery
         if: steps.ci_scope.outputs.run == 'true'

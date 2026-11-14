@@ -4,7 +4,7 @@ on:
     branches: [main]
     paths: ['src/site113*.js', 'src/osm-transport.js', 'src/road-lod.js', 'src/transport-bake.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
   push:
-    branches: [main]
+    branches: [main, fix/ci-repair-20261114]
     paths: ['src/site113*.js', 'src/osm-transport.js', 'src/road-lod.js', 'src/transport-bake.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
   workflow_dispatch:
 permissions:
@@ -18,12 +18,14 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install verification dependencies
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Validate source geometry and performance budget
         run: node tests/site113-source.mjs

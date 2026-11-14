@@ -1,11 +1,11 @@
 name: Card sharing and encyclopedia media
 on:
   push:
-    branches: [main, fix/share-copy-20261111]
-    paths: ['src/card-share*','src/model-viewer.js','src/model-inspector.js','encyclopedia.html','workshop/model.html','tests/card-share-*.mjs','data/encyclopedia.json','src/encyclopedia-3d.js','.github/workflows/verify-encyclopedia-media.yml']
+    branches: [main, fix/share-copy-20261111, fix/ci-repair-20261114]
+    paths: ['src/card-share*', 'src/model-viewer.js', 'src/model-inspector.js', 'encyclopedia.html', 'workshop/model.html', 'tests/card-share-*.mjs', 'data/encyclopedia.json', 'src/encyclopedia-3d.js', '.github/workflows/verify-encyclopedia-media.yml']
   pull_request:
     branches: [main]
-    paths: ['src/card-share*','src/model-viewer.js','src/model-inspector.js','encyclopedia.html','workshop/model.html','tests/card-share-*.mjs']
+    paths: ['src/card-share*', 'src/model-viewer.js', 'src/model-inspector.js', 'encyclopedia.html', 'workshop/model.html', 'tests/card-share-*.mjs']
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,6 +18,8 @@ jobs:
     timeout-minutes: 3
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -42,6 +44,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -50,11 +54,11 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/ms-playwright
-          key: museum-share-copy-${{ runner.os }}-playwright1.57.0
+          key: museum-share-copy-${{ runner.os }}-playwright1.57.0-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             museum-playwright-${{ runner.os }}-1.57.0
       - run: |
-          npm install --no-save playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Serve the exact candidate, without generated edits
         if: github.ref != 'refs/heads/main'
@@ -80,11 +84,13 @@ jobs:
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: |
-          npm install --no-save playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
           python3 -m http.server 8765 --bind 127.0.0.1 &
       - run: node tests/encyclopedia-media-browser.mjs

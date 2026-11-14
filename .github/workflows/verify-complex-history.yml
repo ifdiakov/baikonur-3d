@@ -1,12 +1,8 @@
 name: Verify Baikonur foundation history
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/complex-history*'
-      - 'src/museum-menu.js'
-      - 'tests/complex-history*'
-      - '.github/workflows/verify-complex-history.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['src/complex-history*', 'src/museum-menu.js', 'tests/complex-history*', '.github/workflows/verify-complex-history.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,12 +12,14 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install viewer test dependencies
         run: |
-          npm install --no-save three@0.160.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Verify history and sidebar data contracts
         run: |

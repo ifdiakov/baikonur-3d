@@ -1,12 +1,8 @@
 name: Smooth map camera regression
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/map-camera-smoothing.js'
-      - 'tests/map-camera-smoothing.mjs'
-      - 'tests/map-camera-smoothing-browser.mjs'
-      - '.github/workflows/verify-map-camera-smoothing.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['src/map-camera-smoothing.js', 'tests/map-camera-smoothing.mjs', 'tests/map-camera-smoothing-browser.mjs', '.github/workflows/verify-map-camera-smoothing.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,12 +12,14 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install browser test dependencies
         run: |
-          npm install --no-save playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Check zoom easing at 60 and 120 fps
         run: node tests/map-camera-smoothing.mjs

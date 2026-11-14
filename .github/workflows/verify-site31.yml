@@ -4,20 +4,8 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
-    paths:
-      - 'index.html'
-      - 'src/archive-models.js'
-      - 'assets/models/site31/**'
-      - 'src/site31-*.js'
-      - 'src/gagarin-*.js'
-      - 'src/soyuz-*.js'
-      - 'src/terrain-voids.js'
-      - 'tests/soyuz-*.mjs'
-      - 'tests/gagarin-source-table.mjs'
-      - 'tests/site31-geometry.mjs'
-      - 'tests/site31-source-*.mjs'
-      - '.github/workflows/verify-site31.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['index.html', 'src/archive-models.js', 'assets/models/site31/**', 'src/site31-*.js', 'src/gagarin-*.js', 'src/soyuz-*.js', 'src/terrain-voids.js', 'tests/soyuz-*.mjs', 'tests/gagarin-source-table.mjs', 'tests/site31-geometry.mjs', 'tests/site31-source-*.mjs', '.github/workflows/verify-site31.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,6 +18,8 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         run: node scripts/ci/impact.mjs verify-site31.yml
@@ -42,17 +32,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - name: Reuse matching browser binaries
         if: steps.ci_scope.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Install checks
         if: steps.ci_scope.outputs.run == 'true'
         run: |
-          npm install --no-save three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 @gltf-transform/functions@4.5.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Verify source geometry and preserved connections
         if: steps.ci_scope.outputs.run == 'true'

@@ -1,8 +1,5 @@
 name: Profile detail transition main thread
 on:
-  push:
-    branches: [fix/nonblocking-detail-20261109]
-    paths: ['.github/workflows/diagnose-detail-freeze.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,13 +9,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: |
           if ! grep -q DETAIL_FIDELITY_V2 index.html; then node scripts/apply-nonblocking-detail.mjs; fi
           node scripts/refine-detail-fidelity.mjs
-          npm install --no-save three@0.160.1 playwright@1.57.0 esbuild@0.25.12
+          npm ci --ignore-scripts --no-audit --no-fund
           npx esbuild src/transport-detail-worker-entry.js --bundle --platform=browser --format=esm --minify --outfile=src/transport-detail-worker.bundle.js
           npx playwright install --with-deps chromium
       - run: python3 -m http.server 8765 --bind 127.0.0.1 &

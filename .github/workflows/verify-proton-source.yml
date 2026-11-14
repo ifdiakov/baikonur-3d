@@ -2,10 +2,10 @@ name: Proton source models
 on:
   pull_request:
     branches: [main]
-    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'src/workshop-panel.css', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
+    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'src/workshop-panel.css', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   push:
-    branches: [main, fix/proton-civil-20261111]
-    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'src/workshop-panel.css', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml']
+    branches: [main, fix/proton-civil-20261111, fix/ci-repair-20261114]
+    paths: ['assets/models/proton/**', 'src/proton-*.js', 'src/archive-models.js', 'src/archive-launches.js', 'src/inspection-models.js', 'src/model-catalog.js', 'src/workshop-panel.css', 'tests/proton-*.mjs', '.github/workflows/verify-proton-source.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   workflow_dispatch:
 permissions:
   contents: read
@@ -66,10 +66,10 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/ms-playwright
-          key: proton-source-${{ runner.os }}-playwright1.57.0-three0.160.1-gltf4.2.1
+          key: proton-source-${{ runner.os }}-playwright1.57.0-three0.160.1-gltf4.2.1-${{ hashFiles('package-lock.json') }}
       - name: Install verification dependencies
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 @gltf-transform/core@4.2.1 @gltf-transform/extensions@4.2.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Validate source models, LOD and placement
         if: matrix.mode == 'desktop'

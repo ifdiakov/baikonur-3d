@@ -11,15 +11,17 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install Chromium smoke dependencies
         run: |
-          npm install --no-save playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Start local museum webserver
         run: |
@@ -69,7 +71,7 @@ jobs:
             assets/
             baykonur-plan.png
           if-no-files-found: ignore
-      - name: Write model QA outcome
+      - name: Record exact source without publishing
         if: always()
         env:
           LOCAL: ${{ steps.local.outcome }}
@@ -78,15 +80,4 @@ jobs:
           TARGET: ${{ github.sha }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-saturn.json",JSON.stringify({targetCommit:process.env.TARGET,local:process.env.LOCAL,public:process.env.PUBLIC,publicBrowser:process.env.PUBLIC_BROWSER,runId:process.env.RUN_ID,checkedAt:new Date().toISOString()},null,2)+"\n")'
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/qa-saturn.json
-          git diff --cached --quiet && exit 0
-          git commit -m "ci: record isolated Saturn IP-5 3D QA"
-          for attempt in 1 2 3; do
-            git pull --rebase origin main
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 4
-          done
-          exit 1
+          git diff --exit-code

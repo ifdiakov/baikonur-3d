@@ -12,12 +12,15 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: |
           python3 -m pip install PyYAML==6.0.2
-          npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 @gltf-transform/functions@4.5.1 meshoptimizer@1.3.0
+          npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/ci/historical-deps
+          ln -s "$PWD/scripts/ci/historical-deps/node_modules" node_modules
           python3 scripts/ci/run-archived-regression.py verify_geometry
           python3 scripts/ci/run-archived-regression.py verify_bytes
   browser:
@@ -37,12 +40,15 @@ jobs:
       QA_PREFIX: ${{ matrix.target }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - run: |
           python3 -m pip install PyYAML==6.0.2
-          npm install --no-save playwright@1.57.0 three@0.160.1 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 @gltf-transform/functions@4.5.1 meshoptimizer@1.3.0
+          npm ci --ignore-scripts --no-audit --no-fund --prefix scripts/ci/historical-deps
+          ln -s "$PWD/scripts/ci/historical-deps/node_modules" node_modules
           npx playwright install --with-deps chromium
           python3 scripts/ci/run-archived-regression.py verify_browser
       - uses: actions/upload-artifact@v4

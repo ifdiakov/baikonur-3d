@@ -1,7 +1,7 @@
 name: Verify published model rotation
 on:
   push:
-    branches: [main]
+    branches: [main, fix/ci-repair-20261114]
     paths: ['src/model-viewer.js', 'src/model-inspector.js', 'workshop/model.html', '.github/workflows/verify-model-rotation-public.yml']
   workflow_dispatch:
 permissions:
@@ -12,6 +12,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

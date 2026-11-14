@@ -1,14 +1,8 @@
 name: Verify Soyuz launch animations (sites 1 and 31)
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/soyuz-dual-launch.js'
-      - 'src/soyuz-launch-columns.js'
-      - 'src/soyuz-launch-effects.js'
-      - 'src/energia-plasma-shader.js'
-      - 'tests/soyuz-dual-launch-*.mjs'
-      - '.github/workflows/verify-soyuz-launch.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['src/soyuz-dual-launch.js', 'src/soyuz-launch-columns.js', 'src/soyuz-launch-effects.js', 'src/energia-plasma-shader.js', 'tests/soyuz-dual-launch-*.mjs', '.github/workflows/verify-soyuz-launch.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,12 +15,14 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install test runtime
         run: |
-          npm install --no-save playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Start Baikonur 3D locally
         run: |

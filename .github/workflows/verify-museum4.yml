@@ -14,12 +14,14 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install verification dependencies
         run: |
-          npm install --no-save playwright@1.57.0 three@0.160.1
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Verify detailed Site 31, continuous roads and complete flight cycle
         run: |

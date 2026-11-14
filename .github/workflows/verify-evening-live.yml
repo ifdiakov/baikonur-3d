@@ -1,7 +1,7 @@
 name: Verify published evening workshop
 on:
   push:
-    branches: [main]
+    branches: [main, fix/ci-repair-20261114]
     paths: ['.github/workflows/verify-evening-live.yml']
   workflow_dispatch:
 permissions:
@@ -12,12 +12,14 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install browser
         run: |
-          npm install --no-save three@0.160.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Verify unchanged application and record full startup diagnostics
         run: |

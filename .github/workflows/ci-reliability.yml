@@ -1,8 +1,8 @@
 name: Verify fast and reliable delivery controls
 on:
   push:
-    branches: [main, fix/delivery-repair-20261111]
-    paths: ['scripts/ci/**','tests/ci-reliability.mjs','tests/delivery-policy.mjs','.github/workflows/**','AGENTS.md','docs/CURRENT_WORK.md']
+    branches: [main, fix/delivery-repair-20261111, fix/ci-repair-20261114]
+    paths: ['scripts/ci/**', 'tests/ci-reliability.mjs', 'tests/delivery-policy.mjs', '.github/workflows/**', 'AGENTS.md', 'docs/CURRENT_WORK.md', 'package.json', 'package-lock.json', 'tests/helpers/**', 'tests/ci-contracts.mjs']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,7 +13,7 @@ concurrency:
 jobs:
   policy:
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,8 +21,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Test selection, real failures and deadlines
         run: |
+          node tests/ci-contracts.mjs
           node tests/ci-reliability.mjs
           node tests/delivery-policy.mjs
           node --experimental-vm-modules scripts/ci/fast-check.mjs
@@ -38,4 +40,29 @@ jobs:
           path: |
             qa-delivery/
             qa-ci/
+          retention-days: 7
+
+  acceptance:
+    name: candidate-acceptance
+    needs: policy
+    if: github.event_name == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 42
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Require every selected workflow on this exact revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci/acceptance-gate.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: candidate-acceptance
+          path: qa-ci/acceptance.json
           retention-days: 7

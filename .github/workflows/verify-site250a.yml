@@ -2,10 +2,10 @@ name: Site 250A reference model and Site 118 source integration
 on:
   pull_request:
     branches: [main]
-    paths: ['src/site250a*', 'src/site118*', 'src/archive-models.js', 'src/archive-manifest.js', 'src/facility-ports.js', 'src/workshop-panel.css', 'assets/models/site118/**', 'tests/site250a*', 'tests/site118*', 'scripts/*site118*', 'scripts/source-models/site118/**', 'scripts/verify-site250a-published.mjs', '.github/workflows/verify-site250a.yml']
+    paths: ['src/site250a*', 'src/site118*', 'src/archive-models.js', 'src/archive-manifest.js', 'src/facility-ports.js', 'src/workshop-panel.css', 'assets/models/site118/**', 'tests/site250a*', 'tests/site118*', 'scripts/*site118*', 'scripts/source-models/site118/**', 'scripts/verify-site250a-published.mjs', '.github/workflows/verify-site250a.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   push:
-    branches: [main, fix/site118-industry-20261111]
-    paths: ['src/site250a*', 'src/site118*', 'assets/models/site118/**', 'tests/site250a*', 'tests/site118*', 'scripts/*site118*', 'scripts/source-models/site118/**', 'scripts/verify-site250a-published.mjs', 'src/workshop-panel.css', '.github/workflows/verify-site250a.yml']
+    branches: [main, fix/site118-industry-20261111, fix/ci-repair-20261114]
+    paths: ['src/site250a*', 'src/site118*', 'assets/models/site118/**', 'tests/site250a*', 'tests/site118*', 'scripts/*site118*', 'scripts/source-models/site118/**', 'scripts/verify-site250a-published.mjs', 'src/workshop-panel.css', '.github/workflows/verify-site250a.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   workflow_dispatch:
     inputs:
       target:
@@ -127,10 +127,10 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/ms-playwright
-          key: site-reference-${{ runner.os }}-playwright1.57.0-three0.160.1
+          key: site-reference-${{ runner.os }}-playwright1.57.0-three0.160.1-${{ hashFiles('package-lock.json') }}
       - name: Install verification dependencies
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Preserve the original Site 250A geometry and road checks
         if: matrix.target == 'site250a'

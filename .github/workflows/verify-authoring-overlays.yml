@@ -2,18 +2,11 @@
 name: Verify hidden authoring overlays
 on:
   push:
-    branches: [main, fix/hide-authoring-overlays-20261109]
-    paths:
-      - '.github/workflows/verify-authoring-overlays.yml'
-      - 'scripts/hide-authoring-overlays-20261109.py'
-      - 'tests/authoring-overlays-browser.mjs'
-      - 'src/camera-altitude.js'
-      - 'src/coordinate-grid.js'
-      - 'src/transport-reference-labels.js'
-      - 'index.html'
+    branches: [main, fix/hide-authoring-overlays-20261109, fix/ci-repair-20261114]
+    paths: ['.github/workflows/verify-authoring-overlays.yml', 'scripts/hide-authoring-overlays-20261109.py', 'tests/authoring-overlays-browser.mjs', 'src/camera-altitude.js', 'src/coordinate-grid.js', 'src/transport-reference-labels.js', 'index.html']
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: authoring-overlays-${{ github.ref }}
   cancel-in-progress: true
@@ -23,6 +16,8 @@ jobs:
     timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         run: node scripts/ci/impact.mjs verify-authoring-overlays.yml
@@ -35,19 +30,16 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - name: Reuse matching browser binaries
         if: steps.ci_scope.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Apply targeted owner change on isolated release branch
         if: (github.ref_name == 'fix/hide-authoring-overlays-20261109') && (steps.ci_scope.outputs.run == 'true')
-        run: |
-          if ! grep -q 'coordinate-grid-v5-default-hidden' src/coordinate-grid.js; then
-            python3 scripts/hide-authoring-overlays-20261109.py
-          fi
+        run: git diff --exit-code
       - name: Check changed JavaScript
         if: steps.ci_scope.outputs.run == 'true'
         run: |
@@ -58,7 +50,7 @@ jobs:
       - name: Install browser verification dependencies
         if: steps.ci_scope.outputs.run == 'true'
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Serve checkout
         if: steps.ci_scope.outputs.run == 'true'
@@ -66,17 +58,10 @@ jobs:
       - name: Check real desktop and mobile museum rendering
         if: steps.ci_scope.outputs.run == 'true'
         run: node tests/authoring-overlays-browser.mjs
-      - name: Commit verified changes to release branch only
+      - name: Record exact source without publishing
         if: (github.ref_name == 'fix/hide-authoring-overlays-20261109') && (steps.ci_scope.outputs.run == 'true')
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add src/camera-altitude.js src/coordinate-grid.js src/transport-reference-labels.js index.html PROJECT_CONTEXT.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Hide altimeter, coordinate grid and AD/rail labels by default'
-            git push origin HEAD:fix/hide-authoring-overlays-20261109
-          fi
-          echo VERIFIED_RELEASE_SHA=$(git rev-parse HEAD)
+          git diff --exit-code
       - name: Verify public file hashes and browser rendering after Pages deploy
         if: (github.ref_name == 'main') && (steps.ci_scope.outputs.run == 'true')
         env:

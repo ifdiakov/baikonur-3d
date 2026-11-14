@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
+import {assertMenuMarkup} from './helpers/menu-markup.mjs';
 import {MUSEUM_SECTIONS,MUSEUM_LAUNCH_ENTRIES,MUSEUM_SILO_GROUP,MUSEUM_STORY_GROUPS,isMuseumSilo,museumCatalogueSection} from '../src/museum-menu.js';
 import {SILO_SITE_IDS} from '../src/silo-sites.js';
+import {visibleMapSites} from '../src/map-visible-sites.js';
 import {MODEL_CATALOG,modelsForObject,modelsForKnowledge} from '../src/model-catalog.js';
 import {ROCKET_MODELS} from '../src/rocket-exhibits.js';
 
@@ -16,9 +18,8 @@ const titles=['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХН�
 assert.deepEqual(MUSEUM_SECTIONS.filter(section=>!section.parent).map(section=>section.id),ids);
 assert.deepEqual(MUSEUM_SECTIONS.filter(section=>!section.parent).map(section=>section.title),titles);
 const asideStart=html.indexOf('<aside id="ui"'),aside=html.slice(asideStart,html.indexOf('</aside>',asideStart));
-assert.deepEqual([...aside.matchAll(/<details id="([^"]+)" class="sites-accordion museum-section">/g)].map(match=>match[1]),ids,'The actual HTML has exactly the six remaining menu sections in order');
-assert.deepEqual([...aside.matchAll(/<details id="[^"]+" class="sites-accordion museum-section"><summary><span class="sites-accordion-title">([^<]+)<\/span>/g)].map(match=>match[1]),titles,
- 'Only the seven accordion sections count as catalogue headings; encyclopedia and camera-control training are separate');
+const menuMarkup=assertMenuMarkup(html,MUSEUM_SECTIONS);
+for(const entry of ['museum.html','workshop.html'])assertMenuMarkup(await readFile(new URL('../'+entry,import.meta.url),'utf8'),MUSEUM_SECTIONS);
 const guideStart=html.indexOf('<details id="navigationGuide"'),guide=html.slice(guideStart,html.indexOf('</details>',guideStart));
 assert(guideStart>0&&guide.includes('class="navigation-guide-content"'));
 assert.match(guide,/<button id="museumTourStart"[^>]*type="button"/,
@@ -42,17 +43,21 @@ for(const record of sites){
   const before=JSON.stringify(record),section=museumCatalogueSection(record);
   assert.ok(Object.hasOwn(groups,section));groups[section].push(record.id);assert.equal(JSON.stringify(record),before,'Grouping does not rewrite the source catalogue');
 }
-assert.equal(groups.sitesAccordion.length,40);assert.equal(groups.infrastructureAccordion.length,59);
+assert.equal(groups.sitesAccordion.length,41);assert.equal(groups.infrastructureAccordion.length,58);
 assert.equal(new Set(Object.values(groups).flat()).size,sites.length,'Every existing displayed site belongs to exactly one catalogue section');
 assert.equal(catalogue.sites.find(s=>s.id==='pad-250а').aliasOf,'pad-250a','The old Cyrillic ID resolves to the single 250A compound');
 const expectedLaunch=['pad-1','pad-31','pad-45','pad-81','pad-200','pad-90','pad-250','pad-110','pad-41'];
-const expectedInfrastructure=['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-182','pad-110a','pad-250a','city','pad-130','pad-175','kpp-7'];
+const expectedInfrastructure=['pad-5','pad-42','pad-112','pad-112a','pad-251','airfield','pad-23','pad-75','pad-3','pad-254','pad-182','pad-110a','pad-250a','city','pad-130','kpp-7'];
 assert.deepEqual(MUSEUM_LAUNCH_ENTRIES.map(entry=>entry.id),expectedLaunch,'The nine named launch complexes retain the requested order');
 assert.equal(MUSEUM_SILO_GROUP.id,'siloInstallations');assert.equal(MUSEUM_SILO_GROUP.title,'Шахтные установки');
 assert.deepEqual(MUSEUM_SILO_GROUP.siteIds,SILO_SITE_IDS,'The grouped menu uses the same silo roster as the existing models');
-assert.equal(new Set(MUSEUM_SILO_GROUP.siteIds).size,31,'All 31 silo installations remain individually reachable');
+assert.equal(new Set(MUSEUM_SILO_GROUP.siteIds).size,32,'All 32 archival silo registrations are preserved');
+const visibleSilos=visibleMapSites(sites).filter(isMuseumSilo).map(record=>record.id);
+assert.equal(visibleSilos.length,31,'31 silos remain displayed');
+assert(visibleSilos.includes('pad-175'));assert(!visibleSilos.includes('pad-174'));
+assert(SILO_SITE_IDS.includes('pad-174'),'Hiding does not erase the historical registration');
 assert.deepEqual(sites.filter(isMuseumSilo).map(record=>record.id).sort(),[...SILO_SITE_IDS].sort());
-assert.deepEqual([...groups.sitesAccordion].sort(),[...expectedLaunch,...SILO_SITE_IDS].sort(),'The launch section contains nine named complexes and 31 grouped silos');
+assert.deepEqual([...groups.sitesAccordion].sort(),[...expectedLaunch,...SILO_SITE_IDS].sort(),'The launch section contains nine named complexes and 32 archived silos');
 for(const id of expectedLaunch)assert.ok(groups.sitesAccordion.includes(id),id+' is a launch / silo / stand-start facility');
 for(const id of expectedInfrastructure)assert.ok(groups.infrastructureAccordion.includes(id),id+' is support, technical, transport or accommodation infrastructure');
 for(const record of sites.filter(record=>record.id.startsWith('sector-')))assert.ok(groups.infrastructureAccordion.includes(record.id),'An unidentified map sector is not promoted to a launch site');
@@ -108,7 +113,8 @@ assert.equal(launchStops,7,'Changing the year explicitly exits the launch');
 context.setMuseumYear(1988,false);assert.equal(launchStops,7,'Internal reconstruction year changes do not recursively stop the launch');
 assert.equal(history.events.length,18,'Original historical records remain intact');
 assert.ok(history.events.every(event=>/^\d{4}-\d{2}-\d{2}$/.test(event.date)&&event.source?.startsWith('https://')));
-console.log('MENU_CATALOG_CONTRACT_PASS',JSON.stringify({sections:ids.length,launchEntries:expectedLaunch.length+1,launchComplexes:groups.sitesAccordion.length,silos:MUSEUM_SILO_GROUP.siteIds.length,infrastructureSites:groups.infrastructureAccordion.length,sourceStations:stations.length,fieldFinds:field.objects.length,equipmentActions:actions.length,reconstructions:reconstructionActions.length,archiveStories:groupedStories.length,historicalRecords:history.events.length,yearCases:calls.length}));
+console.log('MENU_CATALOG_CONTRACT_PASS',JSON.stringify({...menuMarkup,launchEntries:expectedLaunch.length+1,launchComplexes:groups.sitesAccordion.length,silos:MUSEUM_SILO_GROUP.siteIds.length,infrastructureSites:groups.infrastructureAccordion.length,sourceStations:stations.length,fieldFinds:field.objects.length,equipmentActions:actions.length,reconstructions:reconstructionActions.length,archiveStories:groupedStories.length,historicalRecords:history.events.length,yearCases:calls.length}));
 
 assert.equal(MUSEUM_SECTIONS.find(s=>s.id==='traditionsAccordion').parent,'mythsAccordion');
 assert.match(aside, /id="mythsAccordion"[\s\S]*id="traditionsAccordion" class="sites-accordion museum-subsection"/);
+

@@ -2,20 +2,22 @@
 name: Workshop road and railway editor — verified
 on:
   push:
-    branches: [main, fix/workshop-network-20261110]
-    paths: ['src/road-editor.js','src/road-editor-core.js','src/road-editor-mesh.js','src/road-junction-repair.js','tests/road-junction-repair.mjs','src/road-geometry-cut.js','tests/road-geometry-cut.mjs','src/road-editor-style.js','src/road-mask-tiles.js','tests/road-mask-tiles.mjs','data/road-edits-authoritative-20261103.json','src/road-editor.css','src/osm-transport.js','tests/road-editor-*.mjs','.github/workflows/verify-road-editor.yml','index.html','workshop.html','src/workshop-*.js','src/workshop-panel.css','tests/workshop-network-*.mjs','scripts/prepare-workshop-network.mjs']
+    branches: [main, fix/workshop-network-20261110, fix/ci-repair-20261114]
+    paths: ['src/road-editor.js', 'src/road-editor-core.js', 'src/road-editor-mesh.js', 'src/road-junction-repair.js', 'tests/road-junction-repair.mjs', 'src/road-geometry-cut.js', 'tests/road-geometry-cut.mjs', 'src/road-editor-style.js', 'src/road-mask-tiles.js', 'tests/road-mask-tiles.mjs', 'data/road-edits-authoritative-20261103.json', 'src/road-editor.css', 'src/osm-transport.js', 'tests/road-editor-*.mjs', '.github/workflows/verify-road-editor.yml', 'index.html', 'workshop.html', 'src/workshop-*.js', 'src/workshop-panel.css', 'tests/workshop-network-*.mjs', 'scripts/prepare-workshop-network.mjs']
   workflow_dispatch:
 concurrency:
   group: rockettrip-road-editor-${{ github.ref }}
   cancel-in-progress: true
 permissions:
-  contents: write
+  contents: read
 jobs:
   editor:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         env:
@@ -38,24 +40,19 @@ jobs:
         if: steps.ci_scope.outputs.run == 'true'
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - uses: actions/cache@v4
         if: steps.ci_scope.outputs.run == 'true'
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Prepare admin-only network controls
         if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.network == 'true'
-        run: |
-          node scripts/prepare-workshop-network.mjs
-          node --check src/workshop-panel.js
-          node --check src/workshop-network-editor.js
-          node --check src/workshop-rail-editor.js
-          git diff --exit-code -- index.html museum.html data assets
+        run: git diff --exit-code
       - name: Install 3D browser dependencies
         if: steps.ci_scope.outputs.run == 'true'
         run: |
-          npm install --no-save playwright@1.57.0 three@0.160.1
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Legacy scheme checks retained for relevant source changes
         if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.legacy == 'true'
@@ -90,17 +87,10 @@ jobs:
         env:
           QA_PREFIX: local
         run: node scripts/ci/run-bounded.mjs 600 workshop-network-local node tests/workshop-network-browser.mjs
-      - name: Record verified prepared admin entrypoint only
+      - name: Record exact source without publishing
         if: github.ref_name == 'fix/workshop-network-20261110'
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add workshop.html src/workshop-panel.js src/workshop-network-editor.js PROJECT_CONTEXT.md docs/WORK_STATUS.md
-          if ! git diff --cached --quiet; then
-            git commit -m 'Integrate verified add/delete AD and railway tools into workshop only'
-            git push origin HEAD:${{ github.ref_name }}
-          fi
-          git rev-parse HEAD > qa-workshop-network/source-commit.txt
+          git diff --exit-code
       - name: Verify published files and repeat actual workshop acceptance
         if: steps.ci_scope.outputs.run == 'true' && steps.ci_scope.outputs.network == 'true' && github.ref == 'refs/heads/main'
         env:

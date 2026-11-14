@@ -1,8 +1,6 @@
 name: NP detail verification snapshot
 on:
-  push:
-    branches: [fix/np-royaltent-detail-20261109]
-    paths: ['.github/workflows/np-detail-snapshot.yml']
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -10,6 +8,8 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - run: git archive --format=tar.gz HEAD -o /tmp/np-detail-source.tar.gz
       - uses: actions/upload-artifact@v4
         with:

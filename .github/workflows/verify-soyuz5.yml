@@ -2,10 +2,10 @@ name: Soyuz-5 source model
 on:
   pull_request:
     branches: [main]
-    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml']
+    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   push:
-    branches: [main]
-    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml']
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,12 +18,14 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
       - name: Install verification dependencies
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 @gltf-transform/core@4.2.1 @gltf-transform/extensions@4.2.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Validate model, textures and menu contracts
         run: |

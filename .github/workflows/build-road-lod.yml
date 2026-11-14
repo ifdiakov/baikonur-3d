@@ -1,13 +1,6 @@
 name: Prepare road LOD artifact without rewriting main
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - 'scripts/build-road-lod.mjs'
-      - 'data/osm/roads.geojson'
-      - 'data/osm/railways.geojson'
-      - '.github/workflows/build-road-lod.yml'
 permissions:
   contents: read
 concurrency:

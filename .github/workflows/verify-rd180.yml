@@ -2,8 +2,8 @@
 name: RD-180 model and linked cards
 on:
   push:
-    branches: [main, codex/rd180]
-    paths: ['assets/models/rd180/**', 'src/rd180-facts.js', 'src/model-*.js', 'src/model-viewer.css', 'src/inspection-models.js', 'src/museum-menu.js', 'src/encyclopedia-3d.js', 'index.html', 'encyclopedia.html', 'data/encyclopedia.json', 'tests/rd180-*.mjs', '.github/workflows/verify-rd180.yml']
+    branches: [main, codex/rd180, fix/ci-repair-20261114]
+    paths: ['assets/models/rd180/**', 'src/rd180-facts.js', 'src/model-*.js', 'src/model-viewer.css', 'src/inspection-models.js', 'src/museum-menu.js', 'src/encyclopedia-3d.js', 'index.html', 'encyclopedia.html', 'data/encyclopedia.json', 'tests/rd180-*.mjs', '.github/workflows/verify-rd180.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,6 +13,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         run: node scripts/ci/impact.mjs verify-rd180.yml
@@ -25,17 +27,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - name: Reuse matching browser binaries
         if: steps.ci_scope.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Install test dependencies
         if: steps.ci_scope.outputs.run == 'true'
         run: |
-          npm install --no-save three@0.160.1 meshoptimizer@0.25.0 @gltf-transform/core@4.5.1 @gltf-transform/extensions@4.5.1 playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Verify source and catalogues
         if: steps.ci_scope.outputs.run == 'true'

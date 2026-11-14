@@ -1,0 +1,22 @@
+{
+  "name": "baikonur-museum-qa",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reproducible verification tools; production remains the unchanged static museum",
+  "engines": { "node": ">=22 <25" },
+  "scripts": {
+    "test:ci": "node tests/delivery-policy.mjs && node tests/ci-reliability.mjs && node tests/ci-contracts.mjs && node --experimental-vm-modules scripts/ci/fast-check.mjs",
+    "test:menu": "node tests/menu-catalog-contract.mjs"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "4.5.1",
+    "@gltf-transform/extensions": "4.5.1",
+    "@gltf-transform/functions": "4.5.1",
+    "esbuild": "0.25.12",
+    "meshoptimizer": "0.25.0",
+    "parse5": "7.3.0",
+    "playwright": "1.57.0",
+    "three": "0.160.1",
+    "yaml": "2.8.1"
+  }
+}

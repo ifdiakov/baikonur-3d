@@ -2,8 +2,8 @@
 name: Fast source and scene checks
 on:
   push:
-    branches: [main, 'fix/**']
-    paths: ['index.html','museum.html','workshop.html','src/**','data/**','assets/**','scripts/ci/fast-check.mjs','scripts/apply-map-group-removal.mjs','scripts/apply-camera-labels.mjs','scripts/prepare-onboarding-ukss.mjs','tests/onboarding-*.mjs','tests/camera-labels-*.mjs','tests/map-group-removal-*.mjs','tests/delivery-smoke.mjs','tests/security-*.mjs','tests/delivery-policy.mjs','tests/ci-reliability.mjs','.github/workflows/nonblocking-detail.yml']
+    branches: [main, 'fix/**', fix/ci-repair-20261114]
+    paths: ['index.html', 'museum.html', 'workshop.html', 'src/**', 'data/**', 'assets/**', 'scripts/ci/fast-check.mjs', 'scripts/apply-map-group-removal.mjs', 'scripts/apply-camera-labels.mjs', 'scripts/prepare-onboarding-ukss.mjs', 'tests/onboarding-*.mjs', 'tests/camera-labels-*.mjs', 'tests/map-group-removal-*.mjs', 'tests/delivery-smoke.mjs', 'tests/security-*.mjs', 'tests/delivery-policy.mjs', 'tests/ci-reliability.mjs', '.github/workflows/nonblocking-detail.yml', 'scripts/ci/**', 'package.json', 'package-lock.json', 'tests/helpers/**', 'tests/ci-contracts.mjs', 'tests/menu-catalog-contract.mjs', 'tests/transport-ground-contact-browser-checks.mjs']
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,7 +13,7 @@ concurrency:
 jobs:
   source:
     runs-on: ubuntu-24.04
-    timeout-minutes: 3
+    timeout-minutes: 5
     permissions:
       contents: read
     outputs:
@@ -46,6 +46,9 @@ jobs:
           if [ "$BRANCH_NAME" = 'fix/onboarding-ukss-20261113' ]; then tour=1; fi
           echo "camera=$profile" >> "$GITHUB_OUTPUT"
           echo "tour=$tour" >> "$GITHUB_OUTPUT"
+      - run: npm ci --ignore-scripts --no-audit --no-fund
+      - run: node tests/menu-catalog-contract.mjs
+      - run: node tests/ci-contracts.mjs
       - run: node --experimental-vm-modules scripts/ci/fast-check.mjs
       - run: node tests/security-model-inputs.mjs
       - run: node tests/delivery-policy.mjs
@@ -67,7 +70,7 @@ jobs:
   smoke:
     needs: source
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 22
     strategy:
       fail-fast: false
       matrix:
@@ -85,11 +88,11 @@ jobs:
           path: |
             ~/.npm
             ~/.cache/ms-playwright
-          key: museum-smoke-${{ runner.os }}-pw1.57.0
+          key: museum-smoke-${{ runner.os }}-pw1.57.0-${{ hashFiles('package-lock.json') }}
           restore-keys: |
             museum-playwright-${{ runner.os }}-1.57.0
       - run: |
-          npm install --no-save playwright@1.57.0
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Serve the exact candidate without generated edits
         if: github.ref != 'refs/heads/main'
@@ -101,7 +104,7 @@ jobs:
           QA_ONBOARDING_ROUTE: ${{ needs.source.outputs.tour }}
           BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://ifdiakov.github.io/baikonur-3d/' || 'http://127.0.0.1:8765/' }}
           VERIFY_PUBLIC: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
-        run: node scripts/ci/run-bounded.mjs 360 smoke-${{ matrix.mode }} node tests/delivery-smoke.mjs
+        run: node scripts/ci/run-bounded.mjs 900 smoke-${{ matrix.mode }} node tests/delivery-smoke.mjs
       - name: Check model input rejection and retained viewer controls
         if: matrix.mode != 'workshop'
         env:

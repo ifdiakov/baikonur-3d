@@ -1,4 +1,14 @@
 import assert from 'node:assert/strict';
+import {isMapSiteHidden,REMOVED_MAP_GROUPS} from '../src/map-visible-sites.js';
+
+export function protonNeighborContract(siteId){
+ const candidates={'pad-81':['pad-82','pad-84','sector-nw2'],'pad-200':['pad-201','pad-202']}[siteId];
+ assert(candidates,'Known Proton neighborhood');
+ const excluded=candidates.filter(id=>isMapSiteHidden(id)||REMOVED_MAP_GROUPS.some(([removed])=>removed===id));
+ assert.deepEqual(excluded,siteId==='pad-81'?['pad-84','sector-nw2']:[],'Approved hiding policy must be reviewed if changed');
+ return {neighbors:candidates.filter(id=>!excluded.includes(id)),excludedNeighbors:excluded};
+}
+
 import {pathToFileURL} from 'node:url';
 import {resolve} from 'node:path';
 import * as THREE from 'three';
@@ -125,7 +135,9 @@ export function measureProtonCivil(options) {
 // images. This checks their rendered geometry, not their declared scale.
 export function measureProtonNeighborClearance(options) {
   const seam = globalThis.__PROTON_TEST, T = options.THREE || seam?.THREE, objects = options.objects || seam?.objects;
-  const ids = {'pad-81': ['pad-82', 'pad-84', 'sector-nw2'], 'pad-200': ['pad-201', 'pad-202']}[options.siteId];
+  const ids = options.neighbors;
+  if(!Array.isArray(ids)||!Array.isArray(options.excludedNeighbors))throw new Error('Explicit current neighbor contract required');
+  for(const id of options.excludedNeighbors)if(objects?.some(o=>o.record.id===id))throw new Error('Intentionally hidden neighbor restored: '+id);
   if (!ids || !T || !objects) throw new Error('Missing Proton neighbor measurement context');
   const root = objects.find(o => o.record.id === options.siteId)?.g;
   if (!root?.userData.protonCivil) throw new Error('Missing actual Proton civil root');
@@ -196,12 +208,13 @@ export function measureProtonNeighborClearance(options) {
       surfaceWorld: sample.world, obstacleWorld: hit.point.toArray(), excessHeightMetres: (hit.point.y - y) / scale,
       mesh: hit.object.name || hit.object.geometry.type, instanceId: hit.instanceId ?? null});
   }
-  return {siteId: options.siteId, neighbors, features, testedSurfaceSamples: surfaces.length, blockedSamples, blockers,
+  return {siteId: options.siteId, neighbors, excludedNeighbors:options.excludedNeighbors, features, testedSurfaceSamples: surfaces.length, blockedSamples, blockers,
     verticalToleranceMetres: .03, method: 'Actual visible neighboring meshes above independently measured civil surfaces; no scale-only assertions'};
 }
 
 export function assertProtonNeighborClearance(report) {
-  const expected = {'pad-81': ['pad-82', 'pad-84', 'sector-nw2'], 'pad-200': ['pad-201', 'pad-202']}[report.siteId];
+  const contract=protonNeighborContract(report.siteId),expected=contract.neighbors;
+  assert.deepEqual(report.excludedNeighbors,contract.excludedNeighbors);
   assert.deepEqual(report.neighbors.map(neighbor => neighbor.id), expected);
   assert(report.features.some(feature => feature.kind === 'path') && report.features.some(feature => feature.kind === 'yard') && report.features.some(feature => feature.kind === 'building'));
   for (const feature of report.features) assert(feature.actualSurfaceSamples >= 4, 'Physical surfaces were sampled for ' + feature.id);
@@ -311,3 +324,4 @@ if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.m
       paths: report.probes.paths.length, entryMasks: report.declaredMasks.length}));
   }
 }
+

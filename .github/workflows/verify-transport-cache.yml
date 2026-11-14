@@ -2,17 +2,8 @@
 name: Verify baked transport fast boot
 on:
   push:
-    branches: [main]
-    paths:
-      - 'data/osm/transport-geometry-bake-v1.json.gz'
-      - 'src/transport-bake.js'
-      - 'src/road-lod.js'
-      - 'src/road-editor.js'
-      - 'index.html'
-      - 'data/osm/road-lod-authoritative-v1.json.gz'
-      - 'tests/road-lod-authoritative.mjs'
-      - 'tests/transport-cache-browser.mjs'
-      - '.github/workflows/verify-transport-cache.yml'
+    branches: [main, fix/ci-repair-20261114]
+    paths: ['data/osm/transport-geometry-bake-v1.json.gz', 'src/transport-bake.js', 'src/road-lod.js', 'src/road-editor.js', 'index.html', 'data/osm/road-lod-authoritative-v1.json.gz', 'tests/road-lod-authoritative.mjs', 'tests/transport-cache-browser.mjs', '.github/workflows/verify-transport-cache.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,6 +13,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Select relevant checks before downloading tools
         id: ci_scope
         run: node scripts/ci/impact.mjs verify-transport-cache.yml
@@ -34,17 +27,17 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.npm
-          key: museum-npm-${{ runner.os }}-v1
+          key: museum-npm-${{ runner.os }}-v1-${{ hashFiles('package-lock.json') }}
       - name: Reuse matching browser binaries
         if: steps.ci_scope.outputs.run == 'true'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: museum-playwright-${{ runner.os }}-1.57.0
+          key: museum-playwright-${{ runner.os }}-1.57.0-${{ hashFiles('package-lock.json') }}
       - name: Install test browser
         if: steps.ci_scope.outputs.run == 'true'
         run: |
-          npm install --no-save playwright@1.57.0 three@0.160.1
+          npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
       - name: Check transport and LOD contracts
         if: steps.ci_scope.outputs.run == 'true'
