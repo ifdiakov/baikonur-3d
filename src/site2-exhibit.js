@@ -31,23 +31,28 @@ export function installSite2Exhibit(root){
  if(controllers.has(root))return controllers.get(root);
  const state={version:SITE2_VERSION,status:'pending',error:null,source:'energia-buran.glb',sharedSource:true,gear:0,drawCalls:0,triangles:0};
  root.userData.site2Model.asset=state;
+ const startup=globalThis.window?.__MUSEUM_STARTUP;
  let pending=null;
  async function load(){
   if(state.status==='ready')return true;if(pending)return pending;
   state.status='loading';state.error=null;
   pending=(async()=>{try{
    const [source,{buildLandingAircraft}]=await Promise.all([loadRocketSource('energia-buran'),import('./buran-landing-aircraft.js?v=20261101-without-ll22-v1')]);
-   const {model,source:provenance}=prepareSite2Buran(buildLandingAircraft({sourceBuran:source.scene}));
-   root.add(model);root.updateWorldMatrix(true,true);
-   const added=[];model.traverse(o=>{if(o.isMesh){added.push(o);state.triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;}});
-   state.status='ready';state.drawCalls=added.length;state.sourceTriangles=provenance.retainedTriangles;
-   state.dimensions=provenance.bounds.size;state.materials=provenance.retainedMaterials;
-   root.dispatchEvent({type:'museum-exhibit-loaded',added,removed:[]});return true;
+   const install=()=>{
+    const {model,source:provenance}=prepareSite2Buran(buildLandingAircraft({sourceBuran:source.scene}));
+    root.add(model);root.updateWorldMatrix(true,true);
+    const added=[];model.traverse(o=>{if(o.isMesh){added.push(o);state.triangles+=(o.geometry.index?.count||o.geometry.attributes.position.count)/3;}});
+    state.status='ready';state.drawCalls=added.length;state.sourceTriangles=provenance.retainedTriangles;
+    state.dimensions=provenance.bounds.size;state.materials=provenance.retainedMaterials;
+    root.dispatchEvent({type:'museum-exhibit-loaded',added,removed:[]});return true;
+   };
+   // Await the separately queued shared source before taking a scheduler
+   // slot. A suspended queue can then drain even on a one-slot connection.
+   return startup?.defer?await startup.defer(install,{key:'site2-buran',priority:35}):install();
   }catch(error){state.status='error';state.error=error.message;return false;}finally{pending=null;root.dispatchEvent({type:'site2-exhibit-change'});}})();
   return pending;
  }
  const controller={load,stats:()=>({...state}),ready:null};controllers.set(root,controller);
- const startup=globalThis.window?.__MUSEUM_STARTUP;
- controller.ready=startup?.defer?startup.defer(load,{key:'site2-buran',priority:35}):load();
+ controller.ready=load();
  return controller;
 }

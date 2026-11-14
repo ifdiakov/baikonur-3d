@@ -576,7 +576,7 @@ body.following-arrival #labelLayer{display:none!important}
   <div class="guide-note">Шаг 5, средние линии 25, крупные 100. X — горизонталь, Y — вертикаль на карте. G — показать/скрыть, Shift + клик — копировать координаты.</div>
    <button id="museumTourStart" class="museum-tour-replay" type="button" aria-label="Повторить обучение управлению музеем, 29 секунд">↻ ОБУЧЕНИЕ · 29 СЕК</button>
  </div>
-</details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261103-onboarding-v2"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
+</details></div><aside id="museumRightStack" inert aria-label="Следующий запуск"><div id="nextLaunchPanel"></div></aside><aside class="info" id="info"><button class="close" id="close">×</button><b id="title"></b><div class="orgrow"><span class="info-org" id="infoOrg"></span><span id="infoOrgRole"></span></div><p class="info-purpose" id="infoPurpose"></p><p id="description"></p><button class="info-more gagarin-rocket-control" id="rocketExhibitToggle" type="button" hidden>ПОКАЗАТЬ «СОЮЗ» · ЭКСПОНАТ</button><div id="mik112Controls" class="buttons" hidden style="margin:10px 0"><button id="mik112All" type="button">МИК целиком</button><button id="mik112Tua" type="button">Кузнечики</button><button id="mik112Top" type="button">Сверху</button></div><button class="info-more" id="detailMore">ПОДРОБНЕЕ ↗</button><div class="info-extra" id="infoExtra"></div></aside><footer id="timeDock" inert aria-label="Историческая шкала времени"><div class="timeline-head"><div class="timeline-title"><span class="timeline-dot" aria-hidden="true"></span>МАШИНА ВРЕМЕНИ <span class="timeline-sub">ИСТОРИЯ КОСМОДРОМА · 1955—2026</span></div><div class="timeline-year"><b id="yearVal" aria-live="polite">2026</b><span>ГОД</span></div></div><div class="timeline-ruler"><input id="year" class="year" aria-label="Исторический год" type="range" min="1955" max="2026" step="1" value="2026"><div class="timeline-marks"><span>1955</span><span>1970</span><span>1990</span><span>2010</span><span>2026</span></div></div></footer><script src="./src/museum-startup.js?v=20261114-launch-hold-v3"></script><script type="importmap">{"imports":{"three":"./src/vendor/three-r160/build/three.module.js","three/addons/":"./src/vendor/three-r160/examples/jsm/"}}</script><script type="module" onerror="window.__MUSEUM_STARTUP?.fail(new Error('Не удалось загрузить 3D-движок'))">
 import {installMuseumSharing,SHARE_EVENTS} from './src/card-share.js?v=20261111-share-v1';
 import {COMPLEX_HISTORY_MENU as SHARE_HISTORY_MENU} from './src/complex-history-menu.js?v=20261103-lean-startup-v1';
 import {visibleMapSites} from './src/map-visible-sites.js?v=20261112-site94-94a-photo-v1';
@@ -592,7 +592,7 @@ import {createSite95RoadGrade} from './src/site95-road-grade.js?v=20261106-site9
 import {createSite113RoadGrade} from './src/site113-road-grade.js?v=20261109-owner19-v3';
 import {createCheckpoint7RoadGrade} from './src/checkpoint7-road-grade.js?v=20261103-checkpoint7-flat-v2';
 import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
-import {installArchiveModels} from './src/archive-models.js?v=20261112-site94-ground-v2';
+import {installArchiveModels} from './src/archive-models.js?v=20261114-launch-hold-v3';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
@@ -625,7 +625,7 @@ import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPosition
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261109-overlays-off-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261102-site2-photo-v3';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
-import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261114-occlusion-light-v14';
+import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261114-ground-warm-hold-v15';
 import {createSoyuzDualLaunch} from './src/soyuz-dual-launch.js?v=20261103-dual-site-launch-v1';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261108-road-fleet-v1';
 import {createCoordinateGrid} from './src/coordinate-grid.js?v=20261109-overlays-off-v1';
@@ -1101,13 +1101,13 @@ if(transportFromBake){
 // rendered map, traffic, lighting and UI remain alive while it calculates.
 let transportDetailJob=null,transportDetailAttempts=0,transportDetailRetryAt=0;
 function requestTransportDetail(){
- if(!transportFromBake||detailTransportReady||detailTransportLoading||transportDetailAttempts>=3||performance.now()<transportDetailRetryAt)return;
+ if(!transportFromBake||detailTransportReady||detailTransportLoading||startup.isSuspended()||transportDetailAttempts>=3||performance.now()<transportDetailRetryAt)return;
  detailTransportLoading=true;transportDetailAttempts++;
  (async()=>{
   try{
    await startup.paint();
-   const {createTransportDetailJob}=await import('./src/transport-detail-job.js?v=20261112-pantsirs-v1');
-   transportDetailJob=createTransportDetailJob();
+   const {createTransportDetailJob}=await import('./src/transport-detail-job.js?v=20261114-launch-hold-v2');
+   transportDetailJob=createTransportDetailJob({beforeInstall:()=>startup.whenResumed()});
    const mikRoot=mik112Exhibit?objects[mik112Index].g:null;mikRoot?.updateWorldMatrix(true,false);
    const result=await transportDetailJob.build({data:{roads:osmRoads,railways:osmRails,railPoints:osmStations,facilities:osmFacilities,airports:osmAirports,places:osmPlaces},
     legacyData:transportData,catalog,matches:osmMatches,siteRecords,checkpointAnchor,pixelRatio:Math.min(devicePixelRatio||1,2),
@@ -1117,6 +1117,7 @@ function requestTransportDetail(){
    if(roots.some(r=>!r))throw Error('Incomplete detailed transport');
    const newlyBuilt=[];for(const root of roots)root.traverse(mesh=>{if(!mesh.isMesh)return;newlyBuilt.push(mesh);for(const mat of Array.isArray(mesh.material)?mesh.material:[mesh.material])portalVoids.mask(mat);});
    await roadEditor.attachRoadMeshesAsync(newlyBuilt,spec=>transportDetailJob.cut(spec));
+   await startup.whenResumed();
    railStations.applyPlans(result.stationPlans);
    for(const key of ['roads','rails'])layers[key].add(...result.roots[key]);
    for(const root of result.roots.roads)applyBridgeGroundSurfaces(root,{referenceMaterial:satelliteGround.material,steppeSurface,registerGroundSurface,width:W*S,height:H*S});
@@ -2630,7 +2631,7 @@ puaLoading=createPuaLoading({airfield:objects.find(o=>o.record.id==='pad-251').g
 }});
 
 energiaLaunch=createEnergiaPolyusLaunch({
- scene,camera,controls:ctl,siteRoot:ukssGroup,renderer,objects,groundMaterials,getEntry:()=>rocketExhibits.get('ukss'),
+ scene,camera,controls:ctl,siteRoot:ukssGroup,renderer,objects,groundMaterials,backgroundWork:startup,getEntry:()=>rocketExhibits.get('ukss'),
  onStart(){
   cancelBuranLaunch({restoreCamera:false});
   puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});
@@ -2665,6 +2666,7 @@ async function requestSoyuzLaunch(siteId){
  const generation=++soyuzRequestGeneration,key=siteId==='pad-1'?'gagarin':siteId==='pad-31'?'site31':null;
  if(!key)return false;
  let entry=rocketExhibits.get(key);if(!entry)return false;
+ ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});
  rocketExhibits.prioritizeSite(siteId);
  const button=document.getElementById('soyuzLaunchStart');
  if(button&&!button.hidden){button.disabled=true;button.textContent='ЗАГРУЗКА «СОЮЗА»…';}
@@ -2873,6 +2875,7 @@ function cancelBuranLaunch(options={restoreCamera:false}){
 async function requestBuranLaunch(){
  const token=++buranLaunchRequest,button=document.getElementById('buranLaunchStart'),entry=rocketExhibits.get('site110');
  if(!entry)return false;
+ ++energiaStartGeneration;energiaLaunch?.stop({releaseCamera:false});
  if(button){button.disabled=true;button.dataset.pending='true';button.textContent='ЗАГРУЗКА «ЭНЕРГИИ — БУРАНА»…';}
  rocketExhibits.prioritizeSite('pad-110');
  try{

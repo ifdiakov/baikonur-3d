@@ -48,12 +48,72 @@ const draw=()=>page.evaluate(()=>{
  const renderMs=performance.now()-t;
  let visibleLights=0,shadowLights=0,shadowTextures=0;
  e.scene.traverseVisible(object=>{if(object.isLight){visibleLights++;if(object.castShadow)shadowLights++;if(object.shadow?.map)shadowTextures++;}});
+ // Read r160's completed render list after timing, without installing scene
+ // callbacks or serializing the whole scene. Attribute new programs to the
+ // materials/objects that can use them, including their existing variants.
+ const history=e.diagnosticHistory??={programs:new Set(),objects:new Set(),materials:new Set()};
+ const freshPrograms=e.renderer.info.programs.filter(program=>!history.programs.has(program.id));
+ const freshProgramIds=new Set(freshPrograms.map(program=>program.id));
+ const lists=e.renderer.renderLists.get(e.scene,0),items=[...lists.opaque,...lists.transmissive,...lists.transparent];
+ const owners=new Map(),newObjects=[],newMaterials=[],frameObjects=new Set(),frameMaterials=new Set();
+ for(const {object,material}of items){
+  if(!object||!material)continue;
+  const ancestry=[];let parent=object,launchEffect=false;
+  while(parent&&ancestry.length<5){
+   ancestry.push((parent.name||parent.type).slice(0,90));
+   if(parent.userData.softSmoke||parent.userData.nozzleFlameLength!=null||parent.userData.museumComponent==='launch-ground-depth'
+    ||parent.name==='Реактивные факелы'||parent.name==='Энергия — Полюс · огонь, дым и газоход')launchEffect=true;
+   parent=parent.parent;
+  }
+  const properties=e.renderer.properties.get(material);
+  const entry={objectId:object.id,materialId:material.id,material:material.name||material.type,
+   ancestry,launchEffect,terrainGlow:material.customProgramCacheKey().includes('energia-ground-light'),
+   currentProgram:properties.currentProgram?.id??null};
+  if(!history.objects.has(object.id)&&!frameObjects.has(object.id))newObjects.push(entry);
+  if(!history.materials.has(material.id)&&!frameMaterials.has(material.id))newMaterials.push(entry);
+  frameObjects.add(object.id);frameMaterials.add(material.id);
+  for(const program of properties.programs?.values()||[]){
+   if(!freshProgramIds.has(program.id))continue;
+   const rows=owners.get(program.id)||[];
+   if(rows.length<3&&!rows.some(row=>row.objectId===object.id&&row.materialId===material.id))rows.push(entry);
+   owners.set(program.id,rows);
+  }
+ }
+ for(const program of e.renderer.info.programs)history.programs.add(program.id);
+ for(const id of frameObjects)history.objects.add(id);
+ for(const id of frameMaterials)history.materials.add(id);
+ const snapshot=window.__BAIKONUR_QA.stats(),{marks,...loading}=snapshot.loading;
+ loading.tasks=loading.tasks.map(({key,state,startedAt,finishedAt,error})=>({key,state,startedAt,finishedAt,error}));
  return {renderMs,drawCalls:e.renderer.info.render.calls,triangles:e.renderer.info.render.triangles,
   programs:e.renderer.info.programs.length,shadersValid:e.renderer.info.programs.every(p=>p.diagnostics?.runnable!==false),
   visibleLights,shadowLights,shadowTextures,shadowEnabled:e.renderer.shadowMap.enabled,
-  memory:{...e.renderer.info.memory}};
+  memory:{...e.renderer.info.memory},cameraPose:{eye:e.camera.position.toArray(),target:e.ctl.target.toArray()},
+  background:{transportBake:snapshot.transportBake,roadLOD:snapshot.roadLOD,loading},
+  shaderChanges:{newProgramCount:freshPrograms.length,newPrograms:freshPrograms.slice(0,16).map(program=>({id:program.id,
+   name:program.name,type:program.type,owners:owners.get(program.id)||[]})),
+   newObjectCount:newObjects.length,newObjects:newObjects.slice(0,12),newMaterialCount:newMaterials.length,newMaterials:newMaterials.slice(0,12)}};
 });
 async function shot(name){await page.screenshot({path:out+'/'+name+'.png',timeout:120000});report.screenshots.push(name+'.png');}
+function assertBackgroundHeld(background,{compare=true}={}){
+ const {loading,transportBake}=background;
+ assert.equal(loading.suspended,true,'An active launch holds optional background work');
+ assert.equal(loading.suspensionCount,report.before.background.loading.suspensionCount+1);
+ assert.equal(loading.suspensionReasons.filter(reason=>reason==='energia-launch').length,1,'Replay keeps one launch lease');
+ assert.equal(loading.active,0,'Preparation drains already active optional jobs before ignition');
+ if(compare&&report.backgroundHeld){
+  const previous=report.backgroundHeld;
+  for(const [index,task]of loading.tasks.entries()){
+   const before=previous.loading.tasks[index];
+   if(before)assert.equal(task.key,before.key);
+   if(!before||before.state==='queued'){
+    assert.equal(task.state,'queued','Queued optional work stays deferred during launch: '+task.key);
+    assert.equal(task.startedAt,undefined);
+   }
+  }
+  assert.equal(transportBake.detailReady,previous.transportBake.detailReady,'Detailed transport is not installed during launch');
+  assert.equal(transportBake.attempts,previous.transportBake.attempts,'Launch does not start another transport build');
+ }
+}
 async function seek(seconds){
  const updateMs=await page.evaluate(time=>{const start=performance.now();window.__BAIKONUR_QA.energia.seek(time);return performance.now()-start;},seconds);
  const current=await state();assert.equal(current.time,seconds);assert.equal(current.active,true);
@@ -72,6 +132,7 @@ async function seek(seconds){
   assert.equal(fx.groundOcclusion.contourSource,'source-model');
   assert.equal(rendered.shadowEnabled,report.before.shadowEnabled,'Launch preserves renderer shadow policy');
   assert.equal(rendered.shadowTextures,report.before.shadowTextures,'No launch shadow texture allocation');
+  assertBackgroundHeld(rendered.background,{compare:!report.backgroundReleased});
  }
  console.log('ENERGIA_SURFACE_PHASE '+JSON.stringify({time:seconds,updateMs:Math.round(updateMs),...rendered}));
  return current;
@@ -85,7 +146,8 @@ try{
   report.requestedBase=base;base=new URL('./',destination.url).href;report.base=base;
   await destination.body?.cancel();
   report.publicHashes={};
-  for(const file of ['index.html','museum.html','workshop.html','src/energia-polyus-launch.js','src/energia-rocket-exhaust.js','src/energia-ground-light.js','src/energia-ground-occlusion.js']){
+  for(const file of ['index.html','museum.html','workshop.html','src/energia-polyus-launch.js','src/energia-rocket-exhaust.js','src/energia-ground-light.js','src/energia-ground-occlusion.js',
+   'src/museum-startup.js','src/transport-detail-job.js','src/site2-exhibit.js','src/archive-models.js','src/archive-buildings.js']){
    const response=await fetch(new URL(file+'?energia_surface='+Date.now(),base));assert.ok(response.ok,'Published file '+file);
    const actual=digest(Buffer.from(await response.arrayBuffer())),expected=digest(await readFile(file));
    assert.equal(actual,expected,'Published candidate bytes: '+file);report.publicHashes[file]=actual;
@@ -138,6 +200,18 @@ try{
   assert.equal(opening.effects.engineCorePower,0);assert.equal(opening.effects.engineBoosterPower,0);
   assert.equal(opening.effects.engineNozzleGlowVisible,0);assert.equal(opening.effects.groundLighting.power,0);
   assert.equal(opening.effects.steam,0);assert.equal(opening.effects.water,0);
+  report.backgroundHeld=await page.evaluate(()=>{
+   const e=window.__ENERGIA_SURFACE_TEST,startup=window.__MUSEUM_STARTUP;
+   // A fast, highest-priority job makes release observable without waiting
+   // for every optional model or road to finish after this episode closes.
+   const probe=e.backgroundProbe={key:'qa-energia-resume',started:false,finished:false};
+   startup.defer(()=>{probe.started=true;probe.startedAt=performance.now();return true;},
+    {key:probe.key,priority:1000000}).then(()=>{probe.finished=true;});
+   const {marks,...loading}=startup.stats();
+   return {loading,transportBake:window.__BAIKONUR_QA.stats().transportBake};
+  });
+  assertBackgroundHeld(report.backgroundHeld);
+  assert.equal(report.backgroundHeld.loading.tasks.find(task=>task.key==='qa-energia-resume').state,'queued');
  }
  for(const time of [-10,-8,-2,0,6]){
   const current=await seek(time);
@@ -208,6 +282,7 @@ try{
  }
  // Replay reconstructs the same illumination, then departure leaves no pit fire.
  await page.evaluate(()=>window.__BAIKONUR_QA.energia.start());
+ if(!baseline)await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.effects?.warmup?.status==='ready',null,{timeout:90000});
  const replay=await seek(0);report.replay={mode:replay.mode,glows:replay.effects.engineNozzleGlowVisible};
  assert.equal(replay.mode,'follow');assert.equal(replay.effects.engineNozzleGlowVisible,8);
  const departed=await seek(30);assert.equal(departed.effects.padFireFade,0);assert.equal(departed.effects.padSmokeFade,0);
@@ -219,6 +294,15 @@ try{
  assert.equal(report.restored.active,false);assert.equal(report.restored.year,report.before.year);
  assert.equal(report.restored.evening,true);assert.equal(report.restored.shadowEnabled,report.before.shadowEnabled);
  if(!baseline)assert.equal(report.restored.fx.groundLighting.power,0);
+ if(!baseline){
+  await page.waitForFunction(()=>window.__ENERGIA_SURFACE_TEST.backgroundProbe.finished,null,{timeout:15000});
+  report.backgroundReleased=await page.evaluate(()=>({loading:window.__MUSEUM_STARTUP.stats(),
+   probe:window.__ENERGIA_SURFACE_TEST.backgroundProbe}));
+  assert.equal(report.backgroundReleased.loading.suspensionCount,report.before.background.loading.suspensionCount);
+  assert.equal(report.backgroundReleased.loading.suspended,report.before.background.loading.suspended);
+  assert.equal(report.backgroundReleased.probe.started,true,'Closing launch resumes the queued optional job');
+  assert.equal(report.backgroundReleased.probe.finished,true);
+ }
  // Same retained scene at a narrow viewport, without reloading all assets.
  await page.setViewportSize({width:390,height:844});
  await page.waitForFunction(()=>{
@@ -231,7 +315,9 @@ try{
   await new Promise(requestAnimationFrame);
   window.__BAIKONUR_QA.inspectUkss('overview');
  });
- await page.evaluate(()=>window.__BAIKONUR_QA.energia.start());await seek(0);
+ await page.evaluate(()=>window.__BAIKONUR_QA.energia.start());
+ if(!baseline)await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.effects?.warmup?.status==='ready',null,{timeout:90000});
+ await seek(0);
  await page.evaluate(()=>window.__ENERGIA_SURFACE_FRAME());
  report.mobileRender=await draw();report.mobileRenderSurface=await renderSurface();
  report.mobileCamera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
@@ -241,6 +327,11 @@ try{
  report.mobile=await page.locator('#energiaLaunchPanel').evaluate(element=>{const b=element.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom};});
  assert.ok(report.mobile.left>=0&&report.mobile.right<=390.5&&report.mobile.bottom<=844.5);
  await shot('mobile-ignition');await page.evaluate(()=>window.__BAIKONUR_QA.energia.stop());
+ if(!baseline){
+  report.backgroundFinal=await page.evaluate(()=>window.__MUSEUM_STARTUP.stats());
+  assert.equal(report.backgroundFinal.suspensionCount,report.before.background.loading.suspensionCount,'Reentry releases its fresh lease');
+  assert.equal(report.backgroundFinal.suspended,report.before.background.loading.suspended);
+ }
  assert.deepEqual(report.errors,[]);report.passed=true;
  console.log('ENERGIA_SURFACE_BROWSER_PASS '+JSON.stringify({prefix,baseline,phases:report.phases.length,depthProbes:report.depthProbes?.probes,shots:report.screenshots.length}));
 }catch(error){report.error=error.stack;await page.screenshot({path:out+'/failure.png',timeout:60000}).catch(()=>{});throw error;}

@@ -8,6 +8,9 @@
   var interactive = false;
   var jobs = [];
   var activeJobs = 0;
+  var activeSettlements = new Set();
+  var suspensions = new Set();
+  var resumeWaiters = [];
   var jobSequence = 0;
   var pumpScheduled = false;
   var jobHistory = [];
@@ -74,14 +77,17 @@
   // painted and revealed. A bounded queue leaves bandwidth and event-loop
   // turns for navigation; choosing a site can promote its pending assets.
   function pump() {
-    if (!interactive || pumpScheduled || activeJobs >= concurrency || !jobs.length) return;
+    if (!interactive || isSuspended() || pumpScheduled || activeJobs >= concurrency || !jobs.length) return;
     pumpScheduled = true;
     var run = function () {
       pumpScheduled = false;
-      if (!interactive || activeJobs >= concurrency || !jobs.length) return;
+      if (!interactive || isSuspended() || activeJobs >= concurrency || !jobs.length) return;
       jobs.sort(function (a, b) { return b.priority - a.priority || a.order - b.order; });
       var job = jobs.shift();
       activeJobs++;
+      var settle;
+      var settled = new Promise(function (resolve) { settle = resolve; });
+      activeSettlements.add(settled);
       job.record.state = 'loading';
       job.record.startedAt = performance.now();
       Promise.resolve().then(job.task).then(function (value) {
@@ -94,6 +100,8 @@
       }).finally(function () {
         job.record.finishedAt = performance.now();
         activeJobs--;
+        activeSettlements.delete(settled);
+        settle();
         pump();
       });
       pump();
@@ -120,8 +128,37 @@
     pump();
   }
 
+  function isSuspended() { return suspensions.size > 0; }
+
+  // A launch holds optional jobs without cancelling them. The lease waits
+  // only for work already running, so releasing it early cannot extend its
+  // readiness promise with newly resumed jobs.
+  function suspend(reason) {
+    var token = { reason: String(reason || 'optional-work') };
+    suspensions.add(token);
+    var ready = Promise.all(Array.from(activeSettlements)).then(function () {});
+    return { ready: ready, release: function () {
+      if (!suspensions.delete(token) || isSuspended()) return;
+      var waiters = resumeWaiters;
+      resumeWaiters = [];
+      waiters.forEach(function (resolve) { resolve(); });
+      pump();
+    } };
+  }
+
+  function whenResumed() {
+    if (!isSuspended()) return Promise.resolve();
+    return new Promise(function (resolve) { resumeWaiters.push(resolve); }).then(function () {
+      // A second launch can acquire a new lease before this microtask runs.
+      // Do not decode an old worker result into that new launch session.
+      if (isSuspended()) return whenResumed();
+    });
+  }
+
   function stats() {
     return { interactive: interactive, active: activeJobs, queued: jobs.length, concurrency: concurrency,
+      suspended: isSuspended(), suspensionCount: suspensions.size,
+      suspensionReasons: Array.from(suspensions, function (token) { return token.reason; }),
       marks: marks.map(function (entry) { return Object.assign({}, entry); }),
       tasks: jobHistory.map(function (entry) { return Object.assign({}, entry); }) };
   }
@@ -278,5 +315,5 @@
   }
 
   window.__MUSEUM_STARTUP = Object.freeze({ stage: stage, ready: ready, fail: fail, fetchJSON: fetchJSON, paint: paint,
-    defer: defer, promote: promote, stats: stats, mark: mark });
+    defer: defer, promote: promote, suspend: suspend, isSuspended: isSuspended, whenResumed: whenResumed, stats: stats, mark: mark });
 })();

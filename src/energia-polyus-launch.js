@@ -455,9 +455,13 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[],rocket,groundMateri
   root.removeFromParent();
  }
  function hideExhaust(){rocketExhaust.hide();}
- const warmup={status:'idle',materials:0,textures:0,rendered:false,drawCalls:0,renderMilliseconds:0};let preparation=null;
- function prepare(scene){
-  if(preparation)return preparation;
+ const warmup={status:'idle',materials:0,textures:0,rendered:false,drawCalls:0,renderMilliseconds:0};
+ let preparation=null,preparationKey=null,preparationSerial=0;
+ function prepare(scene,{key=null,ready=Promise.resolve(),isCurrent=()=>root.visible}={}){
+  if(preparation&&preparationKey===key)return preparation;
+  preparationKey=key;
+  const serial=++preparationSerial,owns=()=>serial===preparationSerial;
+  const current=()=>owns()&&isCurrent()&&root.visible;
   if(!renderer?.compileAsync){warmup.status='unavailable';return Promise.resolve();}
   // Compile hidden flames/smoke while T-90 is still clear. The light-free
   // proxies share the exact materials and instancing flags; scene supplies
@@ -476,15 +480,21 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[],rocket,groundMateri
    proxies.add(proxy);
    if(object.material.map?.isTexture)textures.add(object.material.map);
   });
-  warmup.materials=seen.size;warmup.textures=textures.size;warmup.status='pending';
-  for(const texture of textures)renderer.initTexture(texture);
-  preparation=Promise.resolve().then(()=>renderer.compileAsync(proxies,camera,scene)).then(()=>{
+  Object.assign(warmup,{materials:seen.size,textures:textures.size,status:'pending',rendered:false,drawCalls:0,renderMilliseconds:0});
+  preparation=Promise.resolve(ready).then(async()=>{
+   // Settle the captured optional jobs before compiling and drawing the
+   // scene. A new launch owns a new generation, even while an older wait ends.
+   if(!current())return false;
+   for(const texture of textures)renderer.initTexture(texture);
+   await renderer.compileAsync(proxies,camera,scene);
+   return true;
+  }).then(compiled=>{
    proxies.clear();
    // Shader compilation alone does not upload buffers or finish the driver's
    // first real draw. Warm the real scene in a tiny offscreen framebuffer while
    // its clock is held at T-90. Capture state here, after the asynchronous wait:
    // a visitor may have sought or closed the episode while shaders compiled.
-   if(!root.visible||!latestPose){warmup.status='idle';preparation=null;return;}
+   if(!compiled||!current()||!latestPose){if(owns()){warmup.status='idle';preparation=null;}return;}
    if(root.visible&&latestPose){
     const previous={pose:latestPose,rootVisible:root.visible,rocketVisible:rocket.visible,
      exhaustVisible:rocketExhaust.root.visible,target:renderer.getRenderTarget(),
@@ -533,7 +543,8 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[],rocket,groundMateri
    }
    warmup.status='ready';
   }).catch(error=>{
-   warmup.status='failed';proxies.clear();console.warn('Energia effect preparation failed',error);
+   if(owns())warmup.status=current()?'failed':'idle';
+   proxies.clear();console.warn('Energia effect preparation failed',error);
   });
   return preparation;
  }
@@ -555,7 +566,7 @@ function visualHeight(altKm){return energiaVisualHeight(altKm);}
 export function energiaCameraHeightUnits(altKm){return visualHeight(altKm)/MUSEUM_MAP_SCALE;}
 export function shouldDetachEnergiaCamera(altKm){return energiaCameraHeightUnits(altKm)>=ENERGIA_CAMERA_DETACH_UNITS;}
 
-export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,renderer,objects=[],groundMaterials=[],getEntry,onStart=()=>null,onStop=()=>{}}){
+export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,renderer,objects=[],groundMaterials=[],backgroundWork=null,getEntry,onStart=()=>null,onStop=()=>{}}){
  const stylesheet=document.createElement('link');stylesheet.rel='stylesheet';stylesheet.href=new URL('./energia-polyus-launch.css?v=20261103-cinematic-100h-v1',import.meta.url);document.head.append(stylesheet);
  const panel=document.createElement('section');panel.id='energiaLaunchPanel';panel.hidden=true;panel.setAttribute('aria-label','Энергия — Полюс: реконструкция запуска 15 мая 1987 года');
  panel.innerHTML=[
@@ -576,6 +587,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  const $=id=>panel.querySelector('#'+id);
  let active=false,paused=false,speed=8,seconds=ENERGIA_LAUNCH_START,lastNow=null,mode='follow',saved=null,sceneRestore=null;
  let effects=null,lastPhase=-1,originalRocket=null,lastFrame=null,modelReady=false,preview=null;
+ let launchGeneration=0,backgroundLease=null,backgroundReady=Promise.resolve();
  let cameraDetached=false,detachedAt=null;
  const followStartingTarget=new THREE.Vector3();
  let initialCameraPose=null;
@@ -704,7 +716,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   setCinematicDetach(shouldDetachEnergiaCamera(s.altitudeKm),s);
   const event=ENERGIA_LAUNCH_EVENTS[s.phase];
   $('energiaClock').textContent=clock(seconds);
-  $('energiaStage').textContent=event.title;
+  $('energiaStage').textContent=effects?.isPreparing()?'Подготовка запуска…':event.title;
   $('energiaAltitude').innerHTML=fmt(s.altitudeKm,1)+' <em>км</em>';
   $('energiaVelocity').innerHTML=fmt(s.speedKmS,2)+' <em>км/с</em>';
   $('energiaRange').innerHTML=fmt(s.downrangeKm,1)+' <em>км</em>';
@@ -750,6 +762,11 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
     minDistance:controls.minDistance,maxDistance:controls.maxDistance,rocketVisible:entry.holder.visible};
    originalRocket={position:entry.holder.position.clone(),rotation:entry.holder.rotation.clone()};
    sceneRestore=onStart?.()||null;
+   backgroundLease=backgroundWork?.suspend?.('energia-launch')||null;
+   const generation=++launchGeneration;
+   backgroundReady=Promise.resolve(backgroundLease?.ready).then(()=>{
+    if(active&&generation===launchGeneration)return backgroundWork?.paint?.();
+   });
    active=true;panel.hidden=false;document.body.classList.add('energia-launch-active');effects.root.visible=true;effects.activate();
    controls.enableDamping=false;controls.enabled=true;
    // Follow mode turns any primary drag into an orbit around the rocket.
@@ -776,12 +793,17 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   render();
   // The first GPU draw may block after the last pending frame. Resume from a
   // fresh wall-clock sample instead of adding preparation time to countdown.
-  effects.prepare(scene).then(()=>{lastNow=null;});
+  const generation=launchGeneration;
+  effects.prepare(scene,{key:generation,ready:backgroundReady,isCurrent:()=>active&&generation===launchGeneration}).then(()=>{
+   if(active&&generation===launchGeneration)lastNow=null;
+  });
   return true;
  }
  function stop({releaseCamera=true}={}){
   if(!active)return false;
   active=false;paused=false;lastNow=null;panel.hidden=true;document.body.classList.remove('energia-launch-active');
+  launchGeneration++;
+  backgroundLease?.release();backgroundLease=null;
   resetCinematicPanel();
   const entry=source();
   if(originalRocket&&entry){
@@ -833,6 +855,7 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
  };
  const leave=e=>{if(active&&e.target.closest('button,a,input,select,summary')&&!e.target.closest('#energiaLaunchPanel,#energiaLaunchStart,#modelInspector'))stop({releaseCamera:false});};
  document.addEventListener('pointerdown',leave,{capture:true});
+ document.addEventListener('click',leave,{capture:true});
  document.addEventListener('keydown',e=>{
   if(!active||/input|textarea|select/i.test(e.target?.tagName||''))return;
   if(e.key==='Escape'){e.preventDefault();stop();}
