@@ -24,6 +24,37 @@ await page.addInitScript(()=>{
  const native=requestAnimationFrame.bind(window);let pending;
  window.requestAnimationFrame=fn=>fn.name==='animate'?(pending=fn,0):native(fn);
  window.__ENERGIA_SURFACE_FRAME=()=>{const fn=pending;pending=null;fn?.(performance.now());};
+ const trace={idle:[],pending:new Map(),longTasks:[],longTaskSupported:false};
+ const append=(rows,value,limit)=>{rows.push(value);if(rows.length>limit)rows.shift();};
+ if(typeof requestIdleCallback==='function'){
+  const idle=requestIdleCallback.bind(window),cancel=cancelIdleCallback.bind(window);
+  window.requestIdleCallback=(callback,options)=>{
+   const scheduledAt=performance.now();let id;
+   id=idle(deadline=>{
+    trace.pending.delete(id);
+    append(trace.idle,{kind:'fired',id,at:performance.now(),waitMs:performance.now()-scheduledAt,
+     didTimeout:deadline.didTimeout,name:callback.name},120);
+    callback.call(window,deadline);
+   },options);
+   const event={kind:'scheduled',id,at:scheduledAt,timeout:options?.timeout??null,name:callback.name};
+   trace.pending.set(id,event);append(trace.idle,event,120);return id;
+  };
+  window.cancelIdleCallback=id=>{trace.pending.delete(id);append(trace.idle,{kind:'cancelled',id,at:performance.now()},120);cancel(id);};
+ }
+ if(globalThis.PerformanceObserver?.supportedEntryTypes?.includes('longtask')){
+  trace.longTaskSupported=true;
+  new PerformanceObserver(list=>{for(const entry of list.getEntries())
+   append(trace.longTasks,{at:entry.startTime,duration:entry.duration,name:entry.name},60);
+  }).observe({type:'longtask',buffered:true});
+ }
+ window.__ENERGIA_SURFACE_DIAGNOSTICS=()=>{
+  const startup=window.__MUSEUM_STARTUP,q=window.__BAIKONUR_QA;
+  return {at:performance.now(),active:q?.energia.stats()?.active??null,
+   loading:startup?.stats()??null,isSuspended:startup?.isSuspended?.()??null,
+   probe:window.__ENERGIA_SURFACE_TEST?.backgroundProbe??null,transportBake:q?.stats().transportBake??null,
+   scheduler:{idle:[...trace.idle],pending:[...trace.pending.values()].slice(-64),
+    longTaskSupported:trace.longTaskSupported,longTasks:[...trace.longTasks]}};
+ };
 });
 await page.route('**/museum.html*',async route=>{
  const response=await route.fetch();const source=await response.text();
@@ -287,7 +318,18 @@ try{
  assert.equal(replay.mode,'follow');assert.equal(replay.effects.engineNozzleGlowVisible,8);
  const departed=await seek(30);assert.equal(departed.effects.padFireFade,0);assert.equal(departed.effects.padSmokeFade,0);
  if(!baseline)assert.equal(departed.effects.groundLighting.power,0);
- await page.locator('#energiaClose').click();await draw();
+ report.backgroundAtClose=await page.evaluate(()=>{
+  const closedAt=performance.now();document.getElementById('energiaClose').click();
+  // Observe the real onclick synchronously, before released worker results or
+  // optional jobs get their next microtask/idle turn.
+  return {closedAt,...window.__ENERGIA_SURFACE_DIAGNOSTICS()};
+ });
+ if(!baseline){
+  assert.equal(report.backgroundAtClose.active,false);
+  assert.equal(report.backgroundAtClose.loading.suspensionCount,0,'Close immediately releases the launch lease');
+  assert.equal(report.backgroundAtClose.isSuspended,false,'Close immediately resumes optional work');
+ }
+ await draw();
  report.restored=await page.evaluate(()=>({active:window.__BAIKONUR_QA.energia.stats().active,
   year:document.getElementById('year').value,evening:window.__BAIKONUR_QA.evening.stats().evening,
   shadowEnabled:window.__ENERGIA_SURFACE_TEST.renderer.shadowMap.enabled,fx:window.__BAIKONUR_QA.energia.stats().effects}));
@@ -295,9 +337,11 @@ try{
  assert.equal(report.restored.evening,true);assert.equal(report.restored.shadowEnabled,report.before.shadowEnabled);
  if(!baseline)assert.equal(report.restored.fx.groundLighting.power,0);
  if(!baseline){
-  await page.waitForFunction(()=>window.__ENERGIA_SURFACE_TEST.backgroundProbe.finished,null,{timeout:15000});
-  report.backgroundReleased=await page.evaluate(()=>({loading:window.__MUSEUM_STARTUP.stats(),
-   probe:window.__ENERGIA_SURFACE_TEST.backgroundProbe}));
+  // This is a background lifecycle check in a stepped software renderer.
+  // Public screenshots alone have taken 21–28 seconds; use timer polling and
+  // a bounded fixture wait, retaining the strict synchronous release above.
+  await page.waitForFunction(()=>window.__ENERGIA_SURFACE_TEST.backgroundProbe.finished,null,{polling:100,timeout:60000});
+  report.backgroundReleased=await page.evaluate(()=>window.__ENERGIA_SURFACE_DIAGNOSTICS());
   assert.equal(report.backgroundReleased.loading.suspensionCount,report.before.background.loading.suspensionCount);
   assert.equal(report.backgroundReleased.loading.suspended,report.before.background.loading.suspended);
   assert.equal(report.backgroundReleased.probe.started,true,'Closing launch resumes the queued optional job');
@@ -334,5 +378,10 @@ try{
  }
  assert.deepEqual(report.errors,[]);report.passed=true;
  console.log('ENERGIA_SURFACE_BROWSER_PASS '+JSON.stringify({prefix,baseline,phases:report.phases.length,depthProbes:report.depthProbes?.probes,shots:report.screenshots.length}));
-}catch(error){report.error=error.stack;await page.screenshot({path:out+'/failure.png',timeout:60000}).catch(()=>{});throw error;}
+}catch(error){
+ report.error=error.stack;
+ report.failureState=await page.evaluate(()=>window.__ENERGIA_SURFACE_DIAGNOSTICS?.()??{unavailable:true})
+  .catch(diagnosticError=>({error:diagnosticError.message}));
+ await page.screenshot({path:out+'/failure.png',timeout:60000}).catch(()=>{});throw error;
+}
 finally{await writeFile(out+'/report.json',JSON.stringify(report,null,2));await browser.close();}
