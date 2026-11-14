@@ -42,7 +42,7 @@ assert(SITE91_EDITORIAL.note.includes('11Г141')&&SITE91_EDITORIAL.note.includes
 assert(catalog.sites.some(r=>r.id==='pad-2a'),'Hidden2A archival record must remain');
 for(const path of ['index.html','museum.html','workshop.html']){
  const s=readFileSync(path,'utf8');
- for(const anchor of ['const sites=displayedSiteRecords.map(','record:displayedSiteRecords[i]','const seed=(originalSiteIndices.get(displayedSiteRecords[i].id)*17)%11;','transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords})','legacyData:transportData,catalog,matches:osmMatches,siteRecords,checkpointAnchor'])assert(s.includes(anchor),path+': '+anchor);
+ for(const anchor of ['const sites=displayedSiteRecords.map(','record:displayedSiteRecords[i]','const seed=(originalSiteIndices.get(displayedSiteRecords[i].id)*17)%11;','transportSourceFingerprint({roads:osmRoads,railways:osmRails,ownerRoadEdits,siteRecords})','legacyData:transportData,catalog,matches:osmMatches,siteRecords,ownerRoadEdits,checkpointAnchor'])assert(s.includes(anchor),path+': '+anchor);
 }
 mkdirSync('qa-delivery',{recursive:true});
 const report={passed:true,removed:[...REMOVED_MAP_GROUPS],hiddenSites:[...HIDDEN_MAP_SITE_IDS],absentReservedIds:notPresent,hiddenExistingCount:HIDDEN_MAP_SITE_IDS.length-notPresent.length,before:original.length,after:display.length,retained,transportInputsPreserved:true,unmodifiedRecordIdentityPreserved:true,proceduralSeedsPreserved:true,site91ArticlePreserved:true,site2aArchivePreserved:true,hiddenSilo174Skipped:true,scope:'2A newly hidden by explicit owner request; site2 retained. Prior hidden sites, absent22A policy,9 groups and94/94A merge retained. Raw catalogue, models and road anchors preserved.'};
