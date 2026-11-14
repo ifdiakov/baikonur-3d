@@ -607,9 +607,10 @@ import {buildOsmTransportNetwork} from './src/osm-transport.js?v=20261114-ground
 import {createRoadLOD,ROAD_LOD_VERSION} from './src/road-lod.js?v=20261114-ground-contact-v1';
 import {createMuseumGeography} from './src/osm-geography.js?v=20261108-pad202-204-shifts-v4';
 import {createNorthBankMask} from './src/river-bank.js?v=20261101-museum-view-v1';
-import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261102-progressive-v1';
+import {createRiverWaterModel,buildRiverSurface} from './src/river-surface.js?v=20261114-ground-contact-v1';
 import {fitOverviewCamera} from './src/overview-camera.js?v=20261102-museum10-v1';
-import {buildExtendedTerrain, sampleSteppe, LARGE_TERRAIN_SEGMENTS} from './src/terrain-extent.js?v=20261102-progressive-v1';
+import {buildExtendedTerrain, sampleSteppe, LARGE_TERRAIN_SEGMENTS} from './src/terrain-extent.js?v=20261114-ground-contact-v1';
+import {TRANSPORT_GROUND_Y} from './src/transport-ground-profile.js?v=20261114-ground-contact-v1';
 import {buildMuseumTerrainRelief} from './src/museum-terrain.js?v=20261114-ground-contact-v1';
 import {buildSharedSiloHill} from './src/shared-silo-hill.js?v=20261103-shared-silo-hill-v1';
 import {createSteppeSurface} from './src/steppe-surface.js?v=20261105-seamless-v15';
@@ -776,7 +777,7 @@ const scene=new THREE.Scene();scene.background=new THREE.Color(0xb7b5a4);scene.f
 ctl.enableDamping=true;ctl.dampingFactor=MUSEUM_DAMPING_AT_60FPS;
 ctl.panSpeed=.88;ctl.rotateSpeed=.82;ctl.zoomSpeed=.90;
 ctl.screenSpacePanning=false;ctl.mouseButtons={LEFT:THREE.MOUSE.PAN,MIDDLE:THREE.MOUSE.DOLLY,RIGHT:THREE.MOUSE.ROTATE};ctl.touches={ONE:THREE.TOUCH.PAN,TWO:THREE.TOUCH.DOLLY_ROTATE};// Camera cannot descend lower than 30° above the ground (polar <=60°).
-ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MUSEUM_METRE;ctl.maxDistance=3300*SCENE_SCALE;scene.add(new THREE.HemisphereLight(0xbdd7f2,0x62533d,2));const sun=new THREE.DirectionalLight(0xffdfb4,2.2);sun.position.set(-700,1200,500);scene.add(sun);const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const sand=material(0x807965),pave=material(0x666b6a),steel=material(0x85949b),roof=material(0x427084),white=material(0xcbd0ce),dark=material(0x303b43),orange=material(0xb95c3c),railMat=material(0x4b4944);const layers={sites:new THREE.Group(),roads:new THREE.Group(),rails:new THREE.Group(),city:new THREE.Group(),plan:new THREE.Group()};Object.values(layers).forEach(g=>scene.add(g));const W=1300,H=1045,S=3.40;const coordinateGrid=createCoordinateGrid({scene,camera,canvas:renderer.domElement,width:W,height:H,scale:S});const point=(x,y,z=0)=>new THREE.Vector3((x-W/2)*S,z,(y-H/2)*S);const ground=new THREE.Mesh(new THREE.PlaneGeometry(320000,320000,LARGE_TERRAIN_SEGMENTS,LARGE_TERRAIN_SEGMENTS),sand);ground.rotation.x=-Math.PI/2;ground.position.y=-5.6;scene.add(ground);
+ctl.maxPolarAngle=Math.PI/3;ctl.minDistance=15*MUSEUM_METRE;ctl.maxDistance=3300*SCENE_SCALE;scene.add(new THREE.HemisphereLight(0xbdd7f2,0x62533d,2));const sun=new THREE.DirectionalLight(0xffdfb4,2.2);sun.position.set(-700,1200,500);scene.add(sun);const material=c=>new THREE.MeshStandardMaterial({color:c,roughness:.85});const sand=material(0x807965),pave=material(0x666b6a),steel=material(0x85949b),roof=material(0x427084),white=material(0xcbd0ce),dark=material(0x303b43),orange=material(0xb95c3c),railMat=material(0x4b4944);const layers={sites:new THREE.Group(),roads:new THREE.Group(),rails:new THREE.Group(),city:new THREE.Group(),plan:new THREE.Group()};Object.values(layers).forEach(g=>scene.add(g));const W=1300,H=1045,S=3.40;const coordinateGrid=createCoordinateGrid({scene,camera,canvas:renderer.domElement,width:W,height:H,scale:S});const point=(x,y,z=0)=>new THREE.Vector3((x-W/2)*S,z,(y-H/2)*S);const ground=new THREE.Mesh(new THREE.PlaneGeometry(320000,320000,LARGE_TERRAIN_SEGMENTS,LARGE_TERRAIN_SEGMENTS),sand);ground.rotation.x=-Math.PI/2;ground.position.y=TRANSPORT_GROUND_Y;scene.add(ground);
 const steppeSurfaceReady=loadSatelliteReference().then(satellite=>createSteppeSurface({renderer,satellite}));
 let overviewAltitudeLimit=1650,overviewTopDown=false;
 function applyOverviewFrame(topDown=false){
@@ -1398,7 +1399,7 @@ for(const o of objects){
 const satelliteTexture=new THREE.CanvasTexture(satelliteCanvas);satelliteTexture.colorSpace=THREE.SRGBColorSpace;satelliteTexture.minFilter=THREE.LinearMipmapLinearFilter;satelliteTexture.magFilter=THREE.LinearFilter;satelliteTexture.anisotropy=Math.min(renderer.capabilities.getMaxAnisotropy(),8);
 const satelliteGround=new THREE.Mesh(new THREE.PlaneGeometry(W*S,H*S),new THREE.MeshBasicMaterial({map:satelliteTexture,transparent:true,depthWrite:false,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1}));
 steppeSurface.apply(satelliteGround.material);satelliteGround.material.forceSinglePass=true;
-satelliteGround.rotation.x=-Math.PI/2;satelliteGround.position.y=-2.755;scene.add(satelliteGround);registerGroundSurface(satelliteGround);satelliteGround.renderOrder=2;
+satelliteGround.rotation.x=-Math.PI/2;satelliteGround.position.y=TRANSPORT_GROUND_Y;scene.add(satelliteGround);registerGroundSurface(satelliteGround);satelliteGround.renderOrder=2;
 // The approach hills use the same world-aligned steppe texture as the plain.
 // Shared edge colors and horizontal normals make their rounded toes disappear
 // into the existing terrain, while the slope shading keeps the relief legible.

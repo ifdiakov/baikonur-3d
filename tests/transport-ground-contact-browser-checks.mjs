@@ -19,6 +19,7 @@ export const TRANSPORT_GROUND_PUBLIC_FILES=[
  'src/mik112.js',
  'src/museum-terrain.js',
  'src/osm-transport.js',
+ 'src/river-surface.js',
  'src/road-editor-core.js',
  'src/road-editor-mesh.js',
  'src/road-editor-style.js',
@@ -34,6 +35,7 @@ export const TRANSPORT_GROUND_PUBLIC_FILES=[
  'src/site113-road-grade.js',
  'src/site94-road-grade.js',
  'src/site95-road-grade.js',
+ 'src/terrain-extent.js',
  'src/transport-bake.js',
  'src/transport-detail-build.js',
  'src/transport-detail-codec.js',
@@ -115,9 +117,10 @@ export async function collectTransportGroundContact(page,{height=100,samplesPerM
    }
    return true;
   }
-  const roadNames=new Set(['OSM · единое дорожное полотно','OSM · асфальт трассы','OSM · грунтовые проезды','road-pavement-union',
+  const extensionNames=new Set(['Трасса · продолжение · asphalt','Трасса · продолжение · shoulder']);
+  const roadNames=new Set(['OSM · единое дорожное полотно','OSM · асфальт трассы','OSM · грунтовые проезды','road-pavement-union','Трасса · продолжение · asphalt',
    'Единое полотно редактора · asphalt','Единое полотно редактора · highway','Единое полотно редактора · ground']);
-  const shoulderNames=new Set(['OSM · единые обочины','road-shoulder-union','Единое полотно редактора · shoulder']);
+  const shoulderNames=new Set(['OSM · единые обочины','road-shoulder-union','Единое полотно редактора · shoulder','Трасса · продолжение · shoulder']);
   const targets=[];
   d.scene.traverse(mesh=>{
    if(!mesh.isMesh||!visible(mesh)||!mesh.geometry?.attributes.position||soil.has(mesh))return;
@@ -128,7 +131,7 @@ export async function collectTransportGroundContact(page,{height=100,samplesPerM
    else if(mesh.name==='OSM · балласт')kind='rail-ballast';
    else if(mesh.name==='OSM · рельсы')kind='rail-head';
    else if(mesh.name==='OSM · бывшие пути')kind='rail-abandoned';
-   if(kind)targets.push({mesh,kind});
+   if(kind)targets.push({mesh,kind,distantExtension:extensionNames.has(mesh.name)});
   });
   const regions=[['shared-silo-hill-106-109',d.sharedSiloHill.mesh],['saturn-hill',d.saturnHill]].filter(([,mesh])=>mesh&&visible(mesh))
    .map(([id,mesh])=>({id,kind:'roads',box:new T.Box3().setFromObject(mesh)}));
@@ -259,9 +262,12 @@ export async function collectTransportGroundContact(page,{height=100,samplesPerM
    return null;
   }
   const summaries=[];
-  for(const {mesh,kind}of targets){
+  for(const {mesh,kind,distantExtension}of targets){
    const p=mesh.geometry.attributes.position,index=mesh.geometry.index,faces=Math.floor((index?.count??p.count)/3),selected=new Map(),regional=new Map(regions.map(r=>[r.id,[]]));
-   const n=Math.min(faces,samplesPerMesh),a=V(),c=V(),e=V(),q=V();let sideFaces=0;
+   // The two explicit highway scenery meshes extend beyond the camera and
+   // regional image. A small fixed sample proves their base plane too,
+   // without widening the scope of every other road/rail mesh.
+   const n=Math.min(faces,distantExtension?48:samplesPerMesh),a=V(),c=V(),e=V(),q=V();let sideFaces=0;
    // LOD strips are deliberately DoubleSide and some retain downward
    // winding. Both faces are the same visible zero-thickness surface. Real
    // solid ballast/rail volumes still sample their top, never their bottom.
@@ -293,7 +299,7 @@ export async function collectTransportGroundContact(page,{height=100,samplesPerM
     const normal=c.clone().sub(a).cross(e.clone().sub(a));
     const length=normal.length(),verticalComponent=twoSidedSheet?Math.abs(normal.y):normal.y;
     if(length<1e-8||verticalComponent<length*.25){vertical++;continue;}
-    q.copy(a).add(c).add(e).multiplyScalar(1/3);if(!within(q)){outside++;continue;}
+    q.copy(a).add(c).add(e).multiplyScalar(1/3);if(!within(q)&&!distantExtension){outside++;continue;}
     ray.set(V(q.x,1000,q.z),down);const hit=soilQuery.intersections(ray).find(renderedUpwardHit);
     const ground=hit?.point.y??null,gap=ground===null?null:q.y-ground;
     // Rail heads retain the actual 0.077-unit running height. Ballast is
@@ -308,11 +314,11 @@ export async function collectTransportGroundContact(page,{height=100,samplesPerM
      groundMesh:hit.object.name||hit.object.uuid,coverDepth:-gap}:null;
     const exception=ordinary?null:buriedInactive??bridgeAt(q,kind)??facilitySupportAt(q,kind);
     const region=[...sampleRegions].find(id=>id!=='stratified')??'stratified';
-    rows.push({face,region,regions:[...sampleRegions],point:q.toArray(),map:[q.x/3.4+650,q.z/3.4+522.5],ground,gap,numericTerrain:d.museumTerrainHeightAt(q.x,q.z),
+    rows.push({face,region,regions:[...sampleRegions],scope:within(q)?'museum-camera-bounds':'explicit-highway-extension',point:q.toArray(),map:[q.x/3.4+650,q.z/3.4+522.5],ground,gap,numericTerrain:d.museumTerrainHeightAt(q.x,q.z),
      groundMesh:hit?.object.name||null,allowedGap:[lower,upper],status:ordinary?'ground-contact':buriedInactive?'buried-inactive-source-track':exception?'documented-exception':'failure',exception});
    }
    const gaps=rows.filter(r=>r.status==='ground-contact').map(r=>r.gap).sort((a,b)=>a-b);
-   summaries.push({name:mesh.name,kind,triangles:faces,samples:rows.length,outside,vertical,sideFaces,solidVolume:!!mesh.userData.osmRailVolume,
+   summaries.push({name:mesh.name,kind,distantExtension,triangles:faces,samples:rows.length,outside,vertical,sideFaces,solidVolume:!!mesh.userData.osmRailVolume,
     minGap:gaps[0]??null,medianGap:gaps[Math.floor(gaps.length/2)]??null,maxGap:gaps.at(-1)??null,rows});
   }
   const bridgeChecks=[];
@@ -325,7 +331,10 @@ export async function collectTransportGroundContact(page,{height=100,samplesPerM
    bridgeChecks.push({osmWayId:source.osmWayId,actualMesh:hit?.object.name||null,sourceDeckTop:source.deckTop,actualDeckY:hit?.point.y??null,
     gap:hit?source.deckTop-hit.point.y:null,passed:!!hit&&Math.abs(source.deckTop-hit.point.y)<.12});
   }
+  const outerBounds=new T.Box3();for(const plane of d.outerTerrain.planes)outerBounds.expandByObject(plane);
   return {height,lod:d.roadLOD.stats().mode,detailReady:__BAIKONUR_QA.stats().transportBake.detailReady,meshes:summaries,bridgeChecks,
+   museumCameraBounds:{...b},outerTerrainBounds:{min:outerBounds.min.toArray(),max:outerBounds.max.toArray()},
+   terrainPlanes:[d.ground,d.satelliteGround,...d.outerTerrain.planes].filter(Boolean).map(plane=>({name:plane.name,y:plane.position.y,width:plane.geometry.parameters?.width,height:plane.geometry.parameters?.height})),
    regions:regions.map(r=>({id:r.id,kind:r.kind,required:r.required!==false,min:r.box.min.toArray(),max:r.box.max.toArray()})),ownerRoad31:ownerRoad31?{id:ownerRoad31.id,width:ownerRoad31.width,points:ownerRoad31.points}:null,
    groundSources:soilMeshes.map(m=>m.name),query:soilQuery.stats(),
    sourceBridgeWays:{roads:[...roadBridgeWays.values()].filter(w=>w.bridge).map(w=>w.id),rails:[...railBridgeWays.values()].filter(w=>w.bridge).map(w=>w.id)}};
@@ -350,7 +359,7 @@ async function captureGroundContactView(page,{row,height,name,out}){
 
 export async function checkTransportGroundContact(page,{mode,out}={}){
  const result={passed:false,mode,groundVersion:TRANSPORT_GROUND_VERSION,
-  coverage:'Actual sampled road/rail triangles against real soil; explicit 106/109 and Saturn regions; far/medium/full, software WebGL. Source bridges and actual model-port support are documented separately. Not an exhaustive collision proof or physical-phone/FPS test.',phases:[],shots:[]};
+  coverage:'Actual sampled road/rail triangles against real soil within production camera bounds; explicit 106/109 and Saturn regions; bounded sampling of the two named distant highway meshes beyond those bounds; far/medium/full, software WebGL. Source bridges and actual model-port support are documented separately. Not an exhaustive collision proof or physical-phone/FPS test.',phases:[],shots:[]};
  try{
   result.cache=await page.evaluate(()=>{const d=__GROUND_TEST;return {enabled:d.transportFromBake,bake:d.preparedBake?.groundVersion,lod:d.preparedLOD?.groundVersion,
    sourceFingerprint:d.preparedBake?.sourceFingerprint,lodFingerprint:d.preparedLOD?.sourceFingerprint,editor:d.roadEditor.snapshot().groundVersion,
@@ -377,7 +386,9 @@ export async function checkTransportGroundContact(page,{mode,out}={}){
   if(mode==='desktop'){
    const rows=full.meshes.flatMap(mesh=>mesh.rows.map(row=>({...row,kind:mesh.kind}))),views=[];
    for(const kind of ['roads','rail-ballast']){
-    const row=rows.filter(r=>r.kind===kind&&r.status==='ground-contact'&&r.region==='stratified').sort((a,b)=>Math.abs(a.gap-.025)-Math.abs(b.gap-.025))[0];
+    const candidates=rows.filter(r=>r.kind===kind&&r.status==='ground-contact'&&r.region==='stratified');
+    const outer=kind==='roads'?candidates.filter(r=>r.point[0]>2210&&r.scope==='museum-camera-bounds'):[];
+    const row=(outer.length?outer:candidates).sort((a,b)=>Math.abs(a.gap-.025)-Math.abs(b.gap-.025))[0];
     if(row)views.push({name:kind,row});
    }
    const hill=rows.filter(r=>r.kind==='roads'&&r.regions.includes('shared-silo-hill-106-109')).sort((a,b)=>Math.abs(b.gap??999)-Math.abs(a.gap??999))[0];
@@ -399,6 +410,13 @@ export async function checkTransportGroundContact(page,{mode,out}={}){
   assert(full.detailReady,'Full worker meshes did not install');
   assert(full.meshes.some(m=>m.kind==='rail-ballast'&&m.solidVolume&&m.sideFaces>0),'Ballast has no actual sides down to its base');
   assert(full.meshes.some(m=>m.kind==='rail-head'&&m.samples>=12),'Actual physical rail heads missing');
+  for(const kind of ['roads','road-shoulder']){
+   const extension=full.meshes.find(mesh=>mesh.distantExtension&&mesh.kind===kind);
+   assert(extension?.samples>=12,'Missing bounded actual highway extension sample: '+kind);
+   for(const side of ['west','east'])assert(extension.rows.some(row=>row.scope==='explicit-highway-extension'&&
+    (side==='west'?row.point[0]<full.outerTerrainBounds.min[0]:row.point[0]>full.outerTerrainBounds.max[0])),
+    'Missing '+side+' highway extension beyond the real regional terrain: '+kind);
+  }
   assert(full.ownerRoad31&&full.meshes.some(m=>m.kind==='roads'&&m.name.startsWith('Единое полотно редактора')&&m.rows.some(r=>r.regions.includes('owner-road-31-saturn'))),'Missing actual editor road-31 triangles on the Saturn transition');
   assert(full.bridgeChecks.length>0&&full.bridgeChecks.every(b=>b.passed),'Source road bridges lack their real supporting deck: '+JSON.stringify(full.bridgeChecks));
   assert.equal(result.failures.length,0,'Transport floating/buried relative to actual soil: '+JSON.stringify(result.failures.slice(0,12)));

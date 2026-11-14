@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {TRANSPORT_GROUND_Y} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 
 // Two enormous triangles lose metres in GPU world-coordinate interpolation
 // near a close camera. This modest grid keeps terrain cutouts on their rims.
@@ -26,9 +27,12 @@ const smooth=(a,b,v)=>{const t=Math.min(1,Math.max(0,(v-a)/(b-a)));return t*t*(3
  * each feathering to the lower level for a clean horizon.
  */
 export function buildExtendedTerrain({scene,registerGroundSurface,renderer,satelliteOwnsGroundColor=false}) {
+  // These are colour/detail grades of one physical steppe. Alpha, explicit
+  // render order and the existing depth bias separate their image layers;
+  // lowering their geometry left transport floating outside the main image.
   const config=[
-    {id:'regional',extent:52000,resolution:512,height:-4.95,fade:.31,detail:0,order:0,segments:LARGE_TERRAIN_SEGMENTS},
-    {id:'intermediate',extent:18000,resolution:768,height:-3.75,fade:.24,detail:1,order:1}
+    {id:'regional',extent:52000,resolution:512,height:TRANSPORT_GROUND_Y,fade:.31,detail:0,order:0,segments:LARGE_TERRAIN_SEGMENTS},
+    {id:'intermediate',extent:18000,resolution:768,height:TRANSPORT_GROUND_Y,fade:.24,detail:1,order:1,segments:LARGE_TERRAIN_SEGMENTS}
   ];
   const planes=[],textures=[],regionInfo=[],satelliteBase=[161,136,109];
   for(const spec of config){
