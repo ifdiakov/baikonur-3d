@@ -11,7 +11,7 @@ const imports=[],hashes={};
 function dependency(spec,file){
  if(spec==='three')spec='src/vendor/three-r160/build/three.module.js';
  else if(spec.startsWith('three/addons/'))spec=spec.replace('three/addons/','src/vendor/three-r160/examples/jsm/');
- else if(spec.startsWith('.'))spec=relative(root,resolve(root,dirname(file),spec.split(/[?#]/)[0]));
+ else if(spec.startsWith('.')){const path=spec.split(/[?#]/)[0];spec=relative(root,resolve(root,dirname(file),path,path.endsWith('/')?'index.html':''));}
  else if(/^(https?:|data:|blob:|#|mailto:)/.test(spec))return;
  else return;
  assert(expected.has(spec),'Missing published dependency: '+file+' -> '+spec);imports.push({from:file,to:spec});
