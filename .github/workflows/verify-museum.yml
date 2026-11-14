@@ -11,9 +11,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 24
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -45,47 +47,16 @@ jobs:
         run: |
           set -o pipefail
           node tests/smoke.mjs 2>&1 | tee /tmp/baikonur-public-browser.log
-      - name: Save browser screenshots and reproducible 3D test snapshot
+      - name: Save diagnostic screenshots and logs only
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: baikonur-3d-checks
           path: |
             qa-*.png
-            index.html
-            src/
-            data/*.json
-            assets/
-            tests/smoke.mjs
-            baykonur-plan.png
+            /tmp/baikonur-browser-install.log
+            /tmp/baikonur-test.log
+            /tmp/baikonur-public-browser.log
           if-no-files-found: ignore
-
-      - name: Record check result in repository
-        if: always()
-        env:
-          SMOKE_STATUS: ${{ steps.browser.outcome }}
-          TARGET_SHA: ${{ github.sha }}
-          INSTALL_STATUS: ${{ steps.install.outcome }}
-          SERVER_STATUS: ${{ steps.server.outcome }}
-          PUBLIC_STATUS: ${{ steps.public.outcome }}
-          PUBLIC_BROWSER_STATUS: ${{ steps.publicbrowser.outcome }}
-          RUN_ID: ${{ github.run_id }}
-        run: |
-          mkdir -p data
-          node -e 'const fs=require("fs");fs.writeFileSync("data/qa-status.json",JSON.stringify({targetCommit:process.env.TARGET_SHA,status:process.env.SMOKE_STATUS||"not-run",install:process.env.INSTALL_STATUS,server:process.env.SERVER_STATUS,public:process.env.PUBLIC_STATUS,publicBrowser:process.env.PUBLIC_BROWSER_STATUS,runId:process.env.RUN_ID,checkedAt:new Date().toISOString(),test:"Browser-based Playwright smoke check"},null,2))'
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ -f /tmp/baikonur-browser-install.log ]; then tail -n 80 /tmp/baikonur-browser-install.log > data/qa-install.log; fi
-          if [ -f /tmp/baikonur-test.log ]; then tail -n 140 /tmp/baikonur-test.log > data/qa-test.log; fi
-          if [ -f /tmp/baikonur-public-browser.log ]; then tail -n 130 /tmp/baikonur-public-browser.log > data/qa-public-browser.log; fi
-          git add data/qa-status.json data/qa-install.log data/qa-test.log data/qa-public-browser.log 2>/dev/null || git add data/qa-status.json
-          git diff --cached --quiet || git commit -m "ci: update Baikonur museum browser check result"
-          for attempt in 1 2 3; do
-            git pull --rebase origin main
-            if git push origin HEAD:main; then exit 0; fi
-            sleep 4
-          done
-          exit 1
-
-
+          retention-days: 7
 

@@ -1,6 +1,6 @@
 import {SILO_SITE_IDS} from './silo-sites.js?v=20261112-site175-shpu-v1';
 import {MODEL_FACTS,MODEL_FACTS_VERSION} from './model-facts.js?v=20261108-rd180-v1';
-export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION;
+export const MODEL_VIEWER_VERSION=MODEL_FACTS_VERSION+'-security1-20261114';
 const definitions={
  rd180:{title:'РД-180',subtitle:'НПО «Энергомаш» · двигатель Atlas',kind:'engine',asset:'rd180/model-v1.glb',assetRevision:'rd180-20261108-v1',source:'https://sketchfab.com/3d-models/180-acf0e1b46a2e48158e64015335f9fb5e',credit:'viktor_durov · CC BY 4.0 · материалы и адаптация RocketTrip',viewLabels:{front:'Сопла',side:'Трубопроводы',top:'Агрегаты'},views:{front:{target:[0,.65,0],offset:[0,-1.4,6]},side:{target:[0,2.25,0],offset:[3.7,1,3.6]},top:{target:[0,2.7,0],offset:[2.3,2.8,2.8]}}},
  soyuz5:{title:'Союз-5',subtitle:'Байтерек · площадка №45',kind:'rocket',asset:'rockets/soyuz5.glb',yaw:Math.PI,assetRevision:'soyuz5-20261108-v1',source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/soyuz5-source-model.md',sourceLabel:'Источники модели ↗',viewLabels:{front:'Двигатели',side:'Стык ступеней',top:'Обтекатель'},views:{front:{target:[0,2,0],offset:[6,-5,-9]},side:{target:[0,38.5,0],offset:[8,1.8,-12]},top:{target:[0,55,0],offset:[12,3,-18]}}},
@@ -30,7 +30,7 @@ const definitions={
  'proton-pad':{title:'Старт Протона',subtitle:'Площадки №81 и №200',kind:'site',initialView:'front',viewLabels:{front:'Стартовая позиция',side:'Газоходы',top:'Башня'},source:'https://github.com/ifdiakov/baikonur-3d/blob/main/docs/proton-source-model.md',sourceLabel:'Источники реконструкции ↗',views:{front:{target:[0,23,0],offset:[100,77,-125]},side:{target:[25,-3,0],offset:[48,34,40]},top:{target:[0,32,303],offset:[70,35,-113]},interface:{target:[0,-1,0],offset:[18,22,-23]}}},
  site45:{title:'Старт Зенита',subtitle:'Историческая площадка №45/1',kind:'site'}
 };
-export const MODEL_CATALOG=Object.freeze(Object.fromEntries(Object.entries(definitions).map(([id,spec])=>[id,{...spec,id,description:MODEL_FACTS[id].summary,facts:MODEL_FACTS[id]}])));
+export const MODEL_CATALOG=Object.freeze(Object.assign(Object.create(null),Object.fromEntries(Object.entries(definitions).map(([id,spec])=>[id,{...spec,id,description:MODEL_FACTS[id].summary,facts:MODEL_FACTS[id]}]))));
 const siteModels={
  'pad-2':['buran'],
  'pad-90':['cyclone-2','cyclone-pad','cyclone-3'],
@@ -41,5 +41,5 @@ const siteModels={
  ...Object.fromEntries(SILO_SITE_IDS.map(id=>[id,['silo']]))
 };
 export function resolveModelId(id){return id==='mig25ru'?'mig25':id;}
-export function modelsForObject(record){if(record?.isRailStation||record?.id?.startsWith('rail-station-')||record?.category==='Железнодорожная станция')return ['train','coach'];return [...(siteModels[record?.id]||[])];}
-export function modelsForKnowledge(id){id=resolveModelId(id);if(id==='zenit')return ['zenit-land','zenit-sea'];if(id==='buran')return ['buran','energia-buran','mriya'];return MODEL_CATALOG[id]?[id]:[];}
+export function modelsForObject(record){if(record?.isRailStation||record?.id?.startsWith('rail-station-')||record?.category==='Железнодорожная станция')return ['train','coach'];return Object.hasOwn(siteModels,record?.id)?[...siteModels[record.id]]:[];}
+export function modelsForKnowledge(id){id=resolveModelId(id);if(id==='zenit')return ['zenit-land','zenit-sea'];if(id==='buran')return ['buran','energia-buran','mriya'];return Object.hasOwn(MODEL_CATALOG,id)?[id]:[];}

@@ -1,15 +1,15 @@
 import {createShareButton} from './card-share.js?v=20261111-share-v1';
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261108-rd180-v1';
-import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261108-rd180-v1';
+import {MODEL_CATALOG,MODEL_VIEWER_VERSION,resolveModelId} from './model-catalog.js?v=20261114-security1';
+import {createInspectionModel,inspectionBounds} from './inspection-models.js?v=20261114-security1';
 import {renderModelFacts} from './model-facts-view.js?v=20261108-rd180-v1';
 const params=new URLSearchParams(location.search),embedded=params.has('embed')&&parent!==window;
 if(embedded){document.body.classList.add('embedded');document.getElementById('back').textContent='← К ОБЪЕКТУ';}
 const close=()=>parent.postMessage({type:'museum-model-close'},location.origin);
 if(embedded){document.querySelectorAll('.back,.brand').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();close();}));document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();}});}
 const container=document.getElementById('modelView'),status=document.getElementById('modelStatus'),statusText=document.getElementById('statusText'),select=document.getElementById('modelSelect');
-const choices=(params.get('models')||Object.keys(MODEL_CATALOG).join(',')).split(',').map(resolveModelId).filter((x,i,a)=>MODEL_CATALOG[x]&&a.indexOf(x)===i);
+const choices=(params.get('models')||Object.keys(MODEL_CATALOG).join(',')).split(',').map(resolveModelId).filter((x,i,a)=>Object.hasOwn(MODEL_CATALOG,x)&&a.indexOf(x)===i);
 if(!choices.length)choices.push('soyuz');for(const id of choices){const option=document.createElement('option');option.value=id;option.textContent=MODEL_CATALOG[id].title;select.append(option);}
 let current=choices.includes(resolveModelId(params.get('model')))?resolveModelId(params.get('model')):choices[0],model=null,renderer=null,observer=null,request=null,generation=0,raf=0,disposed=false;
 document.getElementById('modelSubtitle').after(createShareButton(()=>({kind:'model',id:current,title:MODEL_CATALOG[current].title})));
@@ -68,7 +68,7 @@ try{
  }
  function renderFrame(time=performance.now()){if(updateFrame(time))renderer.render(scene,camera);}
  async function load(id){
-  id=resolveModelId(id);if(!MODEL_CATALOG[id])return;
+  id=resolveModelId(id);if(!Object.hasOwn(MODEL_CATALOG,id))return;
   const token=++generation;request?.abort();request=new AbortController();const controller=request,timer=setTimeout(()=>controller.abort(),45000);
   setAutoRotation(false);current=id;select.value=id;status.hidden=false;statusText.textContent='Загружаем модель…';document.getElementById('retry').hidden=true;model?.root.removeFromParent();model?.dispose();model=null;
   const spec=MODEL_CATALOG[id];renderIntro(id);

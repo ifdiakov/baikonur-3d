@@ -144,7 +144,7 @@ export function createEncyclopedia3D(){
    for(const id of ids){
     if(disposed)return;
     if(!previewCache.has(id)){
-     const exact=id==='rd180'?await (await import('./inspection-models.js?v=20261108-rd180-v1')).createInspectionModel(id):null;
+     const exact=id==='rd180'?await (await import('./inspection-models.js?v=20261114-security1')).createInspectionModel(id):null;
      const root=exact?.root||modelFor(id);
      if(!root)continue;
      scene.add(root);fit(camera,controls,root,1.22);
@@ -215,7 +215,7 @@ export function createEncyclopedia3D(){
     // rather than silently showing a different historical vehicle.
     (async()=>{
       try{
-       const {createInspectionModel}=await import('./inspection-models.js?v=20261108-rd180-v1');
+       const {createInspectionModel}=await import('./inspection-models.js?v=20261114-security1');
        const exact=await createInspectionModel(exactId,{signal:abort.signal});
        if(active!==state||abort.signal.aborted){exact.dispose();return;}
        scene.remove(root);state.root=exact.root;scene.add(exact.root);state.exact=exact;
