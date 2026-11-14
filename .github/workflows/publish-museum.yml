@@ -1,0 +1,123 @@
+name: Visitor publication and security checks
+on:
+  push:
+    branches: [main, fix/security-publication-20261114]
+    paths: ['*.html','CNAME','src/**','data/**','assets/**','workshop/model.html','workshop/saturn.html','workshop/zenit.html','package.json','package-lock.json','scripts/publication/**','tests/publication-*.mjs','.github/workflows/publish-museum.yml']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: museum-publication-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  policy:
+    name: Publication policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node tests/publication-policy.mjs
+      - run: node tests/delivery-policy.mjs
+      - run: node tests/ci-reliability.mjs
+      - run: node --experimental-vm-modules scripts/ci/fast-check.mjs
+      - run: node scripts/publication/build.mjs
+      - run: node --experimental-vm-modules tests/publication-artifact.mjs
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-public
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: publication-policy
+          path: qa-publication/*.json
+          retention-days: 7
+  visitor:
+    name: Visitor distribution (${{ matrix.mode }})
+    needs: policy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [desktop, mobile]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: .publication-artifact
+      - name: Unpack the exact deployment artifact
+        run: |
+          mkdir dist-public
+          tar -xf .publication-artifact/artifact.tar -C dist-public
+          node --experimental-vm-modules tests/publication-artifact.mjs
+      - name: Install browser verification
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Serve only the publication artifact
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory dist-public > /tmp/publication-http.log 2>&1 &
+          curl --retry 5 --retry-delay 1 --retry-connrefused --fail http://127.0.0.1:8765/museum.html --output /dev/null
+      - name: Check visitor journey and excluded files
+        env:
+          QA_MODE: ${{ matrix.mode }}
+          BAIKONUR_URL: http://127.0.0.1:8765/
+        run: node scripts/ci/run-bounded.mjs 420 publication-${{ matrix.mode }} node tests/publication-browser.mjs
+      - name: Check retained model controls and rejected inputs
+        env:
+          QA_MODE: ${{ matrix.mode }}
+          BAIKONUR_URL: http://127.0.0.1:8765/
+        run: node scripts/ci/run-bounded.mjs 120 security-${{ matrix.mode }} node tests/security-viewer-browser.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: publication-${{ matrix.mode }}
+          path: |
+            qa-publication/
+            qa-delivery/security-*/
+            qa-ci/publication-*
+          retention-days: 7
+  deploy:
+    name: Publish verified visitor files
+    needs: [policy, visitor]
+    # Enable only after Pages is configured for Actions and owner access is moved.
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.MUSEUM_ACTIONS_PUBLISH == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - name: Reject a stale main revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          EXPECTED_SHA: ${{ github.sha }}
+        run: |
+          node --input-type=module - <<'JS'
+          const r=await fetch('https://api.github.com/repos/'+process.env.REPOSITORY+'/git/ref/heads/main',{headers:{Authorization:'Bearer '+process.env.GH_TOKEN,Accept:'application/vnd.github+json'},signal:AbortSignal.timeout(15000)});
+          if(!r.ok)throw new Error('Cannot verify main: '+r.status);
+          if((await r.json()).object.sha!==process.env.EXPECTED_SHA)throw new Error('Main changed; refusing stale publication');
+          JS
+      - uses: actions/deploy-pages@v4
+        id: deployment

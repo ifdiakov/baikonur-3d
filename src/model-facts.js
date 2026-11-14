@@ -48,9 +48,9 @@ export const FACT_SOURCES=Object.freeze({
  airbusData:['Airbus · годовой отчёт 2023, данные семейства A320','https://www.airbus.com/sites/g/files/jlcbta136/files/2024-03/Airbus-Annual-Report-2023.pdf'],
  m62Data:['Отраслевой каталог тепловозов СССР · М62','https://dieselloc.ru/books/teplsssr/page_7.html'],
  m62History:['В. А. Раков · история М62 и 2М62','https://poezdvl.com/books/rakov/rakov1_17.html'],
- railModel:['Музейный состав · параметры и границы реконструкции','https://github.com/ifdiakov/baikonur-3d/blob/main/src/rail-vehicles.js'],
+ railModel:['Музейный состав · параметры и границы реконструкции','https://museum.rockettrip.space/model-sources.html#rail'],
  silo:['История КБ «Южное» · комплекс Р-36М','https://rvsn.ruzhany.info/kbu_002_03_2.html'],
- siloModel:['Музейная ШПУ · происхождение и границы модели','https://github.com/ifdiakov/baikonur-3d/blob/main/src/silo-pad.js?v=20261102-site2-photo-v3']
+ siloModel:['Музейная ШПУ · происхождение и границы модели','https://museum.rockettrip.space/model-sources.html#silo']
 });
 const record=(summary,specs,developer,service,activity,facts,sources,note='')=>({summary,specs,developer,service,activity,facts,sources,note});
 export const MODEL_FACTS=Object.freeze({
