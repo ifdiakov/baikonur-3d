@@ -57,6 +57,7 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.active===true,null,{timeout:100000});
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.effects?.warmup?.status==='ready',null,{timeout:90000});
  let s=await stats();assert.equal(s.time,-90);assert.equal(s.active,true);
+ assert.equal(s.effects.warmup.rendered,true,'First-use GPU preparation completes before the countdown');
  assert.equal(await page.locator('#year').inputValue(),'1987');
  assert(await page.locator('#energiaLaunchPanel').isVisible());
  assert.equal(s.modelReady,true);

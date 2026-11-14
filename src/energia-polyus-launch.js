@@ -394,7 +394,9 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[],rocket,groundMateri
   mesh.instanceMatrix.needsUpdate=true;
   particleAlpha.needsUpdate=true;
  };
+ let latestPose=null;
  function pose(s,rocketHolder=null){
+  latestPose={sample:s,rocketHolder};
   const t=s.time,fire=s.exhaust;
   const padDissipation=sampleEnergiaPadDissipation(s.altitudeKm*1000);
   root.visible=true;
@@ -453,7 +455,7 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[],rocket,groundMateri
   root.removeFromParent();
  }
  function hideExhaust(){rocketExhaust.hide();}
- const warmup={status:'idle',materials:0,textures:0};let preparation=null;
+ const warmup={status:'idle',materials:0,textures:0,rendered:false,drawCalls:0,renderMilliseconds:0};let preparation=null;
  function prepare(scene){
   if(preparation)return preparation;
   if(!renderer?.compileAsync){warmup.status='unavailable';return Promise.resolve();}
@@ -477,7 +479,59 @@ function addEffectSystem(siteRoot,camera,renderer,objects=[],rocket,groundMateri
   warmup.materials=seen.size;warmup.textures=textures.size;warmup.status='pending';
   for(const texture of textures)renderer.initTexture(texture);
   preparation=Promise.resolve().then(()=>renderer.compileAsync(proxies,camera,scene)).then(()=>{
-   warmup.status='ready';proxies.clear();
+   proxies.clear();
+   // Shader compilation alone does not upload buffers or finish the driver's
+   // first real draw. Warm the real scene in a tiny offscreen framebuffer while
+   // its clock is held at T-90. Capture state here, after the asynchronous wait:
+   // a visitor may have sought or closed the episode while shaders compiled.
+   if(!root.visible||!latestPose){warmup.status='idle';preparation=null;return;}
+   if(root.visible&&latestPose){
+    const previous={pose:latestPose,rootVisible:root.visible,rocketVisible:rocket.visible,
+     exhaustVisible:rocketExhaust.root.visible,target:renderer.getRenderTarget(),
+     face:renderer.getActiveCubeFace(),mip:renderer.getActiveMipmapLevel(),
+     viewport:renderer.getViewport(new THREE.Vector4()),scissor:renderer.getScissor(new THREE.Vector4()),
+     scissorTest:renderer.getScissorTest(),autoClear:renderer.autoClear,
+     ductCulling:ductJets.map(jet=>jet.frustumCulled)};
+    const target=new THREE.WebGLRenderTarget(8,8,{depthBuffer:true,stencilBuffer:false});
+    // r160 otherwise uses a linear-output shader for ordinary render targets.
+    // Its XR-target flag selects the same output/tone-mapping program as the
+    // canvas, without entering XR or changing renderer/camera configuration.
+    target.isXRRenderTarget=previous.target===null||previous.target.isXRRenderTarget===true;
+    target.texture.colorSpace=previous.target?.isXRRenderTarget===true?
+     previous.target.texture.colorSpace:renderer.outputColorSpace;
+    if(renderer.capabilities.isWebGL2)target.texture.internalFormat='RGBA8';
+    const gl=renderer.getContext();
+    // Match the canvas antialiasing pipeline as well as its shader program.
+    if(renderer.capabilities.isWebGL2)target.samples=Math.min(renderer.capabilities.maxSamples,gl.getParameter(gl.SAMPLES));
+    target.viewport.set(0,0,8,8);target.scissor.set(0,0,8,8);target.scissorTest=false;
+    const began=performance.now();
+    try{
+     pose(sampleEnergiaLaunch(6),previous.pose.rocketHolder);
+     rocket.visible=true;
+     for(const jet of ductJets)jet.frustumCulled=false;
+     renderer.autoClear=true;
+     renderer.setRenderTarget(target);
+     renderer.render(scene,camera);
+     gl.finish();
+     warmup.drawCalls=renderer.info.render.calls;
+     warmup.rendered=true;
+    }finally{
+     try{
+      pose(previous.pose.sample,previous.pose.rocketHolder);
+      root.visible=previous.rootVisible;rocket.visible=previous.rocketVisible;
+      rocketExhaust.root.visible=previous.exhaustVisible;
+      ductJets.forEach((jet,index)=>{jet.frustumCulled=previous.ductCulling[index];});
+     }finally{
+      renderer.autoClear=previous.autoClear;
+      renderer.setViewport(previous.viewport);renderer.setScissor(previous.scissor);
+      renderer.setScissorTest(previous.scissorTest);
+      renderer.setRenderTarget(previous.target,previous.face,previous.mip);
+      target.dispose();
+      warmup.renderMilliseconds=performance.now()-began;
+     }
+    }
+   }
+   warmup.status='ready';
   }).catch(error=>{
    warmup.status='failed';proxies.clear();console.warn('Energia effect preparation failed',error);
   });
@@ -720,7 +774,9 @@ export function createEnergiaPolyusLaunch({scene,camera,controls,siteRoot,render
   camera.position.copy(launchEye);controls.target.copy(launchTarget);
   camera.updateMatrixWorld(true);
   render();
-  effects.prepare(scene);
+  // The first GPU draw may block after the last pending frame. Resume from a
+  // fresh wall-clock sample instead of adding preparation time to countdown.
+  effects.prepare(scene).then(()=>{lastNow=null;});
   return true;
  }
  function stop({releaseCamera=true}={}){

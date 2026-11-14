@@ -33,6 +33,15 @@ await page.route('**/museum.html*',async route=>{
  await route.fulfill({response,body});
 });
 const state=()=>page.evaluate(()=>window.__BAIKONUR_QA.energia.stats());
+const renderSurface=()=>page.evaluate(()=>{
+ const {renderer,THREE}=window.__ENERGIA_SURFACE_TEST;
+ return {target:renderer.getRenderTarget()?.uuid??null,
+  cubeFace:renderer.getActiveCubeFace(),mipLevel:renderer.getActiveMipmapLevel(),
+  viewport:renderer.getViewport(new THREE.Vector4()).toArray(),
+  scissor:renderer.getScissor(new THREE.Vector4()).toArray(),scissorTest:renderer.getScissorTest(),
+  drawingBuffer:renderer.getDrawingBufferSize(new THREE.Vector2()).toArray(),
+  pixelRatio:renderer.getPixelRatio(),autoClear:renderer.autoClear};
+});
 const draw=()=>page.evaluate(()=>{
  const e=window.__ENERGIA_SURFACE_TEST,t=performance.now();
  e.renderer.render(e.scene,e.camera);e.renderer.getContext().finish();
@@ -92,14 +101,44 @@ try{
   ukss:window.__ENERGIA_SURFACE_TEST.ukssGroup.userData.ukssModel.status}))};
  assert.equal(report.before.ukss,'ready','Test the actual imported UKSS, not a fallback');
  assert.equal(report.before.evening,true);
+ report.renderSurfaceBefore=await renderSurface();
  // Lazy loading is intentional: the controller need not exist before this CTA.
  assert.equal(await page.locator('#energiaLaunchQuickStart').count(),0);
  await page.locator('#energiaLaunchStart').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.active===true,null,{timeout:120000});
+ if(!baseline)report.clockSeededDuringWarmup=await page.evaluate(()=>{
+  const launch=window.__BAIKONUR_QA.energia;
+  const pending=launch.stats().effects.warmup.status==='pending';
+  if(pending)launch.update(performance.now()-2000);
+  return pending;
+ });
  if(!baseline)await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.effects?.warmup?.status==='ready',null,{timeout:90000});
+ if(!baseline&&report.clockSeededDuringWarmup){
+  report.firstReadyFrameTime=await page.evaluate(()=>{
+   const launch=window.__BAIKONUR_QA.energia;launch.update(performance.now());return launch.stats().time;
+  });
+  assert.equal(report.firstReadyFrameTime,-90,'Preparation elapsed time must not skip the countdown');
+ }
  const opening=await state();assert.equal(opening.time,-90);assert.equal(opening.mode,'follow');
  report.warmup=opening.effects.warmup;
  assert.deepEqual(opening.initialCameraPose.position,report.before.camera.position,'Opening keeps chosen eye');
+ if(!baseline){
+  assert.equal(report.warmup.rendered,true,'Preparation draws the actual effect buffers offscreen before ignition');
+  report.renderSurfaceAfterWarmup=await renderSurface();
+  assert.deepEqual(report.renderSurfaceAfterWarmup,report.renderSurfaceBefore,
+   'Offscreen preparation restores render target, viewport, scissor and canvas size');
+  report.prepared=await page.evaluate(()=>{
+   const e=window.__ENERGIA_SURFACE_TEST;let visibleSmokeBatches=0;
+   e.ukssGroup.traverseVisible(object=>{if(object.isInstancedMesh&&object.userData.softSmoke)visibleSmokeBatches++;});
+   return {camera:window.__BAIKONUR_QA.cameraState(),visibleSmokeBatches};
+  });
+  assert.ok(Math.hypot(...report.prepared.camera.position.map((value,i)=>value-report.before.camera.position[i]))<.005);
+  assert.ok(Math.hypot(...report.prepared.camera.target.map((value,i)=>value-report.before.camera.target[i]))<.005);
+  assert.equal(report.prepared.visibleSmokeBatches,0,'Warm smoke is restored to clear T-90 state');
+  assert.equal(opening.effects.engineCorePower,0);assert.equal(opening.effects.engineBoosterPower,0);
+  assert.equal(opening.effects.engineNozzleGlowVisible,0);assert.equal(opening.effects.groundLighting.power,0);
+  assert.equal(opening.effects.steam,0);assert.equal(opening.effects.water,0);
+ }
  for(const time of [-10,-8,-2,0,6]){
   const current=await seek(time);
   if(time===-8)await shot('center-ignition');
@@ -182,7 +221,23 @@ try{
  if(!baseline)assert.equal(report.restored.fx.groundLighting.power,0);
  // Same retained scene at a narrow viewport, without reloading all assets.
  await page.setViewportSize({width:390,height:844});
+ await page.waitForFunction(()=>{
+  const {renderer,THREE}=window.__ENERGIA_SURFACE_TEST,size=renderer.getSize(new THREE.Vector2());
+  return innerWidth===390&&innerHeight===844&&size.x===390&&size.y===844;
+ });
+ await page.evaluate(async()=>{
+  // Resize clears the default WebGL buffer. Let layout settle before selecting
+  // the portrait view; the normal animation loop is deliberately paused here.
+  await new Promise(requestAnimationFrame);
+  window.__BAIKONUR_QA.inspectUkss('overview');
+ });
  await page.evaluate(()=>window.__BAIKONUR_QA.energia.start());await seek(0);
+ await page.evaluate(()=>window.__ENERGIA_SURFACE_FRAME());
+ report.mobileRender=await draw();report.mobileRenderSurface=await renderSurface();
+ report.mobileCamera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());
+ assert.equal(report.mobileRenderSurface.target,null,'Portrait render returns to the visible canvas');
+ assert.deepEqual(report.mobileRenderSurface.drawingBuffer,[390,844]);
+ assert.ok(report.mobileRender.drawCalls>100,'Portrait screenshot contains the actual museum scene');
  report.mobile=await page.locator('#energiaLaunchPanel').evaluate(element=>{const b=element.getBoundingClientRect();return {left:b.left,right:b.right,bottom:b.bottom};});
  assert.ok(report.mobile.left>=0&&report.mobile.right<=390.5&&report.mobile.bottom<=844.5);
  await shot('mobile-ignition');await page.evaluate(()=>window.__BAIKONUR_QA.energia.stop());
