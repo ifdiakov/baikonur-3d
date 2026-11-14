@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -16,7 +17,9 @@ try{
   await page.locator(`[data-related-id="${id}"]`).click();await page.waitForFunction(id=>location.hash==='#'+id&&document.querySelector('#detail h2')?.textContent.length>0,id);report[id]=await page.locator('#detail h2').innerText();
   await page.goto(new URL('workshop/model.html?model=rd180',base).href);await ready();
  }
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.screenshot({path:`${out}/mobile.png`,fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ }
  await page.goto(new URL('encyclopedia.html#rd180',base).href);await page.waitForFunction(()=>document.querySelector('.detail-model-stage')?.dataset.modelStatus==='museum-asset');
  assert.equal(await page.locator('#detail [data-related-id]').count(),11);await page.locator('#detail [data-related-id="slc3e"]').click();assert.match(await page.locator('#detail h2').innerText(),/SLC-3E/);
  await page.setViewportSize({width:1440,height:1000});await page.goto(new URL('?view=rd180',base).href,{timeout:240000});await page.waitForFunction(()=>window.__BAIKONUR_QA?.modelInspector.stats().ready,undefined,{timeout:240000});

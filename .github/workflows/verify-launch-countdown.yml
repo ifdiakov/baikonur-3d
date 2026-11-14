@@ -3,13 +3,16 @@ name: Verify launch countdown
 on:
   push:
     branches: [main, fix/**]
-    paths: ["src/launch-countdown.js", "index.html", "tests/launch-countdown-format.mjs", ".github/workflows/verify-launch-countdown.yml", "package.json", "package-lock.json"]
+    paths: ["src/launch-countdown.js", "index.html", "tests/launch-countdown-format.mjs", ".github/workflows/verify-launch-countdown.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   pull_request:
     branches: [main]
-    paths: ["src/launch-countdown.js", "index.html", "tests/launch-countdown-format.mjs", ".github/workflows/verify-launch-countdown.yml", "package.json", "package-lock.json"]
+    paths: ["src/launch-countdown.js", "index.html", "tests/launch-countdown-format.mjs", ".github/workflows/verify-launch-countdown.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

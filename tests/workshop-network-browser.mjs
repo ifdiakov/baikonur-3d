@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {readFile,mkdir,writeFile} from 'node:fs/promises';
@@ -62,7 +63,9 @@ try{
  await page.screenshot({path:out+'/'+prefix+'-native-ad-after.png'});await page.locator('#networkUndo').click();assert.deepEqual(await page.evaluate(()=>__MUSEUM_WORKSHOP.snapshot().roadEdits),adBefore);check('Native AD undo restores exact state',true);
  await page.evaluate(value=>__MUSEUM_WORKSHOP.restore(value),baseline);
 
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.locator('#networkDone').click();await page.locator('#wsAddRail').click();check('Mobile drawing leaves map visible',await page.locator('#workshopPanel').evaluate(e=>getComputedStyle(e).display==='none'));check('Mobile tool controls stay inside viewport',await page.locator('#networkEditorDock').evaluate(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.bottom<=innerHeight;}));await page.screenshot({path:out+'/'+prefix+'-mobile-editor.png'});
+ }
  check('No JavaScript errors',errors.length===0);check('No shader errors',shaders.length===0);report.errors=errors;report.shaderErrors=shaders;report.stats=await page.evaluate(()=>__MUSEUM_NETWORK_EDITOR.stats());
  await page.goto(base+'museum.html?tour=0',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:120000});
  check('Visitor museum does not load admin network editor',await page.evaluate(()=>!window.__MUSEUM_NETWORK_EDITOR&&!document.getElementById('wsNetworkTools')));check('Visitor remains evening full scene',await page.evaluate(()=>__BAIKONUR_QA.evening.evening));check('Visitor has no JavaScript or shader errors',errors.length===0&&shaders.length===0);report.passed=true;

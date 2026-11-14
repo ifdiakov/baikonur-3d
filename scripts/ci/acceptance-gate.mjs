@@ -28,7 +28,7 @@ export async function main(){
  const definitions=readdirSync('.github/workflows').filter(f=>f.endsWith('.yml')).map(file=>({path:'.github/workflows/'+file,workflow:YAML.parse(readFileSync('.github/workflows/'+file,'utf8'))}));
  const required=selectedWorkflows(files,branch,definitions);
 
- const report={passed:false,sha,branch,before,files,required,checks:[],skippedJobs:[],started:new Date().toISOString()};
+ const report={passed:false,sha,branch,before,files,required,checks:[],skippedJobs:[],excludedScopes:process.env.QA_SKIP_MOBILE==='1'?[{scope:'mobile',status:'not_run',reason:'Excluded by owner on 2026-11-14'}]:[],started:new Date().toISOString()};
  mkdirSync('qa-ci',{recursive:true});const save=()=>writeFileSync('qa-ci/acceptance.json',JSON.stringify(report,null,2));save();
  async function api(path){const r=await fetch('https://api.github.com/repos/'+repo+path,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json'},signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('GitHub acceptance API '+r.status+' '+path);return r.json();}
  const deadline=Date.now()+40*60*1000;let signature='';
@@ -44,7 +44,7 @@ export async function main(){
    if(report.checks.every(c=>c.status==='completed'&&c.conclusion==='success')){
     for(const check of report.checks){const {jobs}=await api('/actions/runs/'+check.id+'/jobs?per_page=100');report.skippedJobs.push(...jobs.filter(j=>j.conclusion==='skipped').map(j=>({workflow:check.path,job:j.name,status:'not_run'})));}
     report.passed=true;report.finished=new Date().toISOString();save();
-    if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,`\n## Exact-revision acceptance\n${sha}: ${report.checks.length} selected workflows passed. ${report.skippedJobs.length} conditional jobs were not run; see acceptance.json.\n`);
+    if(process.env.GITHUB_STEP_SUMMARY)appendFileSync(process.env.GITHUB_STEP_SUMMARY,`\n## Exact-revision acceptance\n${sha}: ${report.checks.length} selected workflows passed. ${report.skippedJobs.length} conditional jobs were not run; excluded scopes: ${report.excludedScopes.map(x=>x.scope).join(', ')||'none'}. See acceptance.json.\n`);
     console.log('ACCEPTANCE_PASS',sha,report.checks.length);return report;
    }
    await new Promise(resolve=>setTimeout(resolve,15000));

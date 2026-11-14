@@ -13,3 +13,22 @@ The aggregate candidate-acceptance waits for every workflow actually selected by
 
 Delivery status is tracked locally under .tools/ci-repair/checkpoint.json and the workspace CI repair report; do not infer publication or browser success from this pre-acceptance note.
 Previous unfinished museum tasks remain open.
+
+Follow-up 14.11.2026: the broader candidate uncovered obsolete soil import keys,
+old depot presence, NP ownership, approved road-cut count, old evening migration
+snapshot, long Energia duct fire and silo175 count. Tests now preserve the current
+scene contracts and exact published HTML/module bytes. The second candidate
+f454427d595b71839bf519ea5c124e9563ca619b passed desktop/workshop scene smoke,
+3246 numerical ground-contact samples per mobile run with zero failures, and the
+repaired geometry/feature suites. Remaining title-counter, duct-mesh and silo175
+assertions are corrected for the next candidate; no full-success claim yet.
+
+OWNER SCOPE CHANGE: mobile layout tests are explicitly excluded from this
+acceptance at the owner's request. QA_SKIP_MOBILE=1 removes mobile matrix jobs
+and skips embedded mobile viewport blocks. Desktop and workshop checks remain.
+Reports must label mobile coverage NOT RUN, never passed. The mobile layout is
+known to need separate work; its appearance and application code are unchanged.
+Historical manual suites retain their scenarios for a separately requested run.
+
+Concurrent publication/security work in the same checkout is not included in
+this CI branch. Repository access and Pages migration are separate changes.

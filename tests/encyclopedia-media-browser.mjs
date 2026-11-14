@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -58,13 +59,15 @@ try{
  assert.match(await page.locator('#detail .media-credit').textContent(),/Молния/);
  await page.screenshot({path:out+'/organizations.png',fullPage:true});
 
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});
  await page.locator('#cards [data-article-id="energiaorg"]').click();
  await page.screenshot({path:out+'/mobile-enterprise.png',fullPage:true});
+ }
  assert.deepEqual(errors,[],'No uncaught errors in encyclopaedia');
  assert.deepEqual(logs,[],'No WebGL or JavaScript errors in encyclopaedia');
  x=await stat();
- await writeFile(out+'/result.json',JSON.stringify({pass:true,stats:x,errors,logs},null,2));
+ await writeFile(out+'/result.json',JSON.stringify({pass:true,mobileCoverage,stats:x,errors,logs},null,2));
  console.log('ENCYCLOPEDIA_MEDIA_BROWSER_PASS',JSON.stringify({previewCount:7,people:7,companies:8,interactive:true}));
 }catch(error){
  await writeFile(out+'/failure.json',JSON.stringify({message:error.message,errors,logs,stats:await stat()},null,2));

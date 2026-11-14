@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -17,7 +18,9 @@ try{
   await page.evaluate(id=>{const q=window.__BAIKONUR_QA;q.focusStation(id);q.evening.setEvening(false);q.setLabelsVisible(false);},id);await frame();const pose=await page.evaluate(id=>{const q=window.__BAIKONUR_QA,p=q.railStations.plans().find(p=>p.id===id);return {camera:q.cameraState(),position:p.position,visible:q.railStations.stats().visible,projection:q.projectWorld(p.position[0],p.position[1]+.7,p.position[2])};},id);assert(Math.hypot(pose.camera.target[0]-pose.position[0],pose.camera.target[2]-pose.position[2])<.1,'Station focus remains on its real location');assert(pose.visible>0);await writeFile(out+'/'+prefix+'-'+name+'-pose.json',JSON.stringify(pose,null,2));await page.screenshot({path:out+'/'+prefix+'-'+name+'.png'});
  }
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await frame();await page.screenshot({path:out+'/'+prefix+'-night.png'});
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{window.__BAIKONUR_QA.focusStation('osm-station-687010843');window.__BAIKONUR_QA.evening.setEvening(false);});await frame();await page.screenshot({path:out+'/'+prefix+'-mobile.png'});
+ }
  assert.deepEqual(errors,[]);assert(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
- await writeFile(out+'/'+prefix+'-result.json',JSON.stringify({passed:true,requests,successful,stats,errors},null,2));console.log('RAIL_STATION_BROWSER_PASS');
+ await writeFile(out+'/'+prefix+'-result.json',JSON.stringify({passed:true,mobileCoverage,requests,successful,stats,errors},null,2));console.log('RAIL_STATION_BROWSER_PASS');
 }catch(error){await writeFile(out+'/'+prefix+'-failure.json',JSON.stringify({error:error.message,errors},null,2));await page.screenshot({path:out+'/'+prefix+'-failure.png'}).catch(()=>{});throw error;}finally{await browser.close();}

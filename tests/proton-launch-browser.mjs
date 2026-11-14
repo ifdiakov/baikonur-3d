@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {mkdir, readFile, writeFile} from 'node:fs/promises';
@@ -105,12 +106,15 @@ async function standaloneViewer(result) {
   await page.selectOption('#modelSelect', 'proton-pad');
   await page.waitForFunction(() => __MODEL_VIEWER_QA.stats().ready && __MODEL_VIEWER_QA.stats().modelId === 'proton-pad');
   assert.equal((await stats()).vehicleVisible, true);
+ if(mobileEnabled){
   await page.setViewportSize({width: 390, height: 844});
   await page.waitForFunction(() => __MODEL_VIEWER_QA.stats().viewport[0] < 400);
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await capture('viewer-mobile', {viewer: true});
-  result.viewer.mobile = await stats(); result.viewer.orbit = true; result.viewer.explodeRestored = true;
+  result.viewer.mobile = await stats();
+ }
   await page.setViewportSize({width: 1440, height: 1000});
+  result.viewer.orbit=true;result.viewer.explodeRestored=true;result.viewer.mobileCoverage=mobileCoverage;
   progress('standalone-viewer-checked');
 }
 

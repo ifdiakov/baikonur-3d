@@ -3,10 +3,13 @@ name: Verify fast Baikonur loading
 on:
   push:
     branches: [main, fix/**]
-    paths: ["src/museum-menu.js", "src/complex-history-menu.js", "src/osm-transport.js", "src/transport-bake.js", "tests/transport-bake.mjs", "src/road-surface.js", "index.html", "src/ukss-exhibit.js", "src/tua-exhibit.js", "tests/loading-*", "tests/menu-catalog-contract.mjs", "tests/onboarding-flank-flyover.mjs", "src/museum-onboarding.js", ".github/workflows/verify-loading-optimization.yml", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["src/museum-menu.js", "src/complex-history-menu.js", "src/osm-transport.js", "src/transport-bake.js", "tests/transport-bake.mjs", "src/road-surface.js", "index.html", "src/ukss-exhibit.js", "src/tua-exhibit.js", "tests/loading-*", "tests/menu-catalog-contract.mjs", "tests/onboarding-flank-flyover.mjs", "src/museum-onboarding.js", ".github/workflows/verify-loading-optimization.yml", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   profile:
     runs-on: ubuntu-24.04

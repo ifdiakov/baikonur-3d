@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
@@ -77,12 +78,14 @@ try{
  // Deliberately leave editing enabled, then revisit a legacy grid=1 URL.
  // Neither a previous editing session nor that old link may restore it.
  await page.evaluate(()=>document.getElementById('coordinateGridToggle').click());
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});
  await load('?tour=0&grid=1');
  await checkHidden('mobile-fresh-legacy-link');
  await page.screenshot({path:out+'/'+prefix+'-mobile.png',timeout:180000});
+ }
  assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);
- await writeFile(out+'/'+prefix+'-result.json',JSON.stringify({passed:true,prefix,checks,errors,shaderErrors},null,2));
+ await writeFile(out+'/'+prefix+'-result.json',JSON.stringify({passed:true,mobileCoverage,prefix,checks,errors,shaderErrors},null,2));
  console.log('AUTHORING_OVERLAYS_BROWSER_PASS',JSON.stringify({prefix,checks,errors,shaderErrors}));
 }catch(error){
  await writeFile(out+'/'+prefix+'-failure.json',JSON.stringify({error:error.message,checks,errors,shaderErrors},null,2));

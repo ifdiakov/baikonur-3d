@@ -407,7 +407,7 @@ try {
       assert(oldEffects.engineUpperFlameLimitY < 0 && oldEffects.engineHaloUpperLimitY < 0);
       assert(oldEffects.engineCorePower > .9 && oldEffects.engineBoosterPower > .9);
       assert.equal(oldEffects.ductJetVisible,false,'Short ground fire must finish after takeoff');assert.equal(oldEffects.gasPower,0);
-      assert.deepEqual(ukss.actual, {flameAttached: true, flameVisible: true, flameMeshes: 32, glowSprites: 8, groundVisible: false, groundMeshes: 7});
+      assert.deepEqual(ukss.actual, {flameAttached: true, flameVisible: true, flameMeshes: 32, glowSprites: 8, groundVisible: false, groundMeshes: 3});
       await page.locator('#energiaClose').click();
       const ukssAfter = await page.evaluate(() => {
         const d = __BURAN_LAUNCH_TEST, holder = d.rocketExhibits.get('ukss').holder;

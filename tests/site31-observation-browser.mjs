@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -30,14 +31,17 @@ try{
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
  await page.screenshot({path:out+'/np-map-desktop.png',timeout:90000});
  await page.evaluate(()=>window.__qaResumeFrames());
+ let mobile=null;
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>__BAIKONUR_QA.focusSite('np-31-1'));
- const mobile=await page.evaluate(()=>({camera:__BAIKONUR_QA.cameraState(),np:__BAIKONUR_QA.np31(),overflow:document.documentElement.scrollWidth>innerWidth}));
+ mobile=await page.evaluate(()=>({camera:__BAIKONUR_QA.cameraState(),np:__BAIKONUR_QA.np31(),overflow:document.documentElement.scrollWidth>innerWidth}));
  assert(!mobile.overflow);assert(mobile.np.visible);assert.equal(mobile.np.instanceCount,1);
  assert(mobile.np.screenBounds.minX>=12&&mobile.np.screenBounds.maxX<=378,'The whole NP must fit the mobile screen');
  assert(mobile.np.screenBounds.minY>=90&&mobile.np.screenBounds.maxY<=590,'Keep the NP above the mobile card');
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
  await page.screenshot({path:out+'/np-map-mobile.png',timeout:90000});
+ }
  const mapScreenshot=true;
  assert.deepEqual(errors,[]);
- await writeFile(out+'/result.json',JSON.stringify({pass:true,state,mobile,mapScreenshot,errors},null,2));console.log('NP_PHOTO_BROWSER_PASS');
+ await writeFile(out+'/result.json',JSON.stringify({pass:true,mobileCoverage,state,mobile,mapScreenshot,errors},null,2));console.log('NP_PHOTO_BROWSER_PASS');
 }catch(e){await writeFile(out+'/failure.json',JSON.stringify({message:e.message,errors},null,2));throw e}finally{await browser.close()}

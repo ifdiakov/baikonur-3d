@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -22,10 +23,12 @@ try{
  await checkpoint('moving');await page.evaluate(()=>window.__BAIKONUR_QA.traffic.seek(2));await frame();const moved=await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats());
  for(const {index}of initial.roadVehicles.sprinters){const a=initial.carStates[index],b=moved.carStates[index];assert.notEqual(a.wheelRotation,b.wheelRotation);assert.ok(Math.hypot(...a.position.map((v,i)=>v-b.position[i]))>1);}
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await frame();await page.screenshot({path:`${out}/${prefix}-sprinter-night.png`});
+ if(mobileEnabled){
  await checkpoint('mobile');await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.traffic.focusSprinter();q.evening.setEvening(false);});await frame();await page.screenshot({path:`${out}/${prefix}-sprinter-mobile.png`});
  const rect=await page.locator('#sprinterCredit').boundingBox();assert.ok(rect.x>=0&&rect.x+rect.width<=390);await page.locator('#sprinterCredit button').first().click();assert.equal(await page.locator('#sprinterCredit').isVisible(),false);
  await page.mouse.click(350,380);assert.equal((await page.evaluate(()=>window.__BAIKONUR_QA.traffic.stats())).followingSprinter,null);
+ }
  assert.deepEqual(errors,[]);assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
- await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,requests,initial,moved,errors},null,2));console.log('SPRINTER_BROWSER_PASS');
+ await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,mobileCoverage,requests,initial,moved,errors},null,2));console.log('SPRINTER_BROWSER_PASS');
 }catch(error){await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({phase,error:error.message,errors}));await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:10000}).catch(()=>{});throw error;}
 finally{clearTimeout(watchdog);await Promise.race([browser.close(),new Promise(r=>setTimeout(r,5000))]);}

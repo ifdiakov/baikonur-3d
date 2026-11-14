@@ -3,13 +3,16 @@ name: Verify hidden authoring overlays
 on:
   push:
     branches: [main, fix/hide-authoring-overlays-20261109, fix/**]
-    paths: [".github/workflows/verify-authoring-overlays.yml", "scripts/hide-authoring-overlays-20261109.py", "tests/authoring-overlays-browser.mjs", "src/camera-altitude.js", "src/coordinate-grid.js", "src/transport-reference-labels.js", "index.html", "package.json", "package-lock.json"]
+    paths: [".github/workflows/verify-authoring-overlays.yml", "scripts/hide-authoring-overlays-20261109.py", "tests/authoring-overlays-browser.mjs", "src/camera-altitude.js", "src/coordinate-grid.js", "src/transport-reference-labels.js", "index.html", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: authoring-overlays-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -42,9 +43,12 @@ try{
  await page.locator('#site31Views button').filter({hasText:'Газоотвод'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-duct-day.png`});
  await page.locator('#site31Views button').filter({hasText:'Сверху'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-top-day.png`});
  await page.locator('#detailMore').click();assert.equal(await page.locator('#infoExtra').getByRole('link',{name:'Soviet Model Magic',exact:true}).count(),0,'Model license no longer clutters the site card');assert.equal(await page.locator('#modelCreditsLink').getAttribute('href'),'./credits.html');await page.locator('#detailMore').click();
+ let buttons=null;
+ if(mobileEnabled){
  await checkpoint('site31-mobile');await page.setViewportSize({width:390,height:844});assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await page.locator('#site31Views button').filter({hasText:'Стартовый стол'}).click();await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
- const buttons=await page.locator('#site31Views button').evaluateAll(xs=>xs.map(x=>{const b=x.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom};}));assert(buttons.every(b=>b.left>=0&&b.right<=390&&b.bottom<=844));
+ buttons=await page.locator('#site31Views button').evaluateAll(xs=>xs.map(x=>{const b=x.getBoundingClientRect();return {left:b.left,right:b.right,top:b.top,bottom:b.bottom};}));assert(buttons.every(b=>b.left>=0&&b.right<=390&&b.bottom<=844));
  await page.locator('#close').click();assert.equal(await page.locator('#museumIdentity').evaluate(e=>getComputedStyle(e).display),'none');await frame();await page.screenshot({path:`${out}/${prefix}-mobile-uncovered.png`});
+ }
  await checkpoint('gagarin-source');await page.setViewportSize({width:1600,height:1000});
  await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.load());
  await page.waitForFunction(()=>window.__BAIKONUR_QA.gagarinTable.stats().status==='ready');
@@ -57,6 +61,8 @@ try{
  await page.locator('#rocketExhibitToggle').click();await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-table-empty.png`});await page.locator('#rocketExhibitToggle').click();
  await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('all'));await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-all.png`});
  await page.evaluate(()=>window.__BAIKONUR_QA.evening.setEvening(true));await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('structure'));await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-table-evening.png`});
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>window.__BAIKONUR_QA.gagarinTable.inspect('all'));await frame();await page.screenshot({path:`${out}/${prefix}-gagarin-mobile.png`});
- assert.deepEqual(errors,[]);await writeFile(`${out}/${prefix}-evidence.json`,JSON.stringify({base,state,gagarin,poses,requests,buttons,errors},null,2));console.log('SITE31_BROWSER_PASS',JSON.stringify({base,requests,triangles:state.asset.triangles,drawCalls:state.asset.drawCalls,views:poses.length}));
+ }
+ assert.deepEqual(errors,[]);await writeFile(`${out}/${prefix}-evidence.json`,JSON.stringify({base,state,gagarin,mobileCoverage,poses,requests,buttons,errors},null,2));console.log('SITE31_BROWSER_PASS',JSON.stringify({base,requests,triangles:state.asset.triangles,drawCalls:state.asset.drawCalls,views:poses.length}));
 }catch(error){await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({error:error.message,phase,errors},null,2));await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:15000}).catch(()=>{});throw error;}finally{if(errors.length)console.log(JSON.stringify({errors}));await Promise.race([browser.close(),new Promise(resolve=>setTimeout(resolve,5000))]);clearTimeout(watchdog);}

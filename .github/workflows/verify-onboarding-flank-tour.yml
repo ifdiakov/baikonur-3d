@@ -3,13 +3,16 @@ name: Verify opening flank flyover
 on:
   push:
     branches: [main, fix/**]
-    paths: ["index.html", "src/museum-onboarding.js", "tests/onboarding-flank-flyover.mjs", ".github/workflows/verify-onboarding-flank-tour.yml", "package.json", "package-lock.json"]
+    paths: ["index.html", "src/museum-onboarding.js", "tests/onboarding-flank-flyover.mjs", ".github/workflows/verify-onboarding-flank-tour.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   pull_request:
     branches: [main]
-    paths: ["index.html", "src/museum-onboarding.js", "tests/onboarding-flank-flyover.mjs", ".github/workflows/verify-onboarding-flank-tour.yml", "package.json", "package-lock.json"]
+    paths: ["index.html", "src/museum-onboarding.js", "tests/onboarding-flank-flyover.mjs", ".github/workflows/verify-onboarding-flank-tour.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -23,6 +24,7 @@ try{
  await checkpoint('oblique');await page.evaluate(()=>window.__BAIKONUR_QA.checkpoint7.inspect('front'));
  await page.mouse.move(850,460);await page.mouse.down({button:'right'});await page.mouse.move(1000,480,{steps:12});await page.mouse.up({button:'right'});await page.mouse.wheel(0,-120);await frame();await page.screenshot({path:`${out}/${prefix}-oblique.png`});
  await checkpoint('night');await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.checkpoint7.inspect('all');q.evening.setEvening(true);});await frame();await page.screenshot({path:`${out}/${prefix}-night.png`});
+ if(mobileEnabled){
  await checkpoint('mobile');await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.evening.setEvening(false);q.checkpoint7.inspect('all');});await frame();await page.screenshot({path:`${out}/${prefix}-mobile.png`});
  assert(await page.locator('#checkpoint7Views').isVisible());
  assert.equal(await page.locator('#description').isVisible(),false,'Mobile card initially leaves the model visible');
@@ -30,9 +32,10 @@ try{
  assert(panel.y-header.y-header.height>180,'Mobile controls leave at least 180 pixels for the scene');
  await page.locator('#detailMore').click();assert(await page.locator('#description').isVisible());await page.locator('#detailMore').click();
  for(const button of await page.locator('#checkpoint7Views button').all()){const r=await button.boundingBox();assert(r.x>=0&&r.x+r.width<=390);}
+ }
  assert.ok(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));assert.deepEqual(errors,[]);
  assert(!consoleErrors.some(e=>/ReferenceError|TypeError|SyntaxError|shader error/i.test(e)),consoleErrors.join('\n'));
  const stats=await page.evaluate(()=>window.__BAIKONUR_QA.stats());assert.equal(stats.portalArchive.models.filter(s=>s.id==='kpp-7').length,1);
- await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,model,errors,consoleErrors,failedRequests,render:stats.render},null,2));console.log('CHECKPOINT7_BROWSER_PASS');
+ await writeFile(`${out}/${prefix}-result.json`,JSON.stringify({passed:true,mobileCoverage,model,errors,consoleErrors,failedRequests,render:stats.render},null,2));console.log('CHECKPOINT7_BROWSER_PASS');
 }catch(error){await writeFile(`${out}/${prefix}-failure.json`,JSON.stringify({phase,error:error.message,errors,consoleErrors,failedRequests}));await page.screenshot({path:`${out}/${prefix}-failure.png`,timeout:10000}).catch(()=>{});throw error;}
 finally{clearTimeout(watchdog);await Promise.race([browser.close(),new Promise(r=>setTimeout(r,5000))]);}

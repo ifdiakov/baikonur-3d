@@ -2,16 +2,19 @@ name: Proton source models
 on:
   pull_request:
     branches: [main]
-    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   push:
     branches: [main, fix/proton-civil-20261111, fix/**]
-    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: proton-source-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   pages_publication:
     if: github.ref == 'refs/heads/main'
@@ -46,7 +49,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [desktop, mobile, workshop]
+        mode: [desktop, workshop]
     env:
       QA_MODES: ${{ matrix.mode }}
     steps:

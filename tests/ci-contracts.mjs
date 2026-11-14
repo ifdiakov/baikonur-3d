@@ -11,6 +11,8 @@ function test(name,fn){fn();cases.push({name,passed:true});}
 const html=readFileSync('index.html','utf8');
 test('Current hidden navigation and all archive sections are preserved',()=>assert.equal(assertMenuMarkup(html,MUSEUM_SECTIONS).visibleSections,5));
 test('HTML attribute order is not a navigation contract',()=>assertMenuMarkup(html.replace('id="complexHistoryAccordion" hidden','hidden id="complexHistoryAccordion"'),MUSEUM_SECTIONS));
+test('Runtime item counters do not become section titles',()=>{const runtime=html.replace(/(<span class="sites-accordion-count"[^>]*>)(<\/span>)/g,'$117$2');assert(runtime.includes('>17</span>'));assertMenuMarkup(runtime,MUSEUM_SECTIONS);});
+test('Changed section text still fails with counters',()=>assert.throws(()=>assertMenuMarkup(html.replace('СТАРТОВЫЕ КОМПЛЕКСЫ','LOST SECTION'),MUSEUM_SECTIONS)));
 test('Accidentally revealing history is a real failure',()=>assert.throws(()=>assertMenuMarkup(html.replace('id="complexHistoryAccordion" hidden','id="complexHistoryAccordion"'),MUSEUM_SECTIONS)));
 test('Losing the retained history section is a real failure',()=>assert.throws(()=>assertMenuMarkup(html.replace('id="complexHistoryAccordion"','id="lostHistory"'),MUSEUM_SECTIONS)));
 test('Accidentally revealing encyclopedia is a real failure',()=>assert.throws(()=>assertMenuMarkup(html.replace('id="encyclopediaNavLink" hidden','id="encyclopediaNavLink"'),MUSEUM_SECTIONS)));
@@ -32,6 +34,10 @@ const inventory=[];
 for(const file of readdirSync('.github/workflows').filter(f=>f.endsWith('.yml'))){
  const source=readFileSync('.github/workflows/'+file,'utf8'),doc=YAML.parseDocument(source);assert.deepEqual(doc.errors,[],file+' YAML syntax');
  const workflow=doc.toJS();
+ if(source.includes('QA_MOBILE_EXCLUDED_BY_OWNER')){
+  assert.equal(workflow.env.QA_SKIP_MOBILE,'1',file+' lost owner mobile exclusion');
+  for(const job of Object.values(workflow.jobs))assert(!job.strategy?.matrix?.mode?.includes('mobile'),file+' schedules excluded mobile mode');
+ }
  assert.notEqual(workflow.permissions,'write-all',file+' grants write-all');
  assert.notEqual(workflow.permissions?.contents,'write',file+' can write repository');
  const scripts=[];

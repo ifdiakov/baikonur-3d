@@ -9,6 +9,9 @@ permissions:
 concurrency:
   group: ci-reliability-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   policy:
     runs-on: ubuntu-24.04

@@ -2,16 +2,19 @@ name: Soyuz-5 source model
 on:
   pull_request:
     branches: [main]
-    paths: ["assets/models/rockets/soyuz5*", "src/model-catalog.js", "src/model-facts.js", "src/model-viewer.js", "src/inspection-models.js", "tests/soyuz5-*.mjs", ".github/workflows/verify-soyuz5.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["assets/models/rockets/soyuz5*", "src/model-catalog.js", "src/model-facts.js", "src/model-viewer.js", "src/inspection-models.js", "tests/soyuz5-*.mjs", ".github/workflows/verify-soyuz5.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   push:
     branches: [main, fix/**]
-    paths: ["assets/models/rockets/soyuz5*", "src/model-catalog.js", "src/model-facts.js", "src/model-viewer.js", "src/inspection-models.js", "tests/soyuz5-*.mjs", ".github/workflows/verify-soyuz5.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["assets/models/rockets/soyuz5*", "src/model-catalog.js", "src/model-facts.js", "src/model-viewer.js", "src/inspection-models.js", "tests/soyuz5-*.mjs", ".github/workflows/verify-soyuz5.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: soyuz5-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

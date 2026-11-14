@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -16,7 +17,9 @@ try{
  await page.locator('[data-view="full"]').click();await frame();const before=(await stats()).camera;const box=await page.locator('#modelView canvas').boundingBox();await page.mouse.move(box.x+box.width*.45,box.y+box.height*.5);await page.mouse.down();await page.mouse.move(box.x+box.width*.65,box.y+box.height*.65,{steps:5});await page.mouse.up();await frame();assert.notDeepEqual((await stats()).camera,before);
  await page.selectOption('#modelSelect','zenit-land');await page.waitForFunction(()=>__MODEL_VIEWER_QA.stats().ready&&__MODEL_VIEWER_QA.stats().modelId==='zenit-land');
  await page.selectOption('#modelSelect','soyuz5');await page.waitForFunction(()=>__MODEL_VIEWER_QA.stats().ready&&__MODEL_VIEWER_QA.stats().modelId==='soyuz5');
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.waitForFunction(()=>__MODEL_VIEWER_QA.stats().viewport[0]<400);await frame();assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));await page.screenshot({path:`${out}/${prefix}-mobile.png`,fullPage:true});
+ }
  await page.setViewportSize({width:1440,height:1000});
  let sourceRequests=0;page.on('request',r=>{if(r.url().includes('/soyuz5.glb'))sourceRequests++;});
  await page.goto(new URL('?view=site45',base).href,{timeout:240000});await page.waitForFunction(()=>window.__BAIKONUR_QA,undefined,{timeout:240000});
@@ -31,8 +34,10 @@ try{
   await modelFrame.evaluate(()=>__MODEL_VIEWER_QA.frame());await page.screenshot({path:`${out}/${prefix}-site45-${id}.png`});await page.locator('.model-inspector-close').click();
  }
  await page.evaluate(()=>__BAIKONUR_QA.openObject('pad-42'));assert.equal(await page.locator('[data-site45-model="soyuz5"]').isVisible(),false);
+ if(mobileEnabled){
  await page.evaluate(()=>__BAIKONUR_QA.openObject('pad-45'));await page.setViewportSize({width:390,height:844});
  await page.screenshot({path:`${out}/${prefix}-site45-choice-mobile.png`});await page.locator('[data-site45-model="soyuz5"]').click();await page.waitForFunction(()=>__BAIKONUR_QA.modelInspector.stats().ready);assert.equal(await page.evaluate(()=>__BAIKONUR_QA.modelInspector.stats().modelId),'soyuz5');await page.locator('.model-inspector-close').click();await page.setViewportSize({width:1440,height:1000});
+ }
  const requestsBeforeMenu=sourceRequests;
  await page.locator('#equipmentAccordion summary').click();await page.locator('[data-museum-action="soyuz5"]').click();
  await page.waitForFunction(()=>__BAIKONUR_QA.modelInspector.stats().ready,undefined,{timeout:180000});const child=page.frames().find(f=>f.url().includes('/workshop/model.html'));assert(child);await child.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);await child.evaluate(()=>__MODEL_VIEWER_QA.frame());assert.equal(await child.evaluate(()=>__MODEL_VIEWER_QA.stats().modelId),'soyuz5');assert.equal(sourceRequests,requestsBeforeMenu+1);
@@ -42,5 +47,5 @@ try{
   await page.goto(new URL('encyclopedia.html#site45',base).href);await page.locator(`[data-model-choice="${id}"]`).click();await page.waitForFunction(()=>window.__MODEL_VIEWER_QA?.stats().ready);
   assert.equal((await stats()).modelId,id);assert.deepEqual((await stats()).choices,['zenit-land','soyuz5']);
  }
- assert.deepEqual(report.errors,[]);report.passed=true;console.log('SOYUZ5_BROWSER_OK',JSON.stringify({base,views:4,mobile:true,menu:true,lazy:true,returnToMap:true}));
+ assert.deepEqual(report.errors,[]);report.passed=true;console.log('SOYUZ5_BROWSER_OK',JSON.stringify({base,views:4,mobile:mobileCoverage,menu:true,lazy:true,returnToMap:true}));
 }finally{await writeFile(`${out}/${prefix}-report.json`,JSON.stringify(report,null,2));await browser.close();}

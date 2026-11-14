@@ -2,10 +2,13 @@ name: Smooth map camera regression
 on:
   push:
     branches: [main, fix/**]
-    paths: ["src/map-camera-smoothing.js", "tests/map-camera-smoothing.mjs", "tests/map-camera-smoothing-browser.mjs", ".github/workflows/verify-map-camera-smoothing.yml", "package.json", "package-lock.json"]
+    paths: ["src/map-camera-smoothing.js", "tests/map-camera-smoothing.mjs", "tests/map-camera-smoothing-browser.mjs", ".github/workflows/verify-map-camera-smoothing.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   camera:
     runs-on: ubuntu-24.04

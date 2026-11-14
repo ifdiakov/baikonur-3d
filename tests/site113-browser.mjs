@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -20,8 +21,10 @@ try{
   const camera=await page.evaluate(()=>window.__BAIKONUR_QA.cameraState());assert(camera.terrainClearance>=.13);await writeFile(out+'/'+prefix+'-'+view+'-camera.json',JSON.stringify(camera,null,2));
  }
  await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.site113.inspect('all');q.evening.setEvening(true);});await frame();await page.screenshot({path:out+'/'+prefix+'-night.png'});
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{const q=window.__BAIKONUR_QA;q.site113.inspect('all');q.evening.setEvening(false);});await frame();await page.screenshot({path:out+'/'+prefix+'-mobile.png'});
+ }
  assert.deepEqual(errors,[]);assert(await page.evaluate(()=>window.__BAIKONUR_QA.stats().shadersValid));
  await page.evaluate(()=>window.__BAIKONUR_QA.openObject('pad-254'));assert(await page.locator('#site113Views').isHidden(),'Site-specific views disappear on another object');
- await writeFile(out+'/'+prefix+'-result.json',JSON.stringify({passed:true,stats,errors},null,2));console.log('SITE113_BROWSER_PASS');
+ await writeFile(out+'/'+prefix+'-result.json',JSON.stringify({passed:true,mobileCoverage,stats,errors},null,2));console.log('SITE113_BROWSER_PASS');
 }catch(error){await writeFile(out+'/'+prefix+'-failure.json',JSON.stringify({error:error.message,errors},null,2));await page.screenshot({path:out+'/'+prefix+'-failure.png'}).catch(()=>{});throw error;}finally{await browser.close();}

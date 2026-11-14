@@ -2,10 +2,13 @@ name: Verify published evening workshop
 on:
   push:
     branches: [main, fix/**]
-    paths: [".github/workflows/verify-evening-live.yml", "package.json", "package-lock.json", "tests/evening-navigation-source.mjs", "tests/original-museum-browser.mjs", "tests/evening-navigation-browser-checks.mjs", "tests/helpers/menu-markup.mjs", "src/evening-scene.js", "src/arrival-follow-availability.js", "src/museum-menu.js", "index.html", "museum.html", "workshop.html"]
+    paths: [".github/workflows/verify-evening-live.yml", "package.json", "package-lock.json", "tests/evening-navigation-source.mjs", "tests/original-museum-browser.mjs", "tests/evening-navigation-browser-checks.mjs", "tests/helpers/menu-markup.mjs", "src/evening-scene.js", "src/arrival-follow-availability.js", "src/museum-menu.js", "index.html", "museum.html", "workshop.html", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   public-workshop:
     runs-on: ubuntu-24.04

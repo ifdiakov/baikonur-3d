@@ -3,13 +3,16 @@ name: Kosmotrans depot and road fleet
 on:
   push:
     branches: [main, codex/kosmotrans-depot-fleet, fix/**]
-    paths: ["index.html", "src/kosmotrans-depot.js", "src/road-fleet.js", "src/road-vehicles.js", "src/ground-traffic.js", "assets/models/kosmotrans-depot/**", "assets/models/road-fleet/**", "tests/depot-fleet*.mjs", "tests/road-fleet.mjs", "tests/fixtures/depot-fleet.html", ".github/workflows/verify-depot-fleet.yml", "package.json", "package-lock.json"]
+    paths: ["index.html", "src/kosmotrans-depot.js", "src/road-fleet.js", "src/road-vehicles.js", "src/ground-traffic.js", "assets/models/kosmotrans-depot/**", "assets/models/road-fleet/**", "tests/depot-fleet*.mjs", "tests/road-fleet.mjs", "tests/fixtures/depot-fleet.html", ".github/workflows/verify-depot-fleet.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: depot-fleet-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

@@ -1,3 +1,4 @@
+import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -25,7 +26,9 @@ try{
  for(let i=0;i<initial.traffic.carStates.length;i++){const a=initial.traffic.carStates[i],b=moved.carStates[i];assert(Math.hypot(...a.position.map((n,j)=>n-b.position[j]))>.1);assert.notEqual(a.wheelRotation,b.wheelRotation);}
  await page.evaluate(()=>__BAIKONUR_QA.traffic.focusCars(0));await shot('cars-map');
  await page.evaluate(()=>__BAIKONUR_QA.evening.setEvening(true));await shot('cars-night');
+ if(mobileEnabled){
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>{__BAIKONUR_QA.evening.setEvening(false);__BAIKONUR_QA.traffic.focusCars(0)});await shot('cars-mobile');
+ }
  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);assert.deepEqual(errors,[]);
- await writeFile(out+'/result.json',JSON.stringify({pass:true,fixture,initial,moved,errors},null,2));console.log('DEPOT_FLEET_BROWSER_PASS');
+ await writeFile(out+'/result.json',JSON.stringify({pass:true,mobileCoverage,fixture,initial,moved,errors},null,2));console.log('DEPOT_FLEET_BROWSER_PASS');
 }catch(error){await writeFile(out+'/failure.json',JSON.stringify({message:error.message,errors},null,2));throw error}finally{await browser.close()}

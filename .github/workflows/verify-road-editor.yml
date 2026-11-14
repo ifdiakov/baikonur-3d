@@ -3,13 +3,16 @@ name: Workshop road and railway editor — verified
 on:
   push:
     branches: [main, fix/workshop-network-20261110, fix/**]
-    paths: ["src/road-editor.js", "src/road-editor-core.js", "src/road-editor-mesh.js", "src/road-junction-repair.js", "tests/road-junction-repair.mjs", "src/road-geometry-cut.js", "tests/road-geometry-cut.mjs", "src/road-editor-style.js", "src/road-mask-tiles.js", "tests/road-mask-tiles.mjs", "data/road-edits-authoritative-20261103.json", "src/road-editor.css", "src/osm-transport.js", "tests/road-editor-*.mjs", ".github/workflows/verify-road-editor.yml", "index.html", "workshop.html", "src/workshop-*.js", "src/workshop-panel.css", "tests/workshop-network-*.mjs", "scripts/prepare-workshop-network.mjs", "package.json", "package-lock.json"]
+    paths: ["src/road-editor.js", "src/road-editor-core.js", "src/road-editor-mesh.js", "src/road-junction-repair.js", "tests/road-junction-repair.mjs", "src/road-geometry-cut.js", "tests/road-geometry-cut.mjs", "src/road-editor-style.js", "src/road-mask-tiles.js", "tests/road-mask-tiles.mjs", "data/road-edits-authoritative-20261103.json", "src/road-editor.css", "src/osm-transport.js", "tests/road-editor-*.mjs", ".github/workflows/verify-road-editor.yml", "index.html", "workshop.html", "src/workshop-*.js", "src/workshop-panel.css", "tests/workshop-network-*.mjs", "scripts/prepare-workshop-network.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 concurrency:
   group: rockettrip-road-editor-${{ github.ref }}
   cancel-in-progress: true
 permissions:
   contents: read
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   editor:
     runs-on: ubuntu-24.04

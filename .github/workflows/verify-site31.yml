@@ -5,13 +5,16 @@ on:
     branches: [main]
   push:
     branches: [main, fix/**]
-    paths: ["index.html", "src/archive-models.js", "assets/models/site31/**", "src/site31-*.js", "src/gagarin-*.js", "src/soyuz-*.js", "src/terrain-voids.js", "tests/soyuz-*.mjs", "tests/gagarin-source-table.mjs", "tests/site31-geometry.mjs", "tests/site31-source-*.mjs", ".github/workflows/verify-site31.yml", "package.json", "package-lock.json"]
+    paths: ["index.html", "src/archive-models.js", "assets/models/site31/**", "src/site31-*.js", "src/gagarin-*.js", "src/soyuz-*.js", "src/terrain-voids.js", "tests/soyuz-*.mjs", "tests/gagarin-source-table.mjs", "tests/site31-geometry.mjs", "tests/site31-source-*.mjs", ".github/workflows/verify-site31.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: site31-source-model-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

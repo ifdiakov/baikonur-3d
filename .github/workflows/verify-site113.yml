@@ -2,16 +2,19 @@ name: Site 113 housing district
 on:
   pull_request:
     branches: [main]
-    paths: ["src/site113*.js", "src/osm-transport.js", "src/road-lod.js", "src/transport-bake.js", "tests/site113-*.mjs", ".github/workflows/verify-site113.yml", "package.json", "package-lock.json", "scripts/verify-site113-published.mjs"]
+    paths: ["src/site113*.js", "src/osm-transport.js", "src/road-lod.js", "src/transport-bake.js", "tests/site113-*.mjs", ".github/workflows/verify-site113.yml", "package.json", "package-lock.json", "scripts/verify-site113-published.mjs", "tests/helpers/qa-scope.mjs"]
   push:
     branches: [main, fix/**]
-    paths: ["src/site113*.js", "src/osm-transport.js", "src/road-lod.js", "src/transport-bake.js", "tests/site113-*.mjs", ".github/workflows/verify-site113.yml", "package.json", "package-lock.json", "scripts/verify-site113-published.mjs"]
+    paths: ["src/site113*.js", "src/osm-transport.js", "src/road-lod.js", "src/transport-bake.js", "tests/site113-*.mjs", ".github/workflows/verify-site113.yml", "package.json", "package-lock.json", "scripts/verify-site113-published.mjs", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: site113-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

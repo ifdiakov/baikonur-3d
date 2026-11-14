@@ -2,7 +2,7 @@ name: MIK112 model and reconstruction — verified integration
 on:
   push:
     branches: [main, fix/buran-loss-integration-20261110, fix/bridge-sign112-20261110, fix/mik112-photo-20261110, fix/mik112-reference-20261111, fix/buran-launch-1988-20261111, fix/energia-effects-20261114, fix/**]
-    paths: ["src/buran-loss*", "src/buran-launch*", "src/mik112*.js", "src/site110*.js", "src/archive-kit.js", "src/archive-models.js", "src/museum-menu.js", "src/energia-rocket-exhaust.js", "src/energia-buran-effects.js", "src/energia-polyus-launch.js", "src/energia-ground-*.js", "src/energia-plasma-shader.js", "src/bridge-ground-surface.js", "src/road-signs.js", "data/road-signs.json", "scripts/prepare-buran-loss.mjs", "scripts/prepare-bridge-sign112.mjs", "scripts/refine-mik112-callouts.mjs", "scripts/ci/wait-pages-publication.mjs", "tests/mik112-*.mjs", "tests/buran-loss-*.mjs", "tests/buran-launch-*.mjs", "tests/energia-launch-node.mjs", "tests/energia-launch-browser.mjs", "tests/energia-surface-browser.mjs", "tests/energia-ground-occlusion.mjs", "tests/energia-background-loading.mjs", "tests/energia-exhaust-geometry.mjs", "tests/site110-launch-rig.mjs", "tests/bridge-sign112-*.mjs", ".github/workflows/verify-mik112.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["src/buran-loss*", "src/buran-launch*", "src/mik112*.js", "src/site110*.js", "src/archive-kit.js", "src/archive-models.js", "src/museum-menu.js", "src/energia-rocket-exhaust.js", "src/energia-buran-effects.js", "src/energia-polyus-launch.js", "src/energia-ground-*.js", "src/energia-plasma-shader.js", "src/bridge-ground-surface.js", "src/road-signs.js", "data/road-signs.json", "scripts/prepare-buran-loss.mjs", "scripts/prepare-bridge-sign112.mjs", "scripts/refine-mik112-callouts.mjs", "scripts/ci/wait-pages-publication.mjs", "tests/mik112-*.mjs", "tests/buran-loss-*.mjs", "tests/buran-launch-*.mjs", "tests/energia-launch-node.mjs", "tests/energia-launch-browser.mjs", "tests/energia-surface-browser.mjs", "tests/energia-ground-occlusion.mjs", "tests/energia-background-loading.mjs", "tests/energia-exhaust-geometry.mjs", "tests/site110-launch-rig.mjs", "tests/bridge-sign112-*.mjs", ".github/workflows/verify-mik112.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
     inputs:
       target:
@@ -13,6 +13,9 @@ on:
 concurrency:
   group: museum-mik112-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   pages_publication:
     if: github.ref == 'refs/heads/main'
@@ -49,7 +52,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [desktop, mobile, workshop]
+        mode: [desktop, workshop]
     env:
       QA_MODES: ${{ matrix.mode }}
     steps:

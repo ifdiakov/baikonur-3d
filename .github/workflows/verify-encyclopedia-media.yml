@@ -2,16 +2,19 @@ name: Card sharing and encyclopedia media
 on:
   push:
     branches: [main, fix/share-copy-20261111, fix/**]
-    paths: ["src/card-share*", "src/model-viewer.js", "src/model-inspector.js", "encyclopedia.html", "workshop/model.html", "tests/card-share-*.mjs", "data/encyclopedia.json", "src/encyclopedia-3d.js", ".github/workflows/verify-encyclopedia-media.yml", "package.json", "package-lock.json"]
+    paths: ["src/card-share*", "src/model-viewer.js", "src/model-inspector.js", "encyclopedia.html", "workshop/model.html", "tests/card-share-*.mjs", "data/encyclopedia.json", "src/encyclopedia-3d.js", ".github/workflows/verify-encyclopedia-media.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   pull_request:
     branches: [main]
-    paths: ["src/card-share*", "src/model-viewer.js", "src/model-inspector.js", "encyclopedia.html", "workshop/model.html", "tests/card-share-*.mjs", "package.json", "package-lock.json"]
+    paths: ["src/card-share*", "src/model-viewer.js", "src/model-inspector.js", "encyclopedia.html", "workshop/model.html", "tests/card-share-*.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: encyclopedia-media-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   source:
     runs-on: ubuntu-24.04
@@ -39,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        mode: [desktop, mobile, workshop]
+        mode: [desktop, workshop]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

@@ -2,10 +2,13 @@ name: Railway terminus and site connections
 on:
   push:
     branches: [main, fix/**]
-    paths: ["src/rail-terminal-cleanup.js", "src/osm-transport.js", "src/rail-scheme.js", "tests/rail-terminal-cleanup.mjs", "tests/rail-site-gates-integration.mjs", "tests/access-rail-continuity.mjs", "data/osm/railways.geojson", "data/osm/rail-points.geojson", ".github/workflows/verify-rail-termini.yml", "package.json", "package-lock.json", "src/site31-observation-platform.js"]
+    paths: ["src/rail-terminal-cleanup.js", "src/osm-transport.js", "src/rail-scheme.js", "tests/rail-terminal-cleanup.mjs", "tests/rail-site-gates-integration.mjs", "tests/access-rail-continuity.mjs", "data/osm/railways.geojson", "data/osm/rail-points.geojson", ".github/workflows/verify-rail-termini.yml", "package.json", "package-lock.json", "src/site31-observation-platform.js", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   audit:
     runs-on: ubuntu-24.04

@@ -3,16 +3,19 @@ name: Lightweight railway stations
 on:
   pull_request:
     branches: [main]
-    paths: ["src/rail-stations.js", "src/rail-road-clearance.js", "src/osm-transport.js", "index.html", "assets/models/rail-station/**", "tests/rail-station-*.mjs", "tests/rail-road-clearance.mjs", ".github/workflows/verify-rail-stations.yml", "package.json", "package-lock.json", "scripts/verify-rail-station-published.mjs"]
+    paths: ["src/rail-stations.js", "src/rail-road-clearance.js", "src/osm-transport.js", "index.html", "assets/models/rail-station/**", "tests/rail-station-*.mjs", "tests/rail-road-clearance.mjs", ".github/workflows/verify-rail-stations.yml", "package.json", "package-lock.json", "scripts/verify-rail-station-published.mjs", "tests/helpers/qa-scope.mjs"]
   push:
     branches: [main, fix/**]
-    paths: ["src/rail-stations.js", "src/rail-road-clearance.js", "src/osm-transport.js", "index.html", "assets/models/rail-station/**", "tests/rail-station-*.mjs", "tests/rail-road-clearance.mjs", ".github/workflows/verify-rail-stations.yml", "package.json", "package-lock.json", "scripts/verify-rail-station-published.mjs"]
+    paths: ["src/rail-stations.js", "src/rail-road-clearance.js", "src/osm-transport.js", "index.html", "assets/models/rail-station/**", "tests/rail-station-*.mjs", "tests/rail-road-clearance.mjs", ".github/workflows/verify-rail-stations.yml", "package.json", "package-lock.json", "scripts/verify-rail-station-published.mjs", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: rail-stations-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

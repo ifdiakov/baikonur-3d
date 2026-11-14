@@ -3,16 +3,19 @@ name: RocketTrip observation platform
 on:
   push:
     branches: [main, codex/np-redraw, fix/**]
-    paths: ["index.html", "src/site31-observation-platform.js", "src/osm-transport.js", "tests/fixtures/np-photo.html", "src/evening-scene.js", "tests/site31-observation*.mjs", ".github/workflows/verify-site31-np.yml", "package.json", "package-lock.json"]
+    paths: ["index.html", "src/site31-observation-platform.js", "src/osm-transport.js", "tests/fixtures/np-photo.html", "src/evening-scene.js", "tests/site31-observation*.mjs", ".github/workflows/verify-site31-np.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   pull_request:
     branches: [main]
-    paths: ["index.html", "src/site31-observation-platform.js", "src/osm-transport.js", "tests/fixtures/np-photo.html", "src/evening-scene.js", "tests/site31-observation*.mjs", ".github/workflows/verify-site31-np.yml", "package.json", "package-lock.json"]
+    paths: ["index.html", "src/site31-observation-platform.js", "src/osm-transport.js", "tests/fixtures/np-photo.html", "src/evening-scene.js", "tests/site31-observation*.mjs", ".github/workflows/verify-site31-np.yml", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: site31-np-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   verify:
     runs-on: ubuntu-24.04

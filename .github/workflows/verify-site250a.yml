@@ -2,10 +2,10 @@ name: Site 250A reference model and Site 118 source integration
 on:
   pull_request:
     branches: [main]
-    paths: ["src/site250a*", "src/site118*", "src/archive-models.js", "src/archive-manifest.js", "src/facility-ports.js", "src/workshop-panel.css", "assets/models/site118/**", "tests/site250a*", "tests/site118*", "scripts/*site118*", "scripts/source-models/site118/**", "scripts/verify-site250a-published.mjs", ".github/workflows/verify-site250a.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["src/site250a*", "src/site118*", "src/archive-models.js", "src/archive-manifest.js", "src/facility-ports.js", "src/workshop-panel.css", "assets/models/site118/**", "tests/site250a*", "tests/site118*", "scripts/*site118*", "scripts/source-models/site118/**", "scripts/verify-site250a-published.mjs", ".github/workflows/verify-site250a.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   push:
     branches: [main, fix/site118-industry-20261111, fix/**]
-    paths: ["src/site250a*", "src/site118*", "assets/models/site118/**", "tests/site250a*", "tests/site118*", "scripts/*site118*", "scripts/source-models/site118/**", "scripts/verify-site250a-published.mjs", "src/workshop-panel.css", ".github/workflows/verify-site250a.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
+    paths: ["src/site250a*", "src/site118*", "assets/models/site118/**", "tests/site250a*", "tests/site118*", "scripts/*site118*", "scripts/source-models/site118/**", "scripts/verify-site250a-published.mjs", "src/workshop-panel.css", ".github/workflows/verify-site250a.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
   workflow_dispatch:
     inputs:
       target:
@@ -18,6 +18,9 @@ permissions:
 concurrency:
   group: site250a-${{ github.ref }}
   cancel-in-progress: true
+# QA_MOBILE_EXCLUDED_BY_OWNER: not run, never reported as a mobile pass.
+env:
+  QA_SKIP_MOBILE: '1'
 jobs:
   select:
     runs-on: ubuntu-24.04
@@ -59,7 +62,7 @@ jobs:
               targets=['site250a','site118'];reason='FAIL_CLOSED: shared or unclassified changes require both existing acceptance paths';
             }
           }
-          const include=targets.flatMap(target=>target==='site118'?['desktop','mobile','workshop'].map(mode=>({target,mode})):[{target,mode:'legacy'}]);
+          const include=targets.flatMap(target=>target==='site118'?['desktop','workshop'].map(mode=>({target,mode})):[{target,mode:'legacy'}]);
           const report={targets,reason,impact,matrix:{include},sourceCommit:process.env.GITHUB_SHA};
           fs.mkdirSync('qa-ci',{recursive:true});fs.writeFileSync('qa-ci/site-reference-selection.json',JSON.stringify(report,null,2)+'\n');
           // An unknown diff selects both suites. The job-level if skips the
