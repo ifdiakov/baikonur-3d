@@ -488,6 +488,10 @@ body.following-arrival #labelLayer{display:none!important}
 
 #site94Views button{padding:8px 10px;border:1px solid #8da6b75c;border-radius:8px;background:#253e4c;color:#edf4f8;cursor:pointer;font:600 12px Arial}
 @media(min-width:1000px){body.workshop-mode:has(#workshopPanel:not([hidden])) #info:has(#site94Views:not([hidden])){right:370px!important;top:205px!important;width:310px!important;max-height:calc(100dvh - 310px)!important}}
+/* City badge: official Baikonur coat of arms, kept in the actual city map label. */
+.site-label.is-city .site-label-main{display:flex;align-items:center;gap:7px}
+.site-label.is-city .site-city-emblem{display:block;flex:0 0 25px;width:25px;height:36px;object-fit:contain;filter:drop-shadow(0 1px 3px #0008)}
+.site-label.is-city .name{min-width:0}
 </style><link rel="stylesheet" href="./src/soyuz-dual-launch.css?v=20261103-launch-v1"><link rel="stylesheet" href="./src/lighting-editor.css"><link rel="stylesheet" href="./src/flank-territories.css?v=20261028-museum4-osm-live-v2"><link rel="stylesheet" href="./src/evening.css?v=20261109-evening-navigation-v2"><link rel="stylesheet" href="./src/interchange.css?v=20261031-interchange-bridge-v1"><style>#mik112Controls[hidden]{display:none!important}</style><link rel="stylesheet" href="./src/model-inspector.css?v=20261108-site45-choice-v1"><link rel="stylesheet" href="./src/museum-chrome.css?v=20261101-relief-v2"><link rel="stylesheet" href="./src/camera-altitude.css?v=20261101-altitude-v1"><link rel="stylesheet" href="./src/museum-ui-polish.css?v=20261103-logo-compact-v6"><link rel="stylesheet" href="./src/museum-onboarding.css?v=20261108-standalone-tour-button-v1"><link rel="stylesheet" href="./src/complex-history.css?v=20261103-foundation-v1"><style id="buildingCardsReadable">/* BUILDING_CARDS_READABLE_V3 */
 .detail-card[data-site-id="building-mzk"] p,.detail-card[data-site-id="building-sdi"] p{display:block;-webkit-line-clamp:unset;overflow:visible;max-height:none}
 </style><link rel="stylesheet" href="./src/buran-loss.css?v=20261110-v1"><link rel="stylesheet" href="./src/card-share.css?v=20261111-share-v1"></head><body data-preload-museum="true"><div id="view"></div>
@@ -1604,9 +1608,16 @@ for(let i=0;i<cardObjects.length;i++){
  el.title=o.name;el.setAttribute("role","group");el.setAttribute("aria-label",displaySiteName(o));
  el.dataset.siteId=o.record.id;el.dataset.siteIndex=String(i);
  const main=document.createElement("button");main.type="button";main.className="site-label-main";main.setAttribute("aria-label","Открыть "+displaySiteName(o));
- const badge=document.createElement("span");badge.className="tag";badge.textContent=badgeText;
+ const badge=document.createElement("span");badge.className="tag";badge.textContent=item.id==="city"?"ГОРОД":badgeText;
  const caption=document.createElement("span");caption.className="name";caption.textContent=fullText||"";
  main.append(badge);
+ if(item.id==="city"){
+  const emblem=document.createElement("img");emblem.className="site-city-emblem";
+  emblem.src="https://commons.wikimedia.org/wiki/Special:FilePath/Baikonur_seal.png";
+  emblem.alt="Герб города Байконур";emblem.width=25;emblem.height=36;emblem.decoding="async";
+  emblem.onerror=()=>{emblem.style.display="none";};
+  main.append(emblem);el.classList.add("is-city");
+ }
  if(!o.isStation&&organisationLogo(item.organisation?.org)){
   const mark=document.createElement("span");mark.className="site-org-mark";
   setOrganisationBrand(mark,item.organisation.org);main.append(mark);
