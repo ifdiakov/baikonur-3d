@@ -31,7 +31,7 @@ const evidence={base,prefix,phases:[],sources:[],restored:null,mobile:null,error
 try{
  const u=new URL(base);u.searchParams.set('view','ukss');
  await page.goto(u.href,{waitUntil:'domcontentloaded',timeout:120000});
- await page.waitForFunction(()=>window.__BAIKONUR_QA?.energia?.stats()&&document.getElementById('museumLoading')?.dataset.state==='ready',null,{timeout:180000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA?.energia&&document.getElementById('museumLoading')?.dataset.state==='ready',null,{timeout:180000});
  const before=await page.evaluate(()=>({
   year:document.getElementById('year').value,
   evening:window.__BAIKONUR_QA.evening.stats().evening,
@@ -55,6 +55,7 @@ try{
  const inputDirection=inputCamera.position.map((p,i)=>p-inputCamera.target[i]);
  await page.locator('#energiaLaunchStart').click();
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.active===true,null,{timeout:100000});
+ await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.effects?.warmup?.status==='ready',null,{timeout:90000});
  let s=await stats();assert.equal(s.time,-90);assert.equal(s.active,true);
  assert.equal(await page.locator('#year').inputValue(),'1987');
  assert(await page.locator('#energiaLaunchPanel').isVisible());
@@ -80,8 +81,13 @@ try{
  assert.equal(s.effects.steamEnvelope.presence,0);
  assert.equal(s.effects.smokeMode,'multi-octave-feathered-billboards');
  assert.equal(s.effects.instancedSmokeCount,3335);
- assert.equal(s.effects.shadowMapEnabled,true);
- assert.equal(s.effects.shadowReceiverCount,6);
+ assert.equal(s.effects.shadowMapEnabled,false);
+ assert.equal(s.effects.shadowReceiverCount,0);
+ assert.equal(s.effects.groundLighting.mode,'terrain-material-glow');
+ assert.ok(s.effects.groundLighting.materials>0);
+ assert.equal(s.effects.groundLighting.extraDrawCalls,0);
+ assert.equal(s.effects.groundLightCount,2);
+ assert.equal(s.effects.overlayGlowCount,0);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState().controlsEnabled),true,
   'OrbitControls must remain enabled during the launch');
  await shot('prelaunch');
@@ -117,12 +123,19 @@ try{
    assert.ok(e.engineUpperFlameLimitY<0,'Animated flames must stay below the engine exits');
    assert.ok(e.engineHaloUpperLimitY<0,'Nozzle glow must not extend into the rocket body');
    assert.equal(s.cameraDetached,false);
-   assert.equal(e.shadowMapEnabled,true,'Live cast shadows enabled only during the launch');
-   assert.ok(e.shadowLightIntensity>250,'Engine lights illuminate the UKSS structures');
-   assert.equal(e.shadowReceiverCount,6,'Shadow projection covers launch apron and surrounding steppe');
-   assert.ok(e.shadowMapResolution>=512,'Shadow map resolution is valid for device');
+   assert.equal(e.shadowMapEnabled,false,'The launch must not enable costly projected shadows');
+   assert.equal(e.shadowLightIntensity,0);
+   assert.equal(e.shadowReceiverCount,0,'Flat shadow overlays have been removed');
+   assert.equal(e.shadowMapResolution,0,'No launch shadow texture is allocated');
+   assert.equal(e.dynamicShadowCount,0);
+   assert.ok(e.groundLighting.power>0,'The actual terrain receives the reflected launch glow');
+   assert.equal(e.groundLightCount,2,'Two bounded lights illuminate the actual structures');
+   assert.equal(e.ductDepthCompatible,true);
+   assert.equal(e.ductDepthTest,true);
+   assert.equal(e.smokeSinglePass,true);
+   assert.equal(e.groundOcclusion.contourSource,'source-model');
   }
-  if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>100),'The fire illuminates its surroundings');await shot('fire-in-trench');}
+  if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>10),'The fire illuminates its surroundings with bounded lights');await shot('fire-in-trench');}
   if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');assert.equal(e.engineFlameDepthCompatible,true);assert.equal(e.engineFlameAttached,true);assert.ok(e.engineUpperFlameLimitY<0,'Nozzle lip remains clear during ascent');assert.ok(e.engineHaloUpperLimitY<0);assert.ok(e.rocketNozzleWorld?.every(Number.isFinite),'Nozzle position follows the rocket in world space');await shot('lift-off');}
   if(t===145.9){
    assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');

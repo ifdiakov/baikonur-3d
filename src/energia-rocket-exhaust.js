@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {nozzleFlameMaterial} from './energia-plasma-shader.js?v=20261103-plasma-v2';
 
-export const ENERGIA_ROCKET_EXHAUST_VERSION='energia-rocket-exhaust-20261111-v1';
+export const ENERGIA_ROCKET_EXHAUST_VERSION='energia-rocket-exhaust-20261114-stable-light-v2';
 
 // The eight visual exits retain the approved UKSS calibration. They represent
 // four core engines and four booster engines, not individual RD-170 chambers.
@@ -19,7 +19,8 @@ const powerValue=value=>Math.max(0,Math.min(1,Number(value)||0));
 /** The original UKSS flame geometry, shader, colours and flicker, shared by
  * both Energia launches. Engine timing belongs to the calling scenario.
  * This factory owns only its effects, never the rocket GLB's resources. */
-export function createEnergiaRocketExhaust({rocket,anchors=ENERGIA_NOZZLE_ANCHORS}){
+export function createEnergiaRocketExhaust({rocket,anchors=ENERGIA_NOZZLE_ANCHORS,
+ stableLight=false,lightIntensity=1650,lightDistance=210,singlePass=false}){
  if(!rocket?.isObject3D)throw new TypeError('Energia exhaust requires a rocket holder');
  if(!Array.isArray(anchors)||!anchors.length||anchors.some(anchor=>
   !['core','booster'].includes(anchor.type)||!Array.isArray(anchor.position)||
@@ -51,7 +52,11 @@ export function createEnergiaRocketExhaust({rocket,anchors=ENERGIA_NOZZLE_ANCHOR
   core:nozzleFlameMaterial(0x8fdcff),coreGlow:nozzleFlameMaterial(0x36a7ff),coreWhite:nozzleFlameMaterial(0xffffff),
   booster:nozzleFlameMaterial(0xffcc72),boosterGlow:nozzleFlameMaterial(0xff6a12),boosterWhite:nozzleFlameMaterial(0xfffdf4)
  };
+ // Additive colour is order-independent. Drawing both faces in one pass
+ // preserves the approved flame while avoiding a second draw per shell.
+ if(singlePass)for(const material of Object.values(rocketNozzleMaterials))material.forceSinglePass=true;
  const engineJets=[];
+ const geometries=new Map();
  const buildEngineJet=(x,y,z,type,index)=>{
   const core=type==='core',length=core?112:166,radius=core?2.0:2.9;
   const entries=[
@@ -65,7 +70,10 @@ export function createEnergiaRocketExhaust({rocket,anchors=ENERGIA_NOZZLE_ANCHOR
    const layerLength=length*relativeLength;
    const topRadius=top*(layer===0?.59:.71);
    const bottomRadius=Math.max(tip,top*(layer===0?.36:.27));
-   const cone=new THREE.Mesh(new THREE.CylinderGeometry(topRadius,bottomRadius,layerLength,36,18,true),material);
+   const geometryKey=[topRadius,bottomRadius,layerLength].join(':');
+   if(!geometries.has(geometryKey))geometries.set(geometryKey,
+    new THREE.CylinderGeometry(topRadius,bottomRadius,layerLength,36,18,true));
+   const cone=new THREE.Mesh(geometries.get(geometryKey),material);
    cone.position.set(x,y-layerLength/2,z);
    cone.userData.nozzleFlameLength=layerLength;
    cone.userData.nozzleFlameAnchorY=y;
@@ -84,41 +92,59 @@ export function createEnergiaRocketExhaust({rocket,anchors=ENERGIA_NOZZLE_ANCHOR
  const typeIndex={core:0,booster:0};
  for(const {position,type}of anchors)buildEngineJet(...position,type,typeIndex[type]++);
  const movingFlameLight=new THREE.PointLight(0xffd6a0,0,170,1.5);
- movingFlameLight.position.set(0,-7,0);flameRoot.add(movingFlameLight);
+ movingFlameLight.position.set(0,-7,0);
+ // Keep the optional UKSS light outside the hidden flame group. Changing
+ // light counts at ignition otherwise recompiles every lit scene material.
+ (stableLight?rocket:flameRoot).add(movingFlameLight);
+ movingFlameLight.castShadow=false;
  let disposed=false;
 
- function stats(){
+ function stats({diagnostics=true}={}){
   const attached=!disposed&&flameRoot.parent===rocket;
   const visible=attached&&flameRoot.visible;
-  flameRoot.updateWorldMatrix(true,true);
-  return {
+  let upperLimit=-Infinity,haloUpperLimit=-Infinity,visibleGlows=0;
+  for(const jet of engineJets){
+   for(const mesh of jet.meshes)upperLimit=Math.max(upperLimit,
+    mesh.position.y+mesh.userData.nozzleFlameLength*mesh.scale.y/2);
+   haloUpperLimit=Math.max(haloUpperLimit,jet.halo.position.y+jet.haloSize/2);
+   if(jet.halo.visible)visibleGlows++;
+  }
+  const state={
    version:ENERGIA_ROCKET_EXHAUST_VERSION,visible,disposed,
    engineCorePower:rocketNozzleMaterials.core.uniforms.uPower.value,
    engineBoosterPower:rocketNozzleMaterials.booster.uniforms.uPower.value,
    engineJetCount:disposed?0:engineJets.length,
-   engineMeshCount:flameRoot.children.filter(child=>child.isMesh).length,
+   engineMeshCount:disposed?0:engineJets.length*4,
+   engineGeometryCount:disposed?0:geometries.size,
+   engineSinglePass:singlePass,
    enginePlasmaRibbonCount:0,
    engineNozzleGlowCount:disposed?0:engineJets.length,
-   engineNozzleGlowVisible:visible?engineJets.filter(jet=>jet.halo.visible).length:0,
+   engineNozzleGlowVisible:visible?visibleGlows:0,
    engineNozzleGlowOpacity:{core:coreHaloMaterial.opacity,boosters:boosterHaloMaterial.opacity},
-   engineUpperFlameLimitY:Math.max(...engineJets.flatMap(jet=>jet.meshes.map(mesh=>
-    mesh.position.y+mesh.userData.nozzleFlameLength*mesh.scale.y/2))),
-   engineHaloUpperLimitY:Math.max(...engineJets.map(jet=>jet.halo.position.y+jet.haloSize/2)),
+   engineUpperFlameLimitY:upperLimit,
+   engineHaloUpperLimitY:haloUpperLimit,
    engineFlameAttached:attached,
    engineFlameDepthCompatible:rocketNozzleMaterials.core.vertexShader.includes('logdepthbuf_vertex')
     &&rocketNozzleMaterials.core.fragmentShader.includes('logdepthbuf_fragment'),
    engineFlameDepthTest:rocketNozzleMaterials.core.depthTest,
    movingLightIntensity:visible?movingFlameLight.intensity:0,
-   rocketExhaustOffset:rocket.position.toArray(),
-   rocketNozzleWorld:disposed?null:rocket.localToWorld(V()).toArray(),
-   nozzleAnchorsWorld:disposed?[]:engineJets.map(jet=>({type:jet.type,index:jet.index,
+   movingLightDistance:movingFlameLight.distance,
+   stableLightLayout:stableLight,
+   rocketExhaustOffset:rocket.position.toArray()
+  };
+  // World-space anchor diagnostics are for inspection, not the animation
+  // hot path: localToWorld repeatedly walks the rocket and site's ancestors.
+  if(!diagnostics)return state;
+  flameRoot.updateWorldMatrix(true,true);
+  state.rocketNozzleWorld=disposed?null:rocket.localToWorld(V()).toArray();
+  state.nozzleAnchorsWorld=disposed?[]:engineJets.map(jet=>({type:jet.type,index:jet.index,
     localPosition:[jet.x,jet.y,jet.z],worldPosition:flameRoot.localToWorld(V(jet.x,jet.y,jet.z)).toArray(),
     worldDirection:V(0,-1,0).transformDirection(flameRoot.matrixWorld).toArray(),
-    visible:visible&&jet.meshes.some(mesh=>mesh.visible)}))
-  };
+    visible:visible&&jet.meshes.some(mesh=>mesh.visible)}));
+  return state;
  }
- function seek({time,core=0,boosters=0}){
-  if(disposed)return stats();
+ function seek({time,core=0,boosters=0,diagnostics=true}){
+  if(disposed)return stats({diagnostics});
   const t=Number.isFinite(Number(time))?Number(time):0;
   const enginePower={core:powerValue(core),boosters:powerValue(boosters)};
   for(const kind of ['core','booster']){
@@ -144,19 +170,25 @@ export function createEnergiaRocketExhaust({rocket,anchors=ENERGIA_NOZZLE_ANCHOR
   }
   coreHaloMaterial.opacity=.52*enginePower.core*(.94+.06*Math.sin(t*9.3));
   boosterHaloMaterial.opacity=.58*enginePower.boosters*(.94+.06*Math.sin(t*8.1));
-  movingFlameLight.intensity=1650*Math.max(enginePower.core*.92,enginePower.boosters);
-  movingFlameLight.distance=210;
+  movingFlameLight.intensity=lightIntensity*Math.max(enginePower.core*.92,enginePower.boosters);
+  movingFlameLight.distance=lightDistance;
+  if(stableLight){
+   movingFlameLight.visible=true;
+   if(movingFlameLight.parent!==rocket)rocket.add(movingFlameLight);
+  }
   flameRoot.visible=enginePower.core>.003||enginePower.boosters>.003;
   // A GLB reload may clear the holder. Reattach without a second flame copy.
   if(flameRoot.parent!==rocket)rocket.add(flameRoot);
   flameRoot.position.set(0,0,0);flameRoot.quaternion.identity();flameRoot.scale.set(1,1,1);
-  return stats();
+  return stats({diagnostics});
  }
- function hide(){flameRoot.visible=false;movingFlameLight.intensity=0;}
+ function hide(){flameRoot.visible=false;movingFlameLight.intensity=0;if(stableLight)movingFlameLight.visible=false;}
  function dispose(){
   if(disposed)return;
   hide();flameRoot.removeFromParent();
-  for(const jet of engineJets)for(const mesh of jet.meshes)mesh.geometry.dispose();
+  if(stableLight)movingFlameLight.removeFromParent();
+  for(const geometry of geometries.values())geometry.dispose();
+  geometries.clear();
   for(const material of Object.values(rocketNozzleMaterials))material.dispose();
   nozzleGlowTexture.dispose();coreHaloMaterial.dispose();boosterHaloMaterial.dispose();
   // Sprite geometry is shared by Three.js; it is not owned by this factory.

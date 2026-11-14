@@ -114,6 +114,29 @@ assert.equal(exhaust.stats().engineMeshCount,0);assert.equal(exhaust.stats().eng
 assert.equal(model.parent,rocket);assert.equal(modelGeometryDisposed,false);assert.equal(modelMaterialDisposed,false);
 console.log('ENERGIA_EXHAUST_PARITY_PASS '+JSON.stringify({poses:originalPoses.length,meshes:32,glows:8}));
 
+// UKSS prepares its light before ignition; neither engine family may add a
+// new scene-light variant when it becomes visible. Geometry remains identical.
+const stableRocket=new THREE.Group(),stable=createEnergiaRocketExhaust({rocket:stableRocket,
+ stableLight:true,lightIntensity:350,lightDistance:45,singlePass:true});
+assert.equal(geometryDigest(stable.root),'b775d5f6d68814fa945175427bd9b2c8d691441d93ce830f73b3f5aadba3a3a6');
+let stableLamp;
+for(const time of [-90,-9.4,-8,-3.2,-2,0,6,469.2]){
+ const state=stable.seek({time,...sampleEnergiaEnginePlumes(time),diagnostics:false});
+ const lamps=[];stableRocket.traverseVisible(node=>{if(node.isLight)lamps.push(node);});
+ assert.equal(lamps.length,1,'The same bounded light stays in the render layout across ignition and shutdown');
+ stableLamp??=lamps[0];assert.equal(lamps[0],stableLamp);
+ assert.equal(lamps[0].castShadow,false);assert.equal(lamps[0].distance,45);
+ assert.ok(lamps[0].intensity<=350);
+ assert.equal(state.engineGeometryCount,8,'Identical nozzle geometry is shared across the eight engines');
+ assert.equal(state.nozzleAnchorsWorld,undefined,'Per-frame update avoids expensive world-anchor diagnostics');
+ assert.equal(state.engineCorePower,stable.stats().engineCorePower);
+ assert.ok(state.engineUpperFlameLimitY<0);
+}
+stable.hide();assert.equal(stableLamp.visible,false);assert.equal(stableLamp.intensity,0);
+stable.seek({time:0,core:1,boosters:1});assert.equal(stableLamp.visible,true);
+stable.dispose();assert.equal(stableRocket.children.length,0,'Closing owned effects leaves no detached light');
+console.log('ENERGIA_STABLE_LIGHT_PASS');
+
 const channels=[
  {id:'north-east',throat:[-199.912076924,-23,-129.7684430257245],outlet:[-136.912076924,0,-20.649242148885236],width:12},
  {id:'west',throat:[-211.912076924,-23,-136.696646256],outlet:[-337.912076924,0,-136.696646256],width:12},

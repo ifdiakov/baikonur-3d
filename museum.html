@@ -625,7 +625,7 @@ import {isCameraTextEntry,museumMovementSpeed,constrainFreeCamera,cameraPosition
 import {createCameraAltitude} from './src/camera-altitude.js?v=20261109-overlays-off-v1';
 import {createPuaLoading} from './src/pua-loading.js?v=20261102-site2-photo-v3';
 import {createBuranLanding} from './src/buran-landing.js?v=20261101-without-ll22-v1';
-import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261111-shared-exhaust-v13';
+import {createEnergiaPolyusLaunch} from './src/energia-polyus-launch.js?v=20261114-occlusion-light-v14';
 import {createSoyuzDualLaunch} from './src/soyuz-dual-launch.js?v=20261103-dual-site-launch-v1';
 import {createGroundTraffic} from './src/ground-traffic.js?v=20261108-road-fleet-v1';
 import {createCoordinateGrid} from './src/coordinate-grid.js?v=20261109-overlays-off-v1';
@@ -2630,7 +2630,7 @@ puaLoading=createPuaLoading({airfield:objects.find(o=>o.record.id==='pad-251').g
 }});
 
 energiaLaunch=createEnergiaPolyusLaunch({
- scene,camera,controls:ctl,siteRoot:ukssGroup,renderer,objects,getEntry:()=>rocketExhibits.get('ukss'),
+ scene,camera,controls:ctl,siteRoot:ukssGroup,renderer,objects,groundMaterials,getEntry:()=>rocketExhibits.get('ukss'),
  onStart(){
   cancelBuranLaunch({restoreCamera:false});
   puaLoading?.stop({releaseCamera:false});buranLanding?.stop({releaseCamera:false});
