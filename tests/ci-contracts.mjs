@@ -44,6 +44,10 @@ test('Reuse requires unchanged entry script, transitive helper, fixture and appl
  }
  assert.deepEqual(changedVerificationInputs(['docs/task.txt','tests/unrelated.mjs'],path,workflow,inputs),[]);
  assert.throws(()=>verificationInputs(path,workflow,()=>null),/Missing verification input/);
+ const deleted=verificationInputs(path,workflow,p=>p==='tests/helpers/check.mjs'?null:sources[p]??null);
+ assert.deepEqual(changedVerificationInputs(['tests/helpers/check.mjs'],path,workflow,deleted),['tests/helpers/check.mjs']);
+ const deletedFixture=verificationInputs(path,workflow,p=>p==='tests/fixtures/check.json'?null:sources[p]??null);
+ assert.deepEqual(changedVerificationInputs(['tests/fixtures/check.json'],path,workflow,deletedFixture),['tests/fixtures/check.json']);
 });
 test('A newer failure blocks an older success for identical inputs',()=>{
  const runs=[{id:1,path:'feature',head_branch:'fix/candidate',head_sha:'a',conclusion:'success'}, {id:2,path:'feature',head_branch:'fix/candidate',head_sha:'b',conclusion:'failure'}, {id:3,path:'feature',head_branch:'other',head_sha:'c',conclusion:'success'}];

@@ -31,6 +31,7 @@ export function verificationInputs(workflowPath,workflow,read=path=>existsSync(p
    // need not be read to prove their committed identities.
    if(/^(?:src|data|assets|workshop)\//.test(clean))continue;
    if(read(clean)!=null)enqueue(clean);
+   else inputs.add(posix.normalize(clean)); // A deleted fixture/helper must invalidate prior evidence too.
   }
  }
  return [...inputs].sort();
