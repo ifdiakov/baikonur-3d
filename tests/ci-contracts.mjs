@@ -1,3 +1,4 @@
+import {classifyRequestFailures} from './helpers/request-failures.mjs';
 import {createServer} from 'node:http';
 import {resolveNavigationURL} from './helpers/navigation-url.mjs';
 import assert from 'node:assert/strict';
@@ -72,6 +73,14 @@ test('A newer failure blocks an older success for identical inputs',()=>{
   cases.push({name:'Real redirects preserve canonical origin and query; missing pages fail',passed:true});
  }finally{for(const server of [redirect,canonical].filter(Boolean)){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}}
 }
+test('Only aborted stylesheets proven loaded in the current document are classified as harmless',()=>{
+ const url='https://museum.test/src/museum-mobile.css?v=current';
+ const cancelled={url,reason:'net::ERR_ABORTED',resourceType:'stylesheet'};
+ const loaded=[{href:url,loaded:true,rules:3}];
+ assert.deepEqual(classifyRequestFailures([cancelled],loaded),{cancelledLoadedStylesheets:[cancelled],unexpected:[]});
+ for(const sheets of [[],[{href:url,loaded:false,rules:0}],[{href:url,loaded:true,rules:0}],[{href:url+'-different',loaded:true,rules:3}]])assert.deepEqual(classifyRequestFailures([cancelled],sheets).unexpected,[cancelled]);
+ for(const failure of [{...cancelled,resourceType:'script'},{...cancelled,reason:'net::ERR_CONNECTION_RESET'}])assert.deepEqual(classifyRequestFailures([failure],loaded).unexpected,[failure]);
+});
 const inventory=[];
 for(const file of readdirSync('.github/workflows').filter(f=>f.endsWith('.yml'))){
  const source=readFileSync('.github/workflows/'+file,'utf8'),doc=YAML.parseDocument(source);assert.deepEqual(doc.errors,[],file+' YAML syntax');

@@ -1,3 +1,4 @@
+import {classifyRequestFailures} from './helpers/request-failures.mjs';
 import {resolveNavigationURL} from './helpers/navigation-url.mjs';
 import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
@@ -182,7 +183,7 @@ try {
     const result = {mode, passed: false, errors: [], shaderErrors: [], failedRequests: [], sites: {}};
     report.checks.push(result);
     page.on('pageerror', error => {result.errors.push(error.message); console.log('PAGEERROR', error.message);});
-    page.on('requestfailed', request => result.failedRequests.push({url: request.url(), reason: request.failure()?.errorText}));
+    page.on('requestfailed', request => result.failedRequests.push({url: request.url(), reason: request.failure()?.errorText, resourceType: request.resourceType()}));
     page.on('console', message => {
       if (message.type() === 'error' && /Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION|compile shader|Error creating WebGL/i.test(message.text())) result.shaderErrors.push(message.text());
     });
@@ -286,7 +287,12 @@ try {
     result.launchVoids = scene.terrainVoids.items.filter(v => v.shape.source === 'Proton paired lateral ducts and launch aperture');
     assert.equal(result.launchVoids.length, 4); assert(result.launchVoids.every(v => v.enabled === 1));
     result.terrainVoids = scene.terrainVoids; result.render = scene.render;
-    assert.deepEqual(result.errors, []); assert.deepEqual(result.shaderErrors, []); assert.deepEqual(result.failedRequests, []);
+    result.stylesheets = await page.evaluate(() => [...document.querySelectorAll('link[rel="stylesheet"]')].map(link => {
+      try { return {href: link.href, loaded: Boolean(link.sheet), rules: link.sheet?.cssRules.length || 0}; }
+      catch { return {href: link.href, loaded: false, rules: 0}; }
+    }));
+    result.networkFailures = classifyRequestFailures(result.failedRequests, result.stylesheets);
+    assert.deepEqual(result.errors, []); assert.deepEqual(result.shaderErrors, []); assert.deepEqual(result.networkFailures.unexpected, []);
     result.passed = true; progress('PASS');
     await writeFile(`${out}/${prefix}-proton-report.json`, JSON.stringify(report, null, 2) + '\n');
     await browser.close(); browser = null;
