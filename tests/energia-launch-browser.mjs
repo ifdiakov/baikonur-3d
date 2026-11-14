@@ -58,6 +58,8 @@ try{
  await page.waitForFunction(()=>window.__BAIKONUR_QA.energia.stats()?.effects?.warmup?.status==='ready',null,{timeout:90000});
  let s=await stats();assert.equal(s.time,-90);assert.equal(s.active,true);
  assert.equal(s.effects.warmup.rendered,true,'First-use GPU preparation completes before the countdown');
+ assert.ok(s.effects.warmup.ductPower>0,'Offscreen preparation includes the short-lived trench flame');
+ assert.equal(s.effects.warmup.ductJetCount,3);
  assert.equal(await page.locator('#year').inputValue(),'1987');
  assert(await page.locator('#energiaLaunchPanel').isVisible());
  assert.equal(s.modelReady,true);
@@ -88,6 +90,7 @@ try{
  assert.ok(s.effects.groundLighting.materials>0);
  assert.equal(s.effects.groundLighting.extraDrawCalls,0);
  assert.equal(s.effects.groundLightCount,2);
+ assert.equal(s.effects.ductJetCount,3,'The trench uses three compact flame lobes');
  assert.equal(s.effects.overlayGlowCount,0);
  assert.equal(await page.evaluate(()=>window.__BAIKONUR_QA.cameraState().controlsEnabled),true,
   'OrbitControls must remain enabled during the launch');
@@ -103,7 +106,7 @@ try{
  assert.ok(Math.hypot(...prelaunchCamera.position.map((p,i)=>p-inputCamera.position[i]))<.005,
   'Prelaunch telemetry and steam do not move the visitor camera');
  assert.ok(Math.hypot(...prelaunchCamera.target.map((p,i)=>p-inputCamera.target[i]))<.005);
- for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-10,'water-spray'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[6,'initial-ascent'],[20,'pad-disperse'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
+ for(const [t,name] of [[-50,'gantry'],[-45,'gas-purge'],[-10,'water-spray'],[-9.4,'center-ignition'],[-3.2,'booster-ignition'],[0,'liftoff'],[2,'trench-fading'],[4,'trench-clear'],[6,'initial-ascent'],[20,'pad-disperse'],[30,'throttle'],[145.9,'boosters-separated'],[467.6,'core-cutoff'],[480,'separation'],[511,'payload-turn'],[568,'orbit-failed'],[600,'end']]){
   s=await seek(t);const e=s.effects;
   evidence.phases.push({t,phase:s.phase,gasPower:e.gasPower,flamePower:e.flamePower,ductJetVisible:e.ductJetVisible,rocketExhaustOffset:e.rocketExhaustOffset});
   assert.ok(Number.isFinite(s.telemetry.altitudeKm)&&Number.isFinite(s.telemetry.speedKmS));
@@ -137,6 +140,12 @@ try{
    assert.equal(e.groundOcclusion.contourSource,'source-model');
   }
   if(t===0){assert.equal(e.smokeMode,'multi-octave-feathered-billboards');assert.ok(e.ductJetVisible&&e.gasPower>.9,'One UKSS gas trench visibly ignites');assert.ok(e.lightIntensity.some(n=>n>10),'The fire illuminates its surroundings with bounded lights');await shot('fire-in-trench');}
+  if(t===2||t===4){
+   assert.ok(e.engineCorePower>.9&&e.engineBoosterPower>.9,'Nozzle flames remain active while the trench clears');
+   assert.equal(e.engineNozzleGlowVisible,8);
+   if(t===2){assert.ok(e.gasPower>0&&e.gasPower<1);assert.equal(e.ductJetVisible,true);}
+   else{assert.equal(e.gasPower,0);assert.equal(e.ductJetVisible,false);}
+  }
   if(t===6){assert.equal(s.mode,'follow');assert.ok(e.smokeBillboards===undefined||e.plume>0,'A coherent smoke column persists');assert.ok(e.plume>0,'A soft rising plume accompanies the rocket');assert.ok(e.rocketExhaustOffset[1]>6,'Exhaust follows the ascending rocket');assert.equal(e.engineFlameDepthCompatible,true);assert.equal(e.engineFlameAttached,true);assert.ok(e.engineUpperFlameLimitY<0,'Nozzle lip remains clear during ascent');assert.ok(e.engineHaloUpperLimitY<0);assert.ok(e.rocketNozzleWorld?.every(Number.isFinite),'Nozzle position follows the rocket in world space');await shot('lift-off');}
   if(t===145.9){
    assert.ok(e.engineBoosterPower<.1&&e.engineCorePower>.9,'Booster exhaust ends after side engine shutdown');

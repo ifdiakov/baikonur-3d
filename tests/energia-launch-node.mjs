@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {nozzleFlameMaterial,ENERGIA_PLASMA_VERSION} from '../src/energia-plasma-shader.js';
-import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes,sampleEnergiaPadDissipation,sampleEnergiaSteamSpread,sampleEnergiaPlumeBottomFade,energiaCameraHeightUnits,shouldDetachEnergiaCamera,ENERGIA_CAMERA_DETACH_UNITS} from '../src/energia-polyus-launch.js';
+import {ENERGIA_LAUNCH_EVENTS,ENERGIA_LAUNCH_END,ENERGIA_LAUNCH_START,sampleEnergiaLaunch,advanceEnergiaClock,energiaVisualHeight,sampleEnergiaEnginePlumes,sampleEnergiaPadDissipation,sampleEnergiaDuctFire,sampleEnergiaSteamSpread,sampleEnergiaPlumeBottomFade,energiaCameraHeightUnits,shouldDetachEnergiaCamera,ENERGIA_CAMERA_DETACH_UNITS} from '../src/energia-polyus-launch.js';
 assert.equal(ENERGIA_LAUNCH_START,-90);
 assert.equal(ENERGIA_LAUNCH_END,600);
 assert.equal(ENERGIA_LAUNCH_EVENTS.find(e=>e.at===-9.4)?.title,'ЗАПУСК ДВИГАТЕЛЕЙ БЛОКА Ц');
@@ -70,6 +70,35 @@ assert.ok(sampleEnergiaPadDissipation(200).smoke>0&&sampleEnergiaPadDissipation(
 assert.deepEqual(sampleEnergiaPadDissipation(360).fire,0);
 assert.deepEqual(sampleEnergiaPadDissipation(800),{fire:0,smoke:0});
 assert.deepEqual(sampleEnergiaPadDissipation(4000),{fire:0,smoke:0});
+
+// The short ground flare has its own time envelope. Rocket exhaust and the
+// residual smoke keep their independent engine/height-dependent lifetimes.
+for(const time of [-90,-22,-10,-9.4])assert.equal(sampleEnergiaDuctFire(time),0,
+ 'The duct must not burn before engine ignition');
+assert.equal(sampleEnergiaDuctFire(0),1,'Ground flare peaks at liftoff');
+assert.ok(sampleEnergiaDuctFire(2)>0&&sampleEnergiaDuctFire(2)<1,
+ 'The duct flare must already be fading two seconds after liftoff');
+for(const time of [4,6,20,30,146,480,600])assert.equal(sampleEnergiaDuctFire(time),0,
+ 'The short duct flare must end by T+4 and never return later in the flight');
+let lastDuctPower=1;
+for(let tick=0;tick<=80;tick++){
+ const power=sampleEnergiaDuctFire(tick/20);
+ assert.ok(Number.isFinite(power)&&power>=0&&power<=1);
+ assert.ok(power<=lastDuctPower,'Post-liftoff ground flare fades without a second surge');
+ lastDuctPower=power;
+}
+assert.ok(Math.abs(sampleEnergiaDuctFire(-.001)-sampleEnergiaDuctFire(.001))<.01,
+ 'The liftoff boundary does not introduce an abrupt flare jump');
+assert.ok(sampleEnergiaDuctFire(3.999)<.01,'The last visible flame fades before switching off');
+const ductTimes=[-90,-9.4,-5.4,-3.2,0,2,4,20,600];
+const ductFirst=ductTimes.map(sampleEnergiaDuctFire);
+const ductReplay=[...ductTimes].reverse().map(sampleEnergiaDuctFire).reverse();
+assert.deepEqual(ductReplay,ductFirst,'Seeking and replay reproduce the same short flare');
+assert.equal(sampleEnergiaEnginePlumes(6).core,1,'The ascending rocket keeps its core exhaust');
+assert.equal(sampleEnergiaEnginePlumes(6).boosters,1,'The ascending rocket keeps its booster exhaust');
+assert.equal(sampleEnergiaPadDissipation(sampleEnergiaLaunch(6).altitudeKm*1000).smoke,1,
+ 'Smoke continues after the brief flame in the duct has ended');
+console.log('ENERGIA_SHORT_DUCT_FIRE_PASS '+JSON.stringify({peak:sampleEnergiaDuctFire(0),mid:sampleEnergiaDuctFire(2),end:sampleEnergiaDuctFire(4)}));
 
 const early=sampleEnergiaSteamSpread(-90),near=sampleEnergiaSteamSpread(-1);
 const firstVents=sampleEnergiaSteamSpread(-65),laterVents=sampleEnergiaSteamSpread(-25);

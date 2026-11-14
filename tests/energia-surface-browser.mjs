@@ -159,6 +159,7 @@ async function seek(seconds){
   assert.ok(fx.groundLighting.materials>0);assert.equal(fx.groundLighting.extraDrawCalls,0);
   assert.equal(fx.groundLightCount,2);assert.deepEqual(fx.groundLightRanges,[42,38]);
   assert.equal(fx.ductDepthTest,true);assert.equal(fx.ductDepthCompatible,true);
+  assert.equal(fx.ductJetCount,3,'The trench uses three compact flame lobes');
   assert.equal(fx.smokeSinglePass,true);assert.equal(fx.instancedSmokeCount,3335);
   assert.equal(fx.groundOcclusion.contourSource,'source-model');
   assert.equal(rendered.shadowEnabled,report.before.shadowEnabled,'Launch preserves renderer shadow policy');
@@ -217,6 +218,8 @@ try{
  assert.deepEqual(opening.initialCameraPose.position,report.before.camera.position,'Opening keeps chosen eye');
  if(!baseline){
   assert.equal(report.warmup.rendered,true,'Preparation draws the actual effect buffers offscreen before ignition');
+  assert.ok(report.warmup.ductPower>0,'Offscreen preparation still draws the short-lived trench flame');
+  assert.equal(report.warmup.ductJetCount,3);
   report.renderSurfaceAfterWarmup=await renderSurface();
   assert.deepEqual(report.renderSurfaceAfterWarmup,report.renderSurfaceBefore,
    'Offscreen preparation restores render target, viewport, scissor and canvas size');
@@ -266,7 +269,23 @@ try{
    e.ctl.target.copy(e.ukssGroup.localToWorld(new e.THREE.Vector3(35,0,0)));
    e.camera.lookAt(e.ctl.target);e.camera.updateMatrixWorld(true);
   },eye);
-  await draw();await shot(name);
+  const bankRender=await draw();await shot(name);
+  if(name==='bank-right'&&!baseline){
+   const ignition=await state();
+   assert.equal(ignition.effects.ductJetVisible,true);assert.ok(ignition.effects.gasPower>.9);
+   report.ductAppearance=[{time:0,gasPower:ignition.effects.gasPower,visible:ignition.effects.ductJetVisible,
+    cameraPose:bankRender.cameraPose}];
+   for(const time of [2,4]){
+    const fading=await seek(time),fx=fading.effects,frame=report.phases.at(-1);
+    assert.deepEqual(frame.cameraPose,bankRender.cameraPose,'Compare trench duration from the same bank camera');
+    assert.ok(fx.engineCorePower>.9&&fx.engineBoosterPower>.9,'Engine flames remain on while the trench clears');
+    assert.equal(fx.engineNozzleGlowVisible,8);assert.equal(fx.engineFlameAttached,true);
+    if(time===2){assert.equal(fx.ductJetVisible,true);assert.ok(fx.gasPower>0&&fx.gasPower<ignition.effects.gasPower);}
+    else{assert.equal(fx.gasPower,0,'No standing trench flame four seconds after liftoff');assert.equal(fx.ductJetVisible,false);}
+    report.ductAppearance.push({time,gasPower:fx.gasPower,visible:fx.ductJetVisible,cameraPose:frame.cameraPose});
+    await shot('bank-right-plus'+time);
+   }
+  }
  }
  await page.evaluate(()=>{window.__BAIKONUR_QA.energia.seek(0);window.__BAIKONUR_QA.inspectUkss('trench');});
  assert.equal((await state()).active,true,'Changing the UKSS inspection angle keeps the launch active');
