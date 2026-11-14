@@ -1202,6 +1202,16 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  if(saturnSite&&saturnCenter){
   const s=SATURN_ACCESS,gate=saturnCenter.clone().add(V(s.gate.x*s.scale,s.gate.y*s.scale,s.gate.z*s.scale));
   gate.y=s.elevation+s.gate.y*s.scale;
+  // Do not paint a second driveway over a real OSM access to Saturn's gate.
+  // Compare to the actual entrance, not the outer approach target: the latter
+  // can be far away while the existing service road already reaches the gate.
+  const existingGateRoad=nearestSegment(roadGraph,gate,e=>edgeKept(roadGraph,e)&&
+   !e.abandoned&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
+  const existingGateWithin=existingGateRoad&&existingGateRoad.distance<30**2;
+  if(existingGateWithin){
+   saturnAccessReport={status:'existing-osm-access-retained',sourceWayId:existingGateRoad.edge.wayId,
+    gate:gate.toArray(),roadGap:Math.sqrt(existingGateRoad.distance),duplicateDrivewaysAdded:0};
+  }else{
   const outward=V(-1,0,-.26).normalize(),target=gate.clone().addScaledVector(outward,95);
   const near=nearestSegment(roadGraph,target,e=>e.tags.highway!=='track'&&
    !e.abandoned&&edgeKept(roadGraph,e)&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
@@ -1230,6 +1240,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
     length:transition.length,gate:gate.toArray(),roadGap:transition.points[0].distanceTo(near.point),
     gateGap:transition.points.at(-1).distanceTo(gate),profile:'graded-curve-to-northwest-gate'};
    connections++;
+  }
   }
  }
 
