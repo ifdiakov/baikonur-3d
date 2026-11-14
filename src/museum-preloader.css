@@ -27,7 +27,7 @@
 #museumLoading .preloader__phrases{display:grid;position:relative;min-width:0;align-items:center}
 #museumLoading .preloader__phrase{grid-area:1/1;min-width:0;margin:0;font:600 var(--pl-feature)/var(--pl-feature-line) Montserrat,Arial,sans-serif;letter-spacing:-.025em;text-wrap:balance;opacity:0;transform:translateY(14px);transition:opacity 320ms ease,transform 650ms cubic-bezier(.22,.61,.36,1);pointer-events:none}
 #museumLoading .preloader__phrase.is-active{opacity:1;transform:translateY(0);transition-delay:160ms;pointer-events:auto}
-#museumLoading .preloader__claim{grid-column:1;grid-row:3;align-self:end;min-width:0;margin:0;color:#54616a;font:600 var(--pl-claim)/var(--pl-claim-line) Montserrat,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
+#museumLoading .preloader__claim{grid-column:1;grid-row:3;align-self:end;min-width:0;margin:0;color:#54616a;font:600 var(--pl-status)/var(--pl-status-line) Montserrat,Arial,sans-serif;letter-spacing:.08em;text-transform:uppercase}
 #museumLoading .preloader__scene{position:relative;grid-column:2;grid-row:1 / span 3;align-self:stretch;min-width:0;min-height:0;overflow:hidden;background:var(--poster-paper)}
 #museumLoading .preloader__gallery{position:absolute;inset:0;isolation:isolate;overflow:hidden}
 #museumLoading .preloader__image{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;transition:opacity 700ms ease;pointer-events:none;color:transparent}

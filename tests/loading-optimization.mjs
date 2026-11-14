@@ -7,10 +7,10 @@ const [html,menu,history,ukss,tua,startup]=await Promise.all([
 ]);
 const gallery=['soyuz-launch-20261103.webp','energia-buran-20261103.webp','tracking-station-20261103.webp','proton-rollout-20261103.webp','launch-complex-20261105.webp','buran-hangar-20261105.webp'];
 for(const image of gallery){
- assert(html.includes(' src="./assets/preloader/'+image+'"'),'Each CSS carousel slide must have a loadable source: '+image);
- assert(!html.includes('data-src="./assets/preloader/'+image+'"'));
+ assert(html.includes(' src="./assets/preloader/'+image+'?v=20261114"'),'Each CSS carousel slide must have a loadable source: '+image);
+ assert(!html.includes('data-src="./assets/preloader/'+image+'?v=20261114"'));
 }
-assert(html.includes('src="./assets/preloader/soyuz-launch-20261103.webp"'));
+assert(html.includes('src="./assets/preloader/soyuz-launch-20261103.webp?v=20261114"'));
 assert(!html.includes("import {createGameTerrainPilot}"));
 assert(!html.includes("import {createComplexHistoryPanel}"));
 assert(html.includes("await import('./src/terrain-game-detail.js"));
