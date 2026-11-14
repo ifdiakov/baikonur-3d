@@ -598,6 +598,7 @@ import {checkpoint7Placement} from './src/checkpoint7-layout.js?v=20261103-check
 import {installArchiveModels} from './src/archive-models.js?v=20261114-ground-contact-v1';
 import {maskUkssTerrain} from './src/ukss-pad.js?v=20261031-facilities-rails-lighting-v1';
 import {loadUkssExhibit} from './src/ukss-exhibit.js?v=20261031-facilities-rails-lighting-v1';
+import {buildSite250aUkssGallery} from './src/site250a-ukss-gallery.js?v=20261114-ukss-gallery-v1';
 import {buildUkssConnections} from './src/ukss-connections.js?v=20261109-owner19-v3';
 import {buildFlankDistricts, FLANK_DISTRICTS} from './src/flank-districts.js?v=20261105-silo106109-flank-flat-v1';
 import {FLANK_OUTLINE,FLANK_POLYGONS,FLANK_CENTERS} from './src/flank-boundaries.js?v=20261031-facilities-rails-lighting-v1';
@@ -678,6 +679,7 @@ function setMobileMenu(open){document.body.classList.toggle('mobile-menu-open',o
 mobileMenuToggle.addEventListener('click',()=>setMobileMenu(!document.body.classList.contains('mobile-menu-open')));
 const MUSEUM_REVISION='20261114-ground-contact-v1';
 let labelsVisible=true,fly=false,angle=0;
+let site250aGallery=null;
 const startup=window.__MUSEUM_STARTUP;
 const terrainDemReady=startup.fetchJSON('./data/terrain/baikonur-dem.json?v=20261101-relief-v1');
 const nextLaunchDataReady=startup.defer(()=>startup.fetchJSON('./data/next-launch.json?v=20261107-progress-ms36',{optional:true}),{key:'next-launch',priority:40});
@@ -1894,6 +1896,7 @@ saturnGroup.traverse(o=>{
 // Coordinates are provisional — the numbered facility itself is documented.
 // PORTAL_ARCHIVE_INTEGRATION: owner folder only; unlocated studies stay off the map.
 const portalArchive=installArchiveModels({objects,clickable,roadPaths:transport.roadPaths(),voids:portalVoids,steppeSurface,referenceGroundMaterial:satelliteGround.material,width:W*S,height:H*S,checkpoint7Placement:checkpoint7Placement({roads:osmRoads,ownerRoadEdits,geography,roadPaths:transport.roadPaths()})});
+site250aGallery=buildSite250aUkssGallery({site250a:objects.find(o=>o.record.id==='pad-250a')?.g,ukss:ukssGroup,scene:siteRoot});
 // DETAIL_FIDELITY_V2
 for(const card of mzkSdiCards){const part=mzkSdiParent.g.userData.mzkSdi[card.component];const center=part.center||[part.position[0],part.position[2]];card.g.position.set(center[0],part.dimensions.height,center[1]);mzkSdiParent.g.add(card.g);card.archive=mzkSdiParent.archive;}
 
