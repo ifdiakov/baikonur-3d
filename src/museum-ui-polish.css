@@ -168,7 +168,7 @@
 .next-launch__value{font:650 var(--museum-ui-data)/1 Bounded,Montserrat,Arial,sans-serif!important;letter-spacing:-.05em!important}
 .next-launch__unit-label{font:600 8px/1.1 Montserrat,Arial,sans-serif!important;letter-spacing:0}
 .next-launch__meta{grid-row:2;grid-column:1;align-self:center;gap:3px}
-.next-launch__time{font:600 var(--museum-ui-copy)/1.2 Montserrat,Arial,sans-serif!important}
+.next-launch__time{font:700 clamp(12px,1.05vw,15px)/1.2 Montserrat,Arial,sans-serif!important;letter-spacing:-.02em;white-space:normal;overflow-wrap:normal}
 .next-launch__status{font:500 8px/1.2 Montserrat,Arial,sans-serif!important}
 .next-launch__footer{grid-column:2;grid-row:2;align-self:center;min-width:0;height:27px}
 .next-launch__site{display:none}
@@ -247,7 +247,7 @@
  .next-launch__countdown{margin-top:5px!important}
  .next-launch__value{font-size:18px!important}
  .next-launch__unit-label{font-size:6px!important}
- .next-launch__time{font-size:8px!important}
+ .next-launch__time{font-size:11px!important;line-height:1.15!important}
  .next-launch__status{font-size:7px!important;display:none}
  .next-launch__schedule{font-size:8px!important;min-height:25px}
  .next-launch[data-state="unknown"] .next-launch__meta,

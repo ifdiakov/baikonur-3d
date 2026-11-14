@@ -93,7 +93,7 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
   lastParts=precision==='instant'?countdownParts(launch.launchAt,now()):null;
   lastMode=lastParts?(lastParts.expired?'elapsed':'countdown'):precision==='date'?'date':'unknown';
   section.dataset.state=lastMode;section.dataset.launchStatus=launch.status||'planned';
-  lastStatus=lastParts?(lastParts.expired?'Ожидаем подтверждения':launch.status==='confirmed'?'Подтверждено':'Предварительно')
+  lastStatus=lastParts?(lastParts.expired?'Ожидаем подтверждения':launch.status==='confirmed'?'Подтверждено':'')
    :precision==='date'||precision==='instant'?'Время старта уточняется':'Дата старта уточняется';
   for(const [key]of units){
    // Days are a quantity, not a clock field: show 99, 9 and 1 rather than 099, 009 or 001.
@@ -107,6 +107,7 @@ export function createLaunchCountdown({element,launch,onOpenSite,now=Date.now}){
   if(precision==='instant'&&instantMilliseconds(launch.launchAt)!==null)time.dateTime=launch.launchAt;
   else time.removeAttribute('datetime');
   if(status.textContent!==lastStatus)status.textContent=lastStatus;
+  status.hidden=!lastStatus;
   if(!doc.hidden&&lastParts&&!lastParts.expired){if(interval===null)interval=clock.setInterval(refresh,1000);}
   else stopTimer();
   return stats();
