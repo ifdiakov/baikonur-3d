@@ -60,7 +60,10 @@ try{
   if(workshop){
    assert(await page.locator('#cameraAltitude').isVisible());assert(await page.locator('#workshopPanel').isVisible());
    await page.evaluate(()=>window.__MUSEUM_WORKSHOP.select('pad-113'));const old=Number(await page.locator('#wsHeight').inputValue());await page.locator('#wsHeight').fill(String(old+1));await page.locator('#wsApply').click();assert.equal((await page.evaluate(()=>__MUSEUM_WORKSHOP.snapshot())).objects['pad-113'].position[1],old+1);await page.locator('#wsUndo').click();assert.equal(Number(await page.locator('#wsHeight').inputValue()),old);
-   await page.locator('#wsRoadDetails').evaluate(e=>e.open=true);await page.locator('#wsRoadDraw').click();assert(await page.locator('#roadEditorPanel').isVisible());await page.locator('#wsRoadDraw').click();state.editing={height:true,undo:true,roads:true};
+   await page.locator('#wsRoadDetails').evaluate(e=>e.open=true);await page.locator('#wsRoadDraw').click();assert(await page.locator('#networkEditorDock').isVisible());
+   const network=await page.evaluate(()=>__MUSEUM_NETWORK_EDITOR.stats());assert.equal(network.kind,'road');assert.equal(network.mode,'draw');
+   await page.locator('#networkDone').click();assert.equal(await page.locator('#networkEditorDock').isVisible(),false);assert(await page.locator('#workshopPanel').isVisible());
+   state.editing={height:true,undo:true,roadMode:true,exitRoadMode:true};
   }
   assert.deepEqual(errors,[]);assert.deepEqual(shaderErrors,[]);report.checks.push({mode,...state,errors,shaderErrors});await context.close();
  }

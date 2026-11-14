@@ -32,3 +32,11 @@ Historical manual suites retain their scenarios for a separately requested run.
 
 Concurrent publication/security work in the same checkout is not included in
 this CI branch. Repository access and Pages migration are separate changes.
+
+Final targeted correction: the workshop Road Draw button now opens the existing
+networkEditorDock (road/draw) and exits through networkDone; it no longer toggles
+the retired roadEditorPanel. The current integration test verifies entering and
+leaving that mode, height edit and undo. This is not full network-editor acceptance.
+Main protection is prepared with required candidate-acceptance from GitHub Actions,
+strict freshness and no administrator bypass; saving awaits GitHub sudo-mode
+identity confirmation. Do not claim the rule is active until API verification.
