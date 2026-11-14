@@ -1,3 +1,4 @@
+import {resolveNavigationURL} from './helpers/navigation-url.mjs';
 import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -199,8 +200,8 @@ try {
     });
     if (mode === 'desktop') await standaloneViewer(result);
     const entry = mode === 'workshop' ? 'workshop.html' : 'museum.html';
-    await page.goto(new URL(entry + '?view=proton&site=pad-81&tour=0&v=20261111-proton-civil-v1', base).href,
-      {waitUntil: 'domcontentloaded', timeout: 90000});
+    result.navigation = await resolveNavigationURL(new URL(entry + '?view=proton&site=pad-81&tour=0&v=20261111-proton-civil-v1', base).href);
+    await page.goto(result.navigation, {waitUntil: 'domcontentloaded', timeout: 90000});
     await page.waitForFunction(() => document.body.classList.contains('museum-ready') || document.getElementById('error')?.textContent,
       null, {timeout: 180000});
     assert.equal(await page.locator('#error').textContent(), '');

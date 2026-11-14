@@ -2,10 +2,10 @@ name: Proton source models
 on:
   pull_request:
     branches: [main]
-    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
+    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs", "tests/helpers/navigation-url.mjs"]
   push:
     branches: [main, fix/proton-civil-20261111, fix/**]
-    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
+    paths: ["assets/models/proton/**", "src/proton-*.js", "src/archive-models.js", "src/archive-launches.js", "src/inspection-models.js", "src/model-catalog.js", "src/workshop-panel.css", "tests/proton-*.mjs", ".github/workflows/verify-proton-source.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs", "tests/helpers/navigation-url.mjs"]
   workflow_dispatch:
 permissions:
   contents: read

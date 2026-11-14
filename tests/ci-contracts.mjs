@@ -1,3 +1,5 @@
+import {createServer} from 'node:http';
+import {resolveNavigationURL} from './helpers/navigation-url.mjs';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync,mkdirSync,writeFileSync} from 'node:fs';
 import YAML from 'yaml';
@@ -55,6 +57,21 @@ test('A newer failure blocks an older success for identical inputs',()=>{
  assert.equal(latestCompatibleRun(runs,'feature','fix/candidate',r=>r.head_sha==='a').id,1);
  assert.equal(latestCompatibleRun(runs,'feature','fix/candidate',()=>false),undefined);
 });
+// Real two-origin HTTP regression: diagnostic HTML must use the final origin.
+{
+ const canonical=createServer((req,res)=>{if(req.url.startsWith('/missing')){res.writeHead(404);res.end('missing');return;}res.setHeader('Content-Type','text/html');res.end('<html>museum</html>');});
+ let redirect;
+ try{
+  await new Promise(resolve=>canonical.listen(0,'127.0.0.1',resolve));
+  const target='http://127.0.0.1:'+canonical.address().port;
+  redirect=createServer((req,res)=>{res.writeHead(302,{Location:target+req.url});res.end();});
+  await new Promise(resolve=>redirect.listen(0,'127.0.0.1',resolve));
+  const original='http://127.0.0.1:'+redirect.address().port;
+  for(const entry of ['museum.html','workshop.html'])assert.equal(await resolveNavigationURL(original+'/'+entry+'?tour=0'),target+'/'+entry+'?tour=0');
+  await assert.rejects(resolveNavigationURL(original+'/missing'),/Navigation HTTP 404/);
+  cases.push({name:'Real redirects preserve canonical origin and query; missing pages fail',passed:true});
+ }finally{for(const server of [redirect,canonical].filter(Boolean)){server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}}
+}
 const inventory=[];
 for(const file of readdirSync('.github/workflows').filter(f=>f.endsWith('.yml'))){
  const source=readFileSync('.github/workflows/'+file,'utf8'),doc=YAML.parseDocument(source);assert.deepEqual(doc.errors,[],file+' YAML syntax');

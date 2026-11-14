@@ -1,3 +1,4 @@
+import {resolveNavigationURL} from './helpers/navigation-url.mjs';
 import assert from 'node:assert/strict';
 import {readFile, writeFile, mkdir} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
@@ -200,7 +201,9 @@ try {
       await route.fulfill({response, body});
     });
     const entry = mode === 'workshop' ? 'workshop.html' : 'museum.html';
-    await page.goto(new URL(entry + '?view=site110&tour=0&v=buran-launch-20261111', base).href, {waitUntil: 'domcontentloaded', timeout: 90000});
+    const navigation = await resolveNavigationURL(new URL(entry + '?view=site110&tour=0&v=buran-launch-20261111', base).href);
+    report.navigation = navigation;
+    await page.goto(navigation, {waitUntil: 'domcontentloaded', timeout: 90000});
     await page.waitForFunction(() => document.body.classList.contains('museum-ready') || document.getElementById('error')?.textContent, null, {timeout: 150000});
     assert.equal(await page.locator('#error').textContent(), '');
     assert(await page.evaluate(() => Boolean(__BURAN_LAUNCH_TEST?.site110Root && __BAIKONUR_QA?.buranLaunch)));

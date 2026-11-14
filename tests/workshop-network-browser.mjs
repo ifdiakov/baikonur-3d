@@ -1,3 +1,4 @@
+import {resolveNavigationURL} from './helpers/navigation-url.mjs';
 import {mobileEnabled,mobileCoverage} from './helpers/qa-scope.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -19,7 +20,7 @@ try{
  if(local){await page.route('https://unpkg.com/**',async route=>{const u=new URL(route.request().url()),path=u.pathname.replace(/^\/three@[^/]+\//,'node_modules/three/');try{await route.fulfill({body:await readFile(path),contentType:'text/javascript'});}catch{await route.abort();}});await page.route('https://fonts.**',r=>r.fulfill({body:''}));}
  await page.route('**/workshop.html*',async r=>{const res=await r.fetch();let html=await res.text();html=html.replace('window.__BAIKONUR_QA={','window.__NETWORK_DEBUG={scene,camera,controls:ctl,renderer,terrainHeightAt:museumTerrainHeightAt,requestTransportDetail};window.__BAIKONUR_QA={');await r.fulfill({response:res,body:html});});
  const ready=async()=>{const timer=setTimeout(async()=>console.log('STARTUP_DIAG',await page.evaluate(()=>({loading:document.getElementById('museumLoadingMessage')?.textContent,state:document.getElementById('museumLoading')?.dataset,qa:!!window.__BAIKONUR_QA,editor:!!window.__MUSEUM_NETWORK_EDITOR,marks:window.__MUSEUM_STARTUP?.stats().marks})).catch(e=>({error:e.message}))),30000);try{await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__MUSEUM_NETWORK_EDITOR,null,{timeout:120000});await page.evaluate(()=>__NETWORK_FRAME());}finally{clearTimeout(timer);}};
- await page.goto(base+'workshop.html?tour=0',{waitUntil:'domcontentloaded',timeout:120000});await ready();console.log('READY');
+ report.navigation=await resolveNavigationURL(base+'workshop.html?tour=0');await page.goto(report.navigation,{waitUntil:'domcontentloaded',timeout:120000});await ready();console.log('READY');
  check('Four distinct AD/Rail tools',await page.locator('#wsAddAD,#wsDeleteAD,#wsAddRail,#wsDeleteRail').count()===4);
  check('Altimeter visible',await page.locator('#cameraAltitude').isVisible());
  const baseline=await page.evaluate(()=>__MUSEUM_WORKSHOP.snapshot());
@@ -67,6 +68,6 @@ try{
  await page.setViewportSize({width:390,height:844});await page.locator('#networkDone').click();await page.locator('#wsAddRail').click();check('Mobile drawing leaves map visible',await page.locator('#workshopPanel').evaluate(e=>getComputedStyle(e).display==='none'));check('Mobile tool controls stay inside viewport',await page.locator('#networkEditorDock').evaluate(e=>{const b=e.getBoundingClientRect();return b.left>=0&&b.right<=innerWidth&&b.bottom<=innerHeight;}));await page.screenshot({path:out+'/'+prefix+'-mobile-editor.png'});
  }
  check('No JavaScript errors',errors.length===0);check('No shader errors',shaders.length===0);report.errors=errors;report.shaderErrors=shaders;report.stats=await page.evaluate(()=>__MUSEUM_NETWORK_EDITOR.stats());
- await page.goto(base+'museum.html?tour=0',{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:120000});
+ await page.goto(await resolveNavigationURL(base+'museum.html?tour=0'),{waitUntil:'domcontentloaded'});await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:120000});
  check('Visitor museum does not load admin network editor',await page.evaluate(()=>!window.__MUSEUM_NETWORK_EDITOR&&!document.getElementById('wsNetworkTools')));check('Visitor remains evening full scene',await page.evaluate(()=>__BAIKONUR_QA.evening.evening));check('Visitor has no JavaScript or shader errors',errors.length===0&&shaders.length===0);report.passed=true;
 }catch(e){report.error=e.stack;console.error(e);await page?.screenshot({path:out+'/'+prefix+'-failure.png',timeout:20000}).catch(()=>{});throw e;}finally{await writeFile(out+'/'+prefix+'-report.json',JSON.stringify(report,null,2));await browser.close();}

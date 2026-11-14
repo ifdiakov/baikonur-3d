@@ -3,7 +3,7 @@ name: Workshop road and railway editor — verified
 on:
   push:
     branches: [main, fix/workshop-network-20261110, fix/**]
-    paths: ["src/road-editor.js", "src/road-editor-core.js", "src/road-editor-mesh.js", "src/road-junction-repair.js", "tests/road-junction-repair.mjs", "src/road-geometry-cut.js", "tests/road-geometry-cut.mjs", "src/road-editor-style.js", "src/road-mask-tiles.js", "tests/road-mask-tiles.mjs", "data/road-edits-authoritative-20261103.json", "src/road-editor.css", "src/osm-transport.js", "tests/road-editor-*.mjs", ".github/workflows/verify-road-editor.yml", "index.html", "workshop.html", "src/workshop-*.js", "src/workshop-panel.css", "tests/workshop-network-*.mjs", "scripts/prepare-workshop-network.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs"]
+    paths: ["src/road-editor.js", "src/road-editor-core.js", "src/road-editor-mesh.js", "src/road-junction-repair.js", "tests/road-junction-repair.mjs", "src/road-geometry-cut.js", "tests/road-geometry-cut.mjs", "src/road-editor-style.js", "src/road-mask-tiles.js", "tests/road-mask-tiles.mjs", "data/road-edits-authoritative-20261103.json", "src/road-editor.css", "src/osm-transport.js", "tests/road-editor-*.mjs", ".github/workflows/verify-road-editor.yml", "index.html", "workshop.html", "src/workshop-*.js", "src/workshop-panel.css", "tests/workshop-network-*.mjs", "scripts/prepare-workshop-network.mjs", "package.json", "package-lock.json", "tests/helpers/qa-scope.mjs", "tests/helpers/navigation-url.mjs"]
   workflow_dispatch:
 concurrency:
   group: rockettrip-road-editor-${{ github.ref }}
@@ -31,7 +31,7 @@ jobs:
           import fs from 'node:fs';
           const r=JSON.parse(fs.readFileSync('qa-ci/impact-verify-road-editor.yml.json'));
           const all=!r.meaningful||process.env.GITHUB_EVENT_NAME==='workflow_dispatch';
-          const network=all||r.meaningful.some(p=>p==='workshop.html'||p.startsWith('src/workshop-')||p.startsWith('tests/workshop-network-')||p==='scripts/prepare-workshop-network.mjs');
+          const network=all||r.meaningful.some(p=>p==='tests/helpers/navigation-url.mjs')||r.meaningful.some(p=>p==='workshop.html'||p.startsWith('src/workshop-')||p.startsWith('tests/workshop-network-')||p==='scripts/prepare-workshop-network.mjs');
           const legacy=all||r.meaningful.some(p=>p==='index.html'||p==='src/osm-transport.js'||p.startsWith('src/road-')||p.startsWith('tests/road-')||p.startsWith('data/road-edits-'));
           fs.appendFileSync(process.env.GITHUB_OUTPUT,`network=${network}\nlegacy=${legacy}\n`);
           JS
