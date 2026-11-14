@@ -1,11 +1,11 @@
 name: Card sharing and encyclopedia media
 on:
   push:
-    branches: [main, fix/share-copy-20261111, fix/ci-repair-20261114]
-    paths: ['src/card-share*', 'src/model-viewer.js', 'src/model-inspector.js', 'encyclopedia.html', 'workshop/model.html', 'tests/card-share-*.mjs', 'data/encyclopedia.json', 'src/encyclopedia-3d.js', '.github/workflows/verify-encyclopedia-media.yml']
+    branches: [main, fix/share-copy-20261111, fix/**]
+    paths: ["src/card-share*", "src/model-viewer.js", "src/model-inspector.js", "encyclopedia.html", "workshop/model.html", "tests/card-share-*.mjs", "data/encyclopedia.json", "src/encyclopedia-3d.js", ".github/workflows/verify-encyclopedia-media.yml", "package.json", "package-lock.json"]
   pull_request:
     branches: [main]
-    paths: ['src/card-share*', 'src/model-viewer.js', 'src/model-inspector.js', 'encyclopedia.html', 'workshop/model.html', 'tests/card-share-*.mjs']
+    paths: ["src/card-share*", "src/model-viewer.js", "src/model-inspector.js", "encyclopedia.html", "workshop/model.html", "tests/card-share-*.mjs", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

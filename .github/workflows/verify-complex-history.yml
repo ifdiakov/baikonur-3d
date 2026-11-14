@@ -1,8 +1,8 @@
 name: Verify Baikonur foundation history
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/complex-history*', 'src/museum-menu.js', 'tests/complex-history*', '.github/workflows/verify-complex-history.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
+    branches: [main, fix/**]
+    paths: ["src/complex-history*", "src/museum-menu.js", "tests/complex-history*", ".github/workflows/verify-complex-history.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

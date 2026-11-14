@@ -1,8 +1,8 @@
 name: Verify published model rotation
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/model-viewer.js', 'src/model-inspector.js', 'workshop/model.html', '.github/workflows/verify-model-rotation-public.yml']
+    branches: [main, fix/**]
+    paths: ["src/model-viewer.js", "src/model-inspector.js", "workshop/model.html", ".github/workflows/verify-model-rotation-public.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

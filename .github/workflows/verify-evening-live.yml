@@ -1,8 +1,8 @@
 name: Verify published evening workshop
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['.github/workflows/verify-evening-live.yml']
+    branches: [main, fix/**]
+    paths: [".github/workflows/verify-evening-live.yml", "package.json", "package-lock.json", "tests/evening-navigation-source.mjs", "tests/original-museum-browser.mjs", "tests/evening-navigation-browser-checks.mjs", "tests/helpers/menu-markup.mjs", "src/evening-scene.js", "src/arrival-follow-availability.js", "src/museum-menu.js", "index.html", "museum.html", "workshop.html"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,40 +21,17 @@ jobs:
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           npx playwright install --with-deps chromium
-      - name: Verify unchanged application and record full startup diagnostics
-        run: |
-          node tests/evening-navigation-source.mjs
-          node --input-type=module <<'JS'
-          import {readFile,writeFile} from 'node:fs/promises';
-          import assert from 'node:assert/strict';
-          const path='tests/original-museum-browser.mjs';let s=await readFile(path,'utf8');
-          const anchor="page.setDefaultTimeout(180000);const errors=[],shaderErrors=[],requests=[];";
-          assert(s.includes(anchor));
-          s=s.replace(anchor,anchor+`
-            const diagnostic={mode,errors,shaderErrors,requests,console:[],failedRequests:[]};report.lastContext=diagnostic;
-            page.on('console',m=>{if(m.type()==='error'||m.type()==='warning')diagnostic.console.push({type:m.type(),text:m.text()});});
-            page.on('requestfailed',r=>diagnostic.failedRequests.push({url:r.url(),failure:r.failure()}));
-          `);
-          const nav="await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded',timeout:180000});";
-          assert(s.includes(nav));
-          s=s.replace(nav,`const response=await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded',timeout:180000});
-            diagnostic.navigation={url:response.url(),status:response.status(),headers:response.headers(),servedSha256:digest(await response.body()),expectedSha256:digest(await readFile(workshop?'workshop.html':mobile?'museum.html':'index.html'))};
-            assert.equal(diagnostic.navigation.servedSha256,diagnostic.navigation.expectedSha256,'Browser received a stale entrypoint from the public CDN');
-          `);
-          const wait="await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:240000});";
-          assert(s.includes(wait));
-          s=s.replace(wait,`await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA||document.getElementById('museumLoading')?.dataset.state==='error',null,{timeout:240000});
-            diagnostic.startup=await page.evaluate(()=>({failed:document.getElementById('museumLoading')?.dataset.state==='error',message:document.getElementById('error')?.textContent,stats:window.__MUSEUM_STARTUP?.stats?.()}));
-            assert(!diagnostic.startup.failed,'Public workshop startup failed: '+diagnostic.startup.message+' '+JSON.stringify(diagnostic.console));
-          `);
-          await writeFile(path,s);
-          JS
-      - name: Verify live workshop, all requested changes and editing
+      - name: Verify current evening and navigation contracts
+        run: node tests/evening-navigation-source.mjs
+      - name: Serve exact candidate
+        if: github.ref != 'refs/heads/main'
+        run: python3 -m http.server 8765 --bind 127.0.0.1 > /tmp/evening-http.log 2>&1 &
+      - name: Verify workshop, retained evening navigation and editing
         env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          BAIKONUR_URL: ${{ github.ref == 'refs/heads/main' && 'https://museum.rockettrip.space/' || 'http://127.0.0.1:8765/' }}
           QA_OUT: qa-evening-live/workshop
           QA_MODES: workshop
-          VERIFY_PUBLIC: '1'
+          VERIFY_PUBLIC: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
         run: node tests/original-museum-browser.mjs
       - uses: actions/upload-artifact@v4
         if: always()

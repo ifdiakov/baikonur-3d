@@ -1,8 +1,7 @@
 name: Verify fast and reliable delivery controls
 on:
   push:
-    branches: [main, fix/delivery-repair-20261111, fix/ci-repair-20261114]
-    paths: ['scripts/ci/**', 'tests/ci-reliability.mjs', 'tests/delivery-policy.mjs', '.github/workflows/**', 'AGENTS.md', 'docs/CURRENT_WORK.md', 'package.json', 'package-lock.json', 'tests/helpers/**', 'tests/ci-contracts.mjs']
+    branches: [main, fix/delivery-repair-20261111, fix/**]
   workflow_dispatch:
 permissions:
   contents: read

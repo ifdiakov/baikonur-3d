@@ -2,8 +2,8 @@
 name: Soil anti-tiling and texture continuity
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/soil-anti-tiling.js', 'src/global-steppe-detail.js', 'src/terrain-game-detail.js', 'src/steppe-surface.js', 'index.html', 'tests/soil-anti-tiling.mjs', '.github/workflows/verify-soil-anti-tiling.yml']
+    branches: [main, fix/**]
+    paths: ["src/soil-anti-tiling.js", "src/global-steppe-detail.js", "src/terrain-game-detail.js", "src/steppe-surface.js", "index.html", "tests/soil-anti-tiling.mjs", ".github/workflows/verify-soil-anti-tiling.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 
 permissions:

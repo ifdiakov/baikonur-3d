@@ -1,8 +1,8 @@
 name: Verify detailed steppe materials
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/terrain-material-atlas.js', 'src/terrain-game-detail.js', 'tests/detailed-terrain-materials.mjs', 'tests/detailed-terrain-browser.mjs', '.github/workflows/verify-detailed-terrain.yml']
+    branches: [main, fix/**]
+    paths: ["src/terrain-material-atlas.js", "src/terrain-game-detail.js", "tests/detailed-terrain-materials.mjs", "tests/detailed-terrain-browser.mjs", ".github/workflows/verify-detailed-terrain.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

@@ -92,8 +92,10 @@ assert(!game.includes('normalMap:maps.normal'),'Do not stack old repeating bump 
 assert(steppe.includes('!material.userData.skipGlobalSoilDetail'));
 assert(steppe.includes('vec3 steppeUntiledMicro(vec2 p)'), 'Baseline satellite micro grain still tiles');
 assert(!steppe.includes('steppeMicro,p/2.0'), 'Direct repeating satellite grain is forbidden');
-assert(index.includes('steppe-surface.js?v=20261105-seamless-v15'));
-assert(index.includes('terrain-game-detail.js?v=20261105-seamless-v9'));
+for(const name of ['steppe-surface','terrain-game-detail']){
+ const imports=[...index.matchAll(/['"](.\/src\/[^'"]+\.js\?v=[^'"]+)['"]/g)].map(m=>new URL(m[1],'https://museum.invalid/'));
+ assert(imports.some(url=>url.pathname==='/src/'+name+'.js'&&url.searchParams.get('v')),'Versioned soil module missing: '+name);
+}
 console.log('SOIL_ANTI_TILING_PASS',JSON.stringify({version:SOIL_ANTI_TILING_VERSION,comparisons,
  diverse: different,percent:Math.round(100*different/comparisons),
  nearRepeatRemoved,nearRepeatRate:Math.round(100*nearRepeatRemoved/nearRepeat),boundaryJump,maxDiscontinuity}));

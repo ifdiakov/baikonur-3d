@@ -2,10 +2,10 @@ name: Soyuz-5 source model
 on:
   pull_request:
     branches: [main]
-    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
+    paths: ["assets/models/rockets/soyuz5*", "src/model-catalog.js", "src/model-facts.js", "src/model-viewer.js", "src/inspection-models.js", "tests/soyuz5-*.mjs", ".github/workflows/verify-soyuz5.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['assets/models/rockets/soyuz5*', 'src/model-catalog.js', 'src/model-facts.js', 'src/model-viewer.js', 'src/inspection-models.js', 'tests/soyuz5-*.mjs', '.github/workflows/verify-soyuz5.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
+    branches: [main, fix/**]
+    paths: ["assets/models/rockets/soyuz5*", "src/model-catalog.js", "src/model-facts.js", "src/model-viewer.js", "src/inspection-models.js", "tests/soyuz5-*.mjs", ".github/workflows/verify-soyuz5.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

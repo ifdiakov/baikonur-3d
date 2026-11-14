@@ -1,8 +1,8 @@
 name: Left flank models — targeted acceptance
 on:
   push:
-    branches: [main, fix/site94-merge-20261112, fix/shelter-road-access-20261112, fix/pantsirs-82-83-20261112, fix/site95-courtyards-20261109, fix/ci-repair-20261114]
-    paths: ['src/site94*.js', 'src/site95*.js', 'src/site92*.js', 'src/earth-covered-shelters.js', 'src/shelter-road-access.js', 'src/archive-buildings.js', 'src/archive-models.js', 'src/archive-manifest.js', 'src/rail-site-clearance.js', 'scripts/*pantsir*.mjs', 'scripts/prepare-shelter-access.mjs', 'scripts/prepare-site94.mjs', 'scripts/generate-site94-streets.py', 'tests/site94-*.mjs', 'tests/shelter-access-*.mjs', 'tests/pantsirs-*.mjs', 'tests/site95-*.mjs', '.github/workflows/verify-site95.yml']
+    branches: [main, fix/site94-merge-20261112, fix/shelter-road-access-20261112, fix/pantsirs-82-83-20261112, fix/site95-courtyards-20261109, fix/**]
+    paths: ["src/site94*.js", "src/site95*.js", "src/site92*.js", "src/earth-covered-shelters.js", "src/shelter-road-access.js", "src/archive-buildings.js", "src/archive-models.js", "src/archive-manifest.js", "src/rail-site-clearance.js", "scripts/*pantsir*.mjs", "scripts/prepare-shelter-access.mjs", "scripts/prepare-site94.mjs", "scripts/generate-site94-streets.py", "tests/site94-*.mjs", "tests/shelter-access-*.mjs", "tests/pantsirs-*.mjs", "tests/site95-*.mjs", ".github/workflows/verify-site95.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

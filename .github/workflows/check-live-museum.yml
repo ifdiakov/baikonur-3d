@@ -2,7 +2,7 @@ name: Verify public museum connectivity
 on:
   push:
     branches: [main]
-    paths: ['.github/workflows/check-live-museum.yml']
+    paths: [".github/workflows/check-live-museum.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

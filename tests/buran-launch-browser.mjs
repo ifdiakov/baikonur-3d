@@ -385,6 +385,9 @@ try {
       await page.locator('#energiaLaunchStart').click();
       await page.waitForFunction(() => __BAIKONUR_QA.energia.stats()?.active, null, {timeout: 90000});
       await page.locator('#energiaPlay').click(); assert((await page.evaluate(() => __BAIKONUR_QA.energia.stats())).paused);
+      await page.evaluate(() => __BAIKONUR_QA.energia.seek(0)); await frame();
+      const ignition=await page.evaluate(()=>__BAIKONUR_QA.energia.stats().effects);
+      assert(ignition.ductJetVisible&&ignition.gasPower>.9,'Short duct fire must appear at ignition');
       await page.evaluate(() => __BAIKONUR_QA.energia.seek(8)); await frame();
       const ukss = await page.evaluate(() => {
         const d = __BURAN_LAUNCH_TEST, holder = d.rocketExhibits.get('ukss').holder;
@@ -403,8 +406,8 @@ try {
       assert(oldEffects.engineFlameDepthCompatible && oldEffects.engineFlameDepthTest);
       assert(oldEffects.engineUpperFlameLimitY < 0 && oldEffects.engineHaloUpperLimitY < 0);
       assert(oldEffects.engineCorePower > .9 && oldEffects.engineBoosterPower > .9);
-      assert(oldEffects.ductJetVisible && oldEffects.gasPower > 0);
-      assert.deepEqual(ukss.actual, {flameAttached: true, flameVisible: true, flameMeshes: 32, glowSprites: 8, groundVisible: true, groundMeshes: 7});
+      assert.equal(oldEffects.ductJetVisible,false,'Short ground fire must finish after takeoff');assert.equal(oldEffects.gasPower,0);
+      assert.deepEqual(ukss.actual, {flameAttached: true, flameVisible: true, flameMeshes: 32, glowSprites: 8, groundVisible: false, groundMeshes: 7});
       await page.locator('#energiaClose').click();
       const ukssAfter = await page.evaluate(() => {
         const d = __BURAN_LAUNCH_TEST, holder = d.rocketExhibits.get('ukss').holder;
@@ -419,7 +422,7 @@ try {
       assert(distance(ukssAfter.position, ukssBefore.position) < 1e-8 && distance(ukssAfter.quaternion, ukssBefore.quaternion) < 1e-8);
       assert(distance(ukssAfter.camera.position, ukssBefore.camera.position) < 1e-6 && distance(ukssAfter.camera.target, ukssBefore.camera.target) < 1e-6);
       assert.deepEqual(ukssAfter.camera.controls, ukssBefore.camera.controls);
-      result.ukssRegression = {before: ukssBefore, firing: ukss, restored: ukssAfter};
+      result.ukssRegression = {before: ukssBefore, ignition, firing: ukss, restored: ukssAfter};
       progress('existing-ukss-exhaust-integration-checked');
     }
     if (mode === 'workshop') {

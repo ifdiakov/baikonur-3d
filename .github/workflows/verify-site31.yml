@@ -4,8 +4,8 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['index.html', 'src/archive-models.js', 'assets/models/site31/**', 'src/site31-*.js', 'src/gagarin-*.js', 'src/soyuz-*.js', 'src/terrain-voids.js', 'tests/soyuz-*.mjs', 'tests/gagarin-source-table.mjs', 'tests/site31-geometry.mjs', 'tests/site31-source-*.mjs', '.github/workflows/verify-site31.yml']
+    branches: [main, fix/**]
+    paths: ["index.html", "src/archive-models.js", "assets/models/site31/**", "src/site31-*.js", "src/gagarin-*.js", "src/soyuz-*.js", "src/terrain-voids.js", "tests/soyuz-*.mjs", "tests/gagarin-source-table.mjs", "tests/site31-geometry.mjs", "tests/site31-source-*.mjs", ".github/workflows/verify-site31.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -62,9 +62,9 @@ jobs:
         timeout-minutes: 7
         run: node tests/site31-source-browser.mjs
       - name: Verify published version and repeat browser checks
-        if: (github.event_name != 'pull_request') && (steps.ci_scope.outputs.run == 'true')
+        if: (github.ref == 'refs/heads/main') && (steps.ci_scope.outputs.run == 'true')
         env:
-          BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
+          BAIKONUR_URL: https://museum.rockettrip.space/
           QA_PREFIX: public
         run: |
           node scripts/verify-site31-published.mjs

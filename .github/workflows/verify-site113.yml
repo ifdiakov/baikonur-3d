@@ -2,10 +2,10 @@ name: Site 113 housing district
 on:
   pull_request:
     branches: [main]
-    paths: ['src/site113*.js', 'src/osm-transport.js', 'src/road-lod.js', 'src/transport-bake.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
+    paths: ["src/site113*.js", "src/osm-transport.js", "src/road-lod.js", "src/transport-bake.js", "tests/site113-*.mjs", ".github/workflows/verify-site113.yml", "package.json", "package-lock.json", "scripts/verify-site113-published.mjs"]
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/site113*.js', 'src/osm-transport.js', 'src/road-lod.js', 'src/transport-bake.js', 'tests/site113-*.mjs', '.github/workflows/verify-site113.yml']
+    branches: [main, fix/**]
+    paths: ["src/site113*.js", "src/osm-transport.js", "src/road-lod.js", "src/transport-bake.js", "tests/site113-*.mjs", ".github/workflows/verify-site113.yml", "package.json", "package-lock.json", "scripts/verify-site113-published.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,7 +34,7 @@ jobs:
       - name: Inspect town views in museum and on mobile
         run: node tests/site113-browser.mjs
       - name: Verify live deployment and repeat browser check
-        if: github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main'
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_PREFIX: public

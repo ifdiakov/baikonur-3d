@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {isMapSiteHidden} from '../src/map-visible-sites.js';
 import {SILO_SITE_IDS} from '../src/silo-sites.js';
 import {MUSEUM_MAP_SCALE} from '../src/museum-scale.js';
 import {chromium} from 'playwright';
@@ -59,12 +60,15 @@ try{
  await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',false));const hidden=await advance(.2);assert.equal(hidden.visible,false);assert.equal(hidden.steamVisible,false);assert.equal(hidden.progress,0);
  await page.evaluate(()=>window.__BAIKONUR_QA.setLayerVisible('sites',true));await advance();
  // Every card must focus its own shaft, not the first registered instance.
- const checked=[];
- for(const id of SILO_SITE_IDS){
+ const checked=[],visibleSilos=SILO_SITE_IDS.filter(id=>!isMapSiteHidden(id));
+ assert.deepEqual(SILO_SITE_IDS.filter(isMapSiteHidden),['pad-174']);
+ assert.equal(visibleSilos.length,31);
+ assert(!(await page.evaluate(()=>__BAIKONUR_QA.silo.stats().some(s=>s.siteId==='pad-174'))));
+ for(const id of visibleSilos){
   await page.evaluate(id=>window.__BAIKONUR_QA.focusSite(id),id);
   await page.getByRole('button',{name:'К шахте',exact:true}).click();
   const result=await page.evaluate(()=>{window.__SILO_FRAME();const q=window.__BAIKONUR_QA,start=performance.now();q.silo.update(start);for(let i=1;i<=250;i++)q.silo.update(start+i*1000/60);return q.silo.stats().map(s=>({id:s.siteId,state:s.state,steam:s.steamVisible,detail:s.detailVisible,distance:s.cameraDistance}));});
-  assert.equal(result.length,SILO_SITE_IDS.length);assert.equal(result.find(s=>s.id===id).state,'open',id+' must open');
+  assert.equal(result.length,visibleSilos.length);assert.equal(result.find(s=>s.id===id).state,'open',id+' must open');
   assert.deepEqual(result.filter(s=>s.state==='open').map(s=>s.id),[id],'Each shaft opens independently');
   checked.push({id,distance:result.find(s=>s.id===id).distance});
   if(['pad-70','pad-131','pad-194','pad-246'].includes(id)){await page.locator('#close').click();await page.evaluate(()=>window.__SILO_FRAME());await screenshot(id);}

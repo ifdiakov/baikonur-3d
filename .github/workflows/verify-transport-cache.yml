@@ -2,8 +2,8 @@
 name: Verify baked transport fast boot
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['data/osm/transport-geometry-bake-v1.json.gz', 'src/transport-bake.js', 'src/road-lod.js', 'src/road-editor.js', 'index.html', 'data/osm/road-lod-authoritative-v1.json.gz', 'tests/road-lod-authoritative.mjs', 'tests/transport-cache-browser.mjs', '.github/workflows/verify-transport-cache.yml']
+    branches: [main, fix/**]
+    paths: ["data/osm/transport-geometry-bake-v1.json.gz", "src/transport-bake.js", "src/road-lod.js", "src/road-editor.js", "index.html", "data/osm/road-lod-authoritative-v1.json.gz", "tests/road-lod-authoritative.mjs", "tests/transport-cache-browser.mjs", ".github/workflows/verify-transport-cache.yml", "package.json", "package-lock.json", "data/road-edits-authoritative-20261103.json"]
   workflow_dispatch:
 permissions:
   contents: read

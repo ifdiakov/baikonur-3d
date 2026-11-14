@@ -3,10 +3,10 @@ name: Lightweight railway stations
 on:
   pull_request:
     branches: [main]
-    paths: ['src/rail-stations.js', 'src/rail-road-clearance.js', 'src/osm-transport.js', 'index.html', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', 'tests/rail-road-clearance.mjs', '.github/workflows/verify-rail-stations.yml']
+    paths: ["src/rail-stations.js", "src/rail-road-clearance.js", "src/osm-transport.js", "index.html", "assets/models/rail-station/**", "tests/rail-station-*.mjs", "tests/rail-road-clearance.mjs", ".github/workflows/verify-rail-stations.yml", "package.json", "package-lock.json", "scripts/verify-rail-station-published.mjs"]
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/rail-stations.js', 'src/rail-road-clearance.js', 'src/osm-transport.js', 'index.html', 'assets/models/rail-station/**', 'tests/rail-station-*.mjs', 'tests/rail-road-clearance.mjs', '.github/workflows/verify-rail-stations.yml']
+    branches: [main, fix/**]
+    paths: ["src/rail-stations.js", "src/rail-road-clearance.js", "src/osm-transport.js", "index.html", "assets/models/rail-station/**", "tests/rail-station-*.mjs", "tests/rail-road-clearance.mjs", ".github/workflows/verify-rail-stations.yml", "package.json", "package-lock.json", "scripts/verify-rail-station-published.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -57,7 +57,7 @@ jobs:
         if: steps.ci_scope.outputs.run == 'true'
         run: node tests/rail-station-browser.mjs
       - name: Verify live deployment and repeat browser check
-        if: (github.event_name != 'pull_request') && (steps.ci_scope.outputs.run == 'true')
+        if: (github.ref == 'refs/heads/main') && (steps.ci_scope.outputs.run == 'true')
         env:
           BAIKONUR_URL: https://ifdiakov.github.io/baikonur-3d/
           QA_PREFIX: public

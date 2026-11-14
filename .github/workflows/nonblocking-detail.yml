@@ -2,8 +2,8 @@
 name: Fast source and scene checks
 on:
   push:
-    branches: [main, 'fix/**', fix/ci-repair-20261114]
-    paths: ['index.html', 'museum.html', 'workshop.html', 'src/**', 'data/**', 'assets/**', 'scripts/ci/fast-check.mjs', 'scripts/apply-map-group-removal.mjs', 'scripts/apply-camera-labels.mjs', 'scripts/prepare-onboarding-ukss.mjs', 'tests/onboarding-*.mjs', 'tests/camera-labels-*.mjs', 'tests/map-group-removal-*.mjs', 'tests/delivery-smoke.mjs', 'tests/security-*.mjs', 'tests/delivery-policy.mjs', 'tests/ci-reliability.mjs', '.github/workflows/nonblocking-detail.yml', 'scripts/ci/**', 'package.json', 'package-lock.json', 'tests/helpers/**', 'tests/ci-contracts.mjs', 'tests/menu-catalog-contract.mjs', 'tests/transport-ground-contact-browser-checks.mjs']
+    branches: [main, 'fix/**']
+    paths: ["index.html", "museum.html", "workshop.html", "src/**", "data/**", "assets/**", "scripts/ci/fast-check.mjs", "scripts/apply-map-group-removal.mjs", "scripts/apply-camera-labels.mjs", "scripts/prepare-onboarding-ukss.mjs", "tests/onboarding-*.mjs", "tests/camera-labels-*.mjs", "tests/map-group-removal-*.mjs", "tests/delivery-smoke.mjs", "tests/security-*.mjs", "tests/delivery-policy.mjs", "tests/ci-reliability.mjs", ".github/workflows/nonblocking-detail.yml", "scripts/ci/**", "package.json", "package-lock.json", "tests/helpers/**", "tests/ci-contracts.mjs", "tests/menu-catalog-contract.mjs", "tests/transport-ground-contact-browser-checks.mjs"]
   workflow_dispatch:
 permissions:
   contents: read

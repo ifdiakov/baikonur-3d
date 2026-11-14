@@ -2,8 +2,8 @@
 name: RD-180 model and linked cards
 on:
   push:
-    branches: [main, codex/rd180, fix/ci-repair-20261114]
-    paths: ['assets/models/rd180/**', 'src/rd180-facts.js', 'src/model-*.js', 'src/model-viewer.css', 'src/inspection-models.js', 'src/museum-menu.js', 'src/encyclopedia-3d.js', 'index.html', 'encyclopedia.html', 'data/encyclopedia.json', 'tests/rd180-*.mjs', '.github/workflows/verify-rd180.yml', 'tests/menu-catalog-contract.mjs', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
+    branches: [main, codex/rd180, fix/**]
+    paths: ["assets/models/rd180/**", "src/rd180-facts.js", "src/model-*.js", "src/model-viewer.css", "src/inspection-models.js", "src/museum-menu.js", "src/encyclopedia-3d.js", "index.html", "encyclopedia.html", "data/encyclopedia.json", "tests/rd180-*.mjs", ".github/workflows/verify-rd180.yml", "tests/menu-catalog-contract.mjs", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

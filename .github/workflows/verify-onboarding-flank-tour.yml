@@ -2,11 +2,11 @@
 name: Verify opening flank flyover
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['index.html', 'src/museum-onboarding.js', 'tests/onboarding-flank-flyover.mjs', '.github/workflows/verify-onboarding-flank-tour.yml']
+    branches: [main, fix/**]
+    paths: ["index.html", "src/museum-onboarding.js", "tests/onboarding-flank-flyover.mjs", ".github/workflows/verify-onboarding-flank-tour.yml", "package.json", "package-lock.json"]
   pull_request:
     branches: [main]
-    paths: ['index.html', 'src/museum-onboarding.js', 'tests/onboarding-flank-flyover.mjs', '.github/workflows/verify-onboarding-flank-tour.yml']
+    paths: ["index.html", "src/museum-onboarding.js", "tests/onboarding-flank-flyover.mjs", ".github/workflows/verify-onboarding-flank-tour.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

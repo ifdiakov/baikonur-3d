@@ -2,8 +2,8 @@
 name: Verify fast Baikonur loading
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/museum-menu.js', 'src/complex-history-menu.js', 'src/osm-transport.js', 'src/transport-bake.js', 'tests/transport-bake.mjs', 'src/road-surface.js', 'index.html', 'src/ukss-exhibit.js', 'src/tua-exhibit.js', 'tests/loading-*', 'tests/menu-catalog-contract.mjs', 'tests/onboarding-flank-flyover.mjs', 'src/museum-onboarding.js', '.github/workflows/verify-loading-optimization.yml', 'tests/helpers/menu-markup.mjs', 'package.json', 'package-lock.json']
+    branches: [main, fix/**]
+    paths: ["src/museum-menu.js", "src/complex-history-menu.js", "src/osm-transport.js", "src/transport-bake.js", "tests/transport-bake.mjs", "src/road-surface.js", "index.html", "src/ukss-exhibit.js", "src/tua-exhibit.js", "tests/loading-*", "tests/menu-catalog-contract.mjs", "tests/onboarding-flank-flyover.mjs", "src/museum-onboarding.js", ".github/workflows/verify-loading-optimization.yml", "tests/helpers/menu-markup.mjs", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

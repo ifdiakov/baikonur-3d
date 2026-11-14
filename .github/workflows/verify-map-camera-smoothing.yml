@@ -1,8 +1,8 @@
 name: Smooth map camera regression
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/map-camera-smoothing.js', 'tests/map-camera-smoothing.mjs', 'tests/map-camera-smoothing-browser.mjs', '.github/workflows/verify-map-camera-smoothing.yml']
+    branches: [main, fix/**]
+    paths: ["src/map-camera-smoothing.js", "tests/map-camera-smoothing.mjs", "tests/map-camera-smoothing-browser.mjs", ".github/workflows/verify-map-camera-smoothing.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

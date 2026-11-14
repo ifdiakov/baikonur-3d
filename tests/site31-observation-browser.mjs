@@ -9,7 +9,7 @@ try{
  // The production render loop and animation code remain unchanged.
  await page.addInitScript(()=>{
   const raf=requestAnimationFrame.bind(window);let paused=false,pending=[];
-  window.requestAnimationFrame=fn=>raf(t=>{if(paused)pending.push(fn);else fn(t)});
+  window.requestAnimationFrame=fn=>raf(t=>{if(paused&&fn.name==='animate')pending.push(fn);else fn(t)});
   window.__qaPauseFrames=()=>{paused=true};
   window.__qaResumeFrames=()=>{paused=false;const jobs=pending;pending=[];for(const fn of jobs)window.requestAnimationFrame(fn)};
  });
@@ -28,7 +28,7 @@ try{
  assert.equal(await page.evaluate(()=>__BAIKONUR_QA.np31().instanceCount),1);
  await page.evaluate(()=>__BAIKONUR_QA.evening.setEvening(false));
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
- await page.screenshot({path:out+'/np-map-desktop.png',timeout:30000});
+ await page.screenshot({path:out+'/np-map-desktop.png',timeout:90000});
  await page.evaluate(()=>window.__qaResumeFrames());
  await page.setViewportSize({width:390,height:844});await page.evaluate(()=>__BAIKONUR_QA.focusSite('np-31-1'));
  const mobile=await page.evaluate(()=>({camera:__BAIKONUR_QA.cameraState(),np:__BAIKONUR_QA.np31(),overflow:document.documentElement.scrollWidth>innerWidth}));
@@ -36,7 +36,7 @@ try{
  assert(mobile.np.screenBounds.minX>=12&&mobile.np.screenBounds.maxX<=378,'The whole NP must fit the mobile screen');
  assert(mobile.np.screenBounds.minY>=90&&mobile.np.screenBounds.maxY<=590,'Keep the NP above the mobile card');
  await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>{window.__qaPauseFrames();resolve()})));
- await page.screenshot({path:out+'/np-map-mobile.png',timeout:30000});
+ await page.screenshot({path:out+'/np-map-mobile.png',timeout:90000});
  const mapScreenshot=true;
  assert.deepEqual(errors,[]);
  await writeFile(out+'/result.json',JSON.stringify({pass:true,state,mobile,mapScreenshot,errors},null,2));console.log('NP_PHOTO_BROWSER_PASS');

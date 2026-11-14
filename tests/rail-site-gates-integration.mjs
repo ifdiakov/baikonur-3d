@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {RAIL_PROFILE} from '../src/rail-profile.js';
+import {NP_MAP_POSITION,planSite31Observation,buildSite31Observation} from '../src/site31-observation-platform.js';
 import {SITE110_REFERENCE} from '../src/site110.js';
 
 const read=path=>JSON.parse(fs.readFileSync(new URL('../'+path,import.meta.url)));
@@ -62,8 +63,15 @@ for(const id of ['pad-106','pad-109']){
  assert(transport.roadPaths().some(r=>r.id==='silo-single-driveway-'+id),
   id+': dedicated AD is not rendered');
 }
-assert.equal(stats.donskayaObservation?.status,'placed','Donskaya NP must sit at a retained AD dead end');
-assert(stats.donskayaObservation.stationDistance<470,'Donskaya NP is not near the station');
+assert.equal(stats.donskayaObservation?.status,'managed-by-site-layer','Transport must not create a duplicate NP');
+assert.deepEqual(stats.donskayaObservation.mapCoordinates,{x:912.9,y:304.9});
+assert.deepEqual(NP_MAP_POSITION,{x:912.9,y:304.9});
+const npPlan=planSite31Observation({launch:point(siteRecords.find(s=>s.id==='pad-31').x,siteRecords.find(s=>s.id==='pad-31').y),roads:transport.roadPaths()});
+assert.deepEqual(npPlan.mapCoordinates,NP_MAP_POSITION);assert(npPlan.connectedToRoad);
+const np=buildSite31Observation({plan:npPlan});
+assert(np.position.distanceTo(point(912.9,304.9))<1e-8);
+let duplicates=0;for(const layer of Object.values(layers))layer.traverse(o=>{if(o.userData.museumComponent==='observation-platform')duplicates++});
+assert.equal(duplicates,0,'Only the site layer owns the NP');
 assert(['not-needed','connected'].includes(stats.twinThroughRepair.status),
  'Through AD 106/109 repair has an invalid state');
 const train=transport.trainPath();

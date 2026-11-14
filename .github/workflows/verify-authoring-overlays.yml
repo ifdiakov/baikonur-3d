@@ -2,8 +2,8 @@
 name: Verify hidden authoring overlays
 on:
   push:
-    branches: [main, fix/hide-authoring-overlays-20261109, fix/ci-repair-20261114]
-    paths: ['.github/workflows/verify-authoring-overlays.yml', 'scripts/hide-authoring-overlays-20261109.py', 'tests/authoring-overlays-browser.mjs', 'src/camera-altitude.js', 'src/coordinate-grid.js', 'src/transport-reference-labels.js', 'index.html']
+    branches: [main, fix/hide-authoring-overlays-20261109, fix/**]
+    paths: [".github/workflows/verify-authoring-overlays.yml", "scripts/hide-authoring-overlays-20261109.py", "tests/authoring-overlays-browser.mjs", "src/camera-altitude.js", "src/coordinate-grid.js", "src/transport-reference-labels.js", "index.html", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

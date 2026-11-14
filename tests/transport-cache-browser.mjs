@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-import {stat} from 'node:fs/promises';
+import {stat,readFile} from 'node:fs/promises';
 const cacheBytes=(await stat(new URL('../data/osm/transport-geometry-bake-v1.json.gz',import.meta.url))).size;
 const lodBytes=(await stat(new URL('../data/osm/road-lod-authoritative-v1.json.gz',import.meta.url))).size;
 assert(cacheBytes<1500000,'Precompiled transport cache must remain compact: '+cacheBytes);
@@ -36,7 +36,10 @@ try{
  assert.equal(report.transport.baked,true,'Cached topology and source-filtered preview must be used');
  assert.equal(report.bake.enabled,true);
  assert.equal(report.roadEditor.added,18,'Fast overview must respect removal of repaired Site 105 road');
- assert.equal(report.roadEditor.hidden,286);
+ const ownerEdits=JSON.parse(await readFile(new URL('../data/road-edits-authoritative-20261103.json',import.meta.url),'utf8'));
+ assert.equal(ownerEdits.hidden.length,284,'Review intentional changes to approved road cuts');
+ assert.equal(report.roadEditor.hidden,ownerEdits.hidden.length);
+ assert.equal(report.roadEditor.baselineRevision,ownerEdits.revision);
  assert(report.roadEditor.maskedMeshNames.includes('OSM · единое дорожное полотно'));
  assert(report.roadEditor.physicalCuts.sourceCuts>=250,'Approved road removals must cut the fast LOD');
  assert(report.roadEditor.physicalCuts.clipped>0,'Fast LOD must have physically removed road triangles');

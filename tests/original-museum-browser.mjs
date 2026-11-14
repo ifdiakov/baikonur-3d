@@ -1,6 +1,10 @@
 // EVENING_NAVIGATION_V1
 import {verifyEveningNavigation} from './evening-navigation-browser-checks.mjs';
 import assert from 'node:assert/strict';
+import {visibleMapSites} from '../src/map-visible-sites.js';
+import {createMuseumGeography} from '../src/osm-geography.js';
+import {assertMenuMarkup} from './helpers/menu-markup.mjs';
+import {MUSEUM_SECTIONS} from '../src/museum-menu.js';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import {chromium} from 'playwright';
@@ -21,15 +25,21 @@ try{
   const mobile=mode==='mobile',workshop=mode==='workshop';
   const context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1440,height:960},deviceScaleFactor:1,isMobile:mobile,hasTouch:mobile,reducedMotion:'reduce',serviceWorkers:'block'});
   page=await context.newPage();page.setDefaultTimeout(180000);const errors=[],shaderErrors=[],requests=[];
-  page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push(r.url()));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION/.test(m.text()))shaderErrors.push(m.text());});
+  page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')console.error('STARTUP_CONSOLE',m.text())});
+  report.lastContext={mode,errors,shaderErrors,requests};page.on('request',r=>requests.push(r.url()));page.on('console',m=>{if(m.type()==='error'&&/Shader Error|VALIDATE_STATUS|GL_INVALID_OPERATION/.test(m.text()))shaderErrors.push(m.text());});
   await page.addInitScript(()=>{const raf=requestAnimationFrame.bind(window);let fn;window.requestAnimationFrame=cb=>cb.name==='animate'?(fn=cb,0):raf(cb);window.__RESTORE_FRAME=()=>fn?.();});
   const route=workshop?'workshop.html?tour=0':mobile?'museum.html?tour=0':'';
   await page.goto(new URL(route,base).href,{waitUntil:'domcontentloaded',timeout:180000});
-  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:240000});
+  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA||document.getElementById('museumLoading')?.dataset.state==='error',null,{timeout:240000,polling:200});
+  const startup=await page.evaluate(()=>({failed:document.getElementById('museumLoading')?.dataset.state==='error',message:document.getElementById('error')?.textContent}));
+  assert(!startup.failed,'Workshop startup: '+JSON.stringify(startup));
   await page.evaluate(()=>window.__RESTORE_FRAME());
   const state=await page.evaluate(()=>{const q=window.__BAIKONUR_QA,s=q.stats(),m=window.__MUSEUM_STARTUP.stats().marks,t=n=>m.find(x=>x.name===n)?.at;return {navigationToReadyMs:Math.round(performance.now()),firstFrameMs:Math.round(t('first-frame')-t('startup')),interactiveMs:Math.round(t('interactive')-t('startup')),sites:s.sites,render:s.render,evening:{enabled:s.evening.evening,roadLights:s.evening.roadLights,siteLights:s.evening.siteLights,runwayLights:s.evening.runwayLights},flanks:s.flankDistricts,menu:[...document.querySelectorAll('#ui .sites-accordion-title')].map(e=>e.textContent.trim()),camera:q.cameraState(),shadersValid:s.shadersValid,cars:s.traffic.cars,grid:window.__MUSEUM_COORD_GRID.isEnabled(),admin:!!window.__MUSEUM_WORKSHOP,simplified:!!window.__MUSEUM_PUBLIC};});
-  assert.equal(state.simplified,false);assert.equal(state.admin,workshop);assert.equal(state.grid,workshop);assert(state.sites>=90);assert(state.shadersValid);
-  for(const title of ['СТАРТОВЫЕ КОМПЛЕКСЫ','РАКЕТЫ И ТЕХНИКА','ЦИФРОВЫЕ РЕКОНСТРУКЦИИ','МИФЫ И ЛЕГЕНДЫ','ЭНЦИКЛОПЕДИЯ'])assert(state.menu.includes(title),'Missing original menu '+title);
+  assert.equal(state.simplified,false);assert.equal(state.admin,workshop);assert.equal(state.grid,workshop);const geography=createMuseumGeography({catalog:JSON.parse(await readFile('data/catalog.json','utf8')),matches:JSON.parse(await readFile('data/osm/catalog-matches.json','utf8'))});
+  assert.equal(state.sites,visibleMapSites(geography.sites.filter(s=>!s.aliasOf&&s.render!==false)).length+1);assert(state.shadersValid);
+  assertMenuMarkup(await page.content(),MUSEUM_SECTIONS);
+  assert.equal(await page.locator('#encyclopediaNavLink').isVisible(),false);
+  assert.equal(await page.locator('#complexHistoryAccordion').isVisible(),false);
   assert(state.evening.enabled);assert(state.evening.roadLights>100);assert(state.evening.runwayLights>100);assert(state.cars>0);
   assert(!requests.some(url=>/\/src\/public-museum\.js|\/assets\/public-v1\//.test(url)),'Rejected simplified runtime was loaded');
   await page.screenshot({path:out+'/'+mode+'-overview.png',timeout:180000});

@@ -1,8 +1,8 @@
 name: Verify Soyuz launch animations (sites 1 and 31)
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/soyuz-dual-launch.js', 'src/soyuz-launch-columns.js', 'src/soyuz-launch-effects.js', 'src/energia-plasma-shader.js', 'tests/soyuz-dual-launch-*.mjs', '.github/workflows/verify-soyuz-launch.yml']
+    branches: [main, fix/**]
+    paths: ["src/soyuz-dual-launch.js", "src/soyuz-launch-columns.js", "src/soyuz-launch-effects.js", "src/energia-plasma-shader.js", "tests/soyuz-dual-launch-*.mjs", ".github/workflows/verify-soyuz-launch.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

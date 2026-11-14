@@ -21,7 +21,10 @@ try{
  await checkpoint('navigate');
  const url=new URL(base);url.searchParams.set('view','site31');url.searchParams.set('detail','structure');await page.goto(url.href,{waitUntil:'domcontentloaded',timeout:120000});
  await checkpoint('museum-ready');
- await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:300000});
+ await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA||document.getElementById('museumLoading')?.dataset.state==='error',null,{timeout:300000,polling:200});
+ const startup=await page.evaluate(()=>({url:location.href,state:document.getElementById('museumLoading')?.dataset.state,error:document.getElementById('error')?.textContent,stats:window.__MUSEUM_STARTUP?.stats?.()}));
+ await writeFile(`${out}/${prefix}-startup.json`,JSON.stringify(startup,null,2));
+ assert.notEqual(startup.state,'error','Startup failed: '+JSON.stringify(startup));
  await checkpoint('source-failure-retry');
  await page.waitForFunction(()=>window.__BAIKONUR_QA.site31.stats().asset.status==='error');
  assert.equal(await page.locator('#site31Views button').count(),5);await page.locator('#site31LoadStatus button').click();

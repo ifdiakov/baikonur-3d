@@ -2,10 +2,10 @@ name: Checkpoint 7 road placement
 on:
   pull_request:
     branches: [main]
-    paths: ['src/checkpoint7*', 'src/archive-models.js', 'src/archive-manifest.js', 'src/archive-buildings.js', 'data/catalog.json', 'tests/checkpoint7*', '.github/workflows/verify-checkpoint7.yml']
+    paths: ["src/checkpoint7*", "src/archive-models.js", "src/archive-manifest.js", "src/archive-buildings.js", "data/catalog.json", "tests/checkpoint7*", ".github/workflows/verify-checkpoint7.yml", "package.json", "package-lock.json", "scripts/verify-checkpoint7-published.mjs"]
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/checkpoint7*', 'tests/checkpoint7*', '.github/workflows/verify-checkpoint7.yml']
+    branches: [main, fix/**]
+    paths: ["src/checkpoint7*", "tests/checkpoint7*", ".github/workflows/verify-checkpoint7.yml", "package.json", "package-lock.json", "scripts/verify-checkpoint7-published.mjs"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -17,8 +17,8 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 12
     env:
-      BAIKONUR_URL: ${{ github.event_name == 'pull_request' && 'http://127.0.0.1:8765/' || 'https://ifdiakov.github.io/baikonur-3d/' }}
-      QA_PREFIX: ${{ github.event_name == 'pull_request' && 'local' || 'public' }}
+      BAIKONUR_URL: ${{ github.ref != 'refs/heads/main' && 'http://127.0.0.1:8765/' || 'https://ifdiakov.github.io/baikonur-3d/' }}
+      QA_PREFIX: ${{ github.ref != 'refs/heads/main' && 'local' || 'public' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -37,7 +37,7 @@ jobs:
       - name: Serve checkout
         run: python3 -m http.server 8765 --bind 127.0.0.1 &
       - name: Wait for publication
-        if: github.event_name != 'pull_request'
+        if: github.ref == 'refs/heads/main'
         run: node scripts/verify-checkpoint7-published.mjs
       - name: Museum day, night, details and mobile
         timeout-minutes: 7

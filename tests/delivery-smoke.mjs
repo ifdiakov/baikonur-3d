@@ -44,9 +44,11 @@ try{
  const registered=createMuseumGeography({catalog:catalogue,matches}).sites.filter(r=>!r.aliasOf&&r.render!==false);
  // The existing NP31-1 exhibit is added separately from the source catalogue.
  report.expectedSites=visibleMapSites(registered).length+1;assert(await page.evaluate(()=>!!__BAIKONUR_QA.siteState('np-31-1')));assert.equal(report.scene.sites,report.expectedSites,'Scene must contain exactly the visible registered sites');assert(report.scene.shadersValid);assert(report.scene.evening);assert(report.scene.canvas);assert(report.scene.menu>=4);assert.equal(report.scene.admin,mode==='workshop');
+ if(mode==='mobile')await page.locator('#mobileMenuToggle').click();
  assert.equal(await page.locator('#complexHistoryAccordion').count(),1);assert.equal(await page.locator('#complexHistoryAccordion').isVisible(),false);
  assert.equal(await page.locator('#encyclopediaNavLink').count(),1);assert.equal(await page.locator('#encyclopediaNavLink').isVisible(),false);
  for(const id of ['sitesAccordion','equipmentAccordion','reconstructionsAccordion','mythsAccordion','graveyardAccordion'])assert(await page.locator('#'+id).isVisible(),'Retained menu section: '+id);
+ if(mode==='mobile')await page.locator('#mobileMenuToggle').click();
  if(mode==='workshop'){assert(await page.locator('#workshopPanel').isVisible());assert(await page.locator('#cameraAltitude').isVisible());}
  await phase('overview',()=>page.screenshot({path:out+'/overview.png',timeout:60000}));
  report.groupRemoval=await phase('hidden-sites',()=>checkRemovedMapGroups(page,mode));

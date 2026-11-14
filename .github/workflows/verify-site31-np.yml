@@ -2,11 +2,11 @@
 name: RocketTrip observation platform
 on:
   push:
-    branches: [main, codex/np-redraw, fix/ci-repair-20261114]
-    paths: ['index.html', 'src/site31-observation-platform.js', 'src/osm-transport.js', 'tests/fixtures/np-photo.html', 'src/evening-scene.js', 'tests/site31-observation*.mjs', '.github/workflows/verify-site31-np.yml']
+    branches: [main, codex/np-redraw, fix/**]
+    paths: ["index.html", "src/site31-observation-platform.js", "src/osm-transport.js", "tests/fixtures/np-photo.html", "src/evening-scene.js", "tests/site31-observation*.mjs", ".github/workflows/verify-site31-np.yml", "package.json", "package-lock.json"]
   pull_request:
     branches: [main]
-    paths: ['index.html', 'src/site31-observation-platform.js', 'src/osm-transport.js', 'tests/fixtures/np-photo.html', 'src/evening-scene.js', 'tests/site31-observation*.mjs', '.github/workflows/verify-site31-np.yml']
+    paths: ["index.html", "src/site31-observation-platform.js", "src/osm-transport.js", "tests/fixtures/np-photo.html", "src/evening-scene.js", "tests/site31-observation*.mjs", ".github/workflows/verify-site31-np.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

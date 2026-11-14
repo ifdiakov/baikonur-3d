@@ -1,8 +1,8 @@
 name: Portal models — site175 silo correction
 on:
   push:
-    branches: [main, fix/site175-shpu-20261112, fix/ci-repair-20261114]
-    paths: ['src/silo-sites.js', 'src/silo-pad.js', 'scripts/apply-site175.mjs', 'tests/site175-*.mjs', '.github/workflows/verify-portal.yml']
+    branches: [main, fix/site175-shpu-20261112, fix/**]
+    paths: ["src/silo-sites.js", "src/silo-pad.js", "scripts/apply-site175.mjs", "tests/site175-*.mjs", ".github/workflows/verify-portal.yml", "package.json", "package-lock.json", "tests/all-silos-geometry.mjs", "tests/silo-browser.mjs", "src/map-visible-sites.js"]
   workflow_dispatch:
 permissions:
   contents: read

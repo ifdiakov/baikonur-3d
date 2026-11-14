@@ -2,8 +2,8 @@
 name: Kosmotrans depot and road fleet
 on:
   push:
-    branches: [main, codex/kosmotrans-depot-fleet, fix/ci-repair-20261114]
-    paths: ['index.html', 'src/kosmotrans-depot.js', 'src/road-fleet.js', 'src/road-vehicles.js', 'src/ground-traffic.js', 'assets/models/kosmotrans-depot/**', 'assets/models/road-fleet/**', 'tests/depot-fleet*.mjs', 'tests/road-fleet.mjs', 'tests/fixtures/depot-fleet.html', '.github/workflows/verify-depot-fleet.yml']
+    branches: [main, codex/kosmotrans-depot-fleet, fix/**]
+    paths: ["index.html", "src/kosmotrans-depot.js", "src/road-fleet.js", "src/road-vehicles.js", "src/ground-traffic.js", "assets/models/kosmotrans-depot/**", "assets/models/road-fleet/**", "tests/depot-fleet*.mjs", "tests/road-fleet.mjs", "tests/fixtures/depot-fleet.html", ".github/workflows/verify-depot-fleet.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read

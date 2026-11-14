@@ -2,11 +2,11 @@
 name: Verify launch countdown
 on:
   push:
-    branches: [main, fix/ci-repair-20261114]
-    paths: ['src/launch-countdown.js', 'index.html', 'tests/launch-countdown-format.mjs', '.github/workflows/verify-launch-countdown.yml']
+    branches: [main, fix/**]
+    paths: ["src/launch-countdown.js", "index.html", "tests/launch-countdown-format.mjs", ".github/workflows/verify-launch-countdown.yml", "package.json", "package-lock.json"]
   pull_request:
     branches: [main]
-    paths: ['src/launch-countdown.js', 'index.html', 'tests/launch-countdown-format.mjs', '.github/workflows/verify-launch-countdown.yml']
+    paths: ["src/launch-countdown.js", "index.html", "tests/launch-countdown-format.mjs", ".github/workflows/verify-launch-countdown.yml", "package.json", "package-lock.json"]
   workflow_dispatch:
 permissions:
   contents: read
