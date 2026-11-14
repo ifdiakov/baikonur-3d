@@ -15,7 +15,7 @@ try{
  await page.waitForFunction(()=>document.body.classList.contains('museum-ready')&&window.__BAIKONUR_QA,null,{timeout:180000});
  await checkpoint('overview');const model=await page.evaluate(()=>window.__BAIKONUR_QA.site250a.stats());assert.equal(model.version,'20261103-site250a-photo-v1');
  const gallery=await page.evaluate(()=>window.__BAIKONUR_QA.site250aUkssGallery.stats());
- assert(gallery.sourceGalleryContinuity&&gallery.connectsTo==='pad-250'&&gallery.from==='pad-250a','The concrete gallery must join 250A and UKSS');
+ assert(gallery.roadAligned&&gallery.roadId==='museum-yubileiny-250a-ukss'&&gallery.sourceGalleryContinuity&&gallery.connectsTo==='pad-250'&&gallery.from==='pad-250a','The concrete gallery must join 250A and UKSS');
  assert(gallery.length>25&&gallery.pierCount>=12,'The elevated gallery has to span the gap with concrete piers');
  await checkpoint('ukss-gallery');await page.evaluate(()=>window.__BAIKONUR_QA.site250aUkssGallery.inspect());await frame();
  await page.screenshot({path:`${out}/${prefix}-ukss-gallery.png`});
