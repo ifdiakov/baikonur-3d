@@ -3015,7 +3015,7 @@ if(IS_WORKSHOP&&!WORKSHOP_BUILD){
  const {installWorkshop}=await import('./src/workshop-panel.js?v=20261114-ground-contact-v1');
  installWorkshop({scene,objects,camera,controls:ctl,canvas:renderer.domElement,roadEditor,transport,terrainHeightAt:museumTerrainHeightAt,altimeter:cameraAltitude,coordinateGrid,published:publishedWorkshop});
 }
-window.__BAIKONUR_QA={site94:{stats:portalArchive.site94Stats,inspect:view=>portalArchive.inspectSite94(view,camera,ctl)},np31:()=>{
+window.__BAIKONUR_QA={site250aUkssGallery:{stats:()=>site250aGallery.metadata,inspect(){const a=new THREE.Vector3(...site250aGallery.metadata.start),b=new THREE.Vector3(...site250aGallery.metadata.end),mid=a.clone().lerp(b,.5);ctl.target.copy(mid);camera.position.copy(mid).add(new THREE.Vector3(20,27,33));ctl.update();}},site94:{stats:portalArchive.site94Stats,inspect:view=>portalArchive.inspectSite94(view,camera,ctl)},np31:()=>{
  const p=site31Observation; if(!p)return {present:false};
  const model=p.g.userData.observationPlatform;
  const box=new THREE.Box3().setFromObject(p.g),projected=[];

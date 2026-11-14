@@ -12,6 +12,8 @@ export const SITE250A_REFERENCE={
  registration:'owner-anchor-preserved; satellite-relative-plan; approximate-metre-scale',
  date:'2026-11-03'
 };
+// Existing gallery's surveyed-image vertices, shared with its UKSS continuation.
+export const SITE250A_GALLERY_PIXELS=Object.freeze([[1128,765],[1374,411],[1410,404],[1772,650]]);
 export function site250aPixel([u,v]){
  const x=u-900,z=v-700;return [(.8*x+.6*z)*.22,(-.6*x+.8*z)*.22];
 }

@@ -136,6 +136,7 @@ jobs:
         if: matrix.target == 'site250a'
         run: |
           node tests/site250a-geometry.mjs
+          node tests/site250a-ukss-gallery.mjs
           node tests/road-editor-startup.mjs
       - name: Validate the actual Site 118 source, contacts and loader
         if: matrix.target == 'site118' && matrix.mode == 'desktop'

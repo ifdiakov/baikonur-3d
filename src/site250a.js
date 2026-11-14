@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {SITE250A_VERSION,SITE250A_REFERENCE,SITE250A_ACCESS,SITE250A_BUNKER,SITE250A_ROADS,SITE250A_VIEWS,site250aPixel} from './site250a-layout.js?v=20261103-site250a-photo-v1';
+import {SITE250A_VERSION,SITE250A_REFERENCE,SITE250A_ACCESS,SITE250A_BUNKER,SITE250A_ROADS,SITE250A_VIEWS,SITE250A_GALLERY_PIXELS,site250aPixel} from './site250a-layout.js?v=20261103-site250a-photo-v1';
 
 export function buildSite250a(root){
  const k=archiveKit(root);
@@ -75,8 +75,7 @@ export function buildSite250a(root){
 
  // Aboveground utilities. The large pale corridor is visible in the satellite
  // and ground photographs; keep it enclosed instead of inventing a bare pipe.
- const galleryPixels=[[1128,765],[1374,411],[1410,404],[1772,650]];
- const gallery=galleryPixels.map(site250aPixel);
+ const gallery=SITE250A_GALLERY_PIXELS.map(site250aPixel);
  for(let i=1;i<gallery.length;i++){
   const [a,c]=[gallery[i-1],gallery[i]],dx=c[0]-a[0],dz=c[1]-a[1],len=Math.hypot(dx,dz),yaw=Math.atan2(dx,dz);
   k.box(2.8,2.2,len,(a[0]+c[0])/2,5.1,(a[1]+c[1])/2,'white','site250a-raised-gallery',yaw);
