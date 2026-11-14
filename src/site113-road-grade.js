@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {TRANSPORT_GROUND_Y,ROAD_SURFACE_Y} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 // Local vertical correction only: keep the approved OSM street centrelines.
 // The flat museum terrain is at -2.755; use the same 25 mm lift as КПП №7.
 export function createSite113RoadGrade(anchor){
@@ -7,7 +8,7 @@ export function createSite113RoadGrade(anchor){
  const widthScale=id=>String(id).split('-').some(v=>streets.has(v))?.45:1;
  const isBaked=data=>data.displayGradeVersion===version||(!data.displayGradeVersion&&(data.editable||data.levels?.medium?.roads||[]).some(row=>widthScale(row.id)<1&&(row.width??row.w)<=1));
  function adjustWidths(graph){for(const way of graph.ways){const scale=widthScale(way.osmId);way.width*=scale;for(const edge of way.segments)edge.width*=scale;}}
- const baseY=-2.755,roadY=baseY+.08,fade=12;
+ const baseY=TRANSPORT_GROUND_Y,roadY=ROAD_SURFACE_Y,fade=12;
  const bounds={minX:anchor.x-36,maxX:anchor.x+7,minZ:anchor.z-7,maxZ:anchor.z+36};
  function weightAt(x,z){
   const d=Math.max(bounds.minX-x,x-bounds.maxX,bounds.minZ-z,z-bounds.maxZ,0);
@@ -29,7 +30,7 @@ export function createSite113RoadGrade(anchor){
  // network is built. The cached routes and LOD use this local grade directly.
  function withCheckpoint(checkpoint){return {...checkpoint,version,isBaked,adjustWidths,widthScale,cachedGrade:{conform:checkpoint.conform,widthScale:()=>1},
   weightAt:(x,z)=>Math.max(checkpoint.weightAt(x,z),weightAt(x,z)),
-  roadAt:(x,z)=>weightAt(x,z)>0?heightAt(x,z,checkpoint.roadAt(x,z)??.72):checkpoint.roadAt(x,z),
+  roadAt:(x,z)=>weightAt(x,z)>0?heightAt(x,z,checkpoint.roadAt(x,z)??ROAD_SURFACE_Y):checkpoint.roadAt(x,z),
   conform:points=>conform(checkpoint.conform(points))};}
  return {version,isBaked,bounds,baseY,roadY,widthScale,weightAt,heightAt,conform,withCheckpoint,stats:()=>({baseY,roadY,bounds,fade,sourceCentrelinesPreserved:true})};
 }

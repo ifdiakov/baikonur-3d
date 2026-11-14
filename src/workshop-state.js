@@ -1,4 +1,4 @@
-import {validateRoadEdits} from './road-editor-core.js';
+import {validateRoadEdits} from './road-editor-core.js?v=20261114-ground-contact-v1';
 export const WORKSHOP_VERSION=1;
 export const WORKSHOP_STORAGE='rockettrip-workshop-scene-v1';
 export function validateWorkshopState(input){

@@ -1,43 +1,63 @@
 import * as THREE from 'three';
 import {PANTSIR_PROFILES} from './earth-covered-shelters.js?v=20261112-road-facing-v1';
-export const SHELTER_ACCESS_VERSION='20261112-road-facing-v1';
+export const SHELTER_ACCESS_VERSION='20261114-grounded-fixed-road-joins-v2';
 const V=a=>Array.isArray(a)?new THREE.Vector3(...a):a.clone();
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const ease=t=>t*t*(3-2*t);
 
-// Select the closest usable paved segment, with enough length for a graded
-// entrance. The road itself, its traffic graph and all source vertices stay intact.
+// Preserve the displayed, approved orientations. These coordinates were
+// reproduced from commit b51b2a64061bcb969bccf174df2f7fc92a26a3d9 using its
+// checked-in transport cache, restoreBakedTransport and the original composed
+// checkpoint / Site 113 / Site 95 cached grades, exactly as museum.html does.
+// Raw cache rows alone select different joins because Site 95 resamples nearby
+// segments before the original planner's minimum-length filter. This reference
+// is a museum display choice, not a surveyed entrance location.
+export const SHELTER_ROAD_ACCESS_REFERENCE=Object.freeze({
+ sourceRevision:'b51b2a64061bcb969bccf174df2f7fc92a26a3d9',
+ 'pad-82':Object.freeze({roadId:'osm-road-172961048',
+  joinXZ:Object.freeze([-1531.3815314494389,-1242.1560639621334]),
+  tangentXZ:Object.freeze([-.743607186330989,.6686167455552618]),
+  normalXZ:Object.freeze([.6686167455552618,.743607186330989])}),
+ 'pad-83':Object.freeze({roadId:'osm-road-172855620',
+  joinXZ:Object.freeze([-1524.201975592896,-1109.3476356723172]),
+  tangentXZ:Object.freeze([-.8454917442271253,-.5339884928008966]),
+  normalXZ:Object.freeze([.5339884928008966,-.8454917442271253])})
+});
+
+// Resolve only the height on the previously selected road at its fixed XZ
+// join. Vertical changes cannot choose another entrance or rotate the model.
+// A missing/relocated source or impossible grade requires an explicit layout
+// revision instead of silently selecting an unrelated road.
 export function planShelterRoadAccess(root,id,roads){
  const p=PANTSIR_PROFILES[id];if(!p)throw Error('Unknown recessed structure '+id);
  const scale=root.scale.x,origin=root.position.clone(),startZ=p.depth/2+p.ramp+8;
- let best=null;
+ const reference=SHELTER_ROAD_ACCESS_REFERENCE[id];
+ const [x,z]=reference.joinXZ;let best=null;
  for(const road of roads){
+  if(road.id!==reference.roadId)continue;
   if(road.surface==='ground'||road.tags?.highway==='track'||road.tags?.bridge==='yes'||!road.points?.length)continue;
   const width=road.width||2.4;
   for(let i=1;i<road.points.length;i++){
    const a=V(road.points[i-1]),b=V(road.points[i]),d=b.clone().sub(a),len=Math.hypot(d.x,d.z);
-   if(len<10)continue;
-   const tangent=new THREE.Vector3(d.x/len,0,d.z/len),margin=Math.min(.20,Math.max(2,width)/len);
-   const projection=clamp(((origin.x-a.x)*d.x+(origin.z-a.z)*d.z)/(len*len),margin,1-margin);
-   const candidates=[projection];for(let j=0;j<=40;j++)candidates.push(margin+(1-2*margin)*j/40);
-   for(const t of candidates){
-    const q=a.clone().lerp(b,t),dx=q.x-origin.x,dz=q.z-origin.z,distance=Math.hypot(dx,dz);
-    if(distance>90||distance<startZ*scale+width/2+2)continue;
-    const normal=new THREE.Vector3(-tangent.z,0,tangent.x);
-    if(normal.dot(origin.clone().sub(q))<0)normal.negate();
-    const join=q.clone().addScaledVector(normal,width/2),horizontal=Math.hypot(join.x-origin.x,join.z-origin.z);
-    // Smooth grade's maximum slope is 1.5 times the mean. No floating slab or
-    // abrupt step against the existing raised road.
-    const needed=Math.abs(q.y-(origin.y+.025*scale))*1.5/.22;
-    if(horizontal-startZ*scale<Math.max(2,needed))continue;
-    const yaw=Math.atan2(join.x-origin.x,join.z-origin.z);
-    const score=distance+(Math.abs(t-projection)*.001);
-    if(!best||score<best.score)best={score,roadId:road.id,segment:i-1,roadWidth:width,yaw,join:q.toArray(),edge:join.toArray(),tangent:tangent.toArray(),normal:normal.toArray(),roadSlope:d.y/len,startZ,scale,sourceSegment:[a.toArray(),b.toArray()]};
-   }
+   if(len<1e-8)continue;
+   const t=clamp(((x-a.x)*d.x+(z-a.z)*d.z)/(len*len),0,1),q=a.clone().lerp(b,t);
+   const distance=Math.hypot(q.x-x,q.z-z);
+   if(!best||distance<best.distance)best={distance,q,a,b,len,width,segment:i-1,road};
   }
  }
- if(!best)throw Error('No safe road approach for '+id);
- return best;
+ // Full and cached routes may differ by their small horizontal simplification
+ // tolerance. The selected join itself stays at the approved coordinates.
+ if(!best||best.distance>.075)throw Error('Approved road join is no longer on its source road for '+id);
+ const {q,a,b,len,width,segment,road}=best,join=new THREE.Vector3(x,q.y,z);
+ const tangent=new THREE.Vector3(reference.tangentXZ[0],0,reference.tangentXZ[1]);
+ const normal=new THREE.Vector3(reference.normalXZ[0],0,reference.normalXZ[1]);
+ const edge=join.clone().addScaledVector(normal,width/2),horizontal=Math.hypot(edge.x-origin.x,edge.z-origin.z);
+ const needed=Math.abs(q.y-(origin.y+.025*scale))*1.5/.22;
+ if(horizontal-startZ*scale<Math.max(2,needed))throw Error('Approved shelter road join exceeds the supported grade for '+id);
+ return {score:Math.hypot(x-origin.x,z-origin.z),roadId:road.id,segment,roadWidth:width,
+  yaw:Math.atan2(edge.x-origin.x,edge.z-origin.z),join:join.toArray(),edge:edge.toArray(),
+  tangent:tangent.toArray(),normal:normal.toArray(),roadSlope:(b.y-a.y)/len,startZ,scale,
+  sourceSegment:[a.toArray(),b.toArray()],selection:'fixed-approved-xz',referenceRevision:SHELTER_ROAD_ACCESS_REFERENCE.sourceRevision};
 }
 
 export function buildShelterRoadAccess(root,plan){

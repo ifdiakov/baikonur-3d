@@ -57,6 +57,8 @@ const {restoreBakedTransport}=await import('../src/transport-bake.js');
 const {createCheckpoint7RoadGrade}=await import('../src/checkpoint7-road-grade.js');
 const checkpoint=createCheckpoint7RoadGrade({position:[-125,.72,913],roadAxis:[[-125,.72,1002],[-125,.72,824]],roadWidth:3.6,yaw:0,scale:.14});
 const composed=grade.withCheckpoint(checkpoint);
+for(const x of [anchor.x,anchor.x+8,anchor.x+18])assert(Math.abs(composed.roadAt(x,anchor.z)+2.73)<1e-10,'The local fade cannot reintroduce the former raised road datum');
+for(const z of [980,970,913,846])assert(Math.abs(checkpoint.roadAt(-125,z)+2.73)<1e-10,'Raw OSM placement height cannot raise the checkpoint approaches');
 const restored=restoreBakedTransport({bake,layers:{roads:new THREE.Group(),rails:new THREE.Group()},roadGrade:composed});
 const route=restored.roadPaths().find(r=>r.osmWayIds?.includes('173082916'));assert(route);
 const near=[];for(let s=0;s<=route.length;s+=.5){const p=route.position(s);if(Math.abs(p.z-913)<2)near.push(p);}assert(near.length);for(const p of near)assert(Math.abs(p.y+2.73)<.001,'Cached checkpoint road stays on the flat ground');

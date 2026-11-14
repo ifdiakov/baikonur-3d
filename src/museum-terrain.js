@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {buildTerrainRelief} from './terrain-relief.js?v=20261101-natural-relief-v2';
 import {sampleSteppe} from './steppe-field.js?v=20261101-steppe-v7';
-import {saturnTerrainFootprint} from './saturn-access.js?v=20261101-saturn-terrain-v5';
+import {saturnTerrainFootprint} from './saturn-access.js?v=20261114-ground-contact-v1';
 
 const xz=p=>({x:p.x,z:p.z});
 

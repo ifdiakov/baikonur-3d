@@ -2,6 +2,7 @@ import {applyOwnerRampOwnership} from './owner19-surface-ownership.js';
 import {SITE254_ACCESS,SITE254_MASK} from './site254-layout.js?v=20261103-site254-e10s5';
 import {CYCLONE_PAD_ORIGINS,CYCLONE_YAW} from './cyclone-profile.js?v=20261101-cyclone-v1';
 import * as THREE from 'three';
+import {TRANSPORT_GROUND_VERSION,TRANSPORT_GROUND_Y,ROAD_SURFACE_CLEARANCE,ROAD_SURFACE_Y,ROAD_SHOULDER_DROP} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 import {shapeOwnerRail,shapeOwnerTrain,missingOwnerRailSeam,makeOwnerRailSeam} from './owner-rail-curves.js?v=20261109-owner19-v3';
 import {omitOwnerRoadEdge,polishOwnerRoadSamples,keepOwnerTownRoadEdge} from './owner-ad-refinements.js?v=20261109-owner19-v3';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
@@ -14,20 +15,22 @@ import {MUSEUM_METRE} from './museum-scale.js?v=20261031-rocket-exhibits-v1';
 import {FACILITY_PORTS,portWorld} from './facility-ports.js?v=20261103-site250a-photo-v1';
 import {planSite250aThroughRoad,SITE250A_THROUGH_WAY_ID,SITE250A_THROUGH_PROFILE} from './site250a-through-road.js?v=20261108-ukss-width25-v3';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
-import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainHeight,saturnTerrainSample} from './saturn-access.js?v=20261101-saturn-terrain-v5';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,saturnTerrainSample,findSaturnAuthoredAccess} from './saturn-access.js?v=20261114-ground-contact-v1';
+import {createTransportTerrainHeight} from './transport-terrain-height.js?v=20261114-ground-contact-v1';
+import {buildTransportGroundSupport,transportGroundSupportHeightAt} from './transport-ground-support.js?v=20261114-ground-contact-v1';
 import {KRAYNIY_AIRPORT_DISPLAY,krayniyTerminalLayout} from './krayniy-terminal.js?v=20261031-facilities-rails-lighting-v1';
-import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261102-site2-photo-v3';
+import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from './interchange-bridge.js?v=20261114-ground-contact-v1';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,isHighwayRoad,smoothHighwayGraph,HIGHWAY_ASPHALT_COLOR,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS,highwayRunsOutsideBridge} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
 import {unionRoadSurfacePolygons,clipOrdinaryRoadMeshes,fillEnclosedRoadSurfaceVoid} from './road-surface.js?v=20261103-shoulder-clip-v2';
 import {createInterchangeAprons,INTERCHANGE_APRON_VERSION} from './interchange-aprons.js?v=20261031-facilities-rails-lighting-v2';
 import {buildRoadMarkings} from './road-markings.js?v=20261031-facilities-rails-lighting-v6';
 import {smoothLocalRoadGraph,createAccessTransition} from './access-transitions.js?v=20261031-facilities-rails-lighting-v3';
 import {planGagarinSite2Road,GAGARIN_APPROACH_WAY_ID,GAGARIN_NORTH_FORK_WAY_ID} from './gagarin-site2-road.js?v=20261103-site2-road-v5';
-import {createMik112RailSourcePlan,createMik112RailApproaches} from './mik112-rail-plan.js?v=20261031-facilities-rails-lighting-v4';
+import {createMik112RailSourcePlan,createMik112RailApproaches,createMik112RailGroundProfile} from './mik112-rail-plan.js?v=20261114-ground-contact-v1';
 import {createSite41RoadReplacement} from './site41-road-clearance.js?v=20261031-facilities-rails-lighting-v1';
 import {railApproachSleeperDistances} from './paired-rail-approach.js?v=20261031-facilities-rails-lighting-v4';
 import {createSite110RailFan} from './site110-rail-fan.js?v=20261031-facilities-rails-lighting-v4';
-import {buildHighwayDisplay} from './highway-display.js?v=20261102-site2-photo-v3';
+import {buildHighwayDisplay} from './highway-display.js?v=20261114-ground-contact-v1';
 import {smoothRailGraph,graphRailRoutePoints} from './rail-surface.js?v=20261102-rail-scheme-v1';
 import {createRailSchemePlan,RAIL_SCHEME_REFERENCE} from './rail-scheme.js?v=20261102-rail-scheme-v1';
 import {createRailSiteClearancePlan} from './rail-site-clearance.js?v=20261112-pantsirs-v1';
@@ -39,7 +42,7 @@ const clamp=THREE.MathUtils.clamp;
 const BBOX=[62.78,45.57,64.12,46.135];
 // The protected railway terrain is level at this world datum. The physical
 // rail profile supplies ballast, sleepers and rail-head height above it.
-export const RAIL_NETWORK_GROUND_Y=-2.755;
+export const RAIL_NETWORK_GROUND_Y=TRANSPORT_GROUND_Y;
 const MAIN=new Set(['motorway','trunk','primary','secondary','tertiary']);
 const CAR_WEIGHTS={motorway:.8,trunk:.8,primary:.85,secondary:.9,tertiary:1,unclassified:1.15,residential:1.5,service:2.1,living_street:2.5,track:5};
 const ROAD_STYLE=Object.freeze({asphaltColor:'#555751',shoulderColor:'#c5c1b4',paintWidth:.10,shoulderExtra:.6,
@@ -79,7 +82,7 @@ function clipSegment(a,b){
 export function buildOsmGraph(features,{geography,point,rail=false}){
  const nodes=new Map(),edges=[],ways=[];
  function node(id,coord){
-  if(!nodes.has(id)){const p=geography.project(...coord);nodes.set(id,{id,coord,position:point(p[0],p[1],rail?RAIL_NETWORK_GROUND_Y:.72),edges:[],component:-1,raise:0});}
+  if(!nodes.has(id)){const p=geography.project(...coord);nodes.set(id,{id,coord,position:point(p[0],p[1],rail?RAIL_NETWORK_GROUND_Y:ROAD_SURFACE_Y),edges:[],component:-1,raise:0});}
   return nodes.get(id);
  }
  for(const f of features){
@@ -154,20 +157,31 @@ function geometryBatch(parent,name,material,{joined=false,solid=false}={}){
  }
  function quad(a,b,c,d){if(joined){ownershipPolygons.push([a,b,d,c]);for(const p of [[a,c,b],[b,c,d]]){p.priority=currentPriority;pending.push(p);}}else{tri(a,c,b);tri(b,c,d);}}
  function patch(triangles,mask){for(const p of triangles)tri(...p);exclusivePolygons.push(...mask);ownershipPolygons.push(...mask);}
- function disc(center,radius,y=0){for(let i=0;i<14;i++){const a=i*Math.PI/7,b=(i+1)*Math.PI/7;tri(V(center.x,center.y+y,center.z),V(center.x+Math.cos(a)*radius,center.y+y,center.z+Math.sin(a)*radius),V(center.x+Math.cos(b)*radius,center.y+y,center.z+Math.sin(b)*radius));}}
+ function disc(center,radius,y=0,heightAt=null){
+  const at=(x,z)=>{const p=V(x,center.y+y,z);if(heightAt)p.y=heightAt(p,center);return p;};
+  for(let i=0;i<14;i++){const a=i*Math.PI/7,b=(i+1)*Math.PI/7;tri(at(center.x,center.z),at(center.x+Math.cos(a)*radius,center.z+Math.sin(a)*radius),at(center.x+Math.cos(b)*radius,center.z+Math.sin(b)*radius));}
+ }
  function ribbon(points,width,lift=0,offset=0,priority=0,directionAt=null,heightAt=null,thickness=0){
   currentPriority=priority;
-  if(points.length<2)return;const rims=[];
+  if(points.length<2)return;const rims=[],middles=[];
   for(let i=0;i<points.length;i++){
    const prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
    let d=next.clone().sub(prev).setY(0).normalize();if(directionAt)d=directionAt(points[i],d).clone().setY(0).normalize();
    const normal=V(-d.z,0,d.x);
    const w=typeof width==='function'?width(points[i]):width,o=typeof offset==='function'?offset(points[i]):offset;
-   rims.push([-1,1].map(side=>{const p=points[i].clone().addScaledVector(normal,o+side*w/2).add(V(0,lift,0));if(heightAt){const y=heightAt(p);if(y===null)return null;p.y=y;}return p;}));
+   rims.push([-1,1].map(side=>{const p=points[i].clone().addScaledVector(normal,o+side*w/2).add(V(0,lift,0));if(heightAt){const y=heightAt(p,points[i]);if(y===null)return null;p.y=y;}return p;}));
+   let middle=null;
+   if(heightAt){middle=points[i].clone().addScaledVector(normal,o).add(V(0,lift,0));const y=heightAt(middle,points[i]);middle.y=y===null?NaN:y;}
+   middles.push(middle);
   }
   const lower=p=>p.clone().add(V(0,-thickness,0));
   for(let i=1;i<rims.length;i++)if([...rims[i-1],...rims[i]].every(Boolean)){
-   const [a,b]=rims[i-1],[c,d]=rims[i];quad(a,b,c,d);
+   const [a,b]=rims[i-1],[c,d]=rims[i],m=middles[i-1],n=middles[i];
+   // Only curved local ground needs a centre strip. Flat roads retain the
+   // original two triangles; a crest cannot poke through a wide chord.
+   if(heightAt&&Number.isFinite(m.y)&&Number.isFinite(n.y)&&(Math.abs(m.y-(a.y+b.y)/2)>.004||Math.abs(n.y-(c.y+d.y)/2)>.004)){
+    quad(a,m,c,n);quad(m,b,n,d);
+   }else quad(a,b,c,d);
    if(thickness>0){quad(a,c,lower(a),lower(c));quad(d,b,lower(d),lower(b));}
   }
   if(thickness>0)for(const rim of [rims[0],rims.at(-1)])if(rim.every(Boolean))quad(rim[0],rim[1],lower(rim[0]),lower(rim[1]));
@@ -266,7 +280,7 @@ function makeVehicleRoute(id,label,graphRoute,conform=points=>points){
   widthAt(distance){distance*=at/path.length;let lo=0,hi=boundaries.length-1;while(hi-lo>1){const mid=(lo+hi)>>1;if(boundaries[mid].at<=distance)lo=mid;else hi=mid;}return boundaries[lo]?.width||4.8;}};
 }
 
-export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,checkpoint7RoadGrade=null}){
+export function buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,ownerRoadEdits=null,checkpoint7RoadGrade=null}){
  const started=Date.now(),roadGraph=buildOsmGraph(data.roads.features,{geography,point}),railGraph=buildOsmGraph(data.railways.features,{geography,point,rail:true});
  checkpoint7RoadGrade?.adjustWidths?.(roadGraph);
  const buildPhases=[],checkpoint=name=>{
@@ -274,30 +288,30 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(typeof performance!=='undefined'&&performance.mark)performance.mark('museum:transport-'+name);
  };
  checkpoint('graphs');
- const saturnSite=siteRecords.find(s=>s.id==='pad-23'),saturnCenter=saturnSite?point(saturnSite.x,saturnSite.y,0):null;
- function terrainAt(x,z){
-  if(!saturnCenter)return -Infinity;
-  const localX=(x-saturnCenter.x)/SATURN_ACCESS.scale,localZ=(z-saturnCenter.z)/SATURN_ACCESS.scale;
-  const b=SATURN_TERRAIN_BOUNDS;
-  return localX>=b.minX&&localX<=b.maxX&&localZ>=b.minZ&&localZ<=b.maxZ?SATURN_ACCESS.elevation+SATURN_ACCESS.scale*saturnTerrainHeight(localX,localZ):-Infinity;
- }
+ const {heightAt:terrainAt,containsLocalTerrain,siloHill,saturnCenter,onSiloHill}=createTransportTerrainHeight({siteRecords,point});
  function terrainDatum(p,width){
-  if(!saturnCenter)return p.y;
-  const r=width/2+ROAD_STYLE.shoulderExtra/2,b=SATURN_TERRAIN_BOUNDS,s=SATURN_ACCESS.scale;
-  if(p.x+r<saturnCenter.x+b.minX*s||p.x-r>saturnCenter.x+b.maxX*s||
-     p.z+r<saturnCenter.z+b.minZ*s||p.z-r>saturnCenter.z+b.maxZ*s)return p.y;
-  let top=terrainAt(p.x,p.z);
-  for(let i=0;i<8;i++){const a=i*Math.PI/4;top=Math.max(top,terrainAt(p.x+r*Math.cos(a),p.z+r*Math.sin(a)));}
-  return Math.max(p.y,top+.38);
+  return Math.max(p.y,terrainAt(p.x,p.z)+ROAD_SURFACE_CLEARANCE);
  }
- // Source nodes alone are too sparse on Saturn's nonlinear slopes. The
- // entire road width and every intermediate section must clear the hill.
- function conformPath(points,width){
+ function roadVertexHeight(p,center){
+  return p.y+terrainAt(p.x,p.z)-terrainAt(center.x,center.z);
+ }
+ // Follow the real local hills at every section, rather than carrying a
+ // high endpoint chord over the slope. Model thresholds retain a short join.
+ function conformPath(points,width,preserveEndpoints=false,followGround=false){
   const samples=samplesWithVertices(points,1.4);
-  for(const p of samples)p.y=terrainDatum(p,width);
+  // The level toe is part of the local terrain too. Testing only a positive
+  // rise restored an elevated endpoint chord as soon as the hill faded below
+  // .001, producing a visible step followed by a floating tail.
+  for(const p of samples){const height=terrainAt(p.x,p.z);p.y=followGround||containsLocalTerrain(p.x,p.z)?height+ROAD_SURFACE_CLEARANCE:terrainDatum(p,width);}
+  if(preserveEndpoints)for(const end of [points[0],points.at(-1)]){
+   const delta=end.y-(terrainAt(end.x,end.z)+ROAD_SURFACE_CLEARANCE);
+   if(delta<=0)continue;
+   for(const p of samples){const d=Math.hypot(p.x-end.x,p.z-end.z);if(d>=5)continue;const t=1-d/5;p.y=Math.max(p.y,terrainAt(p.x,p.z)+ROAD_SURFACE_CLEARANCE+delta*t*t*(3-2*t));}
+  }
   return samples;
  }
  function railTerrainDatum(p,width){
+  if(onSiloHill(p.x,p.z))p.y=Math.max(p.y,siloHill.heightAt(p.x,p.z));
   if(!saturnCenter)return p.y;
   const scale=SATURN_ACCESS.scale,b=SATURN_TERRAIN_BOUNDS,r=width/2;
   if(p.x+r<saturnCenter.x+b.minX*scale||p.x-r>saturnCenter.x+b.maxX*scale||
@@ -344,8 +358,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const direction=frame.clone();if(direction.dot(edge.b.position.clone().sub(edge.a.position))<0)direction.negate();return direction;
  }});
  const railScheme=createRailSchemePlan(railGraph);
- function conformRoadPath(points,width){
-  const samples=conformPath(points,width);
+ function conformRoadPath(points,width,preserveEndpoints=false,followGround=false){
+  const samples=conformPath(points,width,preserveEndpoints,followGround);
   for(const p of samples)p.y=roadGraph.highwaySurfaceHeight(p,width);
   return checkpoint7RoadGrade?checkpoint7RoadGrade.conform(samples):samples;
  }
@@ -382,8 +396,29 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const shoulder=geometryBatch(roadRoot,'OSM · единые обочины',mat.shoulder),asphalt=geometryBatch(roadRoot,'OSM · единое дорожное полотно',mat.asphalt),highwayAsphalt=geometryBatch(roadRoot,'OSM · асфальт трассы',mat.highway,{joined:true}),unpaved=geometryBatch(roadRoot,'OSM · грунтовые проезды',mat.track),paint=geometryBatch(roadRoot,'OSM · разметка',mat.paint);
  const highwayYellow=geometryBatch(roadRoot,'Трасса · двойная жёлтая',createHighwayMarkingMaterial(HIGHWAY_MARKINGS.yellowColor));
  const highwayWhite=geometryBatch(roadRoot,'Трасса · белые кромки',createHighwayMarkingMaterial(HIGHWAY_MARKINGS.whiteColor));
- const ballast=geometryBatch(railRoot,'OSM · балласт',mat.ballast),ties=geometryBatch(railRoot,'OSM · шпалы',mat.ties,{solid:true}),steel=geometryBatch(railRoot,'OSM · рельсы',mat.steel,{solid:true}),abandoned=geometryBatch(railRoot,'OSM · бывшие пути',mat.abandoned);
+ const ballast=geometryBatch(railRoot,'OSM · балласт',mat.ballast,{solid:true}),ties=geometryBatch(railRoot,'OSM · шпалы',mat.ties,{solid:true}),steel=geometryBatch(railRoot,'OSM · рельсы',mat.steel,{solid:true}),abandoned=geometryBatch(railRoot,'OSM · бывшие пути',mat.abandoned);
  const batches=[shoulder,asphalt,highwayAsphalt,unpaved,paint,ballast,ties,steel,abandoned],roadPaths=[],editableRoadPaths=[],railPaths=[],terrainRailPaths=[],stationLabels=[];
+ const groundSupportProfiles=[];let groundSupportResult=null,roadGroundSupportResult=null;
+ function recordGroundSupport(prefix,siteId,portId,runs,directionAt,heightField=null){
+  for(const [runIndex,points]of runs.entries()){
+   if(!points.some(p=>p.y-terrainAt(p.x,p.z)>.03))continue;
+   const id=prefix+'-'+runIndex,normals=points.map((p,i)=>{
+    const before=points[Math.max(0,i-1)],after=points[Math.min(points.length-1,i+1)];
+    let direction=after.clone().sub(before).setY(0).normalize();
+    if(directionAt)direction=directionAt(p,direction).clone().setY(0).normalize();
+    return [-direction.z,direction.x];
+   });
+   const profile={id,siteId,portId,kind:'rail-model-approach',width:RAIL_PROFILE.ballastWidth,points:points.map(p=>p.toArray()),normals,...(heightField?{heightField}: {})};
+   const old=groundSupportProfiles.findIndex(row=>row.id===id);if(old<0)groundSupportProfiles.push(profile);else groundSupportProfiles[old]=profile;
+   const terrainRow=terrainRailPaths.find(row=>row.points===points);if(terrainRow)terrainRow.groundSupportId=id;
+  }
+ }
+ function refreshGroundSupports(){
+  for(const result of [groundSupportResult,roadGroundSupportResult])if(result?.mesh){const mesh=result.mesh;mesh.removeFromParent();mesh.geometry.dispose();mesh.material.dispose();}
+  groundSupportResult=buildTransportGroundSupport({profiles:groundSupportProfiles.filter(p=>p.kind!=='road-model-approach'),parent:railRoot,heightAt:terrainAt});
+  roadGroundSupportResult=buildTransportGroundSupport({profiles:groundSupportProfiles.filter(p=>p.kind==='road-model-approach'),parent:roadRoot,heightAt:terrainAt});
+  if(roadGroundSupportResult.mesh)roadGroundSupportResult.mesh.name='АД · грунтовое основание модельных подходов';
+ }
  const markingRoads=[],highwayMarkedWays=new Set();let highwayMarkingRuns=0,rampMarkingRuns=0;
  let markingSegments=0,railTies=0,connections=0;const accessReports=[],railPortReports=[],renderedRoadWays=new Set(),renderedRailWays=new Set(),hiddenCityWays=new Set();
  let roadPruning=null,railPruning=null,exhibitRoadFilter=null;
@@ -490,16 +525,16 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return false;
  }
  function drawRoad(points,width,tags={},marked=false,force=false,wayId=null,renderedRuns=null,connections=[],surface={}){
-  if(points.length<2)return false;const samples=polishOwnerRoadSamples(conformRoadPath(points,width),wayId),path=distancePath(samples);if(path.length<.001)return false;
+  if(points.length<2)return false;const samples=polishOwnerRoadSamples(conformRoadPath(points,width,force,surface.followGround),wayId),path=distancePath(samples);if(path.length<.001)return false;
   const dirt=tags.highway==='track'||['unpaved','ground','dirt','sand'].includes(tags.surface),pavement=dirt?unpaved:isHighwayRoad(tags)?highwayAsphalt:asphalt;
   let run=[],rendered=false;
   const flush=()=>{if(run.length>1){
    const highway=isHighwayRoad(tags),directions=surface.directionAt??(wayId?roadDirectionAt(wayId,highway):highwayDirectionAt),widthAt=surface.widthAt??width;
    const pavingRuns=highway?highwayRunsOutsideBridge(run,interchangeBridgePlan,wayId):[run];
    for(const ps of pavingRuns){
-    if(highway)for(const side of [-1,1])shoulder.ribbon(ps,ROAD_STYLE.shoulderExtra/2,-.055,side*(width/2+ROAD_STYLE.shoulderExtra/4),0,directions);
-    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-.055,0,0,directions,checkpoint7RoadGrade?p=>p.y+.043*checkpoint7RoadGrade.weightAt(p.x,p.z):null);
-    pavement.ribbon(ps,widthAt,highway?HIGHWAY_ASPHALT_LIFT:0,0,tags.highway?.endsWith('_link')?1:0,directions);
+    if(highway)for(const side of [-1,1])shoulder.ribbon(ps,ROAD_STYLE.shoulderExtra/2,-ROAD_SHOULDER_DROP,side*(width/2+ROAD_STYLE.shoulderExtra/4),0,directions,roadVertexHeight);
+    else shoulder.ribbon(ps,typeof widthAt==='function'?p=>widthAt(p)+ROAD_STYLE.shoulderExtra:width+ROAD_STYLE.shoulderExtra,-ROAD_SHOULDER_DROP,0,0,directions,roadVertexHeight);
+    pavement.ribbon(ps,widthAt,highway?HIGHWAY_ASPHALT_LIFT:0,0,tags.highway?.endsWith('_link')?1:0,directions,roadVertexHeight);
     markingRoads.push({id:'marking-road-'+(wayId??'display')+'-'+markingRoads.length,wayId,points:ps.map(p=>p.clone()),width,tags,marked:marked||highway,connections,
      directionAt:directions,widthAt,surfaceSmoothed:true});
    }
@@ -530,14 +565,14 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   return total<225&&way.segments.every(edge=>distance(edge.a)<275&&distance(edge.b)<275);
  }
  const localAccessMinor=tags=>['service','track','residential','living_street'].includes(tags.highway);
- const sitePoint=id=>{const s=siteRecords.find(s=>s.id===id);return point(s.x,s.y,.72);};
+ const sitePoint=id=>{const s=siteRecords.find(s=>s.id===id);return point(s.x,s.y,ROAD_SURFACE_Y);};
  const majorNode=n=>n.edges.some(e=>MAIN.has(e.tags.highway?.replace('_link','')));
  const trunkNodes=[...roadGraph.nodes.values()].filter(n=>n.component===roadGraph.largest&&n.edges.some(e=>['trunk','primary'].includes(e.tags.highway))&&n.coord[1]<45.83);
  if(!trunkNodes.length)throw Error('No OSM highway in the Baikonur region');
  const west=trunkNodes.reduce((a,b)=>a.position.x<b.position.x?a:b),east=trunkNodes.reduce((a,b)=>a.position.x>b.position.x?a:b),city=roadGraph.nearest(sitePoint('city'),{filter:majorNode}),northwest=roadGraph.nearest(sitePoint('pad-81'),{filter:majorNode});
  const highway=makeVehicleRoute('highway','Трасса Аральск — Кызылорда',roadGraph.route(west,east),conformRoadPath);
  const cityRoute=makeVehicleRoute('city-cosmodrome','Байконур ↔ космодром',roadGraph.route(city,northwest),conformRoadPath);
- let bridgeDistance=0,best=Infinity,along=0;const crossing=geography.project(63.322,45.679),crossPoint=point(...crossing,.72);
+ let bridgeDistance=0,best=Infinity,along=0;const crossing=geography.project(63.322,45.679),crossPoint=point(...crossing,ROAD_SURFACE_Y);
  for(let i=1;i<highway.points.length;i++){const a=highway.points[i-1],b=highway.points[i],near=new THREE.Line3(a,b).closestPointToPoint(crossPoint,true,V()),d=near.distanceToSquared(crossPoint);if(d<best){best=d;bridgeDistance=along+a.distanceTo(near);}along+=a.distanceTo(b);}
  highway.bridgeDistance=bridgeDistance;highway.routeIds=['osm-e38'];highway.joinGap=0;
  const westCity=makeVehicleRoute('highway-city--1','Аральск ↔ Байконур',roadGraph.route(west,city),conformRoadPath),eastCity=makeVehicleRoute('highway-city-1','Кызылорда ↔ Байконур',roadGraph.route(east,city),conformRoadPath);
@@ -779,7 +814,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(masked(n.position,{},width/2+.3)||inAirportClearance(n.position)&&!n.edges.some(e=>protectedTrafficWays.has(e.wayId))||inKrayniyClearance(n.position)&&!n.edges.some(e=>protectedTrafficWays.has(e.wayId)||roadProtected.has(e)))continue;
   // Highway strips already share an exact centre and a common merge tangent.
   // A horizontal junction disc would protrude through their graded approaches.
-  if(!n.edges.some(e=>isHighwayRoad(e.tags))){shoulder.disc(n.position,width/2+.3,-.055);asphalt.disc(n.position,width*.51);}
+  if(!n.edges.some(e=>isHighwayRoad(e.tags))){shoulder.disc(n.position,width/2+.3,-ROAD_SHOULDER_DROP,roadVertexHeight);asphalt.disc(n.position,width*.51,0,roadVertexHeight);}
   junctionCount++;
  }
  // Exactly one Gagarin road and one branch to Site 2; these share
@@ -797,8 +832,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const mainRoadJoinGap=Math.hypot(startNode.position.x-mainPoints[0].x,startNode.position.z-mainPoints[0].z);
   if(mainRoadJoinGap>1e-4)throw Error('Gagarin access road lost its OSM main-road junction');
   const mainRoadHostWays=[...new Set(startNode.edges.filter(edge=>edge.wayId!==sourceId&&edgeKept(roadGraph,edge)).map(edge=>edge.wayId))];
-  shoulder.disc(startNode.position,2.25,-.055);
-  asphalt.disc(startNode.position,1.9);
+  shoulder.disc(startNode.position,2.25,-ROAD_SHOULDER_DROP,roadVertexHeight);
+  asphalt.disc(startNode.position,1.9,0,roadVertexHeight);
   junctionWidths.set(startNode.id,Math.max(3.2,junctionWidths.get(startNode.id)||0));
   roadPaths.push({id:'gagarin-approach-road',label:'Дорога на Гагаринский старт',width:3.2,
    points:mainRuns.flat(),source:'osm-guided-museum-correction',osmWayIds:[sourceId]});
@@ -814,7 +849,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const spurRuns=[];
   drawRoad(transition.points,3.2,{highway:'service',surface:'asphalt'},false,true,null,spurRuns,
    [{nodeId:'museum-port:pad-2',position:junction.clone(),hostWayId:sourceId}],{widthAt:transition.widthAt});
-  shoulder.disc(junction,2.2,-.055);asphalt.disc(junction,1.88);
+  shoulder.disc(junction,2.2,-ROAD_SHOULDER_DROP,roadVertexHeight);asphalt.disc(junction,1.88,0,roadVertexHeight);
   roadPaths.push({id:'gagarin-site2-turnoff',label:'Съезд на площадку № 2',
    tags:{highway:'service',surface:'asphalt'},surface:'asphalt',
    points:spurRuns.flat(),width:3.2,widthAt:transition.widthAt,
@@ -860,7 +895,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const markingConnections=airportClearance.cuts.map((cut,i)=>({nodeId:'airport-bypass:'+cut.wayId+':'+i,position:airportWorld(cut.point),hostWayId:cut.wayId}));
    drawRoad(rounded,2.4,{},false,true,null,null,markingConnections);
    roadPaths.push({id:'airport-clearance-yubileiny',label:'Юбилейный · обход музейной ВПП',points:rounded,width:2.4,source:'museum-airport-display-clearance',osmWayIds:[...airportClearance.sourceWays]});
-   for(const cut of airportClearance.cuts){const p=airportWorld(cut.point);shoulder.disc(p,Math.max(cut.width,2.4)/2+.3,-.055);asphalt.disc(p,Math.max(cut.width,2.4)*.51);}
+   for(const cut of airportClearance.cuts){const p=airportWorld(cut.point);shoulder.disc(p,Math.max(cut.width,2.4)/2+.3,-ROAD_SHOULDER_DROP,roadVertexHeight);asphalt.disc(p,Math.max(cut.width,2.4)*.51,0,roadVertexHeight);}
   }
   const bypass=rounded.length>1?distancePath(rounded):null;
   const joinGaps=airportClearance.cuts.map(cut=>{
@@ -894,7 +929,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   railClearanceReport.cuts.push(...clipped.cuts.map(p=>({sourceWayId:wayId,position:airportWorld(p).toArray()})));
   return runs;
  }
- function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null,sleeperAnchor=null){
+ function drawRail(points,isAbandoned=false,force=false,endGauge=RAIL_PROFILE.gauge,wayId=null,directionAt=null,sleeperAnchor=null,baseHeightAt=null){
   if(points.length<2)return [];
   const selectedRuns=clipSingleRailAccess(shapeOwnerRail(points,wayId),wayId).flatMap(run=>clipPad5DuplicateRail(run,wayId)),
    // Apply the same round-curve rule to source ways, yard lines and museum
@@ -903,7 +938,13 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    airportRuns=curvedRuns.flatMap(run=>clipAirportRails(run,wayId,RAIL_PROFILE.gauge)),
    displayed=force?airportRuns:airportRuns.flatMap(run=>railSiteClearance.clipPath(run,{sourceWayId:wayId}).runs),renderedRuns=[];
   for(const visible of displayed){
-   const samples=conformRailPath(visible,RAIL_PROFILE.ballastWidth),path=distancePath(samples);if(path.length<.01)continue;
+   // Only the four short MIK approaches use a common two-dimensional grade.
+   // Extra samples keep its curved surface accurate across overlapping beds;
+   // subdivision preserves the complete approved X/Z centreline.
+   const samples=conformRailPath(baseHeightAt?samplesWithVertices(visible,.12):visible,RAIL_PROFILE.ballastWidth);
+   if(baseHeightAt)for(const p of samples)p.y=baseHeightAt(p.x,p.z);
+   const path=distancePath(samples);if(path.length<.01)continue;
+   const surfaceAt=lift=>baseHeightAt?(p=>baseHeightAt(p.x,p.z)+lift):null;
    const runs=[];let run=[];
    const isVisible=p=>force||!railMasked(p),flush=()=>{if(run.length>1)runs.push(run);run=[];};
    for(let i=1;i<samples.length;i++){
@@ -917,13 +958,13 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    for(const ps of runs){
     terrainRailPaths.push({points:ps,width:isAbandoned?.8:RAIL_PROFILE.ballastWidth,abandoned:isAbandoned,sourceWayId:wayId});
     if(isAbandoned){abandoned.ribbon(ps,.8,.01);continue;}
-    ballast.ribbon(ps,RAIL_PROFILE.ballastWidth,RAIL_PROFILE.ballastY,0,0,directionAt);
-    for(const side of [-1,1])steel.ribbon(ps,RAIL_PROFILE.headWidth,RAIL_PROFILE.headY,side*RAIL_PROFILE.gauge/2,0,directionAt,null,RAIL_PROFILE.railHeight);
+    ballast.ribbon(ps,RAIL_PROFILE.ballastWidth,RAIL_PROFILE.ballastY,0,0,directionAt,surfaceAt(RAIL_PROFILE.ballastY),RAIL_PROFILE.ballastY);
+    for(const side of [-1,1])steel.ribbon(ps,RAIL_PROFILE.headWidth,RAIL_PROFILE.headY,side*RAIL_PROFILE.gauge/2,0,directionAt,surfaceAt(RAIL_PROFILE.headY),RAIL_PROFILE.railHeight);
    }
    if(isAbandoned)continue;
    const sleeperDistances=sleeperAnchor?railApproachSleeperDistances(path.length,{step:RAIL_PROFILE.sleeperStep,anchor:sleeperAnchor}):[];
    if(!sleeperAnchor)for(let d=.4;d<path.length;d+=1.45)sleeperDistances.push(d);
-   for(const d of sleeperDistances){const at=path.sample(d,sleeperAnchor ? .035 : .3);if(!force&&railMasked(at.position))continue;const normal=V(-at.tangent.z,0,at.tangent.x).normalize(),half=RAIL_PROFILE.sleeperLength/2,a=at.position.clone().addScaledVector(normal,-half),b=at.position.clone().addScaledVector(normal,half);ties.ribbon([a,b],RAIL_PROFILE.sleeperWidth,RAIL_PROFILE.sleeperY+RAIL_PROFILE.sleeperHeight/2,0,0,null,null,RAIL_PROFILE.sleeperHeight);railTies++;}
+   for(const d of sleeperDistances){const at=path.sample(d,sleeperAnchor ? .035 : .3);if(!force&&railMasked(at.position))continue;const normal=V(-at.tangent.z,0,at.tangent.x).normalize(),half=RAIL_PROFILE.sleeperLength/2,a=at.position.clone().addScaledVector(normal,-half),b=at.position.clone().addScaledVector(normal,half);ties.ribbon([a,b],RAIL_PROFILE.sleeperWidth,RAIL_PROFILE.sleeperY+RAIL_PROFILE.sleeperHeight/2,0,0,null,surfaceAt(RAIL_PROFILE.sleeperY+RAIL_PROFILE.sleeperHeight/2),RAIL_PROFILE.sleeperHeight);railTies++;}
   }
   return renderedRuns;
  }
@@ -1051,7 +1092,14 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const transition=createAccessTransition({start:near.point,end:gate,startTangent:tangent,endTangent:out.clone().negate(),anchors,startWidth:near.edge.width,endWidth,startSlope:tangent.y/Math.hypot(tangent.x,tangent.z)});
   const points=transition.points,visibleRuns=[],width=Math.max(near.edge.width,endWidth);
   const accessDirection=(p,fallback)=>p.distanceToSquared(gate)<1e-10?out.clone().negate():p.distanceToSquared(near.point)<1e-10?tangent:highwayDirectionAt(p,fallback);
-  drawRoad(points,width,{},false,true,null,visibleRuns,[{nodeId:'museum-port:'+id,position:near.point.clone(),hostWayId:near.edge.wayId}],{widthAt:transition.widthAt,directionAt:accessDirection});
+  drawRoad(points,width,{},false,true,null,visibleRuns,[{nodeId:'museum-port:'+id,position:near.point.clone(),hostWayId:near.edge.wayId}],{widthAt:transition.widthAt,directionAt:accessDirection,followGround:id==='pad-251'});
+  if(id==='pad-251')for(const [runIndex,run]of visibleRuns.entries()){
+   // The airport apron threshold is retained, but the long approach follows
+   // the steppe. Only its short final climb needs a real earth foundation.
+   const normals=run.map((p,i)=>{const fallback=run[Math.min(run.length-1,i+1)].clone().sub(run[Math.max(0,i-1)]).setY(0).normalize(),d=accessDirection(p,fallback).clone().setY(0).normalize();return[-d.z,d.x];});
+   groundSupportProfiles.push({id:'road-port-pad-251-'+runIndex,siteId:id,portId:'road',kind:'road-model-approach',
+    width:width+ROAD_STYLE.shoulderExtra,points:run.map(p=>[p.x,p.y-ROAD_SURFACE_CLEARANCE,p.z]),normals});
+  }
   const renderedPoints=visibleRuns.flat();
   roadPaths.push({id:'osm-access-'+id,label:site.titleShort||site.name,points:renderedPoints,width:1.8,widthAt:transition.widthAt,source:'museum-model-port',osmWayIds:[near.edge.wayId]});
   const mainRoadCorner=id==='pad-2'&&site2PrimaryNearby;
@@ -1073,7 +1121,8 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
    const tangent=rr.tangent.clone();if(tangent.dot(end.clone().sub(rr.point))<0)tangent.negate();
    const transition=fanTrack??createAccessTransition({start:rr.point,end,startTangent:tangent,endTangent:railOut.clone().negate(),anchors:(port.approach??[]).map(p=>portWorld(spec,p,site,point)),startWidth:RAIL_PROFILE.ballastWidth,endWidth:RAIL_PROFILE.ballastWidth,sampleStep:.4,startSlope:tangent.y/Math.hypot(tangent.x,tangent.z)}),points=transition.points,endGauge=RAIL_PROFILE.gauge;
    const frame=(p,fallback)=>p.distanceToSquared(end)<1e-10?railOut.clone().negate():p.distanceToSquared(rr.point)<1e-10?tangent:fallback;
-   drawRail(points,false,true,endGauge,null,frame,'end');connections++;
+   const portRuns=drawRail(points,false,true,endGauge,null,frame,'end');connections++;
+   recordGroundSupport('rail-port-'+id+'-'+port.id,id,port.id,portRuns,frame);
    const renderedHeadCenter=points.at(-1).clone().add(V(0,RAIL_PROFILE.headY,0));railPortReports.push({id,portId:port.id,sourceWayId:rr.edge.wayId,sourceNodeId:port.sourceNodeId??null,sourceRouteId:port.sourceRouteId??null,sourcePoint:rr.point.toArray(),sourceTangent:tangent.toArray(),gateInward:railOut.clone().negate().toArray(),points:points.map(p=>p.toArray()),headCenter:headCenter.toArray(),renderedHeadCenter:renderedHeadCenter.toArray(),headCenterGap:renderedHeadCenter.distanceTo(headCenter),networkDatumGap:points[0].distanceTo(rr.point),networkGauge:RAIL_PROFILE.gauge,portGauge:endGauge,physicalGaugeMetres:spec.physicalRailGauge??null,
     ...(fanTrack?{displaySourceNodeId:fanTrack.displaySourceNodeId,displayLayout:site110Fan.version,sourceDestination:fanTrack.originalDestination,metrics:fanTrack.metrics}:{} )});
   }
@@ -1133,6 +1182,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const site=siteRecords.find(s=>s.id===id),spec=FACILITY_PORTS[id];
   if(!site||!spec)continue;
   const gate=portWorld(spec,spec.road,site,point);
+  if(siloHill)gate.y+=siloHill.offsetAt(gate.x,gate.z);
   const near=nearestSegment(roadGraph,gate,e=>edgeKept(roadGraph,e)&&
    ['primary','secondary','tertiary','unclassified'].includes(e.tags.highway)&&
    !e.tags.bridge&&!e.tags.tunnel);
@@ -1199,7 +1249,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // western main AD to the existing north-west gate. Do not add the former
  // isolated straight ribbon or a second parallel spur.
  let saturnAccessReport={status:'unavailable'};
- if(saturnSite&&saturnCenter){
+ if(saturnCenter){
   const s=SATURN_ACCESS,gate=saturnCenter.clone().add(V(s.gate.x*s.scale,s.gate.y*s.scale,s.gate.z*s.scale));
   gate.y=s.elevation+s.gate.y*s.scale;
   // Do not paint a second driveway over a real OSM access to Saturn's gate.
@@ -1208,7 +1258,11 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   const existingGateRoad=nearestSegment(roadGraph,gate,e=>edgeKept(roadGraph,e)&&
    !e.abandoned&&!masked(e.a.position.clone().lerp(e.b.position,.5),e.tags));
   const existingGateWithin=existingGateRoad&&existingGateRoad.distance<30**2;
-  if(existingGateWithin){
+  const authoredAccess=findSaturnAuthoredAccess({ownerRoadEdits,center:saturnCenter});
+  if(authoredAccess){
+   saturnAccessReport={status:'existing-authored-access-retained',...authoredAccess,
+    gate:gate.toArray(),duplicateDrivewaysAdded:0};
+  }else if(existingGateWithin){
    saturnAccessReport={status:'existing-osm-access-retained',sourceWayId:existingGateRoad.edge.wayId,
     gate:gate.toArray(),roadGap:Math.sqrt(existingGateRoad.distance),duplicateDrivewaysAdded:0};
   }else{
@@ -1280,7 +1334,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  const lowerAprons=createInterchangeAprons(roadGraph);
  for(const apron of lowerAprons){
   highwayAsphalt.patch(apron.triangles,apron.mask);
-  for(const curb of apron.curbs)shoulder.ribbon(curb,ROAD_STYLE.shoulderExtra,-.055-HIGHWAY_ASPHALT_LIFT);
+  for(const curb of apron.curbs)shoulder.ribbon(curb,ROAD_STYLE.shoulderExtra,-ROAD_SHOULDER_DROP-HIGHWAY_ASPHALT_LIFT);
  }
  checkpoint('aprons');
  batches.forEach(b=>b.flush());
@@ -1337,9 +1391,18 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   if(!root.userData.mik112Model?.railHeadEntries?.length)return {connected:false};
   const tracks=createMik112RailApproaches(root,mikRailSourcePlan,{headY:RAIL_PROFILE.headY});
   const forward=V(0,0,-1).applyQuaternion(root.getWorldQuaternion(new THREE.Quaternion()));
-  for(const track of tracks){const points=track.points.map(p=>p.clone().add(V(0,-RAIL_PROFILE.headY,0)));
-   drawRail(points,false,true,RAIL_PROFILE.gauge,null,(p,fallback)=>p.distanceToSquared(points[0])<1e-10?forward:p.distanceToSquared(points.at(-1))<1e-10?V(...track.sourceTangent):fallback,'start');
+  const heightField=createMik112RailGroundProfile(tracks,forward,{headY:RAIL_PROFILE.headY,halfWidth:RAIL_PROFILE.ballastWidth/2});
+  const baseHeightAt=(x,z)=>transportGroundSupportHeightAt({heightField},x,z);
+  for(const track of tracks){
+   for(const p of track.points)p.y=baseHeightAt(p.x,p.z)+RAIL_PROFILE.headY;
+   track.curveSamples=track.points.map(p=>p.toArray());track.modelHeadGap=track.points[0].distanceTo(V(...track.start));track.junctionGap=track.points.at(-1).distanceTo(V(...track.end));
   }
+  for(const track of tracks){const points=track.points.map(p=>p.clone().add(V(0,-RAIL_PROFILE.headY,0)));
+   const frame=(p,fallback)=>p.distanceToSquared(points[0])<1e-10?forward:p.distanceToSquared(points.at(-1))<1e-10?V(...track.sourceTangent):fallback;
+   const runs=drawRail(points,false,true,RAIL_PROFILE.gauge,null,frame,'start',baseHeightAt);
+   recordGroundSupport('mik112-rail-'+track.trackIndex,'pad-112','track-'+track.trackIndex,runs,frame,heightField);
+  }
+  refreshGroundSupports();
   for(const b of [ballast,ties,steel])b.flush();connections+=tracks.length;
   return {connected:true,tracks:tracks.map(({points,...track})=>track),joinGap:Math.max(...tracks.map(track=>track.junctionGap)),version:mikRailSourcePlan.version,
    sourceRoutes:mikRailSourcePlan.gates.map(gate=>'osm-rail-'+gate.sourceWayId),sourceSwitches:mikRailSourcePlan.gates.map(gate=>gate.sourceNodeId),
@@ -1352,11 +1415,12 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
  // Roadside crossing signals also cover museum-only late driveways.
  const crossingIndex=buildRailRoadIndex(markingRoads,{railHalfWidth:RAIL_PROFILE.ballastWidth/2});
  const crossingSigns=buildRailCrossingSignals({crossings:findRailRoadCrossings(railPaths,crossingIndex),parent:roadRoot,roadIndex:crossingIndex});
+ refreshGroundSupports();
  checkpoint('complete');
  const buildMilliseconds=Date.now()-started;
  return {roadPaths:()=>roadPaths,
   editableRoadPaths:()=>[...editableRoadPaths,...roadPaths.filter(r=>r.source!=='OpenStreetMap'&&r.points?.length>1&&!r.id.startsWith('r-south-'))],
-  terrainPaths:()=>({roads:markingRoads,rails:terrainRailPaths}),trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,highwayDisplay,
+  terrainPaths:()=>({roads:markingRoads,rails:terrainRailPaths}),groundSupports:()=>groundSupportProfiles,trainPath:()=>train,stationLabels:()=>stationLabels,connectMik112,roadMarkingPlan,highwayDisplay,
   roadMarkingTarget(nodeId){const node=roadGraph.nodes.get(String(nodeId));return node?{nodeId:node.id,center:node.position.toArray(),sourceWayIds:[...new Set(node.edges.map(edge=>edge.wayId))]}:null;},
   bridgeObjects:()=>interchangeBridge?[interchangeBridge.root]:[],
   setBridgeEvening:value=>interchangeBridge?.setEvening(value),
@@ -1364,7 +1428,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
   routes:{road:roadPaths.map(r=>({id:r.id,points:r.points.map(p=>[(p.x/3.4)+650,(p.z/3.4)+522.5])})),rail:railPaths},
   stats:()=>({buildPhases:buildPhases.map(p=>({...p})),version:'osm-transport-v1',source:'OpenStreetMap',sourceTimestamp:data.roads.osmBaseTimestamp,confidence:'osm-source-node-topology',roadFeatureCount:data.roads.features.length,railFeatureCount:data.railways.features.length,
    roadRoutes:roadGraph.ways.length,railRoutes:railGraph.ways.length,roadNodes:roadGraph.nodes.size,railNodes:railGraph.nodes.size,roadComponents:roadGraph.components.length,railComponents:railGraph.components.length,
-   roadSurface:{version:'osm-batched-upward-terrain-surfaces-v2',junctionCount,markingSegments,roads:renderedRoadWays.size,paintLift:HIGHWAY_MARKINGS.lift-HIGHWAY_ASPHALT_LIFT,sampleStep:1.4,normalDirection:'upward',terrainClearance:.38,
+   roadSurface:{version:'osm-batched-upward-terrain-surfaces-v2',groundVersion:TRANSPORT_GROUND_VERSION,groundDatum:TRANSPORT_GROUND_Y,pavementDatum:ROAD_SURFACE_Y,junctionCount,markingSegments,roads:renderedRoadWays.size,paintLift:HIGHWAY_MARKINGS.lift-HIGHWAY_ASPHALT_LIFT,sampleStep:1.4,normalDirection:'upward',terrainClearance:ROAD_SURFACE_CLEARANCE,
     markings:roadMarkingPlan.stats,local:roadGraph.localRoadSurface,
     highway:{...roadGraph.highwaySurface,displayExtensions:highwayDisplay.stats(),asphaltColor:'#'+HIGHWAY_ASPHALT_COLOR.toString(16),asphaltLift:HIGHWAY_ASPHALT_LIFT,sharedWithBridge:true,clippedOverlapSections:highwayAsphalt.clippedSections,ordinarySurfaceClip,
      lowerJunctionAprons:{version:INTERCHANGE_APRON_VERSION,junctions:lowerAprons.map(apron=>apron.report)},
@@ -1372,7 +1436,7 @@ export function buildOsmTransportNetwork({data,legacyData,geography,point,layers
       yellowTriangles:highwayYellow.triangles,whiteTriangles:highwayWhite.triangles,bridgeBoundary:'exact-profile-seams',lanePolicy:'source-lanes-and-direction',junctionPolicy:roadMarkingPlan.stats.version}},
     continuousThroughRoads:[{sourceWayId:INDUSTRIAL_THROUGH_ROAD,siteIds:[...INDUSTRIAL_THROUGH_SITES],renderedRuns:roadPaths.filter(r=>r.source==='OpenStreetMap'&&r.osmWayIds?.includes(INDUSTRIAL_THROUGH_ROAD)).length}]},junctionCount,markingSegments,railTies,railGauge:RAIL_PROFILE.gauge,
    railProfile:RAIL_PROFILE,branchSimplification:{version:'terminal-branches-v2',road:roadPruning.stats,rail:railPruning.stats},renderedRailWays:renderedRailWays.size,site5HiddenRailWays:[...site5HiddenRailWays],
-   railSurface:{...railSurface.stats,groundDatum:RAIL_NETWORK_GROUND_Y,bridgeRise:5.8,trainUsesSharedSurface:true},
+   railSurface:{...railSurface.stats,groundVersion:TRANSPORT_GROUND_VERSION,groundDatum:RAIL_NETWORK_GROUND_Y,bridgeRise:5.8,trainUsesSharedSurface:true,solidBallast:true,groundSupports:groundSupportResult?.stats},
    railCrossings:railCrossings.stats,railRoadClearance:{...railRoadClearance,crossings:railRoadClearance.crossings.length,pad5Straightening:pad5RailStraightening},
     railCrossingSignals:{count:crossingSigns.count,crossings:crossingSigns.crossings},
    railBuildingClearance:railSiteClearance.stats(),

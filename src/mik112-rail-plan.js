@@ -107,3 +107,24 @@ export function createMik112RailApproaches(root,sourcePlan,{headY,sampleStep=.4}
  }
  return tracks;
 }
+
+// The four fixed model ports share one transverse plane. Their X/Z curves
+// overlap at the two switches, so their physical beds must use one height
+// field, not independent Bezier parameters. Reach the level source surface
+// before its nearest full ballast rim; every model/source head seam stays
+// exactly flat and at its authored height.
+export function createMik112RailGroundProfile(tracks,forward,{headY,halfWidth}={}){
+ if(tracks.length!==4||!Number.isFinite(headY)||!(halfWidth>0))throw Error('MIK ground grade requires four complete rail ports');
+ const direction=forward.clone().setY(0).normalize(),origin=tracks[0].start,
+  startY=origin[1]-headY,endY=tracks[0].end[1]-headY;
+ const station=p=>(p[0]-origin[0])*direction.x+(p[2]-origin[2])*direction.z;
+ let length=Infinity;
+ for(const track of tracks){
+  if(Math.abs(station(track.start))>1e-6||Math.abs(track.start[1]-headY-startY)>1e-6||Math.abs(track.end[1]-headY-endY)>1e-6)
+   throw Error('MIK rail ports no longer share their approved start/source planes');
+  const tangent=V(...track.sourceTangent).setY(0).normalize(),normal=V(-tangent.z,0,tangent.x);
+  length=Math.min(length,station(track.end)-Math.abs(normal.dot(direction))*halfWidth);
+ }
+ if(!(length>.1&&Number.isFinite(length)))throw Error('MIK ground grade has no exterior transition length');
+ return {kind:'model-port-plane-grade-v1',origin:[origin[0],origin[2]],direction:[direction.x,direction.z],startY,endY,length};
+}

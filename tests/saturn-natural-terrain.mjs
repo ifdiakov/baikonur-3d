@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import {TRANSPORT_GROUND_Y} from '../src/transport-ground-profile.js';
 import {buildSaturnIP5} from '../src/saturn-structures.js';
 import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample,
  saturnTerrainOuterRadius,saturnTerrainFootprint,saturnTerrainMeshHeight,addSaturnNorthwestGate} from '../src/saturn-access.js';
@@ -9,7 +10,8 @@ const near=(actual,expected,tolerance,message)=>assert.ok(Math.abs(actual-expect
 const sample=saturnTerrainSample;
 // These are the approved, pre-change station elevations and access points.
 // The new terrain must fit them; moving the structures is not a substitute.
-const summit=7.25,scale=.525,elevation=17.45,base=-20/scale-.22;
+const summit=7.25,scale=.525,elevation=17.45,base=(TRANSPORT_GROUND_Y-elevation)/scale;
+near(elevation+scale*base,TRANSPORT_GROUND_Y,1e-12,'The hill foot meets actual steppe without an opacity-boundary step');
 assert.equal(SATURN_ACCESS.verticalRaise,20);
 assert.equal(SATURN_ACCESS.scale,scale);assert.equal(SATURN_ACCESS.elevation,elevation);
 assert.deepEqual(SATURN_ACCESS.gate,{x:-96,y:7.59,z:-79});

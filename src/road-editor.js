@@ -1,20 +1,26 @@
+import {TRANSPORT_GROUND_VERSION} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
+import {groundRoadEdits} from './road-ground-contact.js?v=20261114-ground-contact-v1';
 import * as THREE from 'three';
-import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261103-road-editor-core-v4';
-import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261109-owner19-v3';
-import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261109-owner19-v3';
-import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261103-road-parity-v3';
+import {ROAD_EDITOR_VERSION,ROAD_EDITOR_STORAGE,ROAD_EDITOR_LIMITS,validateRoadEdits,reconcileRoadEdits,nearestRoadSegment,roadSection} from './road-editor-core.js?v=20261114-ground-contact-v1';
+import {stitchEditedRoads,buildEditedRoadMeshes,ROAD_EDIT_MESH_VERSION} from './road-editor-mesh.js?v=20261114-ground-contact-v1';
+import {partitionRoadMaskStrokes,roadMaskTileBounds,roadMaskCoverageWidth,ROAD_MASK_TILE_COUNT} from './road-mask-tiles.js?v=20261114-ground-contact-v1';
+import {deriveEditedRoadStyle,ROAD_EDIT_STYLE_VERSION} from './road-editor-style.js?v=20261114-ground-contact-v1';
 import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry,ROAD_GEOMETRY_CUT_VERSION} from './road-geometry-cut.js?v=20261109-owner19-v3';
 
 // Edit just the museum display. All original OSM coordinates/topology stay intact.
 // A small alpha texture clips existing batched road pavement and paint without
 // replacing each source way with thousands of individual draw calls.
-export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange,onChange=()=>{},terrainHeightAt=null,defaultEdits=null,readOnly=false}){
+export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roads,button,onActiveChange,onChange=()=>{},terrainHeightAt=null,groundSupports=[],defaultEdits=null,readOnly=false}){
  const base=roads.filter(r=>r?.points?.length>1).map(r=>({
   id:String(r.id),width:Math.max(1,Number(r.width)||2),
   points:r.points.map(p=>Array.isArray(p)?[...p]:[p.x,p.y,p.z]),
   source:r.source,tags:r.tags||{},marked:r.marked===true,highway:r.highway===true,
   surface:r.surface||'asphalt'
  }));
+ function readEdits(input){
+  const valid=validateRoadEdits(input);
+  return valid.groundVersion===TRANSPORT_GROUND_VERSION?valid:groundRoadEdits(valid,base,terrainHeightAt);
+ }
  const state={version:ROAD_EDITOR_VERSION,added:[],hidden:[]};
  let active=false,mode='draw',draft=[],history=[],future=[],nextId=1,clearPending=false;
  let routes=base,mouseDown=null;
@@ -32,6 +38,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   ground:originalMaterial('OSM · грунтовые проезды',0xb2a58d),
   highway:originalMaterial('OSM · асфальт трассы',0x555751),
   shoulder:originalMaterial('OSM · единые обочины',0xc5c1b4),
+  support:new THREE.MeshStandardMaterial({color:0xa99c83,roughness:1,metalness:0,side:THREE.DoubleSide}),
   paintWhite:originalMaterial('OSM · разметка',0xf2f0e4),
   paintYellow:originalMaterial('Трасса · двойная жёлтая',0xe2b746)
  };
@@ -138,7 +145,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  const hint=panel.querySelector('#roadEditorHelp');
  const buttons={finish:panel.querySelector('[data-action="finish"]'),cancel:panel.querySelector('[data-action="cancel"]'),
   undo:panel.querySelector('[data-action="undo"]'),redo:panel.querySelector('[data-action="redo"]'),clear:panel.querySelector('[data-action="clear"]')};
- const clone=()=>({version:ROAD_EDITOR_VERSION,added:state.added.map(r=>({...r,points:r.points.map(p=>[...p])})),
+ const clone=()=>({version:ROAD_EDITOR_VERSION,groundVersion:TRANSPORT_GROUND_VERSION,added:state.added.map(r=>({...r,points:r.points.map(p=>[...p])})),
   hidden:state.hidden.map(r=>({...r,points:r.points.map(p=>[...p])}))});
  function persist(){
   try{localStorage.setItem(ROAD_EDITOR_STORAGE,JSON.stringify({...clone(),baselineRevision:baselineData?.revision||null}));return true;}
@@ -172,7 +179,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    widthStart:r.profile.widthStart,widthEnd:r.profile.widthEnd,
    marking:r.profile.marking,marked:r.profile.marked,
    sourceStart:r.profile.matching.start,sourceEnd:r.profile.matching.end}));
-  const built=buildEditedRoadMeshes(styled,{terrainHeightAt,existingRoads:base});
+  const built=buildEditedRoadMeshes(styled,{terrainHeightAt,existingRoads:base,groundSupports,followTerrain:true});
   joinedPaths=built.paths;
   geometryStats=built.stats;
   routes=[...base,...joinedPaths];
@@ -181,6 +188,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    const material=surfaceMaterials[type];
    const mesh=new THREE.Mesh(g,material);mesh.name='Единое полотно редактора · '+type;
    mesh.receiveShadow=true;editingGroup.add(mesh);
+    if(type==='support')mesh.userData.roadGroundSupport=true;
   }
  }
  function applyMask(){
@@ -375,7 +383,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
    case 'clear':clear();break;
    case 'baseline':{
     if(!baselineData){status.textContent='Эталонная схема ещё не загружена.';break;}
-    checkpoint();Object.assign(state,validateRoadEdits(baselineData));draft=[];
+    checkpoint();Object.assign(state,readEdits(baselineData));draft=[];
     nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
     render();status.textContent='Эталонная дорожная схема восстановлена.';break;
    }
@@ -391,7 +399,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
   const file=e.target.files?.[0];if(!file)return;
   try{
    if(file.size>3000000)throw Error('Файл слишком большой.');
-   const loaded=validateRoadEdits(JSON.parse(await file.text()));checkpoint();Object.assign(state,loaded);
+   const loaded=readEdits(JSON.parse(await file.text()));checkpoint();Object.assign(state,loaded);
    nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));draft=[];render();
    status.textContent='Схема импортирована: '+state.added.length+' дорог, скрыто '+state.hidden.length+' участков.';
   }catch(error){status.textContent='Ошибка импорта: '+error.message;}
@@ -406,15 +414,15 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
  });
  }
  try{
-  baselineData=defaultEdits?{...validateRoadEdits(defaultEdits),revision:defaultEdits.revision||null}:null;
+  baselineData=defaultEdits?{...readEdits(defaultEdits),revision:defaultEdits.revision||null,groundVersion:TRANSPORT_GROUND_VERSION}:null;
   const saved=localStorage.getItem(ROAD_EDITOR_STORAGE);
   // The public museum is read-only. Its canonical GitHub scheme takes
   // precedence over stale browser localStorage left by the old road editor.
   // In particular, never resurrect road-7 or old Site 250A surface cuts.
   // In the editable workshop, retain existing local roads as before.
-  if(readOnly&&baselineData){Object.assign(state,validateRoadEdits(baselineData));}
+  if(readOnly&&baselineData){Object.assign(state,readEdits(baselineData));}
   else if(saved){
-   const snapshot=JSON.parse(saved),local=validateRoadEdits(snapshot);
+   const snapshot=JSON.parse(saved),local=readEdits(snapshot);
    Object.assign(state,local);
    // A newer authoritative owner scheme must be visible even to visitors
    // whose browser still holds edits from the preceding release.
@@ -428,7 +436,7 @@ export function createRoadEditor({root,camera,canvas,groundMeshes,roadMeshes,roa
     }
     Object.assign(state,reconcileRoadEdits(local,baselineData));
    }
-  }else if(baselineData){Object.assign(state,validateRoadEdits(baselineData));}
+  }else if(baselineData){Object.assign(state,readEdits(baselineData));}
   nextId=Math.max(1,...state.added.map(r=>Number(r.id.match(/\d+$/)?.[0]||0)+1));
  }catch{status.textContent='Сохранённая схема повреждена. Импортируйте её из JSON или очистите правки.';}
  if(!readOnly)button?.addEventListener('click',()=>setActive(!active));

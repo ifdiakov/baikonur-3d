@@ -1,9 +1,10 @@
+import {ROAD_SHOULDER_DROP} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 // Road editor appearance is a function of the adjoining built OSM network,
 // not a separate design system. Keep this helper independent of Three.js so
 // that road joins/width inheritance can be validated without a GPU.
 export const ROAD_EDIT_STYLE_VERSION='neighbour-road-parity-v1';
 export const ROAD_EDIT_SHOULDER_EXTRA=.6;
-export const ROAD_EDIT_SHOULDER_LIFT=-.055;
+export const ROAD_EDIT_SHOULDER_LIFT=-ROAD_SHOULDER_DROP;
 export const ROAD_EDIT_SURFACE_LIFT=.006;
 export const ROAD_EDIT_HIGHWAY_LIFT=.006;
 export const ROAD_EDIT_PAINT_LIFT=.017;

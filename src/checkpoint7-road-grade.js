@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {checkpointRoadProjection} from './checkpoint7-layout.js?v=20261103-checkpoint7-flat-v2';
+import {TRANSPORT_GROUND_Y,ROAD_SURFACE_CLEARANCE,ROAD_SURFACE_Y} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 
 export const CHECKPOINT7_GRADE_VERSION='checkpoint7-flat-ground-v2';
 const smooth=t=>{t=THREE.MathUtils.clamp(t,0,1);return t*t*t*(t*(t*6-15)+10);};
@@ -7,7 +8,7 @@ const smooth=t=>{t=THREE.MathUtils.clamp(t,0,1);return t*t*t*(t*(t*6-15)+10);};
 // Keep the city–cosmodrome centreline. Only its elevation around the checkpoint
 // changes: asphalt rests on the existing flat ground, with eased end joins.
 export function createCheckpoint7RoadGrade(placement){
- const baseY=-2.755,roadLift=.025,axis=placement.roadAxis.map(p=>new THREE.Vector3(...p));
+ const baseY=TRANSPORT_GROUND_Y,roadLift=ROAD_SURFACE_CLEARANCE,axis=placement.roadAxis.map(p=>new THREE.Vector3(...p));
  const length=axis.slice(1).reduce((n,p,i)=>n+p.distanceTo(axis[i]),0),first=18,last=length-18;
  const shoulder=placement.roadWidth/2+.7,reach=shoulder+16;
  const bounds={minX:Math.min(...axis.map(p=>p.x))-reach,maxX:Math.max(...axis.map(p=>p.x))+reach,minZ:Math.min(...axis.map(p=>p.z))-reach,maxZ:Math.max(...axis.map(p=>p.z))+reach};
@@ -19,7 +20,9 @@ export function createCheckpoint7RoadGrade(placement){
   return smooth(Math.min(at.along-first,last-at.along)/14)*(1-smooth((at.distance-shoulder)/16));
  }
  function roadAt(x,z){
-  const blend=weightAt(x,z);return blend>0?THREE.MathUtils.lerp(placement.position[1],baseY+roadLift,blend):null;
+  // The surrounding source roads now share this ground datum. The raw OSM
+  // placement height must not reintroduce the former raised approach ramps.
+  return weightAt(x,z)>0?ROAD_SURFACE_Y:null;
  }
  function conform(points){
   const result=[];

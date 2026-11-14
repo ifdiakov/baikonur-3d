@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {applyHighwayDisplayFade} from './highway-display.js?v=20261102-site2-photo-v3';
+import {applyHighwayDisplayFade} from './highway-display.js?v=20261114-ground-contact-v1';
 // Lossless typed buffers: no quantization, simplification, model or material changes.
 export function packGeometry(geometry,{copy=false}={}){
  const attr=a=>a?{array:copy?a.array.slice():a.array,itemSize:a.itemSize,normalized:a.normalized,usage:a.usage,instanced:!!a.isInstancedBufferAttribute,meshPerAttribute:a.meshPerAttribute}:null;

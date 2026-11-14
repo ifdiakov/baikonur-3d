@@ -1,5 +1,5 @@
-import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261101-saturn-terrain-v5';
-import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261101-saturn-terrain-v5';
+import { buildSaturnIP5 as buildStructures } from './saturn-structures.js?v=20261114-ground-contact-v1';
+import { SATURN_ACCESS, addSaturnNorthwestGate } from './saturn-access.js?v=20261114-ground-contact-v1';
 
 // Photo-based structures retain the shared northwest entrance and hill datum.
 export function buildSaturnIP5(root,terrain={}) {

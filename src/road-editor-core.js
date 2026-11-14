@@ -1,4 +1,5 @@
 // Pure, deterministic road-editor state. OSM source remains immutable.
+import {TRANSPORT_GROUND_VERSION} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 export const ROAD_EDITOR_VERSION=1;
 export const ROAD_EDITOR_STORAGE='rockettrip-baikonur-road-editor-v1';
 export const ROAD_EDITOR_LIMITS=Object.freeze({roads:250,hidden:350,pointsPerRoad:500,pointsPerCut:700});
@@ -24,7 +25,11 @@ export function validateRoadEdits(data){
   if(!finite(r.width)||r.width<1||r.width>30||typeof r.sourceId!=='string'||r.sourceId.length>180)throw Error('Некорректный удалённый участок.');
   return {sourceId:r.sourceId,width:r.width,points:points(r.points,ROAD_EDITOR_LIMITS.pointsPerCut)};
  });
- return {version:ROAD_EDITOR_VERSION,added,hidden};
+ // Keep only the ground policy this build understands. Workshop validation,
+ // import and Undo all pass through here before returning to the road editor.
+ const validated={version:ROAD_EDITOR_VERSION,added,hidden};
+ if(data.groundVersion===TRANSPORT_GROUND_VERSION)validated.groundVersion=TRANSPORT_GROUND_VERSION;
+ return validated;
 }
 export function nearestRoadSegment(roads,position,{maxDistance=Infinity,skip=()=>false}={}){
  let best=null;
@@ -64,9 +69,10 @@ export function roadSection(road,centerAt,span=30){
 // a few millimetres of file-coordinate rounding.
 export function reconcileRoadEdits(localInput,baselineInput){
  const local=validateRoadEdits(localInput),baseline=validateRoadEdits(baselineInput);
+ let copiedBaseline=false;
  const ids=new Set(local.added.map(r=>r.id));
  for(const r of baseline.added)if(!ids.has(r.id)&&local.added.length<ROAD_EDITOR_LIMITS.roads){
-  local.added.push({...r,points:r.points.map(p=>[...p])});ids.add(r.id);
+  local.added.push({...r,points:r.points.map(p=>[...p])});ids.add(r.id);copiedBaseline=true;
  }
  const close=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])<.015;
  const sameCut=(a,b)=>a.sourceId===b.sourceId&&Math.abs(a.width-b.width)<.01&&(
@@ -81,7 +87,9 @@ export function reconcileRoadEdits(localInput,baselineInput){
   }
   if(matchingIndex>=0){used.add(matchingIndex);continue;}
   if(local.hidden.length>=ROAD_EDITOR_LIMITS.hidden)break;
-  local.hidden.push({...h,points:h.points.map(p=>[...p])});used.add(local.hidden.length-1);
+  local.hidden.push({...h,points:h.points.map(p=>[...p])});used.add(local.hidden.length-1);copiedBaseline=true;
  }
+ // A current local marker cannot certify newly merged legacy coordinates.
+ if(copiedBaseline&&baseline.groundVersion!==local.groundVersion)delete local.groundVersion;
  return local;
 }

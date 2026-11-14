@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {TRANSPORT_GROUND_VERSION} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 import {polishCachedOwnerAd} from './owner-ad-refinements.js?v=20261109-owner19-v3';
 import {shapeOwnerRail} from './owner-rail-curves.js?v=20261109-owner19-v3';
 import {clipSingleRailAccess,clipPad5DuplicateRail} from './site-single-rail-access.js?v=20261108-pad5-rail-clip-v2';
@@ -6,7 +7,7 @@ import {roundRailCorners} from './rail-road-clearance.js?v=20261108-all-rail-cur
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
 
 export const TRANSPORT_BAKE_VERSION='transport-geometry-bake-v1';
-const fingerprint='road-lod-prebuilt-v1;geometry-v3;site250a-ukss-passing-road-v1';
+const fingerprint='road-lod-prebuilt-v1;geometry-v4;site250a-ukss-passing-road-v1;'+TRANSPORT_GROUND_VERSION;
 export function transportSourceFingerprint({roads,railways,ownerRoadEdits,siteRecords}){
  // Fast deterministic FNV-1a of the EXACT topology and owner-specified
  // display anchors, so changed roads cannot silently use an obsolete bake.
@@ -19,7 +20,7 @@ export function transportSourceFingerprint({roads,railways,ownerRoadEdits,siteRe
 const quantize=value=>Math.round(value*1000)/1000;
 function simplifyPoints(points,deviation){
  if(!deviation||points.length<3)return points;
- const sq=deviation*deviation,keep=new Set([0,points.length-1]),stack=[[0,points.length-1]];
+ const sq=deviation*deviation,verticalSq=.005**2,keep=new Set([0,points.length-1]),stack=[[0,points.length-1]];
  while(stack.length){
   const [first,last]=stack.pop(),a=points[first],b=points[last];
   const dx=b[0]-a[0],dy=b[1]-a[1],dz=b[2]-a[2],den=dx*dx+dy*dy+dz*dz;
@@ -27,18 +28,21 @@ function simplifyPoints(points,deviation){
   for(let i=first+1;i<last;i++){
    const p=points[i],u=den?Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy+(p[2]-a[2])*dz)/den)):0;
    const x=p[0]-a[0]-u*dx,y=p[1]-a[1]-u*dy,z=p[2]-a[2]-u*dz;
-   const d=x*x+y*y+z*z;if(d>best){best=d;index=i;}
+   // The roadway is only 0.025 above ground. A permissive overview X/Z
+   // tolerance must never erase the independent small vertical profile.
+   const d=Math.max((x*x+y*y+z*z)/sq,y*y/verticalSq);if(d>best){best=d;index=i;}
   }
-  if(best>sq&&index>first&&index<last){keep.add(index);stack.push([first,index],[index,last]);}
+  if(best>1&&index>first&&index<last){keep.add(index);stack.push([first,index],[index,last]);}
  }
  return [...keep].sort((a,b)=>a-b).map(i=>points[i]);
 }
 const packPath=(path,deviation=0)=>{
  const props={};
- for(const key of ['id','sourceWayId','abandoned','label','width','source','vehicleScale','osmWayIds','nodeIds','bridgeDistance','routeIds','joinGap','rampStart','rampEnd','tags','marked','surface','highway','gauge','sections','joins','from','to']){
+ for(const key of ['id','sourceWayId','groundSupportId','abandoned','label','width','source','vehicleScale','osmWayIds','nodeIds','bridgeDistance','routeIds','joinGap','rampStart','rampEnd','tags','marked','surface','highway','gauge','sections','joins','from','to']){
   if(path[key]!=null&&typeof path[key]!=='function')props[key]=path[key];
  }
- props.points=simplifyPoints((path.points||[]).map(v=>(v.isVector3?v.toArray():Array.isArray(v)?v:[v.x,v.y,v.z]).map(quantize)),deviation);
+ const support=Boolean(path.groundSupportId);
+ props.points=simplifyPoints((path.points||[]).map(v=>(v.isVector3?v.toArray():Array.isArray(v)?v:[v.x,v.y,v.z]).map(support?value=>value:quantize)),support?0:deviation);
  if(path.widthAt&&path.length>0){
   const n=Math.min(128,Math.max(4,Math.ceil(path.length/40)));
   props.widthSamples=Array.from({length:n+1},(_,i)=>path.widthAt(i/n*path.length));
@@ -51,13 +55,14 @@ export function serializeTransport({transport,layers,mik112Rail,sourceFingerprin
  const paths=transport.roadPaths(),plan=paths.osmVehiclePlan,train=transport.trainPath();
  if(!plan?.routes?.length)throw Error('No transport graph to bake');
  const scene={
-  version:TRANSPORT_BAKE_VERSION,fingerprint,sourceFingerprint,displayGradeVersion,
+  version:TRANSPORT_BAKE_VERSION,fingerprint,sourceFingerprint,displayGradeVersion,groundVersion:TRANSPORT_GROUND_VERSION,
   cacheKind:'routes-only',ownerRevision:'20261109-owner19-v2',
   roads:packMany(paths,.02),
   vehicles:{routes:packMany(plan.routes,.015),highway:plan.highway.id,source:plan.source,joins:plan.joins},
   extensions:packMany(paths.displayHighwayExtensions),
   editable:packMany(transport.editableRoadPaths(),.06),
   terrain:{roads:packMany(transport.terrainPaths().roads,.32),rails:packMany(transport.terrainPaths().rails,.16)},
+  groundSupports:JSON.parse(JSON.stringify(transport.groundSupports?.()??[])),
   train:{...train,path:packPath(train.path,.012)},
   stations:transport.stationLabels().map(s=>({id:s.id,name:s.name,osmUrl:s.osmUrl,record:s.record,
    position:s.group.position.toArray(),anchor:s.anchor.position.toArray()})),
@@ -91,7 +96,7 @@ function unpackPath(row,roadGrade=null){
 const unpack=(rows,grade=null)=>rows.map(row=>unpackPath(row,grade));
 export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGrade=null}){
  if(roadGrade?.isBaked?.(bake))roadGrade=roadGrade.cachedGrade??null;
- if(bake?.version!==TRANSPORT_BAKE_VERSION||bake?.fingerprint!==fingerprint)throw Error('Outdated transport bake');
+ if(bake?.version!==TRANSPORT_BAKE_VERSION||bake?.fingerprint!==fingerprint||bake?.groundVersion!==TRANSPORT_GROUND_VERSION)throw Error('Outdated transport bake');
  if(sourceFingerprint!==null&&bake.sourceFingerprint!==sourceFingerprint)throw Error('Source roads or display anchors changed since transport bake');
  if(bake.cacheKind!=='routes-only')throw Error('Full mesh snapshots are disabled; require compact route metadata');
  const roadRoot=new THREE.Group(),railRoot=new THREE.Group();
@@ -135,7 +140,7 @@ export function restoreBakedTransport({bake,layers,sourceFingerprint=null,roadGr
  // Attach only after every required structural object has been validated.
  layers.roads.add(roadRoot);layers.rails.add(railRoot);
  return {roadPaths:()=>paths,editableRoadPaths:()=>unpack(bake.editable,roadGrade),
-  terrainPaths:()=>terrain,trainPath:()=>train,stationLabels:()=>stations,
+  terrainPaths:()=>terrain,groundSupports:()=>bake.groundSupports??[],trainPath:()=>train,stationLabels:()=>stations,
   connectMik112:()=>bake.mik112Rail,roadMarkingPlan:{quads:Array(bake.marking.count),stats:bake.marking.stats},
   highwayDisplay:{stats:()=>bake.highwayDisplay,paths:paths.displayHighwayExtensions},
   roadMarkingTarget:()=>null,bridgeObjects:()=>bridge?[bridge]:[],

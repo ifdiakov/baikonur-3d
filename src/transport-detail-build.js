@@ -1,20 +1,20 @@
 import * as THREE from 'three';
-import {buildOsmTransportNetwork} from './osm-transport.js?v=20261109-owner19-v3';
+import {buildOsmTransportNetwork} from './osm-transport.js?v=20261114-ground-contact-v1';
 import {createMuseumGeography} from './osm-geography.js';
-import {createCheckpoint7RoadGrade} from './checkpoint7-road-grade.js';
-import {createSite113RoadGrade} from './site113-road-grade.js';
-import {createSite95RoadGrade} from './site95-road-grade.js';
+import {createCheckpoint7RoadGrade} from './checkpoint7-road-grade.js?v=20261114-ground-contact-v1';
+import {createSite113RoadGrade} from './site113-road-grade.js?v=20261114-ground-contact-v1';
+import {createSite95RoadGrade} from './site95-road-grade.js?v=20261114-ground-contact-v1';
 import {planRailStations} from './rail-stations.js';
 import {makeRoadSurfaceCutIndex,physicallyCutRoadGeometry} from './road-geometry-cut.js?v=20261109-owner19-v3';
-import {packGeometry,unpackGeometry,packTransportLayers} from './transport-detail-codec.js';
+import {packGeometry,unpackGeometry,packTransportLayers} from './transport-detail-codec.js?v=20261114-ground-contact-v1';
 export function buildTransportDetail(input){
  globalThis.devicePixelRatio=input.pixelRatio||1;
- const {data,legacyData,catalog,matches,siteRecords,checkpointAnchor,mik112,stations}=input;
+ const {data,legacyData,catalog,matches,siteRecords,ownerRoadEdits,checkpointAnchor,mik112,stations}=input;
  const geography=createMuseumGeography({catalog,matches}),point=(x,y,z=0)=>new THREE.Vector3((x-650)*3.4,z,(y-522.5)*3.4);
  const town=id=>{const s=siteRecords.find(s=>s.id===id);return{x:(s.x-650)*3.4,z:(s.y-522.5)*3.4};};
  const grade=createSite95RoadGrade(town('pad-95')).compose(createSite113RoadGrade(town('pad-113')).withCheckpoint(createCheckpoint7RoadGrade(checkpointAnchor)));
  const layers={roads:new THREE.Group(),rails:new THREE.Group()};
- const detail=buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,checkpoint7RoadGrade:grade});
+ const detail=buildOsmTransportNetwork({data,legacyData,geography,point,layers,siteRecords,ownerRoadEdits,checkpoint7RoadGrade:grade});
  if(mik112){const root=new THREE.Group();root.matrix.fromArray(mik112.matrix);root.matrix.decompose(root.position,root.quaternion,root.scale);root.userData.mik112Model=mik112.model;detail.connectMik112(root);}
  detail.setBridgeEvening(true);
  const paths=detail.terrainPaths(),stationPlans=stations?planRailStations(stations.map(s=>({...s,group:{position:new THREE.Vector3(...s.position)}})),paths.rails,paths.roads):null;

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {RAIL_PROFILE} from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';
 import {createSurfacePalette} from './surface-materials.js';
 import {applyMik112PhotoFinishes} from './mik112-materials.js?v=20261110-photo-ruins-v1';
-import {MIK112_RAIL_LAYOUT} from './mik112-rail-plan.js?v=20261111-gates-v2';
+import {MIK112_RAIL_LAYOUT} from './mik112-rail-plan.js?v=20261114-ground-contact-v1';
 import {registerFacilityBeacon} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
 import {buildMik112PhotoDetails} from './mik112-photo-detail.js?v=20261111-facades-v1';
 

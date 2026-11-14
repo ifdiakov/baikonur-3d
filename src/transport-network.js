@@ -1,5 +1,5 @@
 import { buildTransportNetwork as buildBaseNetwork } from './transport-base.js?v=20261102-site2-photo-v3';
-import { SATURN_ACCESS } from './saturn-access.js?v=20261101-saturn-terrain-v5';
+import { SATURN_ACCESS } from './saturn-access.js?v=20261114-ground-contact-v1';
 import { connectedRoadData } from './road-layout.js?v=20261102-site2-photo-v3';
 import { buildSouthInterchange } from './south-interchange.js?v=20261102-site2-photo-v3';
 import { buildGagarinRailApproach } from './gagarin-rail-approach.js?v=20261102-site2-photo-v3';

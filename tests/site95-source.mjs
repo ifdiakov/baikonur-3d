@@ -38,4 +38,5 @@ const samples=grade.conform([new THREE.Vector3(anchor.x-60,.72,anchor.z),new THR
 for(const p of samples)assert.equal(grade.heightAt(p.x,p.z,p.y),p.y,'Cached grade is idempotent');
 const checkpoint=createCheckpoint7RoadGrade({position:[-125,.72,913],roadAxis:[[-125,.72,1002],[-125,.72,824]],roadWidth:3.6,yaw:0,scale:.14});const prior=createSite113RoadGrade({x:0,z:0}).withCheckpoint(checkpoint),composed=grade.compose(prior);
 assert.equal(composed.version,prior.version);assert.equal(composed.isBaked(bake),prior.isBaked(bake));assert.equal(composed.cachedGrade.widthScale('172571792'),1);assert.equal(composed.cachedGrade.conform([new THREE.Vector3(anchor.x,.72,anchor.z)])[0].y,-2.73);
+for(const x of [anchor.x,anchor.x+35,anchor.x+43])assert(Math.abs(composed.roadAt(x,anchor.z)+2.73)<1e-10,'The local fade cannot reintroduce the former raised road datum');
 console.log('SITE95_SOURCE_PASS',JSON.stringify({draws,triangles,buildings:51,windowOpenings:built.features['site95-window']+built.features['site95-end-window']}));

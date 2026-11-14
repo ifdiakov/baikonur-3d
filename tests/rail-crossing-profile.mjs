@@ -7,6 +7,7 @@ import {buildOsmGraph,RAIL_NETWORK_GROUND_Y} from '../src/osm-transport.js';
 import {createMuseumGeography} from '../src/osm-geography.js';
 import {HIGHWAY_ASPHALT_LIFT} from '../src/highway-surface.js';
 import {RAIL_PROFILE} from '../src/rail-profile.js';
+import {ROAD_SURFACE_Y,ROAD_SURFACE_CLEARANCE} from '../src/transport-ground-profile.js';
 
 const GROUND=RAIL_NETWORK_GROUND_Y,HEAD=RAIL_PROFILE.headY,V=(x=0,y=0,z=0)=>new THREE.Vector3(x,y,z);
 const close=(a,b,tolerance=1e-8,message='')=>assert(Math.abs(a-b)<=tolerance,message+': '+a+' versus '+b);
@@ -54,6 +55,17 @@ for(let x=-1.8;x<=1.8;x+=.1)close(heightAt(rail,x)+HEAD,.73,1e-8,'Steel remains 
 close(heightAt(rail,-150),GROUND);close(heightAt(rail,150),GROUND);
 const basicMetrics=checkBounds(rail);
 for(let i=1;i<rail.edges.length;i++)close(rail.edges[i-1].surfaceTangents[1].dot(rail.edges[i].surfaceTangents[0]),1,1e-8,'C1 through source nodes');
+
+// Grounded pavement and the physical railway cross-section have different
+// top surfaces. Keep the ballast datum on soil; do not bury rail geometry to
+// satisfy the legacy rounded 0.05 head/asphalt bound used for raised roads.
+const groundRail=line([-120,0,120]),groundRoad=fixture();roadAt(groundRoad,'r1',0,{y:ROAD_SURFACE_Y});
+const groundPlan=profile(groundRail,groundRoad,[levelPoint('r1')]);smoothRailGraph(groundRail);
+const groundedHeadGap=HEAD-ROAD_SURFACE_CLEARANCE;
+close(groundPlan.stats.crossings[0].roadTopY,GROUND+ROAD_SURFACE_CLEARANCE);
+close(groundPlan.stats.crossings[0].actualHeadY-groundPlan.stats.crossings[0].roadTopY,groundedHeadGap);
+for(let x=-120;x<=120;x+=.5)close(heightAt(groundRail,x),GROUND,1e-8,'Grounded crossing keeps its ballast on soil');
+const actualHeadGapLimit=Math.max(.05,groundedHeadGap)+1e-8;
 
 // The actual archive contains a 537.8-world source edge between two level
 // crossings. Display-only vertical knots must restore ground in its middle.
@@ -164,7 +176,7 @@ const started=performance.now(),realPlan=profile(real,roads,rawPoints.features),
 assert.equal(immutable(real),realBefore);assert.equal(JSON.stringify({rawRail,rawRoad,rawPoints}),rawBefore);
 const required=['1833467958','1833467552','1833284716','1833467226'];
 for(const id of required){const record=realPlan.stats.crossings.find(row=>row.nodeId===id);assert(record,'Missing real train crossing '+id);assert.equal(record.source,'osm-level-crossing');
- assert(record.actualHeadY>=record.roadTopY+.009999&&record.actualHeadY<=record.roadTopY+.05,'Train crossing height must be on top of asphalt: '+id);
+ assert(record.actualHeadY>=record.roadTopY+.009999&&record.actualHeadY<=record.roadTopY+actualHeadGapLimit,'Train crossing must retain its physical head/asphalt separation: '+id);
 }
 let protectedBridgeNodes=0;
 for(const node of real.nodes.values()){assert(node.position.y>=baseY.get(node)-1e-10);if(node.raise){protectedBridgeNodes++;if(node.raise===5.8)close(node.position.y,baseY.get(node),1e-8);}}
@@ -179,7 +191,7 @@ assert(corridorRow?.roadWayIds.includes('173082916'),'The real midpoint is cover
 const midpoint=sparseEdge.a.position.clone().lerp(sparseEdge.b.position,.5),ps=sparseEdge.surfacePoints;
 let nearest=Infinity,midpointHead=null;
 for(let i=1;i<ps.length;i++){const near=new THREE.Line3(ps[i-1],ps[i]).closestPointToPoint(midpoint,true,V()),distance=Math.hypot(near.x-midpoint.x,near.z-midpoint.z);if(distance<nearest){nearest=distance;midpointHead=near.y+HEAD;}}
-assert(nearest<.36);assert(midpointHead>=corridorRow.roadTopY+.009999&&midpointHead<=corridorRow.roadTopY+.05,'Real sparse midpoint clears the adjacent pavement');
+assert(nearest<.36);assert(midpointHead>=corridorRow.roadTopY+.009999&&midpointHead<=corridorRow.roadTopY+actualHeadGapLimit,'Real sparse midpoint clears the adjacent pavement');
 const route={nodes:[sparseEdge.a,sparseEdge.b],edges:[sparseEdge]},forward=graphRailRoutePoints(route),reverse=graphRailRoutePoints({nodes:[...route.nodes].reverse(),edges:route.edges}).reverse();
 assert.deepEqual(forward.map(p=>p.toArray()),reverse.map(p=>p.toArray()));
 console.log('RAIL_CROSSING_PROFILE_PASS',JSON.stringify({version:RAIL_CROSSING_PROFILE_VERSION,basic:basicMetrics,sparseSamples:sparse.edges[1].surfacePoints.length,

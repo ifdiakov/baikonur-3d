@@ -1,5 +1,5 @@
 import fs from 'node:fs';import {gzipSync,gunzipSync} from 'node:zlib';import {createHash} from 'node:crypto';import {execFileSync} from 'node:child_process';import {chromium} from 'playwright';
-const files=['src/transport-bake.js','src/osm-transport.js','src/owner-ad-refinements.js','src/owner-rail-curves.js','src/owner19-surface-ownership.js','src/site113-road-grade.js','src/osm-geography.js','data/road-edits-authoritative-20261103.json'];
+const files=['src/transport-bake.js','src/osm-transport.js','src/transport-ground-profile.js','src/transport-terrain-height.js','src/transport-ground-support.js','src/mik112-rail-plan.js','src/saturn-access.js','src/rail-profile.js','src/owner-ad-refinements.js','src/owner-rail-curves.js','src/owner19-surface-ownership.js','src/checkpoint7-road-grade.js','src/checkpoint7-layout.js','src/site113-road-grade.js','src/site95-road-grade.js','src/shared-silo-hill.js','src/osm-geography.js','data/road-edits-authoritative-20261103.json'];
 const digest=createHash('sha256');for(const f of files)digest.update(f).update(fs.readFileSync(f));const hash=digest.digest('hex');
 const target='data/osm/transport-geometry-bake-v1.json.gz';
 try{if(JSON.parse(gunzipSync(fs.readFileSync(target))).ownerSourceHash===hash){console.log('OWNER19_CACHES_ALREADY_MATCH',hash);process.exit(0);}}catch{}

@@ -2,10 +2,11 @@ import * as THREE from 'three';
 import {archiveKit} from './archive-kit.js?v=20261102-site2-photo-v3';
 import {projectOsm} from './osm-geography.js';
 import {SITE94_STREETS} from './site94-streets.js?v=20261112-site94-94a-photo-v1';
+import {ROAD_SURFACE_Y} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 export function connectSite94(root,roads=[]){
  const data=root.userData.site94Model;if(!data)return;root.updateWorldMatrix(true,true);
  const road=roads.find(r=>r.osmWayIds?.some(id=>String(id)==='172710451')||r.id==='osm-road-172710451');
- const source=road?.points?.[0],join=projectOsm(62.8602042,46.0641567),world=new THREE.Vector3((join[0]-650)*3.4,source?(Array.isArray(source)?source[1]:source.y):.72,(join[1]-522.5)*3.4),local=root.worldToLocal(world);
+ const source=road?.points?.[0],join=projectOsm(62.8602042,46.0641567),world=new THREE.Vector3((join[0]-650)*3.4,source?(Array.isArray(source)?source[1]:source.y):ROAD_SURFACE_Y,(join[1]-522.5)*3.4),local=root.worldToLocal(world);
  const grade=(x,z)=>.045+(local.y-.045)*(1-THREE.MathUtils.smoothstep(Math.hypot(x-local.x,z-local.z),0,160));
  const boundary=SITE94_STREETS.boundary.flatMap(p=>[p.outer,...p.holes]);
  const distance=(x,z)=>{let best=Infinity;for(const ring of boundary)for(let i=1;i<ring.length;i++){const a=ring[i-1],b=ring[i],dx=b[0]-a[0],dz=b[1]-a[1],len=dx*dx+dz*dz,t=THREE.MathUtils.clamp(((x-a[0])*dx+(z-a[1])*dz)/(len||1),0,1);best=Math.min(best,Math.hypot(x-a[0]-t*dx,z-a[1]-t*dz));}return best;};

@@ -1,3 +1,4 @@
+import {ROAD_SHOULDER_DROP} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 import * as THREE from 'three';
 import {createHighwayAsphaltMaterial,createHighwayMarkingMaterial,HIGHWAY_ASPHALT_LIFT,HIGHWAY_MARKINGS} from './highway-surface.js?v=20261031-facilities-rails-lighting-v2';
 import {distancePath} from './traffic-paths.js?v=20261102-site2-photo-v3';
@@ -65,7 +66,7 @@ export function buildHighwayDisplay({parent,highway,directionAt,shoulderColor=0x
  for(const path of paths){
   ribbon(path,'asphalt',path.width,0,HIGHWAY_ASPHALT_LIFT);
   for(const side of [-1,1]){
-   ribbon(path,'shoulder',HIGHWAY_DISPLAY.shoulderExtra/2,side*(path.width/2+HIGHWAY_DISPLAY.shoulderExtra/4),-.055);
+   ribbon(path,'shoulder',HIGHWAY_DISPLAY.shoulderExtra/2,side*(path.width/2+HIGHWAY_DISPLAY.shoulderExtra/4),-ROAD_SHOULDER_DROP);
    ribbon(path,'white',HIGHWAY_MARKINGS.edgeWidth,side*(path.width/2-HIGHWAY_MARKINGS.edgeInset),HIGHWAY_MARKINGS.lift);
    ribbon(path,'yellow',HIGHWAY_MARKINGS.centerWidth,side*HIGHWAY_MARKINGS.centerOffset,HIGHWAY_MARKINGS.lift);
   }

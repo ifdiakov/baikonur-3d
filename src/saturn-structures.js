@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createSurfacePalette} from './surface-materials.js?v=20261031-facilities-rails-lighting-v1';
 import {registerFacilityFloodlights} from './facility-light-anchors.js?v=20261031-facilities-rails-lighting-v1';
-import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample} from './saturn-access.js?v=20261101-saturn-terrain-v5';
+import {SATURN_ACCESS,SATURN_TERRAIN_BOUNDS,SATURN_TERRAIN_SEGMENTS,saturnTerrainSample} from './saturn-access.js?v=20261114-ground-contact-v1';
 export const SATURN_MODEL_VERSION='saturn-photo-20261101-v2';
 // Two P-200 installations, the spherical radome and the service antenna field.
 // Eight new owner-supplied photographs, including two aerial/archival views.

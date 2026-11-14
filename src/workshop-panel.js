@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import {validateWorkshopState,applyWorkshopObjects,WORKSHOP_STORAGE} from './workshop-state-network.js?v=20261110-network-v1';
-import {installNetworkEditor} from './workshop-network-editor.js?v=20261110-network-v1';
-import {nearestRoadSegment} from './road-editor-core.js';
+import {validateWorkshopState,applyWorkshopObjects,WORKSHOP_STORAGE} from './workshop-state-network.js?v=20261114-ground-contact-v1';
+import {installNetworkEditor} from './workshop-network-editor.js?v=20261114-ground-contact-v1';
+import {nearestRoadSegment} from './road-editor-core.js?v=20261114-ground-contact-v1';
 export function installWorkshop({scene,objects,camera,controls,canvas,roadEditor,transport,terrainHeightAt,altimeter,coordinateGrid,published}){
  document.body.classList.add('workshop-mode');altimeter?.setEnabled?.(true);coordinateGrid.setEnabled(true);window.__MUSEUM_TRANSPORT_LABELS?.setEnabled?.(true);
  const original=new Map(objects.map(o=>[o.record.id,{position:o.g.position.toArray(),yaw:o.g.rotation.y,scale:published?.objects?.[o.record.id]?.scale??1,visible:true}]));

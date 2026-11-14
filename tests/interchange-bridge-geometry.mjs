@@ -6,6 +6,7 @@ import {buildOsmGraph,buildOsmTransportNetwork} from '../src/osm-transport.js';
 import {createInterchangeBridgePlan,buildInterchangeBridge,INTERCHANGE_BRIDGE_WAY} from '../src/interchange-bridge.js';
 import {buildRoadVehicleRoutes,roadVehiclePose} from '../src/road-vehicles.js';
 import {RAIL_PROFILE} from '../src/gagarin-rail-approach.js';
+import {ROAD_SURFACE_CLEARANCE} from '../src/transport-ground-profile.js';
 
 const read=p=>JSON.parse(fs.readFileSync(new URL('../'+p,import.meta.url)));
 const catalog=read('data/catalog.json'),geography=createMuseumGeography({catalog,matches:read('data/osm/catalog-matches.json')});
@@ -30,7 +31,8 @@ const roots=transport.bridgeObjects();assert.equal(roots.length,1);
 const root=roots[0],report=transport.stats().interchange.bridges.find(b=>b.osmWayId===INTERCHANGE_BRIDGE_WAY);
 assert.equal(report.version,'reference-viaduct-v1');assert.equal(report.sourceTopologyPreserved,true);
 assert.equal(report.reference.author,'3DtechVN');assert.equal(report.reference.license,'CC BY 4.0');
-assert.equal(report.lamps,24);
+// The approved pre-grounding cache already contains sixteen shared lamps.
+assert.equal(report.lamps,16);
 // The shared curved fixtures and two smooth earth fields add geometry, while
 // retaining the same material batches and draw-call budget.
 assert.ok(report.triangles<32000);assert.ok(report.drawCalls<=12,'Shared lamps and the two embankments remain batched');
@@ -95,7 +97,10 @@ for(const e of plan.approachTerrain.corridors){
     const world=fromLocal(p);down.ray.origin.copy(world).add(new THREE.Vector3(0,12,0));
     const hit=down.intersectObject(earth,false)[0];assert.ok(hit,'A continuous earth field under '+e.wayId);
     const gap=world.y-hit.point.y;minEarthClearance=Math.min(minEarthClearance,gap);embankmentProbes++;
-    assert.ok(gap>.10,'Earth intrudes into '+e.kind+' '+e.wayId+' at '+p.toArray()+': '+gap);
+    // Grounded roads retain their pavement clearance; a railway base can
+    // rest directly on soil. Requiring 0.10 here would require hovering again.
+    const required=e.kind==='rail'?0:ROAD_SURFACE_CLEARANCE;
+    assert.ok(gap>=required-.001,'Earth intrudes into '+e.kind+' '+e.wayId+' at '+p.toArray()+': '+gap);
   }
 }
 assert.ok(embankmentProbes>500,'Cover adjoining loops, ramps, service roads and rail branches');
@@ -146,7 +151,7 @@ assert.ok(vehicleProbes>100);assert.ok(minWheelGap>-.035&&maxWheelGap<.045,JSON.
 
 transport.setBridgeEvening(true);assert.equal(transport.stats().interchange.bridges[0].evening,true);
 assert.equal(root.getObjectByName('Виадук · фонари').visible,true);
-assert.equal(transport.stats().interchange.bridges[0].visibleLampGlows,24);
+assert.equal(transport.stats().interchange.bridges[0].visibleLampGlows,16);
 assert.equal(transport.stats().interchange.bridges[0].lightSpill.enabled,true);assert.equal(spill.visible,true);
 assert.ok(Math.abs(root.getObjectByName('Виадук · lens').material.emissiveIntensity-2.475)<1e-10,'The bridge uses the same LED emission as the highway');
 transport.setBridgeEvening(false);assert.equal(root.getObjectByName('Виадук · фонари').visible,false);

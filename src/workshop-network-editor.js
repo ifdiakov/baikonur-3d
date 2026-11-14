@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {RAIL_PROFILE} from './rail-profile.js';
 import {NETWORK_VERSION,xyz,dist,visibleNetwork,createNetworkIndex,deleteBranch,validateRailEdits,pathLength} from './workshop-network-core.js';
 import {createRailEditor,smoothRail} from './workshop-rail-editor.js';
-import {validateRoadEdits} from './road-editor-core.js';
+import {validateRoadEdits} from './road-editor-core.js?v=20261114-ground-contact-v1';
 
 export function installNetworkEditor({scene,camera,controls,canvas,roadEditor,transport,terrainHeightAt,panel,initialRails,checkpoint,save,onUndo,onRedo}){
  const sourceRoads=transport.editableRoadPaths().map(r=>({...r,id:String(r.id),points:r.points.map(xyz)}));

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {TRANSPORT_GROUND_Y} from './transport-ground-profile.js?v=20261114-ground-contact-v1';
 
 // Museum coordinates: east = +X, north = -Z. Dimensions are illustrative.
 // The entry corner was identified by RocketTrip, not inferred from a map.
@@ -10,7 +11,10 @@ export const SATURN_ACCESS = Object.freeze({
 });
 export const SATURN_TERRAIN_BOUNDS=Object.freeze({minX:-280,maxX:640,minZ:-650,maxZ:270});
 export const SATURN_TERRAIN_SEGMENTS=184;
-const terrainBase=-SATURN_ACCESS.verticalRaise/SATURN_ACCESS.scale-.22;
+// The transparent foot meets the same physical steppe as transport. Its old
+// local datum left a 0.0895-world step at the opacity boundary, so even an
+// exactly sampled road could cut through the first barely visible triangle.
+const terrainBase=(TRANSPORT_GROUND_Y-SATURN_ACCESS.elevation)/SATURN_ACCESS.scale;
 const smooth = (a,b,v) => {
   const t=Math.max(0,Math.min(1,(v-a)/(b-a)));
   return t*t*t*(t*(t*6-15)+10);
@@ -92,6 +96,42 @@ export function saturnTerrainMeshHeight(x,z){
 function curve(points) {
   return new THREE.CatmullRomCurve3(points,false,'centripetal',.3);
 }
+function gateAccessCurve(){
+ const {gate,internalJoin}=SATURN_ACCESS;
+ return curve([
+  new THREE.Vector3(gate.x,gate.y,gate.z),
+  new THREE.Vector3(-96,gate.y,-63),
+  new THREE.Vector3(-92,gate.y,-48),
+  new THREE.Vector3(internalJoin.x,internalJoin.y,internalJoin.z)
+ ]);
+}
+
+// An authored approach can already enter the model's existing gate pavement
+// even though its endpoint is beyond the outer gate and no OSM way is nearby.
+// Match an endpoint inside the actual 40-section pavement triangles, rather
+// than treating an arbitrary nearby road as a connection and deleting access.
+export function findSaturnAuthoredAccess({ownerRoadEdits,center}){
+ if(!center||!Array.isArray(ownerRoadEdits?.added))return null;
+ const s=SATURN_ACCESS,sections=sectionsFor(gateAccessCurve(),40),half=3.5;
+ const rim=(section,side)=>new THREE.Vector3(section.p.x+side*section.nx*half,0,section.p.z+side*section.nz*half);
+ const triangles=[];
+ for(let i=1;i<sections.length;i++){
+  const a=rim(sections[i-1],-1),b=rim(sections[i-1],1),c=rim(sections[i],-1),d=rim(sections[i],1);
+  triangles.push(new THREE.Triangle(a,b,c),new THREE.Triangle(b,d,c));
+ }
+ const pavementY=s.elevation+s.gate.y*s.scale;
+ for(const road of ownerRoadEdits.added){
+  if(!Array.isArray(road.points)||road.points.length<2)continue;
+  for(const endpoint of [road.points[0],road.points.at(-1)]){
+   if(!Array.isArray(endpoint)||endpoint.length!==3||!endpoint.every(Number.isFinite)||Math.abs(endpoint[1]-pavementY)>.2)continue;
+   const p=new THREE.Vector3((endpoint[0]-center.x)/s.scale,0,(endpoint[2]-center.z)/s.scale);
+   if(triangles.some(triangle=>triangle.containsPoint(p)))return {roadId:road.id,endpoint:[...endpoint],
+    gateGap:Math.hypot(endpoint[0]-center.x-s.gate.x*s.scale,endpoint[2]-center.z-s.gate.z*s.scale),
+    pavementDeltaY:endpoint[1]-pavementY};
+  }
+ }
+ return null;
+}
 function pavementMaterial(color) {
   return new THREE.MeshStandardMaterial({color,roughness:1,
     side:THREE.DoubleSide,transparent:false,depthWrite:true});
@@ -126,12 +166,7 @@ function sectionsFor(path,count) {
 
 export function addSaturnNorthwestGate(root) {
   const {gate,internalJoin}=SATURN_ACCESS;
-  const path=curve([
-    new THREE.Vector3(gate.x,gate.y,gate.z),
-    new THREE.Vector3(-96,gate.y,-63),
-    new THREE.Vector3(-92,gate.y,-48),
-    new THREE.Vector3(internalJoin.x,internalJoin.y,internalJoin.z)
-  ]);
+  const path=gateAccessCurve();
   const sections=sectionsFor(path,40);
   strip(root,sections,()=>9,()=>gate.y-.12,pavementMaterial(0x9b917e),'northwest-gate-shoulder',4);
   strip(root,sections,()=>7,()=>gate.y,pavementMaterial(0x555751),'northwest-gate-pavement',5);
