@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync,mkdirSync,writeFileSync} from 'node:fs';
 import YAML from 'yaml';
-import {selectedWorkflows} from '../scripts/ci/acceptance-gate.mjs';
+import {selectedWorkflows,verificationInputs,changedVerificationInputs,latestCompatibleRun} from '../scripts/ci/acceptance-gate.mjs';
 import {assertMenuMarkup} from './helpers/menu-markup.mjs';
 import {MUSEUM_SECTIONS} from '../src/museum-menu.js';
 import {protonNeighborContract,assertProtonNeighborClearance,measureProtonNeighborClearance} from './proton-civil-geometry.mjs';
@@ -29,6 +29,27 @@ test('Aggregate selects actual push dependencies and never waits on itself',()=>
  assert.deepEqual(selectedWorkflows(['tests/a.mjs'],'fix/candidate',definitions).map(w=>w.name),['A']);
  assert.deepEqual(selectedWorkflows(['README.md'],'main',definitions),[]);
  assert.deepEqual(selectedWorkflows(['src/a.js'],'other',definitions),[]);
+});
+test('Cumulative candidate changes keep feature checks after a documentation-only push',()=>{
+ const definition={path:'.github/workflows/feature.yml',workflow:{name:'Feature',on:{push:{branches:['fix/**'],paths:['tests/feature.mjs']}}}};
+ assert.equal(selectedWorkflows(['docs/task.txt'],'fix/candidate',[definition]).length,0);
+ assert.equal(selectedWorkflows(['tests/feature.mjs','docs/task.txt'],'fix/candidate',[definition]).length,1);
+});
+test('Reuse requires unchanged entry script, transitive helper, fixture and application',()=>{
+ const path='.github/workflows/feature.yml',workflow={on:{push:{paths:['tests/feature.mjs']}},jobs:{check:{steps:[{run:'node tests/feature.mjs'}]}}};
+ const sources={'tests/feature.mjs':`import './helpers/check.mjs';`, 'tests/helpers/check.mjs':`readFileSync('../fixtures/check.json');`, 'tests/fixtures/check.json':'{}'};
+ const inputs=verificationInputs(path,workflow,p=>sources[p]??null);
+ for(const changed of [path,'package-lock.json','tests/feature.mjs','tests/helpers/check.mjs','tests/fixtures/check.json','src/scene.js','assets/model.glb','data/sites.json','workshop/editor.js','museum.html','CNAME']){
+  assert.deepEqual(changedVerificationInputs([changed],path,workflow,inputs),[changed]);
+ }
+ assert.deepEqual(changedVerificationInputs(['docs/task.txt','tests/unrelated.mjs'],path,workflow,inputs),[]);
+ assert.throws(()=>verificationInputs(path,workflow,()=>null),/Missing verification input/);
+});
+test('A newer failure blocks an older success for identical inputs',()=>{
+ const runs=[{id:1,path:'feature',head_branch:'fix/candidate',head_sha:'a',conclusion:'success'}, {id:2,path:'feature',head_branch:'fix/candidate',head_sha:'b',conclusion:'failure'}, {id:3,path:'feature',head_branch:'other',head_sha:'c',conclusion:'success'}];
+ assert.equal(latestCompatibleRun(runs,'feature','fix/candidate',()=>true).conclusion,'failure');
+ assert.equal(latestCompatibleRun(runs,'feature','fix/candidate',r=>r.head_sha==='a').id,1);
+ assert.equal(latestCompatibleRun(runs,'feature','fix/candidate',()=>false),undefined);
 });
 const inventory=[];
 for(const file of readdirSync('.github/workflows').filter(f=>f.endsWith('.yml'))){

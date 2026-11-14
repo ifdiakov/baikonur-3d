@@ -40,3 +40,5 @@ leaving that mode, height edit and undo. This is not full network-editor accepta
 Main protection is prepared with required candidate-acceptance from GitHub Actions,
 strict freshness and no administrator bypass; saving awaits GitHub sudo-mode
 identity confirmation. Do not claim the rule is active until API verification.
+
+14.11 — Заключительная приёмка: все 31 профильных workflow прошли на кандидате 0c32aec/ddd05fc; вечерняя сцена исправлена точечно в ddd05fc. Сводный gate усилен: полный diff кандидата относительно main, повторное использование результата только для предка с неизменными исходниками приложения, workflow, зависимостями и транзитивными входами теста; новый сбой не скрывается старым успехом. Добавлены отрицательные проверки этого контракта. main защищена обязательным candidate-acceptance от GitHub Actions (для всех пользователей); подтверждение личности завершено. Финальная ревизия gate и публичная приёмка пока ожидаются. Мобильная вёрстка NOT RUN по указанию владельца.

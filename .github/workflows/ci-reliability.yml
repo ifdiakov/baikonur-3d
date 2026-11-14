@@ -58,7 +58,7 @@ jobs:
         with:
           node-version: '22'
       - run: npm ci --ignore-scripts --no-audit --no-fund
-      - name: Require every selected workflow on this exact revision
+      - name: Require cumulative candidate checks with committed input proofs
         env:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/ci/acceptance-gate.mjs
