@@ -1,0 +1,40 @@
+{
+  "baseRelease": "32f701f805a182c639d50a78fc777d1abb3586b4-streaming-ktx-20261117",
+  "release": "32f701f805a182c639d50a78fc777d1abb3586b4-organizations-admin-v2-20261118",
+  "files": [
+    {
+      "path": "workshop.html",
+      "before": "7321a0f991ef9ac2d0636fc9d72f3c0468c08eaff18ec04c2c330568757dc5db",
+      "after": "64e3d80affd54e5a12c819eb059cbde8e18e1579ebce24b9f0457194365e603e"
+    },
+    {
+      "path": "src/admin-organizations.js",
+      "before": null,
+      "after": "5a23672524a3d81b5a03315a3161e792d0944aabec87901e25aa37bd320bf873"
+    },
+    {
+      "path": "src/admin-organizations-index.js",
+      "before": null,
+      "after": "141de21adf7c37fdb6dfd74f3b77bb74048eff2eb771299dfde71ec5cffc18a5"
+    },
+    {
+      "path": "data/admin-organizations.json",
+      "before": null,
+      "after": "b23a934f887dcf2a0e257e2a40f7d33b2d9440d839e989d3bd8209641a21e7d1"
+    }
+  ],
+  "preserved": {
+    "index.html": "4a6ae371f8bb44ee21f3fd30c9ad08c935b285dcbc66042059d969a635a9fc62",
+    "museum.html": "4a6ae371f8bb44ee21f3fd30c9ad08c935b285dcbc66042059d969a635a9fc62",
+    "data/catalog.json": "e3f0ae3b31b5ec92d7d545ad0d280ad8746a2ea30257e0fbf65a1d934eca34eb",
+    "data/encyclopedia.json": "3592d3722e54ce7774aec7f6655e2914d065b48e89ecfcee3c3fa3029b329e53",
+    "data/buran-knowledge.json": "c471ddf6bd6c294347784a88846556604ccd2d09d8fa1dec55c100365953caf8",
+    "src/mik112.js": "d30e6f63a2de6060724bb627861d19b70b1f0d70e95be7cbb88794df4cf46d53",
+    "src/evening-scene.js": "27c0858a78917f960b982aa64a0182358fcd11b0a37e54a84f4a7378616f3a4d",
+    "src/museum-startup.js": "4ec02d0d6d9e1f283126ca22d06c9ac29e21b3022f2fa9d6e1eb5cb96fb06b69",
+    "src/museum-mobile.js": "6dc03afd7ed4cf1fab6d4a5dc4a7d5f4d80706e715cfc8c4ae87754efccd0ece",
+    "src/museum-ui-polish.css": "0f69758eddef381395a0b4a340750e27434ad4174989acaec36246335ecc28ee",
+    "src/card-share.js": "aa8e7b51667b63c891928dc07232c99dcda8bd18988d74358b9e65a68820deca",
+    "src/organisation-logos.js": "8445cfdfe44ba81ee71760f5d7f05c892fade454652c601779f6677113333a2a"
+  }
+}
