@@ -4,11 +4,13 @@ import {readFileSync} from 'node:fs';
 const enc=JSON.parse(readFileSync('data/encyclopedia.json','utf8'));
 const index=readFileSync('index.html','utf8'),html=readFileSync('encyclopedia.html','utf8'),mod=readFileSync('src/encyclopedia-3d.js','utf8');
 const types={rocket:'model3d',person:'portrait',organization:null};
-// Related articles added with RD-180 are text records until licensed imagery is available.
-const textRecords=new Set(['atlas3','atlas5','katorgin']);
-for(const id of textRecords){const x=enc.items.find(x=>x.id===id);assert(x?.sources?.length&&x.summary.length>60);}
-const roster=enc.items.filter(x=>Object.hasOwn(types,x.type)&&!textRecords.has(x.id));
-assert.equal(roster.length,20);
+// Preserve every established licensed illustration. New articles can be text-only.
+const established=['r7','soyuz','soyuzcraft','proton','energia','buran','okb1','energiaorg','progress','khrunichev','tsenki','molniya','energomash','lavochkin','barmin','korolev','kozlov','glushko','chelomey','lozino'];
+for(const id of established)assert(enc.items.find(x=>x.id===id)?.media,'Lost established media: '+id);
+const textRecords=enc.items.filter(x=>Object.hasOwn(types,x.type)&&!x.media);
+for(const x of textRecords)assert(x.sources?.length&&x.summary.length>60,'Unsourced text article: '+x.id);
+const roster=enc.items.filter(x=>Object.hasOwn(types,x.type)&&x.media);
+assert(roster.length>=established.length);
 for(const item of roster){
  assert(item.media,'Missing encyclopedia image/model for '+item.id);
  if(item.type==='rocket'){
@@ -28,7 +30,7 @@ for(const item of roster){
 assert.equal(roster.filter(x=>x.type==='rocket').length,6);
 assert.equal(roster.filter(x=>x.type==='person').length,6);
 assert.equal(roster.filter(x=>x.type==='organization').length,8);
-assert.equal(enc.items.filter(x=>x.type==='site').length,11);
+assert(enc.items.filter(x=>x.type==='site').length>=11);
 assert.match(index,/<a id="encyclopediaNavLink"[^>]*href="\.\/encyclopedia\.html"/);
 assert.doesNotMatch(index,/id="encyclopedia-entry"/);
 assert.match(index,/#ui>#encyclopediaNavLink/);
@@ -38,4 +40,5 @@ assert.match(html,/src\/encyclopedia-3d\.js/);
 assert.match(html,/dataset\.articleId/);
 assert.match(mod,/preserveDrawingBuffer:true/);
 assert.match(mod,/createInspectionModel/);
-console.log('ENCYCLOPEDIA_MEDIA_DATA_PASS',JSON.stringify({items:enc.items.length,persons:6,technology:6,organizations:8,siteCount:11}));
+console.log('ENCYCLOPEDIA_MEDIA_DATA_PASS',JSON.stringify({items:enc.items.length,illustrated:roster.length,textRecords:textRecords.length,siteCount:enc.items.filter(x=>x.type==='site').length}));
+
