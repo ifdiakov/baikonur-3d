@@ -11,6 +11,7 @@ main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px
 .lead{color:#a9bbc9;max-width:760px}#search{width:100%;padding:16px 18px;border:1px solid #40586b;background:#142337;color:white;border-radius:8px;font-size:16px;margin:25px 0 12px}
 .tabs{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 24px}.tabs button{border:1px solid #40566b;background:#142436;color:#eaf1f9;padding:10px 14px;border-radius:6px;cursor:pointer}.tabs button.active{background:#c6aa6e;color:#10202b;border-color:#c6aa6e}
 .layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,460px);gap:20px;align-items:start}
+.layout>*{min-width:0}.detail button{max-width:100%;overflow-wrap:anywhere}.card-media img{max-width:100%}.reading-steps li{min-width:0}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
 .card{background:#142335;border:1px solid #2b4256;text-align:left;color:inherit;padding:18px;min-height:160px;border-radius:8px;cursor:pointer;transition:border .15s}.card:hover,.card.selected{border-color:#c6aa6e}
 .meta{display:block;color:#c7ab73;font-size:11px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase}.card b{display:block;font-size:19px;margin:9px 0}.small{color:#9fb3c4;font-size:13px;line-height:1.5}
@@ -52,6 +53,10 @@ main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px
 .detail .media-credit{margin:8px 0 18px;font-size:11px;color:#96acbd;line-height:1.6}
 .detail .media-credit a{color:#c8d9e9}
 .detail .model-tip{color:#c7ad77;font-size:11px;margin:8px 0 18px}
+.article-section{border-top:1px solid #36516a;margin-top:24px;padding-top:3px}.article-section h3{font-size:16px;text-transform:none;letter-spacing:0}.article-section p{margin-bottom:8px}.source-refs{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;margin-bottom:14px}.source-refs a{padding:4px 0}.article-note{border-left:3px solid #c6aa6e;padding:10px 14px;background:#102134}.context-links{display:grid;gap:8px}.context-links a{display:block;padding:12px;border:1px solid #52708b;border-radius:6px;text-decoration:none}.article-timeline{padding-left:22px}.article-timeline li{margin:12px 0}.article-timeline time{color:#e1c388;font-weight:bold}.result-count{margin:0 0 16px}.back-to-list{color:#d6e8fa;background:#243f56;border:1px solid #52708b;padding:10px;border-radius:6px;cursor:pointer}.detail{scroll-margin-top:80px}.card:not(:has(.card-media)){min-height:180px;justify-content:center}
+.reading-route-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:28px}.reading-route-card{display:block;padding:20px;border:1px solid #456174;border-radius:8px;background:#172a3e;color:inherit;text-decoration:none}.reading-route-card:hover,.reading-route-card:focus-visible{border-color:#e4c58a;background:#20394e}.reading-route-card h3{font-size:19px;line-height:1.35}.reading-route-card p{margin-bottom:0}.reading-progress{padding:20px;border:1px solid #63808a;border-radius:8px;margin:18px 0 24px}.reading-progress h2{font-size:23px}.reading-progress progress{width:100%;accent-color:#c6aa6e;height:10px}.reading-steps{display:flex;flex-wrap:wrap;gap:8px 24px;padding-left:24px}.reading-steps button{font:inherit;color:#d9e8f5;background:none;border:0;text-decoration:underline;cursor:pointer;text-align:left;min-height:44px}.reading-next{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:18px 0}.reading-all{display:inline-block;color:#ddc48d;padding:12px 0}.back-to-list[aria-pressed=true]{background:#345943}.article-outline{display:flex;flex-wrap:wrap;gap:6px;margin:20px 0}.article-outline button{font:inherit;font-size:12px;color:#d9e8f5;background:#243f56;border:1px solid #52708b;padding:9px;border-radius:5px;cursor:pointer}a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid #e4c58a;outline-offset:3px}
+@media(max-width:850px){.reading-route-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.reading-route-card{padding:14px}.reading-route-card h3{font-size:17px}}@media(max-width:480px){.reading-route-grid{grid-template-columns:1fr}.reading-route-card p{font-size:13px}}
+@media(max-width:850px){.layout.has-detail .detail{order:-1}.detail{padding:20px}.article-section h3{font-size:18px}}
 .article-model-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 22px}.article-model-choices a{display:flex;align-items:center;justify-content:center;min-height:44px;padding:12px 8px;border:1px solid #e88679;border-radius:6px;background:#423541;color:#fff;text-decoration:none;text-align:center;font-weight:700;font-size:13px}.article-model-choices a:hover{background:#60434c}.article-model-choices a:focus-visible{outline:2px solid #f4c989;outline-offset:2px}
 @media(max-width:850px){
  .card{min-height:258px}.card-media{height:130px;flex-basis:130px}
@@ -62,11 +67,12 @@ main{max-width:1400px;margin:auto;padding:36px 20px 70px}h1{font-size:clamp(32px
 <body><header><nav><a href="./index.html">← ВЕРНУТЬСЯ В 3D-МАКЕТ</a><strong>ГРАНД-МАКЕТ · БАЙКОНУР</strong></nav></header>
 <main><span class="meta">Цифровой архив · открытая база знаний</span><h1>Энциклопедия Байконура</h1>
 <p class="lead">Ракеты, космические корабли, стартовые площадки, главные конструкторы и предприятия ракетно-космической отрасли. Откройте любой объект, чтобы исследовать связи между людьми, техникой и инфраструктурой.</p>
-<label for="search" class="small">Поиск по названиям, датам и описаниям</label><input id="search" type="search" placeholder="Например: Протон, Глушко, площадка 31, ЦЭНКИ">
-<section style="margin:0 0 22px;padding:16px 18px;border:1px solid #526078;border-radius:8px;background:#182c3f"><span class="meta">Новая экскурсия · 25 минут</span><h2 style="font-size:19px;margin:9px 0">История освоения космоса: пять сюжетов</h2><p class="small">От первых запусков с Байконура до «Энергии—Бурана». Основано на исторических сюжетах и критическом разборе публицистического источника.</p><a style="color:#e4c68a" href="./docs/excursions/history-of-space-habr-186610.md">Конспект экскурсии и исходная статья ↗</a></section><div class="tabs" id="tabs" aria-label="Разделы"></div><div class="layout"><section class="cards" id="cards" aria-live="polite"></section><aside class="detail" id="detail" aria-live="polite"><h2>Выберите статью</h2><p class="small">Здесь появятся исторические сведения, источники и связанные материалы.</p></aside></div></main>
+<label for="search" class="small">Поиск по полным текстам, людям, датам и названиям</label><input id="search" type="search" placeholder="Например: экипажи Бурана, Рязанский, Союз-5"><p class="small result-count" id="result-count" role="status"></p>
+<section id="reading-routes" aria-label="Маршруты по музею"></section><div id="reading-context"></div><div class="tabs" id="tabs" aria-label="Разделы"></div><div class="layout"><section class="cards" id="cards" aria-live="polite"></section><aside class="detail" id="detail" aria-live="polite"><h2>Выберите статью</h2><p class="small">Здесь появятся исторические сведения, источники и связанные материалы.</p></aside></div></main>
 <footer>Энциклопедия развивается. Годы, названия организаций и распределение инженерных ролей относятся к указанным историческим периодам; непроверенные связи не подменяют доказанные факты.</footer>
 <script type="module">
-import {createShareButton} from './src/card-share.js?v=20261111-share-v1';
+import {createShareButton} from './src/card-share.js?v=public-20261117';
+import {createReadingRoutes} from './src/encyclopedia-routes.js?v=public-20261117';
 (async()=>{
 const $=s=>document.querySelector(s);
 const state={type:'all',q:'',id:null};let data,displayedDetailId=null;
@@ -75,12 +81,16 @@ const thumbs=new Map(),map=new Map(),safeUrl=value=>{
 };
 let modelController=null,modelPromise=null,previewStarted=false;
 try{
- const response=await fetch('./data/encyclopedia.json?v=20261108-site45-choice-v1');
+ const response=await fetch('./data/encyclopedia.json?v=public-20261117');
  if(!response.ok)throw Error('HTTP '+response.status);
  data=await response.json();
 }catch(e){$('#cards').textContent='Не удалось загрузить энциклопедию: '+e.message;return}
 for(const item of data.items)map.set(item.id,item);
+const normalize=value=>value.toLocaleLowerCase('ru').replaceAll('ё','е').replace(/[—–‑]/g,'-');
+const searchIndex=new Map(data.items.map(x=>[x.id,normalize([x.name,x.period,x.summary,...(x.sections||[]).flatMap(s=>[s.title,s.text]),...(x.timeline||[]).flatMap(t=>[t.date,t.text])].join(' '))]));
+const query=new URLSearchParams(location.search),siteFilter=query.get('site'),scenarioFilter=query.get('scenario');
 const types={all:'Все статьи',...data.types};
+const guide=createReadingRoutes(data,{open});
 function el(tag,cls,text){
  const a=document.createElement(tag);if(cls)a.className=cls;if(text!==undefined)a.textContent=text;return a;
 }
@@ -167,18 +177,32 @@ function presentModel(x,stage){
 function open(id){
  if(!map.has(id))return;
  state.id=id;
- history.replaceState(null,'','#'+encodeURIComponent(id));
+ if(location.hash!=='#'+encodeURIComponent(id))history.pushState(null,'','#'+encodeURIComponent(id));
  render();
  if(window.innerWidth<851)$('#detail').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function sourceRefs(record){
+ const refs=el('div','source-refs');
+ for(const id of record.sourceIds||[]){
+  const source=data.sourceRegistry?.[id],href=source&&safeUrl(source.url);if(!href)continue;
+  const a=el('a','','Источник: '+source.title);a.href=href;a.target='_blank';a.rel='noopener noreferrer';refs.append(a);
+ }
+ return refs;
+}
+function contextLink(kind,id,label){
+ const a=el('a','',label+' →');a.href='./museum.html?'+new URLSearchParams({share:kind+':'+id,tour:'0'});return a;
 }
 function render(){
  const tabs=$('#tabs');tabs.replaceChildren();
  Object.entries(types).forEach(([k,v])=>{
-  const b=el('button',state.type===k?'active':'',v);b.type='button';
+  const b=el('button',state.type===k?'active':'',v);b.type='button';b.setAttribute('aria-pressed',String(state.type===k));
   b.onclick=()=>{state.type=k;render()};tabs.append(b);
  });
+ const terms=normalize(state.q).split(/\s+/).filter(Boolean);
  const matches=data.items.filter(x=>(state.type==='all'||x.type===state.type)
-  &&[x.name,x.period,x.summary].join(' ').toLocaleLowerCase('ru').includes(state.q));
+  &&(!siteFilter||x.siteIds?.includes(siteFilter))&&(!scenarioFilter||x.scenarioIds?.includes(scenarioFilter))
+  &&terms.every(term=>searchIndex.get(x.id).includes(term)));
+ $('#result-count').textContent='Найдено: '+matches.length+' · Всего в базе: '+data.items.length+(siteFilter?' · '+(data.siteRegistry?.[siteFilter]?.label||siteFilter):'')+(scenarioFilter?' · '+(data.scenarioRegistry?.[scenarioFilter]?.label||scenarioFilter):'');
  const cards=$('#cards');cards.replaceChildren();
  matches.forEach(x=>{
   const b=el('button','card'+(state.id===x.id?' selected':''));
@@ -187,22 +211,50 @@ function render(){
   b.append(el('span','meta',data.types[x.type]),el('b','',x.name),el('span','small',x.period));
   b.onclick=()=>open(x.id);const wrapper=el('div','encyclopedia-card-wrap');wrapper.append(b,createShareButton({kind:'article',id:x.id,title:x.name}));cards.append(wrapper);
  });
- if(!matches.length)cards.append(el('p','empty','Ничего не найдено'));
+ if(!matches.length){cards.append(el('p','empty','Ничего не найдено. Попробуйте фамилию, название программы или сбросьте раздел.'));const reset=el('button','back-to-list','Сбросить поиск');reset.type='button';reset.onclick=()=>{state.q='';state.type='all';$('#search').value='';render();};cards.append(reset);}
  // Filtering the list must not repeatedly destroy the same WebGL model.
  if(displayedDetailId===state.id)return;
  displayedDetailId=state.id;
  modelController?.destroy();
  const detail=$('#detail');detail.replaceChildren();
+ detail.scrollTop=0;
  const x=map.get(state.id);
+ document.querySelector('.layout').classList.toggle('has-detail',!!x);
  if(!x){
-  detail.append(el('h2','','Выберите статью'),el('p','small','Все материалы связаны единой системой перекрёстных ссылок.'));
+  detail.append(el('h2','',state.id?'Статья не найдена':'Выберите статью'),el('p','small',state.id?'Воспользуйтесь поиском или выберите маршрут.':'Все материалы связаны единой системой перекрёстных ссылок.'));
   return;
  }
  const media=createMedia(x,true);
+ const back=el('button','back-to-list','← К списку статей');back.type='button';back.onclick=()=>{state.id=null;history.replaceState(null,'',location.pathname+location.search);render();$('#search').focus();};detail.append(back);
  if(media)detail.append(media);
  detail.append(el('span','meta',data.types[x.type]),el('h2','',x.name),el('p','small',x.period),el('p','',x.summary));
  detail.append(createShareButton({kind:'article',id:x.id,title:x.name}));
  appendMediaCredit(detail,x);
+ if(x.sections?.length>2){const outline=el('nav','article-outline');outline.setAttribute('aria-label','Разделы статьи');x.sections.forEach((s,i)=>{const b=el('button','',s.title);b.type='button';b.onclick=()=>detail.querySelectorAll('.article-section')[i]?.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});outline.append(b);});detail.append(outline);}
+ if(x.evidenceType&&data.evidenceTypes?.[x.evidenceType]){
+  const evidence=data.evidenceTypes[x.evidenceType];detail.append(el('p','article-note',evidence.label+'. '+evidence.description));
+ }
+ for(const s of x.sections||[]){
+  const section=el('section','article-section');section.append(el('h3','',s.title),el('p','',s.text));
+  if(s.sourceIds?.length)section.append(sourceRefs(s));
+  else if(s.kind==='museum-interpretation')section.append(el('span','small','Пояснение для музейной экспозиции'));
+  detail.append(section);
+ }
+ if(x.timeline?.length){
+  detail.append(el('h3','','Хронология'));const list=el('ol','article-timeline');
+  for(const t of x.timeline){const li=el('li');li.append(el('time','',t.date),el('p','',t.text),sourceRefs(t));list.append(li);}detail.append(list);
+ }
+ if(x.editorialNote)detail.append(el('p','article-note small',x.editorialNote));
+ if(x.siteIds?.length){
+  detail.append(el('h3','','Площадки на 3D-макете'));const group=el('div','context-links');
+  for(const id of x.siteIds){const label=data.siteRegistry?.[id]?.label||id;group.append(contextLink('site',id,label));
+   const related=el('a','small','Все статьи об этой площадке');related.href='./encyclopedia.html?'+new URLSearchParams({site:id});group.append(related);}
+  detail.append(group);
+ }
+ if(x.scenarioIds?.length){
+  detail.append(el('h3','','Сценарии и исторические сюжеты'));const group=el('div','context-links');
+  for(const id of x.scenarioIds){const split=id.indexOf(':');group.append(contextLink(id.slice(0,split),id.slice(split+1),data.scenarioRegistry?.[id]?.label||id));}detail.append(group);
+ }
  if(x.modelChoices?.length){
   detail.append(el('h3','','Выбрать ракету · 3D'));const choices=el('div','article-model-choices');choices.setAttribute('role','group');choices.setAttribute('aria-label','Выбор ракеты площадки');
   const ids=x.modelChoices.map(choice=>choice.id).join(',');
@@ -230,17 +282,23 @@ function render(){
   detail.append(el('h3','','Источники для проверки и расширения'));
   const list=el('ul');x.sources.forEach(url=>{
    const href=safeUrl(url);if(!href)return;
-   const li=el('li'),a=el('a','',new URL(href).hostname);
+   const source=Object.values(data.sourceRegistry||{}).find(s=>s.url===url);
+   const li=el('li'),a=el('a','',source?.title||new URL(href).hostname);
    a.href=href;a.rel='noopener noreferrer';a.target='_blank';li.append(a);list.append(li);
   });detail.append(list);
  }
- detail.append(el('p','small','Содержимое первой редакции: краткая проверяемая справка. Детальные биографии, хронологии и заводские кооперации будут добавляться в соответствующие статьи.'));
+ if(x.editorialUpdated)detail.append(el('p','small','Редакция статьи: '+x.editorialUpdated));
+ if(x.relatedFrom?.length){detail.append(el('h3','','Эту тему продолжают'));const group=el('div','related');for(const id of x.relatedFrom.slice(0,10)){const b=el('button','',map.get(id).name);b.type='button';b.onclick=()=>open(id);group.append(b);}detail.append(group);}
+ guide.article(detail,x);
  if(x.media?.kind==='model3d')presentModel(x,media.querySelector('.detail-model-stage'));
 }
 $('#search').addEventListener('input',e=>{state.q=e.target.value.trim().toLocaleLowerCase('ru');render()});
-window.addEventListener('hashchange',()=>{state.id=decodeURIComponent(location.hash.slice(1));render()});
+const readHash=()=>{try{return decodeURIComponent(location.hash.slice(1));}catch{return '';}};
+window.addEventListener('hashchange',()=>{state.id=readHash();render()});
+window.addEventListener('popstate',()=>{state.id=readHash();render()});
 window.addEventListener('pagehide',()=>modelController?.dispose(),{once:true});
-state.id=decodeURIComponent(location.hash.slice(1));render();
+state.id=readHash()||guide.defaultId;if(!location.hash&&guide.defaultId)history.replaceState(null,'','#'+encodeURIComponent(guide.defaultId));render();
+if(state.id&&innerWidth<851)requestAnimationFrame(()=>$('#detail').scrollIntoView({block:'start'}));
 // The encyclopedia text and portraits are usable before the engine is fetched.
 // One temporary shared WebGL context renders six model thumbnails in idle turns.
 requestAnimationFrame(()=>{

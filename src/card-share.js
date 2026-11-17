@@ -1,4 +1,5 @@
 // Object-specific public links. Copy only: no native/social sharing or tracking.
+import {createReadingLinks} from './museum-reading-links.js?v=public-20261117';
 export const CARD_SHARE_VERSION='20261111-copy-v2';
 export const SHARE_ICON='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4H5a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-3"/><path d="M16 1v4C7 5 5.5 11 6.5 16c1.5-4.5 4.5-6 9.5-6v4l7-6.5L16 1Z"/></svg>';
 const KINDS=new Set(['site','rocket','model','story','history','event','research','view','article']);
@@ -89,13 +90,14 @@ const EVENT_PANELS={energiaLaunchPanel:'energia-launch',buranLaunchPanel:'buran-
 export function installMuseumSharing({cardTarget,infoTarget,historyTarget,soyuzSite,openTarget}={}){
  for(const element of document.querySelectorAll('.site-label,.detail-card'))element.append(createShareButton(()=>cardTarget(Number(element.dataset.siteIndex)),{compact:true}));
  const info=document.getElementById('info'),share=createShareButton(infoTarget);share.id='infoShare';info.insertBefore(share,document.getElementById('detailMore'));
+ const reading=createReadingLinks(infoTarget);info.append(reading);
  function attachPanel(element){
   if(!(element instanceof Element)||element.querySelector(':scope > .museum-share-button'))return;
   let target;
   if(element.id==='soyuzLaunchPanel')target=()=>{const id=soyuzSite()==='pad-31'?'soyuz-launch-31':'soyuz-launch-1';return {kind:'event',id,title:SHARE_EVENTS[id].title};};
   else if(element.id==='complexHistoryPanel')target=historyTarget;
   else if(EVENT_PANELS[element.id]){const id=EVENT_PANELS[element.id];target=()=>({kind:'event',id,title:SHARE_EVENTS[id].title});}
-  if(target)element.append(createShareButton(target));
+  if(target)element.append(createShareButton(target),createReadingLinks(target));
  }
  const observer=new MutationObserver(records=>{for(const record of records){if(record.target.id==='nextLaunchPanel')attachPanel(record.target);for(const node of record.addedNodes)attachPanel(node);}});
  observer.observe(document.body,{childList:true});for(const child of document.body.children)attachPanel(child);
