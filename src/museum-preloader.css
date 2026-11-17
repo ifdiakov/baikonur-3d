@@ -175,6 +175,12 @@
 #museumLoading.is-finishing .preloader__phrase{animation-play-state:paused!important}
 #museumLoading.is-reduced .preloader__phrase,
 #museumLoading.is-reduced .preloader__image{animation:none!important;opacity:0!important;transform:none!important}
-#museumLoading.is-reduced .preloader__phrase:first-child,
-#museumLoading.is-reduced .preloader__image:first-child{opacity:1!important}
+#museumLoading.is-reduced .preloader__phrase.is-active,
+#museumLoading.is-reduced .preloader__image.is-active{opacity:1!important}
 #museumLoading.is-reduced .preloader__progress-fill{animation:none!important;transform:scaleX(.12)}
+
+/* Mobile and reduced-motion views advance content without relying on CSS loops. */
+#museumLoading.is-timed .preloader__phrase,
+#museumLoading.is-timed .preloader__image{animation:none!important;opacity:0;transform:none;transition:opacity .35s ease}
+#museumLoading.is-timed .preloader__phrase.is-active,
+#museumLoading.is-timed .preloader__image.is-active{opacity:1}
