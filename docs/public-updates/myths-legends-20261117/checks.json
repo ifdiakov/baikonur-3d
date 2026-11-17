@@ -1,0 +1,317 @@
+{
+  "published": true,
+  "release": "32f701f805a182c639d50a78fc777d1abb3586b4-myths-legends-20261117",
+  "browsers": {
+    "candidate-chromium": {
+      "mode": "candidate",
+      "engine": "chromium",
+      "errors": [],
+      "stories": [
+        "lost-cosmonauts",
+        "ilyushin-first",
+        "ivan-ivanovich",
+        "nikitin-exile",
+        "krikalev-country",
+        "space-pencil",
+        "october-silence",
+        "black-shepherd",
+        "korolev-coal",
+        "dmb-inscription",
+        "baikal-secret-flight",
+        "tanya-rocket",
+        "white-sun",
+        "gagarin-wheel",
+        "coins-under-tua"
+      ],
+      "passed": true,
+      "phase": "encyclopedia",
+      "shadersValid": true,
+      "directLink": true,
+      "encyclopedia": true
+    },
+    "candidate-webkit": {
+      "mode": "candidate",
+      "engine": "webkit",
+      "errors": [],
+      "stories": [
+        "lost-cosmonauts",
+        "ilyushin-first",
+        "ivan-ivanovich",
+        "nikitin-exile",
+        "krikalev-country",
+        "space-pencil",
+        "october-silence",
+        "black-shepherd",
+        "korolev-coal",
+        "dmb-inscription",
+        "baikal-secret-flight",
+        "tanya-rocket",
+        "white-sun",
+        "gagarin-wheel",
+        "coins-under-tua"
+      ],
+      "passed": true,
+      "phase": "encyclopedia",
+      "shadersValid": true,
+      "directLink": true,
+      "encyclopedia": true
+    },
+    "public-chromium": {
+      "mode": "public",
+      "engine": "chromium",
+      "errors": [],
+      "stories": [
+        "lost-cosmonauts",
+        "ilyushin-first",
+        "ivan-ivanovich",
+        "nikitin-exile",
+        "krikalev-country",
+        "space-pencil",
+        "october-silence",
+        "black-shepherd",
+        "korolev-coal",
+        "dmb-inscription",
+        "baikal-secret-flight",
+        "tanya-rocket",
+        "white-sun",
+        "gagarin-wheel",
+        "coins-under-tua"
+      ],
+      "passed": true,
+      "phase": "encyclopedia",
+      "shadersValid": true,
+      "directLink": true,
+      "encyclopedia": true
+    },
+    "public-webkit": {
+      "mode": "public",
+      "engine": "webkit",
+      "errors": [],
+      "stories": [
+        "lost-cosmonauts",
+        "ilyushin-first",
+        "ivan-ivanovich",
+        "nikitin-exile",
+        "krikalev-country",
+        "space-pencil",
+        "october-silence",
+        "black-shepherd",
+        "korolev-coal",
+        "dmb-inscription",
+        "baikal-secret-flight",
+        "tanya-rocket",
+        "white-sun",
+        "gagarin-wheel",
+        "coins-under-tua"
+      ],
+      "passed": true,
+      "phase": "encyclopedia",
+      "shadersValid": true,
+      "directLink": true,
+      "encyclopedia": true
+    }
+  },
+  "structural": {
+    "passed": true,
+    "articles": 124,
+    "stories": 24,
+    "curatedMyths": 15,
+    "sources": 57,
+    "gzipDeltaBytes": {
+      "index.html": 58,
+      "museum.html": 58,
+      "workshop.html": 107,
+      "encyclopedia.html": 5,
+      "src/museum-menu.js": 126,
+      "src/deferred-knowledge.js": -4,
+      "src/museum-knowledge-index.js": 1901,
+      "data/buran-knowledge.json": 8402,
+      "data/encyclopedia.json": 10383,
+      "data/knowledge-index.json": 2096
+    }
+  },
+  "static": {
+    "passed": true,
+    "checkedModules": 310,
+    "checkedEntrypoints": 3,
+    "elapsedMs": 137,
+    "errors": [],
+    "coverage": "Syntax, static local imports and entrypoint resources. Not visual acceptance."
+  },
+  "menuContract": {
+    "passed": true,
+    "groupedStories": 17,
+    "curatedMyths": 15
+  },
+  "publicHashes": [
+    {
+      "url": "https://museum.rockettrip.space/index.html",
+      "sha256": "0321c19cab2ac81469c217289522fc7addf3630e98545a6a3a0e8fcba57a87da",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/museum.html",
+      "sha256": "0321c19cab2ac81469c217289522fc7addf3630e98545a6a3a0e8fcba57a87da",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/workshop.html",
+      "sha256": "2acb10e51fd5b3965330e51cb5c059cd43319648f8692b6be893d4778f7dc811",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/encyclopedia.html",
+      "sha256": "f8557e85262cd463d798c8971505c23fc7766cbeda5222fb892700992c1e178f",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/museum-menu.js",
+      "sha256": "4eaffe75ab77dc51323bc071a80bf47cafcf018bff8f31544774d5c18437f3ce",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/deferred-knowledge.js",
+      "sha256": "09153579a20fd17d9d0884f60c7b531dab289d67b789c9c45106ba3a33259a33",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/museum-knowledge-index.js",
+      "sha256": "5c1e3c3e63980988aee3fb4e3eba26aec2d814f4c259b9184955a5734d7a4e69",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/data/buran-knowledge.json",
+      "sha256": "c471ddf6bd6c294347784a88846556604ccd2d09d8fa1dec55c100365953caf8",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/data/encyclopedia.json",
+      "sha256": "3592d3722e54ce7774aec7f6655e2914d065b48e89ecfcee3c3fa3029b329e53",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/data/knowledge-index.json",
+      "sha256": "99cdf4acaafbad293b138fd932e1eff703dd18832be636a9519c8fd1f55062f4",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/museum-ui-polish.css",
+      "sha256": "0f69758eddef381395a0b4a340750e27434ad4174989acaec36246335ecc28ee",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/launch-countdown.js",
+      "sha256": "a6c433ba30d58b66ae726d67d19b5c268dcb39ffc56612339323d11aeb19e715",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/mik112.js",
+      "sha256": "d30e6f63a2de6060724bb627861d19b70b1f0d70e95be7cbb88794df4cf46d53",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/museum-startup.js",
+      "sha256": "ff31e2531e5a29021990646046650eea463b32dec497e6751d0512d74c8f5e95",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/evening-scene.js",
+      "sha256": "27c0858a78917f960b982aa64a0182358fcd11b0a37e54a84f4a7378616f3a4d",
+      "passed": true
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/fall-fields.js",
+      "sha256": "7f1824994a8b23dc8d9a2e0d2d6eb80eb9fac4a6eb1af412a09b90e983d53157",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/index.html",
+      "sha256": "0321c19cab2ac81469c217289522fc7addf3630e98545a6a3a0e8fcba57a87da",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/museum.html",
+      "sha256": "0321c19cab2ac81469c217289522fc7addf3630e98545a6a3a0e8fcba57a87da",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/workshop.html",
+      "sha256": "2acb10e51fd5b3965330e51cb5c059cd43319648f8692b6be893d4778f7dc811",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/encyclopedia.html",
+      "sha256": "f8557e85262cd463d798c8971505c23fc7766cbeda5222fb892700992c1e178f",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/museum-menu.js",
+      "sha256": "4eaffe75ab77dc51323bc071a80bf47cafcf018bff8f31544774d5c18437f3ce",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/deferred-knowledge.js",
+      "sha256": "09153579a20fd17d9d0884f60c7b531dab289d67b789c9c45106ba3a33259a33",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/museum-knowledge-index.js",
+      "sha256": "5c1e3c3e63980988aee3fb4e3eba26aec2d814f4c259b9184955a5734d7a4e69",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/data/buran-knowledge.json",
+      "sha256": "c471ddf6bd6c294347784a88846556604ccd2d09d8fa1dec55c100365953caf8",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/data/encyclopedia.json",
+      "sha256": "3592d3722e54ce7774aec7f6655e2914d065b48e89ecfcee3c3fa3029b329e53",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/data/knowledge-index.json",
+      "sha256": "99cdf4acaafbad293b138fd932e1eff703dd18832be636a9519c8fd1f55062f4",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/museum-ui-polish.css",
+      "sha256": "0f69758eddef381395a0b4a340750e27434ad4174989acaec36246335ecc28ee",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/launch-countdown.js",
+      "sha256": "a6c433ba30d58b66ae726d67d19b5c268dcb39ffc56612339323d11aeb19e715",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/mik112.js",
+      "sha256": "d30e6f63a2de6060724bb627861d19b70b1f0d70e95be7cbb88794df4cf46d53",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/museum-startup.js",
+      "sha256": "ff31e2531e5a29021990646046650eea463b32dec497e6751d0512d74c8f5e95",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/evening-scene.js",
+      "sha256": "27c0858a78917f960b982aa64a0182358fcd11b0a37e54a84f4a7378616f3a4d",
+      "passed": true
+    },
+    {
+      "url": "http://136.234.238.77/src/fall-fields.js",
+      "sha256": "7f1824994a8b23dc8d9a2e0d2d6eb80eb9fac4a6eb1af412a09b90e983d53157",
+      "passed": true
+    }
+  ],
+  "sourcePatchSha256": "3e138b4869180882301b929e6ba31aa5a93ecdecb2d523e0b4ea7b91d6842811",
+  "patchReplayExact": true,
+  "sshClosed": true,
+  "limits": [
+    "Mobile WebKit emulation, not physical iPhone.",
+    "Initial public WebKit run opened all stories/direct link/reader, then recorded 30 model-fetch access-control messages during teardown navigation. Retained report: public-webkit-navigation-errors.json. Fresh independent pages assert no runtime errors before teardown and pass all scenarios; no runtime/network policy change was made.",
+    "GitHub main runtime predates intervening server releases. Protected source publication archives the exact patch and readable story records, rather than replacing main runtime."
+  ],
+  "githubArchive": "pending"
+}
