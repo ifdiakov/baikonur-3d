@@ -29,11 +29,11 @@ ${imagePreload}
 <style>${font}
 *{box-sizing:border-box}html,body{margin:0;height:100%;background:#f3f0e7;color:#10242d;font-family:Montserrat,Arial,sans-serif}body{overflow:hidden}
 </style>
-<link rel="stylesheet" href="./src/museum-preloader.css?v=20261114-preloader-optimized-v17">
+<link rel="stylesheet" href="./src/museum-preloader.css?v=20261117-preloader-mobile-v19">
 
 </head><body>
 ${markup}
-<script src="./src/museum-preloader.js?v=20261103-preloader-native-v14"></script>
+<script src="./src/museum-preloader.js?v=20261117-preloader-mobile-v19"></script>
 </body></html>
 `;
 await writeFile(new URL('../preloader.html', import.meta.url), html);

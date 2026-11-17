@@ -34,3 +34,4 @@ assert(html.includes("key:'road-prebuilt-lod'"));
 assert(html.includes("roadLodDataReady=transportQuery.get('previewRoadLOD')==='1'"));
 assert(html.includes("authoritativeLodReady=transportBakeModule.then("));
 console.log('MUSEUM_LOADING_OPTIMIZATION_PASS',JSON.stringify({galleryAvailable:gallery.length,historyInitiallyDeferred:true,soilInitiallyDeferred:true,versionedGlbCaching:true}));
+await import('./preloader-content-cycle.mjs');

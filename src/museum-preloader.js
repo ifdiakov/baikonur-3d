@@ -39,6 +39,8 @@
   // Use the change event to update the preference. Reading MQL.matches on
   // every animation frame can consume Chromium's pending change notification.
   var reducedMotion = Boolean(motion.matches);
+  var compact = window.matchMedia ? window.matchMedia('(max-width: 700px)') : { matches: false };
+  var timedPresentation = false;
   var preview = root.dataset.preview === 'true';
   var launchStep = 0;
   var targetStep = 0;
@@ -193,9 +195,26 @@
     });
   }
 
+  function presentationPaused() {
+    return manuallyPaused || document.hidden || failed || destroyed || finishing;
+  }
+
   function schedulePresentation() {
-    // Phrase and gallery motion is pure CSS/compositor work. Keeping this
-    // function as a no-op preserves the pause/reduced-motion controller API.
+    if (!timedPresentation || presentationPaused() || presentationTimer !== null) return;
+    presentationTimer = window.setTimeout(function () {
+      presentationTimer = null;
+      if (!timedPresentation || presentationPaused()) return;
+      presentationTick++;
+      if (presentationTick % 3 === 0 && phrases.length) showFeature((featureIndex + 1) % phrases.length);
+      if (presentationTick % 4 === 0 && images.length) {
+        var next = (imageCursor + 1) % images.length;
+        if (images[next].complete && images[next].naturalWidth > 0) {
+          imageCursor = next;
+          showImage(next);
+        }
+      }
+      schedulePresentation();
+    }, 1000);
   }
 
   function syncMotion() {
@@ -407,12 +426,18 @@
     reducedMotion = Boolean(motion.matches);
     syncMotion();
     syncProgress();
-    if (motionPaused() || finishing) stopPresentation();
-    else schedulePresentation();
-    if (reducedMotion) {
-      imageCursor = 0;
+    var useTimer = reducedMotion || compact.matches;
+    if (useTimer !== timedPresentation) {
+      stopPresentation();
+      timedPresentation = useTimer;
       presentationTick = 0;
+      imageCursor = 0;
+      showFeature(0);
+      showImage(0);
     }
+    root.classList.toggle('is-timed', timedPresentation);
+    if (presentationPaused()) stopPresentation();
+    else schedulePresentation();
     if (preview) schedulePreview();
     else {
       if (document.hidden) flushAdvance();
@@ -426,6 +451,11 @@
     refreshMotion();
   });
   listen(document, 'visibilitychange', refreshMotion);
+  if (compact.addEventListener) listen(compact, 'change', refreshMotion);
+  else if (compact.addListener) {
+    compact.addListener(refreshMotion);
+    listeners.push(function () { compact.removeListener(refreshMotion); });
+  }
   if (motion.addEventListener) {
     listen(motion, 'change', refreshMotion);
   } else if (motion.addListener) {
