@@ -1,0 +1,659 @@
+{
+  "published": true,
+  "release": "32f701f805a182c639d50a78fc777d1abb3586b4-organizations-admin-v2-20261118",
+  "scope": "admin/workshop only",
+  "organizations": 21,
+  "sources": 59,
+  "projects": 48,
+  "relations": 132,
+  "contextTargets": 33,
+  "runtimeArchiveSHA256": "fdf49f460adf7dd3644b7be0e7c9f82f33b15e7c7d5d33cf0833960f78397db8",
+  "sourcePatchSHA256": "5a978ee021341cab89c217393d7c1856e5af85875caffb5aaab47a5086939e00",
+  "sourceChecks": {
+    "passed": true,
+    "modelRocketEventTargets": true,
+    "newModulesSyntax": true,
+    "workshopScriptsSyntax": true,
+    "patchReplaysExactRuntime": true,
+    "allModelContextIdsExist": true,
+    "unchangedArticlesAndSources": true,
+    "additionalModelLinks": 3
+  },
+  "structuralChecks": {
+    "cards": 21,
+    "relations": 132,
+    "sources": 59,
+    "workshopOnlyInjection": true,
+    "siteAndOrganizationReferences": true,
+    "publicEntrypointsUntouched": true,
+    "contextTargets": 33,
+    "finalUIUnchangedExceptCacheKeys": true
+  },
+  "publicHashes": [
+    {
+      "url": "https://museum.rockettrip.space/workshop.html",
+      "sha": "64e3d80affd54e5a12c819eb059cbde8e18e1579ebce24b9f0457194365e603e",
+      "bytes": 331983
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/admin-organizations.js",
+      "sha": "5a23672524a3d81b5a03315a3161e792d0944aabec87901e25aa37bd320bf873",
+      "bytes": 15050
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/admin-organizations-index.js",
+      "sha": "141de21adf7c37fdb6dfd74f3b77bb74048eff2eb771299dfde71ec5cffc18a5",
+      "bytes": 13655
+    },
+    {
+      "url": "https://museum.rockettrip.space/data/admin-organizations.json",
+      "sha": "b23a934f887dcf2a0e257e2a40f7d33b2d9440d839e989d3bd8209641a21e7d1",
+      "bytes": 87917
+    },
+    {
+      "url": "https://museum.rockettrip.space/index.html",
+      "sha": "4a6ae371f8bb44ee21f3fd30c9ad08c935b285dcbc66042059d969a635a9fc62",
+      "bytes": 330245
+    },
+    {
+      "url": "https://museum.rockettrip.space/museum.html",
+      "sha": "4a6ae371f8bb44ee21f3fd30c9ad08c935b285dcbc66042059d969a635a9fc62",
+      "bytes": 330245
+    },
+    {
+      "url": "https://museum.rockettrip.space/data/catalog.json",
+      "sha": "e3f0ae3b31b5ec92d7d545ad0d280ad8746a2ea30257e0fbf65a1d934eca34eb",
+      "bytes": 190786
+    },
+    {
+      "url": "https://museum.rockettrip.space/data/encyclopedia.json",
+      "sha": "3592d3722e54ce7774aec7f6655e2914d065b48e89ecfcee3c3fa3029b329e53",
+      "bytes": 514895
+    },
+    {
+      "url": "https://museum.rockettrip.space/data/buran-knowledge.json",
+      "sha": "c471ddf6bd6c294347784a88846556604ccd2d09d8fa1dec55c100365953caf8",
+      "bytes": 146053
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/mik112.js",
+      "sha": "d30e6f63a2de6060724bb627861d19b70b1f0d70e95be7cbb88794df4cf46d53",
+      "bytes": 28884
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/evening-scene.js",
+      "sha": "27c0858a78917f960b982aa64a0182358fcd11b0a37e54a84f4a7378616f3a4d",
+      "bytes": 15593
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/museum-startup.js",
+      "sha": "4ec02d0d6d9e1f283126ca22d06c9ac29e21b3022f2fa9d6e1eb5cb96fb06b69",
+      "bytes": 17470
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/museum-mobile.js",
+      "sha": "6dc03afd7ed4cf1fab6d4a5dc4a7d5f4d80706e715cfc8c4ae87754efccd0ece",
+      "bytes": 9384
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/museum-ui-polish.css",
+      "sha": "0f69758eddef381395a0b4a340750e27434ad4174989acaec36246335ecc28ee",
+      "bytes": 21464
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/card-share.js",
+      "sha": "aa8e7b51667b63c891928dc07232c99dcda8bd18988d74358b9e65a68820deca",
+      "bytes": 10261
+    },
+    {
+      "url": "https://museum.rockettrip.space/src/organisation-logos.js",
+      "sha": "8445cfdfe44ba81ee71760f5d7f05c892fade454652c601779f6677113333a2a",
+      "bytes": 2535
+    },
+    {
+      "url": "http://136.234.238.77/workshop.html",
+      "sha": "64e3d80affd54e5a12c819eb059cbde8e18e1579ebce24b9f0457194365e603e",
+      "bytes": 331983
+    },
+    {
+      "url": "http://136.234.238.77/src/admin-organizations.js",
+      "sha": "5a23672524a3d81b5a03315a3161e792d0944aabec87901e25aa37bd320bf873",
+      "bytes": 15050
+    },
+    {
+      "url": "http://136.234.238.77/src/admin-organizations-index.js",
+      "sha": "141de21adf7c37fdb6dfd74f3b77bb74048eff2eb771299dfde71ec5cffc18a5",
+      "bytes": 13655
+    },
+    {
+      "url": "http://136.234.238.77/data/admin-organizations.json",
+      "sha": "b23a934f887dcf2a0e257e2a40f7d33b2d9440d839e989d3bd8209641a21e7d1",
+      "bytes": 87917
+    },
+    {
+      "url": "http://136.234.238.77/index.html",
+      "sha": "4a6ae371f8bb44ee21f3fd30c9ad08c935b285dcbc66042059d969a635a9fc62",
+      "bytes": 330245
+    },
+    {
+      "url": "http://136.234.238.77/museum.html",
+      "sha": "4a6ae371f8bb44ee21f3fd30c9ad08c935b285dcbc66042059d969a635a9fc62",
+      "bytes": 330245
+    },
+    {
+      "url": "http://136.234.238.77/data/catalog.json",
+      "sha": "e3f0ae3b31b5ec92d7d545ad0d280ad8746a2ea30257e0fbf65a1d934eca34eb",
+      "bytes": 190786
+    },
+    {
+      "url": "http://136.234.238.77/data/encyclopedia.json",
+      "sha": "3592d3722e54ce7774aec7f6655e2914d065b48e89ecfcee3c3fa3029b329e53",
+      "bytes": 514895
+    },
+    {
+      "url": "http://136.234.238.77/data/buran-knowledge.json",
+      "sha": "c471ddf6bd6c294347784a88846556604ccd2d09d8fa1dec55c100365953caf8",
+      "bytes": 146053
+    },
+    {
+      "url": "http://136.234.238.77/src/mik112.js",
+      "sha": "d30e6f63a2de6060724bb627861d19b70b1f0d70e95be7cbb88794df4cf46d53",
+      "bytes": 28884
+    },
+    {
+      "url": "http://136.234.238.77/src/evening-scene.js",
+      "sha": "27c0858a78917f960b982aa64a0182358fcd11b0a37e54a84f4a7378616f3a4d",
+      "bytes": 15593
+    },
+    {
+      "url": "http://136.234.238.77/src/museum-startup.js",
+      "sha": "4ec02d0d6d9e1f283126ca22d06c9ac29e21b3022f2fa9d6e1eb5cb96fb06b69",
+      "bytes": 17470
+    },
+    {
+      "url": "http://136.234.238.77/src/museum-mobile.js",
+      "sha": "6dc03afd7ed4cf1fab6d4a5dc4a7d5f4d80706e715cfc8c4ae87754efccd0ece",
+      "bytes": 9384
+    },
+    {
+      "url": "http://136.234.238.77/src/museum-ui-polish.css",
+      "sha": "0f69758eddef381395a0b4a340750e27434ad4174989acaec36246335ecc28ee",
+      "bytes": 21464
+    },
+    {
+      "url": "http://136.234.238.77/src/card-share.js",
+      "sha": "aa8e7b51667b63c891928dc07232c99dcda8bd18988d74358b9e65a68820deca",
+      "bytes": 10261
+    },
+    {
+      "url": "http://136.234.238.77/src/organisation-logos.js",
+      "sha": "8445cfdfe44ba81ee71760f5d7f05c892fade454652c601779f6677113333a2a",
+      "bytes": 2535
+    }
+  ],
+  "localFiles": [
+    {
+      "path": "workshop.html",
+      "exact": true
+    },
+    {
+      "path": "src/admin-organizations.js",
+      "exact": true
+    },
+    {
+      "path": "src/admin-organizations-index.js",
+      "exact": true
+    },
+    {
+      "path": "data/admin-organizations.json",
+      "exact": true
+    }
+  ],
+  "browsers": {
+    "candidate-chromium": {
+      "mode": "candidate",
+      "engine": "chromium",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "passed": true,
+      "phase": "public-absence",
+      "lazyFetchOnce": true,
+      "contextBack": true,
+      "models": true,
+      "scenarioPanel": true,
+      "shadersValid": true,
+      "deepLink": true,
+      "publicAbsent": true
+    },
+    "candidate-webkit": {
+      "mode": "candidate",
+      "engine": "webkit",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "passed": true,
+      "runtimeHashes": [
+        {
+          "path": "workshop.html",
+          "sha": "aea526081d8e7756f15abeb8acb2f71f2bb45f070330006b82fc0dea2278d72f"
+        },
+        {
+          "path": "src/admin-organizations.js",
+          "sha": "52a5a8b5f118b108a2506612b652b679c9c231f073dbaf0c7072ed18e06ea409"
+        },
+        {
+          "path": "src/admin-organizations-index.js",
+          "sha": "2021f858c9d6a5e73ebdfda5d295f822f185d41bd6b9c78ac5947e5d71035440"
+        },
+        {
+          "path": "data/admin-organizations.json",
+          "sha": "3045244da43ac146d1c05a9342d87f9d7058b6109c6162a3bec87b0aeba00ab0"
+        }
+      ],
+      "phase": "public-absence",
+      "lazyFetchOnce": true,
+      "contextBack": true,
+      "models": true,
+      "scenarioPanel": true,
+      "shadersValid": true,
+      "deepLink": true,
+      "publicAbsent": true
+    },
+    "public-chromium": {
+      "mode": "public",
+      "engine": "chromium",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "passed": true,
+      "runtimeHashes": [
+        {
+          "path": "workshop.html",
+          "sha": "aea526081d8e7756f15abeb8acb2f71f2bb45f070330006b82fc0dea2278d72f"
+        },
+        {
+          "path": "src/admin-organizations.js",
+          "sha": "52a5a8b5f118b108a2506612b652b679c9c231f073dbaf0c7072ed18e06ea409"
+        },
+        {
+          "path": "src/admin-organizations-index.js",
+          "sha": "2021f858c9d6a5e73ebdfda5d295f822f185d41bd6b9c78ac5947e5d71035440"
+        },
+        {
+          "path": "data/admin-organizations.json",
+          "sha": "3045244da43ac146d1c05a9342d87f9d7058b6109c6162a3bec87b0aeba00ab0"
+        }
+      ],
+      "phase": "public-absence",
+      "lazyFetchOnce": true,
+      "contextBack": true,
+      "models": true,
+      "scenarioPanel": true,
+      "shadersValid": true,
+      "deepLink": true,
+      "publicAbsent": true
+    },
+    "public-webkit": {
+      "mode": "public",
+      "engine": "webkit",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "passed": true,
+      "runtimeHashes": [
+        {
+          "path": "workshop.html",
+          "sha": "aea526081d8e7756f15abeb8acb2f71f2bb45f070330006b82fc0dea2278d72f"
+        },
+        {
+          "path": "src/admin-organizations.js",
+          "sha": "52a5a8b5f118b108a2506612b652b679c9c231f073dbaf0c7072ed18e06ea409"
+        },
+        {
+          "path": "src/admin-organizations-index.js",
+          "sha": "2021f858c9d6a5e73ebdfda5d295f822f185d41bd6b9c78ac5947e5d71035440"
+        },
+        {
+          "path": "data/admin-organizations.json",
+          "sha": "3045244da43ac146d1c05a9342d87f9d7058b6109c6162a3bec87b0aeba00ab0"
+        }
+      ],
+      "phase": "public-absence",
+      "lazyFetchOnce": true,
+      "contextBack": true,
+      "models": true,
+      "scenarioPanel": true,
+      "shadersValid": true,
+      "deepLink": true,
+      "publicAbsent": true
+    },
+    "candidate-models-chromium": {
+      "mode": "candidate",
+      "engine": "chromium",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "models": [
+        "zenit-land",
+        "zenit-sea",
+        "soyuz5"
+      ],
+      "hashes": [
+        {
+          "path": "workshop.html",
+          "before": "7321a0f991ef9ac2d0636fc9d72f3c0468c08eaff18ec04c2c330568757dc5db",
+          "after": "64e3d80affd54e5a12c819eb059cbde8e18e1579ebce24b9f0457194365e603e"
+        },
+        {
+          "path": "src/admin-organizations.js",
+          "before": null,
+          "after": "5a23672524a3d81b5a03315a3161e792d0944aabec87901e25aa37bd320bf873"
+        },
+        {
+          "path": "src/admin-organizations-index.js",
+          "before": null,
+          "after": "141de21adf7c37fdb6dfd74f3b77bb74048eff2eb771299dfde71ec5cffc18a5"
+        },
+        {
+          "path": "data/admin-organizations.json",
+          "before": null,
+          "after": "b23a934f887dcf2a0e257e2a40f7d33b2d9440d839e989d3bd8209641a21e7d1"
+        }
+      ],
+      "passed": true,
+      "phase": "soyuz5",
+      "shadersValid": true
+    },
+    "candidate-models-webkit": {
+      "mode": "candidate",
+      "engine": "webkit",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "models": [
+        "zenit-land",
+        "zenit-sea",
+        "soyuz5"
+      ],
+      "hashes": [
+        {
+          "path": "workshop.html",
+          "before": "7321a0f991ef9ac2d0636fc9d72f3c0468c08eaff18ec04c2c330568757dc5db",
+          "after": "64e3d80affd54e5a12c819eb059cbde8e18e1579ebce24b9f0457194365e603e"
+        },
+        {
+          "path": "src/admin-organizations.js",
+          "before": null,
+          "after": "5a23672524a3d81b5a03315a3161e792d0944aabec87901e25aa37bd320bf873"
+        },
+        {
+          "path": "src/admin-organizations-index.js",
+          "before": null,
+          "after": "141de21adf7c37fdb6dfd74f3b77bb74048eff2eb771299dfde71ec5cffc18a5"
+        },
+        {
+          "path": "data/admin-organizations.json",
+          "before": null,
+          "after": "b23a934f887dcf2a0e257e2a40f7d33b2d9440d839e989d3bd8209641a21e7d1"
+        }
+      ],
+      "passed": true,
+      "phase": "soyuz5",
+      "shadersValid": true
+    },
+    "public-models-chromium": {
+      "mode": "public",
+      "engine": "chromium",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "models": [
+        "zenit-land",
+        "zenit-sea",
+        "soyuz5"
+      ],
+      "hashes": [
+        {
+          "path": "workshop.html",
+          "before": "7321a0f991ef9ac2d0636fc9d72f3c0468c08eaff18ec04c2c330568757dc5db",
+          "after": "64e3d80affd54e5a12c819eb059cbde8e18e1579ebce24b9f0457194365e603e"
+        },
+        {
+          "path": "src/admin-organizations.js",
+          "before": null,
+          "after": "5a23672524a3d81b5a03315a3161e792d0944aabec87901e25aa37bd320bf873"
+        },
+        {
+          "path": "src/admin-organizations-index.js",
+          "before": null,
+          "after": "141de21adf7c37fdb6dfd74f3b77bb74048eff2eb771299dfde71ec5cffc18a5"
+        },
+        {
+          "path": "data/admin-organizations.json",
+          "before": null,
+          "after": "b23a934f887dcf2a0e257e2a40f7d33b2d9440d839e989d3bd8209641a21e7d1"
+        }
+      ],
+      "passed": true,
+      "phase": "soyuz5",
+      "shadersValid": true
+    },
+    "public-models-webkit": {
+      "mode": "public",
+      "engine": "webkit",
+      "errors": [],
+      "cards": [
+        "energia",
+        "progress",
+        "gctc",
+        "tsenki",
+        "roscosmos",
+        "lavochkin",
+        "energomash",
+        "vympel-mak",
+        "fakel",
+        "molniya",
+        "khrunichev",
+        "reshetnev",
+        "npcap",
+        "rks",
+        "npoa",
+        "kbkha",
+        "kbom",
+        "vniira",
+        "lii",
+        "tsagi",
+        "vympel-mmz"
+      ],
+      "models": [
+        "zenit-land",
+        "zenit-sea",
+        "soyuz5"
+      ],
+      "hashes": [
+        {
+          "path": "workshop.html",
+          "before": "7321a0f991ef9ac2d0636fc9d72f3c0468c08eaff18ec04c2c330568757dc5db",
+          "after": "64e3d80affd54e5a12c819eb059cbde8e18e1579ebce24b9f0457194365e603e"
+        },
+        {
+          "path": "src/admin-organizations.js",
+          "before": null,
+          "after": "5a23672524a3d81b5a03315a3161e792d0944aabec87901e25aa37bd320bf873"
+        },
+        {
+          "path": "src/admin-organizations-index.js",
+          "before": null,
+          "after": "141de21adf7c37fdb6dfd74f3b77bb74048eff2eb771299dfde71ec5cffc18a5"
+        },
+        {
+          "path": "data/admin-organizations.json",
+          "before": null,
+          "after": "b23a934f887dcf2a0e257e2a40f7d33b2d9440d839e989d3bd8209641a21e7d1"
+        }
+      ],
+      "passed": true,
+      "phase": "soyuz5",
+      "shadersValid": true
+    }
+  },
+  "validationScope": "Full candidate/public workflows on v1; final v2 repeats all21cards and3model bidirectional paths on both engines. Prose/sources identical; UI code identical except cachekeys. Public entrypoints and12controlfiles hashes unchanged.",
+  "limits": [
+    "WebKit iPhone emulation; no physical device test.",
+    "No claim of general FPS/OOM improvements.",
+    "MMZ Vympel current portfolio lacks a dated primary confirmation; explicitly labelled."
+  ],
+  "retainedFailures": [
+    "initial editor panel overlap fixed",
+    "mobile collapsed-panel harness corrected to use existing Подробнее toggle",
+    "source-check initially parsed importmap as JS; parser corrected"
+  ]
+}

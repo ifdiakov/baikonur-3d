@@ -1,0 +1,479 @@
+{
+  "organizations": [
+    {
+      "id": "energia",
+      "name": "РКК «Энергия»",
+      "projects": 3,
+      "links": 20,
+      "sourceIds": [
+        "energia-now",
+        "okb1",
+        "buran-coop"
+      ]
+    },
+    {
+      "id": "progress",
+      "name": "РКЦ «Прогресс»",
+      "projects": 3,
+      "links": 8,
+      "sourceIds": [
+        "progress-history",
+        "progress-programs",
+        "progress-products",
+        "progress-launch"
+      ]
+    },
+    {
+      "id": "gctc",
+      "name": "ЦПК имени Ю. А. Гагарина",
+      "projects": 3,
+      "links": 4,
+      "sourceIds": [
+        "gctc-history",
+        "gctc-now",
+        "gctc-ptk",
+        "gctc-buran"
+      ]
+    },
+    {
+      "id": "tsenki",
+      "name": "ЦЭНКИ",
+      "projects": 3,
+      "links": 6,
+      "sourceIds": [
+        "tsenki-history",
+        "tsenki-now",
+        "kbom"
+      ]
+    },
+    {
+      "id": "roscosmos",
+      "name": "Роскосмос",
+      "projects": 3,
+      "links": 6,
+      "sourceIds": [
+        "roscosmos",
+        "national-space",
+        "energia-now"
+      ]
+    },
+    {
+      "id": "lavochkin",
+      "name": "НПО Лавочкина",
+      "projects": 3,
+      "links": 6,
+      "sourceIds": [
+        "lavochkin-history",
+        "lavochkin-now",
+        "lavochkin-projects",
+        "lavochkin-luna"
+      ]
+    },
+    {
+      "id": "energomash",
+      "name": "НПО Энергомаш",
+      "projects": 3,
+      "links": 12,
+      "sourceIds": [
+        "energomash-now",
+        "rd170",
+        "atlas",
+        "progress-launch"
+      ]
+    },
+    {
+      "id": "vympel-mak",
+      "name": "МАК «Вымпел»",
+      "projects": 2,
+      "links": 3,
+      "sourceIds": [
+        "vympel-now",
+        "vympel-history",
+        "vympel-catalog"
+      ]
+    },
+    {
+      "id": "fakel",
+      "name": "ОКБ «Факел»",
+      "projects": 2,
+      "links": 3,
+      "sourceIds": [
+        "fakel-profile",
+        "fakel-history",
+        "fakel-now",
+        "fakel-partners"
+      ]
+    },
+    {
+      "id": "molniya",
+      "name": "НПО «Молния»",
+      "projects": 2,
+      "links": 10,
+      "sourceIds": [
+        "molniya",
+        "molniya-now",
+        "buran-coop"
+      ]
+    },
+    {
+      "id": "khrunichev",
+      "name": "Центр имени М. В. Хруничева",
+      "projects": 2,
+      "links": 4,
+      "sourceIds": [
+        "angara-now",
+        "zarya",
+        "khrunichev-history"
+      ]
+    },
+    {
+      "id": "reshetnev",
+      "name": "АО «РЕШЕТНЁВ»",
+      "projects": 2,
+      "links": 2,
+      "sourceIds": [
+        "reshetnev-history",
+        "reshetnev-now",
+        "reshetnev-products"
+      ]
+    },
+    {
+      "id": "npcap",
+      "name": "НПЦАП имени Н. А. Пилюгина",
+      "projects": 2,
+      "links": 7,
+      "sourceIds": [
+        "npcap-history",
+        "npcap-projects",
+        "npcap-profile",
+        "vniira-buran"
+      ]
+    },
+    {
+      "id": "rks",
+      "name": "Российские космические системы",
+      "projects": 2,
+      "links": 3,
+      "sourceIds": [
+        "rks-history",
+        "rks-now",
+        "rks-data"
+      ]
+    },
+    {
+      "id": "npoa",
+      "name": "НПО автоматики имени Н. А. Семихатова",
+      "projects": 2,
+      "links": 5,
+      "sourceIds": [
+        "npoa-history",
+        "npoa-soyuz5"
+      ]
+    },
+    {
+      "id": "kbkha",
+      "name": "КБ химавтоматики",
+      "projects": 2,
+      "links": 11,
+      "sourceIds": [
+        "kbkha-history",
+        "kbkha-rd0120",
+        "kbkha-rd0124",
+        "progress-launch"
+      ]
+    },
+    {
+      "id": "kbom",
+      "name": "КБОМ имени В. П. Бармина",
+      "projects": 2,
+      "links": 5,
+      "sourceIds": [
+        "kbom",
+        "tsenki-now"
+      ]
+    },
+    {
+      "id": "vniira",
+      "name": "ВНИИРА · школа комплекса «Вымпел»",
+      "projects": 2,
+      "links": 5,
+      "sourceIds": [
+        "vniira-buran",
+        "vniira-report",
+        "vniira-successor"
+      ]
+    },
+    {
+      "id": "lii",
+      "name": "ЛИИ имени М. М. Громова",
+      "projects": 2,
+      "links": 5,
+      "sourceIds": [
+        "lii-history",
+        "lii-profile",
+        "lii-now",
+        "gctc-buran"
+      ]
+    },
+    {
+      "id": "tsagi",
+      "name": "ЦАГИ имени Н. Е. Жуковского",
+      "projects": 2,
+      "links": 4,
+      "sourceIds": [
+        "tsagi-now",
+        "tsagi-projects",
+        "buran-coop",
+        "lii-history"
+      ]
+    },
+    {
+      "id": "vympel-mmz",
+      "name": "ММЗ «Вымпел»",
+      "projects": 1,
+      "links": 3,
+      "sourceIds": [
+        "mmz-history",
+        "mmz-memoir"
+      ]
+    }
+  ],
+  "sources": {
+    "energia-now": {
+      "title": "РКК «Энергия» · направления работы и перспективные программы",
+      "url": "https://rkk-rabota.ru/"
+    },
+    "okb1": {
+      "title": "РГАНТД · ОКБ-1 Сергея Королёва",
+      "url": "https://rgantd.ru/korolev/biography/okb-1/"
+    },
+    "buran-coop": {
+      "title": "Архив программы · кооперация «Энергии — Бурана»",
+      "url": "https://buran.ru/htm/cooperat.htm"
+    },
+    "progress-history": {
+      "title": "РКЦ «Прогресс» · история предприятия",
+      "url": "https://samspace.ru/about/history/"
+    },
+    "progress-programs": {
+      "title": "РКЦ «Прогресс» · действующие и перспективные программы",
+      "url": "https://samspace.ru/about/programs/"
+    },
+    "progress-products": {
+      "title": "РКЦ «Прогресс» · каталог техники",
+      "url": "https://samspace.ru/products/"
+    },
+    "progress-launch": {
+      "title": "РКЦ «Прогресс» · сообщение о первом пуске «Союза-5» 30 апреля 2026",
+      "url": "https://samspace.ru/"
+    },
+    "gctc-history": {
+      "title": "ЦПК · этапы развития Центра",
+      "url": "https://www.gctc.ru/main.php?id=242"
+    },
+    "gctc-now": {
+      "title": "ЦПК · подготовка экипажей и тренажёрные комплексы",
+      "url": "https://www.gctc.ru/"
+    },
+    "gctc-ptk": {
+      "title": "ЦПК · комплексный тренажёр перспективного транспортного корабля",
+      "url": "https://www.gctc.ru/main.php?id=7305"
+    },
+    "gctc-buran": {
+      "title": "ЦПК · участие в программе «Буран»",
+      "url": "https://www.gctc.ru/main.php?id=236"
+    },
+    "tsenki-history": {
+      "title": "ЦЭНКИ · история предприятия",
+      "url": "https://www.russian.space/o-predpriyatii/istoriya-predpriyatiya/"
+    },
+    "tsenki-now": {
+      "title": "ЦЭНКИ · работы на Байконуре и Восточном, новости 2026 года",
+      "url": "https://www.russian.space/"
+    },
+    "kbom": {
+      "title": "ЦЭНКИ · 80 лет КБОМ, 30 июня 2021",
+      "url": "https://www.russian.space/press-tsentr/novosti/80-let-so-dnya-obrazovaniya-kbom.html"
+    },
+    "roscosmos": {
+      "title": "Роскосмос · направления космической деятельности",
+      "url": "https://www.roscosmos.ru/"
+    },
+    "national-space": {
+      "title": "РАН · рассмотрение национального проекта «Космос», 22 мая 2026",
+      "url": "https://www.ras.ru/news/shownews.aspx?id=d447a948-668f-4ab8-9dcb-4f3e4b485578"
+    },
+    "lavochkin-history": {
+      "title": "НПО Лавочкина · 55 лет космической деятельности",
+      "url": "https://www.laspace.ru/ru/press/news/55-let-kosmicheskoy-deyatelnosti-npo-lavochkina/"
+    },
+    "lavochkin-now": {
+      "title": "НПО Лавочкина · предприятие и основные проекты",
+      "url": "https://www.laspace.ru/ru/"
+    },
+    "lavochkin-projects": {
+      "title": "НПО Лавочкина · каталог проектов и стадий разработки",
+      "url": "https://www.laspace.ru/ru/activities/projects/"
+    },
+    "lavochkin-luna": {
+      "title": "НПО Лавочкина · орбитальный аппарат «Луна-26»",
+      "url": "https://www.laspace.ru/ru/activities/projects/luna-resurs-oa/"
+    },
+    "energomash-now": {
+      "title": "Официальный канал НПО Энергомаш · итоги испытаний 2025 года",
+      "url": "https://t.me/s/npoenergomash?before=1688"
+    },
+    "rd170": {
+      "title": "Архив программы «Энергия» · двигатель РД-170",
+      "url": "https://www.buran.ru/htm/rd170.htm"
+    },
+    "atlas": {
+      "title": "United Launch Alliance · Atlas V и двигатель РД-180",
+      "url": "https://www.ulalaunch.com/rockets/atlas-v"
+    },
+    "vympel-now": {
+      "title": "МАК «Вымпел» · направления работы и гражданские комплексы",
+      "url": "https://macvympel.ru/about/"
+    },
+    "vympel-history": {
+      "title": "МАК «Вымпел» · история компании",
+      "url": "https://macvympel.ru/about/istoriya-kompanii/"
+    },
+    "vympel-catalog": {
+      "title": "МАК «Вымпел» · официальный каталог 2022 года",
+      "url": "https://www.macvympel.ru/upload/catalog/ru-catalog-2022.pdf"
+    },
+    "mmz-history": {
+      "title": "Интерфакс · справка о ММЗ «Вымпел» со слов Роскосмоса, 2009",
+      "url": "https://www.interfax-russia.ru/military/news/232267"
+    },
+    "mmz-memoir": {
+      "title": "«Ещё поднималось пламя…», раздел о «Прогнозе» и ММЗ «Вымпел»",
+      "url": "https://books.google.com/books?id=YS_hAAAAMAAJ"
+    },
+    "fakel-profile": {
+      "title": "МАИ · ОКБ «Факел», профиль предприятия-партнёра",
+      "url": "https://mai.ru/content/org/index.php?ID=10231"
+    },
+    "fakel-history": {
+      "title": "МАИ · история и применение стационарных плазменных двигателей",
+      "url": "https://mai.ru/press/news/detail.php?ID=157851"
+    },
+    "fakel-now": {
+      "title": "МАИ · российские электроракетные двигатели, 2025",
+      "url": "https://mai.ru/press/news/detail.php?ID=186402"
+    },
+    "fakel-partners": {
+      "title": "МАИ · кооперация при создании двигателей космических аппаратов",
+      "url": "https://mai.ru/press/news/detail.php?ID=86943"
+    },
+    "molniya": {
+      "title": "НПО «Молния» · о предприятии и открытых разработках",
+      "url": "https://npomolniya.ru/o-kompanii.html"
+    },
+    "molniya-now": {
+      "title": "НПО «Молния» · официальный сайт, публикации 2026 года",
+      "url": "https://www.npomolniya.ru/index.php"
+    },
+    "angara-now": {
+      "title": "Роскосмос · производство «Ангары» как задача Центра Хруничева, 2025",
+      "url": "https://www.roscosmos.ru/41494/"
+    },
+    "zarya": {
+      "title": "NASA · модуль «Заря» и его изготовитель",
+      "url": "https://www.nasa.gov/international-space-station/zarya-module/"
+    },
+    "khrunichev-history": {
+      "title": "НПО машиностроения · история ракетной кооперации, 6 февраля 2026",
+      "url": "https://npomash.ru/press/ru/tribuna060226.htm?l=0&prn=y"
+    },
+    "reshetnev-now": {
+      "title": "АО «РЕШЕТНЁВ» · официальный канал технологических проектов",
+      "url": "https://t.me/s/reshetnevhightech/37"
+    },
+    "reshetnev-products": {
+      "title": "Союз машиностроителей · разработки предприятия на MILEX-2025",
+      "url": "https://soyuzmash.ru/news/companies-news/sputniki-ao-reshetnyev-na-milex-2025/"
+    },
+    "reshetnev-history": {
+      "title": "СО РАН · история создания решетнёвского предприятия",
+      "url": "https://www.sbras.info/system/files?file=NVS_15_2021.pdf"
+    },
+    "npcap-history": {
+      "title": "НПЦАП · история школы автономного управления",
+      "url": "https://npcap.ru/nashe-predpriyatie/istoriya/"
+    },
+    "npcap-projects": {
+      "title": "НПЦАП · космические проекты",
+      "url": "https://npcap.ru/napravleniya-deyatelnosti/kosmicheskie-proekty/"
+    },
+    "npcap-profile": {
+      "title": "НПЦАП · полный цикл разработки систем управления",
+      "url": "https://www.npcap.ru/nashe-predpriyatie/o-fgup-nptsap-/"
+    },
+    "rks-now": {
+      "title": "НЦ ОМЗ / РКС · национальный проект «Космос», 2026",
+      "url": "https://ntsomz.ru/project_space/"
+    },
+    "rks-data": {
+      "title": "НЦ ОМЗ / РКС · геоаналитические сервисы EXPOCIFRA-2026",
+      "url": "https://ntsomz.ru/expocifra_2026/"
+    },
+    "rks-history": {
+      "title": "РГАНТД · Михаил Рязанский и Совет главных конструкторов",
+      "url": "https://rgantd.ru/vystavki/korolev/razdel5.htm"
+    },
+    "npoa-history": {
+      "title": "НПО автоматики · интервью о предприятии и его истории",
+      "url": "https://www.npoa.ru/public/upload/file/shalimov.pdf"
+    },
+    "npoa-soyuz5": {
+      "title": "Правительство Свердловской области · системы «Союза-5», 4 мая 2026",
+      "url": "https://www.xn--b1ag8a.xn--p1ai/news/34569"
+    },
+    "kbkha-history": {
+      "title": "КБХА · история предприятия",
+      "url": "https://kbkha.ru/o-kompanii/istoriya/"
+    },
+    "kbkha-rd0120": {
+      "title": "КБХА · водородный двигатель РД0120",
+      "url": "https://kbkha.ru/deyatel-nost/raketnye-dvigateli-dlya-kosmicheskoy-otrasli/raketnye-dvigateli-ao-kbha/rd0120/"
+    },
+    "kbkha-rd0124": {
+      "title": "КБХА · передача РД0124МС для испытаний в составе ступени",
+      "url": "https://kbkha.ru/press-centr/novosti/dvigatel-rd0124ms-peredan-dlya-ispytanij-v-sostave-stupeni/"
+    },
+    "vniira-buran": {
+      "title": "ИПМ имени М. В. Келдыша · управление «Бураном» и комплекс «Вымпел», 2026",
+      "url": "https://www.keldysh.ru/papers/2026/prep1/prep2026_1.html"
+    },
+    "vniira-successor": {
+      "title": "Обуховский завод · объединение предприятий и переименование, 27 июня 2025",
+      "url": "https://www.goz.ru/pereimenovanie-predpriyatiya/"
+    },
+    "vniira-report": {
+      "title": "Экспресс-отчёт о работе комплекса «Вымпел» 15 ноября 1988",
+      "url": "https://www.buran.ru/htm/vympel03.htm"
+    },
+    "lii-profile": {
+      "title": "Ассоциация государственных научных центров · профиль ЛИИ",
+      "url": "https://www.agnc.ru/gnc/71"
+    },
+    "lii-history": {
+      "title": "Центральный музей ВВС · основание ЛИИ в 1941 году",
+      "url": "https://cmvvs.ru/muzejnaya-deyatelnost/znamenatelnye-daty/v-1941-g-byl-osnovan-lii-im-m-m-gromova.html"
+    },
+    "lii-now": {
+      "title": "Ростех · ЛИИ как школа экспериментальной авиации, 2026",
+      "url": "https://rostec.ru/media/news/lii-imeni-m-m-gromova-shkola-eksperimentalnoy-aviatsii/?sphrase_id=7824126"
+    },
+    "tsagi-now": {
+      "title": "ЦАГИ · испытания отечественных панелей МС-21, 24 декабря 2025",
+      "url": "https://www.tsagi.ru/pressroom/archive/2025/7027/"
+    },
+    "tsagi-projects": {
+      "title": "ЦАГИ · исследования для гражданской авиации",
+      "url": "https://www.tsagi.ru/pressroom/news/6155/"
+    }
+  }
+}
